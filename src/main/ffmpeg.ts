@@ -94,6 +94,24 @@ export async function generateSpectrogram(input: string): Promise<string> {
   }
 }
 
+export async function processCover(
+  input: string,
+  opts: { maxSize: number; square: boolean }
+): Promise<string> {
+  const max = opts.maxSize > 0 ? opts.maxSize : 4000
+  const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
+  const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
+  const out = join(tmpdir(), `vinilo-cover-proc-${Date.now()}.jpg`)
+  await run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', input,
+    '-vf', vf,
+    '-q:v', '2',
+    out
+  ])
+  return out
+}
+
 export async function analyzeCutoff(input: string): Promise<number> {
   const stats = join(tmpdir(), `vinilo-stats-${Date.now()}.txt`)
   try {

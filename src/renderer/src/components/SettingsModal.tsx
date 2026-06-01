@@ -9,11 +9,12 @@ interface Props {
   onSave: (patch: Partial<Settings>) => void
 }
 
-type Tab = 'general' | 'naming' | 'fields'
+type Tab = 'general' | 'naming' | 'artwork' | 'fields'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'naming', label: 'Nombres' },
+  { id: 'artwork', label: 'Carátula' },
   { id: 'fields', label: 'Campos' }
 ]
 
@@ -31,6 +32,8 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
   const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
   const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
+  const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
+  const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
@@ -42,6 +45,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       .split(',')
       .map((g) => g.trim())
       .filter(Boolean)
+    const max = parseInt(coverMaxSize, 10)
     onSave({
       discogsToken: token.trim(),
       outputDir,
@@ -50,7 +54,9 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       groupingPresets,
       trimWhitespace,
       zeroPadTrack,
-      visibleFields
+      visibleFields,
+      coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
+      coverSquare
     })
     onClose()
   }
@@ -191,6 +197,40 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   <span className="text-sm">Nº de pista con cero delante (03)</span>
                 </label>
               </div>
+            </>
+          )}
+
+          {tab === 'artwork' && (
+            <>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-300">
+                Tamaño máximo de la carátula
+              </label>
+              <div className="mb-5 flex items-center gap-2">
+                <input
+                  data-testid="settings-cover-max"
+                  type="number"
+                  min={0}
+                  value={coverMaxSize}
+                  onChange={(e) => setCoverMaxSize(e.target.value)}
+                  className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <span className="text-sm text-neutral-500">px (0 = sin límite)</span>
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  data-testid="settings-cover-square"
+                  type="checkbox"
+                  checked={coverSquare}
+                  onChange={(e) => setCoverSquare(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">Recortar la carátula a cuadrado</span>
+              </label>
+              <p className="mt-3 text-xs text-neutral-500">
+                Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro
+                para dejarlas cuadradas.
+              </p>
             </>
           )}
 

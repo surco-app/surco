@@ -3,7 +3,7 @@ import { join } from 'path'
 import { mkdir, unlink } from 'fs/promises'
 import { getSettings, saveSettings } from './settings'
 import { search, getRelease, downloadCover } from './discogs'
-import { convertToAiff, generateSpectrogram, analyzeCutoff, probeAudio } from './ffmpeg'
+import { convertToAiff, generateSpectrogram, analyzeCutoff, probeAudio, processCover } from './ffmpeg'
 import { addToAppleMusic } from './applemusic'
 import { Settings, ProcessJob } from '../shared/types'
 
@@ -98,11 +98,19 @@ function registerIpc(): void {
     await mkdir(settings.outputDir, { recursive: true })
 
     let tempCover: string | undefined
+    let processedCover: string | undefined
     try {
       let coverPath = job.coverPath
       if (!coverPath && job.coverUrl?.startsWith('http')) {
         tempCover = await downloadCover(job.coverUrl)
         coverPath = tempCover
+      }
+      if (coverPath) {
+        processedCover = await processCover(coverPath, {
+          maxSize: settings.coverMaxSize,
+          square: settings.coverSquare
+        })
+        coverPath = processedCover
       }
 
       const outputPath = join(settings.outputDir, `${sanitizeFilename(job.outputName)}.aiff`)
@@ -113,6 +121,7 @@ function registerIpc(): void {
       return { outputPath }
     } finally {
       if (tempCover) await unlink(tempCover).catch(() => {})
+      if (processedCover) await unlink(processedCover).catch(() => {})
     }
   })
 

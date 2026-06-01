@@ -21,7 +21,9 @@ const defaults: Settings = {
     'grouping',
     'trackNumber',
     'comment'
-  ]
+  ],
+  coverMaxSize: 1200,
+  coverSquare: false
 }
 
 function file(): string {

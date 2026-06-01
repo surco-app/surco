@@ -7,6 +7,8 @@ export interface Settings {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
+  coverMaxSize: number
+  coverSquare: boolean
 }
 
 export interface TrackMetadata {
