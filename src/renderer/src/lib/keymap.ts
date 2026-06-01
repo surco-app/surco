@@ -16,7 +16,7 @@ export function keyToCommandId(e: KeyLike, typing: boolean): string | null {
   if (mod && e.key === 'Enter') return e.shiftKey ? 'process-all' : 'process-current'
   if (mod && e.key.toLowerCase() === 'o') return 'add'
   if (mod && e.key === ',') return 'settings'
-  if (mod && e.key === 'Backspace') return 'remove'
+  if (mod && e.key === 'Backspace') return typing ? null : 'remove'
   if (typing) return null
   if (e.key === 'ArrowDown' || e.key === 'j') return 'next'
   if (e.key === 'ArrowUp' || e.key === 'k') return 'prev'

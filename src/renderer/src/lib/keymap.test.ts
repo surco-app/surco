@@ -48,6 +48,11 @@ describe('keyToCommandId', () => {
     expect(keyToCommandId(key('/'), true)).toBeNull()
   })
 
+  it('removes the track on ⌘⌫ only when not typing, so editing a field is safe', () => {
+    expect(keyToCommandId(key('Backspace', { metaKey: true }), false)).toBe('remove')
+    expect(keyToCommandId(key('Backspace', { metaKey: true }), true)).toBeNull()
+  })
+
   it('returns null for unmapped keys', () => {
     expect(keyToCommandId(key('x'), false)).toBeNull()
   })
