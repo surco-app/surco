@@ -1,11 +1,83 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import { readFile, unlink } from 'fs/promises'
+import { readFile, unlink, rename } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { TrackMetadata } from '../shared/types'
+import { ffmpegPath, ffprobePath } from './binaries'
 
 const run = promisify(execFile)
+
+interface ProbeTags {
+  format?: { tags?: Record<string, unknown> }
+  streams?: { tags?: Record<string, unknown> }[]
+}
+
+// Maps an ffprobe tag dump onto our metadata fields so a freshly loaded track
+// arrives pre-filled. Tags live under format.tags for WAV/FLAC/AIFF (and
+// stream.tags for some containers); keys vary in case across muxers, so we match
+// case-insensitively and accept the common aliases each writer uses.
+export function tagsFromProbe(data: ProbeTags): TrackMetadata {
+  const sources: Record<string, unknown>[] = [
+    data.format?.tags,
+    ...(data.streams ?? []).map((s) => s.tags)
+  ].filter((t): t is Record<string, unknown> => Boolean(t))
+  const pick = (...names: string[]): string => {
+    for (const tags of sources) {
+      for (const [key, value] of Object.entries(tags)) {
+        if (names.includes(key.toLowerCase())) return String(value ?? '').trim()
+      }
+    }
+    return ''
+  }
+  return {
+    title: pick('title'),
+    artist: pick('artist'),
+    album: pick('album'),
+    albumArtist: pick('album_artist', 'albumartist', 'album artist'),
+    year: pick('date', 'year'),
+    genre: pick('genre'),
+    grouping: pick('grouping', 'content_group'),
+    comment: pick('comment'),
+    // A "3/12" track tag would survive zero-padding as "312", so drop the total.
+    trackNumber: pick('track', 'tracknumber').split('/')[0].trim()
+  }
+}
+
+export async function readTags(input: string): Promise<TrackMetadata> {
+  const { stdout } = await run(ffprobePath, [
+    '-v', 'error',
+    '-show_entries', 'format_tags:stream_tags',
+    '-of', 'json',
+    input
+  ])
+  return tagsFromProbe(JSON.parse(stdout))
+}
+
+// Pulls the first embedded picture out as a still image (no audio), letting the
+// .jpg target drive the encoder so PNG art is transcoded too. ffmpeg exits
+// non-zero when the file carries no attached picture.
+export function coverArgs(input: string, output: string): string[] {
+  return [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', input,
+    '-an', '-map', '0:v:0', '-frames:v', '1',
+    output
+  ]
+}
+
+export async function extractCover(input: string): Promise<string | null> {
+  const out = join(tmpdir(), `rotulo-cover-${Date.now()}.jpg`)
+  try {
+    await run(ffmpegPath, coverArgs(input, out))
+    const buf = await readFile(out)
+    return `data:image/jpeg;base64,${buf.toString('base64')}`
+  } catch {
+    return null
+  } finally {
+    await unlink(out).catch(() => {})
+  }
+}
 
 interface ProbeResult {
   sampleFmt: string
@@ -15,7 +87,7 @@ interface ProbeResult {
 }
 
 export async function probeAudio(input: string): Promise<ProbeResult> {
-  const { stdout } = await run('ffprobe', [
+  const { stdout } = await run(ffprobePath, [
     '-v', 'error',
     '-select_streams', 'a:0',
     '-show_entries', 'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
@@ -56,15 +128,15 @@ function metadataArgs(meta: TrackMetadata): string[] {
   return pairs.filter(([, v]) => v && v.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
 }
 
-export async function convertToAiff(
+const AIFF_INPUT = /\.aiff?$/i
+
+export function convertArgs(
   input: string,
   output: string,
+  codec: string,
   meta: TrackMetadata,
   coverPath?: string
-): Promise<void> {
-  const probe = await probeAudio(input)
-  const codec = aiffCodec(probe)
-
+): string[] {
   const args = ['-y', '-i', input]
   if (coverPath) args.push('-i', coverPath)
 
@@ -74,14 +146,38 @@ export async function convertToAiff(
   args.push('-c:a', codec, '-write_id3v2', '1', '-id3v2_version', '3')
   args.push(...metadataArgs(meta))
   args.push(output)
+  return args
+}
 
-  await run('ffmpeg', args, { maxBuffer: 1024 * 1024 * 32 })
+export async function convertToAiff(
+  input: string,
+  output: string,
+  meta: TrackMetadata,
+  coverPath?: string
+): Promise<void> {
+  // An AIFF input is already lossless PCM, so stream-copy it instead of
+  // re-encoding (instant, bit-identical). We always write to a temp file and
+  // rename it over the target, so re-processing a file that already lives in
+  // the output folder (input path === output path) overwrites it atomically
+  // instead of failing with ffmpeg's "Output same as Input" error.
+  const codec = AIFF_INPUT.test(input) ? 'copy' : aiffCodec(await probeAudio(input))
+  const tmp = output.replace(/\.aiff$/i, '.tmp.aiff')
+
+  try {
+    await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath), {
+      maxBuffer: 1024 * 1024 * 32
+    })
+    await rename(tmp, output)
+  } catch (e) {
+    await unlink(tmp).catch(() => {})
+    throw e
+  }
 }
 
 export async function generateSpectrogram(input: string): Promise<string> {
   const out = join(tmpdir(), `rotulo-spec-${Date.now()}.png`)
   try {
-    await run('ffmpeg', [
+    await run(ffmpegPath, [
       '-hide_banner', '-loglevel', 'error', '-y',
       '-i', input,
       '-lavfi', 'showspectrumpic=s=1000x280:legend=0:color=intensity:gain=2',
@@ -102,7 +198,7 @@ export async function processCover(
   const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
   const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
   const out = join(tmpdir(), `rotulo-cover-proc-${Date.now()}.jpg`)
-  await run('ffmpeg', [
+  await run(ffmpegPath, [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', input,
     '-vf', vf,
@@ -115,7 +211,7 @@ export async function processCover(
 export async function analyzeCutoff(input: string): Promise<number> {
   const stats = join(tmpdir(), `rotulo-stats-${Date.now()}.txt`)
   try {
-    await run('ffmpeg', [
+    await run(ffmpegPath, [
       '-hide_banner', '-loglevel', 'error',
       '-i', input,
       '-af', `aspectralstats=measure=rolloff,ametadata=mode=print:file=${stats}`,
