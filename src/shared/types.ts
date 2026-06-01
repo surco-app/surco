@@ -57,3 +57,9 @@ export interface ProcessJob {
 export interface ProcessResult {
   outputPath: string
 }
+
+export interface SpectrumResult {
+  image: string
+  cutoffHz: number
+  sampleRateHz: number
+}

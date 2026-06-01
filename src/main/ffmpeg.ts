@@ -1,5 +1,8 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { readFile, unlink } from 'fs/promises'
+import { join } from 'path'
+import { tmpdir } from 'os'
 import { TrackMetadata } from '../shared/types'
 
 const run = promisify(execFile)
@@ -73,4 +76,36 @@ export async function convertToAiff(
   args.push(output)
 
   await run('ffmpeg', args, { maxBuffer: 1024 * 1024 * 32 })
+}
+
+export async function generateSpectrogram(input: string): Promise<string> {
+  const out = join(tmpdir(), `vinilo-spec-${Date.now()}.png`)
+  try {
+    await run('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', input,
+      '-lavfi', 'showspectrumpic=s=900x320:legend=1:color=intensity:gain=2',
+      out
+    ])
+    const buf = await readFile(out)
+    return `data:image/png;base64,${buf.toString('base64')}`
+  } finally {
+    await unlink(out).catch(() => {})
+  }
+}
+
+export async function analyzeCutoff(input: string): Promise<number> {
+  const stats = join(tmpdir(), `vinilo-stats-${Date.now()}.txt`)
+  try {
+    await run('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error',
+      '-i', input,
+      '-af', `aspectralstats=measure=rolloff,ametadata=mode=print:file=${stats}`,
+      '-f', 'null', '-'
+    ], { maxBuffer: 1024 * 1024 * 16 })
+    const text = await readFile(stats, 'utf-8')
+    return [...text.matchAll(/rolloff=([\d.]+)/g)].reduce((max, m) => Math.max(max, Number(m[1])), 0)
+  } finally {
+    await unlink(stats).catch(() => {})
+  }
 }

@@ -3,7 +3,7 @@ import { join } from 'path'
 import { mkdir, unlink } from 'fs/promises'
 import { getSettings, saveSettings } from './settings'
 import { search, getRelease, downloadCover } from './discogs'
-import { convertToAiff } from './ffmpeg'
+import { convertToAiff, generateSpectrogram, analyzeCutoff, probeAudio } from './ffmpeg'
 import { addToAppleMusic } from './applemusic'
 import { Settings, ProcessJob } from '../shared/types'
 
@@ -117,6 +117,15 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))
+
+  ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
+    const [image, cutoffHz, probe] = await Promise.all([
+      generateSpectrogram(inputPath),
+      analyzeCutoff(inputPath),
+      probeAudio(inputPath)
+    ])
+    return { image, cutoffHz, sampleRateHz: Number(probe.sampleRate) || 0 }
+  })
 }
 
 app.whenReady().then(() => {

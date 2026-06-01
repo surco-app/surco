@@ -10,6 +10,7 @@ const api = {
   getRelease: (id: number) => ipcRenderer.invoke('discogs:release', id),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
+  spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   onOpenSettings: (cb: () => void) => {
     const listener = (): void => cb()
     ipcRenderer.on('menu:settings', listener)

@@ -3,7 +3,8 @@ import type {
   DiscogsSearchResult,
   DiscogsRelease,
   ProcessJob,
-  ProcessResult
+  ProcessResult,
+  SpectrumResult
 } from '../shared/types'
 
 export interface Api {
@@ -16,6 +17,7 @@ export interface Api {
   getRelease: (id: number) => Promise<DiscogsRelease>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   reveal: (path: string) => Promise<void>
+  spectrogram: (path: string) => Promise<SpectrumResult>
   onOpenSettings: (cb: () => void) => () => void
 }
 
