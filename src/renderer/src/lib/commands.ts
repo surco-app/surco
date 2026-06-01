@@ -1,0 +1,15 @@
+export interface Command {
+  id: string
+  title: string
+  hint?: string
+  enabled: boolean
+  run: () => void
+}
+
+// Substring match on the title, case-insensitive. Boring on purpose: the
+// command set is tiny, so a fuzzy matcher would add complexity with no payoff.
+export function filterCommands(commands: Command[], query: string): Command[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return commands
+  return commands.filter((c) => c.title.toLowerCase().includes(q))
+}

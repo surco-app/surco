@@ -1,0 +1,34 @@
+{
+  "name": "vinilo",
+  "version": "0.1.0",
+  "description": "Organizador de pistas de audio para DJ: convierte a AIFF lossless, etiqueta desde Discogs y manda a Apple Music",
+  "main": "./out/main/index.js",
+  "author": "Vicent",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "3.2.4"
+  }
+}

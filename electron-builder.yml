@@ -1,0 +1,13 @@
+appId: com.vigosan.vinilo
+productName: Vinilo
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+mac:
+  category: public.app-category.music
+  target:
+    - dmg
+  artifactName: ${productName}-${version}.${ext}

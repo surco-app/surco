@@ -1,0 +1,31 @@
+import { describe, it, expect } from 'vitest'
+import { genrePresets } from './genre'
+import type { DiscogsRelease } from '../../../shared/types'
+
+function release(patch: Partial<DiscogsRelease>): DiscogsRelease {
+  return { id: 1, title: '', artists: [], tracklist: [], ...patch }
+}
+
+describe('genrePresets', () => {
+  it('offers the broad genres and the specific styles Discogs returns', () => {
+    // the chips should reflect what the release actually is, not a fixed guess,
+    // so the DJ tags from real Discogs data instead of always seeing "Electronic"
+    const r = release({ genres: ['Electronic'], styles: ['House', 'Techno'] })
+    expect(genrePresets(r)).toEqual(['Electronic', 'House', 'Techno'])
+  })
+
+  it('de-dupes so a value present in both genres and styles appears once', () => {
+    const r = release({ genres: ['Electronic'], styles: ['Electronic', 'House'] })
+    expect(genrePresets(r)).toEqual(['Electronic', 'House'])
+  })
+
+  it('returns nothing when no release is loaded, so no stale chips show', () => {
+    expect(genrePresets(null)).toEqual([])
+  })
+
+  it('handles a release missing genres or styles', () => {
+    expect(genrePresets(release({ styles: ['Trance'] }))).toEqual(['Trance'])
+    expect(genrePresets(release({ genres: ['Rock'] }))).toEqual(['Rock'])
+    expect(genrePresets(release({}))).toEqual([])
+  })
+})
