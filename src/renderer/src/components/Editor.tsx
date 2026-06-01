@@ -6,6 +6,7 @@ import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { qualityVerdict, formatKHz } from '../lib/quality'
 import { WaveSpinner } from './WaveSpinner'
+import { Spectrogram } from './Spectrogram'
 
 interface Props {
   item: TrackItem
@@ -381,14 +382,9 @@ export function Editor({
               <p className="text-xs text-red-400">{analyzeError}</p>
             ) : item.spectrum ? (
               <>
-                <img
-                  data-testid="spectrogram"
-                  src={item.spectrum.image}
-                  alt="Espectrograma"
-                  className="w-full rounded-lg border border-[var(--color-line)]"
-                />
+                <Spectrogram spectrum={item.spectrum} />
                 <p className="mt-2 text-xs text-neutral-500">
-                  Energía hasta ~{formatKHz(item.spectrum.cutoffHz)} de{' '}
+                  Llega a ~{formatKHz(item.spectrum.cutoffHz)} de{' '}
                   {formatKHz(item.spectrum.sampleRateHz / 2)} (Nyquist). Un corte brusco por debajo
                   delata un MP3 reconvertido a WAV.
                 </p>

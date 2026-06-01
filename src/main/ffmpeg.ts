@@ -84,7 +84,7 @@ export async function generateSpectrogram(input: string): Promise<string> {
     await run('ffmpeg', [
       '-hide_banner', '-loglevel', 'error', '-y',
       '-i', input,
-      '-lavfi', 'showspectrumpic=s=900x320:legend=1:color=intensity:gain=2',
+      '-lavfi', 'showspectrumpic=s=1000x280:legend=0:color=intensity:gain=2',
       out
     ])
     const buf = await readFile(out)
