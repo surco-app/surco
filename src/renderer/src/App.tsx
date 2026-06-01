@@ -5,6 +5,7 @@ import type { TrackItem } from './types'
 import type { Command } from './lib/commands'
 import { parseFileName } from './lib/filename'
 import { renderOutputName } from './lib/outputName'
+import { keyToCommandId, moveIndex } from './lib/keymap'
 import { TrackList } from './components/TrackList'
 import { Editor } from './components/Editor'
 import { SettingsModal } from './components/SettingsModal'
@@ -106,9 +107,8 @@ export default function App(): React.JSX.Element {
   }
 
   function moveSelection(delta: number): void {
-    if (tracks.length === 0) return
-    const idx = tracks.findIndex((t) => t.id === selectedId)
-    const next = idx === -1 ? 0 : Math.min(tracks.length - 1, Math.max(0, idx + delta))
+    const next = moveIndex(tracks.length, tracks.findIndex((t) => t.id === selectedId), delta)
+    if (next === -1) return
     setSelectedId(tracks[next].id)
   }
 
@@ -158,8 +158,7 @@ export default function App(): React.JSX.Element {
       if (c?.enabled) c.run()
     }
     function onKey(e: KeyboardEvent): void {
-      const mod = e.metaKey || e.ctrlKey
-      if (mod && e.key.toLowerCase() === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setShowPalette((v) => !v)
         return
@@ -170,37 +169,12 @@ export default function App(): React.JSX.Element {
         return
       }
       if (paletteOpenRef.current || settingsOpenRef.current) return
-      if (mod && e.key === 'Enter') {
-        e.preventDefault()
-        run(e.shiftKey ? 'process-all' : 'process-current')
-        return
-      }
-      if (mod && e.key.toLowerCase() === 'o') {
-        e.preventDefault()
-        run('add')
-        return
-      }
-      if (mod && e.key === ',') {
-        e.preventDefault()
-        run('settings')
-        return
-      }
-      if (mod && e.key === 'Backspace') {
-        e.preventDefault()
-        run('remove')
-        return
-      }
       const el = document.activeElement
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
-      if (e.key === 'ArrowDown' || e.key === 'j') {
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
+      const id = keyToCommandId(e, typing)
+      if (id) {
         e.preventDefault()
-        run('next')
-      } else if (e.key === 'ArrowUp' || e.key === 'k') {
-        e.preventDefault()
-        run('prev')
-      } else if (e.key === '/') {
-        e.preventDefault()
-        run('search')
+        run(id)
       }
     }
     window.addEventListener('keydown', onKey)
