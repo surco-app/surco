@@ -8,7 +8,9 @@ const defaults: Settings = {
   outputDir: join(app.getPath('music'), 'Vinilo'),
   addToAppleMusic: true,
   filenameFormat: '{artist} - {title}',
-  groupingPresets: ['Bases', 'Cantaditas']
+  groupingPresets: ['Bases', 'Cantaditas'],
+  trimWhitespace: true,
+  zeroPadTrack: true
 }
 
 function file(): string {

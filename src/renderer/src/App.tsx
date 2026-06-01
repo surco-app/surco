@@ -5,6 +5,7 @@ import type { TrackItem } from './types'
 import type { Command } from './lib/commands'
 import { parseFileName } from './lib/filename'
 import { renderOutputName } from './lib/outputName'
+import { sanitizeMeta } from './lib/hygiene'
 import { keyToCommandId, moveIndex } from './lib/keymap'
 import { TrackList } from './components/TrackList'
 import { Editor } from './components/Editor'
@@ -82,13 +83,17 @@ export default function App(): React.JSX.Element {
     const track = tracks.find((t) => t.id === id)
     if (!track) return
     updateTrack(id, { status: 'processing', error: undefined })
+    const meta = sanitizeMeta(track.meta, {
+      trim: settings?.trimWhitespace ?? true,
+      zeroPad: settings?.zeroPadTrack ?? true
+    })
     const format = settings?.filenameFormat ?? '{artist} - {title}'
-    const outputName = renderOutputName(format, track.meta) || track.fileName
+    const outputName = renderOutputName(format, meta) || track.fileName
     try {
       const { outputPath } = await window.api.processTrack({
         inputPath: track.inputPath,
         outputName,
-        meta: track.meta,
+        meta,
         coverUrl: track.coverUrl,
         coverPath: track.coverPath
       })

@@ -22,6 +22,8 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
+  const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
+  const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
@@ -38,7 +40,9 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       outputDir,
       addToAppleMusic,
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
-      groupingPresets
+      groupingPresets,
+      trimWhitespace,
+      zeroPadTrack
     })
     onClose()
   }
@@ -153,9 +157,32 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 placeholder="Bases, Cantaditas"
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
-              <p className="mt-1.5 text-xs text-neutral-500">
+              <p className="mt-1.5 mb-5 text-xs text-neutral-500">
                 Aparecen como botones rápidos al editar una pista.
               </p>
+
+              <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-trim"
+                    type="checkbox"
+                    checked={trimWhitespace}
+                    onChange={(e) => setTrimWhitespace(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">Recortar espacios sobrantes</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-zeropad"
+                    type="checkbox"
+                    checked={zeroPadTrack}
+                    onChange={(e) => setZeroPadTrack(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">Nº de pista con cero delante (03)</span>
+                </label>
+              </div>
             </>
           )}
         </div>

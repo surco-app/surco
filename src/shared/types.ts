@@ -4,6 +4,8 @@ export interface Settings {
   addToAppleMusic: boolean
   filenameFormat: string
   groupingPresets: string[]
+  trimWhitespace: boolean
+  zeroPadTrack: boolean
 }
 
 export interface TrackMetadata {
