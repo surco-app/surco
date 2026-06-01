@@ -1,0 +1,123 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "change": "Cambiar"
+  },
+  "header": {
+    "add": "Añadir archivos",
+    "palette": "Paleta de comandos",
+    "settings": "Ajustes"
+  },
+  "sidebar": {
+    "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”."
+  },
+  "drop": {
+    "release": "Suelta para añadir"
+  },
+  "empty": {
+    "title": "Añade pistas para empezar.",
+    "subtitle": "Convierte tus pistas a AIFF lossless, las etiqueta desde Discogs y las manda a Apple Music."
+  },
+  "commands": {
+    "add": "Añadir archivos",
+    "processCurrent": "Procesar pista actual",
+    "play": "Reproducir / pausar pista",
+    "remove": "Quitar pista actual",
+    "next": "Siguiente pista",
+    "prev": "Pista anterior",
+    "search": "Buscar en Discogs",
+    "settings": "Ajustes"
+  },
+  "trackList": {
+    "noArtist": "Sin artista",
+    "remove": "Quitar",
+    "status": {
+      "idle": "Pendiente",
+      "processing": "Procesando…",
+      "done": "Hecho",
+      "error": "Error"
+    },
+    "stage": {
+      "cover": "Preparando carátula…",
+      "converting": "Convirtiendo a AIFF…",
+      "appleMusic": "Añadiendo a Apple Music…"
+    }
+  },
+  "editor": {
+    "searchPlaceholder": "Buscar en Discogs…",
+    "search": "Buscar",
+    "tokenWarning": "Configura tu token de Discogs en Ajustes para buscar.",
+    "chooseTrack": "Elige la pista",
+    "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
+    "resultHint": "Un clic para ver las pistas · doble clic para aplicar los datos",
+    "coverDrop": "Arrastra una carátula",
+    "coverDropActive": "Suelta la imagen",
+    "coverAlt": "Carátula",
+    "coverTitle": "Arrastra una imagen para usarla como carátula",
+    "qualityTitle": "Calidad de audio",
+    "qualityGood": "Buena calidad",
+    "qualitySuspect": "Sospechoso",
+    "analyzing": "Analizando espectro…",
+    "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
+    "output": "Salida:",
+    "convert": "Convertir a AIFF + Apple Music",
+    "processing": "Procesando…",
+    "doneReveal": "✓ Hecho — mostrar archivo",
+    "searchError": "Error en la búsqueda",
+    "releaseError": "No se pudo cargar el release",
+    "analyzeError": "No se pudo analizar el audio",
+    "processError": "Error al procesar",
+    "missingRequired": "Faltan campos obligatorios: {{fields}}"
+  },
+  "fields": {
+    "title": "Título",
+    "artist": "Artista",
+    "albumArtist": "Artista del álbum",
+    "album": "Álbum",
+    "year": "Año",
+    "genre": "Género",
+    "grouping": "Grouping",
+    "trackNumber": "Nº pista",
+    "comment": "Comentario"
+  },
+  "settings": {
+    "tabs": {
+      "general": "General",
+      "naming": "Nombres",
+      "artwork": "Carátula",
+      "fields": "Campos"
+    },
+    "discogsToken": "Token de Discogs",
+    "tokenPlaceholder": "Pega aquí tu token personal",
+    "tokenHelp": "Genera uno gratis en",
+    "outputDir": "Carpeta de salida",
+    "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
+    "filenameFormat": "Formato del nombre",
+    "tokensHint": "Tokens:",
+    "grouping": "Grouping (separados por comas)",
+    "groupingHint": "Aparecen como botones rápidos al editar una pista.",
+    "trimWhitespace": "Recortar espacios sobrantes",
+    "zeroPadTrack": "Nº de pista con cero delante (03)",
+    "coverMaxSize": "Tamaño máximo de la carátula",
+    "coverMaxHint": "px (0 = sin límite)",
+    "coverSquare": "Recortar la carátula a cuadrado",
+    "coverHint": "Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro para dejarlas cuadradas.",
+    "shown": "Mostrados",
+    "hidden": "Ocultos",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "allVisible": "Todos los campos están visibles.",
+    "required": "Obligatorio"
+  },
+  "errorBoundary": {
+    "title": "Algo ha fallado al renderizar",
+    "retry": "Reintentar"
+  },
+  "palette": {
+    "placeholder": "Escribe una acción…",
+    "empty": "Sin resultados"
+  }
+}

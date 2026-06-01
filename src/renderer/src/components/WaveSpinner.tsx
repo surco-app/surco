@@ -1,8 +1,10 @@
 import type React from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function WaveSpinner(): React.JSX.Element {
+  const { t } = useTranslation()
   return (
-    <div className="flex items-end gap-1" data-testid="wave-spinner" aria-label="Analizando">
+    <div className="flex items-end gap-1" data-testid="wave-spinner" aria-label={t('editor.analyzing')}>
       {[0, 1, 2, 3, 4].map((i) => (
         <span
           key={i}

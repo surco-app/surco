@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { filterCommands, type Command } from '../lib/commands'
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function CommandPalette({ commands, onClose }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,12 +58,12 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Escribe una acción…"
+          placeholder={t('palette.placeholder')}
           className="w-full border-b border-[var(--color-line)] bg-transparent px-4 py-3.5 text-sm outline-none"
         />
         <ul className="max-h-[50vh] overflow-y-auto p-2">
           {results.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-neutral-500">Sin resultados</li>
+            <li className="px-3 py-6 text-center text-xs text-neutral-500">{t('palette.empty')}</li>
           )}
           {results.map((c, i) => (
             <li key={c.id}>

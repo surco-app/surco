@@ -1,0 +1,123 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "change": "Change"
+  },
+  "header": {
+    "add": "Add files",
+    "palette": "Command palette",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "dropHint": "Drag your WAV or FLAC here, or press “Add files”."
+  },
+  "drop": {
+    "release": "Drop to add"
+  },
+  "empty": {
+    "title": "Add tracks to get started.",
+    "subtitle": "Converts your tracks to lossless AIFF, tags them from Discogs and sends them to Apple Music."
+  },
+  "commands": {
+    "add": "Add files",
+    "processCurrent": "Process current track",
+    "play": "Play / pause track",
+    "remove": "Remove current track",
+    "next": "Next track",
+    "prev": "Previous track",
+    "search": "Search Discogs",
+    "settings": "Settings"
+  },
+  "trackList": {
+    "noArtist": "No artist",
+    "remove": "Remove",
+    "status": {
+      "idle": "Pending",
+      "processing": "Processing…",
+      "done": "Done",
+      "error": "Error"
+    },
+    "stage": {
+      "cover": "Preparing artwork…",
+      "converting": "Converting to AIFF…",
+      "appleMusic": "Adding to Apple Music…"
+    }
+  },
+  "editor": {
+    "searchPlaceholder": "Search Discogs…",
+    "search": "Search",
+    "tokenWarning": "Set your Discogs token in Settings to search.",
+    "chooseTrack": "Choose the track",
+    "chooseAlbumHint": "Choose an album from the list to see its tracks.",
+    "resultHint": "Click to see the tracks · double-click to apply the data",
+    "coverDrop": "Drag artwork here",
+    "coverDropActive": "Drop the image",
+    "coverAlt": "Artwork",
+    "coverTitle": "Drag an image to use it as the artwork",
+    "qualityTitle": "Audio quality",
+    "qualityGood": "Good quality",
+    "qualitySuspect": "Suspicious",
+    "analyzing": "Analyzing spectrum…",
+    "qualityCaption": "Reaches ~{{cutoff}} of {{nyquist}} (Nyquist). A sharp cutoff below it reveals an MP3 re-encoded as WAV.",
+    "output": "Output:",
+    "convert": "Convert to AIFF + Apple Music",
+    "processing": "Processing…",
+    "doneReveal": "✓ Done — show file",
+    "searchError": "Search failed",
+    "releaseError": "Could not load the release",
+    "analyzeError": "Could not analyze the audio",
+    "processError": "Processing failed",
+    "missingRequired": "Missing required fields: {{fields}}"
+  },
+  "fields": {
+    "title": "Title",
+    "artist": "Artist",
+    "albumArtist": "Album artist",
+    "album": "Album",
+    "year": "Year",
+    "genre": "Genre",
+    "grouping": "Grouping",
+    "trackNumber": "Track No.",
+    "comment": "Comment"
+  },
+  "settings": {
+    "tabs": {
+      "general": "General",
+      "naming": "Naming",
+      "artwork": "Artwork",
+      "fields": "Fields"
+    },
+    "discogsToken": "Discogs token",
+    "tokenPlaceholder": "Paste your personal token here",
+    "tokenHelp": "Generate one for free at",
+    "outputDir": "Output folder",
+    "addToAppleMusic": "Automatically add to Apple Music after processing",
+    "filenameFormat": "File name format",
+    "tokensHint": "Tokens:",
+    "grouping": "Grouping (comma-separated)",
+    "groupingHint": "Shown as quick buttons when editing a track.",
+    "trimWhitespace": "Trim extra whitespace",
+    "zeroPadTrack": "Zero-pad track number (03)",
+    "coverMaxSize": "Maximum artwork size",
+    "coverMaxHint": "px (0 = no limit)",
+    "coverSquare": "Crop artwork to square",
+    "coverHint": "Applied on embed: shrinks large artwork and, if enabled, center-crops it to square.",
+    "shown": "Shown",
+    "hidden": "Hidden",
+    "hide": "Hide",
+    "show": "Show",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "allVisible": "All fields are visible.",
+    "required": "Required"
+  },
+  "errorBoundary": {
+    "title": "Something failed to render",
+    "retry": "Retry"
+  },
+  "palette": {
+    "placeholder": "Type a command…",
+    "empty": "No results"
+  }
+}

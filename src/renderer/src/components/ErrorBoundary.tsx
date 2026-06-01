@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import i18n from '../i18n'
 
 interface Props {
   children: ReactNode
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
         data-testid="error-boundary"
         className="flex h-screen flex-col gap-4 overflow-auto bg-[var(--color-ink)] p-8 text-sm"
       >
-        <h1 className="text-lg font-semibold text-red-400">Algo ha fallado al renderizar</h1>
+        <h1 className="text-lg font-semibold text-red-400">{i18n.t('errorBoundary.title')}</h1>
         <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-red-300">
           {error.message}
         </pre>
@@ -42,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
           onClick={() => this.setState({ error: null, info: '' })}
           className="self-start rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
         >
-          Reintentar
+          {i18n.t('errorBoundary.retry')}
         </button>
       </div>
     )
