@@ -1,5 +1,6 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DiscogsSearchResult, DiscogsRelease, DiscogsTrack } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { genrePresets } from '../lib/genre'
@@ -15,6 +16,7 @@ interface Props {
   filenameFormat: string
   groupingPresets: string[]
   visibleFields: string[]
+  requiredFields: string[]
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: () => void
@@ -66,10 +68,12 @@ export function Editor({
   filenameFormat,
   groupingPresets,
   visibleFields,
+  requiredFields,
   searchInputRef,
   onChange,
   onProcess
 }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [query, setQuery] = useState(item.query)
   const [results, setResults] = useState<DiscogsSearchResult[]>([])
   const [release, setRelease] = useState<DiscogsRelease | null>(null)
@@ -78,6 +82,7 @@ export function Editor({
   const [coverDragging, setCoverDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
+  const releaseRef = useRef<DiscogsRelease | null>(null)
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -87,7 +92,7 @@ export function Editor({
     try {
       setResults(await window.api.searchDiscogs(query))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error en la búsqueda')
+      setError(e instanceof Error ? e.message : tr('editor.searchError'))
     } finally {
       setBusy(false)
     }
@@ -107,7 +112,7 @@ export function Editor({
       .spectrogram(item.inputPath)
       .then((res) => onChange({ spectrum: res }))
       .catch((e) => {
-        if (active) setAnalyzeError(e instanceof Error ? e.message : 'No se pudo analizar el audio')
+        if (active) setAnalyzeError(e instanceof Error ? e.message : tr('editor.analyzeError'))
       })
       .finally(() => {
         if (active) setAnalyzing(false)
@@ -118,47 +123,67 @@ export function Editor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function pickRelease(result: DiscogsSearchResult): Promise<void> {
+  async function loadRelease(id: number): Promise<DiscogsRelease> {
+    if (releaseRef.current?.id === id) return releaseRef.current
+    const rel = await window.api.getRelease(id)
+    releaseRef.current = rel
+    return rel
+  }
+
+  // A single click only previews the release (loads its tracklist) — it must
+  // not touch the song's data, so browsing results never clobbers what the user
+  // already entered. Applying the metadata is the deliberate double click.
+  async function previewRelease(result: DiscogsSearchResult): Promise<void> {
     setBusy(true)
     setError('')
     try {
-      const rel = await window.api.getRelease(result.id)
-      setRelease(rel)
-      const albumArtist = joinArtists(rel.artists)
-      const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? [])).join(', ')
-      const match = bestTrack(rel.tracklist, item.meta.title)
-      const matchArtist = joinArtists(match?.artists)
-      onChange({
-        coverUrl: coverOf(rel, result.cover_image),
-        coverPath: undefined,
-        meta: {
-          ...item.meta,
-          title: match ? match.title : item.meta.title,
-          trackNumber: match ? match.position.replace(/\D/g, '') : item.meta.trackNumber,
-          album: rel.title,
-          albumArtist,
-          artist: matchArtist || item.meta.artist || albumArtist,
-          year: rel.year ? String(rel.year) : item.meta.year,
-          genre
-        }
-      })
+      setRelease(await loadRelease(result.id))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo cargar el release')
+      setError(e instanceof Error ? e.message : tr('editor.releaseError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Applying a release overwrites the whole right-hand panel — album-level data
+  // and cover from the release, plus the chosen track's title/number/artist — so
+  // the song ends up fully tagged from Discogs in one action.
+  function commitMeta(rel: DiscogsRelease, track: DiscogsTrack | undefined, coverFallback?: string): void {
+    const albumArtist = joinArtists(rel.artists)
+    const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? [])).join(', ')
+    const trackArtist = joinArtists(track?.artists)
+    onChange({
+      coverUrl: coverOf(rel, coverFallback),
+      coverPath: undefined,
+      meta: {
+        ...item.meta,
+        title: track ? track.title : item.meta.title,
+        trackNumber: track ? track.position.replace(/\D/g, '') : item.meta.trackNumber,
+        album: rel.title,
+        albumArtist,
+        artist: trackArtist || item.meta.artist || albumArtist,
+        year: rel.year ? String(rel.year) : item.meta.year,
+        genre
+      }
+    })
+  }
+
+  async function applyRelease(result: DiscogsSearchResult): Promise<void> {
+    setBusy(true)
+    setError('')
+    try {
+      const rel = await loadRelease(result.id)
+      setRelease(rel)
+      commitMeta(rel, bestTrack(rel.tracklist, item.meta.title), result.cover_image)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : tr('editor.releaseError'))
     } finally {
       setBusy(false)
     }
   }
 
   function selectTrack(track: DiscogsTrack): void {
-    const trackArtist = joinArtists(track.artists)
-    onChange({
-      meta: {
-        ...item.meta,
-        title: track.title,
-        trackNumber: track.position.replace(/\D/g, ''),
-        artist: trackArtist || item.meta.artist
-      }
-    })
+    if (release) commitMeta(release, track, item.coverUrl)
   }
 
   function setField(key: keyof TrackItem['meta'], value: string): void {
@@ -175,6 +200,7 @@ export function Editor({
   }
 
   const done = item.status === 'done'
+  const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
 
   return (
@@ -188,7 +214,7 @@ export function Editor({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
-              placeholder="Buscar en Discogs…"
+              placeholder={tr('editor.searchPlaceholder')}
               className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
@@ -197,13 +223,11 @@ export function Editor({
               disabled={busy || !hasToken}
               className="rounded-lg bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40"
             >
-              Buscar
+              {tr('editor.search')}
             </button>
           </div>
           {!hasToken && (
-            <p className="mt-2 text-xs text-amber-400">
-              Configura tu token de Discogs en Ajustes para buscar.
-            </p>
+            <p className="mt-2 text-xs text-amber-400">{tr('editor.tokenWarning')}</p>
           )}
           {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
         </div>
@@ -214,7 +238,9 @@ export function Editor({
               <button
                 key={r.id}
                 data-testid="discogs-result"
-                onClick={() => pickRelease(r)}
+                title={tr('editor.resultHint')}
+                onClick={() => previewRelease(r)}
+                onDoubleClick={() => applyRelease(r)}
                 className={`flex w-full items-center gap-3 border-b border-[var(--color-line)]/50 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
                   release?.id === r.id ? 'bg-[var(--color-accent-soft)]' : ''
                 }`}
@@ -236,7 +262,7 @@ export function Editor({
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             <p className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-neutral-500">
-              Elige la pista
+              {tr('editor.chooseTrack')}
             </p>
             {release ? (
               release.tracklist.map((t, i) => (
@@ -253,9 +279,7 @@ export function Editor({
                 </button>
               ))
             ) : (
-              <p className="px-3 pt-2 text-xs text-neutral-600">
-                Elige un álbum de la lista para ver sus pistas.
-              </p>
+              <p className="px-3 pt-2 text-xs text-neutral-600">{tr('editor.chooseAlbumHint')}</p>
             )}
           </div>
         </div>
@@ -277,13 +301,13 @@ export function Editor({
               }}
               onDrop={onCoverDrop}
               className="shrink-0"
-              title="Arrastra una imagen para usarla como carátula"
+              title={tr('editor.coverTitle')}
             >
               {item.coverUrl ? (
                 <img
                   data-testid="cover-preview"
                   src={item.coverUrl}
-                  alt="Carátula"
+                  alt={tr('editor.coverAlt')}
                   className={`h-44 w-44 rounded-xl object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.08)] ${
                     coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
                   }`}
@@ -296,7 +320,7 @@ export function Editor({
                       : 'border-[var(--color-line)] text-neutral-600'
                   }`}
                 >
-                  {coverDragging ? 'Suelta la imagen' : 'Arrastra una carátula'}
+                  {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
                 </div>
               )}
             </div>
@@ -308,10 +332,16 @@ export function Editor({
                 return (
                   <Field
                     key={def.key}
-                    label={def.label}
+                    name={def.key}
+                    label={tr(`fields.${def.key}`)}
                     value={item.meta[def.key]}
                     onChange={(v) => setField(def.key, v)}
                     wide={def.wide}
+                    invalid={
+                      showRequiredErrors &&
+                      requiredFields.includes(def.key) &&
+                      !item.meta[def.key].trim()
+                    }
                   />
                 )
               })}
@@ -321,7 +351,7 @@ export function Editor({
           <div className="mt-6 space-y-2.5 border-t border-[var(--color-line)] pt-5">
             {genreChips.length > 0 && (
               <ChipRow
-                label="Género"
+                label={tr('fields.genre')}
                 presets={genreChips}
                 active={item.meta.genre}
                 onPick={(v) => setField('genre', v)}
@@ -329,7 +359,7 @@ export function Editor({
             )}
             {groupingPresets.length > 0 && (
               <ChipRow
-                label="Grouping"
+                label={tr('fields.grouping')}
                 presets={groupingPresets}
                 active={item.meta.grouping}
                 onPick={(v) => setField('grouping', v)}
@@ -340,7 +370,7 @@ export function Editor({
           <div className="mt-6 border-t border-[var(--color-line)] pt-5">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Calidad de audio
+                {tr('editor.qualityTitle')}
               </span>
               {item.spectrum &&
                 (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
@@ -348,21 +378,21 @@ export function Editor({
                     data-testid="quality-badge"
                     className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300"
                   >
-                    Buena calidad
+                    {tr('editor.qualityGood')}
                   </span>
                 ) : (
                   <span
                     data-testid="quality-badge"
                     className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300"
                   >
-                    Sospechoso
+                    {tr('editor.qualitySuspect')}
                   </span>
                 ))}
             </div>
             {analyzing ? (
               <div className="flex h-28 items-center justify-center gap-3 text-xs text-neutral-500">
                 <WaveSpinner />
-                Analizando espectro…
+                {tr('editor.analyzing')}
               </div>
             ) : analyzeError ? (
               <p className="text-xs text-red-400">{analyzeError}</p>
@@ -370,9 +400,10 @@ export function Editor({
               <>
                 <Spectrogram spectrum={item.spectrum} />
                 <p className="mt-2 text-xs text-neutral-500">
-                  Llega a ~{formatKHz(item.spectrum.cutoffHz)} de{' '}
-                  {formatKHz(item.spectrum.sampleRateHz / 2)} (Nyquist). Un corte brusco por debajo
-                  delata un MP3 reconvertido a WAV.
+                  {tr('editor.qualityCaption', {
+                    cutoff: formatKHz(item.spectrum.cutoffHz),
+                    nyquist: formatKHz(item.spectrum.sampleRateHz / 2)
+                  })}
                 </p>
               </>
             ) : null}
@@ -381,7 +412,7 @@ export function Editor({
 
         <div className="flex items-center justify-between gap-4 border-t border-[var(--color-line)] p-4">
           <div className="min-w-0 text-xs text-neutral-500">
-            <span className="text-neutral-400">Salida:</span>{' '}
+            <span className="text-neutral-400">{tr('editor.output')}</span>{' '}
             <span className="truncate">
               {(renderOutputName(filenameFormat, item.meta) || item.fileName) + '.aiff'}
             </span>
@@ -392,7 +423,7 @@ export function Editor({
               onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
               className="shrink-0 rounded-lg border border-emerald-500/40 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-500/10"
             >
-              ✓ Hecho — mostrar archivo
+              {tr('editor.doneReveal')}
             </button>
           ) : (
             <button
@@ -401,7 +432,7 @@ export function Editor({
               disabled={item.status === 'processing'}
               className="shrink-0 rounded-lg bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
             >
-              {item.status === 'processing' ? 'Procesando…' : 'Convertir a AIFF + Apple Music'}
+              {item.status === 'processing' ? tr('editor.processing') : tr('editor.convert')}
             </button>
           )}
         </div>
@@ -445,21 +476,28 @@ function ChipRow({ label, presets, active, onPick }: ChipRowProps): React.JSX.El
 }
 
 interface FieldProps {
+  name: string
   label: string
   value: string
   onChange: (v: string) => void
   wide?: boolean
+  invalid?: boolean
 }
 
-function Field({ label, value, onChange, wide }: FieldProps): React.JSX.Element {
+function Field({ name, label, value, onChange, wide, invalid }: FieldProps): React.JSX.Element {
   return (
     <label className={`block ${wide ? 'col-span-2' : ''}`}>
       <span className="mb-1 block text-xs font-medium text-neutral-500">{label}</span>
       <input
-        data-testid={`field-${label}`}
+        data-testid={`field-${name}`}
+        aria-invalid={invalid}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+        className={`w-full rounded-lg border bg-[var(--color-ink)] px-3 py-2 text-sm outline-none ${
+          invalid
+            ? 'border-red-500 focus:border-red-500'
+            : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
+        }`}
       />
     </label>
   )

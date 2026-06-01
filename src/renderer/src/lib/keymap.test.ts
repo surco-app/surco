@@ -29,9 +29,17 @@ describe('moveIndex', () => {
 describe('keyToCommandId', () => {
   it('maps the modifier shortcuts to their commands', () => {
     expect(keyToCommandId(key('Enter', { metaKey: true }), false)).toBe('process-current')
-    expect(keyToCommandId(key('Enter', { metaKey: true, shiftKey: true }), false)).toBe('process-all')
     expect(keyToCommandId(key('o', { metaKey: true }), false)).toBe('add')
     expect(keyToCommandId(key(',', { metaKey: true }), false)).toBe('settings')
+  })
+
+  it('does not bind cmd+shift+enter, since tracks are only processed one at a time', () => {
+    expect(keyToCommandId(key('Enter', { metaKey: true, shiftKey: true }), false)).toBeNull()
+  })
+
+  it('plays the current track on space, but never while typing in a field', () => {
+    expect(keyToCommandId(key(' '), false)).toBe('play')
+    expect(keyToCommandId(key(' '), true)).toBeNull()
   })
 
   it('navigates the list with arrows or j/k only when not typing', () => {

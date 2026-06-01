@@ -2,23 +2,36 @@ import type { TrackMetadata } from '../../../shared/types'
 
 export interface FieldDef {
   key: keyof TrackMetadata
-  label: string
   wide?: boolean
 }
 
 export const FIELD_DEFS: FieldDef[] = [
-  { key: 'title', label: 'Título', wide: true },
-  { key: 'artist', label: 'Artista' },
-  { key: 'albumArtist', label: 'Artista del álbum' },
-  { key: 'album', label: 'Álbum' },
-  { key: 'year', label: 'Año' },
-  { key: 'genre', label: 'Género' },
-  { key: 'grouping', label: 'Grouping' },
-  { key: 'trackNumber', label: 'Nº pista' },
-  { key: 'comment', label: 'Comentario', wide: true }
+  { key: 'title', wide: true },
+  { key: 'artist' },
+  { key: 'albumArtist' },
+  { key: 'album' },
+  { key: 'year' },
+  { key: 'genre' },
+  { key: 'grouping' },
+  { key: 'trackNumber' },
+  { key: 'comment', wide: true }
 ]
 
 export const DEFAULT_FIELDS: string[] = FIELD_DEFS.map((d) => d.key)
+
+export const DEFAULT_REQUIRED_FIELDS: string[] = [
+  'title',
+  'artist',
+  'albumArtist',
+  'album',
+  'year',
+  'genre',
+  'grouping'
+]
+
+export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
+  return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())
+}
 
 export function moveItem<T>(arr: T[], index: number, delta: number): T[] {
   const to = index + delta

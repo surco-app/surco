@@ -1,5 +1,7 @@
 import type React from 'react'
+import { useTranslation } from 'react-i18next'
 import type { TrackItem, TrackStatus } from '../types'
+import { STAGE_PROGRESS } from '../lib/progress'
 
 interface Props {
   tracks: TrackItem[]
@@ -15,14 +17,8 @@ const statusColor: Record<TrackStatus, string> = {
   error: 'bg-red-500'
 }
 
-const statusLabel: Record<TrackStatus, string> = {
-  idle: 'Pendiente',
-  processing: 'Procesando…',
-  done: 'Hecho',
-  error: 'Error'
-}
-
 export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
   return (
     <ul className="flex flex-col gap-1 p-2">
       {tracks.map((t) => {
@@ -37,20 +33,34 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
               }`}
             >
               <span
-                title={statusLabel[t.status]}
+                title={tr(`trackList.status.${t.status}`)}
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-neutral-100">
                   {t.meta.title || t.fileName}
                 </span>
-                <span className="block truncate text-xs text-neutral-500">
-                  {t.meta.artist || 'Sin artista'}
-                </span>
+                {t.status === 'processing' && t.stage ? (
+                  <span data-testid="track-stage" className="mt-1 block">
+                    <span className="block truncate text-xs text-[var(--color-accent)]">
+                      {tr(`trackList.stage.${t.stage}`)}
+                    </span>
+                    <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
+                      <span
+                        className="block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500 animate-pulse"
+                        style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
+                      />
+                    </span>
+                  </span>
+                ) : (
+                  <span className="block truncate text-xs text-neutral-500">
+                    {t.meta.artist || tr('trackList.noArtist')}
+                  </span>
+                )}
               </span>
               <span
                 role="button"
-                aria-label="Quitar"
+                aria-label={tr('trackList.remove')}
                 onClick={(e) => {
                   e.stopPropagation()
                   onRemove(t.id)

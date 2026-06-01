@@ -7,6 +7,7 @@ export interface Settings {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
+  requiredFields: string[]
   coverMaxSize: number
   coverSquare: boolean
 }
@@ -52,11 +53,19 @@ export interface DiscogsRelease {
 }
 
 export interface ProcessJob {
+  id: string
   inputPath: string
   outputName: string
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
+}
+
+export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
+
+export interface ProcessProgress {
+  id: string
+  stage: ProcessStage
 }
 
 export interface ProcessResult {

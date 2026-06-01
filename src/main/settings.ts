@@ -12,6 +12,7 @@ const defaults: Settings = {
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping', 'comment'],
+  requiredFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
   coverMaxSize: 1200,
   coverSquare: false
 }

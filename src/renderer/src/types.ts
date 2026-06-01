@@ -1,4 +1,4 @@
-import type { TrackMetadata, SpectrumResult } from '../../shared/types'
+import type { TrackMetadata, SpectrumResult, ProcessStage } from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
@@ -12,6 +12,7 @@ export interface TrackItem {
   coverPath?: string
   spectrum?: SpectrumResult
   status: TrackStatus
+  stage?: ProcessStage
   outputPath?: string
   error?: string
 }

@@ -4,7 +4,8 @@ import type {
   DiscogsRelease,
   ProcessJob,
   ProcessResult,
-  SpectrumResult
+  SpectrumResult,
+  TrackMetadata
 } from '../shared/types'
 
 export interface Api {
@@ -18,6 +19,8 @@ export interface Api {
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   reveal: (path: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>
+  readTags: (path: string) => Promise<TrackMetadata>
+  readCover: (path: string) => Promise<string | null>
   onOpenSettings: (cb: () => void) => () => void
 }
 

@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 
@@ -11,18 +12,10 @@ interface Props {
 
 type Tab = 'general' | 'naming' | 'artwork' | 'fields'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'naming', label: 'Nombres' },
-  { id: 'artwork', label: 'Carátula' },
-  { id: 'fields', label: 'Campos' }
-]
-
-function fieldLabel(key: string): string {
-  return FIELD_DEFS.find((d) => d.key === key)?.label ?? key
-}
+const TABS: Tab[] = ['general', 'naming', 'artwork', 'fields']
 
 export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [tab, setTab] = useState<Tab>('general')
   const [token, setToken] = useState(settings.discogsToken)
   const [outputDir, setOutputDir] = useState(settings.outputDir)
@@ -32,6 +25,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
   const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
   const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
+  const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
 
@@ -55,6 +49,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       trimWhitespace,
       zeroPadTrack,
       visibleFields,
+      requiredFields,
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
       coverSquare
     })
@@ -72,18 +67,18 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       >
         <div className="mb-5 flex justify-center">
           <div className="inline-flex gap-1 rounded-lg bg-[var(--color-ink)] p-1">
-            {TABS.map((t) => (
+            {TABS.map((id) => (
               <button
-                key={t.id}
-                data-testid={`settings-tab-${t.id}`}
-                onClick={() => setTab(t.id)}
+                key={id}
+                data-testid={`settings-tab-${id}`}
+                onClick={() => setTab(id)}
                 className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                  tab === t.id
+                  tab === id
                     ? 'bg-[var(--color-panel-2)] text-neutral-100'
                     : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
-                {t.label}
+                {tr(`settings.tabs.${id}`)}
               </button>
             ))}
           </div>
@@ -93,28 +88,27 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
           {tab === 'general' && (
             <>
               <label className="mb-1.5 block text-sm font-medium text-neutral-300">
-                Token de Discogs
+                {tr('settings.discogsToken')}
               </label>
               <input
                 data-testid="settings-token"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Pega aquí tu token personal"
+                placeholder={tr('settings.tokenPlaceholder')}
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 mb-5 text-xs text-neutral-500">
-                Genera uno gratis en{' '}
+                {tr('settings.tokenHelp')}{' '}
                 <a
                   href="https://www.discogs.com/settings/developers"
                   className="text-[var(--color-accent)] hover:underline"
                 >
                   discogs.com/settings/developers
-                </a>{' '}
-                → “Generate new token”.
+                </a>
               </p>
 
               <label className="mb-1.5 block text-sm font-medium text-neutral-300">
-                Carpeta de salida
+                {tr('settings.outputDir')}
               </label>
               <div className="mb-5 flex gap-2">
                 <input
@@ -127,7 +121,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   onClick={changeDir}
                   className="rounded-lg border border-[var(--color-line)] px-3 py-2 text-sm hover:bg-[var(--color-panel-2)]"
                 >
-                  Cambiar
+                  {tr('common.change')}
                 </button>
               </div>
 
@@ -139,7 +133,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   onChange={(e) => setAddToAppleMusic(e.target.checked)}
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
-                <span className="text-sm">Añadir automáticamente a Apple Music tras procesar</span>
+                <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
               </label>
             </>
           )}
@@ -147,7 +141,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
           {tab === 'naming' && (
             <>
               <label className="mb-1.5 block text-sm font-medium text-neutral-300">
-                Formato del nombre
+                {tr('settings.filenameFormat')}
               </label>
               <input
                 data-testid="settings-filename-format"
@@ -157,12 +151,12 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 mb-5 text-xs text-neutral-500">
-                Tokens: {'{artist}'} {'{title}'} {'{album}'} {'{albumArtist}'} {'{year}'} {'{genre}'}{' '}
-                {'{grouping}'} {'{trackNumber}'}
+                {tr('settings.tokensHint')} {'{artist}'} {'{title}'} {'{album}'} {'{albumArtist}'}{' '}
+                {'{year}'} {'{genre}'} {'{grouping}'} {'{trackNumber}'}
               </p>
 
               <label className="mb-1.5 block text-sm font-medium text-neutral-300">
-                Grouping (separados por comas)
+                {tr('settings.grouping')}
               </label>
               <input
                 data-testid="settings-grouping"
@@ -171,9 +165,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 placeholder="Bases, Cantaditas"
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
-              <p className="mt-1.5 mb-5 text-xs text-neutral-500">
-                Aparecen como botones rápidos al editar una pista.
-              </p>
+              <p className="mt-1.5 mb-5 text-xs text-neutral-500">{tr('settings.groupingHint')}</p>
 
               <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
                 <label className="flex cursor-pointer items-center gap-3">
@@ -184,7 +176,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                     onChange={(e) => setTrimWhitespace(e.target.checked)}
                     className="h-4 w-4 accent-[var(--color-accent)]"
                   />
-                  <span className="text-sm">Recortar espacios sobrantes</span>
+                  <span className="text-sm">{tr('settings.trimWhitespace')}</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-3">
                   <input
@@ -194,7 +186,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                     onChange={(e) => setZeroPadTrack(e.target.checked)}
                     className="h-4 w-4 accent-[var(--color-accent)]"
                   />
-                  <span className="text-sm">Nº de pista con cero delante (03)</span>
+                  <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
                 </label>
               </div>
             </>
@@ -203,7 +195,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
           {tab === 'artwork' && (
             <>
               <label className="mb-1.5 block text-sm font-medium text-neutral-300">
-                Tamaño máximo de la carátula
+                {tr('settings.coverMaxSize')}
               </label>
               <div className="mb-5 flex items-center gap-2">
                 <input
@@ -214,7 +206,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   onChange={(e) => setCoverMaxSize(e.target.value)}
                   className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
-                <span className="text-sm text-neutral-500">px (0 = sin límite)</span>
+                <span className="text-sm text-neutral-500">{tr('settings.coverMaxHint')}</span>
               </div>
 
               <label className="flex cursor-pointer items-center gap-3">
@@ -225,12 +217,9 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   onChange={(e) => setCoverSquare(e.target.checked)}
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
-                <span className="text-sm">Recortar la carátula a cuadrado</span>
+                <span className="text-sm">{tr('settings.coverSquare')}</span>
               </label>
-              <p className="mt-3 text-xs text-neutral-500">
-                Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro
-                para dejarlas cuadradas.
-              </p>
+              <p className="mt-3 text-xs text-neutral-500">{tr('settings.coverHint')}</p>
             </>
           )}
 
@@ -238,7 +227,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
             <div className="max-h-[340px] space-y-4 overflow-y-auto">
               <div>
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Mostrados
+                  {tr('settings.shown')}
                 </p>
                 <div className="space-y-1.5">
                   {visibleFields.map((key, i) => (
@@ -247,13 +236,31 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                       data-testid={`field-row-${key}`}
                       className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] py-1.5 pl-3 pr-2"
                     >
-                      <span className="text-sm">{fieldLabel(key)}</span>
+                      <span className="text-sm">{tr(`fields.${key}`)}</span>
                       <div className="flex items-center gap-1">
+                        <button
+                          data-testid={`field-required-${key}`}
+                          aria-pressed={requiredFields.includes(key)}
+                          onClick={() =>
+                            setRequiredFields(
+                              requiredFields.includes(key)
+                                ? requiredFields.filter((k) => k !== key)
+                                : [...requiredFields, key]
+                            )
+                          }
+                          className={`mr-1 rounded px-2 py-0.5 text-xs ${
+                            requiredFields.includes(key)
+                              ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                              : 'text-neutral-500 hover:bg-[var(--color-panel-2)] hover:text-neutral-300'
+                          }`}
+                        >
+                          {tr('settings.required')}
+                        </button>
                         <button
                           onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
                           disabled={i === 0}
                           className="rounded px-1.5 text-neutral-400 hover:text-neutral-100 disabled:opacity-25"
-                          aria-label="Subir"
+                          aria-label={tr('settings.moveUp')}
                         >
                           ↑
                         </button>
@@ -261,15 +268,18 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                           onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
                           disabled={i === visibleFields.length - 1}
                           className="rounded px-1.5 text-neutral-400 hover:text-neutral-100 disabled:opacity-25"
-                          aria-label="Bajar"
+                          aria-label={tr('settings.moveDown')}
                         >
                           ↓
                         </button>
                         <button
-                          onClick={() => setVisibleFields(visibleFields.filter((k) => k !== key))}
+                          onClick={() => {
+                            setVisibleFields(visibleFields.filter((k) => k !== key))
+                            setRequiredFields(requiredFields.filter((k) => k !== key))
+                          }}
                           className="ml-1 rounded px-2 py-0.5 text-xs text-neutral-400 hover:bg-[var(--color-panel-2)] hover:text-neutral-100"
                         >
-                          Ocultar
+                          {tr('settings.hide')}
                         </button>
                       </div>
                     </div>
@@ -279,7 +289,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
 
               <div>
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Ocultos
+                  {tr('settings.hidden')}
                 </p>
                 <div className="space-y-1.5">
                   {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
@@ -287,17 +297,17 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                       key={d.key}
                       className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] py-1.5 pl-3 pr-2"
                     >
-                      <span className="text-sm text-neutral-400">{d.label}</span>
+                      <span className="text-sm text-neutral-400">{tr(`fields.${d.key}`)}</span>
                       <button
                         onClick={() => setVisibleFields([...visibleFields, d.key])}
                         className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
                       >
-                        Mostrar
+                        {tr('settings.show')}
                       </button>
                     </div>
                   ))}
                   {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
-                    <p className="text-xs text-neutral-600">Todos los campos están visibles.</p>
+                    <p className="text-xs text-neutral-600">{tr('settings.allVisible')}</p>
                   )}
                 </div>
               </div>
@@ -310,14 +320,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
             onClick={onClose}
             className="rounded-lg px-4 py-2 text-sm text-neutral-400 hover:text-neutral-200"
           >
-            Cancelar
+            {tr('common.cancel')}
           </button>
           <button
             data-testid="settings-save"
             onClick={save}
             className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
           >
-            Guardar
+            {tr('common.save')}
           </button>
         </div>
       </div>

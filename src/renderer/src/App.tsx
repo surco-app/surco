@@ -1,13 +1,16 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../shared/types'
 import type { TrackItem } from './types'
 import type { Command } from './lib/commands'
 import { parseFileName } from './lib/filename'
 import { renderOutputName } from './lib/outputName'
 import { sanitizeMeta } from './lib/hygiene'
-import { DEFAULT_FIELDS } from './lib/fields'
+import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { keyToCommandId, moveIndex } from './lib/keymap'
+import { applyProgress } from './lib/progress'
+import { searchFromTags } from './lib/search'
 import { TrackList } from './components/TrackList'
 import { Editor } from './components/Editor'
 import { SettingsModal } from './components/SettingsModal'
@@ -38,6 +41,7 @@ function newTrack(path: string): TrackItem {
 }
 
 export default function App(): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -45,6 +49,9 @@ export default function App(): React.JSX.Element {
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const audioUrlRef = useRef<string | null>(null)
+  const [playingId, setPlayingId] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then(setSettings)
@@ -52,13 +59,57 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => window.api.onOpenSettings(() => setShowSettings(true)), [])
 
-  function addPaths(paths: string[]): void {
-    setTracks((prev) => {
-      const existing = new Set(prev.map((t) => t.inputPath))
-      const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p)).map(newTrack)
-      if (fresh.length && !selectedId) setSelectedId(fresh[0].id)
-      return [...prev, ...fresh]
-    })
+  useEffect(
+    () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
+    []
+  )
+
+  // Playback only ever applies to the selected track: switching selection stops
+  // it, and the object URL is freed on unmount.
+  useEffect(() => {
+    audioRef.current?.pause()
+    setPlayingId(null)
+  }, [selectedId])
+
+  useEffect(
+    () => () => {
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
+    },
+    []
+  )
+
+  async function addPaths(paths: string[]): Promise<void> {
+    const existing = new Set(tracks.map((t) => t.inputPath))
+    const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
+    if (fresh.length === 0) return
+    const items = await Promise.all(
+      fresh.map(async (path) => {
+        const base = newTrack(path)
+        try {
+          const [tags, cover] = await Promise.all([
+            window.api.readTags(path),
+            window.api.readCover(path)
+          ])
+          const s = searchFromTags(parseFileName(path), tags)
+          return {
+            ...base,
+            query: s.query,
+            coverUrl: cover ?? undefined,
+            meta: {
+              ...base.meta,
+              ...tags,
+              title: s.title,
+              artist: s.artist,
+              albumArtist: tags.albumArtist || s.artist
+            }
+          }
+        } catch {
+          return base
+        }
+      })
+    )
+    setTracks((prev) => [...prev, ...items])
+    if (!selectedId) setSelectedId(items[0].id)
   }
 
   async function pickFiles(): Promise<void> {
@@ -80,10 +131,36 @@ export default function App(): React.JSX.Element {
     if (selectedId === id) setSelectedId((prev) => (prev === id ? null : prev))
   }
 
+  async function togglePlay(): Promise<void> {
+    const audio = audioRef.current
+    if (!audio || !selected) return
+    if (playingId === selected.id) {
+      if (audio.paused) audio.play().catch(() => {})
+      else audio.pause()
+      return
+    }
+    const buf = await window.api.readAudio(selected.inputPath)
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
+    audioUrlRef.current = URL.createObjectURL(new Blob([buf]))
+    audio.src = audioUrlRef.current
+    setPlayingId(selected.id)
+    audio.play().catch(() => {})
+  }
+
   async function processOne(id: string): Promise<void> {
     const track = tracks.find((t) => t.id === id)
     if (!track) return
-    updateTrack(id, { status: 'processing', error: undefined })
+    const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+    if (missing.length) {
+      const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
+      updateTrack(id, {
+        status: 'error',
+        error: tr('editor.missingRequired', { fields: names }),
+        stage: undefined
+      })
+      return
+    }
+    updateTrack(id, { status: 'processing', error: undefined, stage: undefined })
     const meta = sanitizeMeta(track.meta, {
       trim: settings?.trimWhitespace ?? true,
       zeroPad: settings?.zeroPadTrack ?? true
@@ -92,21 +169,20 @@ export default function App(): React.JSX.Element {
     const outputName = renderOutputName(format, meta) || track.fileName
     try {
       const { outputPath } = await window.api.processTrack({
+        id: track.id,
         inputPath: track.inputPath,
         outputName,
         meta,
         coverUrl: track.coverUrl,
         coverPath: track.coverPath
       })
-      updateTrack(id, { status: 'done', outputPath })
+      updateTrack(id, { status: 'done', outputPath, stage: undefined })
     } catch (e) {
-      updateTrack(id, { status: 'error', error: e instanceof Error ? e.message : 'Error al procesar' })
-    }
-  }
-
-  async function processAll(): Promise<void> {
-    for (const t of tracks) {
-      if (t.status === 'idle' || t.status === 'error') await processOne(t.id)
+      updateTrack(id, {
+        status: 'error',
+        error: e instanceof Error ? e.message : tr('editor.processError'),
+        stage: undefined
+      })
     }
   }
 
@@ -121,36 +197,35 @@ export default function App(): React.JSX.Element {
   }
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
-  const pending = tracks.filter((t) => t.status === 'idle' || t.status === 'error').length
   const canProcessSelected = !!selected && (selected.status === 'idle' || selected.status === 'error')
 
   const commands: Command[] = [
-    { id: 'add', title: 'Añadir archivos', hint: '⌘O', enabled: true, run: pickFiles },
+    { id: 'add', title: tr('commands.add'), hint: '⌘O', enabled: true, run: pickFiles },
     {
       id: 'process-current',
-      title: 'Procesar pista actual',
+      title: tr('commands.processCurrent'),
       hint: '⌘↵',
       enabled: canProcessSelected,
       run: () => selected && processOne(selected.id)
     },
-    { id: 'process-all', title: 'Procesar todo', hint: '⌘⇧↵', enabled: pending > 0, run: processAll },
+    { id: 'play', title: tr('commands.play'), hint: '␣', enabled: !!selected, run: togglePlay },
     {
       id: 'remove',
-      title: 'Quitar pista actual',
+      title: tr('commands.remove'),
       hint: '⌘⌫',
       enabled: !!selected,
       run: () => selected && removeTrack(selected.id)
     },
-    { id: 'next', title: 'Siguiente pista', hint: '↓', enabled: tracks.length > 1, run: () => moveSelection(1) },
-    { id: 'prev', title: 'Pista anterior', hint: '↑', enabled: tracks.length > 1, run: () => moveSelection(-1) },
+    { id: 'next', title: tr('commands.next'), hint: '↓', enabled: tracks.length > 1, run: () => moveSelection(1) },
+    { id: 'prev', title: tr('commands.prev'), hint: '↑', enabled: tracks.length > 1, run: () => moveSelection(-1) },
     {
       id: 'search',
-      title: 'Buscar en Discogs',
+      title: tr('commands.search'),
       hint: '/',
       enabled: !!selected,
       run: () => searchInputRef.current?.focus()
     },
-    { id: 'settings', title: 'Ajustes', hint: '⌘,', enabled: true, run: () => setShowSettings(true) }
+    { id: 'settings', title: tr('commands.settings'), hint: '⌘,', enabled: true, run: () => setShowSettings(true) }
   ]
 
   const commandsRef = useRef<Command[]>(commands)
@@ -199,6 +274,7 @@ export default function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
+      <audio ref={audioRef} hidden onEnded={() => setPlayingId(null)} />
       <header
         className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
@@ -210,21 +286,13 @@ export default function App(): React.JSX.Element {
             onClick={pickFiles}
             className="rounded-lg border border-[var(--color-line)] px-3 py-1.5 text-sm hover:bg-[var(--color-panel-2)]"
           >
-            Añadir archivos
-          </button>
-          <button
-            data-testid="process-all"
-            onClick={processAll}
-            disabled={pending === 0}
-            className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40"
-          >
-            Procesar todo{pending ? ` (${pending})` : ''}
+            {tr('header.add')}
           </button>
           <button
             data-testid="open-palette"
             onClick={() => setShowPalette(true)}
             className="rounded-lg border border-[var(--color-line)] px-2.5 py-1.5 text-xs text-neutral-400 hover:bg-[var(--color-panel-2)]"
-            aria-label="Paleta de comandos"
+            aria-label={tr('header.palette')}
           >
             ⌘K
           </button>
@@ -232,7 +300,7 @@ export default function App(): React.JSX.Element {
             data-testid="open-settings"
             onClick={() => setShowSettings(true)}
             className="rounded-lg border border-[var(--color-line)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-panel-2)]"
-            aria-label="Ajustes"
+            aria-label={tr('header.settings')}
           >
             ⚙
           </button>
@@ -242,9 +310,7 @@ export default function App(): React.JSX.Element {
       <div className="flex min-h-0 flex-1">
         <aside className="w-72 shrink-0 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel)]">
           {tracks.length === 0 ? (
-            <p className="p-6 text-center text-xs text-neutral-600">
-              Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”.
-            </p>
+            <p className="p-6 text-center text-xs text-neutral-600">{tr('sidebar.dropHint')}</p>
           ) : (
             <TrackList
               tracks={tracks}
@@ -264,6 +330,7 @@ export default function App(): React.JSX.Element {
               filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
+              requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={() => processOne(selected.id)}
@@ -285,11 +352,8 @@ export default function App(): React.JSX.Element {
                   <rect x="34" y="15" width="4" height="18" rx="2" />
                   <rect x="40" y="19" width="4" height="10" rx="2" />
                 </svg>
-                <p className="text-neutral-400">Añade pistas para empezar.</p>
-                <p className="mt-1 text-sm text-neutral-600">
-                  Rótulo las convierte a AIFF lossless, las etiqueta desde Discogs y las manda a Apple
-                  Music.
-                </p>
+                <p className="text-neutral-400">{tr('empty.title')}</p>
+                <p className="mt-1 text-sm text-neutral-600">{tr('empty.subtitle')}</p>
               </div>
             </div>
           )}
@@ -299,7 +363,7 @@ export default function App(): React.JSX.Element {
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
           <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
-            Suelta para añadir
+            {tr('drop.release')}
           </span>
         </div>
       )}
