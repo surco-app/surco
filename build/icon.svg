@@ -5,22 +5,25 @@
       <stop offset="0.55" stop-color="#F86F2C"/>
       <stop offset="1" stop-color="#E0481C"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.28" cy="0.22" r="0.8">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
-      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    <radialGradient id="bgGlow" cx="0.3" cy="0.24" r="0.85">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="vignette" cx="0.5" cy="0.95" r="0.75">
-      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="1" stop-color="#7A1E00" stop-opacity="0.30"/>
+    <radialGradient id="disc" cx="0.42" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#2A2D34"/>
+      <stop offset="0.5" stop-color="#17191E"/>
+      <stop offset="1" stop-color="#0B0C0F"/>
     </radialGradient>
-    <linearGradient id="label" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0" stop-color="#FFFEFA"/>
-      <stop offset="1" stop-color="#F3EFE4"/>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#E7E1D2"/>
-      <stop offset="1" stop-color="#CFC8B6"/>
-    </linearGradient>
+    <radialGradient id="label" cx="0.4" cy="0.36" r="0.8">
+      <stop offset="0" stop-color="#FFFDF7"/>
+      <stop offset="1" stop-color="#EFE7D3"/>
+    </radialGradient>
     <linearGradient id="barrel" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#3C424B"/>
       <stop offset="0.5" stop-color="#23272D"/>
@@ -36,65 +39,68 @@
       <stop offset="1" stop-color="#7E848C"/>
     </linearGradient>
     <linearGradient id="nib" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#3A2A12"/>
-      <stop offset="0.35" stop-color="#7A5320"/>
-      <stop offset="1" stop-color="#F0B447"/>
-    </linearGradient>
-    <linearGradient id="nib2" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#2C1F0D"/>
       <stop offset="0.4" stop-color="#8A6326"/>
       <stop offset="1" stop-color="#F4BE4E"/>
     </linearGradient>
-    <filter id="labelShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="18" stdDeviation="26" flood-color="#5A1500" flood-opacity="0.28"/>
+    <clipPath id="discClip"><circle cx="512" cy="500" r="322"/></clipPath>
+    <filter id="discShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#3A0E00" flood-opacity="0.35"/>
     </filter>
     <filter id="penShadow" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="-14" dy="26" stdDeviation="26" flood-color="#3A0E00" flood-opacity="0.38"/>
+      <feDropShadow dx="-12" dy="22" stdDeviation="22" flood-color="#3A0E00" flood-opacity="0.40"/>
     </filter>
-    <filter id="inkSoft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.18"/>
+    <filter id="inkSoft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.20"/>
     </filter>
   </defs>
 
-  <!-- background -->
-  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#bg)"/>
-  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#glow)"/>
-  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#vignette)"/>
+  <!-- full-bleed background (clipped to the macOS squircle afterwards) -->
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#bgGlow)"/>
 
-  <!-- label with a peeled corner -->
-  <g transform="rotate(-6 512 470)" filter="url(#labelShadow)">
-    <rect x="206" y="300" width="612" height="332" rx="40" ry="40" fill="url(#label)"/>
-    <rect x="206" y="300" width="612" height="332" rx="40" ry="40" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="3"/>
-    <!-- faint ruled guide lines -->
-    <line x1="266" y1="392" x2="758" y2="392" stroke="#C9C2B1" stroke-width="4" stroke-opacity="0.6"/>
-    <line x1="266" y1="556" x2="758" y2="556" stroke="#C9C2B1" stroke-width="4" stroke-opacity="0.6"/>
-    <!-- peeled top-right corner -->
-    <path d="M752 300 L818 300 L818 366 Z" fill="url(#fold)"/>
-    <path d="M752 300 L818 366 L786 318 Z" fill="#FFFFFF" fill-opacity="0.5"/>
+  <!-- vinyl record -->
+  <g filter="url(#discShadow)">
+    <circle cx="512" cy="500" r="322" fill="url(#disc)"/>
+    <g clip-path="url(#discClip)">
+      <!-- grooves -->
+      <g fill="none" stroke="#FFFFFF" stroke-opacity="0.05">
+        <circle cx="512" cy="500" r="300" stroke-width="2"/>
+        <circle cx="512" cy="500" r="278" stroke-width="2"/>
+        <circle cx="512" cy="500" r="256" stroke-width="2"/>
+        <circle cx="512" cy="500" r="234" stroke-width="2"/>
+        <circle cx="512" cy="500" r="212" stroke-width="2"/>
+        <circle cx="512" cy="500" r="190" stroke-width="2"/>
+        <circle cx="512" cy="500" r="168" stroke-width="2"/>
+      </g>
+      <circle cx="512" cy="500" r="289" fill="none" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="3"/>
+      <!-- diagonal sheen -->
+      <rect x="190" y="178" width="644" height="644" fill="url(#sheen)"/>
+    </g>
+    <!-- center label -->
+    <circle cx="512" cy="500" r="132" fill="url(#label)"/>
+    <circle cx="512" cy="500" r="132" fill="none" stroke="#000000" stroke-opacity="0.08" stroke-width="3"/>
+    <!-- spindle hole -->
+    <circle cx="512" cy="500" r="11" fill="#0B0C0F"/>
   </g>
 
-  <!-- handwritten flourish (the rótulo) -->
+  <!-- handwritten flourish on the label (the rótulo) -->
   <g filter="url(#inkSoft)">
-    <path d="M300 540 C 296 430, 322 372, 388 372 C 452 372, 470 452, 392 466
-             C 470 470, 512 556, 602 492 C 648 460, 690 486, 726 452"
-          fill="none" stroke="#15181D" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M452 560 C 448 488, 466 452, 506 452 C 546 452, 556 502, 506 510
+             C 556 514, 584 566, 632 524"
+          fill="none" stroke="#1A1E24" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
-  <!-- marker, nib tip touching the end of the flourish at (726,452) -->
+  <!-- marker, nib tip touching the end of the flourish at (632,524) -->
   <g filter="url(#penShadow)">
-    <g transform="translate(726 452) rotate(33)">
-      <!-- felt nib -->
-      <path d="M0 0 L70 -36 L70 36 Z" fill="url(#nib2)"/>
-      <path d="M0 0 L70 -36 L70 -12 Z" fill="#FFFFFF" fill-opacity="0.18"/>
-      <!-- chrome collar -->
-      <rect x="64" y="-40" width="44" height="80" rx="10" ry="10" fill="url(#collar)"/>
-      <!-- barrel -->
-      <rect x="104" y="-64" width="430" height="128" rx="46" ry="46" fill="url(#barrel)"/>
-      <!-- gloss highlight -->
-      <rect x="138" y="-50" width="356" height="34" rx="17" ry="17" fill="url(#gloss)"/>
-      <!-- cap ring + end -->
-      <rect x="486" y="-64" width="22" height="128" fill="#F6A23C"/>
-      <rect x="508" y="-64" width="26" height="128" rx="46" ry="46" fill="#1A1D22"/>
+    <g transform="translate(632 524) rotate(34)">
+      <path d="M0 0 L60 -32 L60 32 Z" fill="url(#nib)"/>
+      <path d="M0 0 L60 -32 L60 -10 Z" fill="#FFFFFF" fill-opacity="0.18"/>
+      <rect x="54" y="-36" width="40" height="72" rx="9" ry="9" fill="url(#collar)"/>
+      <rect x="90" y="-58" width="392" height="116" rx="42" ry="42" fill="url(#barrel)"/>
+      <rect x="120" y="-45" width="320" height="30" rx="15" ry="15" fill="url(#gloss)"/>
+      <rect x="436" y="-58" width="20" height="116" fill="#F6A23C"/>
+      <rect x="456" y="-58" width="26" height="116" rx="42" ry="42" fill="#1A1D22"/>
     </g>
   </g>
 </svg>
