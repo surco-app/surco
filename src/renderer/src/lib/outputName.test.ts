@@ -18,9 +18,7 @@ function meta(patch: Partial<TrackMetadata>): TrackMetadata {
 }
 
 describe('renderOutputName', () => {
-  it('fills tokens from metadata in the order the template defines', () => {
-    // the user controls the shape of the final file name, so order and
-    // separators must come straight from their template
+  it('fills tokens in template order so the user controls the file-name shape', () => {
     const r = renderOutputName('{artist} - {title}', meta({ artist: 'Chumi Dj', title: 'Open Your Eyes' }))
     expect(r).toBe('Chumi Dj - Open Your Eyes')
   })
@@ -33,8 +31,7 @@ describe('renderOutputName', () => {
     expect(r).toBe('03 - Acer - Keep Calm')
   })
 
-  it('drops a dangling separator when a leading token is empty', () => {
-    // a missing track number must not leave "- Acer - Keep Calm"
+  it('drops a dangling separator when a leading token (e.g. track no.) is empty', () => {
     const r = renderOutputName(
       '{trackNumber} - {artist} - {title}',
       meta({ artist: 'Acer', title: 'Keep Calm' })

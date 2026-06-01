@@ -8,8 +8,7 @@ function cmd(id: string, title: string): Command {
 const commands = [cmd('add', 'Añadir archivos'), cmd('settings', 'Ajustes'), cmd('all', 'Procesar todo')]
 
 describe('filterCommands', () => {
-  it('returns every command when the query is empty', () => {
-    // an empty palette must show the full menu so the user can browse it
+  it('returns every command when the query is empty, so the menu is browsable', () => {
     expect(filterCommands(commands, '').map((c) => c.id)).toEqual(['add', 'settings', 'all'])
   })
 

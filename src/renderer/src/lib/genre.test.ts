@@ -7,9 +7,7 @@ function release(patch: Partial<DiscogsRelease>): DiscogsRelease {
 }
 
 describe('genrePresets', () => {
-  it('offers the broad genres and the specific styles Discogs returns', () => {
-    // the chips should reflect what the release actually is, not a fixed guess,
-    // so the DJ tags from real Discogs data instead of always seeing "Electronic"
+  it('offers the broad genres and styles Discogs returns, not a fixed guess', () => {
     const r = release({ genres: ['Electronic'], styles: ['House', 'Techno'] })
     expect(genrePresets(r)).toEqual(['Electronic', 'House', 'Techno'])
   })

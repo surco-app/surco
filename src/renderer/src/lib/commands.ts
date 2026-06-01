@@ -6,8 +6,6 @@ export interface Command {
   run: () => void
 }
 
-// Substring match on the title, case-insensitive. Boring on purpose: the
-// command set is tiny, so a fuzzy matcher would add complexity with no payoff.
 export function filterCommands(commands: Command[], query: string): Command[] {
   const q = query.trim().toLowerCase()
   if (!q) return commands

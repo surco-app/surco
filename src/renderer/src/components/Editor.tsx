@@ -136,9 +136,6 @@ export function Editor({
     onChange({ meta: { ...item.meta, [key]: value } })
   }
 
-  // A local image dropped on the cover is used as-is for tagging (coverPath),
-  // while a blob URL drives the preview — file:// paths don't render under the
-  // dev server's web security, and the user's file must never be downloaded.
   function onCoverDrop(e: React.DragEvent): void {
     e.preventDefault()
     e.stopPropagation()
