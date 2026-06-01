@@ -12,8 +12,9 @@ El AIFF resultante funciona tanto en **rekordbox** como en **Apple Music**, con 
 ## Requisitos
 
 - macOS
-- [ffmpeg](https://ffmpeg.org/) y ffprobe en el `PATH` (`brew install ffmpeg`)
 - Un [token personal de Discogs](https://www.discogs.com/settings/developers) (gratis) → se configura en Ajustes
+
+ffmpeg y ffprobe vienen incluidos en la app (vía `ffmpeg-static`/`ffprobe-static`), así que el usuario no instala nada.
 
 ## Desarrollo
 
