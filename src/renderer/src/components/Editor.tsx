@@ -176,11 +176,7 @@ export function Editor({
 
   return (
     <div className="flex h-full min-h-0">
-      <div
-        className={`flex shrink-0 flex-col border-r border-[var(--color-line)] ${
-          release ? 'w-[500px]' : 'w-[320px]'
-        }`}
-      >
+      <div className="flex w-[500px] shrink-0 flex-col border-r border-[var(--color-line)]">
         <div className="border-b border-[var(--color-line)] p-3">
           <div className="flex gap-2">
             <input
@@ -210,11 +206,7 @@ export function Editor({
         </div>
 
         <div className="flex min-h-0 flex-1">
-          <div
-            className={`min-h-0 overflow-y-auto ${
-              release ? 'w-[240px] border-r border-[var(--color-line)]' : 'flex-1'
-            }`}
-          >
+          <div className="min-h-0 w-[240px] shrink-0 overflow-y-auto border-r border-[var(--color-line)]">
             {results.map((r) => (
               <button
                 key={r.id}
@@ -239,12 +231,12 @@ export function Editor({
             ))}
           </div>
 
-          {release && (
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <p className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-neutral-500">
-                Elige la pista
-              </p>
-              {release.tracklist.map((t, i) => (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <p className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-neutral-500">
+              Elige la pista
+            </p>
+            {release ? (
+              release.tracklist.map((t, i) => (
                 <button
                   key={`${t.position}-${i}`}
                   data-testid="discogs-track"
@@ -256,9 +248,13 @@ export function Editor({
                   <span className="w-8 shrink-0 text-xs text-neutral-500">{t.position}</span>
                   <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
                 </button>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <p className="px-3 pt-2 text-xs text-neutral-600">
+                Elige un álbum de la lista para ver sus pistas.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
