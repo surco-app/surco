@@ -1,5 +1,5 @@
-appId: com.vigosan.vinilo
-productName: Vinilo
+appId: com.vigosan.rotulo
+productName: Rótulo
 directories:
   buildResources: build
   output: dist

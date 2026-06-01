@@ -1,11 +1,11 @@
-# Vinilo
+# Rótulo
 
 App de escritorio (macOS) para organizar pistas de audio para DJ. Automatiza el flujo:
 
 1. Añades tus archivos **WAV** o **FLAC** (botón o arrastrando).
 2. Buscas el disco en **Discogs** y eliges la pista → trae artista, álbum, año, género y carátula.
 3. Editas lo que quieras y pulsas procesar.
-4. Vinilo convierte a **AIFF lossless** (preservando la profundidad de bits exacta, cero pérdida), embebe los tags + la carátula y lo añade a **Apple Music**.
+4. Rótulo convierte a **AIFF lossless** (preservando la profundidad de bits exacta, cero pérdida), embebe los tags + la carátula y lo añade a **Apple Music**.
 
 El AIFF resultante funciona tanto en **rekordbox** como en **Apple Music**, con la info y la carátula siempre visibles.
 

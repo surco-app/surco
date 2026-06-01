@@ -204,7 +204,7 @@ export default function App(): React.JSX.Element {
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
         <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <span className="text-[var(--color-accent)]">●</span> Vinilo
+          <span className="text-[var(--color-accent)]">●</span> Rótulo
         </div>
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <button
@@ -289,7 +289,7 @@ export default function App(): React.JSX.Element {
                 </svg>
                 <p className="text-neutral-400">Añade pistas para empezar.</p>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Vinilo las convierte a AIFF lossless, las etiqueta desde Discogs y las manda a Apple
+                  Rótulo las convierte a AIFF lossless, las etiqueta desde Discogs y las manda a Apple
                   Music.
                 </p>
               </div>

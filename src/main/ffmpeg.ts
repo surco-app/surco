@@ -79,7 +79,7 @@ export async function convertToAiff(
 }
 
 export async function generateSpectrogram(input: string): Promise<string> {
-  const out = join(tmpdir(), `vinilo-spec-${Date.now()}.png`)
+  const out = join(tmpdir(), `rotulo-spec-${Date.now()}.png`)
   try {
     await run('ffmpeg', [
       '-hide_banner', '-loglevel', 'error', '-y',
@@ -101,7 +101,7 @@ export async function processCover(
   const max = opts.maxSize > 0 ? opts.maxSize : 4000
   const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
   const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
-  const out = join(tmpdir(), `vinilo-cover-proc-${Date.now()}.jpg`)
+  const out = join(tmpdir(), `rotulo-cover-proc-${Date.now()}.jpg`)
   await run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', input,
@@ -113,7 +113,7 @@ export async function processCover(
 }
 
 export async function analyzeCutoff(input: string): Promise<number> {
-  const stats = join(tmpdir(), `vinilo-stats-${Date.now()}.txt`)
+  const stats = join(tmpdir(), `rotulo-stats-${Date.now()}.txt`)
   try {
     await run('ffmpeg', [
       '-hide_banner', '-loglevel', 'error',

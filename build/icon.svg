@@ -1,0 +1,100 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FF9D4D"/>
+      <stop offset="0.55" stop-color="#F86F2C"/>
+      <stop offset="1" stop-color="#E0481C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.22" r="0.8">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.95" r="0.75">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7A1E00" stop-opacity="0.30"/>
+    </radialGradient>
+    <linearGradient id="label" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#FFFEFA"/>
+      <stop offset="1" stop-color="#F3EFE4"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E7E1D2"/>
+      <stop offset="1" stop-color="#CFC8B6"/>
+    </linearGradient>
+    <linearGradient id="barrel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3C424B"/>
+      <stop offset="0.5" stop-color="#23272D"/>
+      <stop offset="1" stop-color="#12151A"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="collar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDEFF2"/>
+      <stop offset="0.5" stop-color="#AEB4BC"/>
+      <stop offset="1" stop-color="#7E848C"/>
+    </linearGradient>
+    <linearGradient id="nib" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3A2A12"/>
+      <stop offset="0.35" stop-color="#7A5320"/>
+      <stop offset="1" stop-color="#F0B447"/>
+    </linearGradient>
+    <linearGradient id="nib2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2C1F0D"/>
+      <stop offset="0.4" stop-color="#8A6326"/>
+      <stop offset="1" stop-color="#F4BE4E"/>
+    </linearGradient>
+    <filter id="labelShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="26" flood-color="#5A1500" flood-opacity="0.28"/>
+    </filter>
+    <filter id="penShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="-14" dy="26" stdDeviation="26" flood-color="#3A0E00" flood-opacity="0.38"/>
+    </filter>
+    <filter id="inkSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#glow)"/>
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#vignette)"/>
+
+  <!-- label with a peeled corner -->
+  <g transform="rotate(-6 512 470)" filter="url(#labelShadow)">
+    <rect x="206" y="300" width="612" height="332" rx="40" ry="40" fill="url(#label)"/>
+    <rect x="206" y="300" width="612" height="332" rx="40" ry="40" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="3"/>
+    <!-- faint ruled guide lines -->
+    <line x1="266" y1="392" x2="758" y2="392" stroke="#C9C2B1" stroke-width="4" stroke-opacity="0.6"/>
+    <line x1="266" y1="556" x2="758" y2="556" stroke="#C9C2B1" stroke-width="4" stroke-opacity="0.6"/>
+    <!-- peeled top-right corner -->
+    <path d="M752 300 L818 300 L818 366 Z" fill="url(#fold)"/>
+    <path d="M752 300 L818 366 L786 318 Z" fill="#FFFFFF" fill-opacity="0.5"/>
+  </g>
+
+  <!-- handwritten flourish (the rótulo) -->
+  <g filter="url(#inkSoft)">
+    <path d="M300 540 C 296 430, 322 372, 388 372 C 452 372, 470 452, 392 466
+             C 470 470, 512 556, 602 492 C 648 460, 690 486, 726 452"
+          fill="none" stroke="#15181D" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- marker, nib tip touching the end of the flourish at (726,452) -->
+  <g filter="url(#penShadow)">
+    <g transform="translate(726 452) rotate(33)">
+      <!-- felt nib -->
+      <path d="M0 0 L70 -36 L70 36 Z" fill="url(#nib2)"/>
+      <path d="M0 0 L70 -36 L70 -12 Z" fill="#FFFFFF" fill-opacity="0.18"/>
+      <!-- chrome collar -->
+      <rect x="64" y="-40" width="44" height="80" rx="10" ry="10" fill="url(#collar)"/>
+      <!-- barrel -->
+      <rect x="104" y="-64" width="430" height="128" rx="46" ry="46" fill="url(#barrel)"/>
+      <!-- gloss highlight -->
+      <rect x="138" y="-50" width="356" height="34" rx="17" ry="17" fill="url(#gloss)"/>
+      <!-- cap ring + end -->
+      <rect x="486" y="-64" width="22" height="128" fill="#F6A23C"/>
+      <rect x="508" y="-64" width="26" height="128" rx="46" ry="46" fill="#1A1D22"/>
+    </g>
+  </g>
+</svg>

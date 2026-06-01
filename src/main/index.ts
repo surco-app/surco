@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu, nativeImage } from 'electron'
 import { join } from 'path'
 import { mkdir, unlink } from 'fs/promises'
 import { getSettings, saveSettings } from './settings'
@@ -137,7 +137,12 @@ function registerIpc(): void {
   })
 }
 
+app.setName('Rótulo')
+
 app.whenReady().then(() => {
+  if (!app.isPackaged && process.platform === 'darwin') {
+    app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
+  }
   registerIpc()
   createWindow()
 

@@ -5,7 +5,7 @@ import { Settings } from '../shared/types'
 
 const defaults: Settings = {
   discogsToken: '',
-  outputDir: join(app.getPath('music'), 'Vinilo'),
+  outputDir: join(app.getPath('music'), 'Rótulo'),
   addToAppleMusic: true,
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
