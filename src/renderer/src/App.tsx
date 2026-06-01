@@ -48,6 +48,8 @@ export default function App(): React.JSX.Element {
     window.api.getSettings().then(setSettings)
   }, [])
 
+  useEffect(() => window.api.onOpenSettings(() => setShowSettings(true)), [])
+
   function addPaths(paths: string[]): void {
     setTracks((prev) => {
       const existing = new Set(prev.map((t) => t.inputPath))

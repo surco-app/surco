@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join } from 'path'
 import { mkdir, unlink } from 'fs/promises'
 import { getSettings, saveSettings } from './settings'
@@ -9,6 +9,34 @@ import { Settings, ProcessJob } from '../shared/types'
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim()
+}
+
+function buildAppMenu(win: BrowserWindow): void {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Ajustes…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => win.webContents.send('menu:settings')
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    { role: 'editMenu' },
+    { role: 'windowMenu' }
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
 function createWindow(): void {
@@ -27,6 +55,7 @@ function createWindow(): void {
   })
 
   win.on('ready-to-show', () => win.show())
+  buildAppMenu(win)
 
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

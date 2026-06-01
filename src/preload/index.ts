@@ -9,7 +9,12 @@ const api = {
   searchDiscogs: (query: string) => ipcRenderer.invoke('discogs:search', query),
   getRelease: (id: number) => ipcRenderer.invoke('discogs:release', id),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
-  reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path)
+  reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
+  onOpenSettings: (cb: () => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('menu:settings', listener)
+    return () => ipcRenderer.removeListener('menu:settings', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('api', api)

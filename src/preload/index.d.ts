@@ -16,6 +16,7 @@ export interface Api {
   getRelease: (id: number) => Promise<DiscogsRelease>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   reveal: (path: string) => Promise<void>
+  onOpenSettings: (cb: () => void) => () => void
 }
 
 declare global {
