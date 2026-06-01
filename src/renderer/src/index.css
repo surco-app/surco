@@ -15,6 +15,16 @@ body,
   height: 100%;
 }
 
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
 body {
   margin: 0;
   background: var(--color-ink);

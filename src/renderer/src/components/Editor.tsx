@@ -4,6 +4,8 @@ import type { DiscogsSearchResult, DiscogsRelease, DiscogsTrack } from '../../..
 import type { TrackItem } from '../types'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
+import { qualityVerdict, formatKHz } from '../lib/quality'
+import { WaveSpinner } from './WaveSpinner'
 
 interface Props {
   item: TrackItem
@@ -70,6 +72,8 @@ export function Editor({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [coverDragging, setCoverDragging] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeError, setAnalyzeError] = useState('')
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -87,6 +91,26 @@ export function Editor({
 
   useEffect(() => {
     if (hasToken && query.trim()) void doSearch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (item.spectrum) return
+    let active = true
+    setAnalyzing(true)
+    setAnalyzeError('')
+    window.api
+      .spectrogram(item.inputPath)
+      .then((res) => onChange({ spectrum: res }))
+      .catch((e) => {
+        if (active) setAnalyzeError(e instanceof Error ? e.message : 'No se pudo analizar el audio')
+      })
+      .finally(() => {
+        if (active) setAnalyzing(false)
+      })
+    return () => {
+      active = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -324,6 +348,52 @@ export function Editor({
                 onPick={(v) => setField('grouping', v)}
               />
             )}
+          </div>
+
+          <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                Calidad de audio
+              </span>
+              {item.spectrum &&
+                (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
+                  <span
+                    data-testid="quality-badge"
+                    className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300"
+                  >
+                    Buena calidad
+                  </span>
+                ) : (
+                  <span
+                    data-testid="quality-badge"
+                    className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300"
+                  >
+                    Sospechoso
+                  </span>
+                ))}
+            </div>
+            {analyzing ? (
+              <div className="flex h-28 items-center justify-center gap-3 text-xs text-neutral-500">
+                <WaveSpinner />
+                Analizando espectro…
+              </div>
+            ) : analyzeError ? (
+              <p className="text-xs text-red-400">{analyzeError}</p>
+            ) : item.spectrum ? (
+              <>
+                <img
+                  data-testid="spectrogram"
+                  src={item.spectrum.image}
+                  alt="Espectrograma"
+                  className="w-full rounded-lg border border-[var(--color-line)]"
+                />
+                <p className="mt-2 text-xs text-neutral-500">
+                  Energía hasta ~{formatKHz(item.spectrum.cutoffHz)} de{' '}
+                  {formatKHz(item.spectrum.sampleRateHz / 2)} (Nyquist). Un corte brusco por debajo
+                  delata un MP3 reconvertido a WAV.
+                </p>
+              </>
+            ) : null}
           </div>
         </div>
 
