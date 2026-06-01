@@ -11,17 +11,7 @@ const defaults: Settings = {
   groupingPresets: ['Bases', 'Cantaditas'],
   trimWhitespace: true,
   zeroPadTrack: true,
-  visibleFields: [
-    'title',
-    'artist',
-    'albumArtist',
-    'album',
-    'year',
-    'genre',
-    'grouping',
-    'trackNumber',
-    'comment'
-  ],
+  visibleFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping', 'comment'],
   coverMaxSize: 1200,
   coverSquare: false
 }
