@@ -102,6 +102,7 @@ export function Editor({
       const matchArtist = joinArtists(match?.artists)
       onChange({
         coverUrl: coverOf(rel, result.cover_image),
+        coverPath: undefined,
         meta: {
           ...item.meta,
           title: match ? match.title : item.meta.title,
