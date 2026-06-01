@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useState } from 'react'
 import type { Settings } from '../../../shared/types'
+import { FIELD_DEFS, moveItem } from '../lib/fields'
 
 interface Props {
   settings: Settings
@@ -8,12 +9,17 @@ interface Props {
   onSave: (patch: Partial<Settings>) => void
 }
 
-type Tab = 'general' | 'naming'
+type Tab = 'general' | 'naming' | 'fields'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'general', label: 'General' },
-  { id: 'naming', label: 'Nombres' }
+  { id: 'naming', label: 'Nombres' },
+  { id: 'fields', label: 'Campos' }
 ]
+
+function fieldLabel(key: string): string {
+  return FIELD_DEFS.find((d) => d.key === key)?.label ?? key
+}
 
 export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('general')
@@ -24,6 +30,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
   const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
+  const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
@@ -42,7 +49,8 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
       groupingPresets,
       trimWhitespace,
-      zeroPadTrack
+      zeroPadTrack,
+      visibleFields
     })
     onClose()
   }
@@ -184,6 +192,76 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 </label>
               </div>
             </>
+          )}
+
+          {tab === 'fields' && (
+            <div className="max-h-[340px] space-y-4 overflow-y-auto">
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Mostrados
+                </p>
+                <div className="space-y-1.5">
+                  {visibleFields.map((key, i) => (
+                    <div
+                      key={key}
+                      data-testid={`field-row-${key}`}
+                      className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] py-1.5 pl-3 pr-2"
+                    >
+                      <span className="text-sm">{fieldLabel(key)}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
+                          disabled={i === 0}
+                          className="rounded px-1.5 text-neutral-400 hover:text-neutral-100 disabled:opacity-25"
+                          aria-label="Subir"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
+                          disabled={i === visibleFields.length - 1}
+                          className="rounded px-1.5 text-neutral-400 hover:text-neutral-100 disabled:opacity-25"
+                          aria-label="Bajar"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={() => setVisibleFields(visibleFields.filter((k) => k !== key))}
+                          className="ml-1 rounded px-2 py-0.5 text-xs text-neutral-400 hover:bg-[var(--color-panel-2)] hover:text-neutral-100"
+                        >
+                          Ocultar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Ocultos
+                </p>
+                <div className="space-y-1.5">
+                  {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
+                    <div
+                      key={d.key}
+                      className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] py-1.5 pl-3 pr-2"
+                    >
+                      <span className="text-sm text-neutral-400">{d.label}</span>
+                      <button
+                        onClick={() => setVisibleFields([...visibleFields, d.key])}
+                        className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+                      >
+                        Mostrar
+                      </button>
+                    </div>
+                  ))}
+                  {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
+                    <p className="text-xs text-neutral-600">Todos los campos están visibles.</p>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

@@ -5,6 +5,7 @@ import type { TrackItem } from '../types'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { qualityVerdict, formatKHz } from '../lib/quality'
+import { FIELD_DEFS } from '../lib/fields'
 import { WaveSpinner } from './WaveSpinner'
 import { Spectrogram } from './Spectrogram'
 
@@ -13,6 +14,7 @@ interface Props {
   hasToken: boolean
   filenameFormat: string
   groupingPresets: string[]
+  visibleFields: string[]
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: () => void
@@ -63,6 +65,7 @@ export function Editor({
   hasToken,
   filenameFormat,
   groupingPresets,
+  visibleFields,
   searchInputRef,
   onChange,
   onProcess
@@ -299,32 +302,19 @@ export function Editor({
             </div>
 
             <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3">
-              <Field label="Título" value={item.meta.title} onChange={(v) => setField('title', v)} wide />
-              <Field label="Artista" value={item.meta.artist} onChange={(v) => setField('artist', v)} />
-              <Field
-                label="Artista del álbum"
-                value={item.meta.albumArtist}
-                onChange={(v) => setField('albumArtist', v)}
-              />
-              <Field label="Álbum" value={item.meta.album} onChange={(v) => setField('album', v)} />
-              <Field label="Año" value={item.meta.year} onChange={(v) => setField('year', v)} />
-              <Field label="Género" value={item.meta.genre} onChange={(v) => setField('genre', v)} />
-              <Field
-                label="Grouping"
-                value={item.meta.grouping}
-                onChange={(v) => setField('grouping', v)}
-              />
-              <Field
-                label="Nº pista"
-                value={item.meta.trackNumber}
-                onChange={(v) => setField('trackNumber', v)}
-              />
-              <Field
-                label="Comentario"
-                value={item.meta.comment}
-                onChange={(v) => setField('comment', v)}
-                wide
-              />
+              {visibleFields.map((key) => {
+                const def = FIELD_DEFS.find((d) => d.key === key)
+                if (!def) return null
+                return (
+                  <Field
+                    key={def.key}
+                    label={def.label}
+                    value={item.meta[def.key]}
+                    onChange={(v) => setField(def.key, v)}
+                    wide={def.wide}
+                  />
+                )
+              })}
             </div>
           </div>
 

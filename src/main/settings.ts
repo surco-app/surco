@@ -10,7 +10,18 @@ const defaults: Settings = {
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
   trimWhitespace: true,
-  zeroPadTrack: true
+  zeroPadTrack: true,
+  visibleFields: [
+    'title',
+    'artist',
+    'albumArtist',
+    'album',
+    'year',
+    'genre',
+    'grouping',
+    'trackNumber',
+    'comment'
+  ]
 }
 
 function file(): string {

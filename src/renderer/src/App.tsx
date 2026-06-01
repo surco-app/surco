@@ -6,6 +6,7 @@ import type { Command } from './lib/commands'
 import { parseFileName } from './lib/filename'
 import { renderOutputName } from './lib/outputName'
 import { sanitizeMeta } from './lib/hygiene'
+import { DEFAULT_FIELDS } from './lib/fields'
 import { keyToCommandId, moveIndex } from './lib/keymap'
 import { TrackList } from './components/TrackList'
 import { Editor } from './components/Editor'
@@ -264,6 +265,7 @@ export default function App(): React.JSX.Element {
               hasToken={!!settings?.discogsToken}
               filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
+              visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={() => processOne(selected.id)}

@@ -6,6 +6,7 @@ export interface Settings {
   groupingPresets: string[]
   trimWhitespace: boolean
   zeroPadTrack: boolean
+  visibleFields: string[]
 }
 
 export interface TrackMetadata {
