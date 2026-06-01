@@ -203,9 +203,7 @@ export default function App(): React.JSX.Element {
         className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
-        <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <span className="text-[var(--color-accent)]">●</span> Rótulo
-        </div>
+        <div />
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <button
             data-testid="add-files"
