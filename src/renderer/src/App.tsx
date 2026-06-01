@@ -266,7 +266,20 @@ export default function App(): React.JSX.Element {
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
               <div>
-                <div className="mb-3 text-5xl">🎚️</div>
+                <svg
+                  viewBox="0 0 48 48"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  className="mx-auto mb-4 h-12 w-12 text-neutral-600"
+                >
+                  <rect x="4" y="19" width="4" height="10" rx="2" />
+                  <rect x="10" y="15" width="4" height="18" rx="2" />
+                  <rect x="16" y="10" width="4" height="28" rx="2" />
+                  <rect x="22" y="5" width="4" height="38" rx="2" />
+                  <rect x="28" y="10" width="4" height="28" rx="2" />
+                  <rect x="34" y="15" width="4" height="18" rx="2" />
+                  <rect x="40" y="19" width="4" height="10" rx="2" />
+                </svg>
                 <p className="text-neutral-400">Añade pistas para empezar.</p>
                 <p className="mt-1 text-sm text-neutral-600">
                   Vinilo las convierte a AIFF lossless, las etiqueta desde Discogs y las manda a Apple
