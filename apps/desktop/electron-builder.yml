@@ -44,3 +44,6 @@ publish:
   # Source stays in the private repo; binaries and the update feed go to a public
   # repo so the web button and electron-updater can reach them without a token.
   repo: surco-releases
+  # Publish live instead of as a draft: pushing a tag ships the release with no
+  # manual step on GitHub.
+  releaseType: release
