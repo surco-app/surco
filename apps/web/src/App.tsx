@@ -43,8 +43,8 @@ export default function App() {
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-3">
-          <img src="/icon.png" alt="Surco" className="h-11 w-11" />
-          <span className="text-2xl font-semibold tracking-tight">Surco</span>
+          <img src="/icon.png" alt="Surco" className="h-14 w-14" />
+          <span className="text-3xl font-semibold tracking-tight">Surco</span>
         </div>
         <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
           <a href="#velocidad" className="hover:text-fg">Velocidad</a>
@@ -213,11 +213,52 @@ export default function App() {
           </div>
         </section>
 
-        <footer className="flex flex-col items-center gap-3 border-t border-line/60 py-12 text-center text-sm text-muted">
-          <img src="/icon.png" alt="" className="h-7 w-7 opacity-80" />
-          <span className="font-mono">Surco — del crate a la cabina.</span>
-        </footer>
       </main>
+
+      <footer className="relative mt-8 border-t border-line/60">
+        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <img src="/icon.png" alt="Surco" className="h-9 w-9" />
+              <span className="text-lg font-semibold tracking-tight">Surco</span>
+            </div>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+              Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.
+            </p>
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue" style={{ animation: 'glow 2s ease-in-out infinite' }} />
+              Próximamente · macOS
+            </p>
+          </div>
+
+          <div>
+            <h3 className="font-mono text-xs tracking-wider text-muted uppercase">Producto</h3>
+            <ul className="mt-4 space-y-2.5 text-sm text-muted">
+              <li><a href="#velocidad" className="hover:text-fg">Velocidad</a></li>
+              <li><a href="#analisis" className="hover:text-fg">Análisis</a></li>
+              <li><a href="#funciones" className="hover:text-fg">Funciones</a></li>
+              <li><a href="#atajos" className="hover:text-fg">Atajos</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-mono text-xs tracking-wider text-muted uppercase">Formatos</h3>
+            <ul className="mt-4 space-y-2.5 font-mono text-sm text-muted">
+              <li>AIFF lossless</li>
+              <li>MP3 320</li>
+              <li>etiquetas Discogs</li>
+              <li>a Apple Music</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-line/60">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-muted sm:flex-row">
+            <span>© 2026 Surco · getsurco.app</span>
+            <span className="text-muted/80">del crate a la cabina</span>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
