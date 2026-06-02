@@ -446,6 +446,7 @@ export default function App(): React.JSX.Element {
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={() => processOne(selected.id)}
+              onOpenSettings={() => setShowSettings(true)}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">

@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type {
   DiscogsRelease,
   DiscogsSearchResult,
@@ -29,6 +29,7 @@ interface Props {
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: () => void
+  onOpenSettings: () => void
 }
 
 function cleanName(name: string): string {
@@ -88,6 +89,7 @@ export function Editor({
   searchInputRef,
   onChange,
   onProcess,
+  onOpenSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState(item.query)
@@ -265,7 +267,21 @@ export function Editor({
               {tr('editor.search')}
             </button>
           </div>
-          {!hasToken && <p className="mt-2 text-xs text-warn">{tr('editor.tokenWarning')}</p>}
+          {!hasToken && (
+            <p className="mt-2 text-xs text-warn">
+              <Trans
+                i18nKey="editor.tokenWarning"
+                components={[
+                  <button
+                    key="settings"
+                    type="button"
+                    onClick={onOpenSettings}
+                    className="underline underline-offset-2 hover:no-underline"
+                  />,
+                ]}
+              />
+            </p>
+          )}
           {error && <p className="mt-2 text-xs text-danger">{error}</p>}
         </div>
 

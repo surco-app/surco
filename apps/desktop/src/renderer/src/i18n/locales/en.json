@@ -55,7 +55,7 @@
   "editor": {
     "searchPlaceholder": "Search Discogs…",
     "search": "Search",
-    "tokenWarning": "Set your Discogs token in Settings to search.",
+    "tokenWarning": "Set your Discogs token in <0>Settings</0> to search.",
     "chooseTrack": "Choose the track",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "resultHint": "Click to see the tracks · double-click to apply the data",
