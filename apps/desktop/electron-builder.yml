@@ -41,4 +41,6 @@ nsis:
 publish:
   provider: github
   owner: vigosan
-  repo: surco
+  # Source stays in the private repo; binaries and the update feed go to a public
+  # repo so the web button and electron-updater can reach them without a token.
+  repo: surco-releases

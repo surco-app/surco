@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const REPO = 'vigosan/surco'
+const REPO = 'vigosan/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
 
 type OS = 'mac' | 'windows' | 'other'
