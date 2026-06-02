@@ -123,6 +123,7 @@ export function Editor({
     return () => clearTimeout(id)
   }, [hasToken, query])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once.
   useEffect(() => {
     if (item.spectrum) return
     let active = true
@@ -130,7 +131,9 @@ export function Editor({
     setAnalyzeError('')
     window.api
       .spectrogram(item.inputPath)
-      .then((res) => onChange({ spectrum: res }))
+      .then((res) => {
+        if (active) onChange({ spectrum: res })
+      })
       .catch((e) => {
         if (active) setAnalyzeError(e instanceof Error ? e.message : tr('editor.analyzeError'))
       })
@@ -140,8 +143,7 @@ export function Editor({
     return () => {
       active = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChange, tr, item.spectrum, item.inputPath])
+  }, [item.inputPath])
 
   async function loadRelease(id: number): Promise<DiscogsRelease> {
     if (releaseRef.current?.id === id) return releaseRef.current
