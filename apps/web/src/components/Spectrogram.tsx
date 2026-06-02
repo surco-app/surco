@@ -48,7 +48,16 @@ function energy(t: number, f: number, suspect: boolean): number {
 const C = 320
 const R = 110
 
-export default function Spectrogram({ suspect = false }: { suspect?: boolean }) {
+const NYQUIST = 22
+const ticks = [20, 15, 10, 5]
+
+export default function Spectrogram({
+  suspect = false,
+  axis = false
+}: {
+  suspect?: boolean
+  axis?: boolean
+}) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -80,6 +89,19 @@ export default function Spectrogram({ suspect = false }: { suspect?: boolean }) 
           boxShadow: '0 0 14px 2px rgba(125,207,255,0.6)'
         }}
       />
+      {axis && (
+        <div className="pointer-events-none absolute inset-y-0 right-0 font-mono text-[9px] text-fg/75">
+          {ticks.map((k) => (
+            <span
+              key={k}
+              className="absolute right-1 -translate-y-1/2 rounded-sm bg-bg/55 px-1 leading-none backdrop-blur-sm"
+              style={{ top: `${(1 - k / NYQUIST) * 100}%` }}
+            >
+              {k} kHz
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

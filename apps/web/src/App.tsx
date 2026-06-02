@@ -138,7 +138,7 @@ export default function App() {
                     ● buena calidad
                   </span>
                 </div>
-                <Spectrogram />
+                <Spectrogram axis />
                 <p className="mt-3 font-mono text-xs text-muted">
                   energía hasta <span className="text-fg">~22 kHz</span> (Nyquist) — banda completa.
                 </p>
@@ -154,7 +154,7 @@ export default function App() {
                   </span>
                 </div>
                 <div className="relative">
-                  <Spectrogram suspect />
+                  <Spectrogram suspect axis />
                   <div className="pointer-events-none absolute inset-x-0" style={{ top: '32%' }}>
                     <div className="border-t border-dashed border-red/80" />
                     <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">

@@ -1,3 +1,5 @@
+import Spectrogram from './Spectrogram'
+
 const tracks = [
   { n: '01', title: 'Till I Come', artist: 'ATB', state: 'done' },
   { n: '02', title: 'Café Del Mar', artist: 'Energy 52', state: 'active' },
@@ -11,22 +13,6 @@ const fields: [string, string][] = [
   ['year', '1998'],
   ['genre', 'Trance']
 ]
-
-function Bars() {
-  return (
-    <div className="flex h-8 items-end gap-[3px]">
-      {Array.from({ length: 22 }).map((_, i) => (
-        <span
-          key={i}
-          className="w-[3px] flex-1 origin-bottom rounded-sm bg-gradient-to-t from-blue/40 to-cyan"
-          style={{
-            animation: `eq ${0.7 + (i % 5) * 0.18}s ease-in-out ${(i % 7) * 0.09}s infinite`
-          }}
-        />
-      ))}
-    </div>
-  )
-}
 
 export default function AppMockup() {
   return (
@@ -98,7 +84,7 @@ export default function AppMockup() {
               <span>espectro</span>
               <span className="text-cyan">→ 21.4 kHz</span>
             </div>
-            <Bars />
+            <Spectrogram />
           </div>
         </div>
       </div>
