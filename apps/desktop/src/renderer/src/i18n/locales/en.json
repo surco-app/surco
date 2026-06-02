@@ -79,7 +79,8 @@
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
     "processError": "Processing failed",
-    "missingRequired": "Missing required fields: {{fields}}"
+    "missingRequired": "Missing required fields: {{fields}}",
+    "reportError": "Report"
   },
   "fields": {
     "title": "Title",
@@ -143,7 +144,8 @@
   },
   "errorBoundary": {
     "title": "Something failed to render",
-    "retry": "Retry"
+    "retry": "Retry",
+    "report": "Report this error"
   },
   "palette": {
     "placeholder": "Type a command…",

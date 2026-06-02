@@ -8,6 +8,7 @@ import type {
   OutputFormat,
 } from '../../../shared/types'
 import { csvHas, toggleCsv } from '../lib/csv'
+import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS } from '../lib/fields'
 import { splitPosition } from '../lib/position'
 import { genrePresets } from '../lib/genre'
@@ -512,7 +513,17 @@ export function Editor({
 
         <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
           {item.status === 'error' && (
-            <p className="mb-2 truncate text-xs text-danger">{item.error}</p>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="truncate text-xs text-danger">{item.error}</p>
+              <button
+                type="button"
+                data-testid="report-error"
+                onClick={() => openFeedback(item.error)}
+                className="shrink-0 text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline"
+              >
+                {tr('editor.reportError')}
+              </button>
+            </div>
           )}
           {done ? (
             <button

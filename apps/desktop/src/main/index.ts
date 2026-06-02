@@ -37,6 +37,10 @@ function buildAppMenu(win: BrowserWindow): void {
           accelerator: 'CmdOrCtrl+,',
           click: () => win.webContents.send('menu:settings'),
         },
+        {
+          label: 'Enviar comentarios…',
+          click: () => win.webContents.send('menu:feedback'),
+        },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -86,6 +90,11 @@ function createWindow(): BrowserWindow {
 }
 
 function registerIpc(): void {
+  // Synchronous so the preload can expose api.version as a plain value.
+  ipcMain.on('app:version', (e) => {
+    e.returnValue = app.getVersion()
+  })
+
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => saveSettings(patch))
 

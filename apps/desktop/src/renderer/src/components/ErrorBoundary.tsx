@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import i18n from '../i18n'
+import { openFeedback } from '../lib/feedback'
 
 interface Props {
   children: ReactNode
@@ -39,12 +40,21 @@ export class ErrorBoundary extends Component<Props, State> {
             {error.stack ?? info}
           </pre>
         )}
-        <button
-          onClick={() => this.setState({ error: null, info: '' })}
-          className="self-start rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
-        >
-          {i18n.t('errorBoundary.retry')}
-        </button>
+        <div className="flex gap-2 self-start">
+          <button
+            onClick={() => this.setState({ error: null, info: '' })}
+            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
+          >
+            {i18n.t('errorBoundary.retry')}
+          </button>
+          <button
+            data-testid="report-crash"
+            onClick={() => openFeedback(error.message)}
+            className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
+          >
+            {i18n.t('errorBoundary.report')}
+          </button>
+        </div>
       </div>
     )
   }

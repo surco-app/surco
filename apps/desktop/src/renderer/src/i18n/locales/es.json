@@ -79,7 +79,8 @@
     "releaseError": "No se pudo cargar el release",
     "analyzeError": "No se pudo analizar el audio",
     "processError": "Error al procesar",
-    "missingRequired": "Faltan campos obligatorios: {{fields}}"
+    "missingRequired": "Faltan campos obligatorios: {{fields}}",
+    "reportError": "Reportar"
   },
   "fields": {
     "title": "Título",
@@ -143,7 +144,8 @@
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "report": "Reportar este error"
   },
   "palette": {
     "placeholder": "Escribe una acción…",

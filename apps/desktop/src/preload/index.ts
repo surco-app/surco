@@ -3,6 +3,9 @@ import type { ProcessProgress } from '../shared/types'
 
 const api = {
   platform: process.platform,
+  // Resolved once at startup so the renderer (and the ErrorBoundary above it) can
+  // stamp feedback with the version synchronously, like platform.
+  version: ipcRenderer.sendSync('app:version') as string,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
@@ -20,6 +23,11 @@ const api = {
     const listener = (): void => cb()
     ipcRenderer.on('menu:settings', listener)
     return () => ipcRenderer.removeListener('menu:settings', listener)
+  },
+  onFeedback: (cb: () => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('menu:feedback', listener)
+    return () => ipcRenderer.removeListener('menu:feedback', listener)
   },
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => {
     const listener = (_e: unknown, progress: ProcessProgress): void => cb(progress)

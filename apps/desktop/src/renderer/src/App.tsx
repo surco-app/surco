@@ -10,6 +10,7 @@ import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { eligibleForBatch } from './lib/batch'
 import type { Command } from './lib/commands'
+import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
@@ -85,6 +86,8 @@ export default function App(): React.JSX.Element {
   }, [settings?.theme])
 
   useEffect(() => window.api.onOpenSettings(() => setShowSettings(true)), [])
+
+  useEffect(() => window.api.onFeedback(() => openFeedback()), [])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
