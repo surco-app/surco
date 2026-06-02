@@ -41,9 +41,6 @@ export default function Header() {
               {label}
             </a>
           ))}
-          <span className="cursor-not-allowed rounded-full border border-line bg-surface/50 px-4 py-1.5 font-medium text-muted">
-            Pronto
-          </span>
         </nav>
       </div>
     </header>
