@@ -1,113 +1,208 @@
+import AppMockup from './components/AppMockup'
+import Spectrogram from './components/Spectrogram'
+
 const features = [
-  {
-    title: 'Importa y arrastra',
-    body: 'Suelta tus WAV, FLAC o AIFF. Surco lee las etiquetas y la carátula embebida al instante.'
-  },
-  {
-    title: 'Metadatos desde Discogs',
-    body: 'Busca el disco y trae artista, álbum, año, género y carátula con un clic.'
-  },
-  {
-    title: 'AIFF lossless',
-    body: 'Convierte preservando la profundidad de bits exacta. Misma calidad bit a bit, cero pérdida.'
-  },
-  {
-    title: 'Carátula embebida',
-    body: 'La portada y las etiquetas viajan dentro del archivo, visibles en Apple Music y rekordbox.'
-  },
-  {
-    title: 'Directo a Apple Music',
-    body: 'Añade la pista ya etiquetada a tu biblioteca automáticamente al terminar.'
-  },
-  {
-    title: 'Espectrograma anti-fake',
-    body: 'Visualiza el espectro y detecta transcodificaciones y MP3 disfrazados de lossless.'
-  }
+  { kick: 'import', title: 'Importa y arrastra', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee las etiquetas y la carátula embebida al instante.' },
+  { kick: 'discogs', title: 'Metadatos de Discogs', body: 'Busca el disco y trae artista, álbum, año, género y carátula con un clic.' },
+  { kick: 'convert', title: 'AIFF lossless', body: 'PCM big-endian que preserva la profundidad de bits exacta. Cero pérdida, bit a bit.' },
+  { kick: 'artwork', title: 'Carátula embebida', body: 'Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox.' },
+  { kick: 'library', title: 'Directo a Apple Music', body: 'Añade la pista ya etiquetada a tu biblioteca automáticamente al terminar.' },
+  { kick: 'spek', title: 'Análisis tipo Spek', body: 'Detecta el muro de frecuencias de un MP3 recomprimido y disfrazado de lossless.' }
 ]
 
-function Feature({ title, body }: { title: string; body: string }) {
+const shortcuts: [string[], string][] = [
+  [['⌘', 'O'], 'Añadir archivos'],
+  [['⌘', '↵'], 'Procesar pista'],
+  [['⌘', '⇧', '↵'], 'Procesar todas'],
+  [['Espacio'], 'Reproducir / pausa'],
+  [['J', 'K'], 'Navegar pistas'],
+  [['/'], 'Buscar en Discogs']
+]
+
+const stack = ['AIFF · PCM', 'ffmpeg incluido', 'ID3v2.3', 'Discogs API', 'Apple Silicon', 'lossless bit-a-bit']
+
+function Kbd({ k }: { k: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-brand/40">
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-white/60">{body}</p>
-    </div>
+    <kbd className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-fg shadow-sm">
+      {k}
+    </kbd>
   )
 }
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-ink text-white antialiased">
+    <div className="min-h-screen bg-bg text-fg antialiased">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[640px] opacity-60"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[720px]"
         style={{
           background:
-            'radial-gradient(60% 60% at 50% 0%, rgba(248,111,44,0.28) 0%, rgba(11,12,15,0) 70%)'
+            'radial-gradient(55% 50% at 70% 0%, rgba(122,162,247,0.18) 0%, rgba(26,27,38,0) 70%)'
         }}
       />
 
-      <header className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-3">
-          <img src="/icon.png" alt="Surco" className="h-9 w-9" />
-          <span className="text-lg font-semibold tracking-tight">Surco</span>
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-2.5">
+          <img src="/icon.png" alt="Surco" className="h-8 w-8" />
+          <span className="font-semibold tracking-tight">Surco</span>
+          <span className="ml-1 hidden font-mono text-xs text-muted sm:inline">groove tool</span>
         </div>
-        <nav className="hidden gap-8 text-sm text-white/60 sm:flex">
-          <a href="#features" className="hover:text-white">Funciones</a>
-          <a href="#why" className="hover:text-white">Por qué AIFF</a>
+        <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
+          <a href="#analisis" className="hover:text-fg">Análisis</a>
+          <a href="#funciones" className="hover:text-fg">Funciones</a>
+          <a href="#atajos" className="hover:text-fg">Atajos</a>
+          <a href="#" className="rounded-full bg-blue px-4 py-1.5 font-medium text-bg hover:opacity-90">
+            Descargar
+          </a>
         </nav>
       </header>
 
-      <main className="relative mx-auto max-w-5xl px-6">
-        <section className="flex flex-col items-center pt-16 pb-24 text-center sm:pt-24">
-          <img
-            src="/icon.png"
-            alt="Surco"
-            className="h-32 w-32 drop-shadow-[0_20px_60px_rgba(248,111,44,0.35)] sm:h-40 sm:w-40"
-          />
-          <h1 className="mt-10 max-w-2xl text-4xl font-bold tracking-tight sm:text-6xl">
-            Cuida tus pistas de DJ
-          </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/60">
-            Surco convierte a AIFF lossless, etiqueta desde Discogs y manda tu música a Apple Music
-            — con la carátula y la info siempre en su sitio.
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-            <a
-              href="#"
-              className="rounded-full bg-brand px-7 py-3 text-sm font-semibold text-ink transition-transform hover:scale-[1.03]"
-            >
-              Descargar para macOS
-            </a>
-            <span className="text-xs text-white/40">Apple Silicon · macOS</span>
+      <main className="relative mx-auto max-w-6xl px-6">
+        <section className="grid items-center gap-12 pt-12 pb-24 lg:grid-cols-2 lg:pt-20">
+          <div className="reveal">
+            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/50 px-3 py-1 font-mono text-xs text-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-green" /> macOS · Apple Silicon
+            </div>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
+              Cuida tus pistas.
+              <br />
+              <span className="text-blue">Caza los fakes.</span>
+            </h1>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
+              Surco convierte a AIFF lossless, etiqueta desde Discogs y manda tu música a Apple Music
+              — y te enseña el espectro para que ningún MP3 recomprimido se cuele.
+            </p>
+            <div className="mt-5 font-mono text-sm text-muted">
+              <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
+              <span className="text-fg">AIFF</span> <span className="text-blue">→</span>{' '}
+              <span className="text-cyan">AIFF lossless</span>
+            </div>
+            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <a
+                href="#"
+                className="rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg transition-transform hover:scale-[1.03]"
+              >
+                Descargar para macOS
+              </a>
+              <a href="#analisis" className="text-sm font-medium text-fg hover:text-blue">
+                Ver el análisis →
+              </a>
+            </div>
+          </div>
+
+          <div className="reveal" style={{ animationDelay: '0.12s' }}>
+            <AppMockup />
           </div>
         </section>
 
-        <section id="features" className="scroll-mt-20 pb-24">
-          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+        <section id="analisis" className="scroll-mt-20 pb-24">
+          <p className="font-mono text-xs tracking-wider text-blue uppercase">Análisis anti-fake</p>
+          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">
+            El espectro no miente
+          </h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-muted">
+            Un MP3 recomprimido a WAV/AIFF arrastra un corte brusco en altas frecuencias. Surco lo
+            mide y marca la pista como sospechosa antes de que ensucie tu biblioteca.
+          </p>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-line bg-surface2/50 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-mono text-xs text-muted">original.flac</span>
+                <span className="rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
+                  ● buena calidad
+                </span>
+              </div>
+              <Spectrogram />
+              <p className="mt-3 font-mono text-xs text-muted">
+                energía hasta <span className="text-fg">~22 kHz</span> (Nyquist) — banda completa.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-line bg-surface2/50 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-mono text-xs text-muted">descarga_320.aiff</span>
+                <span className="rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
+                  ● sospechoso
+                </span>
+              </div>
+              <div className="relative">
+                <Spectrogram suspect />
+                <div className="pointer-events-none absolute inset-x-0" style={{ top: '32%' }}>
+                  <div className="border-t border-dashed border-red/80" />
+                  <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
+                    muro ~16 kHz
+                  </span>
+                </div>
+              </div>
+              <p className="mt-3 font-mono text-xs text-muted">
+                corte brusco en <span className="text-red">~16 kHz</span> — delata un MP3 recomprimido.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="funciones" className="scroll-mt-20 pb-24">
+          <p className="font-mono text-xs tracking-wider text-blue uppercase">Funciones</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
             Todo el flujo, en una app
           </h2>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
-              <Feature key={f.title} title={f.title} body={f.body} />
+              <div
+                key={f.kick}
+                className="rounded-2xl border border-line bg-surface2/40 p-6 transition-colors hover:border-blue/50"
+              >
+                <div className="font-mono text-xs text-blue">{f.kick}</div>
+                <h3 className="mt-2 text-lg font-semibold text-fg">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{f.body}</p>
+              </div>
             ))}
           </div>
         </section>
 
-        <section
-          id="why"
-          className="scroll-mt-20 rounded-3xl border border-white/10 bg-white/[0.03] p-10 sm:p-14"
-        >
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Por qué AIFF y no WAV</h2>
-          <p className="mt-4 max-w-3xl leading-relaxed text-white/60">
-            WAV no tiene un estándar fiable de metadatos: Apple Music suele ignorar las etiquetas y la
-            carátula. AIFF es <span className="text-white">el mismo audio PCM sin comprimir</span> —
-            idéntico bit a bit, misma calidad — pero con soporte sólido de ID3 que tanto Apple Music
-            como rekordbox leen perfectamente.
-          </p>
+        <section id="atajos" className="scroll-mt-20 pb-24">
+          <div className="grid gap-10 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+            <div>
+              <p className="font-mono text-xs tracking-wider text-blue uppercase">Teclado primero</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Vuela sin tocar el ratón
+              </h2>
+              <p className="mt-3 leading-relaxed text-muted">
+                Una paleta de comandos y atajos para todo el flujo. Añade, etiqueta, analiza y procesa
+                pista tras pista sin soltar las manos del teclado.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              {shortcuts.map(([keys, label]) => (
+                <div key={label} className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5">
+                  <span className="text-sm text-fg">{label}</span>
+                  <span className="flex items-center gap-1">
+                    {keys.map((k) => (
+                      <Kbd key={k} k={k} />
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
-        <footer className="flex flex-col items-center gap-2 py-16 text-center text-sm text-white/40">
-          <img src="/icon.png" alt="" className="h-6 w-6 opacity-70" />
-          <span>Surco — hecho para DJs cuidadosos.</span>
+        <section className="pb-24">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {stack.map((s) => (
+              <span
+                key={s}
+                className="rounded-full border border-line bg-surface/40 px-4 py-1.5 font-mono text-xs text-muted"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <footer className="flex flex-col items-center gap-3 border-t border-line/60 py-12 text-center text-sm text-muted">
+          <img src="/icon.png" alt="" className="h-7 w-7 opacity-80" />
+          <span className="font-mono">Surco — hecho para DJs cuidadosos.</span>
         </footer>
       </main>
     </div>

@@ -1,0 +1,85 @@
+import { useEffect, useRef } from 'react'
+
+const stops: [number, [number, number, number]][] = [
+  [0.0, [21, 22, 30]], [0.16, [31, 35, 53]], [0.32, [36, 54, 110]],
+  [0.48, [52, 84, 138]], [0.62, [90, 127, 214]], [0.74, [122, 162, 247]],
+  [0.86, [125, 207, 255]], [0.94, [187, 154, 247]], [1.0, [214, 240, 255]]
+]
+
+function colormap(t: number): [number, number, number] {
+  const v = Math.max(0, Math.min(1, t))
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [a, ca] = stops[i]
+    const [b, cb] = stops[i + 1]
+    if (v <= b) {
+      const u = (v - a) / (b - a)
+      return [
+        Math.round(ca[0] + (cb[0] - ca[0]) * u),
+        Math.round(ca[1] + (cb[1] - ca[1]) * u),
+        Math.round(ca[2] + (cb[2] - ca[2]) * u)
+      ]
+    }
+  }
+  return stops[stops.length - 1][1]
+}
+
+const fract = (v: number) => v - Math.floor(v)
+const noise = (x: number, y: number) => fract(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453)
+
+function energy(t: number, f: number, suspect: boolean): number {
+  const floor = 0.05
+  const body = Math.exp(-f * 2.4) * 0.66
+  let harm = 0
+  for (let k = 1; k <= 9; k++) {
+    const c = 0.04 + 0.085 * k
+    harm += 0.32 * Math.exp(-(((f - c) / 0.013) ** 2)) * (0.55 + 0.45 * Math.sin(t * 30 + k * 1.7))
+  }
+  const beat = 0.5 * Math.exp(-(((fract(t * 16) - 0.04) / 0.035) ** 2)) * Math.exp(-f * 1.7)
+  let e = floor + body + harm + beat
+  e *= 0.78 + 0.34 * noise(t * 600, f * 240)
+  if (suspect) {
+    const cut = 0.68
+    if (f > cut) e *= Math.exp(-(f - cut) * 55)
+    if (Math.abs(f - cut) < 0.007) e = Math.max(e, 0.34)
+  }
+  return Math.max(0, Math.min(1, e))
+}
+
+const C = 320
+const R = 110
+
+export default function Spectrogram({ suspect = false }: { suspect?: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const cw = canvas.width / C
+    const ch = canvas.height / R
+    for (let cx = 0; cx < C; cx++) {
+      for (let cy = 0; cy < R; cy++) {
+        const t = cx / (C - 1)
+        const f = (R - 1 - cy) / (R - 1)
+        const [r, g, b] = colormap(energy(t, f, suspect))
+        ctx.fillStyle = `rgb(${r},${g},${b})`
+        ctx.fillRect(cx * cw, cy * ch, cw + 0.6, ch + 0.6)
+      }
+    }
+  }, [suspect])
+
+  return (
+    <div className="relative overflow-hidden rounded-xl ring-1 ring-line/70">
+      <canvas ref={ref} width={C * 2} height={R * 2} className="block h-full w-full" />
+      <div
+        className="pointer-events-none absolute top-0 bottom-0 w-px"
+        style={{
+          animation: 'scan 4.5s linear infinite',
+          background: '#7dcfff',
+          boxShadow: '0 0 14px 2px rgba(125,207,255,0.6)'
+        }}
+      />
+    </div>
+  )
+}
