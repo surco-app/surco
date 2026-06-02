@@ -11,7 +11,9 @@ version=$(node -p "require('./apps/desktop/package.json').version")
 
 git add apps/desktop/package.json package-lock.json
 git commit -m "Release v$version"
-git tag "v$version"
+# Annotated (-a) so `git push --follow-tags` actually pushes it; a lightweight
+# tag would be left behind and CI would never trigger.
+git tag -a "v$version" -m "Release v$version"
 git push --follow-tags origin main
 
 echo "Pushed v$version — build: https://github.com/vigosan/surco/actions"
