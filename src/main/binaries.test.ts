@@ -1,4 +1,4 @@
-import { vi, describe, it, expect } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
@@ -6,9 +6,10 @@ import { unpacked } from './binaries'
 
 describe('unpacked', () => {
   it('remaps the binary into app.asar.unpacked when packaged, because native binaries cannot be spawned from inside the asar archive', () => {
-    const inside = '/Applications/Surco.app/Contents/Resources/app.asar/node_modules/ffmpeg-static/ffmpeg'
+    const inside =
+      '/Applications/Surco.app/Contents/Resources/app.asar/node_modules/ffmpeg-static/ffmpeg'
     expect(unpacked(inside, true)).toBe(
-      '/Applications/Surco.app/Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg'
+      '/Applications/Surco.app/Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg',
     )
   })
 

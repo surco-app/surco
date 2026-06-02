@@ -24,7 +24,7 @@ const api = {
     const listener = (_e: unknown, progress: ProcessProgress): void => cb(progress)
     ipcRenderer.on('process:progress', listener)
     return () => ipcRenderer.removeListener('process:progress', listener)
-  }
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

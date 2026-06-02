@@ -1,5 +1,5 @@
-import type { TrackItem } from '../types'
 import type { ProcessProgress, ProcessStage } from '../../../shared/types'
+import type { TrackItem } from '../types'
 
 // How far the per-item bar has advanced when each export phase begins. Honest
 // *phase* progress, not byte progress — the AIFF encode and the Apple Music
@@ -7,7 +7,7 @@ import type { ProcessProgress, ProcessStage } from '../../../shared/types'
 export const STAGE_PROGRESS: Record<ProcessStage, number> = {
   cover: 0.2,
   converting: 0.55,
-  appleMusic: 0.85
+  appleMusic: 0.85,
 }
 
 export function applyProgress(tracks: TrackItem[], progress: ProcessProgress): TrackItem[] {

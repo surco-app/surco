@@ -14,7 +14,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'genre' },
   { key: 'grouping' },
   { key: 'trackNumber' },
-  { key: 'comment', wide: true }
+  { key: 'comment', wide: true },
 ]
 
 export const DEFAULT_FIELDS: string[] = FIELD_DEFS.map((d) => d.key)
@@ -26,7 +26,7 @@ export const DEFAULT_REQUIRED_FIELDS: string[] = [
   'album',
   'year',
   'genre',
-  'grouping'
+  'grouping',
 ]
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {

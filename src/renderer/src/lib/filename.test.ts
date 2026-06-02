@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { parseFileName } from './filename'
 
 describe('parseFileName', () => {
@@ -12,7 +12,7 @@ describe('parseFileName', () => {
   })
 
   it('keeps a hyphenated title whole when it contains a later " - "', () => {
-    const r = parseFileName('/m/Artist - The Beat - Won\'t Stop.flac')
+    const r = parseFileName("/m/Artist - The Beat - Won't Stop.flac")
     expect(r.artist).toBe('Artist')
     expect(r.title).toBe("The Beat - Won't Stop")
   })

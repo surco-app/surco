@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { filterCommands, type Command } from '../lib/commands'
+import { type Command, filterCommands } from '../lib/commands'
 
 interface Props {
   commands: Command[]
@@ -20,11 +20,11 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
   }, [])
   useEffect(() => {
     setActive(0)
-  }, [query])
+  }, [])
 
   function runAt(i: number): void {
     const c = results[i]
-    if (c && c.enabled) {
+    if (c?.enabled) {
       c.run()
       onClose()
     }
@@ -45,11 +45,11 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[12vh] backdrop-blur-sm"
+      className="animate-overlay fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[12vh] backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-panel)] shadow-2xl"
+        className="animate-pop w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -63,7 +63,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
         />
         <ul className="max-h-[50vh] overflow-y-auto p-2">
           {results.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-neutral-500">{t('palette.empty')}</li>
+            <li className="px-3 py-6 text-center text-xs text-fg-dim">{t('palette.empty')}</li>
           )}
           {results.map((c, i) => (
             <li key={c.id}>
@@ -77,7 +77,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
                 }`}
               >
                 <span>{c.title}</span>
-                {c.hint && <span className="ml-4 shrink-0 text-xs text-neutral-500">{c.hint}</span>}
+                {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
               </button>
             </li>
           ))}

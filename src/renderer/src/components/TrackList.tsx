@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TrackItem, TrackStatus } from '../types'
 import { STAGE_PROGRESS } from '../lib/progress'
+import type { TrackItem, TrackStatus } from '../types'
 
 interface Props {
   tracks: TrackItem[]
@@ -11,10 +11,10 @@ interface Props {
 }
 
 const statusColor: Record<TrackStatus, string> = {
-  idle: 'bg-neutral-600',
-  processing: 'bg-amber-400 animate-pulse',
-  done: 'bg-emerald-400',
-  error: 'bg-red-500'
+  idle: 'bg-fg-faint',
+  processing: 'bg-warn animate-pulse',
+  done: 'bg-good',
+  error: 'bg-danger',
 }
 
 export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): React.JSX.Element {
@@ -28,8 +28,10 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
             <button
               data-testid="track-row"
               onClick={() => onSelect(t.id)}
-              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                active ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-panel-2)]'
+              className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                active
+                  ? 'bg-[var(--color-accent-soft)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
+                  : 'hover:bg-[var(--color-panel-2)]'
               }`}
             >
               <span
@@ -37,7 +39,7 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-neutral-100">
+                <span className="block truncate text-sm font-medium text-fg">
                   {t.meta.title || t.fileName}
                 </span>
                 {t.status === 'processing' && t.stage ? (
@@ -53,7 +55,7 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
                     </span>
                   </span>
                 ) : (
-                  <span className="block truncate text-xs text-neutral-500">
+                  <span className="block truncate text-xs text-fg-dim">
                     {t.meta.artist || tr('trackList.noArtist')}
                   </span>
                 )}
@@ -65,7 +67,7 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
                   e.stopPropagation()
                   onRemove(t.id)
                 }}
-                className="hidden shrink-0 rounded px-1.5 text-neutral-500 hover:text-neutral-200 group-hover:block"
+                className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:flex"
               >
                 ✕
               </span>

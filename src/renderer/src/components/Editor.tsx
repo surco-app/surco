@@ -1,14 +1,16 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DiscogsSearchResult, DiscogsRelease, DiscogsTrack } from '../../../shared/types'
-import type { TrackItem } from '../types'
+import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
+import { csvHas, toggleCsv } from '../lib/csv'
+import { FIELD_DEFS } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
-import { qualityVerdict, formatKHz } from '../lib/quality'
-import { FIELD_DEFS } from '../lib/fields'
-import { WaveSpinner } from './WaveSpinner'
+import { formatKHz, qualityVerdict } from '../lib/quality'
+import type { TrackItem } from '../types'
+import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
+import { WaveSpinner } from './WaveSpinner'
 
 interface Props {
   item: TrackItem
@@ -31,11 +33,16 @@ function joinArtists(artists?: { name: string }[]): string {
 }
 
 function coverOf(release: DiscogsRelease, fallback?: string): string | undefined {
-  return release.images?.find((i) => i.type === 'primary')?.uri ?? release.images?.[0]?.uri ?? fallback
+  return (
+    release.images?.find((i) => i.type === 'primary')?.uri ?? release.images?.[0]?.uri ?? fallback
+  )
 }
 
 function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 }
 
 // Mirrors Meta's "Match Tracks: Automatically": picks the tracklist entry whose
@@ -52,7 +59,8 @@ function bestTrack(tracks: DiscogsTrack[], title: string): DiscogsTrack | undefi
     if (!nt) continue
     let score: number
     if (nt === target) score = 1000
-    else if (target.includes(nt) || nt.includes(target)) score = 500 + Math.min(nt.length, target.length)
+    else if (target.includes(nt) || nt.includes(target))
+      score = 500 + Math.min(nt.length, target.length)
     else score = nt.split(' ').filter((w) => targetWords.has(w)).length
     if (score > bestScore) {
       bestScore = score
@@ -71,7 +79,7 @@ export function Editor({
   requiredFields,
   searchInputRef,
   onChange,
-  onProcess
+  onProcess,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState(item.query)
@@ -82,7 +90,10 @@ export function Editor({
   const [coverDragging, setCoverDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
+  const [formOpen, setFormOpen] = useState(true)
+  const [spectrumOpen, setSpectrumOpen] = useState(true)
   const releaseRef = useRef<DiscogsRelease | null>(null)
+  const discogs = useResizableWidth(400, 320, 720)
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -101,7 +112,7 @@ export function Editor({
   useEffect(() => {
     if (hasToken && query.trim()) void doSearch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [hasToken, doSearch, query.trim])
 
   useEffect(() => {
     if (item.spectrum) return
@@ -121,7 +132,7 @@ export function Editor({
       active = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [onChange, tr, item.spectrum, item.inputPath])
 
   async function loadRelease(id: number): Promise<DiscogsRelease> {
     if (releaseRef.current?.id === id) return releaseRef.current
@@ -148,9 +159,13 @@ export function Editor({
   // Applying a release overwrites the whole right-hand panel — album-level data
   // and cover from the release, plus the chosen track's title/number/artist — so
   // the song ends up fully tagged from Discogs in one action.
-  function commitMeta(rel: DiscogsRelease, track: DiscogsTrack | undefined, coverFallback?: string): void {
+  function commitMeta(
+    rel: DiscogsRelease,
+    track: DiscogsTrack | undefined,
+    coverFallback?: string,
+  ): void {
     const albumArtist = joinArtists(rel.artists)
-    const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? [])).join(', ')
+    const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
     const trackArtist = joinArtists(track?.artists)
     onChange({
       coverUrl: coverOf(rel, coverFallback),
@@ -163,8 +178,8 @@ export function Editor({
         albumArtist,
         artist: trackArtist || item.meta.artist || albumArtist,
         year: rel.year ? String(rel.year) : item.meta.year,
-        genre
-      }
+        genre,
+      },
     })
   }
 
@@ -202,10 +217,14 @@ export function Editor({
   const done = item.status === 'done'
   const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
+  const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="flex w-[500px] shrink-0 flex-col border-r border-[var(--color-line)]">
+      <div
+        style={{ width: discogs.width }}
+        className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
+      >
         <div className="border-b border-[var(--color-line)] p-3">
           <div className="flex gap-2">
             <input
@@ -215,213 +234,254 @@ export function Editor({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
               placeholder={tr('editor.searchPlaceholder')}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy || !hasToken}
-              className="rounded-lg bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40"
+              className="press rounded-lg bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
           </div>
-          {!hasToken && (
-            <p className="mt-2 text-xs text-amber-400">{tr('editor.tokenWarning')}</p>
-          )}
-          {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+          {!hasToken && <p className="mt-2 text-xs text-warn">{tr('editor.tokenWarning')}</p>}
+          {error && <p className="mt-2 text-xs text-danger">{error}</p>}
         </div>
 
-        <div className="flex min-h-0 flex-1">
-          <div className="min-h-0 w-[240px] shrink-0 overflow-y-auto border-r border-[var(--color-line)]">
-            {results.map((r) => (
-              <button
-                key={r.id}
-                data-testid="discogs-result"
-                title={tr('editor.resultHint')}
-                onClick={() => previewRelease(r)}
-                onDoubleClick={() => applyRelease(r)}
-                className={`flex w-full items-center gap-3 border-b border-[var(--color-line)]/50 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
-                  release?.id === r.id ? 'bg-[var(--color-accent-soft)]' : ''
-                }`}
-              >
-                {r.thumb ? (
-                  <img src={r.thumb} alt="" className="h-11 w-11 shrink-0 rounded object-cover" />
-                ) : (
-                  <div className="h-11 w-11 shrink-0 rounded bg-[var(--color-panel-2)]" />
-                )}
-                <span className="min-w-0">
-                  <span className="block truncate text-sm">{r.title}</span>
-                  <span className="block truncate text-xs text-neutral-500">
-                    {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <p className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-neutral-500">
-              {tr('editor.chooseTrack')}
-            </p>
-            {release ? (
-              release.tracklist.map((t, i) => (
-                <button
-                  key={`${t.position}-${i}`}
-                  data-testid="discogs-track"
-                  onClick={() => selectTrack(t)}
-                  className={`flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-[var(--color-panel-2)] ${
-                    t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
-                  }`}
-                >
-                  <span className="w-8 shrink-0 text-xs text-neutral-500">{t.position}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
-                </button>
-              ))
-            ) : (
-              <p className="px-3 pt-2 text-xs text-neutral-600">{tr('editor.chooseAlbumHint')}</p>
-            )}
-          </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {results.length === 0 ? (
+            <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
+          ) : (
+            results.map((r) => {
+              const expanded = release?.id === r.id
+              return (
+                <div key={r.id} className="border-b border-[var(--color-line)]/60">
+                  <button
+                    data-testid="discogs-result"
+                    title={tr('editor.resultHint')}
+                    aria-expanded={expanded}
+                    onClick={() => previewRelease(r)}
+                    onDoubleClick={() => applyRelease(r)}
+                    className={`flex w-full items-center gap-3 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
+                      expanded ? 'bg-[var(--color-accent-soft)]' : ''
+                    }`}
+                  >
+                    {r.thumb ? (
+                      <img
+                        src={r.thumb}
+                        alt=""
+                        className="h-11 w-11 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+                      />
+                    ) : (
+                      <div className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm">{r.title}</span>
+                      <span className="block truncate text-xs text-fg-dim">
+                        {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                    <svg
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      aria-hidden="true"
+                      className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
+                    >
+                      <path
+                        d="m4.5 2.5 3.5 3.5-3.5 3.5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  {expanded && release && (
+                    <div className="pb-1">
+                      <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
+                        {tr('editor.chooseTrack')}
+                      </p>
+                      {release.tracklist.map((t, i) => (
+                        <button
+                          key={`${t.position}-${i}`}
+                          data-testid="discogs-track"
+                          onClick={() => selectTrack(t)}
+                          className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
+                            t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
+                          }`}
+                        >
+                          <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                            {t.position}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
 
+      <ResizeHandle onPointerDown={discogs.onPointerDown} />
+
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
-          <div className="flex gap-6">
-            <div
-              data-testid="cover-dropzone"
-              onDragOver={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setCoverDragging(true)
-              }}
-              onDragLeave={(e) => {
-                e.stopPropagation()
-                setCoverDragging(false)
-              }}
-              onDrop={onCoverDrop}
-              className="shrink-0"
-              title={tr('editor.coverTitle')}
-            >
-              {item.coverUrl ? (
-                <img
-                  data-testid="cover-preview"
-                  src={item.coverUrl}
-                  alt={tr('editor.coverAlt')}
-                  className={`h-44 w-44 rounded-xl object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.08)] ${
-                    coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
-                  }`}
-                />
-              ) : (
+          <SectionHeader
+            title={tr('editor.sectionForm')}
+            open={formOpen}
+            onToggle={() => setFormOpen((v) => !v)}
+          />
+          {formOpen && (
+            <div className="mt-4">
+              <div className="flex gap-6">
                 <div
-                  className={`flex h-44 w-44 items-center justify-center rounded-xl border border-dashed text-xs ${
-                    coverDragging
-                      ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                      : 'border-[var(--color-line)] text-neutral-600'
-                  }`}
+                  data-testid="cover-dropzone"
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setCoverDragging(true)
+                  }}
+                  onDragLeave={(e) => {
+                    e.stopPropagation()
+                    setCoverDragging(false)
+                  }}
+                  onDrop={onCoverDrop}
+                  className="shrink-0"
+                  title={tr('editor.coverTitle')}
                 >
-                  {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+                  {item.coverUrl ? (
+                    <img
+                      data-testid="cover-preview"
+                      src={item.coverUrl}
+                      alt={tr('editor.coverAlt')}
+                      className={`h-44 w-44 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
+                        coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
+                      }`}
+                    />
+                  ) : (
+                    <div
+                      className={`flex h-44 w-44 items-center justify-center rounded-xl border border-dashed text-xs ${
+                        coverDragging
+                          ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                          : 'border-[var(--color-line)] text-fg-faint'
+                      }`}
+                    >
+                      {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3">
-              {visibleFields.map((key) => {
-                const def = FIELD_DEFS.find((d) => d.key === key)
-                if (!def) return null
-                return (
-                  <Field
-                    key={def.key}
-                    name={def.key}
-                    label={tr(`fields.${def.key}`)}
-                    value={item.meta[def.key]}
-                    onChange={(v) => setField(def.key, v)}
-                    wide={def.wide}
-                    invalid={
-                      showRequiredErrors &&
-                      requiredFields.includes(def.key) &&
-                      !item.meta[def.key].trim()
-                    }
-                  />
-                )
-              })}
+                <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3">
+                  {visibleFields.map((key) => {
+                    const def = FIELD_DEFS.find((d) => d.key === key)
+                    if (!def) return null
+                    return (
+                      <Field
+                        key={def.key}
+                        name={def.key}
+                        label={tr(`fields.${def.key}`)}
+                        value={item.meta[def.key]}
+                        onChange={(v) => setField(def.key, v)}
+                        wide={def.wide}
+                        invalid={
+                          showRequiredErrors &&
+                          requiredFields.includes(def.key) &&
+                          !item.meta[def.key].trim()
+                        }
+                        suggestions={
+                          def.key === 'genre'
+                            ? genreChips
+                            : def.key === 'grouping'
+                              ? groupingPresets
+                              : undefined
+                        }
+                        multiSuggestions={def.key === 'grouping'}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-
-          <div className="mt-6 space-y-2.5 border-t border-[var(--color-line)] pt-5">
-            {genreChips.length > 0 && (
-              <ChipRow
-                label={tr('fields.genre')}
-                presets={genreChips}
-                active={item.meta.genre}
-                onPick={(v) => setField('genre', v)}
-              />
-            )}
-            {groupingPresets.length > 0 && (
-              <ChipRow
-                label={tr('fields.grouping')}
-                presets={groupingPresets}
-                active={item.meta.grouping}
-                onPick={(v) => setField('grouping', v)}
-              />
-            )}
-          </div>
+          )}
 
           <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                {tr('editor.qualityTitle')}
-              </span>
-              {item.spectrum &&
+            <SectionHeader
+              title={tr('editor.qualityTitle')}
+              open={spectrumOpen}
+              onToggle={() => setSpectrumOpen((v) => !v)}
+              right={
+                item.spectrum &&
                 (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
                   <span
                     data-testid="quality-badge"
-                    className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300"
+                    className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
                   >
                     {tr('editor.qualityGood')}
                   </span>
                 ) : (
                   <span
                     data-testid="quality-badge"
-                    className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300"
+                    className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
                   >
                     {tr('editor.qualitySuspect')}
                   </span>
-                ))}
-            </div>
-            {analyzing ? (
-              <div className="flex h-28 items-center justify-center gap-3 text-xs text-neutral-500">
-                <WaveSpinner />
-                {tr('editor.analyzing')}
+                ))
+              }
+            />
+            {spectrumOpen && (
+              <div className="mt-3">
+                {analyzing ? (
+                  <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
+                    <WaveSpinner />
+                    {tr('editor.analyzing')}
+                  </div>
+                ) : analyzeError ? (
+                  <p className="text-xs text-danger">{analyzeError}</p>
+                ) : item.spectrum ? (
+                  <>
+                    <Spectrogram spectrum={item.spectrum} />
+                    <p className="mt-2 text-xs text-fg-dim">
+                      {tr('editor.qualityCaption', {
+                        cutoff: formatKHz(item.spectrum.cutoffHz),
+                        nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
+                      })}
+                    </p>
+                  </>
+                ) : null}
               </div>
-            ) : analyzeError ? (
-              <p className="text-xs text-red-400">{analyzeError}</p>
-            ) : item.spectrum ? (
-              <>
-                <Spectrogram spectrum={item.spectrum} />
-                <p className="mt-2 text-xs text-neutral-500">
-                  {tr('editor.qualityCaption', {
-                    cutoff: formatKHz(item.spectrum.cutoffHz),
-                    nyquist: formatKHz(item.spectrum.sampleRateHz / 2)
-                  })}
-                </p>
-              </>
-            ) : null}
+            )}
           </div>
+
+          <label className="mt-6 block border-t border-[var(--color-line)] pt-5">
+            <span className="mb-1 block text-xs font-medium text-fg-dim">
+              {tr('editor.outputName')}
+            </span>
+            <div className="relative">
+              <input
+                data-testid="output-name"
+                value={item.outputName ?? defaultOutputName}
+                onChange={(e) => onChange({ outputName: e.target.value })}
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
+                .aiff
+              </span>
+            </div>
+          </label>
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-[var(--color-line)] p-4">
-          <div className="min-w-0 text-xs text-neutral-500">
-            <span className="text-neutral-400">{tr('editor.output')}</span>{' '}
-            <span className="truncate">
-              {(renderOutputName(filenameFormat, item.meta) || item.fileName) + '.aiff'}
-            </span>
-            {item.status === 'error' && <p className="mt-1 text-red-400">{item.error}</p>}
-          </div>
+        <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
+          {item.status === 'error' && (
+            <p className="mb-2 truncate text-xs text-danger">{item.error}</p>
+          )}
           {done ? (
             <button
               onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
-              className="shrink-0 rounded-lg border border-emerald-500/40 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-500/10"
+              className="press w-full rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
             >
               {tr('editor.doneReveal')}
             </button>
@@ -430,7 +490,7 @@ export function Editor({
               data-testid="process-btn"
               onClick={onProcess}
               disabled={item.status === 'processing'}
-              className="shrink-0 rounded-lg bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+              className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
             >
               {item.status === 'processing' ? tr('editor.processing') : tr('editor.convert')}
             </button>
@@ -441,36 +501,38 @@ export function Editor({
   )
 }
 
-interface ChipRowProps {
-  label: string
-  presets: string[]
-  active: string
-  onPick: (value: string) => void
+interface SectionHeaderProps {
+  title: string
+  open: boolean
+  onToggle: () => void
+  right?: React.ReactNode
 }
 
-function ChipRow({ label, presets, active, onPick }: ChipRowProps): React.JSX.Element {
+function SectionHeader({ title, open, onToggle, right }: SectionHeaderProps): React.JSX.Element {
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-20 shrink-0 text-xs font-medium text-neutral-500">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {presets.map((p) => {
-          const on = active === p
-          return (
-            <button
-              key={p}
-              data-testid={`chip-${p}`}
-              onClick={() => onPick(on ? '' : p)}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                on
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
-                  : 'border-[var(--color-line)] text-neutral-300 hover:bg-[var(--color-panel-2)]'
-              }`}
-            >
-              {p}
-            </button>
-          )
-        })}
-      </div>
+    <div className="flex items-center justify-between">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
+        >
+          <path
+            d="m4.5 2.5 3.5 3.5-3.5 3.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {title}
+      </button>
+      {right}
     </div>
   )
 }
@@ -482,23 +544,57 @@ interface FieldProps {
   onChange: (v: string) => void
   wide?: boolean
   invalid?: boolean
+  suggestions?: string[]
+  multiSuggestions?: boolean
 }
 
-function Field({ name, label, value, onChange, wide, invalid }: FieldProps): React.JSX.Element {
+function Field({
+  name,
+  label,
+  value,
+  onChange,
+  wide,
+  invalid,
+  suggestions,
+  multiSuggestions,
+}: FieldProps): React.JSX.Element {
   return (
     <label className={`block ${wide ? 'col-span-2' : ''}`}>
-      <span className="mb-1 block text-xs font-medium text-neutral-500">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-fg-dim">{label}</span>
       <input
         data-testid={`field-${name}`}
         aria-invalid={invalid}
+        title={value}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-lg border bg-[var(--color-ink)] px-3 py-2 text-sm outline-none ${
+        className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
           invalid
-            ? 'border-red-500 focus:border-red-500'
+            ? 'border-danger focus:border-danger'
             : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
         }`}
       />
+      {suggestions && suggestions.length > 0 && (
+        <span className="mt-1.5 flex flex-wrap gap-1.5">
+          {suggestions.map((s) => {
+            const on = multiSuggestions ? csvHas(value, s) : value === s
+            return (
+              <button
+                key={s}
+                type="button"
+                data-testid={`chip-${s}`}
+                onClick={() => onChange(multiSuggestions ? toggleCsv(value, s) : on ? '' : s)}
+                className={`press rounded-full border px-2.5 py-0.5 text-[11px] transition-colors ${
+                  on
+                    ? 'border-transparent bg-[var(--color-accent)] text-white'
+                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
+                }`}
+              >
+                {s}
+              </button>
+            )
+          })}
+        </span>
+      )}
     </label>
   )
 }

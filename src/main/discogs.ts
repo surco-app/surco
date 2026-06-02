@@ -1,7 +1,7 @@
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { DiscogsSearchResult, DiscogsRelease } from '../shared/types'
+import { writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { DiscogsRelease, DiscogsSearchResult } from '../shared/types'
 
 const BASE = 'https://api.discogs.com'
 const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/vinilo'
@@ -11,7 +11,8 @@ async function api<T>(path: string, token: string): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
   const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
   if (res.status === 401) throw new Error('Token de Discogs inválido.')
-  if (res.status === 429) throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
+  if (res.status === 429)
+    throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
   if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
   return res.json() as Promise<T>
 }
@@ -19,7 +20,7 @@ async function api<T>(path: string, token: string): Promise<T> {
 export async function search(query: string, token: string): Promise<DiscogsSearchResult[]> {
   const data = await api<{ results: DiscogsSearchResult[] }>(
     `/database/search?type=release&q=${encodeURIComponent(query)}&per_page=20`,
-    token
+    token,
   )
   return data.results ?? []
 }

@@ -1,6 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { moveItem, missingRequired, DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, FIELD_DEFS } from './fields'
+import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import {
+  DEFAULT_FIELDS,
+  DEFAULT_REQUIRED_FIELDS,
+  FIELD_DEFS,
+  missingRequired,
+  moveItem,
+} from './fields'
 
 const meta: TrackMetadata = {
   title: 'Gold',
@@ -11,7 +17,7 @@ const meta: TrackMetadata = {
   genre: '   ',
   grouping: '',
   comment: '',
-  trackNumber: ''
+  trackNumber: '',
 }
 
 describe('moveItem', () => {
@@ -38,7 +44,10 @@ describe('DEFAULT_FIELDS', () => {
 
 describe('missingRequired', () => {
   it('reports required fields that are empty so processing is blocked until they are filled', () => {
-    expect(missingRequired(meta, ['title', 'album', 'albumArtist'])).toEqual(['album', 'albumArtist'])
+    expect(missingRequired(meta, ['title', 'album', 'albumArtist'])).toEqual([
+      'album',
+      'albumArtist',
+    ])
   })
 
   it('treats whitespace-only values as missing, since a blank genre tags the track with nothing useful', () => {
@@ -63,7 +72,7 @@ describe('DEFAULT_REQUIRED_FIELDS', () => {
       'album',
       'year',
       'genre',
-      'grouping'
+      'grouping',
     ])
   })
 })

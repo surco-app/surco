@@ -1,11 +1,15 @@
-import { describe, it, expect } from 'vitest'
-import { filterCommands, type Command } from './commands'
+import { describe, expect, it } from 'vitest'
+import { type Command, filterCommands } from './commands'
 
 function cmd(id: string, title: string): Command {
   return { id, title, enabled: true, run: () => {} }
 }
 
-const commands = [cmd('add', 'Añadir archivos'), cmd('settings', 'Ajustes'), cmd('all', 'Procesar todo')]
+const commands = [
+  cmd('add', 'Añadir archivos'),
+  cmd('settings', 'Ajustes'),
+  cmd('all', 'Procesar todo'),
+]
 
 describe('filterCommands', () => {
   it('returns every command when the query is empty, so the menu is browsable', () => {

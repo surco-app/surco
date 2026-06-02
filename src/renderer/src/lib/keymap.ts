@@ -13,7 +13,7 @@ interface KeyLike {
 
 export function keyToCommandId(e: KeyLike, typing: boolean): string | null {
   const mod = e.metaKey || e.ctrlKey
-  if (mod && e.key === 'Enter') return e.shiftKey ? null : 'process-current'
+  if (mod && e.key === 'Enter') return e.shiftKey ? 'process-all' : 'process-current'
   if (mod && e.key.toLowerCase() === 'o') return 'add'
   if (mod && e.key === ',') return 'settings'
   if (mod && e.key === 'Backspace') return typing ? null : 'remove'

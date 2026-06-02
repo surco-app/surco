@@ -1,5 +1,5 @@
-import type { ParsedName } from './filename'
 import type { TrackMetadata } from '../../shared/types'
+import type { ParsedName } from './filename'
 
 export interface ResolvedSearch {
   title: string
@@ -12,7 +12,7 @@ export interface ResolvedSearch {
 // is the fallback used only when the file carries no usable title/artist tag.
 export function searchFromTags(
   parsed: ParsedName,
-  tags: Pick<TrackMetadata, 'title' | 'artist'>
+  tags: Pick<TrackMetadata, 'title' | 'artist'>,
 ): ResolvedSearch {
   const title = tags.title.trim()
   const artist = tags.artist.trim()
@@ -22,6 +22,6 @@ export function searchFromTags(
   return {
     title: title || parsed.title,
     artist: artist || parsed.artist,
-    query: [artist, title].filter(Boolean).join(' ')
+    query: [artist, title].filter(Boolean).join(' '),
   }
 }

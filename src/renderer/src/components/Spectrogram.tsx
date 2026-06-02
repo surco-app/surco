@@ -19,7 +19,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
           <span
             key={f}
             style={{ top: `${(1 - f / nyquist) * 100}%` }}
-            className="pointer-events-none absolute left-1 -translate-y-1/2 rounded bg-black/55 px-1 text-[10px] tabular-nums text-neutral-200"
+            className="pointer-events-none absolute left-1 -translate-y-1/2 rounded bg-black/55 px-1 text-[10px] tabular-nums text-white"
           >
             {f / 1000}k
           </span>

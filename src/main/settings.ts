@@ -1,9 +1,10 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { app } from 'electron'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import { join } from 'path'
-import { Settings } from '../shared/types'
+import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
+  theme: 'system',
   discogsToken: '',
   outputDir: join(app.getPath('music'), 'Surco'),
   addToAppleMusic: true,
@@ -11,10 +12,19 @@ const defaults: Settings = {
   groupingPresets: ['Bases', 'Cantaditas'],
   trimWhitespace: true,
   zeroPadTrack: true,
-  visibleFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping', 'comment'],
+  visibleFields: [
+    'title',
+    'artist',
+    'albumArtist',
+    'album',
+    'year',
+    'genre',
+    'grouping',
+    'comment',
+  ],
   requiredFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
   coverMaxSize: 1200,
-  coverSquare: false
+  coverSquare: false,
 }
 
 function file(): string {

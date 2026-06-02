@@ -1,6 +1,6 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import { TrackMetadata } from '../shared/types'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import type { TrackMetadata } from '../shared/types'
 
 const run = promisify(execFile)
 
@@ -25,7 +25,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
     ['album', meta.album],
     ['genre', meta.genre],
     ['grouping', meta.grouping],
-    ['comment', meta.comment]
+    ['comment', meta.comment],
   ]
   for (const [prop, value] of text) {
     if (value.trim()) sets.push(`      set ${prop} of theTrack to ${JSON.stringify(value)}`)
@@ -33,7 +33,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
 
   const numeric: [string, string][] = [
     ['year', meta.year],
-    ['track number', meta.trackNumber]
+    ['track number', meta.trackNumber],
   ]
   for (const [prop, value] of numeric) {
     const n = parseInt(value, 10)
@@ -55,7 +55,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
     '    end try',
     '  end repeat',
     '  if not metaSet then error "Apple Music no terminó de importar la pista a tiempo."',
-    'end tell'
+    'end tell',
   ].join('\n')
 }
 

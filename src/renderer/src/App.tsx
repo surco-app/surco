@@ -2,19 +2,22 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../shared/types'
-import type { TrackItem } from './types'
+import { CommandPalette } from './components/CommandPalette'
+import { Editor } from './components/Editor'
+import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
+import { SettingsModal } from './components/SettingsModal'
+import { TrackList } from './components/TrackList'
+import { eligibleForBatch } from './lib/batch'
 import type { Command } from './lib/commands'
-import { parseFileName } from './lib/filename'
-import { renderOutputName } from './lib/outputName'
-import { sanitizeMeta } from './lib/hygiene'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
+import { parseFileName } from './lib/filename'
+import { sanitizeMeta } from './lib/hygiene'
 import { keyToCommandId, moveIndex } from './lib/keymap'
+import { renderOutputName } from './lib/outputName'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
-import { TrackList } from './components/TrackList'
-import { Editor } from './components/Editor'
-import { SettingsModal } from './components/SettingsModal'
-import { CommandPalette } from './components/CommandPalette'
+import { resolveTheme } from './lib/theme'
+import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff)$/i
 
@@ -35,8 +38,8 @@ function newTrack(path: string): TrackItem {
       genre: '',
       grouping: '',
       comment: '',
-      trackNumber: ''
-    }
+      trackNumber: '',
+    },
   }
 }
 
@@ -52,16 +55,29 @@ export default function App(): React.JSX.Element {
   const audioRef = useRef<HTMLAudioElement>(null)
   const audioUrlRef = useRef<string | null>(null)
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const [batching, setBatching] = useState(false)
 
   useEffect(() => {
     window.api.getSettings().then(setSettings)
   }, [])
 
+  useEffect(() => {
+    const pref = settings?.theme ?? 'system'
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = (): void => {
+      document.documentElement.dataset.theme = resolveTheme(pref, mq.matches)
+    }
+    apply()
+    if (pref !== 'system') return
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [settings?.theme])
+
   useEffect(() => window.api.onOpenSettings(() => setShowSettings(true)), [])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
-    []
+    [],
   )
 
   // Playback only ever applies to the selected track: switching selection stops
@@ -69,13 +85,13 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     audioRef.current?.pause()
     setPlayingId(null)
-  }, [selectedId])
+  }, [])
 
   useEffect(
     () => () => {
       if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
     },
-    []
+    [],
   )
 
   async function addPaths(paths: string[]): Promise<void> {
@@ -88,7 +104,7 @@ export default function App(): React.JSX.Element {
         try {
           const [tags, cover] = await Promise.all([
             window.api.readTags(path),
-            window.api.readCover(path)
+            window.api.readCover(path),
           ])
           const s = searchFromTags(parseFileName(path), tags)
           return {
@@ -100,13 +116,13 @@ export default function App(): React.JSX.Element {
               ...tags,
               title: s.title,
               artist: s.artist,
-              albumArtist: tags.albumArtist || s.artist
-            }
+              albumArtist: tags.albumArtist || s.artist,
+            },
           }
         } catch {
           return base
         }
-      })
+      }),
     )
     setTracks((prev) => [...prev, ...items])
     if (!selectedId) setSelectedId(items[0].id)
@@ -156,17 +172,17 @@ export default function App(): React.JSX.Element {
       updateTrack(id, {
         status: 'error',
         error: tr('editor.missingRequired', { fields: names }),
-        stage: undefined
+        stage: undefined,
       })
       return
     }
     updateTrack(id, { status: 'processing', error: undefined, stage: undefined })
     const meta = sanitizeMeta(track.meta, {
       trim: settings?.trimWhitespace ?? true,
-      zeroPad: settings?.zeroPadTrack ?? true
+      zeroPad: settings?.zeroPadTrack ?? true,
     })
     const format = settings?.filenameFormat ?? '{artist} - {title}'
-    const outputName = renderOutputName(format, meta) || track.fileName
+    const outputName = track.outputName?.trim() || renderOutputName(format, meta) || track.fileName
     try {
       const { outputPath } = await window.api.processTrack({
         id: track.id,
@@ -174,15 +190,27 @@ export default function App(): React.JSX.Element {
         outputName,
         meta,
         coverUrl: track.coverUrl,
-        coverPath: track.coverPath
+        coverPath: track.coverPath,
       })
       updateTrack(id, { status: 'done', outputPath, stage: undefined })
     } catch (e) {
       updateTrack(id, {
         status: 'error',
         error: e instanceof Error ? e.message : tr('editor.processError'),
-        stage: undefined
+        stage: undefined,
       })
+    }
+  }
+
+  async function processAll(): Promise<void> {
+    if (batching) return
+    setBatching(true)
+    try {
+      for (const id of eligibleForBatch(tracks)) {
+        await processOne(id)
+      }
+    } finally {
+      setBatching(false)
     }
   }
 
@@ -191,13 +219,22 @@ export default function App(): React.JSX.Element {
   }
 
   function moveSelection(delta: number): void {
-    const next = moveIndex(tracks.length, tracks.findIndex((t) => t.id === selectedId), delta)
+    const next = moveIndex(
+      tracks.length,
+      tracks.findIndex((t) => t.id === selectedId),
+      delta,
+    )
     if (next === -1) return
     setSelectedId(tracks[next].id)
   }
 
+  const sidebar = useResizableWidth(288, 220, 520)
+
   const selected = tracks.find((t) => t.id === selectedId) ?? null
-  const canProcessSelected = !!selected && (selected.status === 'idle' || selected.status === 'error')
+  const canProcessSelected =
+    !!selected && (selected.status === 'idle' || selected.status === 'error')
+  const eligibleCount = eligibleForBatch(tracks).length
+  const canProcessAll = eligibleCount > 0 && !batching
 
   const commands: Command[] = [
     { id: 'add', title: tr('commands.add'), hint: '⌘O', enabled: true, run: pickFiles },
@@ -206,7 +243,14 @@ export default function App(): React.JSX.Element {
       title: tr('commands.processCurrent'),
       hint: '⌘↵',
       enabled: canProcessSelected,
-      run: () => selected && processOne(selected.id)
+      run: () => selected && processOne(selected.id),
+    },
+    {
+      id: 'process-all',
+      title: tr('commands.processAll'),
+      hint: '⌘⇧↵',
+      enabled: canProcessAll,
+      run: processAll,
     },
     { id: 'play', title: tr('commands.play'), hint: '␣', enabled: !!selected, run: togglePlay },
     {
@@ -214,18 +258,36 @@ export default function App(): React.JSX.Element {
       title: tr('commands.remove'),
       hint: '⌘⌫',
       enabled: !!selected,
-      run: () => selected && removeTrack(selected.id)
+      run: () => selected && removeTrack(selected.id),
     },
-    { id: 'next', title: tr('commands.next'), hint: '↓', enabled: tracks.length > 1, run: () => moveSelection(1) },
-    { id: 'prev', title: tr('commands.prev'), hint: '↑', enabled: tracks.length > 1, run: () => moveSelection(-1) },
+    {
+      id: 'next',
+      title: tr('commands.next'),
+      hint: '↓',
+      enabled: tracks.length > 1,
+      run: () => moveSelection(1),
+    },
+    {
+      id: 'prev',
+      title: tr('commands.prev'),
+      hint: '↑',
+      enabled: tracks.length > 1,
+      run: () => moveSelection(-1),
+    },
     {
       id: 'search',
       title: tr('commands.search'),
       hint: '/',
       enabled: !!selected,
-      run: () => searchInputRef.current?.focus()
+      run: () => searchInputRef.current?.focus(),
     },
-    { id: 'settings', title: tr('commands.settings'), hint: '⌘,', enabled: true, run: () => setShowSettings(true) }
+    {
+      id: 'settings',
+      title: tr('commands.settings'),
+      hint: '⌘,',
+      enabled: true,
+      run: () => setShowSettings(true),
+    },
   ]
 
   const commandsRef = useRef<Command[]>(commands)
@@ -280,37 +342,66 @@ export default function App(): React.JSX.Element {
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
         <div />
-        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        <div
+          className="flex items-center gap-2"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {tracks.length > 0 && (
+            <button
+              data-testid="convert-all"
+              onClick={processAll}
+              disabled={!canProcessAll}
+              className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            >
+              {batching ? tr('header.converting') : `${tr('header.convertAll')} (${eligibleCount})`}
+            </button>
+          )}
           <button
             data-testid="add-files"
             onClick={pickFiles}
-            className="rounded-lg border border-[var(--color-line)] px-3 py-1.5 text-sm hover:bg-[var(--color-panel-2)]"
+            className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
           >
             {tr('header.add')}
           </button>
           <button
             data-testid="open-palette"
             onClick={() => setShowPalette(true)}
-            className="rounded-lg border border-[var(--color-line)] px-2.5 py-1.5 text-xs text-neutral-400 hover:bg-[var(--color-panel-2)]"
+            className="press flex h-8 items-center gap-1 rounded-lg border border-[var(--color-line)] px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.palette')}
           >
-            ⌘K
+            <kbd className="font-sans">⌘</kbd>
+            <kbd className="font-sans">K</kbd>
           </button>
           <button
             data-testid="open-settings"
             onClick={() => setShowSettings(true)}
-            className="rounded-lg border border-[var(--color-line)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-panel-2)]"
+            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.settings')}
           >
-            ⚙
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="h-4 w-4">
+              <path
+                d="M8 10.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z"
+                stroke="currentColor"
+                strokeWidth="1.3"
+              />
+              <path
+                d="M8 1.3 9 2.9a6.7 6.7 0 0 1 1.4.6l1.9-.3.9 1.6-1.1 1.5a6.7 6.7 0 0 1 0 1.4l1.1 1.5-.9 1.6-1.9-.3a6.7 6.7 0 0 1-1.4.6L8 14.7l-1-1.6a6.7 6.7 0 0 1-1.4-.6l-1.9.3-.9-1.6 1.1-1.5a6.7 6.7 0 0 1 0-1.4L2.9 6.8l.9-1.6 1.9.3A6.7 6.7 0 0 1 7 4.9L8 1.3Z"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-72 shrink-0 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel)]">
+        <aside
+          style={{ width: sidebar.width }}
+          className="shrink-0 overflow-y-auto bg-[var(--color-panel)]"
+        >
           {tracks.length === 0 ? (
-            <p className="p-6 text-center text-xs text-neutral-600">{tr('sidebar.dropHint')}</p>
+            <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
           ) : (
             <TrackList
               tracks={tracks}
@@ -320,6 +411,8 @@ export default function App(): React.JSX.Element {
             />
           )}
         </aside>
+
+        <ResizeHandle onPointerDown={sidebar.onPointerDown} />
 
         <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
           {selected ? (
@@ -337,12 +430,12 @@ export default function App(): React.JSX.Element {
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
-              <div>
+              <div className="max-w-sm">
                 <svg
                   viewBox="0 0 48 48"
                   fill="currentColor"
                   aria-hidden="true"
-                  className="mx-auto mb-4 h-12 w-12 text-neutral-600"
+                  className="mx-auto mb-5 h-12 w-12 text-fg-faint"
                 >
                   <rect x="4" y="19" width="4" height="10" rx="2" />
                   <rect x="10" y="15" width="4" height="18" rx="2" />
@@ -352,8 +445,10 @@ export default function App(): React.JSX.Element {
                   <rect x="34" y="15" width="4" height="18" rx="2" />
                   <rect x="40" y="19" width="4" height="10" rx="2" />
                 </svg>
-                <p className="text-neutral-400">{tr('empty.title')}</p>
-                <p className="mt-1 text-sm text-neutral-600">{tr('empty.subtitle')}</p>
+                <p className="text-[15px] font-medium text-balance text-fg-muted">
+                  {tr('empty.title')}
+                </p>
+                <p className="mt-1.5 text-sm text-pretty text-fg-dim">{tr('empty.subtitle')}</p>
               </div>
             </div>
           )}
@@ -376,9 +471,7 @@ export default function App(): React.JSX.Element {
         />
       )}
 
-      {showPalette && (
-        <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />
-      )}
+      {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
     </div>
   )
 }

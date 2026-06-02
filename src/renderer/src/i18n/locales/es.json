@@ -6,6 +6,8 @@
   },
   "header": {
     "add": "Añadir archivos",
+    "convertAll": "Convertir todo",
+    "converting": "Convirtiendo…",
     "palette": "Paleta de comandos",
     "settings": "Ajustes"
   },
@@ -22,6 +24,7 @@
   "commands": {
     "add": "Añadir archivos",
     "processCurrent": "Procesar pista actual",
+    "processAll": "Convertir todas las pistas",
     "play": "Reproducir / pausar pista",
     "remove": "Quitar pista actual",
     "next": "Siguiente pista",
@@ -59,8 +62,10 @@
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",
     "analyzing": "Analizando espectro…",
+    "sectionForm": "Metadatos",
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
     "output": "Salida:",
+    "outputName": "Nombre de salida",
     "convert": "Convertir a AIFF + Apple Music",
     "processing": "Procesando…",
     "doneReveal": "✓ Hecho — mostrar archivo",
@@ -87,6 +92,12 @@
       "naming": "Nombres",
       "artwork": "Carátula",
       "fields": "Campos"
+    },
+    "theme": "Apariencia",
+    "themes": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
     },
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",

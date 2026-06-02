@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { moveIndex, keyToCommandId } from './keymap'
+import { describe, expect, it } from 'vitest'
+import { keyToCommandId, moveIndex } from './keymap'
 
 function key(
   k: string,
-  mods: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {}
+  mods: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {},
 ): { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean } {
   return { key: k, metaKey: false, ctrlKey: false, shiftKey: false, ...mods }
 }
@@ -33,8 +33,10 @@ describe('keyToCommandId', () => {
     expect(keyToCommandId(key(',', { metaKey: true }), false)).toBe('settings')
   })
 
-  it('does not bind cmd+shift+enter, since tracks are only processed one at a time', () => {
-    expect(keyToCommandId(key('Enter', { metaKey: true, shiftKey: true }), false)).toBeNull()
+  it('processes the whole queue on cmd+shift+enter', () => {
+    expect(keyToCommandId(key('Enter', { metaKey: true, shiftKey: true }), false)).toBe(
+      'process-all',
+    )
   })
 
   it('plays the current track on space, but never while typing in a field', () => {

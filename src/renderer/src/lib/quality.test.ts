@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { qualityVerdict, formatKHz } from './quality'
+import { describe, expect, it } from 'vitest'
+import { formatKHz, qualityVerdict } from './quality'
 
 describe('qualityVerdict', () => {
   it('passes a track whose energy reaches near Nyquist as good', () => {

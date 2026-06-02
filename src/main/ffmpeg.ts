@@ -1,10 +1,11 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import { readFile, unlink, rename } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { TrackMetadata } from '../shared/types'
+import { execFile } from 'node:child_process'
+import { readFile, rename, unlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+import type { TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
+import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
 
 const run = promisify(execFile)
 
@@ -20,7 +21,7 @@ interface ProbeTags {
 export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   const sources: Record<string, unknown>[] = [
     data.format?.tags,
-    ...(data.streams ?? []).map((s) => s.tags)
+    ...(data.streams ?? []).map((s) => s.tags),
   ].filter((t): t is Record<string, unknown> => Boolean(t))
   const pick = (...names: string[]): string => {
     for (const tags of sources) {
@@ -40,16 +41,19 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     grouping: pick('grouping', 'content_group'),
     comment: pick('comment'),
     // A "3/12" track tag would survive zero-padding as "312", so drop the total.
-    trackNumber: pick('track', 'tracknumber').split('/')[0].trim()
+    trackNumber: pick('track', 'tracknumber').split('/')[0].trim(),
   }
 }
 
 export async function readTags(input: string): Promise<TrackMetadata> {
   const { stdout } = await run(ffprobePath, [
-    '-v', 'error',
-    '-show_entries', 'format_tags:stream_tags',
-    '-of', 'json',
-    input
+    '-v',
+    'error',
+    '-show_entries',
+    'format_tags:stream_tags',
+    '-of',
+    'json',
+    input,
   ])
   return tagsFromProbe(JSON.parse(stdout))
 }
@@ -59,10 +63,18 @@ export async function readTags(input: string): Promise<TrackMetadata> {
 // non-zero when the file carries no attached picture.
 export function coverArgs(input: string, output: string): string[] {
   return [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-i', input,
-    '-an', '-map', '0:v:0', '-frames:v', '1',
-    output
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    input,
+    '-an',
+    '-map',
+    '0:v:0',
+    '-frames:v',
+    '1',
+    output,
   ]
 }
 
@@ -88,18 +100,22 @@ interface ProbeResult {
 
 export async function probeAudio(input: string): Promise<ProbeResult> {
   const { stdout } = await run(ffprobePath, [
-    '-v', 'error',
-    '-select_streams', 'a:0',
-    '-show_entries', 'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
-    '-of', 'json',
-    input
+    '-v',
+    'error',
+    '-select_streams',
+    'a:0',
+    '-show_entries',
+    'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
+    '-of',
+    'json',
+    input,
   ])
   const stream = JSON.parse(stdout).streams?.[0] ?? {}
   return {
     sampleFmt: stream.sample_fmt ?? 's16',
     bitsPerRawSample: Number(stream.bits_per_raw_sample) || 0,
     sampleRate: String(stream.sample_rate ?? ''),
-    channels: Number(stream.channels) || 2
+    channels: Number(stream.channels) || 2,
   }
 }
 
@@ -107,7 +123,9 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
 // exactly (lossless). Never downsamples bit depth.
 function aiffCodec(probe: ProbeResult): string {
   if (probe.sampleFmt.startsWith('f')) return 'pcm_f32be'
-  const bits = probe.bitsPerRawSample || (probe.sampleFmt.includes('32') ? 32 : probe.sampleFmt.includes('16') ? 16 : 24)
+  const bits =
+    probe.bitsPerRawSample ||
+    (probe.sampleFmt.includes('32') ? 32 : probe.sampleFmt.includes('16') ? 16 : 24)
   if (bits >= 32) return 'pcm_s32be'
   if (bits >= 24) return 'pcm_s24be'
   return 'pcm_s16be'
@@ -123,9 +141,9 @@ function metadataArgs(meta: TrackMetadata): string[] {
     ['genre', meta.genre],
     ['grouping', meta.grouping],
     ['comment', meta.comment],
-    ['track', meta.trackNumber]
+    ['track', meta.trackNumber],
   ]
-  return pairs.filter(([, v]) => v && v.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
+  return pairs.filter(([, v]) => v?.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
 }
 
 const AIFF_INPUT = /\.aiff?$/i
@@ -135,7 +153,7 @@ export function convertArgs(
   output: string,
   codec: string,
   meta: TrackMetadata,
-  coverPath?: string
+  coverPath?: string,
 ): string[] {
   const args = ['-y', '-i', input]
   if (coverPath) args.push('-i', coverPath)
@@ -153,7 +171,7 @@ export async function convertToAiff(
   input: string,
   output: string,
   meta: TrackMetadata,
-  coverPath?: string
+  coverPath?: string,
 ): Promise<void> {
   // An AIFF input is already lossless PCM, so stream-copy it instead of
   // re-encoding (instant, bit-identical). We always write to a temp file and
@@ -165,7 +183,7 @@ export async function convertToAiff(
 
   try {
     await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath), {
-      maxBuffer: 1024 * 1024 * 32
+      maxBuffer: 1024 * 1024 * 32,
     })
     await rename(tmp, output)
   } catch (e) {
@@ -178,10 +196,15 @@ export async function generateSpectrogram(input: string): Promise<string> {
   const out = join(tmpdir(), `surco-spec-${Date.now()}.png`)
   try {
     await run(ffmpegPath, [
-      '-hide_banner', '-loglevel', 'error', '-y',
-      '-i', input,
-      '-lavfi', 'showspectrumpic=s=1000x280:legend=0:color=intensity:gain=2',
-      out
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-i',
+      input,
+      '-lavfi',
+      'showspectrumpic=s=1000x280:legend=0:color=intensity:gain=2',
+      out,
     ])
     const buf = await readFile(out)
     return `data:image/png;base64,${buf.toString('base64')}`
@@ -192,34 +215,79 @@ export async function generateSpectrogram(input: string): Promise<string> {
 
 export async function processCover(
   input: string,
-  opts: { maxSize: number; square: boolean }
+  opts: { maxSize: number; square: boolean },
 ): Promise<string> {
   const max = opts.maxSize > 0 ? opts.maxSize : 4000
   const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
   const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
   const out = join(tmpdir(), `surco-cover-proc-${Date.now()}.jpg`)
   await run(ffmpegPath, [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-i', input,
-    '-vf', vf,
-    '-q:v', '2',
-    out
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    input,
+    '-vf',
+    vf,
+    '-q:v',
+    '2',
+    out,
   ])
   return out
 }
 
-export async function analyzeCutoff(input: string): Promise<number> {
-  const stats = join(tmpdir(), `surco-stats-${Date.now()}.txt`)
+// Measures the energy in each high-frequency band in a single decode (asplit
+// into one bandpass→astats branch per band) and hands the per-band RMS to
+// detectCutoff, which spots the codec's brick wall. The cumulative astats RMS is
+// printed once per (large) frame, so the last value in each file is the band's
+// whole-file level.
+export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<number> {
+  const nyquist = sampleRateHz / 2
+  const freqs = bandFrequencies(nyquist)
+  if (freqs.length < 2) return nyquist
+
+  const files = freqs.map((f) => join(tmpdir(), `surco-band-${f}-${Date.now()}.txt`))
+  const branches = freqs
+    .map(
+      (f, i) =>
+        `[b${i}]bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
+        `ametadata=mode=print:file=${files[i]}[o${i}]`,
+    )
+    .join(';')
+  const filter =
+    `[0:a]asetnsamples=n=1048576:p=0,asplit=${freqs.length}${freqs.map((_, i) => `[b${i}]`).join('')};` +
+    `${branches};${freqs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${freqs.length}`
+
   try {
-    await run(ffmpegPath, [
-      '-hide_banner', '-loglevel', 'error',
-      '-i', input,
-      '-af', `aspectralstats=measure=rolloff,ametadata=mode=print:file=${stats}`,
-      '-f', 'null', '-'
-    ], { maxBuffer: 1024 * 1024 * 16 })
-    const text = await readFile(stats, 'utf-8')
-    return [...text.matchAll(/rolloff=([\d.]+)/g)].reduce((max, m) => Math.max(max, Number(m[1])), 0)
+    await run(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-i',
+        input,
+        '-filter_complex',
+        filter,
+        '-f',
+        'null',
+        '-',
+      ],
+      { maxBuffer: 1024 * 1024 * 16 },
+    )
+    const bands = await Promise.all(
+      freqs.map(async (freqHz, i) => {
+        const text = await readFile(files[i], 'utf-8').catch(() => '')
+        const matches = [...text.matchAll(/RMS_level=(-?[\d.]+)/g)]
+        return {
+          freqHz,
+          rmsDb: matches.length ? Number(matches[matches.length - 1][1]) : -Infinity,
+        }
+      }),
+    )
+    return detectCutoff(bands, nyquist)
   } finally {
-    await unlink(stats).catch(() => {})
+    await Promise.all(files.map((f) => unlink(f).catch(() => {})))
   }
 }

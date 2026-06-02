@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { applyProgress } from './progress'
+import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
+import { applyProgress } from './progress'
 
 function track(id: string): TrackItem {
   return {
@@ -10,9 +10,16 @@ function track(id: string): TrackItem {
     query: '',
     status: 'processing',
     meta: {
-      title: '', artist: '', album: '', albumArtist: '',
-      year: '', genre: '', grouping: '', comment: '', trackNumber: ''
-    }
+      title: '',
+      artist: '',
+      album: '',
+      albumArtist: '',
+      year: '',
+      genre: '',
+      grouping: '',
+      comment: '',
+      trackNumber: '',
+    },
   }
 }
 

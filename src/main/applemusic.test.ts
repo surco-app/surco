@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import type { TrackMetadata } from '../shared/types'
 import { buildAddScript } from './applemusic'
-import { TrackMetadata } from '../shared/types'
 
 const base: TrackMetadata = {
   title: 'ATB (Till I Come)',
@@ -11,7 +11,7 @@ const base: TrackMetadata = {
   genre: 'Electronic',
   grouping: 'Bases',
   comment: '',
-  trackNumber: ''
+  trackNumber: '',
 }
 
 describe('buildAddScript', () => {
@@ -32,7 +32,9 @@ describe('buildAddScript', () => {
 
   it('adds the file via POSIX path and writes only the fields that have values', () => {
     const script = buildAddScript('/Users/vicent/Music/Surco/track.aiff', base)
-    expect(script).toContain('set theTrack to add POSIX file "/Users/vicent/Music/Surco/track.aiff"')
+    expect(script).toContain(
+      'set theTrack to add POSIX file "/Users/vicent/Music/Surco/track.aiff"',
+    )
     expect(script).toContain('set name of theTrack to "ATB (Till I Come)"')
     expect(script).toContain('set album of theTrack to "ATB / Verano Sin Azul"')
     expect(script).not.toContain('set comment of theTrack')

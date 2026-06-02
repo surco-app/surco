@@ -1,18 +1,102 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
+/* Tokyo Night. Dark values are the defaults; the light palette overrides the
+   same custom properties under [data-theme='light'] below, so every utility
+   that resolves to var(--color-*) flips automatically. The active theme is set
+   on <html> from the user's setting (system resolves to the OS preference). */
 @theme {
-  --color-ink: #0c0c0f;
-  --color-panel: #16161c;
-  --color-panel-2: #1d1d25;
-  --color-line: #2a2a33;
-  --color-accent: #7c5cff;
-  --color-accent-soft: #2a2348;
+  --color-ink: #16161e;
+  --color-panel: #1a1b26;
+  --color-panel-2: #292e42;
+  --color-field: #14141b;
+  --color-line: rgba(192, 202, 245, 0.09);
+  --color-line-strong: rgba(192, 202, 245, 0.16);
+  --color-accent: #7aa2f7;
+  --color-accent-hover: #89b4ff;
+  --color-accent-soft: #283457;
+  --color-fg: #c0caf5;
+  --color-fg-muted: #a9b1d6;
+  --color-fg-dim: #787c99;
+  --color-fg-faint: #565f89;
+  --color-good: #9ece6a;
+  --color-warn: #e0af68;
+  --color-danger: #f7768e;
+  --color-scrollbar: rgba(192, 202, 245, 0.13);
+  --color-scrollbar-hover: rgba(192, 202, 245, 0.24);
+}
+
+:root {
+  color-scheme: dark;
+  --ring: 0 0 0 3.5px color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-ink: #d6d8df;
+  --color-panel: #e6e7ed;
+  --color-panel-2: #d4d6de;
+  --color-field: #f4f5f8;
+  --color-line: rgba(20, 22, 38, 0.12);
+  --color-line-strong: rgba(20, 22, 38, 0.22);
+  --color-accent: #2959aa;
+  --color-accent-hover: #21498f;
+  --color-accent-soft: #d4def0;
+  --color-fg: #2c3043;
+  --color-fg-muted: #424757;
+  --color-fg-dim: #6c7086;
+  --color-fg-faint: #9396a3;
+  --color-good: #33635c;
+  --color-warn: #8f5e15;
+  --color-danger: #8c4351;
+  --color-scrollbar: rgba(20, 22, 38, 0.18);
+  --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
 }
 
 html,
 body,
 #root {
   height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-feature-settings: "cv01", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+@layer base {
+  button:not(:disabled),
+  a,
+  [role="button"] {
+    cursor: pointer;
+  }
+  input,
+  textarea {
+    font-variant-numeric: tabular-nums;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 @keyframes wave {
@@ -25,28 +109,64 @@ body,
   }
 }
 
-body {
-  margin: 0;
-  background: var(--color-ink);
-  color: #e7e7ea;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  user-select: none;
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-input,
-textarea {
-  user-select: text;
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-pop {
+  animation: pop-in 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.animate-overlay {
+  animation: overlay-in 0.16s ease;
+}
+
+.press {
+  transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #33333d;
+  background: var(--color-scrollbar);
   border-radius: 999px;
-  border: 2px solid var(--color-ink);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-hover);
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms;
+    transition-duration: 0.01ms;
+  }
 }

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { sanitizeMeta } from './hygiene'
+import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import { sanitizeMeta } from './hygiene'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -13,7 +13,7 @@ function meta(patch: Partial<TrackMetadata>): TrackMetadata {
     grouping: '',
     comment: '',
     trackNumber: '',
-    ...patch
+    ...patch,
   }
 }
 
@@ -21,19 +21,25 @@ describe('sanitizeMeta', () => {
   it('trims and collapses whitespace so stray spaces never reach the tags', () => {
     const r = sanitizeMeta(meta({ title: '  Open   Your Eyes  ', artist: ' Chumi Dj ' }), {
       trim: true,
-      zeroPad: false
+      zeroPad: false,
     })
     expect(r.title).toBe('Open Your Eyes')
     expect(r.artist).toBe('Chumi Dj')
   })
 
   it('zero-pads the track number so it sorts and shows as 03, not 3', () => {
-    expect(sanitizeMeta(meta({ trackNumber: '3' }), { trim: false, zeroPad: true }).trackNumber).toBe('03')
-    expect(sanitizeMeta(meta({ trackNumber: '12' }), { trim: false, zeroPad: true }).trackNumber).toBe('12')
+    expect(
+      sanitizeMeta(meta({ trackNumber: '3' }), { trim: false, zeroPad: true }).trackNumber,
+    ).toBe('03')
+    expect(
+      sanitizeMeta(meta({ trackNumber: '12' }), { trim: false, zeroPad: true }).trackNumber,
+    ).toBe('12')
   })
 
   it('leaves an empty track number alone instead of padding it to 00', () => {
-    expect(sanitizeMeta(meta({ trackNumber: '' }), { trim: false, zeroPad: true }).trackNumber).toBe('')
+    expect(
+      sanitizeMeta(meta({ trackNumber: '' }), { trim: false, zeroPad: true }).trackNumber,
+    ).toBe('')
   })
 
   it('applies nothing when both options are off', () => {

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { searchFromTags } from './search'
+import { describe, expect, it } from 'vitest'
 import { parseFileName } from './filename'
+import { searchFromTags } from './search'
 
 describe('searchFromTags', () => {
   it('builds the query from embedded artist + title, ignoring a messier file name', () => {

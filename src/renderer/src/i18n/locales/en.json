@@ -6,6 +6,8 @@
   },
   "header": {
     "add": "Add files",
+    "convertAll": "Convert all",
+    "converting": "Converting…",
     "palette": "Command palette",
     "settings": "Settings"
   },
@@ -22,6 +24,7 @@
   "commands": {
     "add": "Add files",
     "processCurrent": "Process current track",
+    "processAll": "Convert all tracks",
     "play": "Play / pause track",
     "remove": "Remove current track",
     "next": "Next track",
@@ -59,8 +62,10 @@
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",
     "analyzing": "Analyzing spectrum…",
+    "sectionForm": "Metadata",
     "qualityCaption": "Reaches ~{{cutoff}} of {{nyquist}} (Nyquist). A sharp cutoff below it reveals an MP3 re-encoded as WAV.",
     "output": "Output:",
+    "outputName": "Output name",
     "convert": "Convert to AIFF + Apple Music",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",
@@ -87,6 +92,12 @@
       "naming": "Naming",
       "artwork": "Artwork",
       "fields": "Fields"
+    },
+    "theme": "Appearance",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
     },
     "discogsToken": "Discogs token",
     "tokenPlaceholder": "Paste your personal token here",

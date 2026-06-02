@@ -1,13 +1,20 @@
-import { vi, describe, it, expect } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
+import type { TrackMetadata } from '../shared/types'
 import { convertArgs, coverArgs, tagsFromProbe } from './ffmpeg'
-import { TrackMetadata } from '../shared/types'
 
 const meta: TrackMetadata = {
-  title: 'Till I Come', artist: 'ATB', album: '', albumArtist: 'ATB',
-  year: '', genre: '', grouping: '', comment: '', trackNumber: ''
+  title: 'Till I Come',
+  artist: 'ATB',
+  album: '',
+  albumArtist: 'ATB',
+  year: '',
+  genre: '',
+  grouping: '',
+  comment: '',
+  trackNumber: '',
 }
 
 describe('convertArgs', () => {
@@ -57,9 +64,9 @@ describe('tagsFromProbe', () => {
           genre: 'Trance',
           grouping: 'Set A',
           comment: 'vinyl rip',
-          track: '3'
-        }
-      }
+          track: '3',
+        },
+      },
     })
     expect(m).toEqual({
       title: 'Till I Come',
@@ -70,7 +77,7 @@ describe('tagsFromProbe', () => {
       genre: 'Trance',
       grouping: 'Set A',
       comment: 'vinyl rip',
-      trackNumber: '3'
+      trackNumber: '3',
     })
   })
 
@@ -102,7 +109,7 @@ describe('tagsFromProbe', () => {
       genre: '',
       grouping: '',
       comment: '',
-      trackNumber: ''
+      trackNumber: '',
     })
   })
 })

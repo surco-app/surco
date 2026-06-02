@@ -1,4 +1,7 @@
+export type ThemePref = 'system' | 'light' | 'dark'
+
 export interface Settings {
+  theme: ThemePref
   discogsToken: string
   outputDir: string
   addToAppleMusic: boolean

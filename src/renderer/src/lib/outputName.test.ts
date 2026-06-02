@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { renderOutputName } from './outputName'
+import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import { renderOutputName } from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -13,20 +13,23 @@ function meta(patch: Partial<TrackMetadata>): TrackMetadata {
     grouping: '',
     comment: '',
     trackNumber: '',
-    ...patch
+    ...patch,
   }
 }
 
 describe('renderOutputName', () => {
   it('fills tokens in template order so the user controls the file-name shape', () => {
-    const r = renderOutputName('{artist} - {title}', meta({ artist: 'Chumi Dj', title: 'Open Your Eyes' }))
+    const r = renderOutputName(
+      '{artist} - {title}',
+      meta({ artist: 'Chumi Dj', title: 'Open Your Eyes' }),
+    )
     expect(r).toBe('Chumi Dj - Open Your Eyes')
   })
 
   it('supports reordering and extra tokens like the track number', () => {
     const r = renderOutputName(
       '{trackNumber} - {artist} - {title}',
-      meta({ trackNumber: '03', artist: 'Acer', title: 'Keep Calm' })
+      meta({ trackNumber: '03', artist: 'Acer', title: 'Keep Calm' }),
     )
     expect(r).toBe('03 - Acer - Keep Calm')
   })
@@ -34,7 +37,7 @@ describe('renderOutputName', () => {
   it('drops a dangling separator when a leading token (e.g. track no.) is empty', () => {
     const r = renderOutputName(
       '{trackNumber} - {artist} - {title}',
-      meta({ artist: 'Acer', title: 'Keep Calm' })
+      meta({ artist: 'Acer', title: 'Keep Calm' }),
     )
     expect(r).toBe('Acer - Keep Calm')
   })

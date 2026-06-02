@@ -1,15 +1,26 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, Menu, nativeImage } from 'electron'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { mkdir, unlink, readFile, writeFile } from 'fs/promises'
-import { getSettings, saveSettings } from './settings'
-import { search, getRelease, downloadCover } from './discogs'
-import { convertToAiff, generateSpectrogram, analyzeCutoff, probeAudio, processCover, readTags, extractCover } from './ffmpeg'
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
+import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic } from './applemusic'
-import { Settings, ProcessJob, ProcessStage } from '../shared/types'
+import { downloadCover, getRelease, search } from './discogs'
+import {
+  analyzeCutoff,
+  convertToAiff,
+  extractCover,
+  generateSpectrogram,
+  probeAudio,
+  processCover,
+  readTags,
+} from './ffmpeg'
+import { getSettings, saveSettings } from './settings'
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim()
+  return name
+    .replace(/[/\\:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function buildAppMenu(win: BrowserWindow): void {
@@ -22,7 +33,7 @@ function buildAppMenu(win: BrowserWindow): void {
         {
           label: 'Ajustes…',
           accelerator: 'CmdOrCtrl+,',
-          click: () => win.webContents.send('menu:settings')
+          click: () => win.webContents.send('menu:settings'),
         },
         { type: 'separator' },
         { role: 'services' },
@@ -31,11 +42,11 @@ function buildAppMenu(win: BrowserWindow): void {
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
-      ]
+        { role: 'quit' },
+      ],
     },
     { role: 'editMenu' },
-    { role: 'windowMenu' }
+    { role: 'windowMenu' },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -48,11 +59,11 @@ function createWindow(): void {
     minHeight: 620,
     show: false,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#0c0c0f',
+    backgroundColor: '#09090d',
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
-    }
+      sandbox: false,
+    },
   })
 
   win.on('ready-to-show', () => win.show())
@@ -63,8 +74,8 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  if (process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -78,7 +89,7 @@ function registerIpc(): void {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Selecciona pistas',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff'] }]
+      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff'] }],
     })
     return canceled ? [] : filePaths
   })
@@ -86,7 +97,7 @@ function registerIpc(): void {
   ipcMain.handle('dialog:pickOutputDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Carpeta de salida',
-      properties: ['openDirectory', 'createDirectory']
+      properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
   })
@@ -97,7 +108,8 @@ function registerIpc(): void {
   ipcMain.handle('process:track', async (e, job: ProcessJob) => {
     const settings = getSettings()
     await mkdir(settings.outputDir, { recursive: true })
-    const stage = (s: ProcessStage): void => e.sender.send('process:progress', { id: job.id, stage: s })
+    const stage = (s: ProcessStage): void =>
+      e.sender.send('process:progress', { id: job.id, stage: s })
 
     let tempCover: string | undefined
     let processedCover: string | undefined
@@ -113,14 +125,17 @@ function registerIpc(): void {
         // data URL; decode it to disk so it can be re-embedded into the output.
         stage('cover')
         tempCover = join(tmpdir(), `surco-embed-${Date.now()}.jpg`)
-        await writeFile(tempCover, Buffer.from(job.coverUrl.slice(job.coverUrl.indexOf(',') + 1), 'base64'))
+        await writeFile(
+          tempCover,
+          Buffer.from(job.coverUrl.slice(job.coverUrl.indexOf(',') + 1), 'base64'),
+        )
         coverPath = tempCover
       }
       if (coverPath) {
         stage('cover')
         processedCover = await processCover(coverPath, {
           maxSize: settings.coverMaxSize,
-          square: settings.coverSquare
+          square: settings.coverSquare,
         })
         coverPath = processedCover
       }
@@ -150,12 +165,12 @@ function registerIpc(): void {
   ipcMain.handle('audio:read', (_e, inputPath: string) => readFile(inputPath))
 
   ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
-    const [image, cutoffHz, probe] = await Promise.all([
+    const sampleRateHz = Number((await probeAudio(inputPath)).sampleRate) || 0
+    const [image, cutoffHz] = await Promise.all([
       generateSpectrogram(inputPath),
-      analyzeCutoff(inputPath),
-      probeAudio(inputPath)
+      analyzeCutoff(inputPath, sampleRateHz),
     ])
-    return { image, cutoffHz, sampleRateHz: Number(probe.sampleRate) || 0 }
+    return { image, cutoffHz, sampleRateHz }
   })
 }
 

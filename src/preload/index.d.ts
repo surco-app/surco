@@ -1,11 +1,11 @@
 import type {
-  Settings,
-  DiscogsSearchResult,
   DiscogsRelease,
+  DiscogsSearchResult,
   ProcessJob,
   ProcessResult,
+  Settings,
   SpectrumResult,
-  TrackMetadata
+  TrackMetadata,
 } from '../shared/types'
 
 export interface Api {

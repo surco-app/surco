@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { genrePresets } from './genre'
+import { describe, expect, it } from 'vitest'
 import type { DiscogsRelease } from '../../../shared/types'
+import { genrePresets } from './genre'
 
 function release(patch: Partial<DiscogsRelease>): DiscogsRelease {
   return { id: 1, title: '', artists: [], tracklist: [], ...patch }
