@@ -2,6 +2,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
+import electronUpdater from 'electron-updater'
 import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import { downloadCover, getRelease, search } from './discogs'
@@ -185,6 +186,11 @@ app.whenReady().then(() => {
   }
   registerIpc()
   createWindow()
+
+  // Reads the published GitHub release metadata, downloads a newer version in the
+  // background and installs it on quit. Only in packaged builds — there is no
+  // update feed in dev. macOS requires the build to be signed and notarized.
+  if (app.isPackaged) electronUpdater.autoUpdater.checkForUpdatesAndNotify()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
