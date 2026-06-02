@@ -1,17 +1,17 @@
 import Spectrogram from './Spectrogram'
 
 const tracks = [
-  { n: '01', title: 'Till I Come', artist: 'ATB', state: 'done' },
-  { n: '02', title: 'Café Del Mar', artist: 'Energy 52', state: 'active' },
+  { n: '01', title: 'Café Del Mar', artist: 'Energy 52', state: 'done' },
+  { n: '02', title: 'Take me into the sky', artist: 'Dj Vixent', state: 'active' },
   { n: '03', title: 'Silence', artist: 'Delerium', state: 'idle' }
 ]
 
 const fields: [string, string][] = [
-  ['title', 'Café Del Mar'],
-  ['artist', 'Energy 52'],
-  ['album', 'Cafe Del Mar — Vol. 2'],
-  ['year', '1998'],
-  ['genre', 'Trance']
+  ['title', 'Take me into the sky (Original Remix)'],
+  ['artist', 'Dj Vixent'],
+  ['album', 'Take me into the sky'],
+  ['year', '2026'],
+  ['genre', 'Electronic']
 ]
 
 export default function AppMockup() {
