@@ -96,7 +96,7 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     audioRef.current?.pause()
     setPlayingId(null)
-  }, [])
+  }, [selectedId])
 
   useEffect(
     () => () => {
