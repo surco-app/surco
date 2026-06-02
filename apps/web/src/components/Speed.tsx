@@ -1,7 +1,7 @@
 const manualSteps = [
-  { app: 'línea de comandos / otra app', label: 'Convertir a AIFF', t: '~60 s' },
-  { app: 'Meta', label: 'Escribir los metadatos', t: '~60 s' },
-  { app: 'a mano', label: 'Añadir grouping y tags que Meta no pone', t: '~45 s' },
+  { app: 'otra app', label: 'Convertir a AIFF', t: '~60 s' },
+  { app: 'app de tags', label: 'Escribir los metadatos', t: '~60 s' },
+  { app: 'a mano', label: 'Añadir grouping y tags que el tagger no pone', t: '~45 s' },
   { app: 'Música', label: 'Importar a Apple Music', t: '~30 s' }
 ]
 
@@ -35,7 +35,7 @@ export default function Speed() {
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-bg">
             <div
               className="h-full rounded-full bg-red/70"
-              style={{ animation: 'fillSlow 5s linear infinite' }}
+              style={{ animation: 'fillSlow 6s linear infinite' }}
             />
           </div>
           <p className="mt-2 font-mono text-[10px] text-muted">4 apps · pasos repetidos por cada pista</p>
@@ -55,7 +55,7 @@ export default function Speed() {
             <span className="text-sm font-medium text-fg">Convertir + etiquetar + Apple Music</span>
             <span
               className="ml-auto text-green"
-              style={{ animation: 'popcheck 5s ease-out infinite' }}
+              style={{ animation: 'popcheck 6s ease-out infinite' }}
             >
               ✓
             </span>
@@ -71,7 +71,7 @@ export default function Speed() {
           <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-bg">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue to-cyan"
-              style={{ animation: 'fillSnap 5s linear infinite' }}
+              style={{ animation: 'fillSnap 6s ease-out infinite' }}
             />
           </div>
           <p className="relative mt-2 font-mono text-[10px] text-muted">un clic · una pista lista</p>
