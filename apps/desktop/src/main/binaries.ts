@@ -1,6 +1,6 @@
+import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import { app } from 'electron'
 import ffmpegStatic from 'ffmpeg-static'
-import { path as ffprobeStaticPath } from 'ffprobe-static'
 
 // ffmpeg/ffprobe are bundled with the app so a user never has to install them.
 // They ship inside the asar archive, but native binaries can't be executed from
@@ -13,4 +13,4 @@ export function unpacked(binaryPath: string, packaged: boolean): string {
 }
 
 export const ffmpegPath = unpacked(ffmpegStatic as unknown as string, app.isPackaged)
-export const ffprobePath = unpacked(ffprobeStaticPath, app.isPackaged)
+export const ffprobePath = unpacked(ffprobeInstaller.path, app.isPackaged)
