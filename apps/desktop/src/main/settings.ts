@@ -7,6 +7,7 @@ const defaults: Settings = {
   theme: 'system',
   discogsToken: '',
   outputDir: join(app.getPath('music'), 'Surco'),
+  outputFormat: 'aiff',
   addToAppleMusic: true,
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],

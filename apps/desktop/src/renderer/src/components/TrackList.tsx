@@ -1,11 +1,13 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import type { OutputFormat } from '../../../shared/types'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem, TrackStatus } from '../types'
 
 interface Props {
   tracks: TrackItem[]
   selectedId: string | null
+  outputFormat: OutputFormat
   onSelect: (id: string) => void
   onRemove: (id: string) => void
 }
@@ -17,7 +19,13 @@ const statusColor: Record<TrackStatus, string> = {
   error: 'bg-danger',
 }
 
-export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): React.JSX.Element {
+export function TrackList({
+  tracks,
+  selectedId,
+  outputFormat,
+  onSelect,
+  onRemove,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <ul className="flex flex-col gap-1 p-2">
@@ -45,7 +53,7 @@ export function TrackList({ tracks, selectedId, onSelect, onRemove }: Props): Re
                 {t.status === 'processing' && t.stage ? (
                   <span data-testid="track-stage" className="mt-1 block">
                     <span className="block truncate text-xs text-[var(--color-accent)]">
-                      {tr(`trackList.stage.${t.stage}`)}
+                      {tr(`trackList.stage.${t.stage}`, { format: outputFormat.toUpperCase() })}
                     </span>
                     <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
                       <span

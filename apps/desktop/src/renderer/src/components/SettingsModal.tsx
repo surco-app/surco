@@ -1,10 +1,11 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings, ThemePref } from '../../../shared/types'
+import type { OutputFormat, Settings, ThemePref } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
+const FORMATS: OutputFormat[] = ['aiff', 'mp3']
 
 interface Props {
   settings: Settings
@@ -22,6 +23,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [theme, setTheme] = useState(settings.theme)
   const [token, setToken] = useState(settings.discogsToken)
   const [outputDir, setOutputDir] = useState(settings.outputDir)
+  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
@@ -47,6 +49,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       theme,
       discogsToken: token.trim(),
       outputDir,
+      outputFormat,
       addToAppleMusic,
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
       groupingPresets,
@@ -147,6 +150,28 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   {tr('common.change')}
                 </button>
               </div>
+
+              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+                {tr('settings.outputFormat')}
+              </label>
+              <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+                {FORMATS.map((id) => (
+                  <button
+                    key={id}
+                    data-testid={`settings-format-${id}`}
+                    aria-pressed={outputFormat === id}
+                    onClick={() => setOutputFormat(id)}
+                    className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                      outputFormat === id
+                        ? 'bg-[var(--color-panel-2)] text-fg'
+                        : 'text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {tr(`settings.formats.${id}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
               <label className="flex cursor-pointer items-center gap-3">
                 <input

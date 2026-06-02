@@ -1,7 +1,12 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
+import type {
+  DiscogsRelease,
+  DiscogsSearchResult,
+  DiscogsTrack,
+  OutputFormat,
+} from '../../../shared/types'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FIELD_DEFS } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
@@ -15,6 +20,7 @@ import { WaveSpinner } from './WaveSpinner'
 interface Props {
   item: TrackItem
   hasToken: boolean
+  outputFormat: OutputFormat
   filenameFormat: string
   groupingPresets: string[]
   visibleFields: string[]
@@ -73,6 +79,7 @@ function bestTrack(tracks: DiscogsTrack[], title: string): DiscogsTrack | undefi
 export function Editor({
   item,
   hasToken,
+  outputFormat,
   filenameFormat,
   groupingPresets,
   visibleFields,
@@ -470,7 +477,7 @@ export function Editor({
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-                .aiff
+                .{outputFormat}
               </span>
             </div>
           </label>
@@ -494,7 +501,9 @@ export function Editor({
               disabled={item.status === 'processing'}
               className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
             >
-              {item.status === 'processing' ? tr('editor.processing') : tr('editor.convert')}
+              {item.status === 'processing'
+                ? tr('editor.processing')
+                : tr('editor.convert', { format: outputFormat.toUpperCase() })}
             </button>
           )}
         </div>

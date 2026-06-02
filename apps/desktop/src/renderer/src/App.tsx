@@ -19,7 +19,7 @@ import { searchFromTags } from './lib/search'
 import { resolveTheme } from './lib/theme'
 import type { TrackItem } from './types'
 
-const AUDIO_EXT = /\.(wav|flac|aif|aiff)$/i
+const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3)$/i
 
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)
@@ -406,6 +406,7 @@ export default function App(): React.JSX.Element {
             <TrackList
               tracks={tracks}
               selectedId={selectedId}
+              outputFormat={settings?.outputFormat ?? 'aiff'}
               onSelect={setSelectedId}
               onRemove={removeTrack}
             />
@@ -420,6 +421,7 @@ export default function App(): React.JSX.Element {
               key={selected.id}
               item={selected}
               hasToken={!!settings?.discogsToken}
+              outputFormat={settings?.outputFormat ?? 'aiff'}
               filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}

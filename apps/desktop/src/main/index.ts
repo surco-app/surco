@@ -7,7 +7,7 @@ import { addToAppleMusic } from './applemusic'
 import { downloadCover, getRelease, search } from './discogs'
 import {
   analyzeCutoff,
-  convertToAiff,
+  convertAudio,
   extractCover,
   generateSpectrogram,
   probeAudio,
@@ -89,7 +89,7 @@ function registerIpc(): void {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Selecciona pistas',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff'] }],
+      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'mp3'] }],
     })
     return canceled ? [] : filePaths
   })
@@ -141,8 +141,11 @@ function registerIpc(): void {
       }
 
       stage('converting')
-      const outputPath = join(settings.outputDir, `${sanitizeFilename(job.outputName)}.aiff`)
-      await convertToAiff(job.inputPath, outputPath, job.meta, coverPath)
+      const outputPath = join(
+        settings.outputDir,
+        `${sanitizeFilename(job.outputName)}.${settings.outputFormat}`,
+      )
+      await convertAudio(job.inputPath, outputPath, settings.outputFormat, job.meta, coverPath)
 
       if (settings.addToAppleMusic) {
         stage('appleMusic')

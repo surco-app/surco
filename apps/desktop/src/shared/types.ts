@@ -1,9 +1,12 @@
 export type ThemePref = 'system' | 'light' | 'dark'
 
+export type OutputFormat = 'aiff' | 'mp3'
+
 export interface Settings {
   theme: ThemePref
   discogsToken: string
   outputDir: string
+  outputFormat: OutputFormat
   addToAppleMusic: boolean
   filenameFormat: string
   groupingPresets: string[]

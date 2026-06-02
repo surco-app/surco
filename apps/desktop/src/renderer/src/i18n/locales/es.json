@@ -43,7 +43,7 @@
     },
     "stage": {
       "cover": "Preparando carátula…",
-      "converting": "Convirtiendo a AIFF…",
+      "converting": "Convirtiendo a {{format}}…",
       "appleMusic": "Añadiendo a Apple Music…"
     }
   },
@@ -66,7 +66,7 @@
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
     "output": "Salida:",
     "outputName": "Nombre de salida",
-    "convert": "Convertir a AIFF + Apple Music",
+    "convert": "Convertir a {{format}} + Apple Music",
     "processing": "Procesando…",
     "doneReveal": "✓ Hecho — mostrar archivo",
     "searchError": "Error en la búsqueda",
@@ -103,6 +103,12 @@
     "tokenPlaceholder": "Pega aquí tu token personal",
     "tokenHelp": "Genera uno gratis en",
     "outputDir": "Carpeta de salida",
+    "outputFormat": "Formato de salida",
+    "formats": {
+      "aiff": "AIFF",
+      "mp3": "MP3"
+    },
+    "outputFormatHint": "AIFF conserva la calidad sin pérdida; MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
     "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
     "filenameFormat": "Formato del nombre",
     "tokensHint": "Tokens:",

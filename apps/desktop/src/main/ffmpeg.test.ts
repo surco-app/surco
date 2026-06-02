@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertArgs, coverArgs, tagsFromProbe } from './ffmpeg'
+import { convertArgs, coverArgs, planConversion, tagsFromProbe } from './ffmpeg'
 
 const meta: TrackMetadata = {
   title: 'Till I Come',
@@ -37,6 +37,49 @@ describe('convertArgs', () => {
     const withCover = convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta, '/cover.jpg')
     expect(withCover).toContain('/cover.jpg')
     expect(withCover).toContain('attached_pic')
+  })
+
+  it('sets the audio bitrate right after the codec when one is given', () => {
+    // an MP3 encode needs an explicit bitrate; a stream-copy must not carry one
+    const args = convertArgs('/in.wav', '/o.mp3', 'libmp3lame', meta, undefined, '320k')
+    const i = args.indexOf('-c:a')
+    expect(args.slice(i, i + 4)).toEqual(['-c:a', 'libmp3lame', '-b:a', '320k'])
+    expect(convertArgs('/in.mp3', '/o.mp3', 'copy', meta)).not.toContain('-b:a')
+  })
+})
+
+describe('planConversion', () => {
+  const probe = vi.fn(async () => ({
+    sampleFmt: 's32',
+    bitsPerRawSample: 24,
+    sampleRate: '44100',
+    channels: 2,
+  }))
+
+  it('stream-copies a source already in the target format', async () => {
+    expect(await planConversion('/in.aiff', 'aiff', probe)).toEqual({ codec: 'copy', ext: '.aiff' })
+    expect(await planConversion('/in.mp3', 'mp3', probe)).toEqual({ codec: 'copy', ext: '.mp3' })
+    // copying never needs to inspect the stream
+    expect(probe).not.toHaveBeenCalled()
+  })
+
+  it('encodes a lossless source to 320 kbps MP3 without probing the bit depth', async () => {
+    // MP3 is fixed-rate lossy, so the source bit depth is irrelevant
+    expect(await planConversion('/in.wav', 'mp3', probe)).toEqual({
+      codec: 'libmp3lame',
+      bitrate: '320k',
+      ext: '.mp3',
+    })
+    expect(probe).not.toHaveBeenCalled()
+  })
+
+  it('probes the source bit depth when encoding a lossless target to AIFF', async () => {
+    // AIFF must preserve the exact bit depth, which only ffprobe can reveal
+    expect(await planConversion('/in.wav', 'aiff', probe)).toEqual({
+      codec: 'pcm_s24be',
+      ext: '.aiff',
+    })
+    expect(probe).toHaveBeenCalledWith('/in.wav')
   })
 })
 

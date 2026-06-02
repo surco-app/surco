@@ -3,7 +3,7 @@ import { readFile, rename, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import type { TrackMetadata } from '../shared/types'
+import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
 
@@ -147,6 +147,8 @@ function metadataArgs(meta: TrackMetadata): string[] {
 }
 
 const AIFF_INPUT = /\.aiff?$/i
+const MP3_INPUT = /\.mp3$/i
+const MP3_BITRATE = '320k'
 
 export function convertArgs(
   input: string,
@@ -154,6 +156,7 @@ export function convertArgs(
   codec: string,
   meta: TrackMetadata,
   coverPath?: string,
+  bitrate?: string,
 ): string[] {
   const args = ['-y', '-i', input]
   if (coverPath) args.push('-i', coverPath)
@@ -161,28 +164,54 @@ export function convertArgs(
   args.push('-map', '0:a')
   if (coverPath) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
 
-  args.push('-c:a', codec, '-write_id3v2', '1', '-id3v2_version', '3')
+  args.push('-c:a', codec)
+  if (bitrate) args.push('-b:a', bitrate)
+  args.push('-write_id3v2', '1', '-id3v2_version', '3')
   args.push(...metadataArgs(meta))
   args.push(output)
   return args
 }
 
-export async function convertToAiff(
+export interface ConversionPlan {
+  codec: string
+  bitrate?: string
+  ext: '.aiff' | '.mp3'
+}
+
+// Decides how to render a source into the chosen output format. A source
+// already in the target format is bit-identical, so it stream-copies (instant);
+// otherwise it encodes — lossless to bit-depth-preserving PCM for AIFF, or to a
+// fixed 320 kbps for MP3. The bit depth only matters for AIFF, so MP3 targets
+// skip the probe entirely.
+export async function planConversion(
+  input: string,
+  format: OutputFormat,
+  probe: (input: string) => Promise<ProbeResult>,
+): Promise<ConversionPlan> {
+  if (format === 'mp3') {
+    if (MP3_INPUT.test(input)) return { codec: 'copy', ext: '.mp3' }
+    return { codec: 'libmp3lame', bitrate: MP3_BITRATE, ext: '.mp3' }
+  }
+  if (AIFF_INPUT.test(input)) return { codec: 'copy', ext: '.aiff' }
+  return { codec: aiffCodec(await probe(input)), ext: '.aiff' }
+}
+
+export async function convertAudio(
   input: string,
   output: string,
+  format: OutputFormat,
   meta: TrackMetadata,
   coverPath?: string,
 ): Promise<void> {
-  // An AIFF input is already lossless PCM, so stream-copy it instead of
-  // re-encoding (instant, bit-identical). We always write to a temp file and
-  // rename it over the target, so re-processing a file that already lives in
-  // the output folder (input path === output path) overwrites it atomically
-  // instead of failing with ffmpeg's "Output same as Input" error.
-  const codec = AIFF_INPUT.test(input) ? 'copy' : aiffCodec(await probeAudio(input))
-  const tmp = output.replace(/\.aiff$/i, '.tmp.aiff')
+  // We always write to a temp file and rename it over the target, so
+  // re-processing a file that already lives in the output folder (input path ===
+  // output path) overwrites it atomically instead of failing with ffmpeg's
+  // "Output same as Input" error.
+  const { codec, bitrate, ext } = await planConversion(input, format, probeAudio)
+  const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
   try {
-    await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath), {
+    await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate), {
       maxBuffer: 1024 * 1024 * 32,
     })
     await rename(tmp, output)

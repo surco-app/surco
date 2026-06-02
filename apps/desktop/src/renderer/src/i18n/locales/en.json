@@ -43,7 +43,7 @@
     },
     "stage": {
       "cover": "Preparing artwork…",
-      "converting": "Converting to AIFF…",
+      "converting": "Converting to {{format}}…",
       "appleMusic": "Adding to Apple Music…"
     }
   },
@@ -66,7 +66,7 @@
     "qualityCaption": "Reaches ~{{cutoff}} of {{nyquist}} (Nyquist). A sharp cutoff below it reveals an MP3 re-encoded as WAV.",
     "output": "Output:",
     "outputName": "Output name",
-    "convert": "Convert to AIFF + Apple Music",
+    "convert": "Convert to {{format}} + Apple Music",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",
     "searchError": "Search failed",
@@ -103,6 +103,12 @@
     "tokenPlaceholder": "Paste your personal token here",
     "tokenHelp": "Generate one for free at",
     "outputDir": "Output folder",
+    "outputFormat": "Output format",
+    "formats": {
+      "aiff": "AIFF",
+      "mp3": "MP3"
+    },
+    "outputFormatHint": "AIFF keeps lossless quality; MP3 (320 kbps) takes less space. A file already in the chosen format is copied without re-encoding.",
     "addToAppleMusic": "Automatically add to Apple Music after processing",
     "filenameFormat": "File name format",
     "tokensHint": "Tokens:",
