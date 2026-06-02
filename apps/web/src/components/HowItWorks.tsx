@@ -3,7 +3,7 @@ import Reveal from './Reveal'
 const steps = [
   { n: '1', title: 'Suelta tus pistas', body: 'Arrastra tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula.' },
   { n: '2', title: 'Elige el disco', body: 'Busca en Discogs y aplica artista, álbum, año, género y carátula con un clic.' },
-  { n: '3', title: 'Pulsa una vez', body: 'Convierte a AIFF o MP3, revisa el espectro y manda la pista a Apple Music.' }
+  { n: '3', title: 'Exporta de un golpe', body: 'Convierte a AIFF o MP3, revisa el espectro y manda la pista a Apple Music.' }
 ]
 
 export default function HowItWorks() {
