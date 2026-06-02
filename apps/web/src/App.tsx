@@ -66,7 +66,7 @@ export default function App() {
                 className="h-1.5 w-1.5 rounded-full bg-blue"
                 style={{ animation: 'glow 2s ease-in-out infinite' }}
               />
-              Próximamente · macOS · Windows
+              Disponible · macOS · Windows
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
               Menos preparar,
