@@ -27,7 +27,7 @@ export default function DownloadCount() {
 
   return (
     <p data-testid="download-count" className="mt-4 font-mono text-xs text-faint">
-      <span className="text-fg">{count.toLocaleString('es')}</span> descargas y subiendo
+      <span className="text-fg">{count.toLocaleString('es')}</span> descargas
     </p>
   )
 }
