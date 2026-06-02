@@ -109,7 +109,7 @@ export default function App() {
               </div>
               <div>
                 <div className="text-4xl font-bold text-fg sm:text-5xl">1</div>
-                <p className="mt-2 text-sm text-muted">botón, todo el flujo</p>
+                <p className="mt-2 text-sm text-muted">golpe, todo el flujo</p>
               </div>
             </div>
           </section>
