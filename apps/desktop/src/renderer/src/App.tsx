@@ -456,7 +456,9 @@ export default function App(): React.JSX.Element {
                 <p className="text-[15px] font-medium text-balance text-fg-muted">
                   {tr('empty.title')}
                 </p>
-                <p className="mt-1.5 text-sm text-pretty text-fg-dim">{tr('empty.subtitle')}</p>
+                <p className="mt-1.5 text-sm text-pretty text-fg-dim">
+                  {tr(window.api.platform === 'darwin' ? 'empty.subtitle' : 'empty.subtitleNoMusic')}
+                </p>
               </div>
             </div>
           )}

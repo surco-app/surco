@@ -19,7 +19,8 @@
   },
   "empty": {
     "title": "Add tracks to get started.",
-    "subtitle": "Converts your tracks to lossless AIFF, tags them from Discogs and sends them to Apple Music."
+    "subtitle": "Converts your tracks to lossless AIFF, tags them from Discogs and sends them to Apple Music.",
+    "subtitleNoMusic": "Converts your tracks to lossless AIFF and tags them from Discogs."
   },
   "commands": {
     "add": "Add files",
@@ -67,6 +68,7 @@
     "output": "Output:",
     "outputName": "Output name",
     "convert": "Convert to {{format}} + Apple Music",
+    "convertNoMusic": "Convert to {{format}}",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",
     "searchError": "Search failed",

@@ -20,3 +20,11 @@ mac:
   target:
     - dmg
   artifactName: ${productName}-${version}.${ext}
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-Setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
-import { addToAppleMusic } from './applemusic'
+import { addToAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import { downloadCover, getRelease, search } from './discogs'
 import {
   analyzeCutoff,
@@ -147,7 +147,7 @@ function registerIpc(): void {
       )
       await convertAudio(job.inputPath, outputPath, settings.outputFormat, job.meta, coverPath)
 
-      if (settings.addToAppleMusic) {
+      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform)) {
         stage('appleMusic')
         await addToAppleMusic(outputPath, job.meta)
       }

@@ -9,6 +9,7 @@ import type {
 } from '../shared/types'
 
 export interface Api {
+  platform: NodeJS.Platform
   getPathForFile: (file: File) => string
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { ProcessProgress } from '../shared/types'
 
 const api = {
+  platform: process.platform,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),

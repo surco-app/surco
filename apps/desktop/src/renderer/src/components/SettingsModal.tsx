@@ -7,6 +7,10 @@ import { FIELD_DEFS, moveItem } from '../lib/fields'
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3']
 
+// Apple Music automation only exists on macOS, so the toggle is meaningless on
+// other platforms where a track simply finishes in the output folder.
+const isMac = window.api.platform === 'darwin'
+
 interface Props {
   settings: Settings
   onClose: () => void
@@ -173,16 +177,18 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
               </div>
               <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
-              <label className="flex cursor-pointer items-center gap-3">
-                <input
-                  data-testid="settings-applemusic"
-                  type="checkbox"
-                  checked={addToAppleMusic}
-                  onChange={(e) => setAddToAppleMusic(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
-                />
-                <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
-              </label>
+              {isMac && (
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-applemusic"
+                    type="checkbox"
+                    checked={addToAppleMusic}
+                    onChange={(e) => setAddToAppleMusic(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
+                </label>
+              )}
             </>
           )}
 

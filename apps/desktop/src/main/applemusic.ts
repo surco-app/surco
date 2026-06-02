@@ -63,6 +63,13 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
   ].join('\n')
 }
 
+// osascript and the Music AppleScript bridge only exist on macOS, so this gates
+// the whole feature on the platform. Apple Music for Windows exposes no
+// automation, so a track simply finishes in the output folder there.
+export function shouldAddToAppleMusic(enabled: boolean, platform: NodeJS.Platform): boolean {
+  return enabled && platform === 'darwin'
+}
+
 export async function addToAppleMusic(filePath: string, meta: TrackMetadata): Promise<void> {
   await run('osascript', ['-e', buildAddScript(filePath, meta)])
 }

@@ -8,7 +8,7 @@ const defaults: Settings = {
   discogsToken: '',
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
-  addToAppleMusic: true,
+  addToAppleMusic: process.platform === 'darwin',
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
   trimWhitespace: true,

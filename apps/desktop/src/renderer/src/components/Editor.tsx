@@ -514,7 +514,9 @@ export function Editor({
             >
               {item.status === 'processing'
                 ? tr('editor.processing')
-                : tr('editor.convert', { format: outputFormat.toUpperCase() })}
+                : tr(window.api.platform === 'darwin' ? 'editor.convert' : 'editor.convertNoMusic', {
+                    format: outputFormat.toUpperCase(),
+                  })}
             </button>
           )}
         </div>

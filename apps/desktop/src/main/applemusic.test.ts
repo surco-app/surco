@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { buildAddScript } from './applemusic'
+import { buildAddScript, shouldAddToAppleMusic } from './applemusic'
 
 const base: TrackMetadata = {
   title: 'ATB (Till I Come)',
@@ -60,5 +60,17 @@ describe('buildAddScript', () => {
     expect(script).toContain('set bpm of theTrack to 128')
     expect(script).toContain('set disc number of theTrack to 2')
     expect(script).not.toContain('set bpm of theTrack to 0')
+  })
+})
+
+describe('shouldAddToAppleMusic', () => {
+  it('refuses on non-darwin platforms even when the setting is enabled, because osascript and the Music AppleScript bridge only exist on macOS — a settings.json carried over to Windows must not spawn a missing binary', () => {
+    expect(shouldAddToAppleMusic(true, 'win32')).toBe(false)
+    expect(shouldAddToAppleMusic(true, 'linux')).toBe(false)
+  })
+
+  it('runs only when the user enabled it and the platform is macOS', () => {
+    expect(shouldAddToAppleMusic(true, 'darwin')).toBe(true)
+    expect(shouldAddToAppleMusic(false, 'darwin')).toBe(false)
   })
 })

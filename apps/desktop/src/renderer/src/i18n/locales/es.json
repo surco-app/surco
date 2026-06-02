@@ -19,7 +19,8 @@
   },
   "empty": {
     "title": "Añade pistas para empezar.",
-    "subtitle": "Convierte tus pistas a AIFF lossless, las etiqueta desde Discogs y las manda a Apple Music."
+    "subtitle": "Convierte tus pistas a AIFF lossless, las etiqueta desde Discogs y las manda a Apple Music.",
+    "subtitleNoMusic": "Convierte tus pistas a AIFF lossless y las etiqueta desde Discogs."
   },
   "commands": {
     "add": "Añadir archivos",
@@ -67,6 +68,7 @@
     "output": "Salida:",
     "outputName": "Nombre de salida",
     "convert": "Convertir a {{format}} + Apple Music",
+    "convertNoMusic": "Convertir a {{format}}",
     "processing": "Procesando…",
     "doneReveal": "✓ Hecho — mostrar archivo",
     "searchError": "Error en la búsqueda",
