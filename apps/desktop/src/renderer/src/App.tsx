@@ -17,10 +17,14 @@ import { keyToCommandId, moveIndex } from './lib/keymap'
 import { renderOutputName } from './lib/outputName'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
+import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3)$/i
+
+// macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
+const isMac = window.api.platform === 'darwin'
 
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)
@@ -244,18 +248,24 @@ export default function App(): React.JSX.Element {
   const canProcessAll = eligibleCount > 0 && !batching
 
   const commands: Command[] = [
-    { id: 'add', title: tr('commands.add'), hint: '⌘O', enabled: true, run: pickFiles },
+    {
+      id: 'add',
+      title: tr('commands.add'),
+      hint: formatShortcut(['mod', 'O'], isMac),
+      enabled: true,
+      run: pickFiles,
+    },
     {
       id: 'process-current',
       title: tr('commands.processCurrent'),
-      hint: '⌘↵',
+      hint: formatShortcut(['mod', 'enter'], isMac),
       enabled: canProcessSelected,
       run: () => selected && processOne(selected.id),
     },
     {
       id: 'process-all',
       title: tr('commands.processAll'),
-      hint: '⌘⇧↵',
+      hint: formatShortcut(['mod', 'shift', 'enter'], isMac),
       enabled: canProcessAll,
       run: processAll,
     },
@@ -263,7 +273,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'remove',
       title: tr('commands.remove'),
-      hint: '⌘⌫',
+      hint: formatShortcut(['mod', 'backspace'], isMac),
       enabled: !!selected,
       run: () => selected && removeTrack(selected.id),
     },
@@ -291,7 +301,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'settings',
       title: tr('commands.settings'),
-      hint: '⌘,',
+      hint: formatShortcut(['mod', ','], isMac),
       enabled: true,
       run: () => setShowSettings(true),
     },
@@ -376,7 +386,7 @@ export default function App(): React.JSX.Element {
             className="press flex h-8 items-center gap-1 rounded-lg border border-[var(--color-line)] px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.palette')}
           >
-            <kbd className="font-sans">⌘</kbd>
+            <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
             <kbd className="font-sans">K</kbd>
           </button>
           <button
