@@ -16,7 +16,7 @@ const base: TrackMetadata = {
 
 describe('buildAddScript', () => {
   it('retries property writes so the paramErr (-50) raised while Apple Music is still importing does not abort the add', () => {
-    const script = buildAddScript('/Users/vicent/Music/Rótulo/track.aiff', base)
+    const script = buildAddScript('/Users/vicent/Music/Surco/track.aiff', base)
     // The retry loop is the whole point: without it, setting properties on a
     // track that is mid-import throws -50 and the track lands untagged.
     expect(script).toContain('repeat 100 times')
@@ -31,8 +31,8 @@ describe('buildAddScript', () => {
   })
 
   it('adds the file via POSIX path and writes only the fields that have values', () => {
-    const script = buildAddScript('/Users/vicent/Music/Rótulo/track.aiff', base)
-    expect(script).toContain('set theTrack to add POSIX file "/Users/vicent/Music/Rótulo/track.aiff"')
+    const script = buildAddScript('/Users/vicent/Music/Surco/track.aiff', base)
+    expect(script).toContain('set theTrack to add POSIX file "/Users/vicent/Music/Surco/track.aiff"')
     expect(script).toContain('set name of theTrack to "ATB (Till I Come)"')
     expect(script).toContain('set album of theTrack to "ATB / Verano Sin Azul"')
     expect(script).not.toContain('set comment of theTrack')

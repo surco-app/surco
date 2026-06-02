@@ -112,7 +112,7 @@ function registerIpc(): void {
         // The cover the user kept from the file's embedded art rides along as a
         // data URL; decode it to disk so it can be re-embedded into the output.
         stage('cover')
-        tempCover = join(tmpdir(), `rotulo-embed-${Date.now()}.jpg`)
+        tempCover = join(tmpdir(), `surco-embed-${Date.now()}.jpg`)
         await writeFile(tempCover, Buffer.from(job.coverUrl.slice(job.coverUrl.indexOf(',') + 1), 'base64'))
         coverPath = tempCover
       }
@@ -159,7 +159,7 @@ function registerIpc(): void {
   })
 }
 
-app.setName('Rótulo')
+app.setName('Surco')
 
 app.whenReady().then(() => {
   if (!app.isPackaged && process.platform === 'darwin') {

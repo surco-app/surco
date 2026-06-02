@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { DiscogsSearchResult, DiscogsRelease } from '../shared/types'
 
 const BASE = 'https://api.discogs.com'
-const USER_AGENT = 'Rotulo/0.1 +https://github.com/vigosan/vinilo'
+const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/vinilo'
 
 async function api<T>(path: string, token: string): Promise<T> {
   if (!token) throw new Error('Falta el token de Discogs. Configúralo en Ajustes.')
@@ -33,7 +33,7 @@ export async function downloadCover(url: string): Promise<string> {
   if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
   const buf = Buffer.from(await res.arrayBuffer())
   const ext = res.headers.get('content-type')?.includes('png') ? 'png' : 'jpg'
-  const path = join(tmpdir(), `rotulo-cover-${Date.now()}.${ext}`)
+  const path = join(tmpdir(), `surco-cover-${Date.now()}.${ext}`)
   await writeFile(path, buf)
   return path
 }

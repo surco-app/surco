@@ -67,7 +67,7 @@ export function coverArgs(input: string, output: string): string[] {
 }
 
 export async function extractCover(input: string): Promise<string | null> {
-  const out = join(tmpdir(), `rotulo-cover-${Date.now()}.jpg`)
+  const out = join(tmpdir(), `surco-cover-${Date.now()}.jpg`)
   try {
     await run(ffmpegPath, coverArgs(input, out))
     const buf = await readFile(out)
@@ -175,7 +175,7 @@ export async function convertToAiff(
 }
 
 export async function generateSpectrogram(input: string): Promise<string> {
-  const out = join(tmpdir(), `rotulo-spec-${Date.now()}.png`)
+  const out = join(tmpdir(), `surco-spec-${Date.now()}.png`)
   try {
     await run(ffmpegPath, [
       '-hide_banner', '-loglevel', 'error', '-y',
@@ -197,7 +197,7 @@ export async function processCover(
   const max = opts.maxSize > 0 ? opts.maxSize : 4000
   const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
   const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
-  const out = join(tmpdir(), `rotulo-cover-proc-${Date.now()}.jpg`)
+  const out = join(tmpdir(), `surco-cover-proc-${Date.now()}.jpg`)
   await run(ffmpegPath, [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', input,
@@ -209,7 +209,7 @@ export async function processCover(
 }
 
 export async function analyzeCutoff(input: string): Promise<number> {
-  const stats = join(tmpdir(), `rotulo-stats-${Date.now()}.txt`)
+  const stats = join(tmpdir(), `surco-stats-${Date.now()}.txt`)
   try {
     await run(ffmpegPath, [
       '-hide_banner', '-loglevel', 'error',

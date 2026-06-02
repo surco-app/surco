@@ -1,5 +1,5 @@
-appId: com.vigosan.rotulo
-productName: Rótulo
+appId: com.vigosan.surco
+productName: Surco
 directories:
   buildResources: build
   output: dist
