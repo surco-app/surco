@@ -52,17 +52,21 @@ export default function App() {
           <a href="#analisis" className="hover:text-fg">Análisis</a>
           <a href="#funciones" className="hover:text-fg">Funciones</a>
           <a href="#atajos" className="hover:text-fg">Atajos</a>
-          <a href="#" className="rounded-full bg-blue px-4 py-1.5 font-medium text-bg hover:opacity-90">
-            Descargar
-          </a>
+          <span className="cursor-not-allowed rounded-full border border-line bg-surface/50 px-4 py-1.5 font-medium text-muted">
+            Pronto
+          </span>
         </nav>
       </header>
 
       <main className="relative mx-auto max-w-6xl px-6">
         <section className="grid items-center gap-12 pt-12 pb-24 lg:grid-cols-2 lg:pt-20">
           <div className="reveal">
-            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/50 px-3 py-1 font-mono text-xs text-muted">
-              <span className="h-1.5 w-1.5 rounded-full bg-green" /> macOS · Apple Silicon
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-blue"
+                style={{ animation: 'glow 2s ease-in-out infinite' }}
+              />
+              Próximamente · macOS · Apple Silicon
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
               Cuida tus pistas.
@@ -79,16 +83,21 @@ export default function App() {
               <span className="text-cyan">AIFF lossless</span>
             </div>
             <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <a
-                href="#"
-                className="rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg transition-transform hover:scale-[1.03]"
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="cursor-not-allowed rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
               >
                 Descargar para macOS
-              </a>
+              </button>
               <a href="#analisis" className="text-sm font-medium text-fg hover:text-blue">
                 Ver el análisis →
               </a>
             </div>
+            <p className="mt-4 font-mono text-xs text-muted">
+              La descarga aún no está disponible — estamos puliendo la primera versión.
+            </p>
           </div>
 
           <div className="reveal" style={{ animationDelay: '0.12s' }}>
