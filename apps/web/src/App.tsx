@@ -8,6 +8,7 @@ import Reveal from './components/Reveal'
 import CountUp from './components/CountUp'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
+import DownloadButton from './components/DownloadButton'
 
 const features = [
   { kick: 'importar', title: 'Arrastra y suelta', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen.' },
@@ -81,24 +82,7 @@ export default function App() {
               <span className="text-cyan">AIFF lossless</span> <span className="text-faint">o</span>{' '}
               <span className="text-cyan">MP3</span>
             </div>
-            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="cursor-not-allowed rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
-              >
-                Descargar para macOS
-              </button>
-              <a href="#analisis" className="text-sm font-medium text-fg transition-colors hover:text-blue">
-                Ver el análisis →
-              </a>
-            </div>
-            <p className="mt-4 font-mono text-xs text-faint">
-              La descarga aún no está disponible — estamos puliendo la primera versión.
-              <br />
-              También llega a Windows, con todo igual salvo el envío automático a Apple Music.
-            </p>
+            <DownloadButton />
           </Reveal>
 
           <Reveal delay={120}>
