@@ -131,6 +131,8 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 {tr('settings.tokenHelp')}{' '}
                 <a
                   href="https://www.discogs.com/settings/developers"
+                  target="_blank"
+                  rel="noreferrer"
                   className="text-[var(--color-accent)] hover:underline"
                 >
                   discogs.com/settings/developers
