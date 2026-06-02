@@ -11,7 +11,7 @@
     "build:desktop": "npm run build -w apps/desktop",
     "build:web": "npm run build -w apps/web",
     "dist:desktop": "npm run dist -w apps/desktop",
-    "test": "npm run test -w apps/desktop",
+    "test": "npm run test --workspaces --if-present",
     "downloads": "node scripts/downloads.mjs",
     "release:patch": "bash scripts/release.sh patch",
     "release:minor": "bash scripts/release.sh minor",
