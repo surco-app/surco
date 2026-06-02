@@ -9,7 +9,6 @@ import CountUp from './components/CountUp'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
-import DownloadCount from './components/DownloadCount'
 
 const features = [
   { kick: 'importar', title: 'Arrastra y suelta', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen.' },
@@ -84,7 +83,6 @@ export default function App() {
               <span className="text-cyan">MP3</span>
             </div>
             <DownloadButton />
-            <DownloadCount />
           </Reveal>
 
           <Reveal delay={120}>

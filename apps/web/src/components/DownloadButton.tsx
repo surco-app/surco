@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DownloadCount from './DownloadCount'
 
 const REPO = 'vigosan/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
@@ -92,13 +93,17 @@ export default function DownloadButton() {
           ¿Mac con Intel (2020 o anterior)? Descárgalo aquí
         </a>
       )}
-      <p className="mt-4 font-mono text-xs text-faint">
-        {ready
-          ? 'Descarga gratuita.'
-          : 'La descarga aún no está disponible — estamos puliendo la primera versión.'}
-        <br />
-        También llega a Windows, con todo igual salvo el envío automático a Apple Music.
-      </p>
+      <div className="mt-4 space-y-1 font-mono text-xs text-faint">
+        <p>
+          {ready
+            ? 'Descarga gratuita'
+            : 'La descarga aún no está disponible — estamos puliendo la primera versión.'}
+          {ready && <DownloadCount />}
+        </p>
+        <p className="max-w-md text-pretty">
+          También llega a Windows, con todo igual salvo el envío automático a Apple Music.
+        </p>
+      </div>
     </>
   )
 }
