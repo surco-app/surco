@@ -281,6 +281,31 @@ export async function processCover(
   return out
 }
 
+// An ffmpeg filtergraph reads ':' as an option separator and '\' as an escape,
+// so a Windows temp path (C:\Users\...\x.txt) handed to ametadata's file= option
+// loses its backslashes and breaks at the drive colon. Forward slashes are
+// accepted on Windows and the remaining colon is escaped as '\:'.
+export function escapeFilterPath(path: string): string {
+  return path.replace(/\\/g, '/').replace(/:/g, '\\:')
+}
+
+// Builds the single-decode filtergraph that splits the audio into one
+// bandpass→astats branch per band, prints each band's running stats to its own
+// temp file, then mixes the branches so ffmpeg has a single output to render.
+export function cutoffFilter(freqs: number[], files: string[]): string {
+  const branches = freqs
+    .map(
+      (f, i) =>
+        `[b${i}]bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
+        `ametadata=mode=print:file=${escapeFilterPath(files[i])}[o${i}]`,
+    )
+    .join(';')
+  return (
+    `[0:a]asetnsamples=n=1048576:p=0,asplit=${freqs.length}${freqs.map((_, i) => `[b${i}]`).join('')};` +
+    `${branches};${freqs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${freqs.length}`
+  )
+}
+
 // Measures the energy in each high-frequency band in a single decode (asplit
 // into one bandpass→astats branch per band) and hands the per-band RMS to
 // detectCutoff, which spots the codec's brick wall. The cumulative astats RMS is
@@ -292,16 +317,7 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
   if (freqs.length < 2) return nyquist
 
   const files = freqs.map((f) => join(tmpdir(), `surco-band-${f}-${Date.now()}.txt`))
-  const branches = freqs
-    .map(
-      (f, i) =>
-        `[b${i}]bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
-        `ametadata=mode=print:file=${files[i]}[o${i}]`,
-    )
-    .join(';')
-  const filter =
-    `[0:a]asetnsamples=n=1048576:p=0,asplit=${freqs.length}${freqs.map((_, i) => `[b${i}]`).join('')};` +
-    `${branches};${freqs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${freqs.length}`
+  const filter = cutoffFilter(freqs, files)
 
   try {
     await run(

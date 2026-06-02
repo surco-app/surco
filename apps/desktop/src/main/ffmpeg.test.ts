@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertArgs, coverArgs, planConversion, tagsFromProbe } from './ffmpeg'
+import { convertArgs, coverArgs, cutoffFilter, planConversion, tagsFromProbe } from './ffmpeg'
 
 const meta: TrackMetadata = {
   title: 'Till I Come',
@@ -111,6 +111,28 @@ describe('planConversion', () => {
       ext: '.aiff',
     })
     expect(probe).toHaveBeenCalledWith('/in.wav')
+  })
+})
+
+describe('cutoffFilter', () => {
+  it('escapes a Windows temp path embedded in the filtergraph so ffmpeg does not read the drive colon as an option separator nor the backslashes as escapes', () => {
+    // The real Windows bug: ametadata file=C:\Users\...\x.txt makes ffmpeg drop
+    // the backslashes and treat ":" as the option separator, corrupting the path
+    // ("Invalid argument"). Forward slashes are accepted and the colon must be \:
+    const filter = cutoffFilter(
+      [9000, 10000],
+      [
+        'C:\\Users\\usuario\\AppData\\Local\\Temp\\surco-band-9000.txt',
+        'C:\\Users\\usuario\\AppData\\Local\\Temp\\surco-band-10000.txt',
+      ],
+    )
+    expect(filter).toContain('file=C\\:/Users/usuario/AppData/Local/Temp/surco-band-9000.txt')
+    expect(filter).not.toContain('\\Users')
+  })
+
+  it('leaves a POSIX path untouched (no colon or backslash to escape)', () => {
+    const filter = cutoffFilter([9000], ['/var/folders/xy/surco-band-9000.txt'])
+    expect(filter).toContain('file=/var/folders/xy/surco-band-9000.txt')
   })
 })
 
