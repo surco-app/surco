@@ -281,23 +281,21 @@ export async function processCover(
   return out
 }
 
-// An ffmpeg filtergraph reads ':' as an option separator and '\' as an escape,
-// so a Windows temp path (C:\Users\...\x.txt) handed to ametadata's file= option
-// loses its backslashes and breaks at the drive colon. Forward slashes are
-// accepted on Windows and the remaining colon is escaped as '\:'.
-export function escapeFilterPath(path: string): string {
-  return path.replace(/\\/g, '/').replace(/:/g, '\\:')
-}
-
 // Builds the single-decode filtergraph that splits the audio into one
 // bandpass→astats branch per band, prints each band's running stats to its own
-// temp file, then mixes the branches so ffmpeg has a single output to render.
-export function cutoffFilter(freqs: number[], files: string[]): string {
+// file, then mixes the branches so ffmpeg has a single output to render.
+//
+// The entries are bare filenames, never absolute paths: ffmpeg's filtergraph
+// parser reads ':' as an option separator and '\' as an escape, so a Windows
+// path like C:\Users\...\x.txt inside file= is unparseable (no escaping is
+// reliable). analyzeCutoff runs ffmpeg with cwd set to the temp dir so these
+// resolve there.
+export function cutoffFilter(freqs: number[], names: string[]): string {
   const branches = freqs
     .map(
       (f, i) =>
         `[b${i}]bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
-        `ametadata=mode=print:file=${escapeFilterPath(files[i])}[o${i}]`,
+        `ametadata=mode=print:file=${names[i]}[o${i}]`,
     )
     .join(';')
   return (
@@ -316,8 +314,10 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2) return nyquist
 
-  const files = freqs.map((f) => join(tmpdir(), `surco-band-${f}-${Date.now()}.txt`))
-  const filter = cutoffFilter(freqs, files)
+  const dir = tmpdir()
+  const stamp = Date.now()
+  const names = freqs.map((f) => `surco-band-${f}-${stamp}.txt`)
+  const filter = cutoffFilter(freqs, names)
 
   try {
     await run(
@@ -334,11 +334,13 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
         'null',
         '-',
       ],
-      { maxBuffer: 1024 * 1024 * 16 },
+      // cwd is the temp dir so the filter can reference bare filenames; an
+      // absolute path inside file= breaks ffmpeg's filtergraph parser on Windows.
+      { cwd: dir, maxBuffer: 1024 * 1024 * 16 },
     )
     const bands = await Promise.all(
       freqs.map(async (freqHz, i) => {
-        const text = await readFile(files[i], 'utf-8').catch(() => '')
+        const text = await readFile(join(dir, names[i]), 'utf-8').catch(() => '')
         const matches = [...text.matchAll(/RMS_level=(-?[\d.]+)/g)]
         return {
           freqHz,
@@ -348,6 +350,6 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
     )
     return detectCutoff(bands, nyquist)
   } finally {
-    await Promise.all(files.map((f) => unlink(f).catch(() => {})))
+    await Promise.all(names.map((n) => unlink(join(dir, n)).catch(() => {})))
   }
 }

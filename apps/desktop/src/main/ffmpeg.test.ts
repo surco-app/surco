@@ -115,24 +115,19 @@ describe('planConversion', () => {
 })
 
 describe('cutoffFilter', () => {
-  it('escapes a Windows temp path embedded in the filtergraph so ffmpeg does not read the drive colon as an option separator nor the backslashes as escapes', () => {
-    // The real Windows bug: ametadata file=C:\Users\...\x.txt makes ffmpeg drop
-    // the backslashes and treat ":" as the option separator, corrupting the path
-    // ("Invalid argument"). Forward slashes are accepted and the colon must be \:
-    const filter = cutoffFilter(
-      [9000, 10000],
-      [
-        'C:\\Users\\usuario\\AppData\\Local\\Temp\\surco-band-9000.txt',
-        'C:\\Users\\usuario\\AppData\\Local\\Temp\\surco-band-10000.txt',
-      ],
-    )
-    expect(filter).toContain('file=C\\:/Users/usuario/AppData/Local/Temp/surco-band-9000.txt')
-    expect(filter).not.toContain('\\Users')
+  it('embeds bare filenames in file=, never absolute paths, so a Windows path (C:\\…, where ":" and "\\" are filtergraph metacharacters) can never reach the parser', () => {
+    // Escaping a Windows path inside file= is unreliable — ffmpeg still tries to
+    // evaluate it ("Invalid argument"). The fix is to pass a plain filename and
+    // run ffmpeg with cwd set to the temp dir, so nothing here needs escaping.
+    const filter = cutoffFilter([9000, 21000], ['surco-band-9000.txt', 'surco-band-21000.txt'])
+    expect(filter).toContain('ametadata=mode=print:file=surco-band-9000.txt[o0]')
+    expect(filter).toContain('ametadata=mode=print:file=surco-band-21000.txt[o1]')
   })
 
-  it('leaves a POSIX path untouched (no colon or backslash to escape)', () => {
-    const filter = cutoffFilter([9000], ['/var/folders/xy/surco-band-9000.txt'])
-    expect(filter).toContain('file=/var/folders/xy/surco-band-9000.txt')
+  it('splits the decode into one branch per band and mixes them back into a single output', () => {
+    const filter = cutoffFilter([9000, 10000], ['a.txt', 'b.txt'])
+    expect(filter).toContain('asplit=2[b0][b1]')
+    expect(filter).toContain('amix=inputs=2')
   })
 })
 
