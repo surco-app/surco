@@ -1,0 +1,43 @@
+{
+  "name": "surco",
+  "version": "0.1.0",
+  "description": "Organizador de pistas de audio para DJ: convierte a AIFF lossless, etiqueta desde Discogs y manda a Apple Music",
+  "main": "./out/main/index.js",
+  "author": "Vicent",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome lint src",
+    "format": "biome format --write src",
+    "check": "biome check --write src"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^34.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^3.0.0",
+    "i18next": "^26.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^17.0.8",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0"
+  }
+}
