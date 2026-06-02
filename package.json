@@ -11,6 +11,9 @@
     "build:desktop": "npm run build -w apps/desktop",
     "build:web": "npm run build -w apps/web",
     "dist:desktop": "npm run dist -w apps/desktop",
-    "test": "npm run test -w apps/desktop"
+    "test": "npm run test -w apps/desktop",
+    "release:patch": "cd apps/desktop && npm version patch -m \"Release v%s\" && git push --follow-tags origin main",
+    "release:minor": "cd apps/desktop && npm version minor -m \"Release v%s\" && git push --follow-tags origin main",
+    "release:major": "cd apps/desktop && npm version major -m \"Release v%s\" && git push --follow-tags origin main"
   }
 }
