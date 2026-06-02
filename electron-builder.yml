@@ -9,8 +9,14 @@ files:
 asarUnpack:
   - node_modules/ffmpeg-static/**
   - node_modules/ffprobe-static/**
+afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
+  identity: null
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    CFBundleDisplayName: Surco
   target:
     - dmg
   artifactName: ${productName}-${version}.${ext}
