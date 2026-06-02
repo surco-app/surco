@@ -13,7 +13,6 @@ function detectOS(): OS {
   return 'other'
 }
 
-const EXT: Record<OS, string | null> = { mac: '.dmg', windows: '.exe', other: null }
 const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', other: '' }
 
 const primary =
@@ -23,19 +22,31 @@ const primary =
 // release. /releases/latest skips drafts, so until the first release is
 // published the fetch 404s and the button stays disabled on its own — no manual
 // flag to flip when the binaries land.
+//
+// macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
+// reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
+// majority of Macs — and a discreet link below covers Intel.
 export default function DownloadButton() {
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
+  const [intelHref, setIntelHref] = useState<string | null>(null)
 
   useEffect(() => {
-    const ext = EXT[os]
-    if (!ext) return
+    if (os === 'other') return
     let cancelled = false
     fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const asset = data?.assets?.find((a: { name: string }) => a.name.endsWith(ext))
-        if (!cancelled && asset) setHref(asset.browser_download_url)
+        if (cancelled || !data?.assets) return
+        const url = (suffix: string) =>
+          data.assets.find((a: { name: string }) => a.name.endsWith(suffix))?.browser_download_url ??
+          null
+        if (os === 'mac') {
+          setHref(url('arm64.dmg'))
+          setIntelHref(url('x64.dmg'))
+        } else {
+          setHref(url('.exe'))
+        }
       })
       .catch(() => {})
     return () => {
@@ -73,6 +84,14 @@ export default function DownloadButton() {
           Ver el análisis →
         </a>
       </div>
+      {os === 'mac' && intelHref && (
+        <a
+          href={intelHref}
+          className="mt-3 inline-block font-mono text-xs text-faint underline-offset-2 transition-colors hover:text-blue hover:underline"
+        >
+          ¿Mac con Intel (2020 o anterior)? Descárgalo aquí
+        </a>
+      )}
       <p className="mt-4 font-mono text-xs text-faint">
         {ready
           ? 'Descarga gratuita.'

@@ -12,7 +12,10 @@ jobs:
   release:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        # macos-14 = Apple Silicon (arm64), macos-13 = Intel (x64). Each runner
+        # installs ffmpeg/ffprobe natively for its arch, so its .dmg bundles the
+        # matching binary — no cross-arch fetching. Windows stays x64-only.
+        os: [macos-14, macos-13, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +57,16 @@ jobs:
           npx electron-vite build
           npx electron-builder --mac --publish always
 
+      # Both macOS runners publish a file literally named latest-mac.yml, so on the
+      # shared release the second upload clobbers the first and one arch loses its
+      # update feed. Stash each arch's copy so a later job can merge them.
+      - name: Stash the per-arch update feed
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-mac-${{ matrix.os }}
+          path: apps/desktop/dist/latest-mac.yml
+
       - name: Build & publish (Windows)
         if: runner.os == 'Windows'
         working-directory: apps/desktop
@@ -63,3 +76,45 @@ jobs:
         run: |
           npx electron-vite build
           npx electron-builder --win --publish always
+
+  # The arm64 and x64 runners each uploaded a single-arch latest-mac.yml and the
+  # last one won. Rebuild one feed that lists BOTH arch zips so electron-updater
+  # serves each Mac the matching build, then overwrite the clobbered copy.
+  merge-mac-feed:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: latest-mac-*
+          path: feeds
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Merge the two feeds into one
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i js-yaml@4 >/dev/null 2>&1
+          node - <<'EOF'
+          const fs = require('fs')
+          const yaml = require('js-yaml')
+          const feeds = fs
+            .readdirSync('feeds')
+            .map((d) => yaml.load(fs.readFileSync(`feeds/${d}/latest-mac.yml`, 'utf8')))
+          // Keep the arm64 feed as the base (its top-level path stays the legacy
+          // default) and splice in the x64 file entries electron-updater matches by arch.
+          const base = feeds.find((f) => f.files.some((x) => x.url.includes('arm64'))) || feeds[0]
+          const seen = new Set(base.files.map((f) => f.url))
+          for (const f of feeds)
+            for (const file of f.files)
+              if (!seen.has(file.url)) {
+                base.files.push(file)
+                seen.add(file.url)
+              }
+          fs.writeFileSync('latest-mac.yml', yaml.dump(base, { lineWidth: -1 }))
+          console.log(fs.readFileSync('latest-mac.yml', 'utf8'))
+          EOF
+      - name: Overwrite the feed on the release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" latest-mac.yml --clobber --repo vigosan/surco-releases

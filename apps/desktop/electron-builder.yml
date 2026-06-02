@@ -28,7 +28,9 @@ mac:
   target:
     - dmg
     - zip
-  artifactName: ${productName}-${version}.${ext}
+  # Arch in the name so the arm64 and x64 builds (each from its own native runner)
+  # don't collide as the same asset on the shared GitHub release.
+  artifactName: ${productName}-${version}-${arch}.${ext}
 win:
   icon: build/icon.ico
   target:
