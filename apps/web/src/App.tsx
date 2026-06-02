@@ -1,5 +1,6 @@
 import AppMockup from './components/AppMockup'
 import Spectrogram from './components/Spectrogram'
+import Speed from './components/Speed'
 
 const features = [
   { kick: 'import', title: 'Importa y arrastra', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee las etiquetas y la carátula embebida al instante.' },
@@ -47,6 +48,7 @@ export default function App() {
           <span className="ml-1 hidden font-mono text-xs text-muted sm:inline">groove tool</span>
         </div>
         <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
+          <a href="#velocidad" className="hover:text-fg">Velocidad</a>
           <a href="#analisis" className="hover:text-fg">Análisis</a>
           <a href="#funciones" className="hover:text-fg">Funciones</a>
           <a href="#atajos" className="hover:text-fg">Atajos</a>
@@ -93,6 +95,8 @@ export default function App() {
             <AppMockup />
           </div>
         </section>
+
+        <Speed />
 
         <section id="analisis" className="scroll-mt-20 pb-24">
           <p className="font-mono text-xs tracking-wider text-blue uppercase">Análisis anti-fake</p>
