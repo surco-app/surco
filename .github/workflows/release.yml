@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The App Store Connect API key arrives base64-encoded as a secret; notarize
+      # needs it as a file on disk.
+      - name: Write Apple API key
+        if: runner.os == 'macOS'
+        shell: bash
+        run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/apple-api-key.p8"
+
+      # electron-builder publishes a DRAFT GitHub release keyed by version, so both
+      # matrix jobs upload to the same draft. Review it on GitHub and hit publish
+      # once the .dmg, .zip and .exe are all attached.
+      - name: Build & publish (macOS)
+        if: runner.os == 'macOS'
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY: ${{ runner.temp }}/apple-api-key.p8
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          npx electron-vite build
+          npx electron-builder --mac --publish always
+
+      - name: Build & publish (Windows)
+        if: runner.os == 'Windows'
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx electron-vite build
+          npx electron-builder --win --publish always

@@ -12,15 +12,21 @@ asarUnpack:
 afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
-  identity: null
+  hardenedRuntime: true
+  gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  notarize: true
   extendInfo:
     CFBundleDisplayName: Surco
+  # zip alongside dmg: Squirrel.Mac (electron-updater) updates from the zip, not
+  # the dmg, so omitting it would ship installs that can't auto-update.
   target:
     - dmg
+    - zip
   artifactName: ${productName}-${version}.${ext}
 win:
+  icon: build/icon.ico
   target:
     - nsis
   artifactName: ${productName}-${version}-Setup.${ext}
@@ -28,3 +34,7 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+publish:
+  provider: github
+  owner: vigosan
+  repo: surco

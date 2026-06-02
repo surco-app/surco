@@ -9,6 +9,10 @@ const { join } = require('path')
 // distribution / not notarized).
 exports.default = async function afterPack(context) {
   if (context.electronPlatformName !== 'darwin') return
+  // When a real Developer ID certificate is present (CI release), electron-builder
+  // signs and notarizes the bundle itself — ad-hoc re-signing here would clobber
+  // that signature, so this hook is only for local unsigned test builds.
+  if (process.env.CSC_LINK) return
   const appPath = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
   const entitlements = join(__dirname, 'entitlements.mac.plist')
   execFileSync(
