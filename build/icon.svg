@@ -84,16 +84,15 @@
     <circle cx="512" cy="500" r="11" fill="#0B0C0F"/>
   </g>
 
-  <!-- handwritten flourish on the label (the rótulo) -->
+  <!-- handwritten "S" written on the label with the marker -->
   <g filter="url(#inkSoft)">
-    <path d="M452 560 C 448 488, 466 452, 506 452 C 546 452, 556 502, 506 510
-             C 556 514, 584 566, 632 524"
-          fill="none" stroke="#1A1E24" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="500" y="500" font-family="Marker Felt" font-weight="bold" font-size="210"
+          fill="#1A1E24" text-anchor="middle" dominant-baseline="central">S</text>
   </g>
 
   <!-- marker, nib tip touching the end of the flourish at (632,524) -->
   <g filter="url(#penShadow)">
-    <g transform="translate(632 524) rotate(34)">
+    <g transform="translate(566 548) rotate(34)">
       <path d="M0 0 L60 -32 L60 32 Z" fill="url(#nib)"/>
       <path d="M0 0 L60 -32 L60 -10 Z" fill="#FFFFFF" fill-opacity="0.18"/>
       <rect x="54" y="-36" width="40" height="72" rx="9" ry="9" fill="url(#collar)"/>
