@@ -22,7 +22,12 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      # npm's optionalDependencies bug (npm/cli#4828) makes a lockfile-pinned
+      # install skip the platform-specific rollup binary when the lockfile was
+      # generated on another OS. Installing fresh lets npm resolve the right one
+      # for each runner (same workaround the web build uses on Vercel).
+      - run: rm -f package-lock.json && npm install
+        shell: bash
 
       # The App Store Connect API key arrives base64-encoded as a secret; notarize
       # needs it as a file on disk.
