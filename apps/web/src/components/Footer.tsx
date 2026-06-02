@@ -16,7 +16,7 @@ export default function Footer() {
           </p>
           <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
             <span className="h-1.5 w-1.5 rounded-full bg-blue" style={{ animation: 'glow 2s ease-in-out infinite' }} />
-            Próximamente · macOS
+            Próximamente · macOS · Windows
           </p>
         </div>
 

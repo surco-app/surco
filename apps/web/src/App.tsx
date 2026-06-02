@@ -64,7 +64,7 @@ export default function App() {
                 className="h-1.5 w-1.5 rounded-full bg-blue"
                 style={{ animation: 'glow 2s ease-in-out infinite' }}
               />
-              Próximamente · macOS · Apple Silicon
+              Próximamente · macOS · Windows
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
               Menos preparar,
@@ -96,6 +96,8 @@ export default function App() {
             </div>
             <p className="mt-4 font-mono text-xs text-faint">
               La descarga aún no está disponible — estamos puliendo la primera versión.
+              <br />
+              También llega a Windows, con todo igual salvo el envío automático a Apple Music.
             </p>
           </Reveal>
 
