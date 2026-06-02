@@ -1,5 +1,9 @@
 appId: com.vigosan.surco
 productName: Surco
+# npm workspaces hoist electron to the repo-root node_modules, so electron-builder
+# run from apps/desktop can't infer the version — pin it explicitly. Keep in sync
+# with the electron devDependency.
+electronVersion: 34.5.8
 directories:
   buildResources: build
   output: dist
