@@ -164,6 +164,10 @@ function registerIpc(): void {
 
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))
 
+  // Restarts into the already-downloaded update. Paired with the update:downloaded
+  // push below — without this handler the toast's "Restart" button rejects.
+  ipcMain.handle('update:install', () => electronUpdater.autoUpdater.quitAndInstall())
+
   ipcMain.handle('audio:tags', (_e, inputPath: string) => readTags(inputPath))
 
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
