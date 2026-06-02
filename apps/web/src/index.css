@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #f86f2c;
+  --color-brand-light: #ff9d4d;
+  --color-ink: #0b0c0f;
+  --color-vinyl: #17191e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
