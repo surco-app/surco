@@ -42,10 +42,9 @@ export default function App() {
       />
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-2.5">
-          <img src="/icon.png" alt="Surco" className="h-8 w-8" />
-          <span className="font-semibold tracking-tight">Surco</span>
-          <span className="ml-1 hidden font-mono text-xs text-muted sm:inline">groove tool</span>
+        <div className="flex items-center gap-3">
+          <img src="/icon.png" alt="Surco" className="h-11 w-11" />
+          <span className="text-2xl font-semibold tracking-tight">Surco</span>
         </div>
         <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
           <a href="#velocidad" className="hover:text-fg">Velocidad</a>
