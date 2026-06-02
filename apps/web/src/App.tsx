@@ -8,7 +8,7 @@ const features = [
   { kick: 'convert', title: 'AIFF lossless', body: 'PCM big-endian que preserva la profundidad de bits exacta. Cero pérdida, bit a bit.' },
   { kick: 'artwork', title: 'Carátula embebida', body: 'Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox.' },
   { kick: 'library', title: 'Directo a Apple Music', body: 'Añade la pista ya etiquetada a tu biblioteca automáticamente al terminar.' },
-  { kick: 'spek', title: 'Análisis tipo Spek', body: 'Detecta el muro de frecuencias de un MP3 recomprimido y disfrazado de lossless.' }
+  { kick: 'espectro', title: 'Análisis de espectro', body: 'Detecta el muro de frecuencias de un MP3 recomprimido y disfrazado de lossless.' }
 ]
 
 const shortcuts: [string[], string][] = [

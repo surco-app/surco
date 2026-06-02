@@ -13,8 +13,9 @@ export default function Speed() {
         De minutos a segundos por pista
       </h2>
       <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-        El flujo a mano son cuatro apps y un montón de pasos repetidos. Surco lo hace todo —
-        convertir, etiquetar, carátula, grouping y Apple Music — al pulsar un botón.
+        A mano es un proceso de varios pasos —convertir, etiquetar, completar tags, subir— saltando
+        entre herramientas. Tedioso en cuanto lo repites pista tras pista. Surco lo hace todo al
+        pulsar un botón.
       </p>
 
       <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2">
@@ -38,7 +39,7 @@ export default function Speed() {
               style={{ animation: 'fillSlow 6s linear infinite' }}
             />
           </div>
-          <p className="mt-2 font-mono text-[10px] text-muted">4 apps · pasos repetidos por cada pista</p>
+          <p className="mt-2 font-mono text-[10px] text-muted">saltando entre herramientas · repitiendo en cada pista</p>
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6">
@@ -79,8 +80,8 @@ export default function Speed() {
       </div>
 
       <p className="mt-4 font-mono text-[11px] text-muted">
-        * Tiempos del flujo a mano estimados (convertir + Meta + grouping + importar). Tu kilometraje
-        puede variar.
+        * Flujo a mano a modo de ejemplo; los pasos y herramientas varían según cada quien. Tiempos
+        estimados.
       </p>
     </section>
   )
