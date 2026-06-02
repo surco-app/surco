@@ -42,6 +42,12 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     comment: pick('comment'),
     // A "3/12" track tag would survive zero-padding as "312", so drop the total.
     trackNumber: pick('track', 'tracknumber').split('/')[0].trim(),
+    discNumber: pick('disc', 'tpos', 'disc_number', 'discnumber').split('/')[0].trim(),
+    bpm: pick('tbpm', 'bpm'),
+    key: pick('tkey', 'initial_key', 'initialkey'),
+    publisher: pick('publisher', 'tpub', 'label', 'organization'),
+    catalogNumber: pick('catalognumber', 'catalog_number', 'catalogue', 'catalog'),
+    remixArtist: pick('tpe4', 'remixer', 'remixed_by', 'remixedby', 'remix_artist'),
   }
 }
 
@@ -142,6 +148,15 @@ function metadataArgs(meta: TrackMetadata): string[] {
     ['grouping', meta.grouping],
     ['comment', meta.comment],
     ['track', meta.trackNumber],
+    // ffmpeg maps these to the real ID3 frames DJ software and Music read:
+    // disc→TPOS, publisher→TPUB, and the raw frame ids TBPM/TKEY/TPE4; the
+    // catalog number has no standard frame so it rides the de-facto TXXX one.
+    ['disc', meta.discNumber],
+    ['TBPM', meta.bpm],
+    ['TKEY', meta.key],
+    ['TPE4', meta.remixArtist],
+    ['publisher', meta.publisher],
+    ['CATALOGNUMBER', meta.catalogNumber],
   ]
   return pairs.filter(([, v]) => v?.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
 }

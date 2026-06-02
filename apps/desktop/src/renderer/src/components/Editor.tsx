@@ -9,6 +9,7 @@ import type {
 } from '../../../shared/types'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FIELD_DEFS } from '../lib/fields'
+import { splitPosition } from '../lib/position'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
@@ -178,18 +179,26 @@ export function Editor({
     const albumArtist = joinArtists(rel.artists)
     const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
     const trackArtist = joinArtists(track?.artists)
+    const label = rel.labels?.[0]
+    const publisher = label?.name?.trim() ?? ''
+    const catno = label?.catno?.trim() ?? ''
+    const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
+    const pos = track ? splitPosition(track.position) : undefined
     onChange({
       coverUrl: coverOf(rel, coverFallback),
       coverPath: undefined,
       meta: {
         ...item.meta,
         title: track ? track.title : item.meta.title,
-        trackNumber: track ? track.position.replace(/\D/g, '') : item.meta.trackNumber,
+        trackNumber: pos ? pos.track : item.meta.trackNumber,
+        discNumber: pos ? pos.disc : item.meta.discNumber,
         album: rel.title,
         albumArtist,
         artist: trackArtist || item.meta.artist || albumArtist,
         year: rel.year ? String(rel.year) : item.meta.year,
         genre,
+        publisher: publisher || item.meta.publisher,
+        catalogNumber: catalogNumber || item.meta.catalogNumber,
       },
     })
   }

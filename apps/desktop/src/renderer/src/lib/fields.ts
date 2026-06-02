@@ -15,9 +15,28 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'grouping' },
   { key: 'trackNumber' },
   { key: 'comment', wide: true },
+  { key: 'discNumber' },
+  { key: 'bpm' },
+  { key: 'key' },
+  { key: 'remixArtist' },
+  { key: 'publisher' },
+  { key: 'catalogNumber' },
 ]
 
-export const DEFAULT_FIELDS: string[] = FIELD_DEFS.map((d) => d.key)
+// The core tags shown by default. The advanced ones above (disc, bpm, key,
+// remixer, label, catalog) ship hidden so the editor stays uncluttered; users
+// turn them on per taste in Settings → Fields.
+export const DEFAULT_FIELDS: string[] = [
+  'title',
+  'artist',
+  'albumArtist',
+  'album',
+  'year',
+  'genre',
+  'grouping',
+  'trackNumber',
+  'comment',
+]
 
 export const DEFAULT_REQUIRED_FIELDS: string[] = [
   'title',

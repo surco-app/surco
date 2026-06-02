@@ -84,7 +84,13 @@
     "genre": "Género",
     "grouping": "Grouping",
     "trackNumber": "Nº pista",
-    "comment": "Comentario"
+    "comment": "Comentario",
+    "discNumber": "Nº disco",
+    "bpm": "BPM",
+    "key": "Tonalidad",
+    "remixArtist": "Artista remix",
+    "publisher": "Sello / Editora",
+    "catalogNumber": "Nº catálogo"
   },
   "settings": {
     "tabs": {

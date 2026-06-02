@@ -15,6 +15,12 @@ const meta: TrackMetadata = {
   grouping: '',
   comment: '',
   trackNumber: '',
+  discNumber: '',
+  bpm: '',
+  key: '',
+  publisher: '',
+  catalogNumber: '',
+  remixArtist: '',
 }
 
 describe('convertArgs', () => {
@@ -37,6 +43,31 @@ describe('convertArgs', () => {
     const withCover = convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta, '/cover.jpg')
     expect(withCover).toContain('/cover.jpg')
     expect(withCover).toContain('attached_pic')
+  })
+
+  it('writes the advanced tags to the ID3 frames the DJ tools and Music read', () => {
+    // verified against ffmpeg: these keys land in real TBPM/TKEY/TPUB/TPOS/TPE4
+    // frames and the de-facto TXXX:CATALOGNUMBER, all re-readable by ffprobe
+    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', {
+      ...meta,
+      bpm: '128',
+      key: '8A',
+      publisher: 'Kontor',
+      catalogNumber: 'KON123',
+      discNumber: '2',
+      remixArtist: 'Airscape',
+    })
+    expect(args).toContain('TBPM=128')
+    expect(args).toContain('TKEY=8A')
+    expect(args).toContain('publisher=Kontor')
+    expect(args).toContain('CATALOGNUMBER=KON123')
+    expect(args).toContain('disc=2')
+    expect(args).toContain('TPE4=Airscape')
+  })
+
+  it('omits an advanced tag when it is blank', () => {
+    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', meta)
+    expect(args.some((a) => a.startsWith('TBPM'))).toBe(false)
   })
 
   it('sets the audio bitrate right after the codec when one is given', () => {
@@ -108,6 +139,14 @@ describe('tagsFromProbe', () => {
           grouping: 'Set A',
           comment: 'vinyl rip',
           track: '3',
+          // advanced tags re-read from the frames we write: TBPM/TKEY/TPUB/TPOS/
+          // TPE4 and the de-facto TXXX:CATALOGNUMBER
+          TBPM: '138',
+          TKEY: '8A',
+          publisher: 'Kontor',
+          CATALOGNUMBER: 'KON123',
+          disc: '2',
+          TPE4: 'Airscape',
         },
       },
     })
@@ -121,6 +160,12 @@ describe('tagsFromProbe', () => {
       grouping: 'Set A',
       comment: 'vinyl rip',
       trackNumber: '3',
+      discNumber: '2',
+      bpm: '138',
+      key: '8A',
+      publisher: 'Kontor',
+      catalogNumber: 'KON123',
+      remixArtist: 'Airscape',
     })
   })
 
@@ -153,6 +198,12 @@ describe('tagsFromProbe', () => {
       grouping: '',
       comment: '',
       trackNumber: '',
+      discNumber: '',
+      bpm: '',
+      key: '',
+      publisher: '',
+      catalogNumber: '',
+      remixArtist: '',
     })
   })
 })

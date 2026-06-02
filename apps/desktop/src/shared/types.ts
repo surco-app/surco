@@ -28,6 +28,12 @@ export interface TrackMetadata {
   grouping: string
   comment: string
   trackNumber: string
+  discNumber: string
+  bpm: string
+  key: string
+  publisher: string
+  catalogNumber: string
+  remixArtist: string
 }
 
 export interface DiscogsSearchResult {

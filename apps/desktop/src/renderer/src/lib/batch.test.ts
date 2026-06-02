@@ -19,6 +19,12 @@ function track(id: string, status: TrackStatus): TrackItem {
       grouping: '',
       comment: '',
       trackNumber: '',
+      discNumber: '',
+      bpm: '',
+      key: '',
+      publisher: '',
+      catalogNumber: '',
+      remixArtist: '',
     },
   }
 }

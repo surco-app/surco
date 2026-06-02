@@ -12,6 +12,12 @@ const base: TrackMetadata = {
   grouping: 'Bases',
   comment: '',
   trackNumber: '',
+  discNumber: '',
+  bpm: '',
+  key: '',
+  publisher: '',
+  catalogNumber: '',
+  remixArtist: '',
 }
 
 describe('buildAddScript', () => {
@@ -45,5 +51,14 @@ describe('buildAddScript', () => {
     const withYear = buildAddScript('/x.aiff', { ...base, year: '1999', trackNumber: '0' })
     expect(withYear).toContain('set year of theTrack to 1999')
     expect(withYear).not.toContain('set track number of theTrack')
+  })
+
+  it('sets the Apple Music BPM and disc number, the only advanced tags Music can hold', () => {
+    // key/publisher/catalog/remixer have no Music property, so they live only in
+    // the file tag; bpm and disc number are scriptable and must reach Music
+    const script = buildAddScript('/x.aiff', { ...base, bpm: '128', discNumber: '2' })
+    expect(script).toContain('set bpm of theTrack to 128')
+    expect(script).toContain('set disc number of theTrack to 2')
+    expect(script).not.toContain('set bpm of theTrack to 0')
   })
 })

@@ -13,6 +13,12 @@ function meta(patch: Partial<TrackMetadata>): TrackMetadata {
     grouping: '',
     comment: '',
     trackNumber: '',
+    discNumber: '',
+    bpm: '',
+    key: '',
+    publisher: '',
+    catalogNumber: '',
+    remixArtist: '',
     ...patch,
   }
 }

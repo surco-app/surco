@@ -34,6 +34,10 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
   const numeric: [string, string][] = [
     ['year', meta.year],
     ['track number', meta.trackNumber],
+    // bpm and disc number are the only advanced tags Music exposes to scripting;
+    // key/publisher/catalog/remixer live solely in the file tag.
+    ['disc number', meta.discNumber],
+    ['bpm', meta.bpm],
   ]
   for (const [prop, value] of numeric) {
     const n = parseInt(value, 10)

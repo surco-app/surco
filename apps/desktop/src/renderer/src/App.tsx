@@ -39,6 +39,12 @@ function newTrack(path: string): TrackItem {
       grouping: '',
       comment: '',
       trackNumber: '',
+      discNumber: '',
+      bpm: '',
+      key: '',
+      publisher: '',
+      catalogNumber: '',
+      remixArtist: '',
     },
   }
 }

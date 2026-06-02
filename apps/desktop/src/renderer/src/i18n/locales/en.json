@@ -84,7 +84,13 @@
     "genre": "Genre",
     "grouping": "Grouping",
     "trackNumber": "Track No.",
-    "comment": "Comment"
+    "comment": "Comment",
+    "discNumber": "Disc No.",
+    "bpm": "BPM",
+    "key": "Key",
+    "remixArtist": "Remix artist",
+    "publisher": "Label / Publisher",
+    "catalogNumber": "Catalog No."
   },
   "settings": {
     "tabs": {

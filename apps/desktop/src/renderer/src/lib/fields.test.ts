@@ -18,6 +18,12 @@ const meta: TrackMetadata = {
   grouping: '',
   comment: '',
   trackNumber: '',
+  discNumber: '',
+  bpm: '',
+  key: '',
+  publisher: '',
+  catalogNumber: '',
+  remixArtist: '',
 }
 
 describe('moveItem', () => {
@@ -36,9 +42,14 @@ describe('moveItem', () => {
 })
 
 describe('DEFAULT_FIELDS', () => {
-  it('lists every editable field so the default editor is unchanged', () => {
-    expect(DEFAULT_FIELDS).toEqual(FIELD_DEFS.map((d) => d.key))
+  it('shows the core tags by default but keeps the advanced ones hidden until enabled', () => {
+    // advanced DJ/label tags ship in the catalog so Settings can offer them,
+    // but the default editor stays uncluttered — they are opt-in
     expect(DEFAULT_FIELDS).toContain('trackNumber')
+    expect(DEFAULT_FIELDS).not.toContain('bpm')
+    expect(DEFAULT_FIELDS).not.toContain('publisher')
+    expect(FIELD_DEFS.map((d) => d.key)).toContain('bpm')
+    expect(FIELD_DEFS.map((d) => d.key)).toContain('publisher')
   })
 })
 
