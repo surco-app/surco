@@ -27,20 +27,35 @@ const fract = (v: number) => v - Math.floor(v)
 const noise = (x: number, y: number) => fract(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453)
 
 function energy(t: number, f: number, suspect: boolean): number {
-  const floor = 0.05
-  const body = Math.exp(-f * 2.4) * 0.66
+  const floor = 0.06
+  const tilt = Math.exp(-f * 2.1)
+  let e = floor + 0.72 * tilt
+
+  const section = 0.62 + 0.38 * Math.sin(t * 5.7 + 0.6) * Math.sin(t * 2.1 + 1.3)
+  e *= section
+
+  const break1 = 1 - 0.85 * Math.exp(-(((t - 0.34) / 0.018) ** 2))
+  const break2 = 1 - 0.7 * Math.exp(-(((t - 0.71) / 0.012) ** 2))
+  e *= break1 * break2
+
+  const beat = fract(t * 24)
+  const transient = Math.exp(-((beat / 0.014) ** 2))
+  e += transient * (0.5 + 0.4 * tilt)
+
   let harm = 0
-  for (let k = 1; k <= 9; k++) {
-    const c = 0.04 + 0.085 * k
-    harm += 0.32 * Math.exp(-(((f - c) / 0.013) ** 2)) * (0.55 + 0.45 * Math.sin(t * 30 + k * 1.7))
+  for (let k = 1; k <= 7; k++) {
+    const c = 0.045 * k
+    harm += 0.13 * Math.exp(-(((f - c) / 0.009) ** 2)) * (0.55 + 0.45 * Math.sin(t * 9 + k * 1.7))
   }
-  const beat = 0.5 * Math.exp(-(((fract(t * 16) - 0.04) / 0.035) ** 2)) * Math.exp(-f * 1.7)
-  let e = floor + body + harm + beat
-  e *= 0.78 + 0.34 * noise(t * 600, f * 240)
+  e += harm
+
+  e *= 0.8 + 0.32 * noise(t * 680, f * 300)
+  e += 0.05 * noise(t * 240 + 11, f * 880)
+
   if (suspect) {
-    const cut = 0.68
-    if (f > cut) e *= Math.exp(-(f - cut) * 55)
-    if (Math.abs(f - cut) < 0.007) e = Math.max(e, 0.34)
+    const cut = 16 / NYQUIST
+    if (f > cut) e *= 0.01 + 0.99 * Math.exp(-(f - cut) * 200)
+    if (Math.abs(f - cut) < 0.006) e = Math.max(e, 0.62)
   }
   return Math.max(0, Math.min(1, e))
 }

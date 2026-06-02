@@ -155,7 +155,7 @@ export default function App() {
                 </div>
                 <div className="relative">
                   <Spectrogram suspect axis />
-                  <div className="pointer-events-none absolute inset-x-0" style={{ top: '32%' }}>
+                  <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
                     <div className="border-t border-dashed border-red/80" />
                     <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
                       muro ~16 kHz
