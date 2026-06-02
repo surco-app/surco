@@ -62,7 +62,7 @@ export default function Speed() {
             </span>
           </div>
           <ul className="relative mt-4 grid grid-cols-2 gap-2 font-mono text-[11px] text-muted">
-            <li>· AIFF lossless</li>
+            <li>· AIFF lossless o MP3</li>
             <li>· metadatos Discogs</li>
             <li>· carátula embebida</li>
             <li>· grouping y tags</li>

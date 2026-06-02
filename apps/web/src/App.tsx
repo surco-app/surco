@@ -3,12 +3,12 @@ import Spectrogram from './components/Spectrogram'
 import Speed from './components/Speed'
 
 const features = [
-  { kick: 'import', title: 'Importa y arrastra', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee las etiquetas y la carátula embebida al instante.' },
+  { kick: 'importar', title: 'Arrastra y suelta', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen.' },
   { kick: 'discogs', title: 'Metadatos de Discogs', body: 'Busca el disco y trae artista, álbum, año, género y carátula con un clic.' },
-  { kick: 'convert', title: 'AIFF lossless', body: 'PCM big-endian que preserva la profundidad de bits exacta. Cero pérdida, bit a bit.' },
-  { kick: 'artwork', title: 'Carátula embebida', body: 'Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox.' },
-  { kick: 'library', title: 'Directo a Apple Music', body: 'Añade la pista ya etiquetada a tu biblioteca automáticamente al terminar.' },
-  { kick: 'espectro', title: 'Análisis de espectro', body: 'Detecta el muro de frecuencias de un MP3 recomprimido y disfrazado de lossless.' }
+  { kick: 'exportar', title: 'AIFF lossless o MP3', body: 'Exporta sin pérdida en AIFF (PCM, profundidad de bits exacta) o en MP3 de alta calidad cuando buscas ligereza.' },
+  { kick: 'carátula', title: 'Carátula embebida', body: 'Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox.' },
+  { kick: 'biblioteca', title: 'Directo a Apple Music', body: 'Manda la pista ya etiquetada a tu biblioteca, lista para pinchar.' },
+  { kick: 'espectro', title: 'Análisis de espectro', body: 'Mira el espectro y caza el MP3 recomprimido que se hace pasar por lossless.' }
 ]
 
 const shortcuts: [string[], string][] = [
@@ -20,7 +20,7 @@ const shortcuts: [string[], string][] = [
   [['/'], 'Buscar en Discogs']
 ]
 
-const stack = ['AIFF · PCM', 'ffmpeg incluido', 'ID3v2.3', 'Discogs API', 'Apple Silicon', 'lossless bit-a-bit']
+const stack = ['AIFF lossless', 'MP3 320', 'ffmpeg incluido', 'ID3v2.3', 'Discogs', 'Apple Silicon']
 
 function Kbd({ k }: { k: string }) {
   return (
@@ -68,18 +68,19 @@ export default function App() {
               Próximamente · macOS · Apple Silicon
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
-              Sáltate el curro de
+              Menos preparar,
               <br />
-              <span className="text-blue">preparar pistas.</span>
+              <span className="text-blue">más pinchar.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
-              Surco convierte, etiqueta y organiza tus descargas en segundos — y te avisa si un MP3
-              viene disfrazado de lossless.
+              Surco convierte tus descargas a AIFF lossless o MP3, las etiqueta desde Discogs y las
+              deja listas en Apple Music — y te avisa si una pista viene falseada.
             </p>
             <div className="mt-5 font-mono text-sm text-muted">
               <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
               <span className="text-fg">AIFF</span> <span className="text-blue">→</span>{' '}
-              <span className="text-cyan">AIFF lossless</span>
+              <span className="text-cyan">AIFF lossless</span> <span className="text-muted">o</span>{' '}
+              <span className="text-cyan">MP3</span>
             </div>
             <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
               <button
@@ -113,7 +114,7 @@ export default function App() {
           </h2>
           <p className="mt-3 max-w-2xl leading-relaxed text-muted">
             Un MP3 recomprimido a WAV/AIFF arrastra un corte brusco en altas frecuencias. Surco lo
-            mide y marca la pista como sospechosa antes de que ensucie tu biblioteca.
+            mide y marca la pista como sospechosa antes de que acabe sonando en cabina.
           </p>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -214,7 +215,7 @@ export default function App() {
 
         <footer className="flex flex-col items-center gap-3 border-t border-line/60 py-12 text-center text-sm text-muted">
           <img src="/icon.png" alt="" className="h-7 w-7 opacity-80" />
-          <span className="font-mono">Surco — hecho para DJs cuidadosos.</span>
+          <span className="font-mono">Surco — del crate a la cabina.</span>
         </footer>
       </main>
     </div>
