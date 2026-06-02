@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
+import { tmpName } from './tmp'
 
 const run = promisify(execFile)
 
@@ -85,7 +86,7 @@ export function coverArgs(input: string, output: string): string[] {
 }
 
 export async function extractCover(input: string): Promise<string | null> {
-  const out = join(tmpdir(), `surco-cover-${Date.now()}.jpg`)
+  const out = join(tmpdir(), tmpName('cover', 'jpg'))
   try {
     await run(ffmpegPath, coverArgs(input, out))
     const buf = await readFile(out)
@@ -237,7 +238,7 @@ export async function convertAudio(
 }
 
 export async function generateSpectrogram(input: string): Promise<string> {
-  const out = join(tmpdir(), `surco-spec-${Date.now()}.png`)
+  const out = join(tmpdir(), tmpName('spec', 'png'))
   try {
     await run(ffmpegPath, [
       '-hide_banner',
@@ -264,7 +265,7 @@ export async function processCover(
   const max = opts.maxSize > 0 ? opts.maxSize : 4000
   const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
   const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
-  const out = join(tmpdir(), `surco-cover-proc-${Date.now()}.jpg`)
+  const out = join(tmpdir(), tmpName('cover-proc', 'jpg'))
   await run(ffmpegPath, [
     '-hide_banner',
     '-loglevel',
@@ -315,8 +316,7 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
   if (freqs.length < 2) return nyquist
 
   const dir = tmpdir()
-  const stamp = Date.now()
-  const names = freqs.map((f) => `surco-band-${f}-${stamp}.txt`)
+  const names = freqs.map((f) => tmpName(`band-${f}`, 'txt'))
   const filter = cutoffFilter(freqs, names)
 
   try {

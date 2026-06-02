@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { DiscogsRelease, DiscogsSearchResult } from '../shared/types'
+import { tmpName } from './tmp'
 
 const BASE = 'https://api.discogs.com'
 const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/vinilo'
@@ -41,7 +42,7 @@ export async function downloadCover(url: string): Promise<string> {
   if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
   const buf = Buffer.from(await res.arrayBuffer())
   const ext = res.headers.get('content-type')?.includes('png') ? 'png' : 'jpg'
-  const path = join(tmpdir(), `surco-cover-${Date.now()}.${ext}`)
+  const path = join(tmpdir(), tmpName('cover', ext))
   await writeFile(path, buf)
   return path
 }
