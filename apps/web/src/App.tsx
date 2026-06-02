@@ -68,13 +68,13 @@ export default function App() {
               Próximamente · macOS · Apple Silicon
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
-              Cuida tus pistas.
+              Sáltate el curro de
               <br />
-              <span className="text-blue">Caza los fakes.</span>
+              <span className="text-blue">preparar pistas.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
-              Surco convierte a AIFF lossless, etiqueta desde Discogs y manda tu música a Apple Music
-              — y te enseña el espectro para que ningún MP3 recomprimido se cuele.
+              Surco convierte, etiqueta y organiza tus descargas en segundos — y te avisa si un MP3
+              viene disfrazado de lossless.
             </p>
             <div className="mt-5 font-mono text-sm text-muted">
               <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
