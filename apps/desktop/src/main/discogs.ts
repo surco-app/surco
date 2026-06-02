@@ -17,12 +17,19 @@ async function api<T>(path: string, token: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+const searchCache = new Map<string, DiscogsSearchResult[]>()
+
 export async function search(query: string, token: string): Promise<DiscogsSearchResult[]> {
+  const key = query.trim().toLowerCase()
+  const cached = searchCache.get(key)
+  if (cached) return cached
   const data = await api<{ results: DiscogsSearchResult[] }>(
     `/database/search?type=release&q=${encodeURIComponent(query)}&per_page=20`,
     token,
   )
-  return data.results ?? []
+  const results = data.results ?? []
+  searchCache.set(key, results)
+  return results
 }
 
 export async function getRelease(id: number, token: string): Promise<DiscogsRelease> {

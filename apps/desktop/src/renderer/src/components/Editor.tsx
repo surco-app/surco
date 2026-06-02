@@ -109,10 +109,12 @@ export function Editor({
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must depend on the query value, not doSearch's identity — with doSearch the effect re-ran every render and looped search requests until Discogs returned 429. Debounced so a search fires once, 500ms after typing stops.
   useEffect(() => {
-    if (hasToken && query.trim()) void doSearch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasToken, doSearch, query.trim])
+    if (!hasToken || !query.trim()) return
+    const id = setTimeout(() => void doSearch(), 500)
+    return () => clearTimeout(id)
+  }, [hasToken, query])
 
   useEffect(() => {
     if (item.spectrum) return
