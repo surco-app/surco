@@ -22,6 +22,10 @@
     "subtitle": "Convierte tus pistas a AIFF lossless, las etiqueta desde Discogs y las manda a Apple Music.",
     "subtitleNoMusic": "Convierte tus pistas a AIFF lossless y las etiqueta desde Discogs."
   },
+  "update": {
+    "ready": "La versión {{version}} está lista",
+    "restart": "Reiniciar para actualizar"
+  },
   "commands": {
     "add": "Añadir archivos",
     "processCurrent": "Procesar pista actual",

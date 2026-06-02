@@ -23,6 +23,8 @@ export interface Api {
   readTags: (path: string) => Promise<TrackMetadata>
   readCover: (path: string) => Promise<string | null>
   onOpenSettings: (cb: () => void) => () => void
+  installUpdate: () => Promise<void>
+  onUpdateDownloaded: (cb: (version: string) => void) => () => void
 }
 
 declare global {

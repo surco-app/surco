@@ -52,7 +52,7 @@ function buildAppMenu(win: BrowserWindow): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1320,
     height: 820,
@@ -80,6 +80,8 @@ function createWindow(): void {
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return win
 }
 
 function registerIpc(): void {
@@ -185,12 +187,18 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
-  createWindow()
+  const win = createWindow()
 
-  // Reads the published GitHub release metadata, downloads a newer version in the
-  // background and installs it on quit. Only in packaged builds — there is no
-  // update feed in dev. macOS requires the build to be signed and notarized.
-  if (app.isPackaged) electronUpdater.autoUpdater.checkForUpdatesAndNotify()
+  // Downloads a newer version in the background, then tells the renderer so it can
+  // show a "restart to update" toast (which calls quitAndInstall via update:install).
+  // Only in packaged builds — there is no update feed in dev, and macOS requires
+  // the build to be signed and notarized.
+  if (app.isPackaged) {
+    electronUpdater.autoUpdater.on('update-downloaded', (info) =>
+      win.webContents.send('update:downloaded', info.version),
+    )
+    electronUpdater.autoUpdater.checkForUpdates()
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

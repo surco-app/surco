@@ -7,6 +7,7 @@ import { Editor } from './components/Editor'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
+import { UpdateToast } from './components/UpdateToast'
 import { eligibleForBatch } from './lib/batch'
 import type { Command } from './lib/commands'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
@@ -482,6 +483,8 @@ export default function App(): React.JSX.Element {
       )}
 
       {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
+
+      <UpdateToast />
     </div>
   )
 }

@@ -26,6 +26,12 @@ const api = {
     ipcRenderer.on('process:progress', listener)
     return () => ipcRenderer.removeListener('process:progress', listener)
   },
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateDownloaded: (cb: (version: string) => void) => {
+    const listener = (_e: unknown, version: string): void => cb(version)
+    ipcRenderer.on('update:downloaded', listener)
+    return () => ipcRenderer.removeListener('update:downloaded', listener)
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)
