@@ -24,7 +24,9 @@ describe('buildFeedbackMailto', () => {
   })
 
   it('omits the error line for plain feedback', () => {
-    const decoded = decodeURIComponent(buildFeedbackMailto({ version: '0.1.2', platform: 'darwin' }))
+    const decoded = decodeURIComponent(
+      buildFeedbackMailto({ version: '0.1.2', platform: 'darwin' }),
+    )
     expect(decoded).not.toContain('Error:')
   })
 })

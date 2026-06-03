@@ -55,7 +55,9 @@ describe('buildAddScript', () => {
 
   it('writes the cover onto the Music track via AppleScript so it does not depend on the file carrying embedded art — the whole point for WAV, whose embedded artwork Music ignores', () => {
     const script = buildAddScript('/x.wav', base, '/tmp/cover.jpg')
-    expect(script).toContain('set data of artwork 1 of theTrack to (read (POSIX file "/tmp/cover.jpg") as picture)')
+    expect(script).toContain(
+      'set data of artwork 1 of theTrack to (read (POSIX file "/tmp/cover.jpg") as picture)',
+    )
   })
 
   it('does not touch artwork when there is no cover, leaving any existing artwork alone', () => {

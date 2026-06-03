@@ -28,5 +28,7 @@ export function buildFeedbackMailto({ version, platform, error }: FeedbackContex
 // window.open routes the mailto to the system mail client via the main process
 // (setWindowOpenHandler → shell.openExternal), the same path external links take.
 export function openFeedback(error?: string): void {
-  window.open(buildFeedbackMailto({ version: window.api.version, platform: window.api.platform, error }))
+  window.open(
+    buildFeedbackMailto({ version: window.api.version, platform: window.api.platform, error }),
+  )
 }

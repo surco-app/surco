@@ -15,9 +15,7 @@ const APP_KEY = 'mWMICwBUWiUpKwjXUOnG'
 const APP_SECRET = 'otWEkXSaNXZehSTINgxSeTiPKsGbvNxJ'
 
 function authParams(token: string): string {
-  return token
-    ? `token=${encodeURIComponent(token)}`
-    : `key=${APP_KEY}&secret=${APP_SECRET}`
+  return token ? `token=${encodeURIComponent(token)}` : `key=${APP_KEY}&secret=${APP_SECRET}`
 }
 
 async function api<T>(path: string, token: string): Promise<T> {
