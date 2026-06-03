@@ -26,7 +26,7 @@
   "hero": {
     "h1a": "Less prepping,",
     "h1b": "more playing.",
-    "lede": "Surco converts your downloads to lossless AIFF, WAV or MP3, tags them from Discogs and gets them ready in Apple Music — and warns you when a track has been faked.",
+    "lede": "Drop in the tracks you've downloaded: Surco fills in the artist, title and cover art from the Discogs music database, converts them to full quality and leaves them in Apple Music ready to play — and warns you when a file that looks hi-fi is really a low-quality fake.",
     "or": "or"
   },
   "stats": {
@@ -37,16 +37,16 @@
   "analysis": {
     "kicker": "Anti-fake analysis",
     "title": "The spectrum doesn't lie",
-    "lede": "An MP3 re-encoded to WAV/AIFF drags a sharp cutoff in the high frequencies. Surco measures it and flags the track as suspicious before it ends up playing in the booth.",
+    "lede": "Some \"lossless\" files are just low-quality MP3s converted to look hi-fi — and they sound worse on a big system. Surco spots the missing high frequencies and flags the track as suspicious before it ends up in your set.",
     "good": "● good quality",
     "suspect": "● suspicious",
-    "goodCaptionPre": "energy up to ",
+    "goodCaptionPre": "full sound up to ",
     "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " (Nyquist) — full band.",
-    "wall": "wall ~16 kHz",
-    "suspectCaptionPre": "sharp cutoff at ",
+    "goodCaptionPost": " — nothing missing. The real thing.",
+    "wall": "drop-off ~16 kHz",
+    "suspectCaptionPre": "everything cut off at ",
     "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — gives away a re-encoded MP3."
+    "suspectCaptionPost": " — the highs are gone. A fake."
   },
   "features": {
     "kicker": "Features",
@@ -54,10 +54,10 @@
     "items": [
       { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC or AIFF. Surco reads the tags and cover art they already carry on the fly." },
       { "kick": "discogs", "title": "Discogs metadata", "body": "Search the release and pull artist, album, year, genre and cover art in one click." },
-      { "kick": "export", "title": "Lossless AIFF, WAV or MP3", "body": "Export lossless to AIFF or WAV (PCM, exact bit depth) or to high-quality MP3 when you want it lighter." },
-      { "kick": "cover", "title": "Embedded cover art", "body": "Cover and tags travel inside the file (ID3v2.3), visible in Apple Music and rekordbox." },
+      { "kick": "export", "title": "Full quality or lighter MP3", "body": "Export at full original quality (AIFF or WAV) or as a lighter high-quality MP3 when you want smaller files." },
+      { "kick": "cover", "title": "Artwork that travels with it", "body": "The artwork and track info are saved inside the file itself, so they show up in Apple Music and rekordbox." },
       { "kick": "library", "title": "Straight to Apple Music", "body": "Send the already-tagged track to your library, ready to play." },
-      { "kick": "spectrum", "title": "Spectrum analysis", "body": "Look at the spectrum and catch the re-encoded MP3 posing as lossless." },
+      { "kick": "spectrum", "title": "Spot the fakes", "body": "See the quality at a glance and catch low-quality MP3s dressed up as hi-fi." },
       { "kick": "duplicates", "title": "No accidental duplicates", "body": "As you tag, Surco checks your Apple Music library and flags the track if it's already there." },
       { "kick": "dj", "title": "DJ-ready tags", "body": "BPM, musical key, catalog number, remixer and grouping — the fields you actually sort by in rekordbox." },
       { "kick": "batch", "title": "Batch in one click", "body": "Queue the whole crate and hit Convert all — every track tagged, converted and sent to Apple Music in one go." },

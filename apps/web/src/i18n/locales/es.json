@@ -26,7 +26,7 @@
   "hero": {
     "h1a": "Menos preparar,",
     "h1b": "más pinchar.",
-    "lede": "Surco convierte tus descargas a AIFF, WAV lossless o MP3, las etiqueta desde Discogs y las deja listas en Apple Music — y te avisa si una pista viene falseada.",
+    "lede": "Suelta las pistas que te has descargado: Surco rellena artista, título y carátula desde la base de datos Discogs, las convierte a máxima calidad y las deja listas en Apple Music para pinchar — y te avisa cuando un archivo que parece de alta calidad es en realidad una copia mala.",
     "or": "o"
   },
   "stats": {
@@ -37,16 +37,16 @@
   "analysis": {
     "kicker": "Análisis anti-fake",
     "title": "El espectro no miente",
-    "lede": "Un MP3 recomprimido a WAV/AIFF arrastra un corte brusco en altas frecuencias. Surco lo mide y marca la pista como sospechosa antes de que acabe sonando en cabina.",
+    "lede": "Algunos archivos «lossless» no son más que MP3 de baja calidad convertidos para parecer de alta — y suenan peor en un buen equipo. Surco detecta las frecuencias altas que faltan y marca la pista como sospechosa antes de que acabe sonando en cabina.",
     "good": "● buena calidad",
     "suspect": "● sospechoso",
-    "goodCaptionPre": "energía hasta ",
+    "goodCaptionPre": "sonido completo hasta ",
     "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " (Nyquist) — banda completa.",
-    "wall": "muro ~16 kHz",
-    "suspectCaptionPre": "corte brusco en ",
+    "goodCaptionPost": " — no falta nada. El de verdad.",
+    "wall": "corte ~16 kHz",
+    "suspectCaptionPre": "todo cortado en ",
     "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — delata un MP3 recomprimido."
+    "suspectCaptionPost": " — faltan los agudos. Es un fake."
   },
   "features": {
     "kicker": "Funciones",
@@ -54,10 +54,10 @@
     "items": [
       { "kick": "importar", "title": "Arrastra y suelta", "body": "Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen." },
       { "kick": "discogs", "title": "Metadatos de Discogs", "body": "Busca el disco y trae artista, álbum, año, género y carátula con un clic." },
-      { "kick": "exportar", "title": "AIFF, WAV lossless o MP3", "body": "Exporta sin pérdida en AIFF o WAV (PCM, profundidad de bits exacta) o en MP3 de alta calidad cuando buscas ligereza." },
-      { "kick": "carátula", "title": "Carátula embebida", "body": "Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox." },
+      { "kick": "exportar", "title": "Máxima calidad o MP3 ligero", "body": "Exporta con la calidad original intacta (AIFF o WAV) o en MP3 de alta calidad cuando quieras archivos más ligeros." },
+      { "kick": "carátula", "title": "La carátula viaja con la pista", "body": "La carátula y los datos de la pista se guardan dentro del propio archivo, así que aparecen en Apple Music y rekordbox." },
       { "kick": "biblioteca", "title": "Directo a Apple Music", "body": "Manda la pista ya etiquetada a tu biblioteca, lista para pinchar." },
-      { "kick": "espectro", "title": "Análisis de espectro", "body": "Mira el espectro y caza el MP3 recomprimido que se hace pasar por lossless." },
+      { "kick": "espectro", "title": "Caza los fakes", "body": "Comprueba la calidad de un vistazo y caza los MP3 de baja calidad disfrazados de alta." },
       { "kick": "duplicados", "title": "Sin duplicados por error", "body": "Mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
       { "kick": "dj", "title": "Tags para DJ", "body": "BPM, tonalidad, número de catálogo, remixer y agrupación — los campos por los que de verdad ordenas en rekordbox." },
       { "kick": "lote", "title": "Por lotes con un clic", "body": "Añade todas tus pistas y pulsa Convertir todo — cada una etiquetada, convertida y enviada a Apple Music de una vez." },
