@@ -371,32 +371,30 @@ export function Editor({
                     </svg>
                   </button>
                   <CollapsibleTracks open={expanded}>
-                    {expanded && (
-                      <div className="pb-1">
-                        <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
-                          {tr('editor.chooseTrack')}
-                        </p>
-                        {loaded && release ? (
-                          release.tracklist.map((t, i) => (
-                            <button
-                              key={`${t.position}-${i}`}
-                              data-testid="discogs-track"
-                              onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
-                                t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
-                              }`}
-                            >
-                              <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
-                                {t.position}
-                              </span>
-                              <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
-                            </button>
-                          ))
-                        ) : (
-                          <TrackSkeleton />
-                        )}
-                      </div>
-                    )}
+                    <div className="pb-1">
+                      <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
+                        {tr('editor.chooseTrack')}
+                      </p>
+                      {loaded && release ? (
+                        release.tracklist.map((t, i) => (
+                          <button
+                            key={`${t.position}-${i}`}
+                            data-testid="discogs-track"
+                            onClick={() => selectTrack(t)}
+                            className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
+                              t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
+                            }`}
+                          >
+                            <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                              {t.position}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <TrackSkeleton />
+                      )}
+                    </div>
                   </CollapsibleTracks>
                 </div>
               )
