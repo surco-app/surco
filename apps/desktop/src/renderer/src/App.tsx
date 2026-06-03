@@ -13,6 +13,7 @@ import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
 import { eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
+import { mapWithConcurrency } from './lib/concurrency'
 import { trackSignature } from './lib/dirty'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
@@ -28,6 +29,10 @@ import { resolveTheme } from './lib/theme'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3)$/i
+
+// Cap on tracks read in parallel when files are dropped: each spawns taglib +
+// ffprobe, so an unbounded drop of a full crate would flood the main process.
+const READ_CONCURRENCY = 6
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
@@ -131,32 +136,30 @@ export default function App(): React.JSX.Element {
     const existing = new Set(tracks.map((t) => t.inputPath))
     const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
     if (fresh.length === 0) return
-    const items = await Promise.all(
-      fresh.map(async (path) => {
-        const base = newTrack(path)
-        try {
-          const [tags, cover] = await Promise.all([
-            window.api.readTags(path),
-            window.api.readCover(path),
-          ])
-          const s = searchFromTags(parseFileName(path), tags)
-          return {
-            ...base,
-            query: s.query,
-            coverUrl: cover ?? undefined,
-            meta: {
-              ...base.meta,
-              ...tags,
-              title: s.title,
-              artist: s.artist,
-              albumArtist: tags.albumArtist || s.artist,
-            },
-          }
-        } catch {
-          return base
+    const items = await mapWithConcurrency(fresh, READ_CONCURRENCY, async (path) => {
+      const base = newTrack(path)
+      try {
+        const [tags, cover] = await Promise.all([
+          window.api.readTags(path),
+          window.api.readCover(path),
+        ])
+        const s = searchFromTags(parseFileName(path), tags)
+        return {
+          ...base,
+          query: s.query,
+          coverUrl: cover ?? undefined,
+          meta: {
+            ...base.meta,
+            ...tags,
+            title: s.title,
+            artist: s.artist,
+            albumArtist: tags.albumArtist || s.artist,
+          },
         }
-      }),
-    )
+      } catch {
+        return base
+      }
+    })
     setTracks((prev) => [...prev, ...items])
     if (!selectedId) setSelectedId(items[0].id)
   }
