@@ -122,6 +122,7 @@ export function Editor({
   const [analyzeError, setAnalyzeError] = useState('')
   const [formOpen, setFormOpen] = useState(true)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
+  const [outputOpen, setOutputOpen] = useState(true)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
@@ -638,44 +639,50 @@ export function Editor({
           )}
 
           <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-fg-dim">{tr('editor.outputName')}</span>
-              <button
-                type="button"
-                data-testid="regenerate-output-name"
-                onClick={() => onChange({ outputName: undefined })}
-                title={tr('editor.regenerateHint')}
-                className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-3 w-3"
+            <SectionHeader
+              title={tr('editor.outputName')}
+              open={outputOpen}
+              onToggle={() => setOutputOpen((v) => !v)}
+              right={
+                <button
+                  type="button"
+                  data-testid="regenerate-output-name"
+                  onClick={() => onChange({ outputName: undefined })}
+                  title={tr('editor.regenerateHint')}
+                  className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                 >
-                  <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                  <path d="M21 3v5h-5" />
-                  <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                  <path d="M3 21v-5h5" />
-                </svg>
-                {tr('editor.regenerate')}
-              </button>
-            </div>
-            <label className="relative block">
-              <input
-                data-testid="output-name"
-                value={item.outputName ?? defaultOutputName}
-                onChange={(e) => onChange({ outputName: e.target.value })}
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-                .{outputFormat}
-              </span>
-            </label>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="h-3 w-3"
+                  >
+                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    <path d="M3 21v-5h5" />
+                  </svg>
+                  {tr('editor.regenerate')}
+                </button>
+              }
+            />
+            {outputOpen && (
+              <label className="relative mt-3 block">
+                <input
+                  data-testid="output-name"
+                  value={item.outputName ?? defaultOutputName}
+                  onChange={(e) => onChange({ outputName: e.target.value })}
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
+                  .{outputFormat}
+                </span>
+              </label>
+            )}
           </div>
         </div>
 
