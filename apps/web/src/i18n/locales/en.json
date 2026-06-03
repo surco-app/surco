@@ -4,10 +4,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or MP3, tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco — Get your DJ tracks ready in seconds",
-    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or MP3, tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF or WAV, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
+    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV or FLAC, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -54,7 +54,7 @@
     "items": [
       { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC, AIFF or MP3. Surco reads the tags and cover art they already carry on the fly." },
       { "kick": "discogs", "title": "Discogs metadata", "body": "Search the release and pull artist, album, year, genre and cover art in one click." },
-      { "kick": "export", "title": "Full quality or lighter MP3", "body": "Export at full original quality (AIFF or WAV) or as a lighter high-quality MP3 when you want smaller files." },
+      { "kick": "export", "title": "Full quality or lighter MP3", "body": "Export at full original quality (AIFF, WAV or losslessly compressed FLAC) or as a lighter high-quality MP3 when you want smaller files." },
       { "kick": "cover", "title": "Artwork that travels with it", "body": "The artwork and track info are saved inside the file itself, so they show up in Apple Music and rekordbox." },
       { "kick": "library", "title": "Straight to Apple Music", "body": "Send the tagged track to your Apple Music library — the hub rekordbox reads from, so your whole collection stays in one organized place." },
       { "kick": "spectrum", "title": "Spot the fakes", "body": "See the quality at a glance and catch low-quality MP3s dressed up as hi-fi." },
@@ -81,6 +81,7 @@
   },
   "stack": [
     "lossless AIFF",
+    "lossless FLAC",
     "high-quality MP3",
     "ffmpeg included",
     "ID3v2.3",
@@ -104,7 +105,7 @@
     "withSurcoTime": "~1–2 s",
     "combo": "Convert + tag + Apple Music",
     "bullets": [
-      "lossless AIFF, WAV or MP3",
+      "lossless AIFF, WAV or FLAC, or MP3",
       "Discogs metadata",
       "embedded cover art",
       "grouping and tags",
@@ -120,7 +121,7 @@
     "steps": [
       { "title": "Drop your tracks", "body": "Drag your WAV, FLAC, AIFF or MP3. Surco reads the tags and cover art on the fly." },
       { "title": "Pick the release", "body": "Search Discogs and apply artist, album, year, genre and cover art in one click." },
-      { "title": "Export and you're done", "body": "Convert to AIFF, WAV or MP3, check the spectrum and send the track to Apple Music." }
+      { "title": "Export and you're done", "body": "Convert to AIFF, WAV, FLAC or MP3, check the spectrum and send the track to Apple Music." }
     ]
   },
   "mockup": {
@@ -136,6 +137,7 @@
     "formats": [
       "lossless AIFF",
       "lossless WAV",
+      "lossless FLAC",
       "high-quality MP3",
       "Discogs tags",
       "to Apple Music"
