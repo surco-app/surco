@@ -24,7 +24,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
             {f / 1000}k
           </span>
         ))}
-      {nyquist > 0 && (
+      {nyquist > 0 && spectrum.cutoffHz !== null && (
         <div
           style={{ top: `${(1 - spectrum.cutoffHz / nyquist) * 100}%` }}
           className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/70"

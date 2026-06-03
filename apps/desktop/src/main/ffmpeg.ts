@@ -373,7 +373,7 @@ interface SpectrumDeps {
 
 interface SpectrumBuild {
   image: string
-  cutoffHz: number
+  cutoffHz: number | null
   sampleRateHz: number
   cutoffError?: unknown
 }
@@ -382,9 +382,9 @@ interface SpectrumBuild {
 // is the whole point of the panel, so a failure in the (far more fragile) cutoff
 // pass — a per-band filtergraph that writes and re-reads temp files and has
 // repeatedly broken on Windows — must not discard a perfectly good image. We run
-// both, but only a missing image rejects; a cutoff failure falls back to Nyquist
-// (what analyzeCutoff itself returns when it finds no brick wall) and is handed
-// back so the caller can log the real ffmpeg error instead of swallowing it.
+// both, but only a missing image rejects; a cutoff failure yields a null cutoff
+// (so the UI hides the quality verdict rather than inventing one) and the real
+// ffmpeg error is handed back for the caller to log instead of swallowing it.
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
   const [imageR, cutoffR] = await Promise.allSettled([
@@ -394,7 +394,7 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   if (imageR.status === 'rejected') throw imageR.reason
   return {
     image: imageR.value,
-    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value : sampleRateHz / 2,
+    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value : null,
     sampleRateHz,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
   }

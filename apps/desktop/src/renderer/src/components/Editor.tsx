@@ -509,6 +509,7 @@ export function Editor({
               onToggle={() => setSpectrumOpen((v) => !v)}
               right={
                 item.spectrum &&
+                item.spectrum.cutoffHz !== null &&
                 (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
                   <span
                     data-testid="quality-badge"
@@ -538,12 +539,14 @@ export function Editor({
                 ) : item.spectrum ? (
                   <>
                     <Spectrogram spectrum={item.spectrum} />
-                    <p className="mt-2 text-xs text-fg-dim">
-                      {tr('editor.qualityCaption', {
-                        cutoff: formatKHz(item.spectrum.cutoffHz),
-                        nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
-                      })}
-                    </p>
+                    {item.spectrum.cutoffHz !== null && (
+                      <p className="mt-2 text-xs text-fg-dim">
+                        {tr('editor.qualityCaption', {
+                          cutoff: formatKHz(item.spectrum.cutoffHz),
+                          nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
+                        })}
+                      </p>
+                    )}
                   </>
                 ) : null}
               </div>

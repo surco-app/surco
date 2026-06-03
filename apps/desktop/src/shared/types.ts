@@ -86,6 +86,8 @@ export interface ProcessResult {
 
 export interface SpectrumResult {
   image: string
-  cutoffHz: number
+  // null when the cutoff analysis failed (e.g. ffmpeg errored) but the image
+  // still rendered — the UI then hides the quality verdict instead of inventing one.
+  cutoffHz: number | null
   sampleRateHz: number
 }

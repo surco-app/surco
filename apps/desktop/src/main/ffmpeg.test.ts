@@ -267,11 +267,12 @@ describe('buildSpectrum', () => {
     expect(res.cutoffError).toBeUndefined()
   })
 
-  it('still returns the image, falling back to Nyquist, when cutoff analysis fails', async () => {
+  it('still returns the image, with a null cutoff, when cutoff analysis fails', async () => {
     // The cutoff pass is a fragile per-band filtergraph that writes and re-reads
     // temp files and has repeatedly broken on Windows. Its failure must never blank
     // a spectrogram image that generated fine — that is the whole point of decoupling
     // them; otherwise one Promise.all rejection hides the image the user came to see.
+    // The cutoff comes back null (not a guessed value) so the UI hides the verdict.
     const boom = new Error('ffmpeg filtergraph: Invalid argument')
     const res = await buildSpectrum(
       '/in.flac',
@@ -282,7 +283,7 @@ describe('buildSpectrum', () => {
       }),
     )
     expect(res.image).toBe('data:image/png;base64,AAAA')
-    expect(res.cutoffHz).toBe(22050)
+    expect(res.cutoffHz).toBeNull()
     expect(res.cutoffError).toBe(boom)
   })
 
