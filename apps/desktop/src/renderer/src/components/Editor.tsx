@@ -411,6 +411,8 @@ export function Editor({
           {formOpen && (
             <div className="mt-4">
               <div className="flex gap-6">
+                {/* Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release. */}
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
                 <div
                   data-testid="cover-dropzone"
                   onDragOver={(e) => {

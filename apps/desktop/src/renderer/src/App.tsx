@@ -461,6 +461,9 @@ export default function App(): React.JSX.Element {
   }, [])
 
   return (
+    // Drag-and-drop is a pointer-only convenience; the "Add files" button is the
+    // keyboard-accessible path to the same action.
+    // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
       className="flex h-screen flex-col"
       onDragOver={(e) => {
@@ -470,6 +473,8 @@ export default function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
+      {/* Music preview playback — there is no speech to caption. */}
+      {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
       <audio ref={audioRef} hidden onEnded={() => setPlayingId(null)} />
       <header
         className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
