@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { SECTIONS } from '../lib/nav'
 
 export default function Header() {
+  const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
+  const otherLang = i18n.language === 'en' ? '/' : '/en'
+  const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -10,6 +14,15 @@ export default function Header() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Keep the in-page anchor when switching language: both pages share the same
+  // section ids, so we send the visitor to the same spot on the other locale.
+  const keepHash = (e: React.MouseEvent) => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      e.preventDefault()
+      window.location.href = otherLang + window.location.hash
+    }
+  }
 
   return (
     <header
@@ -35,13 +48,22 @@ export default function Header() {
             Surco
           </span>
         </a>
-        <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
-          {SECTIONS.map(([href, label]) => (
-            <a key={href} href={href} className="transition-colors hover:text-fg">
-              {label}
-            </a>
-          ))}
-        </nav>
+        <div className="flex items-center gap-7">
+          <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
+            {SECTIONS.map((id) => (
+              <a key={id} href={`#${id}`} className="transition-colors hover:text-fg">
+                {t(`nav.${id}`)}
+              </a>
+            ))}
+          </nav>
+          <a
+            href={otherLang}
+            onClick={keepHash}
+            className="rounded-full border border-line px-3 py-1 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
+          >
+            {otherLabel}
+          </a>
+        </div>
       </div>
     </header>
   )

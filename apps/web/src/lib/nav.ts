@@ -1,7 +1,1 @@
-export const SECTIONS: [string, string][] = [
-  ['#velocidad', 'Velocidad'],
-  ['#como', 'Cómo funciona'],
-  ['#analisis', 'Análisis'],
-  ['#funciones', 'Funciones'],
-  ['#atajos', 'Atajos']
-]
+export const SECTIONS = ['velocidad', 'como', 'analisis', 'funciones', 'atajos'] as const

@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "htmlLang": "en",
+    "ogLocale": "en_US",
+    "inLanguage": "en",
+    "title": "Surco — Get your DJ tracks ready in seconds",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF or MP3, tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "ogTitle": "Surco — Get your DJ tracks ready in seconds",
+    "ogDescription": "Less prepping, more playing: convert to lossless AIFF or MP3, tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
+  },
+  "nav": {
+    "velocidad": "Speed",
+    "como": "How it works",
+    "analisis": "Analysis",
+    "funciones": "Features",
+    "atajos": "Shortcuts"
+  },
+  "available": "Available · macOS · Windows",
+  "hero": {
+    "h1a": "Less prepping,",
+    "h1b": "more playing.",
+    "lede": "Surco converts your downloads to lossless AIFF or MP3, tags them from Discogs and gets them ready in Apple Music — and warns you when a track has been faked.",
+    "or": "or"
+  },
+  "stats": {
+    "faster": "faster than by hand*",
+    "perTrack": "per track",
+    "oneShot": "shot, the whole flow"
+  },
+  "analysis": {
+    "kicker": "Anti-fake analysis",
+    "title": "The spectrum doesn't lie",
+    "lede": "An MP3 re-encoded to WAV/AIFF drags a sharp cutoff in the high frequencies. Surco measures it and flags the track as suspicious before it ends up playing in the booth.",
+    "good": "● good quality",
+    "suspect": "● suspicious",
+    "goodCaptionPre": "energy up to ",
+    "goodCaptionHz": "~22 kHz",
+    "goodCaptionPost": " (Nyquist) — full band.",
+    "wall": "wall ~16 kHz",
+    "suspectCaptionPre": "sharp cutoff at ",
+    "suspectCaptionHz": "~16 kHz",
+    "suspectCaptionPost": " — gives away a re-encoded MP3."
+  },
+  "features": {
+    "kicker": "Features",
+    "title": "The whole flow, in one app",
+    "items": [
+      { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC or AIFF. Surco reads the tags and cover art they already carry on the fly." },
+      { "kick": "discogs", "title": "Discogs metadata", "body": "Search the release and pull artist, album, year, genre and cover art in one click." },
+      { "kick": "export", "title": "Lossless AIFF or MP3", "body": "Export lossless to AIFF (PCM, exact bit depth) or to high-quality MP3 when you want it lighter." },
+      { "kick": "cover", "title": "Embedded cover art", "body": "Cover and tags travel inside the file (ID3v2.3), visible in Apple Music and rekordbox." },
+      { "kick": "library", "title": "Straight to Apple Music", "body": "Send the already-tagged track to your library, ready to play." },
+      { "kick": "spectrum", "title": "Spectrum analysis", "body": "Look at the spectrum and catch the re-encoded MP3 posing as lossless." }
+    ]
+  },
+  "shortcuts": {
+    "kicker": "Keyboard first",
+    "title": "Fly without touching the mouse",
+    "lede": "A command palette and shortcuts for the whole flow. Add, tag, analyze and process track after track without lifting your hands off the keyboard.",
+    "items": [
+      "Add files",
+      "Process track",
+      "Process all",
+      "Play / pause",
+      "Navigate tracks",
+      "Search Discogs"
+    ]
+  },
+  "stack": [
+    "lossless AIFF",
+    "high-quality MP3",
+    "ffmpeg included",
+    "ID3v2.3",
+    "Discogs",
+    "Apple Silicon"
+  ],
+  "speed": {
+    "kicker": "One button",
+    "title": "From minutes to seconds per track",
+    "lede": "By hand it's a multi-step process —convert, tag, fill in tags, import— jumping between tools. Tedious the moment you repeat it track after track. Surco does it all at the press of a button.",
+    "manual": "By hand",
+    "manualTime": "~3–4 min",
+    "manualSteps": [
+      { "app": "another app", "label": "Convert to AIFF" },
+      { "app": "tag app", "label": "Write the metadata" },
+      { "app": "by hand", "label": "Add grouping and tags the tagger leaves out" },
+      { "app": "Music", "label": "Import to Apple Music" }
+    ],
+    "manualCaption": "jumping between tools · repeating on every track",
+    "withSurco": "With Surco",
+    "withSurcoTime": "~1–2 s",
+    "combo": "Convert + tag + Apple Music",
+    "bullets": [
+      "lossless AIFF or MP3",
+      "Discogs metadata",
+      "embedded cover art",
+      "grouping and tags",
+      "spectrum analysis",
+      "to Apple Music"
+    ],
+    "oneClick": "one click · one track ready",
+    "footnote": "* Manual flow shown as an example; steps and tools vary from person to person. Estimated times."
+  },
+  "how": {
+    "kicker": "How it works",
+    "title": "Three steps and you're playing",
+    "steps": [
+      { "title": "Drop your tracks", "body": "Drag your WAV, FLAC or AIFF. Surco reads the tags and cover art on the fly." },
+      { "title": "Pick the release", "body": "Search Discogs and apply artist, album, year, genre and cover art in one click." },
+      { "title": "Export in one shot", "body": "Convert to AIFF or MP3, check the spectrum and send the track to Apple Music." }
+    ]
+  },
+  "mockup": {
+    "tracks": "Tracks",
+    "metadata": "Metadata",
+    "good": "● good quality",
+    "spectrum": "spectrum"
+  },
+  "footer": {
+    "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
+    "product": "Product",
+    "formatsHeading": "Formats",
+    "formats": [
+      "lossless AIFF",
+      "high-quality MP3",
+      "Discogs tags",
+      "to Apple Music"
+    ],
+    "copyright": "© 2026 Surco · getsurco.app",
+    "slogan": "from the crate to the booth"
+  },
+  "download": {
+    "viewDownloads": "View downloads",
+    "cta": "Download for {{os}}",
+    "viewAnalysis": "See the analysis →",
+    "intel": "Intel Mac (2020 or earlier)? Download it here",
+    "free": "Free download",
+    "unavailable": "The download isn't available yet — we're polishing the first version.",
+    "windows": "It's coming to Windows too, with everything the same except the automatic send to Apple Music.",
+    "countSuffix": "downloads and counting"
+  }
+}

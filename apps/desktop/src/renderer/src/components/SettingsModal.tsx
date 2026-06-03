@@ -19,7 +19,43 @@ interface Props {
 
 type Tab = 'general' | 'naming' | 'artwork' | 'fields'
 
-const TABS: Tab[] = ['general', 'naming', 'artwork', 'fields']
+// Ordered to mirror Meta's preferences flow: broad app settings, then what the
+// editor shows, then artwork, then editing behavior.
+const TABS: Tab[] = ['general', 'fields', 'artwork', 'naming']
+
+const TAB_ICONS: Record<Tab, React.JSX.Element> = {
+  general: (
+    <>
+      <line x1="4" y1="8" x2="20" y2="8" />
+      <circle cx="9" cy="8" r="2.4" fill="var(--color-panel)" />
+      <line x1="4" y1="16" x2="20" y2="16" />
+      <circle cx="15" cy="16" r="2.4" fill="var(--color-panel)" />
+    </>
+  ),
+  fields: (
+    <>
+      <line x1="9" y1="6" x2="20" y2="6" />
+      <line x1="9" y1="12" x2="20" y2="12" />
+      <line x1="9" y1="18" x2="20" y2="18" />
+      <circle cx="4.5" cy="6" r="1" />
+      <circle cx="4.5" cy="12" r="1" />
+      <circle cx="4.5" cy="18" r="1" />
+    </>
+  ),
+  artwork: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.6" />
+      <path d="m21 15-5-5L5 21" />
+    </>
+  ),
+  naming: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </>
+  ),
+}
 
 export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -76,17 +112,33 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
         className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-5 flex justify-center">
-          <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+        <div className="-mx-6 -mt-6 mb-5 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
+          <div className="flex justify-center gap-1">
             {TABS.map((id) => (
               <button
                 key={id}
+                type="button"
                 data-testid={`settings-tab-${id}`}
                 onClick={() => setTab(id)}
-                className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                  tab === id ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-muted hover:text-fg'
+                aria-pressed={tab === id}
+                className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
+                  tab === id
+                    ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
+                    : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
                 }`}
               >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-6 w-6"
+                >
+                  {TAB_ICONS[id]}
+                </svg>
                 {tr(`settings.tabs.${id}`)}
               </button>
             ))}

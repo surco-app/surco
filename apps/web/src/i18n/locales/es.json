@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "htmlLang": "es",
+    "ogLocale": "es_ES",
+    "inLanguage": "es",
+    "title": "Surco — Prepara tus pistas de DJ en segundos",
+    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF lossless o MP3, etiqueta desde Discogs y manda a Apple Music en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
+    "ogTitle": "Surco — Prepara tus pistas de DJ en segundos",
+    "ogDescription": "Menos preparar, más pinchar: convierte a AIFF lossless o MP3, etiqueta desde Discogs y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
+    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF lossless, etiqueta desde Discogs, manda a Apple Music y analiza el espectro para detectar MP3 recomprimidos."
+  },
+  "nav": {
+    "velocidad": "Velocidad",
+    "como": "Cómo funciona",
+    "analisis": "Análisis",
+    "funciones": "Funciones",
+    "atajos": "Atajos"
+  },
+  "available": "Disponible · macOS · Windows",
+  "hero": {
+    "h1a": "Menos preparar,",
+    "h1b": "más pinchar.",
+    "lede": "Surco convierte tus descargas a AIFF lossless o MP3, las etiqueta desde Discogs y las deja listas en Apple Music — y te avisa si una pista viene falseada.",
+    "or": "o"
+  },
+  "stats": {
+    "faster": "más rápido que a mano*",
+    "perTrack": "por pista",
+    "oneShot": "golpe, todo el flujo"
+  },
+  "analysis": {
+    "kicker": "Análisis anti-fake",
+    "title": "El espectro no miente",
+    "lede": "Un MP3 recomprimido a WAV/AIFF arrastra un corte brusco en altas frecuencias. Surco lo mide y marca la pista como sospechosa antes de que acabe sonando en cabina.",
+    "good": "● buena calidad",
+    "suspect": "● sospechoso",
+    "goodCaptionPre": "energía hasta ",
+    "goodCaptionHz": "~22 kHz",
+    "goodCaptionPost": " (Nyquist) — banda completa.",
+    "wall": "muro ~16 kHz",
+    "suspectCaptionPre": "corte brusco en ",
+    "suspectCaptionHz": "~16 kHz",
+    "suspectCaptionPost": " — delata un MP3 recomprimido."
+  },
+  "features": {
+    "kicker": "Funciones",
+    "title": "Todo el flujo, en una app",
+    "items": [
+      { "kick": "importar", "title": "Arrastra y suelta", "body": "Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen." },
+      { "kick": "discogs", "title": "Metadatos de Discogs", "body": "Busca el disco y trae artista, álbum, año, género y carátula con un clic." },
+      { "kick": "exportar", "title": "AIFF lossless o MP3", "body": "Exporta sin pérdida en AIFF (PCM, profundidad de bits exacta) o en MP3 de alta calidad cuando buscas ligereza." },
+      { "kick": "carátula", "title": "Carátula embebida", "body": "Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox." },
+      { "kick": "biblioteca", "title": "Directo a Apple Music", "body": "Manda la pista ya etiquetada a tu biblioteca, lista para pinchar." },
+      { "kick": "espectro", "title": "Análisis de espectro", "body": "Mira el espectro y caza el MP3 recomprimido que se hace pasar por lossless." }
+    ]
+  },
+  "shortcuts": {
+    "kicker": "Teclado primero",
+    "title": "Vuela sin tocar el ratón",
+    "lede": "Una paleta de comandos y atajos para todo el flujo. Añade, etiqueta, analiza y procesa pista tras pista sin soltar las manos del teclado.",
+    "items": [
+      "Añadir archivos",
+      "Procesar pista",
+      "Procesar todas",
+      "Reproducir / pausa",
+      "Navegar pistas",
+      "Buscar en Discogs"
+    ]
+  },
+  "stack": [
+    "AIFF lossless",
+    "MP3 alta calidad",
+    "ffmpeg incluido",
+    "ID3v2.3",
+    "Discogs",
+    "Apple Silicon"
+  ],
+  "speed": {
+    "kicker": "Un botón",
+    "title": "De minutos a segundos por pista",
+    "lede": "A mano es un proceso de varios pasos —convertir, etiquetar, completar tags, subir— saltando entre herramientas. Tedioso en cuanto lo repites pista tras pista. Surco lo hace todo al pulsar un botón.",
+    "manual": "A mano",
+    "manualTime": "~3–4 min",
+    "manualSteps": [
+      { "app": "otra app", "label": "Convertir a AIFF" },
+      { "app": "app de tags", "label": "Escribir los metadatos" },
+      { "app": "a mano", "label": "Añadir grouping y tags que el tagger no pone" },
+      { "app": "Música", "label": "Importar a Apple Music" }
+    ],
+    "manualCaption": "saltando entre herramientas · repitiendo en cada pista",
+    "withSurco": "Con Surco",
+    "withSurcoTime": "~1–2 s",
+    "combo": "Convertir + etiquetar + Apple Music",
+    "bullets": [
+      "AIFF lossless o MP3",
+      "metadatos Discogs",
+      "carátula embebida",
+      "grouping y tags",
+      "análisis de espectro",
+      "a Apple Music"
+    ],
+    "oneClick": "un clic · una pista lista",
+    "footnote": "* Flujo a mano a modo de ejemplo; los pasos y herramientas varían según cada quien. Tiempos estimados."
+  },
+  "how": {
+    "kicker": "Cómo funciona",
+    "title": "Tres pasos y a pinchar",
+    "steps": [
+      { "title": "Suelta tus pistas", "body": "Arrastra tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula." },
+      { "title": "Elige el disco", "body": "Busca en Discogs y aplica artista, álbum, año, género y carátula con un clic." },
+      { "title": "Exporta de un golpe", "body": "Convierte a AIFF o MP3, revisa el espectro y manda la pista a Apple Music." }
+    ]
+  },
+  "mockup": {
+    "tracks": "Pistas",
+    "metadata": "Metadatos",
+    "good": "● buena calidad",
+    "spectrum": "espectro"
+  },
+  "footer": {
+    "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
+    "product": "Producto",
+    "formatsHeading": "Formatos",
+    "formats": [
+      "AIFF lossless",
+      "MP3 alta calidad",
+      "etiquetas Discogs",
+      "a Apple Music"
+    ],
+    "copyright": "© 2026 Surco · getsurco.app",
+    "slogan": "del crate a la cabina"
+  },
+  "download": {
+    "viewDownloads": "Ver descargas",
+    "cta": "Descargar para {{os}}",
+    "viewAnalysis": "Ver el análisis →",
+    "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
+    "free": "Descarga gratuita",
+    "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
+    "windows": "También llega a Windows, con todo igual salvo el envío automático a Apple Music.",
+    "countSuffix": "descargas y subiendo"
+  }
+}
