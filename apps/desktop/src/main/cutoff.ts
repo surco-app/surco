@@ -22,6 +22,19 @@ const BAND_MAX_HZ = 22000
 // clear of both, validated against real MP3/AAC re-encodes.
 const WALL_DROP_DB = 8
 
+// A low-bitrate codec can lowpass with a soft transition band rather than a
+// brick wall: the energy slides down a ramp no single step trips WALL_DROP_DB.
+// Its intermediate rolloff (9–16 kHz) is indistinguishable from genuine
+// full-band audio, which can taper just as steeply — so we cannot key on where
+// the slide starts. The tell is the top: a soft lossy lowpass has collapsed
+// toward the noise floor by Nyquist, while real full-band audio still carries
+// measurable energy there. We compare the top band against the 9–11 kHz
+// reference plateau (NYQUIST_DROP_DB) to decide cut vs full-band, then place the
+// reported edge where the level first fell CUT_EDGE_DB below that plateau.
+const REFERENCE_BANDS = 3
+const NYQUIST_DROP_DB = 32
+const CUT_EDGE_DB = 12
+
 // The band centre frequencies to probe for a given Nyquist, spaced one band
 // width apart from BAND_START_HZ up to just under Nyquist (capped at BAND_MAX_HZ).
 export function bandFrequencies(nyquistHz: number): number[] {
@@ -32,8 +45,10 @@ export function bandFrequencies(nyquistHz: number): number[] {
 }
 
 // Returns the frequency of the last band before the steepest qualifying drop,
-// or the Nyquist frequency when the spectrum tapers smoothly (no wall, i.e. the
-// audio is genuinely full-band).
+// or the Nyquist frequency when the audio is genuinely full-band. When no
+// single-step shelf qualifies, falls back to the Nyquist-collapse test so a soft
+// transition band (whose steepest step never reaches WALL_DROP_DB) is still
+// caught without flagging full-band audio that merely rolls off toward Nyquist.
 export function detectCutoff(bands: Band[], nyquistHz: number): number {
   let wallIndex = -1
   let maxDrop = WALL_DROP_DB
@@ -44,5 +59,17 @@ export function detectCutoff(bands: Band[], nyquistHz: number): number {
       wallIndex = i
     }
   }
-  return wallIndex === -1 ? nyquistHz : bands[wallIndex].freqHz
+  if (wallIndex !== -1) return bands[wallIndex].freqHz
+
+  const refCount = Math.min(REFERENCE_BANDS, bands.length)
+  if (refCount === 0) return nyquistHz
+  const plateau = bands.slice(0, refCount).reduce((sum, b) => sum + b.rmsDb, 0) / refCount
+  // Full-band audio keeps energy near Nyquist; a soft lossy lowpass has collapsed
+  // toward the noise floor by the top band. Only the latter is a cut.
+  if (plateau - bands[bands.length - 1].rmsDb <= NYQUIST_DROP_DB) return nyquistHz
+  const edge = plateau - CUT_EDGE_DB
+  for (let i = 0; i < bands.length - 1; i++) {
+    if (bands[i].rmsDb <= edge) return bands[i].freqHz
+  }
+  return nyquistHz
 }
