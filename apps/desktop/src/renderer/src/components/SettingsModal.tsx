@@ -187,13 +187,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
         <div className="min-h-[280px]">
           {tab === 'general' && (
             <>
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <span className="mb-1.5 block text-sm font-medium text-fg-muted">
                 {tr('settings.theme')}
-              </label>
+              </span>
               <div className="mb-5 inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
                 {THEMES.map((id) => (
                   <button
                     key={id}
+                    type="button"
                     data-testid={`settings-theme-${id}`}
                     aria-pressed={theme === id}
                     onClick={() => setTheme(id)}
@@ -208,10 +209,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 ))}
               </div>
 
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <label
+                htmlFor="settings-token"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
                 {tr('settings.discogsToken')}
               </label>
               <input
+                id="settings-token"
                 data-testid="settings-token"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
@@ -234,17 +239,22 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 {tr('settings.outputSection')}
               </p>
 
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <label
+                htmlFor="settings-output"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
                 {tr('settings.outputDir')}
               </label>
               <div className="mb-5 flex gap-2">
                 <input
+                  id="settings-output"
                   data-testid="settings-output"
                   value={outputDir}
                   readOnly
                   className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
                 />
                 <button
+                  type="button"
                   onClick={changeDir}
                   className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                 >
@@ -252,13 +262,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 </button>
               </div>
 
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <span className="mb-1.5 block text-sm font-medium text-fg-muted">
                 {tr('settings.outputFormat')}
-              </label>
+              </span>
               <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
                 {FORMATS.map((id) => (
                   <button
                     key={id}
+                    type="button"
                     data-testid={`settings-format-${id}`}
                     aria-pressed={outputFormat === id}
                     onClick={() => setOutputFormat(id)}
@@ -292,7 +303,9 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                     <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
                   </label>
                   {outputFormat === 'flac' && (
-                    <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
+                    <p className="mt-1.5 text-xs text-fg-dim">
+                      {tr('settings.appleMusicFlacNote')}
+                    </p>
                   )}
                 </>
               )}
@@ -301,11 +314,15 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
 
           {tab === 'naming' && (
             <>
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <label
+                htmlFor="settings-filename-format"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
                 {tr('settings.filenameFormat')}
               </label>
               <input
                 ref={formatRef}
+                id="settings-filename-format"
                 data-testid="settings-filename-format"
                 value={filenameFormat}
                 onChange={(e) => setFilenameFormat(e.target.value)}
@@ -334,10 +351,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 </span>
               </p>
 
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <label
+                htmlFor="settings-grouping"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
                 {tr('settings.grouping')}
               </label>
               <input
+                id="settings-grouping"
                 data-testid="settings-grouping"
                 value={grouping}
                 onChange={(e) => setGrouping(e.target.value)}
@@ -386,11 +407,15 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
 
           {tab === 'artwork' && (
             <>
-              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
+              <label
+                htmlFor="settings-cover-max"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
                 {tr('settings.coverMaxSize')}
               </label>
               <div className="mb-5 flex items-center gap-2">
                 <input
+                  id="settings-cover-max"
                   data-testid="settings-cover-max"
                   type="number"
                   min={0}
@@ -431,6 +456,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                       <span className="text-sm">{tr(`fields.${key}`)}</span>
                       <div className="flex items-center gap-1">
                         <button
+                          type="button"
                           data-testid={`field-required-${key}`}
                           aria-pressed={requiredFields.includes(key)}
                           onClick={() =>
@@ -449,6 +475,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                           {tr('settings.required')}
                         </button>
                         <button
+                          type="button"
                           onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
                           disabled={i === 0}
                           className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
@@ -457,6 +484,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                           ↑
                         </button>
                         <button
+                          type="button"
                           onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
                           disabled={i === visibleFields.length - 1}
                           className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
@@ -465,6 +493,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                           ↓
                         </button>
                         <button
+                          type="button"
                           onClick={() => {
                             setVisibleFields(visibleFields.filter((k) => k !== key))
                             setRequiredFields(requiredFields.filter((k) => k !== key))
@@ -491,6 +520,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                     >
                       <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
                       <button
+                        type="button"
                         onClick={() => setVisibleFields([...visibleFields, d.key])}
                         className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
                       >
@@ -509,12 +539,14 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
 
         <div className="mt-6 flex justify-end gap-2">
           <button
+            type="button"
             onClick={onClose}
             className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
           >
             {tr('common.cancel')}
           </button>
           <button
+            type="button"
             data-testid="settings-save"
             onClick={save}
             className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"

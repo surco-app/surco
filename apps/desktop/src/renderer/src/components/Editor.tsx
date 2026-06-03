@@ -271,6 +271,7 @@ export function Editor({
               className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
+              type="button"
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
@@ -307,6 +308,7 @@ export function Editor({
               return (
                 <div key={r.id} className="border-b border-[var(--color-line)]/60">
                   <button
+                    type="button"
                     data-testid="discogs-result"
                     title={tr('editor.resultHint')}
                     aria-expanded={expanded}
@@ -355,6 +357,7 @@ export function Editor({
                         release.tracklist.map((t, i) => (
                           <button
                             key={`${t.position}-${i}`}
+                            type="button"
                             data-testid="discogs-track"
                             onClick={() => selectTrack(t)}
                             className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
@@ -642,6 +645,7 @@ export function Editor({
             {done && (
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
                   className="press flex-1 rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
                 >

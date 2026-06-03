@@ -482,6 +482,7 @@ export default function App(): React.JSX.Element {
         >
           {tracks.length > 0 && (
             <button
+              type="button"
               data-testid="convert-all"
               onClick={processAll}
               disabled={!canProcessAll}
@@ -491,6 +492,7 @@ export default function App(): React.JSX.Element {
             </button>
           )}
           <button
+            type="button"
             data-testid="add-files"
             onClick={pickFiles}
             className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
@@ -498,6 +500,7 @@ export default function App(): React.JSX.Element {
             {tr('header.add')}
           </button>
           <button
+            type="button"
             data-testid="open-palette"
             onClick={() => setShowPalette(true)}
             className="press flex h-8 items-center gap-1 rounded-lg border border-[var(--color-line)] px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
@@ -507,6 +510,7 @@ export default function App(): React.JSX.Element {
             <kbd className="font-sans">K</kbd>
           </button>
           <button
+            type="button"
             data-testid="open-settings"
             onClick={() => setShowSettings(true)}
             className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
