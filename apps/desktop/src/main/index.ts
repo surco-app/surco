@@ -15,6 +15,7 @@ import {
   processCover,
   readTags,
 } from './ffmpeg'
+import { createMenuT } from './i18n'
 import { getSettings, saveSettings } from './settings'
 import { tmpName } from './tmp'
 
@@ -26,6 +27,7 @@ function sanitizeFilename(name: string): string {
 }
 
 function buildAppMenu(win: BrowserWindow): void {
+  const t = createMenuT(app.getLocale())
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: app.name,
@@ -33,12 +35,12 @@ function buildAppMenu(win: BrowserWindow): void {
         { role: 'about' },
         { type: 'separator' },
         {
-          label: 'Ajustes…',
+          label: t('settings'),
           accelerator: 'CmdOrCtrl+,',
           click: () => win.webContents.send('menu:settings'),
         },
         {
-          label: 'Enviar comentarios…',
+          label: t('feedback'),
           click: () => win.webContents.send('menu:feedback'),
         },
         { type: 'separator' },
