@@ -55,6 +55,13 @@ describe('SettingsModal filename tokens', () => {
       'Dj VixentTake me into the sky.aiff',
     )
   })
+
+  it('closes when the backdrop is clicked', () => {
+    const onClose = vi.fn()
+    render(<SettingsModal settings={settings} onClose={onClose} onSave={() => {}} />)
+    fireEvent.click(screen.getByTestId('settings-backdrop'))
+    expect(onClose).toHaveBeenCalled()
+  })
 })
 
 describe('SettingsModal organization', () => {

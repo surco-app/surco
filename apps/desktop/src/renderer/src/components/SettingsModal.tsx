@@ -143,13 +143,18 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   }
 
   return (
-    <div
-      className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        type="button"
+        data-testid="settings-backdrop"
+        aria-label={tr('common.close')}
+        onClick={onClose}
+        className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
       <div
-        className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        className="animate-pop relative z-10 w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-5 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
           <div className="flex justify-center gap-1">
