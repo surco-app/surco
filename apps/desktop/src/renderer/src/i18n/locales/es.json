@@ -136,15 +136,16 @@
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
     "tokenHelp": "Genera uno gratis en",
+    "outputSection": "Salida",
     "outputDir": "Carpeta de salida",
-    "outputFormat": "Formato de salida",
+    "outputFormat": "Formato por defecto",
     "formats": {
       "aiff": "AIFF",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF, WAV y FLAC conservan la calidad sin pérdida (FLAC va comprimido); MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
+    "outputFormatHint": "AIFF, WAV y FLAC conservan la calidad sin pérdida (FLAC va comprimido); MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir. Puedes elegir otro formato al exportar cada pista.",
     "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que esto se desactiva mientras tu formato de salida sea FLAC.",
     "filenameFormat": "Formato del nombre",

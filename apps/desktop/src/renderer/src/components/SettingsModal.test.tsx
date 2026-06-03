@@ -56,3 +56,14 @@ describe('SettingsModal filename tokens', () => {
     )
   })
 })
+
+describe('SettingsModal organization', () => {
+  // The spectrum toggle controls what the editor shows, so it belongs with the
+  // other editing-behavior switches under the Editing tab, not in General.
+  it('shows the audio spectrum toggle under the Editing tab, not General', () => {
+    render(<SettingsModal settings={settings} onClose={() => {}} onSave={() => {}} />)
+    expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-tab-naming'))
+    expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
+  })
+})

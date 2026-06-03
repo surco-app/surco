@@ -230,6 +230,10 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 </a>
               </p>
 
+              <p className="mb-3 border-t border-[var(--color-line)] pt-5 text-xs font-medium uppercase tracking-wide text-fg-dim">
+                {tr('settings.outputSection')}
+              </p>
+
               <label className="mb-1.5 block text-sm font-medium text-fg-muted">
                 {tr('settings.outputDir')}
               </label>
@@ -292,20 +296,6 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   )}
                 </>
               )}
-
-              <div className={`${isMac ? 'mt-5 border-t border-[var(--color-line)] pt-5' : ''}`}>
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-show-spectrum"
-                    type="checkbox"
-                    checked={showSpectrum}
-                    onChange={(e) => setShowSpectrum(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.showSpectrum')}</span>
-                </label>
-                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
-              </div>
             </>
           )}
 
@@ -377,6 +367,19 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   />
                   <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
                 </label>
+                <div>
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      data-testid="settings-show-spectrum"
+                      type="checkbox"
+                      checked={showSpectrum}
+                      onChange={(e) => setShowSpectrum(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr('settings.showSpectrum')}</span>
+                  </label>
+                  <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+                </div>
               </div>
             </>
           )}
