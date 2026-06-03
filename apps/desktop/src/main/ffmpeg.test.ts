@@ -106,7 +106,15 @@ describe('planConversion', () => {
     expect(await planConversion('/in.aiff', 'aiff', probe)).toEqual({ codec: 'copy', ext: '.aiff' })
     expect(await planConversion('/in.mp3', 'mp3', probe)).toEqual({ codec: 'copy', ext: '.mp3' })
     expect(await planConversion('/in.wav', 'wav', probe)).toEqual({ codec: 'copy', ext: '.wav' })
+    expect(await planConversion('/in.flac', 'flac', probe)).toEqual({ codec: 'copy', ext: '.flac' })
     // copying never needs to inspect the stream
+    expect(probe).not.toHaveBeenCalled()
+  })
+
+  it('encodes a lossless source to FLAC without probing, since the flac codec preserves the source bit depth itself', async () => {
+    // FLAC is losslessly compressed and derives its bit depth from the input,
+    // so there is no endianness or PCM width to pick — unlike AIFF/WAV
+    expect(await planConversion('/in.wav', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
     expect(probe).not.toHaveBeenCalled()
   })
 

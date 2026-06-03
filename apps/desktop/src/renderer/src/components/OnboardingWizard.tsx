@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings } from '../../../shared/types'
 import { buildOnboardingPatch } from '../lib/onboarding'
 
-const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav']
+const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 const STEPS = ['welcome', 'token', 'format', 'grouping'] as const
 
 interface Props {

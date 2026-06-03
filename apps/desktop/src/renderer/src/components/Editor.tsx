@@ -24,6 +24,7 @@ interface Props {
   item: TrackItem
   hasToken: boolean
   outputFormat: OutputFormat
+  addToAppleMusic: boolean
   filenameFormat: string
   groupingPresets: string[]
   visibleFields: string[]
@@ -97,6 +98,7 @@ export function Editor({
   item,
   hasToken,
   outputFormat,
+  addToAppleMusic,
   filenameFormat,
   groupingPresets,
   visibleFields,
@@ -574,11 +576,36 @@ export function Editor({
             )}
           </div>
 
-          <label className="mt-6 block border-t border-[var(--color-line)] pt-5">
-            <span className="mb-1 block text-xs font-medium text-fg-dim">
-              {tr('editor.outputName')}
-            </span>
-            <div className="relative">
+          <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-medium text-fg-dim">{tr('editor.outputName')}</span>
+              <button
+                type="button"
+                data-testid="regenerate-output-name"
+                onClick={() => onChange({ outputName: undefined })}
+                disabled={item.outputName === undefined}
+                title={tr('editor.regenerateHint')}
+                className="press flex items-center gap-1 text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline disabled:opacity-40 disabled:no-underline disabled:hover:text-fg-dim"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-3 w-3"
+                >
+                  <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+                {tr('editor.regenerate')}
+              </button>
+            </div>
+            <label className="relative block">
               <input
                 data-testid="output-name"
                 value={item.outputName ?? defaultOutputName}
@@ -588,8 +615,8 @@ export function Editor({
               <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
                 .{outputFormat}
               </span>
-            </div>
-          </label>
+            </label>
+          </div>
         </div>
 
         <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
@@ -622,9 +649,16 @@ export function Editor({
             >
               {item.status === 'processing'
                 ? tr('editor.processing')
-                : tr(window.api.platform === 'darwin' ? 'editor.convert' : 'editor.convertNoMusic', {
-                    format: outputFormat.toUpperCase(),
-                  })}
+                : tr(
+                    window.api.platform === 'darwin' &&
+                      outputFormat !== 'flac' &&
+                      addToAppleMusic
+                      ? 'editor.convert'
+                      : 'editor.convertNoMusic',
+                    {
+                      format: outputFormat.toUpperCase(),
+                    },
+                  )}
             </button>
           )}
         </div>

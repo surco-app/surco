@@ -498,6 +498,7 @@ export default function App(): React.JSX.Element {
               item={selected}
               hasToken={!!settings?.discogsToken}
               outputFormat={settings?.outputFormat ?? 'aiff'}
+              addToAppleMusic={settings?.addToAppleMusic ?? false}
               filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}

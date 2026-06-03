@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import type { TrackMetadata } from '../shared/types'
+import type { OutputFormat, TrackMetadata } from '../shared/types'
 
 const run = promisify(execFile)
 
@@ -75,9 +75,15 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
 
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
 // the whole feature on the platform. Apple Music for Windows exposes no
-// automation, so a track simply finishes in the output folder there.
-export function shouldAddToAppleMusic(enabled: boolean, platform: NodeJS.Platform): boolean {
-  return enabled && platform === 'darwin'
+// automation, so a track simply finishes in the output folder there. FLAC is
+// excluded on every platform because Apple Music cannot ingest it — adding the
+// file would fail or import nothing, so a FLAC export always stays on disk.
+export function shouldAddToAppleMusic(
+  enabled: boolean,
+  platform: NodeJS.Platform,
+  format: OutputFormat,
+): boolean {
+  return enabled && platform === 'darwin' && format !== 'flac'
 }
 
 // Counts library tracks matching the given name and artist. AppleScript text

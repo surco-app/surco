@@ -78,6 +78,8 @@
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
     "output": "Salida:",
     "outputName": "Nombre de salida",
+    "regenerate": "Regenerar",
+    "regenerateHint": "Reconstruir el nombre a partir de los metadatos",
     "convert": "Convertir a {{format}} + Apple Music",
     "convertNoMusic": "Convertir a {{format}}",
     "processing": "Procesando…",
@@ -129,10 +131,12 @@
     "formats": {
       "aiff": "AIFF",
       "mp3": "MP3",
-      "wav": "WAV"
+      "wav": "WAV",
+      "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF y WAV conservan la calidad sin pérdida; MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
+    "outputFormatHint": "AIFF, WAV y FLAC conservan la calidad sin pérdida (FLAC va comprimido); MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
     "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
+    "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que esto se desactiva mientras tu formato de salida sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "tokensHint": "Tokens:",
     "grouping": "Grouping (separados por comas)",

@@ -272,7 +272,7 @@ function registerIpc(): void {
       )
       await convertAudio(job.inputPath, outputPath, settings.outputFormat, job.meta, coverPath)
 
-      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform)) {
+      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, settings.outputFormat)) {
         stage('appleMusic')
         await addToAppleMusic(outputPath, job.meta, coverPath)
       }

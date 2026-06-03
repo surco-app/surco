@@ -5,7 +5,7 @@ import type { OutputFormat, Settings, ThemePref } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
-const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav']
+const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
 // Apple Music automation only exists on macOS, so the toggle is meaningless on
 // other platforms where a track simply finishes in the output folder.
@@ -232,16 +232,26 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
               <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
               {isMac && (
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-applemusic"
-                    type="checkbox"
-                    checked={addToAppleMusic}
-                    onChange={(e) => setAddToAppleMusic(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
-                </label>
+                <>
+                  <label
+                    className={`flex items-center gap-3 ${
+                      outputFormat === 'flac' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                    }`}
+                  >
+                    <input
+                      data-testid="settings-applemusic"
+                      type="checkbox"
+                      checked={addToAppleMusic && outputFormat !== 'flac'}
+                      disabled={outputFormat === 'flac'}
+                      onChange={(e) => setAddToAppleMusic(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
+                  </label>
+                  {outputFormat === 'flac' && (
+                    <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
+                  )}
+                </>
               )}
             </>
           )}

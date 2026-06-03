@@ -105,12 +105,16 @@ describe('buildLookupScript', () => {
 
 describe('shouldAddToAppleMusic', () => {
   it('refuses on non-darwin platforms even when the setting is enabled, because osascript and the Music AppleScript bridge only exist on macOS — a settings.json carried over to Windows must not spawn a missing binary', () => {
-    expect(shouldAddToAppleMusic(true, 'win32')).toBe(false)
-    expect(shouldAddToAppleMusic(true, 'linux')).toBe(false)
+    expect(shouldAddToAppleMusic(true, 'win32', 'aiff')).toBe(false)
+    expect(shouldAddToAppleMusic(true, 'linux', 'aiff')).toBe(false)
   })
 
   it('runs only when the user enabled it and the platform is macOS', () => {
-    expect(shouldAddToAppleMusic(true, 'darwin')).toBe(true)
-    expect(shouldAddToAppleMusic(false, 'darwin')).toBe(false)
+    expect(shouldAddToAppleMusic(true, 'darwin', 'aiff')).toBe(true)
+    expect(shouldAddToAppleMusic(false, 'darwin', 'aiff')).toBe(false)
+  })
+
+  it('refuses for FLAC even on macOS with the setting enabled, because Apple Music cannot ingest FLAC — adding the file would either fail or import nothing', () => {
+    expect(shouldAddToAppleMusic(true, 'darwin', 'flac')).toBe(false)
   })
 })

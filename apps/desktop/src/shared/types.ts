@@ -1,6 +1,6 @@
 export type ThemePref = 'system' | 'light' | 'dark'
 
-export type OutputFormat = 'aiff' | 'mp3' | 'wav'
+export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
 export interface Settings {
   theme: ThemePref

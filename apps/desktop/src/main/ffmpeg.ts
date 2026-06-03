@@ -167,6 +167,7 @@ function metadataArgs(meta: TrackMetadata): string[] {
 const AIFF_INPUT = /\.aiff?$/i
 const MP3_INPUT = /\.mp3$/i
 const WAV_INPUT = /\.wav$/i
+const FLAC_INPUT = /\.flac$/i
 const MP3_BITRATE = '320k'
 
 export function convertArgs(
@@ -198,7 +199,7 @@ export function convertArgs(
 export interface ConversionPlan {
   codec: string
   bitrate?: string
-  ext: '.aiff' | '.mp3' | '.wav'
+  ext: '.aiff' | '.mp3' | '.wav' | '.flac'
 }
 
 // Decides how to render a source into the chosen output format. A source
@@ -218,6 +219,12 @@ export async function planConversion(
   if (format === 'wav') {
     if (WAV_INPUT.test(input)) return { codec: 'copy', ext: '.wav' }
     return { codec: pcmCodec(await probe(input), 'le'), ext: '.wav' }
+  }
+  if (format === 'flac') {
+    // FLAC is losslessly compressed and the encoder reads the source bit depth
+    // itself, so there is no PCM width or endianness to choose — no probe needed.
+    if (FLAC_INPUT.test(input)) return { codec: 'copy', ext: '.flac' }
+    return { codec: 'flac', ext: '.flac' }
   }
   if (AIFF_INPUT.test(input)) return { codec: 'copy', ext: '.aiff' }
   return { codec: pcmCodec(await probe(input), 'be'), ext: '.aiff' }
