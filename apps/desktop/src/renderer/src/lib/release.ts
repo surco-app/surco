@@ -1,4 +1,10 @@
-import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
+import type {
+  DiscogsRelease,
+  DiscogsSearchResult,
+  DiscogsTrack,
+  TrackMetadata,
+} from '../../../shared/types'
+import { splitPosition } from './position'
 
 export function cleanName(name: string): string {
   return name.replace(/\s*\(\d+\)$/, '')
@@ -57,4 +63,47 @@ export function bestTrack(tracks: DiscogsTrack[], title: string): DiscogsTrack |
     }
   }
   return bestScore > 0 ? best : undefined
+}
+
+export interface ReleaseMetaPatch {
+  coverUrl: string | undefined
+  coverPath: undefined
+  meta: TrackMetadata
+}
+
+// Applying a release overwrites the whole right-hand panel — album-level data
+// and cover from the release, plus the chosen track's title/number/artist — so
+// the song ends up fully tagged from Discogs in one action. Fields the release
+// doesn't carry keep their current value.
+export function buildReleaseMeta(
+  current: TrackMetadata,
+  rel: DiscogsRelease,
+  track: DiscogsTrack | undefined,
+  coverFallback?: string,
+): ReleaseMetaPatch {
+  const albumArtist = joinArtists(rel.artists)
+  const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
+  const trackArtist = joinArtists(track?.artists)
+  const label = rel.labels?.[0]
+  const publisher = label?.name?.trim() ?? ''
+  const catno = label?.catno?.trim() ?? ''
+  const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
+  const pos = track ? splitPosition(track.position) : undefined
+  return {
+    coverUrl: coverOf(rel, coverFallback),
+    coverPath: undefined,
+    meta: {
+      ...current,
+      title: track ? track.title : current.title,
+      trackNumber: pos ? pos.track : current.trackNumber,
+      discNumber: pos ? pos.disc : current.discNumber,
+      album: rel.title,
+      albumArtist,
+      artist: trackArtist || current.artist || albumArtist,
+      year: rel.year ? String(rel.year) : current.year,
+      genre,
+      publisher: publisher || current.publisher,
+      catalogNumber: catalogNumber || current.catalogNumber,
+    },
+  }
 }

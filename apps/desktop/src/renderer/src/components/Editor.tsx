@@ -11,11 +11,10 @@ import { csvHas, toggleCsv } from '../lib/csv'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS } from '../lib/fields'
-import { splitPosition } from '../lib/position'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { bestTrack, coverOf, joinArtists, resultFromRelease } from '../lib/release'
+import { bestTrack, buildReleaseMeta, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -194,39 +193,12 @@ export function Editor({
     }
   }
 
-  // Applying a release overwrites the whole right-hand panel — album-level data
-  // and cover from the release, plus the chosen track's title/number/artist — so
-  // the song ends up fully tagged from Discogs in one action.
   function commitMeta(
     rel: DiscogsRelease,
     track: DiscogsTrack | undefined,
     coverFallback?: string,
   ): void {
-    const albumArtist = joinArtists(rel.artists)
-    const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
-    const trackArtist = joinArtists(track?.artists)
-    const label = rel.labels?.[0]
-    const publisher = label?.name?.trim() ?? ''
-    const catno = label?.catno?.trim() ?? ''
-    const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
-    const pos = track ? splitPosition(track.position) : undefined
-    onChange({
-      coverUrl: coverOf(rel, coverFallback),
-      coverPath: undefined,
-      meta: {
-        ...item.meta,
-        title: track ? track.title : item.meta.title,
-        trackNumber: pos ? pos.track : item.meta.trackNumber,
-        discNumber: pos ? pos.disc : item.meta.discNumber,
-        album: rel.title,
-        albumArtist,
-        artist: trackArtist || item.meta.artist || albumArtist,
-        year: rel.year ? String(rel.year) : item.meta.year,
-        genre,
-        publisher: publisher || item.meta.publisher,
-        catalogNumber: catalogNumber || item.meta.catalogNumber,
-      },
-    })
+    onChange(buildReleaseMeta(item.meta, rel, track, coverFallback))
   }
 
   async function applyRelease(result: DiscogsSearchResult): Promise<void> {
