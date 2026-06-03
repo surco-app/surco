@@ -8,6 +8,7 @@ import {
   convertArgs,
   coverArgs,
   cutoffFilter,
+  formatMatchesInput,
   parseBands,
   planConversion,
   tagsFromProbe,
@@ -146,6 +147,33 @@ describe('planConversion', () => {
       ext: '.wav',
     })
     expect(probe).toHaveBeenCalledWith('/in.flac')
+  })
+})
+
+describe('formatMatchesInput', () => {
+  it('reports a match when the export format equals the source format, so it can be updated in place instead of copied out', () => {
+    // This is the gate for editing the original file: exporting a WAV to WAV (or
+    // MP3→MP3, etc.) only rewrites tags on a stream copy, so there is no reason to
+    // spawn a second file in the output folder — we overwrite/rename the source.
+    expect(formatMatchesInput('wav', '/in.wav')).toBe(true)
+    expect(formatMatchesInput('mp3', '/in.mp3')).toBe(true)
+    expect(formatMatchesInput('flac', '/in.flac')).toBe(true)
+    expect(formatMatchesInput('aiff', '/in.aiff')).toBe(true)
+  })
+
+  it('matches case-insensitively and accepts the .aif alias for AIFF', () => {
+    // Sources arrive with whatever case the muxer wrote, and AIFF rips use both
+    // .aif and .aiff — all of these are the same format and must edit in place.
+    expect(formatMatchesInput('wav', '/in.WAV')).toBe(true)
+    expect(formatMatchesInput('aiff', '/in.aif')).toBe(true)
+  })
+
+  it('reports no match when the export format differs, so a real conversion writes a fresh file', () => {
+    // WAV→MP3 re-encodes into a new container; the original is kept untouched and
+    // the converted file lands in the output folder (it is not an in-place edit).
+    expect(formatMatchesInput('mp3', '/in.wav')).toBe(false)
+    expect(formatMatchesInput('wav', '/in.flac')).toBe(false)
+    expect(formatMatchesInput('flac', '/in.aiff')).toBe(false)
   })
 })
 

@@ -120,6 +120,7 @@ export default function App(): React.JSX.Element {
 
   // Playback only ever applies to the selected track: switching selection stops
   // it, and the object URL is freed on unmount.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger, not a read value — the effect must re-run on selection change to stop the previously selected track; its body intentionally doesn't reference selectedId.
   useEffect(() => {
     audioRef.current?.pause()
     setPlayingId(null)
@@ -236,7 +237,7 @@ export default function App(): React.JSX.Element {
     const format = settings?.filenameFormat ?? '{artist} - {title}'
     const outputName = track.outputName?.trim() || renderOutputName(format, meta) || track.fileName
     try {
-      const { outputPath } = await window.api.processTrack({
+      const { outputPath, inPlace } = await window.api.processTrack({
         id: track.id,
         inputPath: track.inputPath,
         outputName,
@@ -248,6 +249,10 @@ export default function App(): React.JSX.Element {
       updateTrack(id, {
         status: 'done',
         outputPath,
+        // An in-place export rewrote (and possibly renamed) the source file itself,
+        // so the path we loaded from is gone — repoint the track at the new file so a
+        // later edit, re-export or playback reads it instead of the deleted original.
+        ...(inPlace && { inputPath: outputPath, fileName: parseFileName(outputPath).fileName }),
         stage: undefined,
         processedSignature: trackSignature(track),
       })

@@ -98,6 +98,10 @@ export interface ProcessProgress {
 
 export interface ProcessResult {
   outputPath: string
+  // True when the export matched the source format and rewrote the original file
+  // (tags + rename) instead of writing a copy to the output folder. The renderer
+  // then repoints the track at outputPath, since the original it loaded is gone.
+  inPlace: boolean
 }
 
 export interface SpectrumResult {
