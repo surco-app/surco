@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
 
 const REPO = 'vigosan/surco-releases'
@@ -33,6 +34,7 @@ export default function DownloadButton() {
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
   const [intelHref, setIntelHref] = useState<string | null>(null)
+  const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
     if (os === 'other') return
@@ -41,6 +43,7 @@ export default function DownloadButton() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data?.assets) return
+        setVersion(formatVersion(data.tag_name))
         const url = (suffix: string) =>
           data.assets.find((a: { name: string }) => a.name.endsWith(suffix))?.browser_download_url ??
           null
@@ -98,6 +101,12 @@ export default function DownloadButton() {
       <div className="mt-4 space-y-1 font-mono text-xs text-faint">
         <p>
           {ready ? t('download.free') : t('download.unavailable')}
+          {version && (
+            <span data-testid="app-version" className="text-muted">
+              {' · '}
+              <span className="text-fg">{version}</span>
+            </span>
+          )}
           {ready && <DownloadCount />}
         </p>
         <p className="max-w-md text-pretty">{t('download.windows')}</p>
