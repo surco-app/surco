@@ -9,6 +9,7 @@ import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './ap
 import { downloadCover, getRelease, search } from './discogs'
 import {
   analyzeCutoff,
+  buildSpectrum,
   convertAudio,
   extractCover,
   generateSpectrogram,
@@ -304,12 +305,21 @@ function registerIpc(): void {
   ipcMain.handle('audio:read', (_e, inputPath: string) => readFile(inputPath))
 
   ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
-    const sampleRateHz = Number((await probeAudio(inputPath)).sampleRate) || 0
-    const [image, cutoffHz] = await Promise.all([
-      generateSpectrogram(inputPath),
-      analyzeCutoff(inputPath, sampleRateHz),
-    ])
-    return { image, cutoffHz, sampleRateHz }
+    try {
+      const { image, cutoffHz, sampleRateHz, cutoffError } = await buildSpectrum(inputPath, {
+        probe: probeAudio,
+        spectrogram: generateSpectrogram,
+        cutoff: analyzeCutoff,
+      })
+      // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
+      // stderr) rather than reject — this is the only trace when it breaks on a
+      // machine we can't reach, e.g. Windows.
+      if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
+      return { image, cutoffHz, sampleRateHz }
+    } catch (err) {
+      log.error('audio:spectrogram failed', err)
+      throw err
+    }
   })
 }
 

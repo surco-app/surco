@@ -3,7 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertArgs, coverArgs, cutoffFilter, planConversion, tagsFromProbe } from './ffmpeg'
+import {
+  buildSpectrum,
+  convertArgs,
+  coverArgs,
+  cutoffFilter,
+  planConversion,
+  tagsFromProbe,
+} from './ffmpeg'
 
 const meta: TrackMetadata = {
   title: 'Till I Come',
@@ -241,5 +248,55 @@ describe('tagsFromProbe', () => {
       catalogNumber: '',
       remixArtist: '',
     })
+  })
+})
+
+describe('buildSpectrum', () => {
+  const deps = (over: Record<string, unknown> = {}) => ({
+    probe: vi.fn(async () => ({ sampleRate: '44100' })),
+    spectrogram: vi.fn(async () => 'data:image/png;base64,AAAA'),
+    cutoff: vi.fn(async () => 18000),
+    ...over,
+  })
+
+  it('returns the image, measured cutoff and sample rate when everything succeeds', async () => {
+    const res = await buildSpectrum('/in.flac', deps())
+    expect(res.image).toBe('data:image/png;base64,AAAA')
+    expect(res.cutoffHz).toBe(18000)
+    expect(res.sampleRateHz).toBe(44100)
+    expect(res.cutoffError).toBeUndefined()
+  })
+
+  it('still returns the image, falling back to Nyquist, when cutoff analysis fails', async () => {
+    // The cutoff pass is a fragile per-band filtergraph that writes and re-reads
+    // temp files and has repeatedly broken on Windows. Its failure must never blank
+    // a spectrogram image that generated fine — that is the whole point of decoupling
+    // them; otherwise one Promise.all rejection hides the image the user came to see.
+    const boom = new Error('ffmpeg filtergraph: Invalid argument')
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => {
+          throw boom
+        }),
+      }),
+    )
+    expect(res.image).toBe('data:image/png;base64,AAAA')
+    expect(res.cutoffHz).toBe(22050)
+    expect(res.cutoffError).toBe(boom)
+  })
+
+  it('rejects when the image itself cannot be generated, since there is nothing to show', async () => {
+    const boom = new Error('showspectrumpic failed')
+    await expect(
+      buildSpectrum(
+        '/in.flac',
+        deps({
+          spectrogram: vi.fn(async () => {
+            throw boom
+          }),
+        }),
+      ),
+    ).rejects.toBe(boom)
   })
 })

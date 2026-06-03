@@ -364,3 +364,38 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
     await Promise.all(names.map((n) => unlink(join(dir, n)).catch(() => {})))
   }
 }
+
+interface SpectrumDeps {
+  probe: (input: string) => Promise<{ sampleRate: string }>
+  spectrogram: (input: string) => Promise<string>
+  cutoff: (input: string, sampleRateHz: number) => Promise<number>
+}
+
+interface SpectrumBuild {
+  image: string
+  cutoffHz: number
+  sampleRateHz: number
+  cutoffError?: unknown
+}
+
+// Builds the spectrogram image and measures the lossy cutoff in one go. The image
+// is the whole point of the panel, so a failure in the (far more fragile) cutoff
+// pass — a per-band filtergraph that writes and re-reads temp files and has
+// repeatedly broken on Windows — must not discard a perfectly good image. We run
+// both, but only a missing image rejects; a cutoff failure falls back to Nyquist
+// (what analyzeCutoff itself returns when it finds no brick wall) and is handed
+// back so the caller can log the real ffmpeg error instead of swallowing it.
+export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
+  const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
+  const [imageR, cutoffR] = await Promise.allSettled([
+    deps.spectrogram(input),
+    deps.cutoff(input, sampleRateHz),
+  ])
+  if (imageR.status === 'rejected') throw imageR.reason
+  return {
+    image: imageR.value,
+    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value : sampleRateHz / 2,
+    sampleRateHz,
+    cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
+  }
+}
