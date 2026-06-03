@@ -1,11 +1,33 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat, Settings, ThemePref } from '../../../shared/types'
+import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
+import { insertToken } from '../lib/insertToken'
+import { renderOutputName } from '../lib/outputName'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+
+// A representative track so the filename preview shows real-looking output
+// instead of empty braces, and every token has something to render.
+const SAMPLE_META: TrackMetadata = {
+  title: 'Take me into the sky',
+  artist: 'Dj Vixent',
+  album: 'Take me into the sky',
+  albumArtist: 'Dj Vixent',
+  year: '2026',
+  genre: 'Hard Dance',
+  grouping: 'Bases',
+  comment: '',
+  trackNumber: '03',
+  discNumber: '1',
+  bpm: '128',
+  key: '8A',
+  publisher: 'Surco',
+  catalogNumber: 'SRC001',
+  remixArtist: '',
+}
 
 // Apple Music automation only exists on macOS, so the toggle is meaningless on
 // other platforms where a track simply finishes in the output folder.
@@ -74,6 +96,21 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  const formatRef = useRef<HTMLInputElement>(null)
+
+  // Drops the token where the caret last sat (or over the selection), then
+  // restores focus and caret past it so the user can keep typing separators.
+  function addToken(key: string): void {
+    const el = formatRef.current
+    const start = el?.selectionStart ?? filenameFormat.length
+    const end = el?.selectionEnd ?? filenameFormat.length
+    const { value, caret } = insertToken(filenameFormat, start, end, key)
+    setFilenameFormat(value)
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(caret, caret)
+    })
+  }
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
@@ -278,15 +315,33 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                 {tr('settings.filenameFormat')}
               </label>
               <input
+                ref={formatRef}
                 data-testid="settings-filename-format"
                 value={filenameFormat}
                 onChange={(e) => setFilenameFormat(e.target.value)}
                 placeholder="{artist} - {title}"
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
-              <p className="mt-1.5 mb-5 text-xs text-fg-dim">
-                {tr('settings.tokensHint')} {'{artist}'} {'{title}'} {'{album}'} {'{albumArtist}'}{' '}
-                {'{year}'} {'{genre}'} {'{grouping}'} {'{trackNumber}'}
+              <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FIELD_DEFS.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    data-testid={`settings-token-${f.key}`}
+                    onClick={() => addToken(f.key)}
+                    title={`{${f.key}}`}
+                    className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                  >
+                    {tr(`fields.${f.key}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 mb-5 text-xs text-fg-dim">
+                {tr('settings.preview')}{' '}
+                <span data-testid="settings-format-preview" className="font-mono text-fg-muted">
+                  {renderOutputName(filenameFormat, SAMPLE_META) || '—'}.{outputFormat}
+                </span>
               </p>
 
               <label className="mb-1.5 block text-sm font-medium text-fg-muted">
