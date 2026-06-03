@@ -33,6 +33,7 @@ interface Props {
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: () => void
+  onAddToAppleMusic: () => void
   onOpenSettings: () => void
 }
 
@@ -108,6 +109,7 @@ export function Editor({
   searchInputRef,
   onChange,
   onProcess,
+  onAddToAppleMusic,
   onOpenSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -701,12 +703,34 @@ export function Editor({
             </div>
           )}
           {done ? (
-            <button
-              onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
-              className="press w-full rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
-            >
-              {tr('editor.doneReveal')}
-            </button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
+                  className="press flex-1 rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
+                >
+                  {tr('editor.doneReveal')}
+                </button>
+                {window.api.platform === 'darwin' && outputFormat !== 'flac' && (
+                  <button
+                    type="button"
+                    data-testid="add-apple-music"
+                    onClick={onAddToAppleMusic}
+                    disabled={item.musicStatus === 'adding' || item.musicStatus === 'added'}
+                    className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2.5 text-sm font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                  >
+                    {item.musicStatus === 'adding'
+                      ? tr('editor.appleMusicAdding')
+                      : item.musicStatus === 'added'
+                        ? tr('editor.appleMusicAdded')
+                        : tr('editor.appleMusicAdd')}
+                  </button>
+                )}
+              </div>
+              {item.musicStatus === 'error' && (
+                <p className="text-xs text-danger">{item.musicError}</p>
+              )}
+            </div>
           ) : (
             <button
               data-testid="process-btn"

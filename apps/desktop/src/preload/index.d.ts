@@ -1,4 +1,5 @@
 import type {
+  AppleMusicAddJob,
   DiscogsRelease,
   DiscogsSearchResult,
   ProcessJob,
@@ -18,6 +19,7 @@ export interface Api {
   pickOutputDir: () => Promise<string | null>
   searchDiscogs: (query: string) => Promise<DiscogsSearchResult[]>
   getRelease: (id: number) => Promise<DiscogsRelease>
+  addToAppleMusic: (job: AppleMusicAddJob) => Promise<void>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   reveal: (path: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>

@@ -10,8 +10,10 @@ import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { canAddToAppleMusic } from './lib/appleMusic'
 import { eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
+import { trackSignature } from './lib/dirty'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
@@ -238,6 +240,34 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  // Pushes an already-converted track into Apple Music by hand, the escape hatch
+  // for when the automatic add is off. The meta is sanitized exactly as the
+  // conversion does so the library entry matches the file; musicStatus drives the
+  // button's adding/added/error states without disturbing the track's own status.
+  async function addTrackToAppleMusic(id: string): Promise<void> {
+    const track = tracks.find((t) => t.id === id)
+    if (!track?.outputPath || track.musicStatus === 'adding') return
+    updateTrack(id, { musicStatus: 'adding', musicError: undefined })
+    const meta = sanitizeMeta(track.meta, {
+      trim: settings?.trimWhitespace ?? true,
+      zeroPad: settings?.zeroPadTrack ?? true,
+    })
+    try {
+      await window.api.addToAppleMusic({
+        outputPath: track.outputPath,
+        meta,
+        coverUrl: track.coverUrl,
+        coverPath: track.coverPath,
+      })
+      updateTrack(id, { musicStatus: 'added' })
+    } catch (e) {
+      updateTrack(id, {
+        musicStatus: 'error',
+        musicError: e instanceof Error ? e.message : tr('editor.appleMusicError'),
+      })
+    }
+  }
+
   async function processAll(): Promise<void> {
     if (batching) return
     setBatching(true)
@@ -326,6 +356,14 @@ export default function App(): React.JSX.Element {
       title: tr('commands.reveal'),
       enabled: !!selected?.outputPath,
       run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
+    },
+    {
+      id: 'add-apple-music',
+      title: tr('commands.addAppleMusic'),
+      enabled:
+        !!selected &&
+        canAddToAppleMusic(selected, window.api.platform, settings?.outputFormat ?? 'aiff'),
+      run: () => selected && addTrackToAppleMusic(selected.id),
     },
     {
       id: 'remove',
@@ -507,6 +545,7 @@ export default function App(): React.JSX.Element {
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={() => processOne(selected.id)}
+              onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onOpenSettings={() => setShowSettings(true)}
             />
           ) : (

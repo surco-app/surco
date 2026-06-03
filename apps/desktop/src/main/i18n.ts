@@ -12,6 +12,7 @@ interface MenuStrings {
   file: string
   add: string
   reveal: string
+  addAppleMusic: string
   remove: string
   removeAll: string
   processCurrent: string
@@ -38,6 +39,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     file: 'Archivo',
     add: 'Añadir pistas…',
     reveal: 'Mostrar en Finder',
+    addAppleMusic: 'Añadir a Apple Music',
     remove: 'Quitar de la lista',
     removeAll: 'Vaciar la lista',
     processCurrent: 'Procesar pista',
@@ -62,6 +64,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     file: 'File',
     add: 'Add tracks…',
     reveal: 'Reveal in Finder',
+    addAppleMusic: 'Add to Apple Music',
     remove: 'Remove from list',
     removeAll: 'Remove all',
     processCurrent: 'Process track',

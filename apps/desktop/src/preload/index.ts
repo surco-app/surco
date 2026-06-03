@@ -15,6 +15,7 @@ const api = {
   getRelease: (id: number) => ipcRenderer.invoke('discogs:release', id),
   lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
     ipcRenderer.invoke('applemusic:lookup', artist, title),
+  addToAppleMusic: (job: unknown): Promise<void> => ipcRenderer.invoke('applemusic:add', job),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
   exportCover: (job: unknown): Promise<string | null> => ipcRenderer.invoke('cover:export', job),
   prepareCoverDrag: (src: unknown): Promise<string | null> =>

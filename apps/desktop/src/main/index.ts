@@ -3,7 +3,13 @@ import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
-import type { CoverExportJob, ProcessJob, ProcessStage, Settings } from '../shared/types'
+import type {
+  AppleMusicAddJob,
+  CoverExportJob,
+  ProcessJob,
+  ProcessStage,
+  Settings,
+} from '../shared/types'
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
@@ -83,6 +89,7 @@ function buildAppMenu(win: BrowserWindow): void {
           click: () => run('add'),
         },
         { label: t('reveal'), accelerator: 'CmdOrCtrl+R', click: () => run('reveal') },
+        { label: t('addAppleMusic'), click: () => run('add-apple-music') },
         { type: 'separator' },
         {
           label: t('processCurrent'),
@@ -228,6 +235,28 @@ function registerIpc(): void {
   ipcMain.handle('applemusic:lookup', (_e, artist: string, title: string) =>
     process.platform === 'darwin' ? lookupInAppleMusic(artist, title) : false,
   )
+
+  // Adds an already-converted track to Apple Music on demand — the tail of
+  // process:track, but invoked by hand from the editor/palette/menu when the
+  // automatic add is off. The processed cover is re-prepared from the same source
+  // so the artwork written to the library matches the embedded one, then cleaned
+  // up. macOS-only; the renderer never offers it elsewhere.
+  ipcMain.handle('applemusic:add', async (_e, job: AppleMusicAddJob) => {
+    if (process.platform !== 'darwin') return
+    const settings = getSettings()
+    let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+    try {
+      if (job.coverPath || job.coverUrl) {
+        prepared = await prepareProcessedCover(job, {
+          maxSize: settings.coverMaxSize,
+          square: settings.coverSquare,
+        })
+      }
+      await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+    } finally {
+      if (prepared) await prepared.cleanup()
+    }
+  })
 
   ipcMain.handle('process:track', async (e, job: ProcessJob) => {
     const settings = getSettings()

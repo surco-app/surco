@@ -81,6 +81,13 @@ export interface CoverExportJob {
   coverPath?: string
 }
 
+export interface AppleMusicAddJob {
+  outputPath: string
+  meta: TrackMetadata
+  coverUrl?: string
+  coverPath?: string
+}
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
 
 export interface ProcessProgress {
