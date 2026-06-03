@@ -1,12 +1,12 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
-import { downloadCover, getRelease, search } from './discogs'
+import { prepareProcessedCover } from './cover'
+import { getRelease, search } from './discogs'
 import {
   analyzeCutoff,
   buildSpectrum,
@@ -14,12 +14,10 @@ import {
   extractCover,
   generateSpectrogram,
   probeAudio,
-  processCover,
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { getSettings, saveSettings } from './settings'
-import { tmpName } from './tmp'
 
 function sanitizeFilename(name: string): string {
   return name
@@ -236,34 +234,16 @@ function registerIpc(): void {
     const stage = (s: ProcessStage): void =>
       e.sender.send('process:progress', { id: job.id, stage: s })
 
-    let tempCover: string | undefined
-    let processedCover: string | undefined
+    let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
     try {
-      let coverPath = job.coverPath
-      if (!coverPath && job.coverUrl?.startsWith('http')) {
+      if (job.coverPath || job.coverUrl) {
         stage('cover')
-        tempCover = await downloadCover(job.coverUrl)
-        coverPath = tempCover
-      }
-      if (!coverPath && job.coverUrl?.startsWith('data:')) {
-        // The cover the user kept from the file's embedded art rides along as a
-        // data URL; decode it to disk so it can be re-embedded into the output.
-        stage('cover')
-        tempCover = join(tmpdir(), tmpName('embed', 'jpg'))
-        await writeFile(
-          tempCover,
-          Buffer.from(job.coverUrl.slice(job.coverUrl.indexOf(',') + 1), 'base64'),
-        )
-        coverPath = tempCover
-      }
-      if (coverPath) {
-        stage('cover')
-        processedCover = await processCover(coverPath, {
+        prepared = await prepareProcessedCover(job, {
           maxSize: settings.coverMaxSize,
           square: settings.coverSquare,
         })
-        coverPath = processedCover
       }
+      const coverPath = prepared?.path
 
       stage('converting')
       const outputPath = join(
@@ -279,8 +259,7 @@ function registerIpc(): void {
 
       return { outputPath }
     } finally {
-      if (tempCover) await unlink(tempCover).catch(() => {})
-      if (processedCover) await unlink(processedCover).catch(() => {})
+      if (prepared) await prepared.cleanup()
     }
   })
 
