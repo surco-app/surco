@@ -44,13 +44,18 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
   }
 
   return (
-    <div
-      className="animate-overlay fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[12vh] backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]">
+      <button
+        type="button"
+        data-testid="palette-backdrop"
+        aria-label={t('common.close')}
+        onClick={onClose}
+        className="animate-overlay absolute inset-0 bg-black/50 backdrop-blur-sm"
+      />
       <div
-        className="animate-pop w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        className="animate-pop relative z-10 w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
       >
         <input
           ref={inputRef}

@@ -13,13 +13,18 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
   const [open, setOpen] = useState<string | null>(ITEMS[0])
 
   return (
-    <div
-      className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        type="button"
+        data-testid="help-backdrop"
+        aria-label={tr('common.close')}
+        onClick={onClose}
+        className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
       <div
-        className="animate-pop flex max-h-[80vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        className="animate-pop relative z-10 flex max-h-[80vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-4 flex items-center justify-between border-b border-[var(--color-line)] px-6 pt-5 pb-3">
           <h2 className="text-base font-semibold">{tr('help.title')}</h2>
