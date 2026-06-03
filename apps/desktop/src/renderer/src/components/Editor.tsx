@@ -689,6 +689,9 @@ export function Editor({
                 </span>
               </label>
             )}
+            {outputOpen && (
+              <p className="mt-2 text-xs text-fg-dim">{tr('editor.outputNameHint')}</p>
+            )}
           </div>
         </div>
 
