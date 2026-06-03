@@ -58,7 +58,7 @@
     }
   },
   "editor": {
-    "searchPlaceholder": "Search Discogs…",
+    "searchPlaceholder": "Search Discogs or paste a release id…",
     "search": "Search",
     "tokenWarning": "Set your Discogs token in <0>Settings</0> to search.",
     "chooseTrack": "Choose the track",

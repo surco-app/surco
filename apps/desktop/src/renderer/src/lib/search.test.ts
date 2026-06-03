@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseFileName } from './filename'
-import { searchFromTags } from './search'
+import { parseReleaseId, searchFromTags } from './search'
 
 describe('searchFromTags', () => {
   it('builds the query from embedded artist + title, ignoring a messier file name', () => {
@@ -31,5 +31,30 @@ describe('searchFromTags', () => {
     const parsed = parseFileName('/m/Artist - Title.wav')
     const r = searchFromTags(parsed, { artist: '   ', title: '' })
     expect(r.query).toBe('Artist Title')
+  })
+})
+
+describe('parseReleaseId', () => {
+  // Discogs' /database/search treats a bare number as text, so "12345" finds
+  // junk. Recognising it as a release id lets the editor hit /releases/{id}.
+  it('reads a bare numeric id', () => {
+    expect(parseReleaseId('12345')).toBe(12345)
+    expect(parseReleaseId('  249504  ')).toBe(249504)
+  })
+
+  it('extracts the id from a discogs release URL, with or without locale and slug', () => {
+    expect(parseReleaseId('https://www.discogs.com/release/249504-Various-Synthetic')).toBe(249504)
+    expect(parseReleaseId('https://www.discogs.com/es/release/249504')).toBe(249504)
+    expect(parseReleaseId('https://api.discogs.com/releases/249504')).toBe(249504)
+  })
+
+  it('reads the [r12345] BBCode form Discogs uses in forums', () => {
+    expect(parseReleaseId('[r249504]')).toBe(249504)
+  })
+
+  it('returns null for real text searches so they still go to the text endpoint', () => {
+    expect(parseReleaseId('DJ Duck Come Again')).toBeNull()
+    expect(parseReleaseId('12345 come again')).toBeNull()
+    expect(parseReleaseId('')).toBeNull()
   })
 })

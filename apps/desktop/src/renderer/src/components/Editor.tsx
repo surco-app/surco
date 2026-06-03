@@ -14,6 +14,7 @@ import { splitPosition } from '../lib/position'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
+import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
@@ -45,6 +46,19 @@ function coverOf(release: DiscogsRelease, fallback?: string): string | undefined
   return (
     release.images?.find((i) => i.type === 'primary')?.uri ?? release.images?.[0]?.uri ?? fallback
   )
+}
+
+// A release fetched by id has no search-result row to show, so synthesise one
+// from the release itself — the list and tracklist UI then work unchanged.
+function resultFromRelease(rel: DiscogsRelease): DiscogsSearchResult {
+  const albumArtist = joinArtists(rel.artists)
+  return {
+    id: rel.id,
+    title: albumArtist ? `${albumArtist} - ${rel.title}` : rel.title,
+    year: rel.year ? String(rel.year) : undefined,
+    thumb: coverOf(rel),
+    label: rel.labels?.map((l) => l.name),
+  }
 }
 
 function normalize(s: string): string {
@@ -114,7 +128,14 @@ export function Editor({
     setError('')
     setRelease(null)
     try {
-      setResults(await window.api.searchDiscogs(query))
+      const id = parseReleaseId(query)
+      if (id !== null) {
+        const rel = await loadRelease(id)
+        setResults([resultFromRelease(rel)])
+        setRelease(rel)
+      } else {
+        setResults(await window.api.searchDiscogs(query))
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : tr('editor.searchError'))
     } finally {

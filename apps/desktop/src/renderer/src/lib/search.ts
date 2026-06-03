@@ -25,3 +25,17 @@ export function searchFromTags(
     query: [artist, title].filter(Boolean).join(' '),
   }
 }
+
+// Discogs' text search treats a number as a search term, so a release id typed
+// into the box finds nothing useful. Recognising an id — bare, as a release URL
+// (any locale, slug optional), or as [r123] BBCode — lets the editor fetch it
+// straight from /releases/{id} instead. Anything else stays a text search.
+export function parseReleaseId(input: string): number | null {
+  const q = input.trim()
+  if (/^\d+$/.test(q)) return Number(q)
+  const url = q.match(/discogs\.com\/(?:[a-z]{2}\/)?releases?\/(\d+)/i)
+  if (url) return Number(url[1])
+  const bb = q.match(/^\[r(\d+)\]$/i)
+  if (bb) return Number(bb[1])
+  return null
+}
