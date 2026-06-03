@@ -97,6 +97,7 @@ export function Editor({
   const [results, setResults] = useState<DiscogsSearchResult[]>([])
   const [release, setRelease] = useState<DiscogsRelease | null>(null)
   const [busy, setBusy] = useState(false)
+  const [loadingId, setLoadingId] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [coverDragging, setCoverDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -189,6 +190,7 @@ export function Editor({
   // already entered. Applying the metadata is the deliberate double click.
   async function previewRelease(result: DiscogsSearchResult): Promise<void> {
     setBusy(true)
+    setLoadingId(result.id)
     setError('')
     try {
       setRelease(await loadRelease(result.id))
@@ -196,6 +198,7 @@ export function Editor({
       setError(e instanceof Error ? e.message : tr('editor.releaseError'))
     } finally {
       setBusy(false)
+      setLoadingId(null)
     }
   }
 
@@ -319,7 +322,8 @@ export function Editor({
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
             results.map((r) => {
-              const expanded = release?.id === r.id
+              const expanded = loadingId !== null ? loadingId === r.id : release?.id === r.id
+              const loaded = release?.id === r.id
               return (
                 <div key={r.id} className="border-b border-[var(--color-line)]/60">
                   <button
@@ -362,28 +366,34 @@ export function Editor({
                       />
                     </svg>
                   </button>
-                  {expanded && release && (
-                    <div className="pb-1">
-                      <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
-                        {tr('editor.chooseTrack')}
-                      </p>
-                      {release.tracklist.map((t, i) => (
-                        <button
-                          key={`${t.position}-${i}`}
-                          data-testid="discogs-track"
-                          onClick={() => selectTrack(t)}
-                          className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
-                            t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
-                          }`}
-                        >
-                          <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
-                            {t.position}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <CollapsibleTracks open={expanded}>
+                    {expanded && (
+                      <div className="pb-1">
+                        <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
+                          {tr('editor.chooseTrack')}
+                        </p>
+                        {loaded && release ? (
+                          release.tracklist.map((t, i) => (
+                            <button
+                              key={`${t.position}-${i}`}
+                              data-testid="discogs-track"
+                              onClick={() => selectTrack(t)}
+                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
+                                t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
+                              }`}
+                            >
+                              <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                                {t.position}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <TrackSkeleton />
+                        )}
+                      </div>
+                    )}
+                  </CollapsibleTracks>
                 </div>
               )
             })
@@ -593,6 +603,46 @@ export function Editor({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function CollapsibleTracks({
+  open,
+  children,
+}: {
+  open: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  const lastContent = useRef<React.ReactNode>(null)
+  if (open && children) lastContent.current = children
+  return (
+    <div
+      className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+      }`}
+    >
+      <div
+        className={`overflow-hidden transition-opacity duration-200 ${
+          open ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {open ? children : lastContent.current}
+      </div>
+    </div>
+  )
+}
+
+function TrackSkeleton(): React.JSX.Element {
+  const widths = ['62%', '48%', '70%']
+  return (
+    <div className="animate-pulse" aria-hidden="true">
+      {widths.map((w) => (
+        <div key={w} className="flex items-center gap-3 py-1.5 pr-3 pl-4">
+          <span className="h-3 w-6 shrink-0 rounded bg-[var(--color-panel-2)]" />
+          <span className="h-3 rounded bg-[var(--color-panel-2)]" style={{ width: w }} />
+        </div>
+      ))}
     </div>
   )
 }
