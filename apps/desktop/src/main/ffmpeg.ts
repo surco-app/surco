@@ -177,11 +177,15 @@ export function convertArgs(
   coverPath?: string,
   bitrate?: string,
 ): string[] {
+  // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
+  // picture into it ("WAVE files have exactly one stream"). The cover still
+  // reaches Apple Music via AppleScript, so a WAV target simply skips the embed.
+  const embedCover = coverPath && !WAV_INPUT.test(output) ? coverPath : undefined
   const args = ['-y', '-i', input]
-  if (coverPath) args.push('-i', coverPath)
+  if (embedCover) args.push('-i', embedCover)
 
   args.push('-map', '0:a')
-  if (coverPath) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
+  if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
 
   args.push('-c:a', codec)
   if (bitrate) args.push('-b:a', bitrate)

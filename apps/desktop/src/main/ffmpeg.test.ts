@@ -45,6 +45,13 @@ describe('convertArgs', () => {
     expect(withCover).toContain('attached_pic')
   })
 
+  it('never embeds the cover into a WAV target, whose single-stream RIFF container makes ffmpeg abort with "WAVE files have exactly one stream" — the art reaches Apple Music via AppleScript instead', () => {
+    const args = convertArgs('/in.flac', '/out.tmp.wav', 'pcm_s24le', meta, '/cover.jpg')
+    expect(args).not.toContain('attached_pic')
+    expect(args).not.toContain('/cover.jpg')
+    expect(args).not.toContain('1:v')
+  })
+
   it('writes the advanced tags to the ID3 frames the DJ tools and Music read', () => {
     // verified against ffmpeg: these keys land in real TBPM/TKEY/TPUB/TPOS/TPE4
     // frames and the de-facto TXXX:CATALOGNUMBER, all re-readable by ffprobe
