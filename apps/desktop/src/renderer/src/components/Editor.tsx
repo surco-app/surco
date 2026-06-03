@@ -103,6 +103,7 @@ export function Editor({
   const [analyzeError, setAnalyzeError] = useState('')
   const [formOpen, setFormOpen] = useState(true)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
+  const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const discogs = useResizableWidth(400, 320, 720)
 
@@ -148,6 +149,33 @@ export function Editor({
       active = false
     }
   }, [item.inputPath])
+
+  // Checking whether the song is already in the Apple Music library is a hint to
+  // avoid duplicating tracks, so it tracks the live title/artist (debounced —
+  // each lookup spawns an osascript) rather than only firing on a Discogs apply.
+  // It is macOS-only; elsewhere there is no library to query, so the badge hides.
+  const { title: metaTitle, artist: metaArtist } = item.meta
+  useEffect(() => {
+    if (window.api.platform !== 'darwin' || !metaTitle.trim() || !metaArtist.trim()) {
+      setInLibrary('idle')
+      return
+    }
+    let active = true
+    const id = setTimeout(() => {
+      window.api
+        .lookupAppleMusic(metaArtist, metaTitle)
+        .then((found) => {
+          if (active) setInLibrary(found ? 'yes' : 'no')
+        })
+        .catch(() => {
+          if (active) setInLibrary('idle')
+        })
+    }, 600)
+    return () => {
+      active = false
+      clearTimeout(id)
+    }
+  }, [metaTitle, metaArtist])
 
   async function loadRelease(id: number): Promise<DiscogsRelease> {
     if (releaseRef.current?.id === id) return releaseRef.current
@@ -371,6 +399,23 @@ export function Editor({
             title={tr('editor.sectionForm')}
             open={formOpen}
             onToggle={() => setFormOpen((v) => !v)}
+            right={
+              inLibrary === 'yes' ? (
+                <span
+                  data-testid="apple-music-status"
+                  className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
+                >
+                  {tr('editor.inLibrary')}
+                </span>
+              ) : inLibrary === 'no' ? (
+                <span
+                  data-testid="apple-music-status"
+                  className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                >
+                  {tr('editor.notInLibrary')}
+                </span>
+              ) : null
+            }
           />
           {formOpen && (
             <div className="mt-4">

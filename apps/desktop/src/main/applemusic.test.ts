@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { buildAddScript, shouldAddToAppleMusic } from './applemusic'
+import { buildAddScript, buildLookupScript, shouldAddToAppleMusic } from './applemusic'
 
 const base: TrackMetadata = {
   title: 'ATB (Till I Come)',
@@ -81,6 +81,25 @@ describe('buildAddScript', () => {
     expect(script).toContain('set bpm of theTrack to 128')
     expect(script).toContain('set disc number of theTrack to 2')
     expect(script).not.toContain('set bpm of theTrack to 0')
+  })
+})
+
+describe('buildLookupScript', () => {
+  it('counts library tracks matching both name and artist so a different song with the same title is not flagged as a duplicate', () => {
+    const script = buildLookupScript('Tom Hafman', 'ATB (Till I Come)')
+    // Querying library playlist 1 (not a specific source) is what scopes the
+    // search to the user's whole library; matching name AND artist is what keeps
+    // it from flagging unrelated songs that happen to share a title.
+    expect(script).toContain('every track of library playlist 1 whose')
+    expect(script).toContain('name is "ATB (Till I Come)"')
+    expect(script).toContain('artist is "Tom Hafman"')
+    expect(script).toContain('return (count of')
+  })
+
+  it('trims the values so trailing whitespace from the tag fields does not break the exact match Music performs', () => {
+    const script = buildLookupScript('  Tom Hafman  ', '  ATB (Till I Come)  ')
+    expect(script).toContain('name is "ATB (Till I Come)"')
+    expect(script).toContain('artist is "Tom Hafman"')
   })
 })
 

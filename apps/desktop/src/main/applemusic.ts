@@ -80,6 +80,31 @@ export function shouldAddToAppleMusic(enabled: boolean, platform: NodeJS.Platfor
   return enabled && platform === 'darwin'
 }
 
+// Counts library tracks matching the given name and artist. AppleScript text
+// comparison ignores case and diacritics by default, so this is forgiving on
+// spelling while still requiring both fields to agree — a different song that
+// shares a title with the release is not flagged as already present. Naming that
+// diverges (e.g. "(Remix)" vs "- Remix") still misses, which is why the result
+// is surfaced as a hint, not a guarantee.
+export function buildLookupScript(artist: string, title: string): string {
+  return [
+    'tell application "Music"',
+    `  set theHits to (every track of library playlist 1 whose name is ${JSON.stringify(title.trim())} and artist is ${JSON.stringify(artist.trim())})`,
+    '  return (count of theHits)',
+    'end tell',
+  ].join('\n')
+}
+
+// Returns whether the song already exists in the user's Apple Music library.
+// Mirrors addToAppleMusic in shelling out to osascript; the empty guard avoids a
+// pointless query (and a match on every untitled track) before either field is
+// filled. osascript prints the count followed by a newline.
+export async function lookupInAppleMusic(artist: string, title: string): Promise<boolean> {
+  if (!artist.trim() || !title.trim()) return false
+  const { stdout } = await run('osascript', ['-e', buildLookupScript(artist, title)])
+  return parseInt(stdout.trim(), 10) > 0
+}
+
 export async function addToAppleMusic(
   filePath: string,
   meta: TrackMetadata,

@@ -13,6 +13,8 @@ const api = {
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
   searchDiscogs: (query: string) => ipcRenderer.invoke('discogs:search', query),
   getRelease: (id: number) => ipcRenderer.invoke('discogs:release', id),
+  lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
+    ipcRenderer.invoke('applemusic:lookup', artist, title),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),

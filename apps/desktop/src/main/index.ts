@@ -5,7 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'e
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
-import { addToAppleMusic, shouldAddToAppleMusic } from './applemusic'
+import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import { downloadCover, getRelease, search } from './discogs'
 import {
   analyzeCutoff,
@@ -220,6 +220,12 @@ function registerIpc(): void {
 
   ipcMain.handle('discogs:search', (_e, query: string) => search(query, getSettings().discogsToken))
   ipcMain.handle('discogs:release', (_e, id: number) => getRelease(id, getSettings().discogsToken))
+
+  // The Music AppleScript bridge is macOS-only; off macOS there is no library to
+  // query, so report "not present" rather than spawning a missing osascript.
+  ipcMain.handle('applemusic:lookup', (_e, artist: string, title: string) =>
+    process.platform === 'darwin' ? lookupInAppleMusic(artist, title) : false,
+  )
 
   ipcMain.handle('process:track', async (e, job: ProcessJob) => {
     const settings = getSettings()

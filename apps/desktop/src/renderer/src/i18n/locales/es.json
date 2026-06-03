@@ -85,7 +85,9 @@
     "analyzeError": "No se pudo analizar el audio",
     "processError": "Error al procesar",
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
-    "reportError": "Reportar"
+    "reportError": "Reportar",
+    "inLibrary": "Ya está en tu biblioteca de Apple Music",
+    "notInLibrary": "No está en tu biblioteca de Apple Music"
   },
   "fields": {
     "title": "Título",

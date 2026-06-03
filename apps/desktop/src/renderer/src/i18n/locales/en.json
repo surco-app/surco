@@ -85,7 +85,9 @@
     "analyzeError": "Could not analyze the audio",
     "processError": "Processing failed",
     "missingRequired": "Missing required fields: {{fields}}",
-    "reportError": "Report"
+    "reportError": "Report",
+    "inLibrary": "Already in your Apple Music library",
+    "notInLibrary": "Not in your Apple Music library"
   },
   "fields": {
     "title": "Title",
