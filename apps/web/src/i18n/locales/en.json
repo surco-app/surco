@@ -17,6 +17,9 @@
     "atajos": "Shortcuts"
   },
   "available": "Available · macOS · Windows",
+  "keys": {
+    "space": "Space"
+  },
   "hero": {
     "h1a": "Less prepping,",
     "h1b": "more playing.",

@@ -17,6 +17,9 @@
     "atajos": "Atajos"
   },
   "available": "Disponible · macOS · Windows",
+  "keys": {
+    "space": "Espacio"
+  },
   "hero": {
     "h1a": "Menos preparar,",
     "h1b": "más pinchar.",

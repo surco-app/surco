@@ -5,6 +5,16 @@
   "workspaces": [
     "apps/*"
   ],
+  "overrides": {
+    "react-helmet-async": {
+      "react": "19.2.7",
+      "react-dom": "19.2.7"
+    }
+  },
+  "devDependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
   "scripts": {
     "dev:desktop": "npm run dev -w apps/desktop",
     "dev:web": "npm run dev -w apps/web",

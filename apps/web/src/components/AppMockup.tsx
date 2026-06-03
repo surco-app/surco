@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import Spectrogram from './Spectrogram'
 
 const tracks = [
@@ -15,6 +16,7 @@ const fields: [string, string][] = [
 ]
 
 export default function AppMockup() {
+  const { t } = useTranslation()
   return (
     <div
       className="w-full rounded-2xl border border-line bg-surface2/90 shadow-2xl shadow-black/50 backdrop-blur"
@@ -29,7 +31,7 @@ export default function AppMockup() {
 
       <div className="grid grid-cols-[1.05fr_1.35fr] gap-px bg-line/60">
         <div className="bg-bg/60 p-3">
-          <div className="mb-2 font-mono text-[10px] tracking-wider text-muted uppercase">Pistas</div>
+          <div className="mb-2 font-mono text-[10px] tracking-wider text-muted uppercase">{t('mockup.tracks')}</div>
           <div className="space-y-1.5">
             {tracks.map((t) => (
               <div
@@ -61,9 +63,9 @@ export default function AppMockup() {
 
         <div className="bg-bg/40 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-mono text-[10px] tracking-wider text-muted uppercase">Metadatos</span>
+            <span className="font-mono text-[10px] tracking-wider text-muted uppercase">{t('mockup.metadata')}</span>
             <span className="rounded-full bg-green/15 px-2 py-0.5 font-mono text-[9px] text-green">
-              ● buena calidad
+              {t('mockup.good')}
             </span>
           </div>
 
@@ -81,7 +83,7 @@ export default function AppMockup() {
 
           <div className="mt-3 rounded-lg border border-line/70 bg-bg2/60 p-2.5">
             <div className="mb-1.5 flex items-center justify-between font-mono text-[9px] text-muted">
-              <span>espectro</span>
+              <span>{t('mockup.spectrum')}</span>
               <span className="text-cyan">→ 21.4 kHz</span>
             </div>
             <Spectrogram />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import DownloadCount from './DownloadCount'
 
 const REPO = 'vigosan/surco-releases'
@@ -28,6 +29,7 @@ const primary =
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
 export default function DownloadButton() {
+  const { t } = useTranslation()
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
   const [intelHref, setIntelHref] = useState<string | null>(null)
@@ -62,11 +64,11 @@ export default function DownloadButton() {
       <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         {os === 'other' ? (
           <a href={RELEASES} className={primary}>
-            Ver descargas
+            {t('download.viewDownloads')}
           </a>
         ) : href ? (
           <a href={href} className={primary}>
-            Descargar para {LABEL[os]}
+            {t('download.cta', { os: LABEL[os] })}
           </a>
         ) : (
           <button
@@ -75,14 +77,14 @@ export default function DownloadButton() {
             aria-disabled="true"
             className="cursor-not-allowed rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
-            Descargar para {LABEL[os] || 'macOS'}
+            {t('download.cta', { os: LABEL[os] || 'macOS' })}
           </button>
         )}
         <a
           href="#analisis"
           className="text-sm font-medium text-fg transition-colors hover:text-blue"
         >
-          Ver el análisis →
+          {t('download.viewAnalysis')}
         </a>
       </div>
       {os === 'mac' && intelHref && (
@@ -90,19 +92,15 @@ export default function DownloadButton() {
           href={intelHref}
           className="mt-3 inline-block font-mono text-xs text-faint underline-offset-2 transition-colors hover:text-blue hover:underline"
         >
-          ¿Mac con Intel (2020 o anterior)? Descárgalo aquí
+          {t('download.intel')}
         </a>
       )}
       <div className="mt-4 space-y-1 font-mono text-xs text-faint">
         <p>
-          {ready
-            ? 'Descarga gratuita'
-            : 'La descarga aún no está disponible — estamos puliendo la primera versión.'}
+          {ready ? t('download.free') : t('download.unavailable')}
           {ready && <DownloadCount />}
         </p>
-        <p className="max-w-md text-pretty">
-          También llega a Windows, con todo igual salvo el envío automático a Apple Music.
-        </p>
+        <p className="max-w-md text-pretty">{t('download.windows')}</p>
       </div>
     </>
   )

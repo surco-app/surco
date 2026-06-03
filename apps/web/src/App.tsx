@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Speed from './components/Speed'
@@ -9,26 +10,6 @@ import CountUp from './components/CountUp'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
-
-const features = [
-  { kick: 'importar', title: 'Arrastra y suelta', body: 'Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen.' },
-  { kick: 'discogs', title: 'Metadatos de Discogs', body: 'Busca el disco y trae artista, álbum, año, género y carátula con un clic.' },
-  { kick: 'exportar', title: 'AIFF lossless o MP3', body: 'Exporta sin pérdida en AIFF (PCM, profundidad de bits exacta) o en MP3 de alta calidad cuando buscas ligereza.' },
-  { kick: 'carátula', title: 'Carátula embebida', body: 'Portada y tags viajan dentro del archivo (ID3v2.3), visibles en Apple Music y rekordbox.' },
-  { kick: 'biblioteca', title: 'Directo a Apple Music', body: 'Manda la pista ya etiquetada a tu biblioteca, lista para pinchar.' },
-  { kick: 'espectro', title: 'Análisis de espectro', body: 'Mira el espectro y caza el MP3 recomprimido que se hace pasar por lossless.' }
-]
-
-const shortcuts: [string[], string][] = [
-  [['⌘', 'O'], 'Añadir archivos'],
-  [['⌘', '↵'], 'Procesar pista'],
-  [['⌘', '⇧', '↵'], 'Procesar todas'],
-  [['Espacio'], 'Reproducir / pausa'],
-  [['J', 'K'], 'Navegar pistas'],
-  [['/'], 'Buscar en Discogs']
-]
-
-const stack = ['AIFF lossless', 'MP3 alta calidad', 'ffmpeg incluido', 'ID3v2.3', 'Discogs', 'Apple Silicon']
 
 const cardHover =
   'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/5'
@@ -42,6 +23,23 @@ function Kbd({ k }: { k: string }) {
 }
 
 export default function App() {
+  const { t } = useTranslation()
+  const features = t('features.items', { returnObjects: true }) as {
+    kick: string
+    title: string
+    body: string
+  }[]
+  const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
+  const shortcutKeys: string[][] = [
+    ['⌘', 'O'],
+    ['⌘', '↵'],
+    ['⌘', '⇧', '↵'],
+    [t('keys.space')],
+    ['J', 'K'],
+    ['/']
+  ]
+  const stack = t('stack', { returnObjects: true }) as string[]
+
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
       <ScrollProgress />
@@ -65,21 +63,18 @@ export default function App() {
                 className="h-1.5 w-1.5 rounded-full bg-blue"
                 style={{ animation: 'glow 2s ease-in-out infinite' }}
               />
-              Disponible · macOS · Windows
+              {t('available')}
             </div>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
-              Menos preparar,
+              {t('hero.h1a')}
               <br />
-              <span className="text-grad">más pinchar.</span>
+              <span className="text-grad">{t('hero.h1b')}</span>
             </h1>
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
-              Surco convierte tus descargas a AIFF lossless o MP3, las etiqueta desde Discogs y las
-              deja listas en Apple Music — y te avisa si una pista viene falseada.
-            </p>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">{t('hero.lede')}</p>
             <div className="mt-5 font-mono text-sm text-muted">
               <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
               <span className="text-fg">AIFF</span> <span className="text-blue">→</span>{' '}
-              <span className="text-cyan">AIFF lossless</span> <span className="text-faint">o</span>{' '}
+              <span className="text-cyan">AIFF lossless</span> <span className="text-faint">{t('hero.or')}</span>{' '}
               <span className="text-cyan">MP3</span>
             </div>
             <DownloadButton />
@@ -101,15 +96,15 @@ export default function App() {
                 <div className="text-4xl font-bold text-grad sm:text-5xl">
                   ~<CountUp to={100} />×
                 </div>
-                <p className="mt-2 text-sm text-muted">más rápido que a mano*</p>
+                <p className="mt-2 text-sm text-muted">{t('stats.faster')}</p>
               </div>
               <div>
                 <div className="text-4xl font-bold text-fg sm:text-5xl">1–2 s</div>
-                <p className="mt-2 text-sm text-muted">por pista</p>
+                <p className="mt-2 text-sm text-muted">{t('stats.perTrack')}</p>
               </div>
               <div>
                 <div className="text-4xl font-bold text-fg sm:text-5xl">1</div>
-                <p className="mt-2 text-sm text-muted">golpe, todo el flujo</p>
+                <p className="mt-2 text-sm text-muted">{t('stats.oneShot')}</p>
               </div>
             </div>
           </section>
@@ -119,14 +114,11 @@ export default function App() {
 
         <section id="analisis" className="scroll-mt-24 pb-24">
           <Reveal>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">Análisis anti-fake</p>
+            <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('analysis.kicker')}</p>
             <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">
-              El espectro no miente
+              {t('analysis.title')}
             </h2>
-            <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-              Un MP3 recomprimido a WAV/AIFF arrastra un corte brusco en altas frecuencias. Surco lo
-              mide y marca la pista como sospechosa antes de que acabe sonando en cabina.
-            </p>
+            <p className="mt-3 max-w-2xl leading-relaxed text-muted">{t('analysis.lede')}</p>
           </Reveal>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -135,12 +127,14 @@ export default function App() {
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-mono text-xs text-muted">original.flac</span>
                   <span className="rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
-                    ● buena calidad
+                    {t('analysis.good')}
                   </span>
                 </div>
                 <Spectrogram axis />
                 <p className="mt-3 font-mono text-xs text-muted">
-                  energía hasta <span className="text-fg">~22 kHz</span> (Nyquist) — banda completa.
+                  {t('analysis.goodCaptionPre')}
+                  <span className="text-fg">{t('analysis.goodCaptionHz')}</span>
+                  {t('analysis.goodCaptionPost')}
                 </p>
               </div>
             </Reveal>
@@ -150,7 +144,7 @@ export default function App() {
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-mono text-xs text-muted">descarga_320.aiff</span>
                   <span className="rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
-                    ● sospechoso
+                    {t('analysis.suspect')}
                   </span>
                 </div>
                 <div className="relative">
@@ -158,12 +152,14 @@ export default function App() {
                   <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
                     <div className="border-t border-dashed border-red/80" />
                     <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
-                      muro ~16 kHz
+                      {t('analysis.wall')}
                     </span>
                   </div>
                 </div>
                 <p className="mt-3 font-mono text-xs text-muted">
-                  corte brusco en <span className="text-red">~16 kHz</span> — delata un MP3 recomprimido.
+                  {t('analysis.suspectCaptionPre')}
+                  <span className="text-red">{t('analysis.suspectCaptionHz')}</span>
+                  {t('analysis.suspectCaptionPost')}
                 </p>
               </div>
             </Reveal>
@@ -172,14 +168,14 @@ export default function App() {
 
         <section id="funciones" className="scroll-mt-24 pb-24">
           <Reveal>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">Funciones</p>
+            <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('features.kicker')}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Todo el flujo, en una app
+              {t('features.title')}
             </h2>
           </Reveal>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
-              <Reveal key={f.kick} delay={(i % 3) * 100}>
+              <Reveal key={f.title} delay={(i % 3) * 100}>
                 <div className={`h-full rounded-2xl border border-line bg-surface2/40 p-6 ${cardHover}`}>
                   <div className="font-mono text-xs text-blue">{f.kick}</div>
                   <h3 className="mt-2 text-lg font-semibold text-fg">{f.title}</h3>
@@ -194,21 +190,18 @@ export default function App() {
           <Reveal>
             <div className="grid gap-10 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
               <div>
-                <p className="font-mono text-xs tracking-wider text-blue uppercase">Teclado primero</p>
+                <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('shortcuts.kicker')}</p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-                  Vuela sin tocar el ratón
+                  {t('shortcuts.title')}
                 </h2>
-                <p className="mt-3 leading-relaxed text-muted">
-                  Una paleta de comandos y atajos para todo el flujo. Añade, etiqueta, analiza y
-                  procesa pista tras pista sin soltar las manos del teclado.
-                </p>
+                <p className="mt-3 leading-relaxed text-muted">{t('shortcuts.lede')}</p>
               </div>
               <div className="space-y-2.5">
-                {shortcuts.map(([keys, label]) => (
+                {shortcutLabels.map((label, i) => (
                   <div key={label} className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5">
                     <span className="text-sm text-fg">{label}</span>
                     <span className="flex items-center gap-1">
-                      {keys.map((k) => (
+                      {shortcutKeys[i].map((k) => (
                         <Kbd key={k} k={k} />
                       ))}
                     </span>

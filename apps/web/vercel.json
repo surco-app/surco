@@ -4,6 +4,7 @@
   "installCommand": "rm -f ../../package-lock.json && npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/assets/(.*)",
