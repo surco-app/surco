@@ -51,10 +51,13 @@
     "items": [
       { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC or AIFF. Surco reads the tags and cover art they already carry on the fly." },
       { "kick": "discogs", "title": "Discogs metadata", "body": "Search the release and pull artist, album, year, genre and cover art in one click." },
-      { "kick": "export", "title": "Lossless AIFF or MP3", "body": "Export lossless to AIFF (PCM, exact bit depth) or to high-quality MP3 when you want it lighter." },
+      { "kick": "export", "title": "Lossless AIFF, WAV or MP3", "body": "Export lossless to AIFF or WAV (PCM, exact bit depth) or to high-quality MP3 when you want it lighter." },
       { "kick": "cover", "title": "Embedded cover art", "body": "Cover and tags travel inside the file (ID3v2.3), visible in Apple Music and rekordbox." },
       { "kick": "library", "title": "Straight to Apple Music", "body": "Send the already-tagged track to your library, ready to play." },
-      { "kick": "spectrum", "title": "Spectrum analysis", "body": "Look at the spectrum and catch the re-encoded MP3 posing as lossless." }
+      { "kick": "spectrum", "title": "Spectrum analysis", "body": "Look at the spectrum and catch the re-encoded MP3 posing as lossless." },
+      { "kick": "duplicates", "title": "No accidental duplicates", "body": "As you tag, Surco checks your Apple Music library and flags the track if it's already there." },
+      { "kick": "dj", "title": "DJ-ready tags", "body": "BPM, musical key, catalog number, remixer and grouping — the fields you actually sort by in rekordbox." },
+      { "kick": "batch", "title": "Batch in one click", "body": "Queue the whole crate and hit Convert all — every track tagged, converted and sent to Apple Music in one go." }
     ]
   },
   "shortcuts": {
