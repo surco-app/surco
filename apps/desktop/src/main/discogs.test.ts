@@ -30,4 +30,25 @@ describe('search', () => {
     await search('autechre', 'tok')
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  // A user's own token gets its own 60 req/min bucket, so when set it must win.
+  it('authenticates with the user token when one is set', async () => {
+    const fetchMock = mockFetch([{ id: 3 }])
+    await search('user token search', 'usertok')
+    const url = fetchMock.mock.calls[0][0] as string
+    expect(url).toContain('token=usertok')
+    expect(url).not.toContain('key=')
+    expect(url).not.toContain('secret=')
+  })
+
+  // Without a user token Surco falls back to its own app key/secret so search
+  // works out of the box — no token required to use the app.
+  it('falls back to the app key and secret when no user token is set', async () => {
+    const fetchMock = mockFetch([{ id: 4 }])
+    await search('app key search', '')
+    const url = fetchMock.mock.calls[0][0] as string
+    expect(url).toContain('key=')
+    expect(url).toContain('secret=')
+    expect(url).not.toContain('token=')
+  })
 })

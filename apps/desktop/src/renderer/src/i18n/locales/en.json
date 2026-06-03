@@ -60,7 +60,7 @@
   "editor": {
     "searchPlaceholder": "Search Discogs or paste a release id…",
     "search": "Search",
-    "tokenWarning": "Set your Discogs token in <0>Settings</0> to search.",
+    "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "chooseTrack": "Choose the track",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "resultHint": "Click to see the tracks · double-click to apply the data",

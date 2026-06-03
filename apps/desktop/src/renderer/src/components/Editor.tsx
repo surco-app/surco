@@ -145,10 +145,10 @@ export function Editor({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: must depend on the query value, not doSearch's identity — with doSearch the effect re-ran every render and looped search requests until Discogs returned 429. Debounced so a search fires once, 500ms after typing stops.
   useEffect(() => {
-    if (!hasToken || !query.trim()) return
+    if (!query.trim()) return
     const id = setTimeout(() => void doSearch(), 500)
     return () => clearTimeout(id)
-  }, [hasToken, query])
+  }, [query])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once.
   useEffect(() => {
@@ -318,16 +318,16 @@ export function Editor({
             <button
               data-testid="discogs-search"
               onClick={doSearch}
-              disabled={busy || !hasToken}
+              disabled={busy}
               className="press rounded-lg bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
           </div>
           {!hasToken && (
-            <p className="mt-2 text-xs text-warn">
+            <p className="mt-2 text-xs text-fg-muted">
               <Trans
-                i18nKey="editor.tokenWarning"
+                i18nKey="editor.tokenTip"
                 components={[
                   <button
                     key="settings"

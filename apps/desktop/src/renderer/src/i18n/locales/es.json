@@ -60,7 +60,7 @@
   "editor": {
     "searchPlaceholder": "Buscar en Discogs o pega un release id…",
     "search": "Buscar",
-    "tokenWarning": "Configura tu token de Discogs en <0>Ajustes</0> para buscar.",
+    "tokenTip": "La búsqueda funciona sin configurar nada. Añade tu propio token de Discogs en <0>Ajustes</0> para tener un límite mayor y privado.",
     "chooseTrack": "Elige la pista",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
     "resultHint": "Un clic para ver las pistas · doble clic para aplicar los datos",

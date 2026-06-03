@@ -7,9 +7,21 @@ import { tmpName } from './tmp'
 const BASE = 'https://api.discogs.com'
 const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/vinilo'
 
+// Surco's own Discogs app credentials. They let search work out of the box
+// without each user creating a token, at the cost of a 60 req/min limit shared
+// across all users. A user token (when set) takes precedence and gets its own
+// bucket. These ship in the binary and are extractable — treat them as public.
+const APP_KEY = 'mWMICwBUWiUpKwjXUOnG'
+const APP_SECRET = 'otWEkXSaNXZehSTINgxSeTiPKsGbvNxJ'
+
+function authParams(token: string): string {
+  return token
+    ? `token=${encodeURIComponent(token)}`
+    : `key=${APP_KEY}&secret=${APP_SECRET}`
+}
+
 async function api<T>(path: string, token: string): Promise<T> {
-  if (!token) throw new Error('Falta el token de Discogs. Configúralo en Ajustes.')
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
   const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
   if (res.status === 401) throw new Error('Token de Discogs inválido.')
   if (res.status === 429)
