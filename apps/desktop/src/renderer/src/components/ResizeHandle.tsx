@@ -35,7 +35,13 @@ export function ResizeHandle({
   onPointerDown: (e: React.PointerEvent) => void
 }): React.JSX.Element {
   return (
+    // A pointer-only resize affordance: the panels are fully usable at their
+    // default width, so by design it offers no keyboard interaction and none of
+    // the focusable-splitter ARIA props apply.
+    // biome-ignore lint/a11y/useFocusableInteractive: pointer-only, intentionally not focusable
+    // biome-ignore lint/a11y/useSemanticElements: no semantic HTML element exists for a draggable splitter
     <div
+      // biome-ignore lint/a11y/useAriaPropsForRole: not focusable, so splitter value props don't apply
       role="separator"
       aria-orientation="vertical"
       onPointerDown={onPointerDown}
