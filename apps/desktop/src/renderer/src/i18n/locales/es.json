@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Cancelar",
     "save": "Guardar",
-    "change": "Cambiar"
+    "change": "Cambiar",
+    "close": "Cerrar"
   },
   "header": {
     "add": "Añadir archivos",
@@ -39,6 +40,7 @@
     "settings": "Ajustes",
     "removeAll": "Vaciar la lista",
     "reveal": "Mostrar en Finder",
+    "help": "Ayuda y FAQ",
     "feedback": "Enviar comentarios",
     "website": "Sitio web de Surco"
   },
@@ -170,5 +172,26 @@
     "next": "Siguiente",
     "finish": "Empezar",
     "step": "Paso {{current}} de {{total}}"
+  },
+  "help": {
+    "title": "Ayuda y FAQ",
+    "items": {
+      "token": {
+        "q": "¿Necesito un token de Discogs?",
+        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de “límite alcanzado”: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → General. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco."
+      },
+      "quality": {
+        "q": "¿Por qué una pista sale marcada como “Sospechoso”?",
+        "a": "Surco analiza el espectro de audio y mira hasta qué frecuencia llega. Los archivos sin pérdida reales (WAV, FLAC, AIFF) usan todo el rango hasta la frecuencia de Nyquist. Un corte brusco muy por debajo es la huella de un MP3 con pérdida que se reconvirtió a un contenedor sin pérdida: parece lossless por la extensión, pero los agudos ya se perdieron para siempre.\n\n“Sospechoso” significa que se detectó esa huella. El archivo no está roto, pero su calidad está limitada por el MP3 original. “Buena calidad” significa que el espectro llega donde debería en un archivo sin pérdida de verdad."
+      },
+      "format": {
+        "q": "¿Qué formato de salida elijo?",
+        "a": "AIFF y WAV son sin pérdida: conservan la calidad original exacta y llevan las etiquetas limpias, ideal para pinchar. AIFF suele manejar mejor los metadatos y la carátula en plataformas Apple.\n\nMP3 (320 kbps) tiene pérdida pero ocupa mucho menos, útil cuando el espacio o el tamaño del USB importa.\n\nElijas lo que elijas, un archivo que ya esté en ese formato se copia sin reconvertir, así que nunca pierdes calidad por una conversión innecesaria."
+      },
+      "appleMusic": {
+        "q": "¿Qué hace “Añadir a Apple Music”?",
+        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de procesarla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivar el añadido automático cuando quieras en Ajustes → General."
+      }
+    }
   }
 }

@@ -33,5 +33,7 @@ describe('createMenuT', () => {
     expect(createMenuT('en')('checkUpdates')).toBe('Check for Updates…')
     expect(createMenuT('es')('file')).toBe('Archivo')
     expect(createMenuT('en')('help')).toBe('Help')
+    expect(createMenuT('es')('faq')).toBe('Preguntas frecuentes')
+    expect(createMenuT('en')('faq')).toBe('Frequently Asked Questions')
   })
 })

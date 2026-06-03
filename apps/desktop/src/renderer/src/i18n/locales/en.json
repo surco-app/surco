@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
-    "change": "Change"
+    "change": "Change",
+    "close": "Close"
   },
   "header": {
     "add": "Add files",
@@ -39,6 +40,7 @@
     "settings": "Settings",
     "removeAll": "Remove all",
     "reveal": "Reveal in Finder",
+    "help": "Help & FAQ",
     "feedback": "Send feedback",
     "website": "Surco website"
   },
@@ -170,5 +172,26 @@
     "next": "Next",
     "finish": "Finish",
     "step": "Step {{current}} of {{total}}"
+  },
+  "help": {
+    "title": "Help & FAQ",
+    "items": {
+      "token": {
+        "q": "Do I need a Discogs token?",
+        "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → General. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
+      },
+      "quality": {
+        "q": "Why is a track flagged as “Suspicious”?",
+        "a": "Surco analyzes the audio spectrum and checks how high the frequencies reach. Genuine lossless files (WAV, FLAC, AIFF) use the full range up to the Nyquist frequency. A sharp cutoff well below it is the fingerprint of a lossy MP3 that was re-encoded into a lossless container: it looks lossless by its extension, but the high frequencies are gone for good.\n\n“Suspicious” means that fingerprint was detected. The file isn't broken, but its quality is capped by the original MP3. “Good quality” means the spectrum reaches where a real lossless file should."
+      },
+      "format": {
+        "q": "Which output format should I choose?",
+        "a": "AIFF and WAV are lossless — they keep the exact original quality and carry tags cleanly, ideal for DJing. AIFF tends to handle metadata and artwork best on Apple platforms.\n\nMP3 (320 kbps) is lossy but takes far less space — handy when storage or USB size matters.\n\nWhichever you pick, a file already in that format is copied without re-encoding, so you never lose quality to a needless conversion."
+      },
+      "appleMusic": {
+        "q": "What does “Add to Apple Music” do?",
+        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → General."
+      }
+    }
   }
 }

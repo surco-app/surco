@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
+import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
@@ -63,6 +64,7 @@ export default function App(): React.JSX.Element {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -346,6 +348,12 @@ export default function App(): React.JSX.Element {
       run: () => setShowSettings(true),
     },
     {
+      id: 'help',
+      title: tr('commands.help'),
+      enabled: true,
+      run: () => setShowHelp(true),
+    },
+    {
       id: 'feedback',
       title: tr('commands.feedback'),
       enabled: true,
@@ -365,6 +373,8 @@ export default function App(): React.JSX.Element {
   paletteOpenRef.current = showPalette
   const settingsOpenRef = useRef(false)
   settingsOpenRef.current = showSettings
+  const helpOpenRef = useRef(false)
+  helpOpenRef.current = showHelp
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -376,9 +386,10 @@ export default function App(): React.JSX.Element {
       if (e.key === 'Escape') {
         if (paletteOpenRef.current) setShowPalette(false)
         else if (settingsOpenRef.current) setShowSettings(false)
+        else if (helpOpenRef.current) setShowHelp(false)
         return
       }
-      if (paletteOpenRef.current || settingsOpenRef.current) return
+      if (paletteOpenRef.current || settingsOpenRef.current || helpOpenRef.current) return
       const el = document.activeElement
       const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
       const id = keyToCommandId(e, typing)
@@ -546,6 +557,8 @@ export default function App(): React.JSX.Element {
       {showOnboarding && settings && (
         <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
       )}
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
 

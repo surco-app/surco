@@ -153,6 +153,8 @@ function buildAppMenu(win: BrowserWindow): void {
       role: 'help',
       label: t('help'),
       submenu: [
+        { label: t('faq'), click: () => run('help') },
+        { type: 'separator' },
         { label: t('website'), click: () => run('website') },
         { label: t('feedback'), click: () => run('feedback') },
       ],
