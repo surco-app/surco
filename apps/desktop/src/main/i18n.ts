@@ -16,6 +16,12 @@ interface MenuStrings {
   removeAll: string
   processCurrent: string
   processAll: string
+  view: string
+  palette: string
+  search: string
+  play: string
+  prev: string
+  next: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -29,6 +35,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     removeAll: 'Vaciar la lista',
     processCurrent: 'Procesar pista',
     processAll: 'Procesar todo',
+    view: 'Ver',
+    palette: 'Paleta de comandos',
+    search: 'Buscar metadatos',
+    play: 'Reproducir / pausar',
+    prev: 'Pista anterior',
+    next: 'Pista siguiente',
   },
   en: {
     settings: 'Settings…',
@@ -40,6 +52,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     removeAll: 'Remove all',
     processCurrent: 'Process track',
     processAll: 'Process all',
+    view: 'View',
+    palette: 'Command palette',
+    search: 'Search metadata',
+    play: 'Play / pause',
+    prev: 'Previous track',
+    next: 'Next track',
   },
 }
 

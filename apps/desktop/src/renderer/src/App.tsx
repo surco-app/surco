@@ -87,7 +87,16 @@ export default function App(): React.JSX.Element {
 
   // The native menu triggers actions by command id, the same registry the
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
-  useEffect(() => window.api.onMenuCommand((id) => runCommand(commandsRef.current, id)), [])
+  // Opening the palette is the one exception: it's a UI affordance, not a track
+  // command, so it never lists itself.
+  useEffect(
+    () =>
+      window.api.onMenuCommand((id) => {
+        if (id === 'palette') setShowPalette(true)
+        else runCommand(commandsRef.current, id)
+      }),
+    [],
+  )
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),

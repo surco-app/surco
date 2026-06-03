@@ -94,6 +94,24 @@ function buildAppMenu(win: BrowserWindow): void {
       ],
     },
     { role: 'editMenu' },
+    {
+      label: t('view'),
+      submenu: [
+        {
+          label: t('palette'),
+          accelerator: 'CmdOrCtrl+K',
+          registerAccelerator: false,
+          click: () => run('palette'),
+        },
+        { type: 'separator' },
+        { label: t('search'), accelerator: '/', registerAccelerator: false, click: () => run('search') },
+        { label: t('play'), accelerator: 'Space', registerAccelerator: false, click: () => run('play') },
+        { label: t('prev'), accelerator: 'Up', registerAccelerator: false, click: () => run('prev') },
+        { label: t('next'), accelerator: 'Down', registerAccelerator: false, click: () => run('next') },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
     { role: 'windowMenu' },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
