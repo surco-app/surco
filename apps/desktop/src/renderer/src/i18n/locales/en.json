@@ -38,7 +38,8 @@
     "settings": "Settings",
     "removeAll": "Remove all",
     "reveal": "Reveal in Finder",
-    "feedback": "Send feedback"
+    "feedback": "Send feedback",
+    "website": "Surco website"
   },
   "trackList": {
     "noArtist": "No artist",

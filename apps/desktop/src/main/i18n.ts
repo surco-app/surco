@@ -22,6 +22,8 @@ interface MenuStrings {
   play: string
   prev: string
   next: string
+  help: string
+  website: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -41,6 +43,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     play: 'Reproducir / pausar',
     prev: 'Pista anterior',
     next: 'Pista siguiente',
+    help: 'Ayuda',
+    website: 'Sitio web de Surco',
   },
   en: {
     settings: 'Settings…',
@@ -58,6 +62,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     play: 'Play / pause',
     prev: 'Previous track',
     next: 'Next track',
+    help: 'Help',
+    website: 'Surco website',
   },
 }
 

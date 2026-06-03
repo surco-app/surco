@@ -47,7 +47,6 @@ function buildAppMenu(win: BrowserWindow): void {
           registerAccelerator: false,
           click: () => run('settings'),
         },
-        { label: t('feedback'), click: () => run('feedback') },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -104,15 +103,43 @@ function buildAppMenu(win: BrowserWindow): void {
           click: () => run('palette'),
         },
         { type: 'separator' },
-        { label: t('search'), accelerator: '/', registerAccelerator: false, click: () => run('search') },
-        { label: t('play'), accelerator: 'Space', registerAccelerator: false, click: () => run('play') },
-        { label: t('prev'), accelerator: 'Up', registerAccelerator: false, click: () => run('prev') },
-        { label: t('next'), accelerator: 'Down', registerAccelerator: false, click: () => run('next') },
+        {
+          label: t('search'),
+          accelerator: '/',
+          registerAccelerator: false,
+          click: () => run('search'),
+        },
+        {
+          label: t('play'),
+          accelerator: 'Space',
+          registerAccelerator: false,
+          click: () => run('play'),
+        },
+        {
+          label: t('prev'),
+          accelerator: 'Up',
+          registerAccelerator: false,
+          click: () => run('prev'),
+        },
+        {
+          label: t('next'),
+          accelerator: 'Down',
+          registerAccelerator: false,
+          click: () => run('next'),
+        },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
     },
     { role: 'windowMenu' },
+    {
+      role: 'help',
+      label: t('help'),
+      submenu: [
+        { label: t('website'), click: () => run('website') },
+        { label: t('feedback'), click: () => run('feedback') },
+      ],
+    },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

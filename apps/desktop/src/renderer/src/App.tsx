@@ -340,6 +340,12 @@ export default function App(): React.JSX.Element {
       enabled: true,
       run: () => openFeedback(),
     },
+    {
+      id: 'website',
+      title: tr('commands.website'),
+      enabled: true,
+      run: () => window.open('https://getsurco.app/'),
+    },
   ]
 
   const commandsRef = useRef<Command[]>(commands)
