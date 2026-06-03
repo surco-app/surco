@@ -53,6 +53,27 @@ describe('buildAddScript', () => {
     expect(withYear).not.toContain('set track number of theTrack')
   })
 
+  it('writes the cover onto the Music track via AppleScript so it does not depend on the file carrying embedded art — the whole point for WAV, whose embedded artwork Music ignores', () => {
+    const script = buildAddScript('/x.wav', base, '/tmp/cover.jpg')
+    expect(script).toContain('set data of artwork 1 of theTrack to (read (POSIX file "/tmp/cover.jpg") as picture)')
+  })
+
+  it('does not touch artwork when there is no cover, leaving any existing artwork alone', () => {
+    expect(buildAddScript('/x.aiff', base)).not.toContain('artwork')
+  })
+
+  it('retries the artwork write alongside the tags so the -50 raised mid-import does not drop the cover', () => {
+    // The artwork set must sit inside the same retry loop as the properties;
+    // outside it, a cover written while Music is still importing throws -50 and
+    // the track lands without art
+    const script = buildAddScript('/x.wav', base, '/tmp/cover.jpg')
+    const repeatStart = script.indexOf('repeat 100 times')
+    const artwork = script.indexOf('set data of artwork 1')
+    const exitRepeat = script.indexOf('exit repeat')
+    expect(repeatStart).toBeLessThan(artwork)
+    expect(artwork).toBeLessThan(exitRepeat)
+  })
+
   it('sets the Apple Music BPM and disc number, the only advanced tags Music can hold', () => {
     // key/publisher/catalog/remixer have no Music property, so they live only in
     // the file tag; bpm and disc number are scriptable and must reach Music

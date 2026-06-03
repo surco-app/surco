@@ -15,7 +15,7 @@ const run = promisify(execFile)
 // file, so writing properties straight away fails with paramErr (-50) on real
 // (large) files. We retry the whole property block until the track settles,
 // re-raise any other error, and fail loud if it never becomes writable.
-export function buildAddScript(filePath: string, meta: TrackMetadata): string {
+export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?: string): string {
   const sets: string[] = []
 
   const text: [string, string][] = [
@@ -44,6 +44,16 @@ export function buildAddScript(filePath: string, meta: TrackMetadata): string {
     if (Number.isFinite(n) && n > 0) sets.push(`      set ${prop} of theTrack to ${n}`)
   }
 
+  // Write the cover explicitly rather than trusting embedded art. Music reads
+  // embedded artwork from AIFF/MP3 but ignores it in WAV, so for a uniform
+  // result across every output format the artwork is set on the track directly,
+  // inside the retry loop so a -50 raised mid-import does not drop it.
+  if (coverPath?.trim()) {
+    sets.push(
+      `      set data of artwork 1 of theTrack to (read (POSIX file ${JSON.stringify(coverPath)}) as picture)`,
+    )
+  }
+
   return [
     'tell application "Music"',
     `  set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
@@ -70,6 +80,10 @@ export function shouldAddToAppleMusic(enabled: boolean, platform: NodeJS.Platfor
   return enabled && platform === 'darwin'
 }
 
-export async function addToAppleMusic(filePath: string, meta: TrackMetadata): Promise<void> {
-  await run('osascript', ['-e', buildAddScript(filePath, meta)])
+export async function addToAppleMusic(
+  filePath: string,
+  meta: TrackMetadata,
+  coverPath?: string,
+): Promise<void> {
+  await run('osascript', ['-e', buildAddScript(filePath, meta, coverPath)])
 }

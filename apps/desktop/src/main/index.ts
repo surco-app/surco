@@ -162,7 +162,7 @@ function registerIpc(): void {
 
       if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform)) {
         stage('appleMusic')
-        await addToAppleMusic(outputPath, job.meta)
+        await addToAppleMusic(outputPath, job.meta, coverPath)
       }
 
       return { outputPath }
