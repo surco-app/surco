@@ -583,9 +583,8 @@ export function Editor({
                 type="button"
                 data-testid="regenerate-output-name"
                 onClick={() => onChange({ outputName: undefined })}
-                disabled={item.outputName === undefined}
                 title={tr('editor.regenerateHint')}
-                className="press flex items-center gap-1 text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline disabled:opacity-40 disabled:no-underline disabled:hover:text-fg-dim"
+                className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
               >
                 <svg
                   viewBox="0 0 24 24"
