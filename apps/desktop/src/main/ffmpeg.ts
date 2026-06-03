@@ -126,16 +126,18 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
   }
 }
 
-// Picks a big-endian PCM codec for AIFF that preserves the source bit depth
-// exactly (lossless). Never downsamples bit depth.
-function aiffCodec(probe: ProbeResult): string {
-  if (probe.sampleFmt.startsWith('f')) return 'pcm_f32be'
+// Picks a PCM codec that preserves the source bit depth exactly (lossless),
+// never downsampling. Endianness differs by container: AIFF stores big-endian
+// samples, WAV (RIFF) little-endian, so the caller passes the one its target
+// needs — using the wrong endianness corrupts every sample.
+function pcmCodec(probe: ProbeResult, endian: 'be' | 'le'): string {
+  if (probe.sampleFmt.startsWith('f')) return `pcm_f32${endian}`
   const bits =
     probe.bitsPerRawSample ||
     (probe.sampleFmt.includes('32') ? 32 : probe.sampleFmt.includes('16') ? 16 : 24)
-  if (bits >= 32) return 'pcm_s32be'
-  if (bits >= 24) return 'pcm_s24be'
-  return 'pcm_s16be'
+  if (bits >= 32) return `pcm_s32${endian}`
+  if (bits >= 24) return `pcm_s24${endian}`
+  return `pcm_s16${endian}`
 }
 
 function metadataArgs(meta: TrackMetadata): string[] {
@@ -164,6 +166,7 @@ function metadataArgs(meta: TrackMetadata): string[] {
 
 const AIFF_INPUT = /\.aiff?$/i
 const MP3_INPUT = /\.mp3$/i
+const WAV_INPUT = /\.wav$/i
 const MP3_BITRATE = '320k'
 
 export function convertArgs(
@@ -191,14 +194,14 @@ export function convertArgs(
 export interface ConversionPlan {
   codec: string
   bitrate?: string
-  ext: '.aiff' | '.mp3'
+  ext: '.aiff' | '.mp3' | '.wav'
 }
 
 // Decides how to render a source into the chosen output format. A source
 // already in the target format is bit-identical, so it stream-copies (instant);
-// otherwise it encodes — lossless to bit-depth-preserving PCM for AIFF, or to a
-// fixed 320 kbps for MP3. The bit depth only matters for AIFF, so MP3 targets
-// skip the probe entirely.
+// otherwise it encodes — lossless to bit-depth-preserving PCM for AIFF/WAV
+// (big-endian for AIFF, little-endian for WAV), or to a fixed 320 kbps for MP3.
+// The bit depth only matters for the lossless targets, so MP3 skips the probe.
 export async function planConversion(
   input: string,
   format: OutputFormat,
@@ -208,8 +211,12 @@ export async function planConversion(
     if (MP3_INPUT.test(input)) return { codec: 'copy', ext: '.mp3' }
     return { codec: 'libmp3lame', bitrate: MP3_BITRATE, ext: '.mp3' }
   }
+  if (format === 'wav') {
+    if (WAV_INPUT.test(input)) return { codec: 'copy', ext: '.wav' }
+    return { codec: pcmCodec(await probe(input), 'le'), ext: '.wav' }
+  }
   if (AIFF_INPUT.test(input)) return { codec: 'copy', ext: '.aiff' }
-  return { codec: aiffCodec(await probe(input)), ext: '.aiff' }
+  return { codec: pcmCodec(await probe(input), 'be'), ext: '.aiff' }
 }
 
 export async function convertAudio(

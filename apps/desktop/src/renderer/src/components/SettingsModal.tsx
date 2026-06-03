@@ -5,7 +5,7 @@ import type { OutputFormat, Settings, ThemePref } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
-const FORMATS: OutputFormat[] = ['aiff', 'mp3']
+const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav']
 
 // Apple Music automation only exists on macOS, so the toggle is meaningless on
 // other platforms where a track simply finishes in the output folder.

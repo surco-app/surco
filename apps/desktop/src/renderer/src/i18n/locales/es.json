@@ -119,9 +119,10 @@
     "outputFormat": "Formato de salida",
     "formats": {
       "aiff": "AIFF",
-      "mp3": "MP3"
+      "mp3": "MP3",
+      "wav": "WAV"
     },
-    "outputFormatHint": "AIFF conserva la calidad sin pérdida; MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
+    "outputFormatHint": "AIFF y WAV conservan la calidad sin pérdida; MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir.",
     "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
     "filenameFormat": "Formato del nombre",
     "tokensHint": "Tokens:",

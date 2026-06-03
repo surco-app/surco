@@ -90,6 +90,7 @@ describe('planConversion', () => {
   it('stream-copies a source already in the target format', async () => {
     expect(await planConversion('/in.aiff', 'aiff', probe)).toEqual({ codec: 'copy', ext: '.aiff' })
     expect(await planConversion('/in.mp3', 'mp3', probe)).toEqual({ codec: 'copy', ext: '.mp3' })
+    expect(await planConversion('/in.wav', 'wav', probe)).toEqual({ codec: 'copy', ext: '.wav' })
     // copying never needs to inspect the stream
     expect(probe).not.toHaveBeenCalled()
   })
@@ -111,6 +112,17 @@ describe('planConversion', () => {
       ext: '.aiff',
     })
     expect(probe).toHaveBeenCalledWith('/in.wav')
+  })
+
+  it('probes the bit depth when encoding a lossless target to WAV, picking little-endian PCM', async () => {
+    // WAV is lossless like AIFF and must preserve the exact bit depth, but its
+    // PCM is little-endian (RIFF) where AIFF is big-endian — encoding a 24-bit
+    // source as pcm_s24be inside a WAV would corrupt every sample
+    expect(await planConversion('/in.flac', 'wav', probe)).toEqual({
+      codec: 'pcm_s24le',
+      ext: '.wav',
+    })
+    expect(probe).toHaveBeenCalledWith('/in.flac')
   })
 })
 
