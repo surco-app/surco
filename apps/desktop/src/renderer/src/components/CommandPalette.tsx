@@ -68,6 +68,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           {results.map((c, i) => (
             <li key={c.id}>
               <button
+                type="button"
                 data-testid="palette-item"
                 onClick={() => runAt(i)}
                 onMouseMove={() => setActive(i)}

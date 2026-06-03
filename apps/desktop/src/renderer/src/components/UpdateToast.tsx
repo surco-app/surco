@@ -24,6 +24,7 @@ export function UpdateToast(): React.JSX.Element | null {
         <>
           <span className="text-sm">{tr('update.ready', { version })}</span>
           <button
+            type="button"
             data-testid="update-restart"
             onClick={() => window.api.installUpdate()}
             className="press rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"

@@ -42,12 +42,14 @@ export class ErrorBoundary extends Component<Props, State> {
         )}
         <div className="flex gap-2 self-start">
           <button
+            type="button"
             onClick={() => this.setState({ error: null, info: '' })}
             className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
           >
             {i18n.t('errorBoundary.retry')}
           </button>
           <button
+            type="button"
             data-testid="report-crash"
             onClick={() => openFeedback(error.message)}
             className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"

@@ -5,6 +5,7 @@ export function WaveSpinner(): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <div
+      role="img"
       className="flex items-end gap-1"
       data-testid="wave-spinner"
       aria-label={t('editor.analyzing')}
