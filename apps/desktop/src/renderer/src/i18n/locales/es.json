@@ -200,11 +200,7 @@
       },
       "format": {
         "q": "¿Qué formato de salida elijo?",
-        "a": "AIFF y WAV son sin pérdida: conservan la calidad original exacta, ideal para pinchar. AIFF (y FLAC) llevan las etiquetas y la carátula limpias; WAV no puede incrustar carátula y pierde algunos tags como el grouping, así que AIFF es la mejor opción sin pérdida cuando quieres todos los metadatos en el archivo.\n\nMP3 (320 kbps) tiene pérdida pero ocupa mucho menos, útil cuando el espacio o el tamaño del USB importa.\n\nElijas lo que elijas, un archivo que ya esté en ese formato se copia sin reconvertir, así que nunca pierdes calidad por una conversión innecesaria."
-      },
-      "wav": {
-        "q": "¿Por qué mi WAV pierde la carátula y algunos tags?",
-        "a": "WAV usa el contenedor RIFF, que no puede guardar carátula incrustada y solo admite un conjunto reducido de etiquetas. Por eso, al exportar a WAV, la carátula, el campo grouping y algunos otros tags no se escriben en el archivo; lo básico como título, artista, álbum y año sí se conserva. Si necesitas carátula y metadatos completos incrustados, exporta a AIFF, FLAC o MP3.\n\nEn macOS, si tienes activado “Añadir a Apple Music”, la carátula igualmente llega a tu biblioteca de Música a través del puente del sistema, aunque no quede guardada dentro del propio WAV."
+        "a": "AIFF y WAV son sin pérdida: conservan la calidad original exacta y llevan las etiquetas limpias, ideal para pinchar. AIFF suele manejar mejor los metadatos y la carátula en plataformas Apple.\n\nMP3 (320 kbps) tiene pérdida pero ocupa mucho menos, útil cuando el espacio o el tamaño del USB importa.\n\nElijas lo que elijas, un archivo que ya esté en ese formato se copia sin reconvertir, así que nunca pierdes calidad por una conversión innecesaria."
       },
       "appleMusic": {
         "q": "¿Qué hace “Añadir a Apple Music”?",

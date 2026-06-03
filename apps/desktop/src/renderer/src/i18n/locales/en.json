@@ -200,11 +200,7 @@
       },
       "format": {
         "q": "Which output format should I choose?",
-        "a": "AIFF and WAV are lossless — they keep the exact original quality, ideal for DJing. AIFF (and FLAC) carry tags and artwork cleanly; WAV can't embed artwork and drops some tags like grouping, so AIFF is the better lossless pick when you want full metadata in the file.\n\nMP3 (320 kbps) is lossy but takes far less space — handy when storage or USB size matters.\n\nWhichever you pick, a file already in that format is copied without re-encoding, so you never lose quality to a needless conversion."
-      },
-      "wav": {
-        "q": "Why does my WAV lose its artwork and some tags?",
-        "a": "WAV uses the RIFF container, which can't hold embedded artwork and only supports a small set of tags. So when you export to WAV, the cover art, the grouping field, and a few other tags aren't written into the file — the basics like title, artist, album and year still travel fine. If you need artwork and full metadata embedded, export to AIFF, FLAC or MP3 instead.\n\nOn macOS, if “Add to Apple Music” is on, the artwork still reaches your Music library through the system bridge, even though it isn't stored inside the WAV itself."
+        "a": "AIFF and WAV are lossless — they keep the exact original quality and carry tags cleanly, ideal for DJing. AIFF tends to handle metadata and artwork best on Apple platforms.\n\nMP3 (320 kbps) is lossy but takes far less space — handy when storage or USB size matters.\n\nWhichever you pick, a file already in that format is copied without re-encoding, so you never lose quality to a needless conversion."
       },
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
