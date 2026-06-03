@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings } from '../../shared/types'
+import type { OutputFormat, Settings } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
@@ -207,7 +207,7 @@ export default function App(): React.JSX.Element {
     audio.play().catch(() => {})
   }
 
-  async function processOne(id: string): Promise<void> {
+  async function processOne(id: string, formatOverride?: OutputFormat): Promise<void> {
     const track = tracks.find((t) => t.id === id)
     if (!track) return
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
@@ -243,6 +243,7 @@ export default function App(): React.JSX.Element {
         meta,
         coverUrl: track.coverUrl,
         coverPath: track.coverPath,
+        format: formatOverride,
       })
       updateTrack(id, {
         status: 'done',
@@ -563,7 +564,7 @@ export default function App(): React.JSX.Element {
               showSpectrum={settings?.showSpectrum ?? true}
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
-              onProcess={() => processOne(selected.id)}
+              onProcess={(format) => processOne(selected.id, format)}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onOpenSettings={() => setShowSettings(true)}
             />

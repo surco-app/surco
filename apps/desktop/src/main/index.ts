@@ -276,15 +276,14 @@ function registerIpc(): void {
       const coverPath = prepared?.path
 
       stage('converting')
+      const format = job.format ?? settings.outputFormat
       const outputPath = join(
         settings.outputDir,
-        `${sanitizeFilename(job.outputName)}.${settings.outputFormat}`,
+        `${sanitizeFilename(job.outputName)}.${format}`,
       )
-      await convertAudio(job.inputPath, outputPath, settings.outputFormat, job.meta, coverPath)
+      await convertAudio(job.inputPath, outputPath, format, job.meta, coverPath)
 
-      if (
-        shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, settings.outputFormat)
-      ) {
+      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, format)) {
         stage('appleMusic')
         await addToAppleMusic(outputPath, job.meta, coverPath)
       }

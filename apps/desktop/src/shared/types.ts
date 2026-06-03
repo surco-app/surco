@@ -73,6 +73,7 @@ export interface ProcessJob {
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
+  format?: OutputFormat
 }
 
 export interface CoverExportJob {

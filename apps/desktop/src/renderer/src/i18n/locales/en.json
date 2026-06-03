@@ -85,6 +85,8 @@
     "regenerateHint": "Rebuild the file name from the metadata above",
     "convert": "Convert to {{format}} + Apple Music",
     "convertNoMusic": "Convert to {{format}}",
+    "exportAgain": "Export again",
+    "chooseFormat": "Choose format",
     "update": "Update",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",

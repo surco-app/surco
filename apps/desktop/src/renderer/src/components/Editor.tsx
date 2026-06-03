@@ -21,6 +21,8 @@ import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
 
+const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+
 interface Props {
   item: TrackItem
   hasToken: boolean
@@ -33,7 +35,7 @@ interface Props {
   showSpectrum: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
-  onProcess: () => void
+  onProcess: (format: OutputFormat) => void
   onAddToAppleMusic: () => void
   onOpenSettings: () => void
 }
@@ -245,6 +247,8 @@ export function Editor({
   // A stale track is done but edited since, so it shows the convert button again
   // (as "Update") rather than the done/reveal state.
   const done = item.status === 'done' && !stale
+  const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
+  const exportedFormat = FORMATS.find((f) => f === exportedExt) ?? null
   const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
@@ -623,8 +627,19 @@ export function Editor({
               </button>
             </div>
           )}
-          {done ? (
-            <div className="space-y-2">
+          <div className="space-y-2">
+            <ExportButton
+              status={item.status}
+              stale={stale}
+              done={done}
+              outputFormat={outputFormat}
+              exportedFormat={exportedFormat}
+              withAppleMusic={
+                window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
+              }
+              onProcess={onProcess}
+            />
+            {done && (
               <div className="flex gap-2">
                 <button
                   onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
@@ -632,7 +647,7 @@ export function Editor({
                 >
                   {tr('editor.doneReveal')}
                 </button>
-                {window.api.platform === 'darwin' && outputFormat !== 'flac' && (
+                {window.api.platform === 'darwin' && exportedFormat !== 'flac' && (
                   <button
                     type="button"
                     data-testid="add-apple-music"
@@ -648,33 +663,133 @@ export function Editor({
                   </button>
                 )}
               </div>
-              {item.musicStatus === 'error' && (
-                <p className="text-xs text-danger">{item.musicError}</p>
-              )}
-            </div>
-          ) : (
-            <button
-              data-testid="process-btn"
-              onClick={onProcess}
-              disabled={item.status === 'processing'}
-              className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-            >
-              {item.status === 'processing'
-                ? tr('editor.processing')
-                : stale
-                  ? tr('editor.update')
-                  : tr(
-                      window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
-                        ? 'editor.convert'
-                        : 'editor.convertNoMusic',
-                      {
-                        format: outputFormat.toUpperCase(),
-                      },
-                    )}
-            </button>
-          )}
+            )}
+            {done && item.musicStatus === 'error' && (
+              <p className="text-xs text-danger">{item.musicError}</p>
+            )}
+          </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+interface ExportButtonProps {
+  status: TrackItem['status']
+  stale: boolean
+  done: boolean
+  outputFormat: OutputFormat
+  exportedFormat: OutputFormat | null
+  withAppleMusic: boolean
+  onProcess: (format: OutputFormat) => void
+}
+
+// A split button: the body exports in the user's default format (from Settings),
+// the chevron opens a menu to export in any other format on the spot. The control
+// stays visible after a track is done so re-exporting to another format never
+// means reloading the file or touching Settings.
+function ExportButton({
+  status,
+  stale,
+  done,
+  outputFormat,
+  exportedFormat,
+  withAppleMusic,
+  onProcess,
+}: ExportButtonProps): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const processing = status === 'processing'
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const label = processing
+    ? tr('editor.processing')
+    : stale
+      ? tr('editor.update')
+      : done
+        ? tr('editor.exportAgain')
+        : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
+            format: outputFormat.toUpperCase(),
+          })
+
+  function pick(format: OutputFormat): void {
+    setOpen(false)
+    onProcess(format)
+  }
+
+  return (
+    <div ref={ref} className="relative flex">
+      <button
+        type="button"
+        data-testid="process-btn"
+        onClick={() => onProcess(outputFormat)}
+        disabled={processing}
+        className="press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+      >
+        {label}
+      </button>
+      <button
+        type="button"
+        data-testid="process-format-toggle"
+        aria-label={tr('editor.chooseFormat')}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        disabled={processing}
+        className="press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+        >
+          <path
+            d="m2.5 4.5 3.5 3.5 3.5-3.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
+          {FORMATS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={`process-format-${id}`}
+              onClick={() => pick(id)}
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)]"
+            >
+              {tr(`settings.formats.${id}`)}
+              {id === exportedFormat && (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 text-good"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
