@@ -1,11 +1,12 @@
 import { execFile } from 'node:child_process'
-import { readFile, rename, unlink } from 'node:fs/promises'
+import { copyFile, readFile, rename, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
+import { preservesCuesInPlace, writeTags } from './tags'
 import { tmpName } from './tmp'
 
 const run = promisify(execFile)
@@ -245,9 +246,17 @@ export async function convertAudio(
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
   try {
-    await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate), {
-      maxBuffer: 1024 * 1024 * 32,
-    })
+    if (codec === 'copy' && preservesCuesInPlace(ext)) {
+      // Source already in the target format: copy the bytes verbatim and edit the
+      // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
+      // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
+      await copyFile(input, tmp)
+      writeTags(tmp, meta, coverPath)
+    } else {
+      await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate), {
+        maxBuffer: 1024 * 1024 * 32,
+      })
+    }
     await rename(tmp, output)
   } catch (e) {
     await unlink(tmp).catch(() => {})
