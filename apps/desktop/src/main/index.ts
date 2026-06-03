@@ -26,6 +26,20 @@ function sanitizeFilename(name: string): string {
     .trim()
 }
 
+// Set while a user-triggered update check is in flight so the updater's result
+// events surface a dialog; the silent startup check leaves it false and stays quiet.
+let manualUpdateCheck = false
+
+function checkForUpdates(win: BrowserWindow): void {
+  const t = createMenuT(app.getLocale())
+  if (!app.isPackaged) {
+    dialog.showMessageBox(win, { type: 'info', message: t('updatesDevOnly') })
+    return
+  }
+  manualUpdateCheck = true
+  electronUpdater.autoUpdater.checkForUpdates()
+}
+
 function buildAppMenu(win: BrowserWindow): void {
   const t = createMenuT(app.getLocale())
   // Every custom item triggers a command by id, the same registry the palette
@@ -40,6 +54,7 @@ function buildAppMenu(win: BrowserWindow): void {
       label: app.name,
       submenu: [
         { role: 'about' },
+        { label: t('checkUpdates'), click: () => checkForUpdates(win) },
         { type: 'separator' },
         {
           label: t('settings'),
@@ -295,10 +310,27 @@ app.whenReady().then(() => {
   // Only in packaged builds — there is no update feed in dev, and macOS requires
   // the build to be signed and notarized.
   if (app.isPackaged) {
-    electronUpdater.autoUpdater.on('update-downloaded', (info) =>
+    const updater = electronUpdater.autoUpdater
+    updater.on('update-downloaded', (info) =>
       win.webContents.send('update:downloaded', info.version),
     )
-    electronUpdater.autoUpdater.checkForUpdates()
+    updater.on('update-not-available', () => {
+      if (!manualUpdateCheck) return
+      manualUpdateCheck = false
+      dialog.showMessageBox(win, {
+        type: 'info',
+        message: createMenuT(app.getLocale())('upToDate'),
+      })
+    })
+    updater.on('error', () => {
+      if (!manualUpdateCheck) return
+      manualUpdateCheck = false
+      dialog.showMessageBox(win, {
+        type: 'error',
+        message: createMenuT(app.getLocale())('updateError'),
+      })
+    })
+    updater.checkForUpdates()
   }
 
   app.on('activate', () => {

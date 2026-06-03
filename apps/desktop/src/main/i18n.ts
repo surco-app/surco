@@ -24,6 +24,10 @@ interface MenuStrings {
   next: string
   help: string
   website: string
+  checkUpdates: string
+  upToDate: string
+  updateError: string
+  updatesDevOnly: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -45,6 +49,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     next: 'Pista siguiente',
     help: 'Ayuda',
     website: 'Sitio web de Surco',
+    checkUpdates: 'Buscar actualizaciones…',
+    upToDate: 'Ya tienes la última versión de Surco.',
+    updateError: 'No se pudo comprobar si hay actualizaciones.',
+    updatesDevOnly: 'Las actualizaciones solo están disponibles en la app instalada.',
   },
   en: {
     settings: 'Settings…',
@@ -64,6 +72,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     next: 'Next track',
     help: 'Help',
     website: 'Surco website',
+    checkUpdates: 'Check for Updates…',
+    upToDate: "You're on the latest version of Surco.",
+    updateError: 'Could not check for updates.',
+    updatesDevOnly: 'Updates are only available in the installed app.',
   },
 }
 

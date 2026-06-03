@@ -27,4 +27,11 @@ describe('createMenuT', () => {
   it('uses English when the locale is unsupported', () => {
     expect(createMenuT('de-DE')('feedback')).toBe('Send feedback…')
   })
+
+  it('covers the menus added beyond the original two items', () => {
+    expect(createMenuT('es')('checkUpdates')).toBe('Buscar actualizaciones…')
+    expect(createMenuT('en')('checkUpdates')).toBe('Check for Updates…')
+    expect(createMenuT('es')('file')).toBe('Archivo')
+    expect(createMenuT('en')('help')).toBe('Help')
+  })
 })
