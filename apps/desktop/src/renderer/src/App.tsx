@@ -214,7 +214,15 @@ export default function App(): React.JSX.Element {
       })
       return
     }
-    updateTrack(id, { status: 'processing', error: undefined, stage: undefined })
+    // Re-processing an edited (stale) track resets the Apple Music state too, since
+    // the file it referred to is being rewritten — the user may want to add it again.
+    updateTrack(id, {
+      status: 'processing',
+      error: undefined,
+      stage: undefined,
+      musicStatus: undefined,
+      musicError: undefined,
+    })
     const meta = sanitizeMeta(track.meta, {
       trim: settings?.trimWhitespace ?? true,
       zeroPad: settings?.zeroPadTrack ?? true,
@@ -230,7 +238,12 @@ export default function App(): React.JSX.Element {
         coverUrl: track.coverUrl,
         coverPath: track.coverPath,
       })
-      updateTrack(id, { status: 'done', outputPath, stage: undefined })
+      updateTrack(id, {
+        status: 'done',
+        outputPath,
+        stage: undefined,
+        processedSignature: trackSignature(track),
+      })
     } catch (e) {
       updateTrack(id, {
         status: 'error',

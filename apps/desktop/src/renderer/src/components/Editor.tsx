@@ -8,6 +8,7 @@ import type {
   OutputFormat,
 } from '../../../shared/types'
 import { csvHas, toggleCsv } from '../lib/csv'
+import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS } from '../lib/fields'
 import { splitPosition } from '../lib/position'
@@ -326,7 +327,10 @@ export function Editor({
     })
   }
 
-  const done = item.status === 'done'
+  const stale = isStale(item)
+  // A stale track is done but edited since, so it shows the convert button again
+  // (as "Update") rather than the done/reveal state.
+  const done = item.status === 'done' && !stale
   const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
@@ -740,14 +744,16 @@ export function Editor({
             >
               {item.status === 'processing'
                 ? tr('editor.processing')
-                : tr(
-                    window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
-                      ? 'editor.convert'
-                      : 'editor.convertNoMusic',
-                    {
-                      format: outputFormat.toUpperCase(),
-                    },
-                  )}
+                : stale
+                  ? tr('editor.update')
+                  : tr(
+                      window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
+                        ? 'editor.convert'
+                        : 'editor.convertNoMusic',
+                      {
+                        format: outputFormat.toUpperCase(),
+                      },
+                    )}
             </button>
           )}
         </div>
