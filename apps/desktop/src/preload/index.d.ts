@@ -23,8 +23,7 @@ export interface Api {
   spectrogram: (path: string) => Promise<SpectrumResult>
   readTags: (path: string) => Promise<TrackMetadata>
   readCover: (path: string) => Promise<string | null>
-  onOpenSettings: (cb: () => void) => () => void
-  onFeedback: (cb: () => void) => () => void
+  onMenuCommand: (cb: (id: string) => void) => () => void
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { type Command, filterCommands } from './commands'
+import { describe, expect, it, vi } from 'vitest'
+import { type Command, filterCommands, runCommand } from './commands'
 
 function cmd(id: string, title: string): Command {
   return { id, title, enabled: true, run: () => {} }
@@ -28,5 +28,29 @@ describe('filterCommands', () => {
 
   it('returns nothing when no title matches', () => {
     expect(filterCommands(commands, 'zzz')).toEqual([])
+  })
+})
+
+describe('runCommand', () => {
+  // The palette, the keyboard shortcuts and the native menu all trigger actions
+  // by command id. Routing them through one runner keeps the three in sync and
+  // enforces the `enabled` gate in a single place, so a disabled action can
+  // never fire no matter which surface invoked it.
+  it('runs the matching command when it is enabled', () => {
+    const run = vi.fn()
+    runCommand([{ id: 'add', title: '', enabled: true, run }], 'add')
+    expect(run).toHaveBeenCalledOnce()
+  })
+
+  it('never runs a disabled command', () => {
+    const run = vi.fn()
+    runCommand([{ id: 'add', title: '', enabled: false, run }], 'add')
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  it('does nothing for an unknown id', () => {
+    const run = vi.fn()
+    runCommand([{ id: 'add', title: '', enabled: true, run }], 'missing')
+    expect(run).not.toHaveBeenCalled()
   })
 })

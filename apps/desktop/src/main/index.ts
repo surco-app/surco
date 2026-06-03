@@ -28,6 +28,13 @@ function sanitizeFilename(name: string): string {
 
 function buildAppMenu(win: BrowserWindow): void {
   const t = createMenuT(app.getLocale())
+  // Every custom item triggers a command by id, the same registry the palette
+  // and keyboard shortcuts use. Items whose accelerator is already owned by the
+  // renderer keymap pass registerAccelerator:false so the shortcut shows in the
+  // menu without firing twice — and crucially without losing the keymap's
+  // "not while typing in a field" guard (⌘⌫ would otherwise delete a track
+  // mid-edit).
+  const run = (id: string): void => win.webContents.send('menu:command', id)
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: app.name,
@@ -37,12 +44,10 @@ function buildAppMenu(win: BrowserWindow): void {
         {
           label: t('settings'),
           accelerator: 'CmdOrCtrl+,',
-          click: () => win.webContents.send('menu:settings'),
+          registerAccelerator: false,
+          click: () => run('settings'),
         },
-        {
-          label: t('feedback'),
-          click: () => win.webContents.send('menu:feedback'),
-        },
+        { label: t('feedback'), click: () => run('feedback') },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -51,6 +56,41 @@ function buildAppMenu(win: BrowserWindow): void {
         { role: 'unhide' },
         { type: 'separator' },
         { role: 'quit' },
+      ],
+    },
+    {
+      label: t('file'),
+      submenu: [
+        {
+          label: t('add'),
+          accelerator: 'CmdOrCtrl+O',
+          registerAccelerator: false,
+          click: () => run('add'),
+        },
+        { label: t('reveal'), accelerator: 'CmdOrCtrl+R', click: () => run('reveal') },
+        { type: 'separator' },
+        {
+          label: t('processCurrent'),
+          accelerator: 'CmdOrCtrl+Enter',
+          registerAccelerator: false,
+          click: () => run('process-current'),
+        },
+        {
+          label: t('processAll'),
+          accelerator: 'CmdOrCtrl+Shift+Enter',
+          registerAccelerator: false,
+          click: () => run('process-all'),
+        },
+        { type: 'separator' },
+        {
+          label: t('remove'),
+          accelerator: 'CmdOrCtrl+Backspace',
+          registerAccelerator: false,
+          click: () => run('remove'),
+        },
+        { label: t('removeAll'), click: () => run('remove-all') },
+        { type: 'separator' },
+        { role: 'close' },
       ],
     },
     { role: 'editMenu' },

@@ -35,7 +35,10 @@
     "next": "Next track",
     "prev": "Previous track",
     "search": "Search Discogs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "removeAll": "Remove all",
+    "reveal": "Reveal in Finder",
+    "feedback": "Send feedback"
   },
   "trackList": {
     "noArtist": "No artist",

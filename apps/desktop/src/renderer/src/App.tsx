@@ -9,7 +9,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { eligibleForBatch } from './lib/batch'
-import type { Command } from './lib/commands'
+import { type Command, runCommand } from './lib/commands'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
@@ -85,9 +85,9 @@ export default function App(): React.JSX.Element {
     return () => mq.removeEventListener('change', apply)
   }, [settings?.theme])
 
-  useEffect(() => window.api.onOpenSettings(() => setShowSettings(true)), [])
-
-  useEffect(() => window.api.onFeedback(() => openFeedback()), [])
+  // The native menu triggers actions by command id, the same registry the
+  // palette and keyboard shortcuts use, so the three surfaces never drift apart.
+  useEffect(() => window.api.onMenuCommand((id) => runCommand(commandsRef.current, id)), [])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
@@ -159,6 +159,11 @@ export default function App(): React.JSX.Element {
   function removeTrack(id: string): void {
     setTracks((prev) => prev.filter((t) => t.id !== id))
     if (selectedId === id) setSelectedId((prev) => (prev === id ? null : prev))
+  }
+
+  function clearTracks(): void {
+    setTracks([])
+    setSelectedId(null)
   }
 
   async function togglePlay(): Promise<void> {
@@ -281,6 +286,18 @@ export default function App(): React.JSX.Element {
       run: () => selected && removeTrack(selected.id),
     },
     {
+      id: 'remove-all',
+      title: tr('commands.removeAll'),
+      enabled: tracks.length > 0,
+      run: clearTracks,
+    },
+    {
+      id: 'reveal',
+      title: tr('commands.reveal'),
+      enabled: !!selected?.outputPath,
+      run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
+    },
+    {
       id: 'next',
       title: tr('commands.next'),
       hint: '↓',
@@ -308,6 +325,12 @@ export default function App(): React.JSX.Element {
       enabled: true,
       run: () => setShowSettings(true),
     },
+    {
+      id: 'feedback',
+      title: tr('commands.feedback'),
+      enabled: true,
+      run: () => openFeedback(),
+    },
   ]
 
   const commandsRef = useRef<Command[]>(commands)
@@ -318,10 +341,6 @@ export default function App(): React.JSX.Element {
   settingsOpenRef.current = showSettings
 
   useEffect(() => {
-    function run(id: string): void {
-      const c = commandsRef.current.find((c) => c.id === id)
-      if (c?.enabled) c.run()
-    }
     function onKey(e: KeyboardEvent): void {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
@@ -339,7 +358,7 @@ export default function App(): React.JSX.Element {
       const id = keyToCommandId(e, typing)
       if (id) {
         e.preventDefault()
-        run(id)
+        runCommand(commandsRef.current, id)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -472,7 +491,9 @@ export default function App(): React.JSX.Element {
                   {tr('empty.title')}
                 </p>
                 <p className="mt-1.5 text-sm text-pretty text-fg-dim">
-                  {tr(window.api.platform === 'darwin' ? 'empty.subtitle' : 'empty.subtitleNoMusic')}
+                  {tr(
+                    window.api.platform === 'darwin' ? 'empty.subtitle' : 'empty.subtitleNoMusic',
+                  )}
                 </p>
               </div>
             </div>

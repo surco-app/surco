@@ -9,16 +9,37 @@ export type MenuLang = 'es' | 'en'
 interface MenuStrings {
   settings: string
   feedback: string
+  file: string
+  add: string
+  reveal: string
+  remove: string
+  removeAll: string
+  processCurrent: string
+  processAll: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
   es: {
     settings: 'Ajustes…',
     feedback: 'Enviar comentarios…',
+    file: 'Archivo',
+    add: 'Añadir pistas…',
+    reveal: 'Mostrar en Finder',
+    remove: 'Quitar de la lista',
+    removeAll: 'Vaciar la lista',
+    processCurrent: 'Procesar pista',
+    processAll: 'Procesar todo',
   },
   en: {
     settings: 'Settings…',
     feedback: 'Send feedback…',
+    file: 'File',
+    add: 'Add tracks…',
+    reveal: 'Reveal in Finder',
+    remove: 'Remove from list',
+    removeAll: 'Remove all',
+    processCurrent: 'Process track',
+    processAll: 'Process all',
   },
 }
 

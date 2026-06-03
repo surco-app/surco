@@ -19,15 +19,10 @@ const api = {
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
   readAudio: (path: string) => ipcRenderer.invoke('audio:read', path),
-  onOpenSettings: (cb: () => void) => {
-    const listener = (): void => cb()
-    ipcRenderer.on('menu:settings', listener)
-    return () => ipcRenderer.removeListener('menu:settings', listener)
-  },
-  onFeedback: (cb: () => void) => {
-    const listener = (): void => cb()
-    ipcRenderer.on('menu:feedback', listener)
-    return () => ipcRenderer.removeListener('menu:feedback', listener)
+  onMenuCommand: (cb: (id: string) => void) => {
+    const listener = (_e: unknown, id: string): void => cb(id)
+    ipcRenderer.on('menu:command', listener)
+    return () => ipcRenderer.removeListener('menu:command', listener)
   },
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => {
     const listener = (_e: unknown, progress: ProcessProgress): void => cb(progress)
