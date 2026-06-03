@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
@@ -175,10 +175,13 @@ export default function App(): React.JSX.Element {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }
 
-  function removeTrack(id: string): void {
+  // Stable identity so the memoized TrackRow only re-renders the row that
+  // changed. The functional update deselects iff the removed track was selected,
+  // which is what the explicit selectedId check did before.
+  const removeTrack = useCallback((id: string): void => {
     setTracks((prev) => prev.filter((t) => t.id !== id))
-    if (selectedId === id) setSelectedId((prev) => (prev === id ? null : prev))
-  }
+    setSelectedId((prev) => (prev === id ? null : prev))
+  }, [])
 
   function clearTracks(): void {
     setTracks([])
