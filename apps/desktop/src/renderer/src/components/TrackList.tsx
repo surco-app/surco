@@ -40,13 +40,14 @@ const TrackRow = memo(function TrackRow({
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <li>
+    <li className="group relative">
       <button
+        type="button"
         data-testid="track-row"
         onClick={() => onSelect(t.id)}
-        className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+        className={`relative flex w-full items-center gap-3 rounded-lg py-2.5 pr-10 pl-3 text-left transition-colors ${
           active
-            ? 'bg-[var(--color-accent-soft)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
+            ? 'bg-[var(--color-accent-soft)] before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
             : 'hover:bg-[var(--color-panel-2)]'
         }`}
       >
@@ -76,17 +77,14 @@ const TrackRow = memo(function TrackRow({
             </span>
           )}
         </span>
-        <span
-          role="button"
-          aria-label={tr('trackList.remove')}
-          onClick={(e) => {
-            e.stopPropagation()
-            onRemove(t.id)
-          }}
-          className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:flex"
-        >
-          ✕
-        </span>
+      </button>
+      <button
+        type="button"
+        aria-label={tr('trackList.remove')}
+        onClick={() => onRemove(t.id)}
+        className="absolute top-1/2 right-2 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:flex"
+      >
+        ✕
       </button>
     </li>
   )
