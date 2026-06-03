@@ -124,7 +124,24 @@ export function Editor({
   const [spectrumOpen, setSpectrumOpen] = useState(true)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
+  const coverDragPath = useRef<string | null>(null)
   const discogs = useResizableWidth(400, 320, 720)
+
+  // startDrag needs a file on disk the instant the drag begins, so prepare the
+  // processed cover whenever it changes and stash its path for onDragStart.
+  useEffect(() => {
+    coverDragPath.current = null
+    if (!item.coverUrl && !item.coverPath) return
+    let cancelled = false
+    window.api
+      .prepareCoverDrag({ coverUrl: item.coverUrl, coverPath: item.coverPath })
+      .then((path) => {
+        if (!cancelled) coverDragPath.current = path
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [item.coverUrl, item.coverPath])
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -487,6 +504,12 @@ export function Editor({
                         data-testid="cover-preview"
                         src={item.coverUrl}
                         alt={tr('editor.coverAlt')}
+                        draggable
+                        onDragStart={(e) => {
+                          if (!coverDragPath.current) return
+                          e.preventDefault()
+                          window.api.startCoverDrag(coverDragPath.current)
+                        }}
                         className={`h-44 w-44 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
                           coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
                         }`}

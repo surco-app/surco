@@ -58,10 +58,7 @@ describe('prepareProcessedCover', () => {
   })
 
   it('decodes embedded art carried as a data URL before processing it', async () => {
-    const prepared = await prepareProcessedCover(
-      { coverUrl: 'data:image/jpeg;base64,QUJD' },
-      opts,
-    )
+    const prepared = await prepareProcessedCover({ coverUrl: 'data:image/jpeg;base64,QUJD' }, opts)
     expect(writeFile).toHaveBeenCalledTimes(1)
     const [, buffer] = writeFile.mock.calls[0]
     expect((buffer as Buffer).toString()).toBe('ABC')

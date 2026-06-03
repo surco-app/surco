@@ -5,6 +5,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import type { CoverExportJob, ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
+import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
 import { getRelease, search } from './discogs'
 import {
@@ -286,6 +287,26 @@ function registerIpc(): void {
     } finally {
       await prepared.cleanup()
     }
+  })
+
+  // startDrag must hand the OS a file that already exists, and it can't run after
+  // an await inside dragstart, so the renderer prepares the processed cover ahead
+  // of the gesture and hands back its path. The temp file is left for the OS to
+  // reap — deleting it here would race the in-flight drag that copies from it.
+  ipcMain.handle('cover:prepareDrag', async (_e, src: CoverSource) => {
+    const settings = getSettings()
+    const prepared = await prepareProcessedCover(src, {
+      maxSize: settings.coverMaxSize,
+      square: settings.coverSquare,
+    })
+    return prepared?.path ?? null
+  })
+
+  ipcMain.on('cover:drag', (e, path: string) => {
+    e.sender.startDrag({
+      file: path,
+      icon: nativeImage.createFromPath(path).resize({ width: 128, height: 128 }),
+    })
   })
 
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))

@@ -17,6 +17,9 @@ const api = {
     ipcRenderer.invoke('applemusic:lookup', artist, title),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
   exportCover: (job: unknown): Promise<string | null> => ipcRenderer.invoke('cover:export', job),
+  prepareCoverDrag: (src: unknown): Promise<string | null> =>
+    ipcRenderer.invoke('cover:prepareDrag', src),
+  startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
