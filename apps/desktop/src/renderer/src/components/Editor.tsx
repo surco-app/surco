@@ -354,9 +354,9 @@ export function Editor({
                         {tr('editor.chooseTrack')}
                       </p>
                       {loaded && release ? (
-                        release.tracklist.map((t, i) => (
+                        release.tracklist.map((t) => (
                           <button
-                            key={`${t.position}-${i}`}
+                            key={`${t.position}-${t.title}`}
                             type="button"
                             data-testid="discogs-track"
                             onClick={() => selectTrack(t)}
