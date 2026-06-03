@@ -35,6 +35,11 @@ const api = {
     ipcRenderer.on('update:downloaded', listener)
     return () => ipcRenderer.removeListener('update:downloaded', listener)
   },
+  onUpdateError: (cb: (message: string) => void) => {
+    const listener = (_e: unknown, message: string): void => cb(message)
+    ipcRenderer.on('update:error', listener)
+    return () => ipcRenderer.removeListener('update:error', listener)
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -24,7 +24,8 @@
   },
   "update": {
     "ready": "La versión {{version}} está lista",
-    "restart": "Reiniciar para actualizar"
+    "restart": "Reiniciar para actualizar",
+    "failed": "Error al actualizar: {{error}}"
   },
   "commands": {
     "add": "Añadir archivos",

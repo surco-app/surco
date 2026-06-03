@@ -26,6 +26,7 @@ export interface Api {
   onMenuCommand: (cb: (id: string) => void) => () => void
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
+  onUpdateError: (cb: (message: string) => void) => () => void
 }
 
 declare global {

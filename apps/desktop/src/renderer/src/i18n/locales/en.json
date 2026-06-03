@@ -24,7 +24,8 @@
   },
   "update": {
     "ready": "Version {{version}} is ready",
-    "restart": "Restart to update"
+    "restart": "Restart to update",
+    "failed": "Update failed: {{error}}"
   },
   "commands": {
     "add": "Add files",

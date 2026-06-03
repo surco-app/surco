@@ -2,6 +2,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
+import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic, shouldAddToAppleMusic } from './applemusic'
@@ -278,7 +279,17 @@ function registerIpc(): void {
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
   // push below — without this handler the toast's "Restart" button rejects.
-  ipcMain.handle('update:install', () => electronUpdater.autoUpdater.quitAndInstall())
+  // quitAndInstall mostly fails asynchronously through the autoUpdater 'error'
+  // event (Squirrel.Mac rejecting a signature mismatch, etc.), but catch the rare
+  // synchronous throw too and surface it instead of dying silently.
+  ipcMain.handle('update:install', (e) => {
+    try {
+      electronUpdater.autoUpdater.quitAndInstall()
+    } catch (err) {
+      log.error('update:install failed', err)
+      e.sender.send('update:error', err instanceof Error ? err.message : String(err))
+    }
+  })
 
   ipcMain.handle('audio:tags', (_e, inputPath: string) => readTags(inputPath))
 
@@ -311,6 +322,10 @@ app.whenReady().then(() => {
   // the build to be signed and notarized.
   if (app.isPackaged) {
     const updater = electronUpdater.autoUpdater
+    // Route the updater's own logs to a file (~/Library/Logs/Surco/main.log on
+    // macOS) so a failed install — which Squirrel.Mac otherwise swallows — leaves
+    // a trace we can read.
+    updater.logger = log
     updater.on('update-downloaded', (info) =>
       win.webContents.send('update:downloaded', info.version),
     )
@@ -322,7 +337,12 @@ app.whenReady().then(() => {
         message: createMenuT(app.getLocale())('upToDate'),
       })
     })
-    updater.on('error', () => {
+    updater.on('error', (err) => {
+      // Always log and tell the renderer: when the restart-to-update install fails
+      // (manualUpdateCheck is false) this is the only sign the user gets that the
+      // button did anything. The manual-check dialog stays as before.
+      log.error('autoUpdater error', err)
+      win.webContents.send('update:error', err instanceof Error ? err.message : String(err))
       if (!manualUpdateCheck) return
       manualUpdateCheck = false
       dialog.showMessageBox(win, {
