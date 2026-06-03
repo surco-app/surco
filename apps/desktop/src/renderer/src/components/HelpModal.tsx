@@ -6,7 +6,7 @@ interface Props {
   onClose: () => void
 }
 
-const ITEMS = ['token', 'quality', 'format', 'appleMusic'] as const
+const ITEMS = ['token', 'quality', 'format', 'wav', 'appleMusic'] as const
 
 export function HelpModal({ onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
