@@ -294,20 +294,22 @@ export async function processCover(
 }
 
 // Builds the single-decode filtergraph that splits the audio into one
-// bandpass→astats branch per band, prints each band's running stats to its own
-// file, then mixes the branches so ffmpeg has a single output to render.
+// bandpass→astats branch per band, prints each band's running stats to stdout
+// (file=-) tagged with a surcoband=<freq> metadata key, then mixes the branches
+// so ffmpeg has a single output to render.
 //
-// The entries are bare filenames, never absolute paths: ffmpeg's filtergraph
-// parser reads ':' as an option separator and '\' as an escape, so a Windows
-// path like C:\Users\...\x.txt inside file= is unparseable (no escaping is
-// reliable). analyzeCutoff runs ffmpeg with cwd set to the temp dir so these
-// resolve there.
-export function cutoffFilter(freqs: number[], names: string[]): string {
+// It writes no temp files on purpose. An ametadata file= path like
+// C:\Users\...\x.txt is unparseable by ffmpeg's filtergraph (':' separates
+// options and '\' escapes, and no escaping is reliable), which is exactly what
+// broke on Windows. Printing to stdout sidesteps filesystem paths entirely; the
+// surcoband tag lets analyzeCutoff split the merged stream back per band.
+export function cutoffFilter(freqs: number[]): string {
   const branches = freqs
     .map(
       (f, i) =>
-        `[b${i}]bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
-        `ametadata=mode=print:file=${names[i]}[o${i}]`,
+        `[b${i}]ametadata=mode=add:key=surcoband:value=${f},` +
+        `bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
+        `ametadata=mode=print:file=-[o${i}]`,
     )
     .join(';')
   return (
@@ -316,53 +318,53 @@ export function cutoffFilter(freqs: number[], names: string[]): string {
   )
 }
 
+// Pairs each band's centre frequency with its cumulative RMS from the tagged
+// stdout the filter prints. Within a band's block the surcoband tag prints just
+// before its Overall RMS, so we attribute each RMS to the band tagged most
+// recently; astats runs with reset=0, so the last block per band carries the
+// whole-file level — last write wins.
+export function parseBands(stdout: string): Map<number, number> {
+  const rms = new Map<number, number>()
+  let band: number | null = null
+  for (const line of stdout.split('\n')) {
+    const tag = line.match(/surcoband=(\d+)/)
+    if (tag) {
+      band = Number(tag[1])
+      continue
+    }
+    const level = line.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/)
+    if (level && band !== null) rms.set(band, Number(level[1]))
+  }
+  return rms
+}
+
 // Measures the energy in each high-frequency band in a single decode (asplit
 // into one bandpass→astats branch per band) and hands the per-band RMS to
-// detectCutoff, which spots the codec's brick wall. The cumulative astats RMS is
-// printed once per (large) frame, so the last value in each file is the band's
-// whole-file level.
+// detectCutoff, which spots the codec's brick wall.
 export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<number> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2) return nyquist
 
-  const dir = tmpdir()
-  const names = freqs.map((f) => tmpName(`band-${f}`, 'txt'))
-  const filter = cutoffFilter(freqs, names)
-
-  try {
-    await run(
-      ffmpegPath,
-      [
-        '-hide_banner',
-        '-loglevel',
-        'error',
-        '-i',
-        input,
-        '-filter_complex',
-        filter,
-        '-f',
-        'null',
-        '-',
-      ],
-      // cwd is the temp dir so the filter can reference bare filenames; an
-      // absolute path inside file= breaks ffmpeg's filtergraph parser on Windows.
-      { cwd: dir, maxBuffer: 1024 * 1024 * 16 },
-    )
-    const bands = await Promise.all(
-      freqs.map(async (freqHz, i) => {
-        const text = await readFile(join(dir, names[i]), 'utf-8').catch(() => '')
-        const matches = [...text.matchAll(/RMS_level=(-?[\d.]+)/g)]
-        return {
-          freqHz,
-          rmsDb: matches.length ? Number(matches[matches.length - 1][1]) : -Infinity,
-        }
-      }),
-    )
-    return detectCutoff(bands, nyquist)
-  } finally {
-    await Promise.all(names.map((n) => unlink(join(dir, n)).catch(() => {})))
-  }
+  const { stdout } = await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      input,
+      '-filter_complex',
+      cutoffFilter(freqs),
+      '-f',
+      'null',
+      '-',
+    ],
+    { maxBuffer: 1024 * 1024 * 16 },
+  )
+  const rms = parseBands(stdout)
+  const bands = freqs.map((freqHz) => ({ freqHz, rmsDb: rms.get(freqHz) ?? -Infinity }))
+  return detectCutoff(bands, nyquist)
 }
 
 interface SpectrumDeps {

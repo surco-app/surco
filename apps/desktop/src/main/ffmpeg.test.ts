@@ -8,6 +8,7 @@ import {
   convertArgs,
   coverArgs,
   cutoffFilter,
+  parseBands,
   planConversion,
   tagsFromProbe,
 } from './ffmpeg'
@@ -141,19 +142,51 @@ describe('planConversion', () => {
 })
 
 describe('cutoffFilter', () => {
-  it('embeds bare filenames in file=, never absolute paths, so a Windows path (C:\\…, where ":" and "\\" are filtergraph metacharacters) can never reach the parser', () => {
-    // Escaping a Windows path inside file= is unreliable — ffmpeg still tries to
-    // evaluate it ("Invalid argument"). The fix is to pass a plain filename and
-    // run ffmpeg with cwd set to the temp dir, so nothing here needs escaping.
-    const filter = cutoffFilter([9000, 21000], ['surco-band-9000.txt', 'surco-band-21000.txt'])
-    expect(filter).toContain('ametadata=mode=print:file=surco-band-9000.txt[o0]')
-    expect(filter).toContain('ametadata=mode=print:file=surco-band-21000.txt[o1]')
+  it('prints each band to stdout (file=-) tagged with its frequency, never to a filesystem path — so a Windows temp path (C:\\…, where ":" and "\\" are filtergraph metacharacters) can never reach the parser', () => {
+    // Escaping a path inside file= is unreliable — ffmpeg still tries to evaluate
+    // it ("Invalid argument"), which is what broke on Windows. Printing to stdout
+    // removes paths from the filtergraph entirely; the surcoband tag is how
+    // analyzeCutoff tells the merged bands apart.
+    const filter = cutoffFilter([9000, 21000])
+    expect(filter).toContain('ametadata=mode=add:key=surcoband:value=9000')
+    expect(filter).toContain('ametadata=mode=add:key=surcoband:value=21000')
+    expect(filter).toContain('ametadata=mode=print:file=-')
+    expect(filter).not.toMatch(/file=(?!-)/)
   })
 
   it('splits the decode into one branch per band and mixes them back into a single output', () => {
-    const filter = cutoffFilter([9000, 10000], ['a.txt', 'b.txt'])
+    const filter = cutoffFilter([9000, 10000])
     expect(filter).toContain('asplit=2[b0][b1]')
     expect(filter).toContain('amix=inputs=2')
+  })
+})
+
+describe('parseBands', () => {
+  it('pairs each band frequency with its overall RMS from the tagged stdout', () => {
+    // the filter prints the surcoband tag just before that band's Overall RMS;
+    // per-channel rows (lavfi.astats.1.*) must be ignored, only Overall counts
+    const out = [
+      'frame:0 pts:0',
+      'surcoband=9000',
+      'lavfi.astats.1.RMS_level=-30.4',
+      'lavfi.astats.Overall.RMS_level=-30.5',
+      'frame:0 pts:0',
+      'surcoband=21000',
+      'lavfi.astats.Overall.RMS_level=-72.1',
+    ].join('\n')
+    const rms = parseBands(out)
+    expect(rms.get(9000)).toBe(-30.5)
+    expect(rms.get(21000)).toBe(-72.1)
+  })
+
+  it('keeps the last cumulative RMS when a band prints several frames, since reset=0 makes the final one the whole-file level', () => {
+    const out = [
+      'surcoband=9000',
+      'lavfi.astats.Overall.RMS_level=-40.0',
+      'surcoband=9000',
+      'lavfi.astats.Overall.RMS_level=-31.2',
+    ].join('\n')
+    expect(parseBands(out).get(9000)).toBe(-31.2)
   })
 })
 
