@@ -1,9 +1,9 @@
-import { mkdir, readFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
-import type { ProcessJob, ProcessStage, Settings } from '../shared/types'
+import type { CoverExportJob, ProcessJob, ProcessStage, Settings } from '../shared/types'
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import { prepareProcessedCover } from './cover'
 import { getRelease, search } from './discogs'
@@ -252,7 +252,9 @@ function registerIpc(): void {
       )
       await convertAudio(job.inputPath, outputPath, settings.outputFormat, job.meta, coverPath)
 
-      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, settings.outputFormat)) {
+      if (
+        shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, settings.outputFormat)
+      ) {
         stage('appleMusic')
         await addToAppleMusic(outputPath, job.meta, coverPath)
       }
@@ -260,6 +262,29 @@ function registerIpc(): void {
       return { outputPath }
     } finally {
       if (prepared) await prepared.cleanup()
+    }
+  })
+
+  // Saves the artwork the way it gets embedded — run through the same resize/square
+  // pipeline — so what the user exports matches what lands in the output file.
+  ipcMain.handle('cover:export', async (_e, job: CoverExportJob) => {
+    const settings = getSettings()
+    const prepared = await prepareProcessedCover(job, {
+      maxSize: settings.coverMaxSize,
+      square: settings.coverSquare,
+    })
+    if (!prepared) return null
+    try {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Exporta la carátula',
+        defaultPath: `${sanitizeFilename(job.name)}.jpg`,
+        filters: [{ name: 'JPEG', extensions: ['jpg'] }],
+      })
+      if (canceled || !filePath) return null
+      await copyFile(prepared.path, filePath)
+      return filePath
+    } finally {
+      await prepared.cleanup()
     }
   })
 

@@ -297,6 +297,15 @@ export function Editor({
     onChange({ coverUrl: URL.createObjectURL(file), coverPath: window.api.getPathForFile(file) })
   }
 
+  function onCoverExport(): void {
+    if (!item.coverUrl) return
+    void window.api.exportCover({
+      name: item.outputName ?? defaultOutputName,
+      coverUrl: item.coverUrl,
+      coverPath: item.coverPath,
+    })
+  }
+
   const done = item.status === 'done'
   const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
@@ -469,18 +478,43 @@ export function Editor({
                     setCoverDragging(false)
                   }}
                   onDrop={onCoverDrop}
-                  className="shrink-0"
+                  className="group relative shrink-0 self-start"
                   title={tr('editor.coverTitle')}
                 >
                   {item.coverUrl ? (
-                    <img
-                      data-testid="cover-preview"
-                      src={item.coverUrl}
-                      alt={tr('editor.coverAlt')}
-                      className={`h-44 w-44 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
-                        coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
-                      }`}
-                    />
+                    <>
+                      <img
+                        data-testid="cover-preview"
+                        src={item.coverUrl}
+                        alt={tr('editor.coverAlt')}
+                        className={`h-44 w-44 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
+                          coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        data-testid="cover-export"
+                        onClick={onCoverExport}
+                        title={tr('editor.coverExport')}
+                        aria-label={tr('editor.coverExport')}
+                        className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <path d="M7 10l5 5 5-5" />
+                          <path d="M12 15V3" />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
                     <div
                       className={`flex h-44 w-44 items-center justify-center rounded-xl border border-dashed text-xs ${

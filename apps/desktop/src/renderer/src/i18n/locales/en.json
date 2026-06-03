@@ -70,6 +70,7 @@
     "coverDropActive": "Drop the image",
     "coverAlt": "Artwork",
     "coverTitle": "Drag an image to use it as the artwork",
+    "coverExport": "Export artwork",
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",

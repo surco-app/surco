@@ -16,6 +16,7 @@ const api = {
   lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
     ipcRenderer.invoke('applemusic:lookup', artist, title),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
+  exportCover: (job: unknown): Promise<string | null> => ipcRenderer.invoke('cover:export', job),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),

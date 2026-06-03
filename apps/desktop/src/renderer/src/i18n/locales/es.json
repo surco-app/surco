@@ -70,6 +70,7 @@
     "coverDropActive": "Suelta la imagen",
     "coverAlt": "Carátula",
     "coverTitle": "Arrastra una imagen para usarla como carátula",
+    "coverExport": "Exportar carátula",
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",

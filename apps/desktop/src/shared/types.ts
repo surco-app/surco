@@ -75,6 +75,12 @@ export interface ProcessJob {
   coverPath?: string
 }
 
+export interface CoverExportJob {
+  name: string
+  coverUrl?: string
+  coverPath?: string
+}
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
 
 export interface ProcessProgress {
