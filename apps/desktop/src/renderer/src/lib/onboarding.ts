@@ -4,6 +4,7 @@ export interface OnboardingChoices {
   discogsToken: string
   outputFormat: OutputFormat
   grouping: string
+  showSpectrum: boolean
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -21,6 +22,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
       .split(',')
       .map((g) => g.trim())
       .filter(Boolean),
+    showSpectrum: choices.showSpectrum,
     hasSeenOnboarding: true,
   }
 }

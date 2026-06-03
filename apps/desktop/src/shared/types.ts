@@ -16,6 +16,7 @@ export interface Settings {
   requiredFields: string[]
   coverMaxSize: number
   coverSquare: boolean
+  showSpectrum: boolean
   hasSeenOnboarding: boolean
 }
 

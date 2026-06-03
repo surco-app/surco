@@ -26,6 +26,7 @@ const defaults: Settings = {
   requiredFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
   coverMaxSize: 1200,
   coverSquare: false,
+  showSpectrum: true,
   hasSeenOnboarding: false,
 }
 

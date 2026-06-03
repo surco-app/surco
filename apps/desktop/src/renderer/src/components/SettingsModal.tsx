@@ -73,6 +73,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
+  const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
@@ -99,6 +100,7 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
       requiredFields,
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
       coverSquare,
+      showSpectrum,
     })
     onClose()
   }
@@ -253,6 +255,20 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                   )}
                 </>
               )}
+
+              <div className={`${isMac ? 'mt-5 border-t border-[var(--color-line)] pt-5' : ''}`}>
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-show-spectrum"
+                    type="checkbox"
+                    checked={showSpectrum}
+                    onChange={(e) => setShowSpectrum(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.showSpectrum')}</span>
+                </label>
+                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+              </div>
             </>
           )}
 

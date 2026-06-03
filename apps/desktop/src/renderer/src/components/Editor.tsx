@@ -29,6 +29,7 @@ interface Props {
   groupingPresets: string[]
   visibleFields: string[]
   requiredFields: string[]
+  showSpectrum: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: () => void
@@ -103,6 +104,7 @@ export function Editor({
   groupingPresets,
   visibleFields,
   requiredFields,
+  showSpectrum,
   searchInputRef,
   onChange,
   onProcess,
@@ -152,9 +154,9 @@ export function Editor({
     return () => clearTimeout(id)
   }, [query])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once. showSpectrum is included so enabling the section later analyzes the current track instead of waiting for a track switch.
   useEffect(() => {
-    if (item.spectrum) return
+    if (!showSpectrum || item.spectrum) return
     let active = true
     setAnalyzing(true)
     setAnalyzeError('')
@@ -172,7 +174,7 @@ export function Editor({
     return () => {
       active = false
     }
-  }, [item.inputPath])
+  }, [item.inputPath, showSpectrum])
 
   // Checking whether the song is already in the Apple Music library is a hint to
   // avoid duplicating tracks, so it tracks the live title/artist (debounced —
@@ -525,56 +527,58 @@ export function Editor({
             </div>
           )}
 
-          <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-            <SectionHeader
-              title={tr('editor.qualityTitle')}
-              open={spectrumOpen}
-              onToggle={() => setSpectrumOpen((v) => !v)}
-              right={
-                item.spectrum &&
-                item.spectrum.cutoffHz !== null &&
-                (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
-                  <span
-                    data-testid="quality-badge"
-                    className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
-                  >
-                    {tr('editor.qualityGood')}
-                  </span>
-                ) : (
-                  <span
-                    data-testid="quality-badge"
-                    className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
-                  >
-                    {tr('editor.qualitySuspect')}
-                  </span>
-                ))
-              }
-            />
-            {spectrumOpen && (
-              <div className="mt-3">
-                {analyzing ? (
-                  <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
-                    <WaveSpinner />
-                    {tr('editor.analyzing')}
-                  </div>
-                ) : analyzeError ? (
-                  <p className="text-xs text-danger">{analyzeError}</p>
-                ) : item.spectrum ? (
-                  <>
-                    <Spectrogram spectrum={item.spectrum} />
-                    {item.spectrum.cutoffHz !== null && (
-                      <p className="mt-2 text-xs text-fg-dim">
-                        {tr('editor.qualityCaption', {
-                          cutoff: formatKHz(item.spectrum.cutoffHz),
-                          nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
-                        })}
-                      </p>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            )}
-          </div>
+          {showSpectrum && (
+            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+              <SectionHeader
+                title={tr('editor.qualityTitle')}
+                open={spectrumOpen}
+                onToggle={() => setSpectrumOpen((v) => !v)}
+                right={
+                  item.spectrum &&
+                  item.spectrum.cutoffHz !== null &&
+                  (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
+                    <span
+                      data-testid="quality-badge"
+                      className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                    >
+                      {tr('editor.qualityGood')}
+                    </span>
+                  ) : (
+                    <span
+                      data-testid="quality-badge"
+                      className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
+                    >
+                      {tr('editor.qualitySuspect')}
+                    </span>
+                  ))
+                }
+              />
+              {spectrumOpen && (
+                <div className="mt-3">
+                  {analyzing ? (
+                    <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
+                      <WaveSpinner />
+                      {tr('editor.analyzing')}
+                    </div>
+                  ) : analyzeError ? (
+                    <p className="text-xs text-danger">{analyzeError}</p>
+                  ) : item.spectrum ? (
+                    <>
+                      <Spectrogram spectrum={item.spectrum} />
+                      {item.spectrum.cutoffHz !== null && (
+                        <p className="mt-2 text-xs text-fg-dim">
+                          {tr('editor.qualityCaption', {
+                            cutoff: formatKHz(item.spectrum.cutoffHz),
+                            nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
+                          })}
+                        </p>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 border-t border-[var(--color-line)] pt-5">
             <div className="mb-1 flex items-center justify-between">
@@ -649,9 +653,7 @@ export function Editor({
               {item.status === 'processing'
                 ? tr('editor.processing')
                 : tr(
-                    window.api.platform === 'darwin' &&
-                      outputFormat !== 'flac' &&
-                      addToAppleMusic
+                    window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
                       ? 'editor.convert'
                       : 'editor.convertNoMusic',
                     {

@@ -5,7 +5,7 @@ import type { OutputFormat, Settings } from '../../../shared/types'
 import { buildOnboardingPatch } from '../lib/onboarding'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-const STEPS = ['welcome', 'token', 'format', 'grouping'] as const
+const STEPS = ['welcome', 'token', 'format', 'grouping', 'spectrum'] as const
 
 interface Props {
   settings: Settings
@@ -18,11 +18,12 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [token, setToken] = useState(settings.discogsToken)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
+  const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
 
   const isLast = step === STEPS.length - 1
 
   function finish(): void {
-    onFinish(buildOnboardingPatch({ discogsToken: token, outputFormat, grouping }))
+    onFinish(buildOnboardingPatch({ discogsToken: token, outputFormat, grouping, showSpectrum }))
   }
 
   return (
@@ -117,6 +118,23 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+            </>
+          )}
+
+          {STEPS[step] === 'spectrum' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.showSpectrum')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.spectrumBody')}</p>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  data-testid="onboarding-spectrum"
+                  type="checkbox"
+                  checked={showSpectrum}
+                  onChange={(e) => setShowSpectrum(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">{tr('settings.showSpectrum')}</span>
+              </label>
             </>
           )}
         </div>

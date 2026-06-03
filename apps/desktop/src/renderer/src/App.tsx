@@ -503,6 +503,7 @@ export default function App(): React.JSX.Element {
               groupingPresets={settings?.groupingPresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
               requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
+              showSpectrum={settings?.showSpectrum ?? true}
               searchInputRef={searchInputRef}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={() => processOne(selected.id)}
