@@ -12,10 +12,12 @@ jobs:
   release:
     strategy:
       matrix:
-        # macos-14 = Apple Silicon (arm64), macos-13 = Intel (x64). Each runner
-        # installs ffmpeg/ffprobe natively for its arch, so its .dmg bundles the
-        # matching binary — no cross-arch fetching. Windows stays x64-only.
-        os: [macos-14, macos-13, windows-latest]
+        # macos-14 = Apple Silicon (arm64), macos-15-intel = Intel (x64). Each
+        # runner installs ffmpeg/ffprobe natively for its arch, so its .dmg bundles
+        # the matching binary — no cross-arch fetching. Windows stays x64-only.
+        # (macos-13 was the old Intel image; GitHub retired it in Dec 2025. The
+        # macos-15-intel label is the last x86_64 runner, available until Aug 2027.)
+        os: [macos-14, macos-15-intel, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
