@@ -189,6 +189,10 @@ export function Editor({
   // not touch the song's data, so browsing results never clobbers what the user
   // already entered. Applying the metadata is the deliberate double click.
   async function previewRelease(result: DiscogsSearchResult): Promise<void> {
+    if (releaseRef.current?.id === result.id) {
+      setRelease(releaseRef.current)
+      return
+    }
     setBusy(true)
     setLoadingId(result.id)
     setError('')
