@@ -40,7 +40,7 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     albumArtist: pick('album_artist', 'albumartist', 'album artist'),
     year: pick('date', 'year'),
     genre: pick('genre'),
-    grouping: pick('grouping', 'content_group'),
+    grouping: pick('grouping', 'content_group', 'tit1', 'grp1'),
     comment: pick('comment'),
     // A "3/12" track tag would survive zero-padding as "312", so drop the total.
     trackNumber: pick('track', 'tracknumber').split('/')[0].trim(),
@@ -256,6 +256,13 @@ export async function convertAudio(
       await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate), {
         maxBuffer: 1024 * 1024 * 32,
       })
+      if (ext === '.wav') {
+        // RIFF rejects an attached-picture stream, so convertArgs can't embed the
+        // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
+        // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
+        // and grouping — and which ffmpeg reads back as a video stream on re-import.
+        writeTags(tmp, meta, coverPath)
+      }
     }
     await rename(tmp, output)
   } catch (e) {

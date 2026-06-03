@@ -65,6 +65,14 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
       id3.addFrame(Id3v2AttachmentFrame.fromPicture(picture))
     }
 
+    // A WAV can hold both a RIFF "INFO" chunk and an ID3v2 "id3 " chunk, but
+    // ffmpeg's WAV demuxer reads tags from INFO and ignores the ID3 text frames
+    // (the artwork still comes through as a stream). INFO has no field for
+    // grouping, so leaving it in place would make grouping unreadable on
+    // re-import. Dropping INFO leaves a single ID3 tag that round-trips fully.
+    // It is a no-op on MP3/AIFF, which never carry a RIFF INFO tag.
+    f.removeTags(TagTypes.RiffInfo)
+
     f.save()
   } finally {
     f.dispose()
