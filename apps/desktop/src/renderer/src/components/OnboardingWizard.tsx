@@ -1,0 +1,160 @@
+import type React from 'react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { OutputFormat, Settings } from '../../../shared/types'
+import { buildOnboardingPatch } from '../lib/onboarding'
+
+const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav']
+const STEPS = ['welcome', 'token', 'format', 'grouping'] as const
+
+interface Props {
+  settings: Settings
+  onFinish: (patch: Partial<Settings>) => void
+}
+
+export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [step, setStep] = useState(0)
+  const [token, setToken] = useState(settings.discogsToken)
+  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
+  const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
+
+  const isLast = step === STEPS.length - 1
+
+  function finish(): void {
+    onFinish(buildOnboardingPatch({ discogsToken: token, outputFormat, grouping }))
+  }
+
+  return (
+    <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6">
+        <div className="min-h-[280px]">
+          {STEPS[step] === 'welcome' && (
+            <div className="flex h-[280px] flex-col items-center justify-center text-center">
+              <svg
+                viewBox="0 0 48 48"
+                fill="currentColor"
+                aria-hidden="true"
+                className="mb-5 h-12 w-12 text-[var(--color-accent)]"
+              >
+                <rect x="4" y="19" width="4" height="10" rx="2" />
+                <rect x="10" y="15" width="4" height="18" rx="2" />
+                <rect x="16" y="10" width="4" height="28" rx="2" />
+                <rect x="22" y="5" width="4" height="38" rx="2" />
+                <rect x="28" y="10" width="4" height="28" rx="2" />
+                <rect x="34" y="15" width="4" height="18" rx="2" />
+                <rect x="40" y="19" width="4" height="10" rx="2" />
+              </svg>
+              <h2 className="text-lg font-semibold text-balance">
+                {tr('onboarding.welcomeTitle')}
+              </h2>
+              <p className="mt-2 max-w-sm text-sm text-pretty text-fg-dim">
+                {tr('onboarding.welcomeBody')}
+              </p>
+            </div>
+          )}
+
+          {STEPS[step] === 'token' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.discogsToken')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.tokenBody')}</p>
+              <input
+                data-testid="onboarding-token"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder={tr('settings.tokenPlaceholder')}
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <p className="mt-1.5 text-xs text-fg-dim">
+                {tr('settings.tokenHelp')}{' '}
+                <a
+                  href="https://www.discogs.com/settings/developers"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[var(--color-accent)] hover:underline"
+                >
+                  discogs.com/settings/developers
+                </a>
+              </p>
+            </>
+          )}
+
+          {STEPS[step] === 'format' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.outputFormat')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
+              <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+                {FORMATS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    data-testid={`onboarding-format-${id}`}
+                    aria-pressed={outputFormat === id}
+                    onClick={() => setOutputFormat(id)}
+                    className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                      outputFormat === id
+                        ? 'bg-[var(--color-panel-2)] text-fg'
+                        : 'text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {tr(`settings.formats.${id}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+            </>
+          )}
+
+          {STEPS[step] === 'grouping' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.grouping')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.groupingBody')}</p>
+              <input
+                data-testid="onboarding-grouping"
+                value={grouping}
+                onChange={(e) => setGrouping(e.target.value)}
+                placeholder="Bases, Cantaditas"
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+            </>
+          )}
+        </div>
+
+        <div className="mt-6 flex items-center justify-between border-t border-[var(--color-line)] pt-4">
+          <button
+            type="button"
+            data-testid="onboarding-skip"
+            onClick={() => onFinish(buildOnboardingPatch(null))}
+            className="press rounded-lg px-3 py-2 text-sm text-fg-muted hover:text-fg"
+          >
+            {tr('onboarding.skip')}
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-fg-faint">
+              {tr('onboarding.step', { current: step + 1, total: STEPS.length })}
+            </span>
+            {step > 0 && (
+              <button
+                type="button"
+                data-testid="onboarding-back"
+                onClick={() => setStep((s) => s - 1)}
+                className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
+              >
+                {tr('onboarding.back')}
+              </button>
+            )}
+            <button
+              type="button"
+              data-testid="onboarding-next"
+              onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+            >
+              {isLast ? tr('onboarding.finish') : tr('onboarding.next')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

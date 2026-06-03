@@ -158,5 +158,17 @@
   "palette": {
     "placeholder": "Escribe una acción…",
     "empty": "Sin resultados"
+  },
+  "onboarding": {
+    "welcomeTitle": "Te damos la bienvenida a Surco",
+    "welcomeBody": "Vamos a configurar lo esencial. Tardas menos de un minuto y podrás cambiarlo todo después en Ajustes.",
+    "tokenBody": "Surco etiqueta tus pistas con datos de Discogs y funciona sin configurar nada. Si quieres, pega un token personal gratuito para tener tu propio límite, más alto.",
+    "formatBody": "Elige a qué formato exporta Surco tus pistas.",
+    "groupingBody": "Opcional. Añade tus propias etiquetas para clasificar pistas más rápido al editar.",
+    "skip": "Saltar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Empezar",
+    "step": "Paso {{current}} de {{total}}"
   }
 }

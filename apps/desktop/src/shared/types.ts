@@ -16,6 +16,7 @@ export interface Settings {
   requiredFields: string[]
   coverMaxSize: number
   coverSquare: boolean
+  hasSeenOnboarding: boolean
 }
 
 export interface TrackMetadata {

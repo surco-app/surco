@@ -158,5 +158,17 @@
   "palette": {
     "placeholder": "Type a command…",
     "empty": "No results"
+  },
+  "onboarding": {
+    "welcomeTitle": "Welcome to Surco",
+    "welcomeBody": "Let's set up the essentials. It takes less than a minute, and you can change everything later in Settings.",
+    "tokenBody": "Surco tags your tracks with data from Discogs and works without any setup. Optionally paste a free personal token for your own, higher rate limit.",
+    "formatBody": "Choose the format Surco exports your tracks to.",
+    "groupingBody": "Optional. Add your own labels to tag tracks faster while editing.",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "step": "Step {{current}} of {{total}}"
   }
 }

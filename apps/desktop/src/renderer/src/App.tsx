@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
+import { OnboardingWizard } from './components/OnboardingWizard'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
@@ -15,6 +16,7 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/
 import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
 import { keyToCommandId, moveIndex } from './lib/keymap'
+import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
@@ -61,6 +63,7 @@ export default function App(): React.JSX.Element {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -70,7 +73,10 @@ export default function App(): React.JSX.Element {
   const [batching, setBatching] = useState(false)
 
   useEffect(() => {
-    window.api.getSettings().then(setSettings)
+    window.api.getSettings().then((s) => {
+      setSettings(s)
+      if (shouldShowOnboarding(s)) setShowOnboarding(true)
+    })
   }, [])
 
   useEffect(() => {
@@ -244,6 +250,11 @@ export default function App(): React.JSX.Element {
 
   function saveSettings(patch: Partial<Settings>): void {
     window.api.saveSettings(patch).then(setSettings)
+  }
+
+  function finishOnboarding(patch: Partial<Settings>): void {
+    saveSettings(patch)
+    setShowOnboarding(false)
   }
 
   function moveSelection(delta: number): void {
@@ -530,6 +541,10 @@ export default function App(): React.JSX.Element {
           onClose={() => setShowSettings(false)}
           onSave={saveSettings}
         />
+      )}
+
+      {showOnboarding && settings && (
+        <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
       )}
 
       {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
