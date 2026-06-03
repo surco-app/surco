@@ -20,6 +20,7 @@ export default function Footer() {
             <span className="h-1.5 w-1.5 rounded-full bg-blue" style={{ animation: 'glow 2s ease-in-out infinite' }} />
             {t('available')}
           </p>
+          <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('betaNote')}</p>
         </div>
 
         <div>

@@ -17,6 +17,9 @@
     "atajos": "Shortcuts"
   },
   "available": "Available · macOS · Windows",
+  "beta": "beta",
+  "betaPill": "Beta · free for now",
+  "betaNote": "Surco is in beta — free for now while we shape it. No pricing decided yet.",
   "keys": {
     "space": "Space"
   },

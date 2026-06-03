@@ -17,6 +17,9 @@
     "atajos": "Atajos"
   },
   "available": "Disponible · macOS · Windows",
+  "beta": "beta",
+  "betaPill": "Beta · gratis por ahora",
+  "betaNote": "Surco está en beta — gratis por ahora mientras lo pulimos. Sin precio decidido aún.",
   "keys": {
     "space": "Espacio"
   },
