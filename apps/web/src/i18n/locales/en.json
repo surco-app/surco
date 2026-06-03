@@ -4,10 +4,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF or MP3, tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or MP3, tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco — Get your DJ tracks ready in seconds",
-    "ogDescription": "Less prepping, more playing: convert to lossless AIFF or MP3, tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
+    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or MP3, tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF or WAV, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -23,7 +23,7 @@
   "hero": {
     "h1a": "Less prepping,",
     "h1b": "more playing.",
-    "lede": "Surco converts your downloads to lossless AIFF or MP3, tags them from Discogs and gets them ready in Apple Music — and warns you when a track has been faked.",
+    "lede": "Surco converts your downloads to lossless AIFF, WAV or MP3, tags them from Discogs and gets them ready in Apple Music — and warns you when a track has been faked.",
     "or": "or"
   },
   "stats": {
@@ -57,7 +57,10 @@
       { "kick": "spectrum", "title": "Spectrum analysis", "body": "Look at the spectrum and catch the re-encoded MP3 posing as lossless." },
       { "kick": "duplicates", "title": "No accidental duplicates", "body": "As you tag, Surco checks your Apple Music library and flags the track if it's already there." },
       { "kick": "dj", "title": "DJ-ready tags", "body": "BPM, musical key, catalog number, remixer and grouping — the fields you actually sort by in rekordbox." },
-      { "kick": "batch", "title": "Batch in one click", "body": "Queue the whole crate and hit Convert all — every track tagged, converted and sent to Apple Music in one go." }
+      { "kick": "batch", "title": "Batch in one click", "body": "Queue the whole crate and hit Convert all — every track tagged, converted and sent to Apple Music in one go." },
+      { "kick": "custom", "title": "Your fields, your filenames", "body": "Show only the tags you use, mark what's required, and name files your way with {artist}-{title} templates." },
+      { "kick": "match", "title": "Tracks matched for you", "body": "Surco reads the filename and preselects the right tune from the Discogs tracklist — even the exact mix." },
+      { "kick": "fast", "title": "No needless re-encoding", "body": "Already in the target format? Surco copies it untouched — same bits, no quality loss, done in an instant." }
     ]
   },
   "shortcuts": {
@@ -98,7 +101,7 @@
     "withSurcoTime": "~1–2 s",
     "combo": "Convert + tag + Apple Music",
     "bullets": [
-      "lossless AIFF or MP3",
+      "lossless AIFF, WAV or MP3",
       "Discogs metadata",
       "embedded cover art",
       "grouping and tags",
@@ -129,6 +132,7 @@
     "formatsHeading": "Formats",
     "formats": [
       "lossless AIFF",
+      "lossless WAV",
       "high-quality MP3",
       "Discogs tags",
       "to Apple Music"
