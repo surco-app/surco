@@ -24,9 +24,9 @@
     "space": "Space"
   },
   "hero": {
-    "h1a": "Less prepping,",
-    "h1b": "more playing.",
-    "lede": "Drop in the tracks you've downloaded: Surco fills in the artist, title and cover art from the Discogs music database, converts them to full quality and leaves them in Apple Music ready to play — and warns you when a file that looks hi-fi is really a low-quality fake.",
+    "h1a": "Stop prepping.",
+    "h1b": "Start playing.",
+    "lede": "Drop in your tracks: Surco fills in the artist, title and cover art from the Discogs music database, converts them to full quality and organizes them in your Apple Music library — the hub rekordbox reads from. It even warns you when a file is a low-quality fake, or when you already have the track.",
     "or": "or"
   },
   "stats": {
@@ -52,11 +52,11 @@
     "kicker": "Features",
     "title": "The whole flow, in one app",
     "items": [
-      { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC or AIFF. Surco reads the tags and cover art they already carry on the fly." },
+      { "kick": "import", "title": "Drag and drop", "body": "Drop your WAV, FLAC, AIFF or MP3. Surco reads the tags and cover art they already carry on the fly." },
       { "kick": "discogs", "title": "Discogs metadata", "body": "Search the release and pull artist, album, year, genre and cover art in one click." },
       { "kick": "export", "title": "Full quality or lighter MP3", "body": "Export at full original quality (AIFF or WAV) or as a lighter high-quality MP3 when you want smaller files." },
       { "kick": "cover", "title": "Artwork that travels with it", "body": "The artwork and track info are saved inside the file itself, so they show up in Apple Music and rekordbox." },
-      { "kick": "library", "title": "Straight to Apple Music", "body": "Send the already-tagged track to your library, ready to play." },
+      { "kick": "library", "title": "Straight to Apple Music", "body": "Send the tagged track to your Apple Music library — the hub rekordbox reads from, so your whole collection stays in one organized place." },
       { "kick": "spectrum", "title": "Spot the fakes", "body": "See the quality at a glance and catch low-quality MP3s dressed up as hi-fi." },
       { "kick": "duplicates", "title": "No accidental duplicates", "body": "As you tag, Surco checks your Apple Music library and flags the track if it's already there." },
       { "kick": "dj", "title": "DJ-ready tags", "body": "BPM, musical key, catalog number, remixer and grouping — the fields you actually sort by in rekordbox." },
@@ -88,7 +88,7 @@
     "Apple Silicon"
   ],
   "speed": {
-    "kicker": "One button",
+    "kicker": "Blink and it's done",
     "title": "From minutes to seconds per track",
     "lede": "By hand it's a multi-step process —convert, tag, fill in tags, import— jumping between tools. Tedious the moment you repeat it track after track. Surco does it all at the press of a button.",
     "manual": "By hand",
@@ -118,9 +118,9 @@
     "kicker": "How it works",
     "title": "Three steps and you're playing",
     "steps": [
-      { "title": "Drop your tracks", "body": "Drag your WAV, FLAC or AIFF. Surco reads the tags and cover art on the fly." },
+      { "title": "Drop your tracks", "body": "Drag your WAV, FLAC, AIFF or MP3. Surco reads the tags and cover art on the fly." },
       { "title": "Pick the release", "body": "Search Discogs and apply artist, album, year, genre and cover art in one click." },
-      { "title": "Export in one shot", "body": "Convert to AIFF or MP3, check the spectrum and send the track to Apple Music." }
+      { "title": "Export and you're done", "body": "Convert to AIFF, WAV or MP3, check the spectrum and send the track to Apple Music." }
     ]
   },
   "mockup": {
@@ -141,7 +141,7 @@
       "to Apple Music"
     ],
     "copyright": "© 2026 Surco · getsurco.app",
-    "slogan": "from the crate to the booth"
+    "slogan": "your music, in order"
   },
   "download": {
     "viewDownloads": "View downloads",

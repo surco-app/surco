@@ -24,9 +24,9 @@
     "space": "Espacio"
   },
   "hero": {
-    "h1a": "Menos preparar,",
-    "h1b": "más pinchar.",
-    "lede": "Suelta las pistas que te has descargado: Surco rellena artista, título y carátula desde la base de datos Discogs, las convierte a máxima calidad y las deja listas en Apple Music para pinchar — y te avisa cuando un archivo que parece de alta calidad es en realidad una copia mala.",
+    "h1a": "Deja de preparar.",
+    "h1b": "Ponte a pinchar.",
+    "lede": "Suelta tus pistas: Surco rellena artista, título y carátula desde la base de datos Discogs, las convierte a máxima calidad y las organiza en tu biblioteca de Apple Music — el centro desde el que lee rekordbox. Hasta te avisa cuando un archivo es una copia mala, o cuando ya tienes esa pista.",
     "or": "o"
   },
   "stats": {
@@ -52,11 +52,11 @@
     "kicker": "Funciones",
     "title": "Todo el flujo, en una app",
     "items": [
-      { "kick": "importar", "title": "Arrastra y suelta", "body": "Suelta tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula que ya traen." },
+      { "kick": "importar", "title": "Arrastra y suelta", "body": "Suelta tus WAV, FLAC, AIFF o MP3. Surco lee al vuelo las etiquetas y la carátula que ya traen." },
       { "kick": "discogs", "title": "Metadatos de Discogs", "body": "Busca el disco y trae artista, álbum, año, género y carátula con un clic." },
       { "kick": "exportar", "title": "Máxima calidad o MP3 ligero", "body": "Exporta con la calidad original intacta (AIFF o WAV) o en MP3 de alta calidad cuando quieras archivos más ligeros." },
       { "kick": "carátula", "title": "La carátula viaja con la pista", "body": "La carátula y los datos de la pista se guardan dentro del propio archivo, así que aparecen en Apple Music y rekordbox." },
-      { "kick": "biblioteca", "title": "Directo a Apple Music", "body": "Manda la pista ya etiquetada a tu biblioteca, lista para pinchar." },
+      { "kick": "biblioteca", "title": "Directo a Apple Music", "body": "Manda la pista etiquetada a tu biblioteca de Apple Music — el centro desde el que lee rekordbox, así toda tu colección queda organizada en un solo sitio." },
       { "kick": "espectro", "title": "Caza los fakes", "body": "Comprueba la calidad de un vistazo y caza los MP3 de baja calidad disfrazados de alta." },
       { "kick": "duplicados", "title": "Sin duplicados por error", "body": "Mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
       { "kick": "dj", "title": "Tags para DJ", "body": "BPM, tonalidad, número de catálogo, remixer y agrupación — los campos por los que de verdad ordenas en rekordbox." },
@@ -88,7 +88,7 @@
     "Apple Silicon"
   ],
   "speed": {
-    "kicker": "Un botón",
+    "kicker": "Visto y no visto",
     "title": "De minutos a segundos por pista",
     "lede": "A mano es un proceso de varios pasos —convertir, etiquetar, completar tags, subir— saltando entre herramientas. Tedioso en cuanto lo repites pista tras pista. Surco lo hace todo al pulsar un botón.",
     "manual": "A mano",
@@ -118,9 +118,9 @@
     "kicker": "Cómo funciona",
     "title": "Tres pasos y a pinchar",
     "steps": [
-      { "title": "Suelta tus pistas", "body": "Arrastra tus WAV, FLAC o AIFF. Surco lee al vuelo las etiquetas y la carátula." },
+      { "title": "Suelta tus pistas", "body": "Arrastra tus WAV, FLAC, AIFF o MP3. Surco lee al vuelo las etiquetas y la carátula." },
       { "title": "Elige el disco", "body": "Busca en Discogs y aplica artista, álbum, año, género y carátula con un clic." },
-      { "title": "Exporta de un golpe", "body": "Convierte a AIFF o MP3, revisa el espectro y manda la pista a Apple Music." }
+      { "title": "Exporta y listo", "body": "Convierte a AIFF, WAV o MP3, revisa el espectro y manda la pista a Apple Music." }
     ]
   },
   "mockup": {
@@ -141,7 +141,7 @@
       "a Apple Music"
     ],
     "copyright": "© 2026 Surco · getsurco.app",
-    "slogan": "del crate a la cabina"
+    "slogan": "tu música, en orden"
   },
   "download": {
     "viewDownloads": "Ver descargas",

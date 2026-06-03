@@ -73,7 +73,8 @@ export default function App() {
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">{t('hero.lede')}</p>
             <div className="mt-5 font-mono text-sm text-muted">
               <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
-              <span className="text-fg">AIFF</span> <span className="text-blue">→</span>{' '}
+              <span className="text-fg">AIFF</span> · <span className="text-fg">MP3</span>{' '}
+              <span className="text-blue">→</span>{' '}
               <span className="text-cyan">AIFF</span>, <span className="text-cyan">WAV lossless</span>{' '}
               <span className="text-faint">{t('hero.or')}</span> <span className="text-cyan">MP3</span>
             </div>
