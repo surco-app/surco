@@ -5,7 +5,7 @@ import type { OutputFormat, Settings } from '../../../shared/types'
 import { buildOnboardingPatch } from '../lib/onboarding'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-const STEPS = ['welcome', 'token', 'format', 'grouping', 'spectrum'] as const
+const STEPS = ['welcome', 'token', 'format', 'grouping', 'required', 'spectrum'] as const
 
 interface Props {
   settings: Settings
@@ -19,11 +19,26 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
 
   const isLast = step === STEPS.length - 1
 
   function finish(): void {
-    onFinish(buildOnboardingPatch({ discogsToken: token, outputFormat, grouping, showSpectrum }))
+    onFinish(
+      buildOnboardingPatch({
+        discogsToken: token,
+        outputFormat,
+        grouping,
+        showSpectrum,
+        requiredFields,
+      }),
+    )
+  }
+
+  function toggleRequired(key: string): void {
+    setRequiredFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    )
   }
 
   return (
@@ -118,6 +133,34 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+            </>
+          )}
+
+          {STEPS[step] === 'required' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.required')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.requiredBody')}</p>
+              <div className="flex flex-wrap gap-2">
+                {settings.visibleFields.map((key) => {
+                  const on = requiredFields.includes(key)
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      data-testid={`onboarding-required-${key}`}
+                      aria-pressed={on}
+                      onClick={() => toggleRequired(key)}
+                      className={`press rounded-full border px-3 py-1 text-sm transition-colors ${
+                        on
+                          ? 'border-transparent bg-[var(--color-accent)] text-white'
+                          : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
+                      }`}
+                    >
+                      {tr(`fields.${key}`)}
+                    </button>
+                  )
+                })}
+              </div>
             </>
           )}
 

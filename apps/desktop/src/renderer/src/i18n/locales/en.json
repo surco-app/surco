@@ -194,6 +194,7 @@
     "tokenBody": "Surco tags your tracks with data from Discogs and works without any setup. Optionally paste a free personal token for your own, higher rate limit.",
     "formatBody": "Choose the format Surco exports your tracks to.",
     "groupingBody": "Optional. Add your own labels to tag tracks faster while editing.",
+    "requiredBody": "Choose which fields must be filled before a track can be converted. Title and artist are the usual minimum; you can change this later in Settings.",
     "spectrumBody": "Surco can show a spectrum of each track to spot lossy files re-encoded as lossless. If you'd rather not see it, turn it off — the analysis is then skipped entirely. You can change this later in Settings.",
     "skip": "Skip",
     "back": "Back",

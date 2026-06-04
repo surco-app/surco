@@ -19,12 +19,14 @@ describe('buildOnboardingPatch', () => {
       outputFormat: 'wav',
       grouping: 'Bases, Cantaditas',
       showSpectrum: false,
+      requiredFields: ['title', 'artist', 'genre'],
     })
     expect(patch).toEqual({
       discogsToken: 'abc123',
       outputFormat: 'wav',
       groupingPresets: ['Bases', 'Cantaditas'],
       showSpectrum: false,
+      requiredFields: ['title', 'artist', 'genre'],
       hasSeenOnboarding: true,
     })
   })
@@ -38,6 +40,7 @@ describe('buildOnboardingPatch', () => {
       outputFormat: 'aiff',
       grouping: 'Bases, , Cantaditas,',
       showSpectrum: true,
+      requiredFields: ['title', 'artist'],
     })
     expect(patch.discogsToken).toBe('tok')
     expect(patch.groupingPresets).toEqual(['Bases', 'Cantaditas'])
