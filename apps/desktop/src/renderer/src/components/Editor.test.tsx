@@ -271,6 +271,17 @@ describe('Editor track preselection', () => {
       'review',
     )
   })
+
+  // A weak match — one incidental shared word — is "too weak to trust", so it must
+  // neither preselect a row nor show a tick. Otherwise loading an unrelated release
+  // still badges a random mix and invites the user to apply the wrong one.
+  it('does not preselect or badge a low-confidence match', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track elsewhere entirely' } })
+    const rows = await loadTracklist()
+    expect(rows.some((r) => r.getAttribute('aria-current') === 'true')).toBe(false)
+    expect(screen.queryByTestId('track-confidence')).toBeNull()
+  })
 })
 
 describe('Editor in-place hint', () => {

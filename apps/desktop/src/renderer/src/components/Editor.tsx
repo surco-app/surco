@@ -258,8 +258,10 @@ export function Editor({
         artist: item.meta.artist,
       })
     : undefined
-  const matchedTrack = match?.track
   const matchTier = match ? confidenceTier(match.confidence) : undefined
+  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
+  // unrelated release still badges whichever mix shares an incidental word.
+  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
