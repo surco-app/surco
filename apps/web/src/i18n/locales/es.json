@@ -14,7 +14,9 @@
     "como": "Cómo funciona",
     "analisis": "Análisis",
     "funciones": "Funciones",
-    "atajos": "Atajos"
+    "atajos": "Atajos",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",

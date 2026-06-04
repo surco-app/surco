@@ -14,7 +14,9 @@
     "como": "How it works",
     "analisis": "Analysis",
     "funciones": "Features",
-    "atajos": "Shortcuts"
+    "atajos": "Shortcuts",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "available": "Available · macOS · Windows",
   "beta": "beta",
