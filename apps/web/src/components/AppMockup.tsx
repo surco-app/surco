@@ -29,7 +29,7 @@ export default function AppMockup() {
         <span className="ml-2 font-mono text-xs text-muted">Surco</span>
       </div>
 
-      <div className="grid grid-cols-[1.05fr_1.35fr] gap-px bg-line/60">
+      <div className="grid grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)] gap-px bg-line/60">
         <div className="bg-bg/60 p-3">
           <div className="mb-2 font-mono text-[10px] tracking-wider text-muted uppercase">{t('mockup.tracks')}</div>
           <div className="space-y-1.5">
@@ -44,7 +44,7 @@ export default function AppMockup() {
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[10px] text-muted">{t.n}</span>
-                  <span className="truncate text-xs font-medium text-fg">{t.title}</span>
+                  <span className="min-w-0 truncate text-xs font-medium text-fg">{t.title}</span>
                   {t.state === 'done' && <span className="ml-auto text-green">✓</span>}
                 </div>
                 <div className="truncate pl-6 text-[10px] text-muted">{t.artist}</div>
@@ -73,7 +73,7 @@ export default function AppMockup() {
             {fields.map(([k, v], i) => (
               <div key={k} className="flex items-center gap-2 rounded-md bg-surface/40 px-2 py-1">
                 <span className="w-12 shrink-0 font-mono text-[9px] text-muted">{k}</span>
-                <span className="truncate text-[11px] text-fg">{v}</span>
+                <span className="min-w-0 truncate text-[11px] text-fg">{v}</span>
                 {i === 1 && (
                   <span className="ml-auto h-3 w-px bg-cyan" style={{ animation: 'blink 1.1s step-end infinite' }} />
                 )}
