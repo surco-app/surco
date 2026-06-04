@@ -26,6 +26,10 @@ async function collectAudio(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   const out: string[] = []
   for (const entry of entries) {
+    // macOS leaves a hidden "._name" AppleDouble companion beside each real file on
+    // exFAT/FAT/network volumes. They share the audio extension, so without this they
+    // load as duplicate tracks holding resource-fork bytes as junk metadata.
+    if (entry.name.startsWith('._')) continue
     const full = join(dir, entry.name)
     if (entry.isDirectory()) {
       out.push(...(await collectAudio(full)))

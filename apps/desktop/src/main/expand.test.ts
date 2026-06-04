@@ -35,6 +35,17 @@ describe('expandPaths', () => {
     expect(await expandPaths([dir])).toEqual([join(dir, 'song.mp3')])
   })
 
+  it('skips macOS AppleDouble companion files so tracks are not doubled', async () => {
+    // Copying to USB/exFAT/network drives makes macOS drop a hidden "._track.flac"
+    // beside each "track.flac". Finder hides them, but readdir sees them — and their
+    // .flac extension would otherwise load them as duplicate tracks carrying the
+    // resource-fork bytes as garbage metadata (e.g. artist "._Alberto Añón").
+    await writeFile(join(dir, 'track.flac'), '')
+    await writeFile(join(dir, '._track.flac'), '')
+
+    expect(await expandPaths([dir])).toEqual([join(dir, 'track.flac')])
+  })
+
   it('passes plain files through untouched so dropping files still works', async () => {
     // Folder support must not regress the existing multi-file drop: a dropped file
     // is returned as-is and left for the renderer to filter.
