@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTime } from './duration'
+import { formatTime, parseDuration } from './duration'
 
 describe('formatTime', () => {
   it('pads the seconds to two digits so 1:05 never reads as 1:5', () => {
@@ -27,5 +27,27 @@ describe('formatTime', () => {
     expect(formatTime(Number.NaN)).toBe('0:00')
     expect(formatTime(Number.POSITIVE_INFINITY)).toBe('0:00')
     expect(formatTime(-5)).toBe('0:00')
+  })
+})
+
+describe('parseDuration', () => {
+  // Discogs writes track lengths as "m:ss", the inverse of formatTime, so we can
+  // compare a release's track length against the file's probed duration.
+  it('parses m:ss into seconds', () => {
+    expect(parseDuration('5:47')).toBe(347)
+    expect(parseDuration('0:42')).toBe(42)
+  })
+
+  it('parses h:mm:ss into seconds for long mixes', () => {
+    expect(parseDuration('1:01:01')).toBe(3661)
+  })
+
+  it('returns undefined when the duration is missing or unparseable', () => {
+    // Many tracklist rows (headings, untimed tracks) carry no duration, and the
+    // field is optional — an absent length must not read as 0 seconds, which would
+    // score as wildly mismatched against every real file.
+    expect(parseDuration(undefined)).toBeUndefined()
+    expect(parseDuration('')).toBeUndefined()
+    expect(parseDuration('?')).toBeUndefined()
   })
 })
