@@ -70,6 +70,11 @@ export function Editor({
   const [formOpen, setFormOpen] = useState(true)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
   const [outputOpen, setOutputOpen] = useState(true)
+  // The chosen export format, seeded from the Settings default. The format menu
+  // only updates this; conversion waits for a deliberate click on the main button.
+  // The Editor remounts per track (key={track.id}), so each track starts from the
+  // default rather than inheriting the last track's pick.
+  const [format, setFormat] = useState(outputFormat)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
@@ -250,7 +255,7 @@ export function Editor({
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise.
-  const willEditInPlace = formatMatchesInput(outputFormat, item.inputPath)
+  const willEditInPlace = formatMatchesInput(format, item.inputPath)
 
   return (
     <div className="flex h-full min-h-0">
@@ -445,7 +450,7 @@ export function Editor({
                           e.preventDefault()
                           window.api.startCoverDrag(coverDragPath.current)
                         }}
-                        className={`h-44 w-44 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
+                        className={`h-40 w-40 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
                           coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
                         }`}
                       />
@@ -475,7 +480,7 @@ export function Editor({
                     </>
                   ) : (
                     <div
-                      className={`flex h-44 w-44 items-center justify-center rounded-xl border border-dashed text-xs ${
+                      className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed text-xs ${
                         coverDragging
                           ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
                           : 'border-[var(--color-line)] text-fg-faint'
@@ -609,7 +614,7 @@ export function Editor({
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
                 <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-                  .{outputFormat}
+                  .{format}
                 </span>
               </label>
             )}
@@ -640,13 +645,14 @@ export function Editor({
               status={item.status}
               stale={stale}
               done={done}
-              outputFormat={outputFormat}
+              outputFormat={format}
               exportedFormat={exportedFormat}
               withAppleMusic={
-                window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
+                window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
               }
               incomplete={incomplete}
               onProcess={onProcess}
+              onSelectFormat={setFormat}
             />
             {done && (
               <div className="flex gap-2">
@@ -693,10 +699,13 @@ interface ExportButtonProps {
   withAppleMusic: boolean
   incomplete: boolean
   onProcess: (format: OutputFormat) => void
+  onSelectFormat: (format: OutputFormat) => void
 }
 
-// A split button: the body exports in the user's default format (from Settings),
-// the chevron opens a menu to export in any other format on the spot. The control
+// A split button: the body exports in the currently chosen format (seeded from
+// Settings), the chevron opens a menu to switch which format that is. Picking a
+// format only relabels the button — it never converts on the spot, so a misclick
+// can't write a file; the deliberate click on the body is what exports. The control
 // stays visible after a track is done so re-exporting to another format never
 // means reloading the file or touching Settings.
 function ExportButton({
@@ -708,6 +717,7 @@ function ExportButton({
   withAppleMusic,
   incomplete,
   onProcess,
+  onSelectFormat,
 }: ExportButtonProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -738,7 +748,7 @@ function ExportButton({
 
   function pick(format: OutputFormat): void {
     setOpen(false)
-    onProcess(format)
+    onSelectFormat(format)
   }
 
   return (
@@ -783,8 +793,11 @@ function ExportButton({
               key={id}
               type="button"
               data-testid={`process-format-${id}`}
+              aria-current={id === outputFormat ? 'true' : undefined}
               onClick={() => pick(id)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)]"
+              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
+                id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
             >
               {tr(`settings.formats.${id}`)}
               {id === exportedFormat && (
@@ -907,7 +920,7 @@ function Field({
   multiSuggestions,
 }: FieldProps): React.JSX.Element {
   return (
-    <label className={`block ${wide ? 'col-span-2' : ''}`}>
+    <label className={`block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 block text-xs font-medium text-fg-dim">{label}</span>
       <input
         data-testid={`field-${name}`}
@@ -931,7 +944,7 @@ function Field({
                 type="button"
                 data-testid={`chip-${s}`}
                 onClick={() => onChange(multiSuggestions ? toggleCsv(value, s) : on ? '' : s)}
-                className={`press rounded-full border px-2.5 py-0.5 text-[11px] transition-colors ${
+                className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
                   on
                     ? 'border-transparent bg-[var(--color-accent)] text-white'
                     : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'

@@ -92,10 +92,29 @@ describe('Editor export control', () => {
     expect(onProcess).toHaveBeenCalledWith('wav')
   })
 
-  it('exports in the chosen format when picked from the dropdown', () => {
+  // Picking a format from the dropdown used to convert on the spot, so a misclick
+  // wrote a file. The dropdown now only chooses the format; conversion waits for a
+  // deliberate click on the main button.
+  it('does not convert when a format is picked from the dropdown', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  it('relabels the main button to the format chosen from the dropdown', () => {
+    renderEditor({ id: 'a' }, 'wav')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('MP3')
+  })
+
+  it('exports in the chosen format when the main button is clicked after picking it', () => {
+    const { onProcess } = renderEditor({ id: 'a' }, 'wav')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalledTimes(1)
     expect(onProcess).toHaveBeenCalledWith('mp3')
   })
 })
