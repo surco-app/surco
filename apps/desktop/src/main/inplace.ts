@@ -1,5 +1,5 @@
 import { stat, unlink } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
 import { formatMatchesInput } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
@@ -23,6 +23,31 @@ export function resolveOutputTarget(
   const inPlace = formatMatchesInput(format, inputPath)
   const dir = inPlace ? dirname(inputPath) : outputDir
   return { outputPath: join(dir, `${name}.${format}`), inPlace }
+}
+
+// Whether a conversion would clobber an unrelated file. A real conversion writing
+// over an existing target is a collision worth a prompt — unless the target is the
+// same track's own previous output (the intended re-export overwrite). In-place
+// edits rewrite the source itself, so they're never a collision.
+export function isOutputConflict(
+  outputPath: string,
+  previousOutputPath: string | undefined,
+  inPlace: boolean,
+  outputExists: boolean,
+): boolean {
+  return !inPlace && outputExists && outputPath !== previousOutputPath
+}
+
+// Finds the first free "name (n).ext" beside a taken path, so "keep both" never
+// overwrites. `exists` is injected so the choice stays a pure, testable decision.
+export function uniqueOutputPath(outputPath: string, exists: (p: string) => boolean): string {
+  if (!exists(outputPath)) return outputPath
+  const dir = dirname(outputPath)
+  const ext = extname(outputPath)
+  const base = basename(outputPath, ext)
+  let n = 2
+  while (exists(join(dir, `${base} (${n})${ext}`))) n++
+  return join(dir, `${base} (${n})${ext}`)
 }
 
 // After an in-place edit, convertAudio has already written the (possibly renamed)
