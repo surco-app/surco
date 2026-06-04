@@ -56,7 +56,7 @@ export default function App() {
       <Header />
 
       <main className="relative mx-auto max-w-6xl px-6">
-        <section className="grid items-center gap-12 pt-10 pb-24 lg:grid-cols-2 lg:pt-16">
+        <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
           <Reveal>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
               <span
@@ -70,13 +70,17 @@ export default function App() {
               <br />
               <span className="text-grad">{t('hero.h1b')}</span>
             </h1>
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">{t('hero.lede')}</p>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted sm:hidden">
+              {t('hero.ledeShort')}
+            </p>
+            <p className="mt-6 hidden max-w-md text-lg leading-relaxed text-muted sm:block">
+              {t('hero.lede')}
+            </p>
             <div className="mt-5 font-mono text-sm text-muted">
-              <span className="text-fg">WAV</span> · <span className="text-fg">FLAC</span> ·{' '}
-              <span className="text-fg">AIFF</span> · <span className="text-fg">MP3</span>{' '}
-              <span className="text-blue">→</span>{' '}
-              <span className="text-cyan">AIFF</span>, <span className="text-cyan">WAV lossless</span>{' '}
-              <span className="text-faint">{t('hero.or')}</span> <span className="text-cyan">MP3</span>
+              <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">WAV</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">FLAC</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">MP3</span>
             </div>
             <DownloadButton />
           </Reveal>

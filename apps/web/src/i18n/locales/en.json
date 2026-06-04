@@ -29,7 +29,7 @@
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
     "lede": "Drop in your tracks: Surco fills in the artist, title and cover art from the Discogs music database, converts them to full quality and organizes them in your Apple Music library — the hub rekordbox reads from. It even warns you when a file is a low-quality fake, or when you already have the track.",
-    "or": "or"
+    "ledeShort": "Drop your tracks and Surco fills the metadata from Discogs, converts them to full quality and organizes them in your Apple Music library."
   },
   "stats": {
     "faster": "faster than by hand*",

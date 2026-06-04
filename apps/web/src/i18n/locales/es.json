@@ -29,7 +29,7 @@
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
     "lede": "Suelta tus pistas: Surco rellena artista, título y carátula desde la base de datos Discogs, las convierte a máxima calidad y las organiza en tu biblioteca de Apple Music — el centro desde el que lee rekordbox. Hasta te avisa cuando un archivo es una copia mala, o cuando ya tienes esa pista.",
-    "or": "o"
+    "ledeShort": "Suelta tus pistas y Surco rellena los metadatos desde Discogs, las convierte a máxima calidad y las ordena en tu biblioteca de Apple Music."
   },
   "stats": {
     "faster": "más rápido que a mano*",
