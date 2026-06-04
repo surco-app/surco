@@ -37,6 +37,7 @@ interface Props {
   settings: Settings
   onClose: () => void
   onSave: (patch: Partial<Settings>) => void
+  onPreviewTheme: (theme: ThemePref) => void
 }
 
 type Tab = 'general' | 'naming' | 'artwork' | 'fields'
@@ -79,7 +80,12 @@ const TAB_ICONS: Record<Tab, React.JSX.Element> = {
   ),
 }
 
-export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.Element {
+export function SettingsModal({
+  settings,
+  onClose,
+  onSave,
+  onPreviewTheme,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<Tab>('general')
   const [theme, setTheme] = useState(settings.theme)
@@ -202,7 +208,10 @@ export function SettingsModal({ settings, onClose, onSave }: Props): React.JSX.E
                     type="button"
                     data-testid={`settings-theme-${id}`}
                     aria-pressed={theme === id}
-                    onClick={() => setTheme(id)}
+                    onClick={() => {
+                      setTheme(id)
+                      onPreviewTheme(id)
+                    }}
                     className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
                       theme === id
                         ? 'bg-[var(--color-panel-2)] text-fg'

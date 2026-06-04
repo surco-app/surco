@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
-import type { OutputFormat, Settings } from '../../shared/types'
+import type { OutputFormat, Settings, ThemePref } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
@@ -73,6 +73,7 @@ export default function App(): React.JSX.Element {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -100,7 +101,7 @@ export default function App(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
-    const pref = settings?.theme ?? 'system'
+    const pref = themePreview ?? settings?.theme ?? 'system'
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = (): void => {
       document.documentElement.dataset.theme = resolveTheme(pref, mq.matches)
@@ -109,7 +110,7 @@ export default function App(): React.JSX.Element {
     if (pref !== 'system') return
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
-  }, [settings?.theme])
+  }, [themePreview, settings?.theme])
 
   // The native menu triggers actions by command id, the same registry the
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
@@ -329,7 +330,17 @@ export default function App(): React.JSX.Element {
   }
 
   function saveSettings(patch: Partial<Settings>): void {
+    // Apply the theme optimistically so clearing the live preview on close
+    // doesn't flash the old theme while the persisted value round-trips.
+    if (patch.theme !== undefined) {
+      setSettings((s) => (s ? { ...s, theme: patch.theme as ThemePref } : s))
+    }
     window.api.saveSettings(patch).then(setSettings)
+  }
+
+  function closeSettings(): void {
+    setShowSettings(false)
+    setThemePreview(null)
   }
 
   function finishOnboarding(patch: Partial<Settings>): void {
@@ -489,8 +500,10 @@ export default function App(): React.JSX.Element {
       }
       if (e.key === 'Escape') {
         if (paletteOpenRef.current) setShowPalette(false)
-        else if (settingsOpenRef.current) setShowSettings(false)
-        else if (helpOpenRef.current) setShowHelp(false)
+        else if (settingsOpenRef.current) {
+          setShowSettings(false)
+          setThemePreview(null)
+        } else if (helpOpenRef.current) setShowHelp(false)
         return
       }
       if (paletteOpenRef.current || settingsOpenRef.current || helpOpenRef.current) return
@@ -700,8 +713,9 @@ export default function App(): React.JSX.Element {
       {showSettings && settings && (
         <SettingsModal
           settings={settings}
-          onClose={() => setShowSettings(false)}
+          onClose={closeSettings}
           onSave={saveSettings}
+          onPreviewTheme={setThemePreview}
         />
       )}
 

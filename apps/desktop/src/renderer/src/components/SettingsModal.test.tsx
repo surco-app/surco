@@ -34,7 +34,14 @@ const settings: Settings = {
 }
 
 function openNaming() {
-  render(<SettingsModal settings={settings} onClose={() => {}} onSave={() => {}} />)
+  render(
+    <SettingsModal
+      settings={settings}
+      onClose={() => {}}
+      onSave={() => {}}
+      onPreviewTheme={() => {}}
+    />,
+  )
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
@@ -58,9 +65,36 @@ describe('SettingsModal filename tokens', () => {
 
   it('closes when the backdrop is clicked', () => {
     const onClose = vi.fn()
-    render(<SettingsModal settings={settings} onClose={onClose} onSave={() => {}} />)
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={onClose}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
     fireEvent.click(screen.getByTestId('settings-backdrop'))
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('SettingsModal theme preview', () => {
+  // Picking a theme should apply it live so the user sees the result before
+  // committing; the parent reverts the preview if they cancel instead of saving.
+  it('previews the chosen theme without saving', () => {
+    const onPreviewTheme = vi.fn()
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={onPreviewTheme}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-theme-dark'))
+    expect(onPreviewTheme).toHaveBeenCalledWith('dark')
+    expect(onSave).not.toHaveBeenCalled()
   })
 })
 
@@ -68,7 +102,14 @@ describe('SettingsModal organization', () => {
   // The spectrum toggle controls what the editor shows, so it belongs with the
   // other editing-behavior switches under the Editing tab, not in General.
   it('shows the audio spectrum toggle under the Editing tab, not General', () => {
-    render(<SettingsModal settings={settings} onClose={() => {}} onSave={() => {}} />)
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
     expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('settings-tab-naming'))
     expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
