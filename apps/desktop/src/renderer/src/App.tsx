@@ -13,7 +13,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
-import { eligibleForBatch } from './lib/batch'
+import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
 import { exportedPatch } from './lib/export'
@@ -351,7 +351,7 @@ export default function App(): React.JSX.Element {
 
   const playProgress = duration > 0 ? currentTime / duration : 0
   const canProcessSelected =
-    !!selected && (selected.status === 'idle' || selected.status === 'error')
+    !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
   const canProcessAll = eligibleCount > 0 && !batching
 
