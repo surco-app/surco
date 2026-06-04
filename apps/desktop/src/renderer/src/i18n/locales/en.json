@@ -28,6 +28,12 @@
     "restart": "Restart to update",
     "failed": "Update failed: {{error}}"
   },
+  "player": {
+    "play": "Play",
+    "pause": "Pause",
+    "seek": "Seek",
+    "close": "Close player"
+  },
   "commands": {
     "add": "Add files",
     "processCurrent": "Process current track",

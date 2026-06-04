@@ -28,6 +28,12 @@
     "restart": "Reiniciar para actualizar",
     "failed": "Error al actualizar: {{error}}"
   },
+  "player": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "seek": "Buscar",
+    "close": "Cerrar reproductor"
+  },
   "commands": {
     "add": "Añadir archivos",
     "processCurrent": "Procesar pista actual",

@@ -1,0 +1,105 @@
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TrackItem } from '../types'
+
+interface PlayerProps {
+  track: TrackItem
+  paused: boolean
+  progress: number
+  onToggle: () => void
+  onSeek: (ratio: number) => void
+  onClose: () => void
+}
+
+// Floats over the bottom of the track column and slides up on open. The progress
+// bar spans the full width and seeks to wherever it's clicked.
+export function Player({
+  track,
+  paused,
+  progress,
+  onToggle,
+  onSeek,
+  onClose,
+}: PlayerProps): React.JSX.Element {
+  const { t } = useTranslation()
+
+  return (
+    <div
+      data-testid="player"
+      className="absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
+    >
+      <div className="flex items-center gap-2.5 px-2.5 py-2.5">
+        {track.coverUrl ? (
+          <img
+            src={track.coverUrl}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+          />
+        ) : (
+          <div className="h-9 w-9 shrink-0 rounded-md bg-[var(--color-panel)]" />
+        )}
+
+        <button
+          type="button"
+          data-testid="player-toggle"
+          onClick={onToggle}
+          aria-label={paused ? t('player.play') : t('player.pause')}
+          className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
+        >
+          {paused ? (
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4">
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          )}
+        </button>
+
+        <span className="min-w-0 flex-1">
+          <span data-testid="player-title" className="block truncate text-sm">
+            {track.meta.title || track.fileName}
+          </span>
+          <span className="block truncate text-fg-dim text-xs">{track.meta.artist}</span>
+        </span>
+
+        <button
+          type="button"
+          data-testid="player-close"
+          onClick={onClose}
+          aria-label={t('player.close')}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Pointer-only scrubber: a thin bar is a poor keyboard target, and Space
+          already toggles the player. */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only scrubber by design */}
+      <span
+        data-testid="player-seek"
+        role="slider"
+        aria-label={t('player.seek')}
+        aria-valuenow={Math.round(progress * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        tabIndex={-1}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          onSeek(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)))
+        }}
+        className="flex h-3 cursor-pointer items-end"
+      >
+        <span className="h-[3px] w-full overflow-hidden bg-[var(--color-line-strong)]">
+          <span
+            className="block h-full bg-[var(--color-accent)] transition-[width] duration-200"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </span>
+      </span>
+    </div>
+  )
+}

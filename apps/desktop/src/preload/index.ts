@@ -28,7 +28,6 @@ const api = {
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
-  readAudio: (path: string) => ipcRenderer.invoke('audio:read', path),
   onMenuCommand: (cb: (id: string) => void) => {
     const listener = (_e: unknown, id: string): void => cb(id)
     ipcRenderer.on('menu:command', listener)

@@ -129,6 +129,21 @@ textarea {
   }
 }
 
+@keyframes player-in {
+  from {
+    transform: translateY(calc(100% + 0.75rem));
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.animate-player-in {
+  animation: player-in 0.26s cubic-bezier(0.2, 0, 0, 1);
+}
+
 .animate-pop {
   animation: pop-in 0.22s cubic-bezier(0.2, 0, 0, 1);
 }

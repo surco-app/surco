@@ -1,8 +1,11 @@
-import { copyFile, mkdir, readFile } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { copyFile, mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
+import { Readable } from 'node:stream'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
+import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
 import type {
   AppleMusicAddJob,
   CoverExportJob,
@@ -13,7 +16,6 @@ import type {
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
-import { getProvider } from './providers'
 import { expandPaths } from './expand'
 import {
   analyzeCutoff,
@@ -26,7 +28,18 @@ import {
 } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { removeRenamedOriginal, resolveOutputTarget } from './inplace'
+import { getProvider } from './providers'
 import { getSettings, saveSettings } from './settings'
+
+// Must run before app ready: a privileged scheme can stream and respond to fetch,
+// which is what lets the renderer's <audio> element seek through a local file
+// served by surco:// instead of buffering the whole thing across IPC.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: MEDIA_SCHEME,
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+])
 
 function sanitizeFilename(name: string): string {
   return name
@@ -364,8 +377,6 @@ function registerIpc(): void {
 
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
 
-  ipcMain.handle('audio:read', (_e, inputPath: string) => readFile(inputPath))
-
   ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
     try {
       const { image, cutoffHz, sampleRateHz, cutoffError } = await buildSpectrum(inputPath, {
@@ -392,6 +403,35 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  // Serve the local audio file ourselves with real HTTP range support: the
+  // <audio> element seeks by re-requesting a byte range, and it only honours the
+  // jump when the server answers 206 with Content-Range. Streaming the exact
+  // slice (rather than net.fetch'ing the whole file:// URL, which ignores Range)
+  // is what makes scrubbing work.
+  protocol.handle(MEDIA_SCHEME, async (req) => {
+    const filePath = mediaPathFromUrl(req.url)
+    const { size } = await stat(filePath)
+    const type = mediaMimeType(filePath)
+    const range = parseRange(req.headers.get('range'), size)
+    if (range) {
+      const { start, end } = range
+      const body = Readable.toWeb(createReadStream(filePath, { start, end })) as ReadableStream
+      return new Response(body, {
+        status: 206,
+        headers: {
+          'Content-Type': type,
+          'Content-Length': String(end - start + 1),
+          'Content-Range': `bytes ${start}-${end}/${size}`,
+          'Accept-Ranges': 'bytes',
+        },
+      })
+    }
+    const body = Readable.toWeb(createReadStream(filePath)) as ReadableStream
+    return new Response(body, {
+      status: 200,
+      headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
+    })
+  })
   const win = createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can

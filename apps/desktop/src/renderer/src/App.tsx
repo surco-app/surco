@@ -1,11 +1,13 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { mediaUrl } from '../../shared/media'
 import type { OutputFormat, Settings } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
+import { Player } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
@@ -77,8 +79,15 @@ export default function App(): React.JSX.Element {
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const audioUrlRef = useRef<string | null>(null)
+  // The floating player follows the selection: while it's open, picking another
+  // track plays it. Space toggles its visibility; the X (or Space again) closes.
+  const [playerVisible, setPlayerVisible] = useState(false)
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const playingIdRef = useRef<string | null>(null)
+  playingIdRef.current = playingId
+  const [paused, setPaused] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [batching, setBatching] = useState(false)
 
   useEffect(() => {
@@ -115,21 +124,6 @@ export default function App(): React.JSX.Element {
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
-    [],
-  )
-
-  // Playback only ever applies to the selected track: switching selection stops
-  // it, and the object URL is freed on unmount.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger, not a read value — the effect must re-run on selection change to stop the previously selected track; its body intentionally doesn't reference selectedId.
-  useEffect(() => {
-    audioRef.current?.pause()
-    setPlayingId(null)
-  }, [selectedId])
-
-  useEffect(
-    () => () => {
-      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
-    },
     [],
   )
 
@@ -193,21 +187,40 @@ export default function App(): React.JSX.Element {
     setSelectedId(null)
   }
 
-  async function togglePlay(): Promise<void> {
+  const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
-    if (!audio || !selected) return
-    if (playingId === selected.id) {
-      if (audio.paused) audio.play().catch(() => {})
-      else audio.pause()
-      return
-    }
-    const buf = await window.api.readAudio(selected.inputPath)
-    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
-    audioUrlRef.current = URL.createObjectURL(new Blob([buf]))
-    audio.src = audioUrlRef.current
-    setPlayingId(selected.id)
+    if (!audio) return
+    // The custom surco:// scheme streams the file from the main process, so the
+    // <audio> element seeks through it without buffering the whole track in memory.
+    audio.src = mediaUrl(track.inputPath)
+    audio.currentTime = 0
+    setPlayingId(track.id)
     audio.play().catch(() => {})
+  }, [])
+
+  const closePlayer = useCallback((): void => {
+    const audio = audioRef.current
+    audio?.pause()
+    audio?.removeAttribute('src')
+    setPlayerVisible(false)
+    setPlayingId(null)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [])
+
+  // Space toggles the player's visibility; the selection effect below starts
+  // playback when it opens.
+  function togglePlay(): void {
+    if (playerVisible) closePlayer()
+    else if (selected) setPlayerVisible(true)
   }
+
+  // While the player is open, opening it or selecting another track plays that
+  // track. Guarded against re-playing the one already loaded.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger; `selected` is read fresh, and depending on it would re-fire every render.
+  useEffect(() => {
+    if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
+  }, [selectedId, playerVisible, startPlayback])
 
   async function processOne(id: string, formatOverride?: OutputFormat): Promise<void> {
     const track = tracks.find((t) => t.id === id)
@@ -319,6 +332,24 @@ export default function App(): React.JSX.Element {
   const sidebar = useResizableWidth(288, 220, 520)
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
+  // Falls back to the selection so the card still renders for the brief moment
+  // between opening and the first track loading.
+  const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
+
+  function pauseResume(): void {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audio.paused) audio.play().catch(() => {})
+    else audio.pause()
+  }
+
+  // Reads the live duration off the element rather than closing over state.
+  function seekToRatio(ratio: number): void {
+    const audio = audioRef.current
+    if (audio && Number.isFinite(audio.duration)) audio.currentTime = ratio * audio.duration
+  }
+
+  const playProgress = duration > 0 ? currentTime / duration : 0
   const canProcessSelected =
     !!selected && (selected.status === 'idle' || selected.status === 'error')
   const eligibleCount = eligibleForBatch(tracks).length
@@ -472,7 +503,15 @@ export default function App(): React.JSX.Element {
     >
       {/* Music preview playback — there is no speech to caption. */}
       {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
-      <audio ref={audioRef} hidden onEnded={() => setPlayingId(null)} />
+      <audio
+        ref={audioRef}
+        hidden
+        onPlay={() => setPaused(false)}
+        onPause={() => setPaused(true)}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={closePlayer}
+      />
       <header
         className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
@@ -538,17 +577,29 @@ export default function App(): React.JSX.Element {
       <div className="flex min-h-0 flex-1">
         <aside
           style={{ width: sidebar.width }}
-          className="shrink-0 overflow-y-auto bg-[var(--color-panel)]"
+          className="relative shrink-0 bg-[var(--color-panel)]"
         >
-          {tracks.length === 0 ? (
-            <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
-          ) : (
-            <TrackList
-              tracks={tracks}
-              selectedId={selectedId}
-              outputFormat={settings?.outputFormat ?? 'aiff'}
-              onSelect={setSelectedId}
-              onRemove={removeTrack}
+          <div className="h-full overflow-y-auto">
+            {tracks.length === 0 ? (
+              <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
+            ) : (
+              <TrackList
+                tracks={tracks}
+                selectedId={selectedId}
+                outputFormat={settings?.outputFormat ?? 'aiff'}
+                onSelect={setSelectedId}
+                onRemove={removeTrack}
+              />
+            )}
+          </div>
+          {playerVisible && playerTrack && (
+            <Player
+              track={playerTrack}
+              paused={paused}
+              progress={playProgress}
+              onToggle={pauseResume}
+              onSeek={seekToRatio}
+              onClose={closePlayer}
             />
           )}
         </aside>
