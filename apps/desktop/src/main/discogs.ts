@@ -43,8 +43,14 @@ export async function search(query: string, token: string): Promise<DiscogsSearc
   return results
 }
 
+const releaseCache = new Map<number, DiscogsRelease>()
+
 export async function getRelease(id: number, token: string): Promise<DiscogsRelease> {
-  return api<DiscogsRelease>(`/releases/${id}`, token)
+  const cached = releaseCache.get(id)
+  if (cached) return cached
+  const release = await api<DiscogsRelease>(`/releases/${id}`, token)
+  releaseCache.set(id, release)
+  return release
 }
 
 export async function downloadCover(url: string): Promise<string> {

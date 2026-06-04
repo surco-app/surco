@@ -24,7 +24,7 @@ import { sanitizeMeta } from './lib/hygiene'
 import { keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
-import { needsSpectrum } from './lib/prefetch'
+import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
 import { formatShortcut } from './lib/shortcuts'
@@ -40,6 +40,14 @@ const READ_CONCURRENCY = 6
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
+
+// Warms the main-process Discogs caches for a hovered track: the search the editor
+// runs on open, plus the top release behind it. Both are cached by the main
+// process, so opening the track (and clicking that release) then hits no network.
+async function warmDiscogs(query: string): Promise<void> {
+  const results = await window.api.searchDiscogs(query)
+  if (results[0]) await window.api.getRelease(results[0].id)
+}
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
@@ -97,8 +105,13 @@ export default function App(): React.JSX.Element {
   tracksRef.current = tracks
   const showSpectrumRef = useRef(true)
   showSpectrumRef.current = settings?.showSpectrum ?? true
+  const hasTokenRef = useRef(false)
+  hasTokenRef.current = !!settings?.discogsToken
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const spectrumInFlight = useRef<Set<string>>(new Set())
+  // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
+  // never re-runs the search; cleared on failure so a transient error can retry.
+  const discogsPrefetched = useRef<Set<string>>(new Set())
   const [paused, setPaused] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -214,14 +227,19 @@ export default function App(): React.JSX.Element {
       if (hoverTimer.current) clearTimeout(hoverTimer.current)
       hoverTimer.current = setTimeout(() => {
         const track = tracksRef.current.find((t) => t.id === id)
-        if (!track || spectrumInFlight.current.has(id)) return
-        if (!needsSpectrum(track, showSpectrumRef.current)) return
-        spectrumInFlight.current.add(id)
-        window.api
-          .spectrogram(track.inputPath)
-          .then((spectrum) => updateTrack(id, { spectrum }))
-          .catch(() => {})
-          .finally(() => spectrumInFlight.current.delete(id))
+        if (!track) return
+        if (needsSpectrum(track, showSpectrumRef.current) && !spectrumInFlight.current.has(id)) {
+          spectrumInFlight.current.add(id)
+          window.api
+            .spectrogram(track.inputPath)
+            .then((spectrum) => updateTrack(id, { spectrum }))
+            .catch(() => {})
+            .finally(() => spectrumInFlight.current.delete(id))
+        }
+        if (needsDiscogsPrefetch(track, hasTokenRef.current) && !discogsPrefetched.current.has(id)) {
+          discogsPrefetched.current.add(id)
+          warmDiscogs(track.query).catch(() => discogsPrefetched.current.delete(id))
+        }
       }, PREFETCH_HOVER_MS)
     },
     [updateTrack],

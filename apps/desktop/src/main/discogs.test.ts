@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { search } from './discogs'
+import { getRelease, search } from './discogs'
 
 function mockFetch(results: unknown[]): ReturnType<typeof vi.fn> {
   const fn = vi.fn(async () => ({
@@ -7,6 +7,12 @@ function mockFetch(results: unknown[]): ReturnType<typeof vi.fn> {
     ok: true,
     json: async () => ({ results }),
   }))
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
+function mockRelease(body: unknown): ReturnType<typeof vi.fn> {
+  const fn = vi.fn(async () => ({ status: 200, ok: true, json: async () => body }))
   vi.stubGlobal('fetch', fn)
   return fn
 }
@@ -50,5 +56,25 @@ describe('search', () => {
     expect(url).toContain('key=')
     expect(url).toContain('secret=')
     expect(url).not.toContain('token=')
+  })
+})
+
+describe('getRelease', () => {
+  // Hover-prefetch warms the top release so opening a track shows its tracklist
+  // (and the suggested-track tick) with no network wait; caching by id means that
+  // warm-up, and the click that follows, hit Discogs only once.
+  it('serves a repeated release id from cache instead of hitting Discogs again', async () => {
+    const fetchMock = mockRelease({ id: 7001, title: 'X', artists: [], tracklist: [] })
+    const first = await getRelease(7001, 'tok')
+    const second = await getRelease(7001, 'tok')
+    expect(second).toEqual(first)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keys the cache by id so a different release still fetches', async () => {
+    const fetchMock = mockRelease({ id: 0, title: 'X', artists: [], tracklist: [] })
+    await getRelease(7002, 'tok')
+    await getRelease(7003, 'tok')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
