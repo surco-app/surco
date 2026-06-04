@@ -10,6 +10,7 @@ import CountUp from './components/CountUp'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
+import HomebrewInstall from './components/HomebrewInstall'
 
 const cardHover =
   'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/5'
@@ -216,6 +217,8 @@ export default function App() {
             </div>
           </Reveal>
         </section>
+
+        <HomebrewInstall />
 
         <section className="pb-24">
           <Reveal>
