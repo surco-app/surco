@@ -15,7 +15,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { bestTrack, buildReleaseMeta, resultFromRelease } from '../lib/release'
+import { buildReleaseMeta, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -204,20 +204,6 @@ export function Editor({
     onChange(buildReleaseMeta(item.meta, rel, track, coverFallback))
   }
 
-  async function applyRelease(result: DiscogsSearchResult): Promise<void> {
-    setBusy(true)
-    setError('')
-    try {
-      const rel = await loadRelease(result.id)
-      setRelease(rel)
-      commitMeta(rel, bestTrack(rel.tracklist, item.meta.title), result.cover_image)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tr('editor.releaseError'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   function selectTrack(track: DiscogsTrack): void {
     if (release) commitMeta(release, track, item.coverUrl)
   }
@@ -321,7 +307,6 @@ export function Editor({
                     title={tr('editor.resultHint')}
                     aria-expanded={expanded}
                     onClick={() => previewRelease(r)}
-                    onDoubleClick={() => applyRelease(r)}
                     className={`flex w-full items-center gap-3 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
                       expanded ? 'bg-[var(--color-accent-soft)]' : ''
                     }`}

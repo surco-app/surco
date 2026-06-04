@@ -54,8 +54,9 @@ function renderEditor(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
   outputFormat: OutputFormat = 'wav',
   props: { requiredFields?: string[]; visibleFields?: string[] } = {},
-): { onProcess: ReturnType<typeof vi.fn> } {
+): { onProcess: ReturnType<typeof vi.fn>; onChange: ReturnType<typeof vi.fn> } {
   const onProcess = vi.fn()
+  const onChange = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -68,13 +69,13 @@ function renderEditor(
       requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
       searchInputRef={createRef<HTMLInputElement>()}
-      onChange={vi.fn()}
+      onChange={onChange}
       onProcess={onProcess}
       onAddToAppleMusic={vi.fn()}
       onOpenSettings={vi.fn()}
     />,
   )
-  return { onProcess }
+  return { onProcess, onChange }
 }
 
 describe('Editor export control', () => {
@@ -124,6 +125,58 @@ describe('Editor required-field gate', () => {
       visibleFields: ['artist'],
     })
     expect(screen.getByTestId('field-artist')).toHaveAttribute('aria-invalid', 'true')
+  })
+})
+
+describe('Editor Discogs apply', () => {
+  const searchResult = { id: 1, title: 'Some Album', cover_image: 'cover.jpg' }
+  const release = {
+    id: 1,
+    title: 'Some Album',
+    artists: [{ name: 'The Artist' }],
+    tracklist: [
+      { position: 'A1', title: 'Track One' },
+      { position: 'A2', title: 'Track Two' },
+    ],
+  }
+
+  function withDiscogs(): { getRelease: ReturnType<typeof vi.fn> } {
+    const getRelease = vi.fn().mockResolvedValue(release)
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'win32',
+      reveal: vi.fn(),
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      getRelease,
+    }
+    return { getRelease }
+  }
+
+  async function search(): Promise<void> {
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    await screen.findByTestId('discogs-result')
+  }
+
+  // The album row used to apply its best-guess track on a hidden double-click,
+  // silently overwriting the user's edits. Browsing results must never mutate the
+  // song; loading the release (getRelease) only happens on a deliberate action.
+  it('does not apply metadata when the album row is double-clicked', async () => {
+    const { getRelease } = withDiscogs()
+    renderEditor({ id: 'a' })
+    await search()
+    fireEvent.doubleClick(screen.getByTestId('discogs-result'))
+    expect(getRelease).not.toHaveBeenCalled()
+  })
+
+  // The discoverable, explicit path: expand the album, then pick the track. That
+  // single click is what applies the metadata.
+  it('applies a track when it is picked from the expanded album', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor({ id: 'a' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange).toHaveBeenCalled()
   })
 })
 
