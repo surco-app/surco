@@ -18,14 +18,37 @@ function authParams(token: string): string {
   return token ? `token=${encodeURIComponent(token)}` : `key=${APP_KEY}&secret=${APP_SECRET}`
 }
 
+// Discogs caps requests (60/min on the shared key); a burst earns a 429. How long
+// to wait before retrying: honor the server's Retry-After (seconds → ms) when it
+// sends one, otherwise back off exponentially with a ceiling so a late attempt
+// never waits absurdly long.
+const MAX_RETRIES = 3
+const BASE_DELAY_MS = 1000
+const MAX_DELAY_MS = 8000
+
+export function retryDelayMs(attempt: number, retryAfter: string | null): number {
+  const headerSec = retryAfter ? Number(retryAfter) : Number.NaN
+  if (Number.isFinite(headerSec) && headerSec >= 0) return headerSec * 1000
+  return Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS)
+}
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
 async function api<T>(path: string, token: string): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
-  if (res.status === 401) throw new Error('Token de Discogs inválido.')
-  if (res.status === 429)
-    throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
-  if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
-  return res.json() as Promise<T>
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+    if (res.status === 401) throw new Error('Token de Discogs inválido.')
+    if (res.status === 429) {
+      // Out of retries: surface the limit so the caller can tell the user to wait.
+      if (attempt >= MAX_RETRIES)
+        throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
+      await sleep(retryDelayMs(attempt, res.headers.get('Retry-After')))
+      continue
+    }
+    if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
+    return res.json() as Promise<T>
+  }
 }
 
 const searchCache = new Map<string, DiscogsSearchResult[]>()
