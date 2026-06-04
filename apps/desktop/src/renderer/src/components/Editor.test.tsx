@@ -251,6 +251,26 @@ describe('Editor track preselection', () => {
     expect(remix).toHaveAttribute('aria-current', 'true')
     expect(other).not.toHaveAttribute('aria-current')
   })
+
+  // A confident preselection (exact title) and a shakier one (a partial match)
+  // should not look the same: the badge tells the user whether to trust the
+  // highlight or double-check it, which is what makes a batch auto-match safe.
+  it('marks an exact-title preselection as a confident match', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track two remix' } })
+    await loadTracklist()
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
+  })
+
+  it('flags a partial-title preselection for review', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track two' } })
+    await loadTracklist()
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute(
+      'data-confidence',
+      'review',
+    )
+  })
 })
 
 describe('Editor in-place hint', () => {

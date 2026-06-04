@@ -4,6 +4,7 @@ import {
   bestMatch,
   buildReleaseMeta,
   cleanName,
+  confidenceTier,
   coverOf,
   joinArtists,
   resultFromRelease,
@@ -206,6 +207,25 @@ describe('bestMatch', () => {
 
   it('reports the winner confidence between 0 and 1', () => {
     expect(bestMatch(tracks, { title: 'Windowlicker' })?.confidence).toBe(1)
+  })
+})
+
+describe('confidenceTier', () => {
+  // The thresholds an auto-match would act on: high enough to apply unattended,
+  // a middle band worth flagging for a glance, and below that, leave it manual.
+  it('calls a near-certain match high', () => {
+    expect(confidenceTier(1)).toBe('high')
+    expect(confidenceTier(0.85)).toBe('high')
+  })
+
+  it('flags a middling match for review', () => {
+    expect(confidenceTier(0.84)).toBe('review')
+    expect(confidenceTier(0.6)).toBe('review')
+  })
+
+  it('calls a weak match low', () => {
+    expect(confidenceTier(0.59)).toBe('low')
+    expect(confidenceTier(0)).toBe('low')
   })
 })
 

@@ -73,6 +73,7 @@
     "search": "Search",
     "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "chooseTrack": "Choose the track to apply",
+    "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "resultHint": "Click to see the tracks, then pick one to apply",
     "coverDrop": "Drag artwork here",

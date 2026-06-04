@@ -73,6 +73,7 @@
     "search": "Buscar",
     "tokenTip": "La búsqueda funciona sin configurar nada. Añade tu propio token de Discogs en <0>Ajustes</0> para tener un límite mayor y privado.",
     "chooseTrack": "Elige la pista para aplicar",
+    "matchSuggested": "Sugerida",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
     "resultHint": "Un clic para ver las pistas; luego elige una para aplicar",
     "coverDrop": "Arrastra una carátula",

@@ -15,7 +15,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { bestMatch, buildReleaseMeta, resultFromRelease } from '../lib/release'
+import { bestMatch, buildReleaseMeta, confidenceTier, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -259,6 +259,7 @@ export function Editor({
       })
     : undefined
   const matchedTrack = match?.track
+  const matchTier = match ? confidenceTier(match.confidence) : undefined
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
@@ -381,6 +382,28 @@ export function Editor({
                               {t.position}
                             </span>
                             <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                            {t === matchedTrack && matchTier && (
+                              <svg
+                                data-testid="track-confidence"
+                                data-confidence={matchTier}
+                                aria-label={tr('editor.matchSuggested')}
+                                role="img"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`size-4 shrink-0 ${
+                                  matchTier === 'high'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-amber-600 dark:text-amber-400'
+                                }`}
+                              >
+                                <title>{tr('editor.matchSuggested')}</title>
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                             {t.duration && (
                               <span className="shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.duration}

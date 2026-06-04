@@ -146,6 +146,19 @@ export function bestMatch(
   return best
 }
 
+// Above HIGH the signals agree closely enough to apply the match unattended; the
+// band down to REVIEW is plausible but worth a human glance; below that it is too
+// weak to trust. The UI labels the preselected track by tier, and a batch
+// auto-match (planned) will apply 'high' outright and queue 'review' for a look.
+const HIGH_CONFIDENCE = 0.85
+const REVIEW_CONFIDENCE = 0.6
+
+export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
+  if (confidence >= HIGH_CONFIDENCE) return 'high'
+  if (confidence >= REVIEW_CONFIDENCE) return 'review'
+  return 'low'
+}
+
 export interface ReleaseMetaPatch {
   coverUrl: string | undefined
   coverPath: undefined
