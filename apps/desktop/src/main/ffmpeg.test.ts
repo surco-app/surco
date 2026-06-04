@@ -317,6 +317,21 @@ describe('tagsFromProbe', () => {
     expect(m.title).toBe('From Stream')
   })
 
+  it('ignores tags on the attached-picture stream', () => {
+    // FLAC exposes the embedded art's "Cover (front)" description as a comment tag on
+    // the picture (video) stream; reading it would stamp every track with a bogus
+    // comment whenever it carries cover art.
+    const m = tagsFromProbe({
+      format: { tags: { title: 'Snap Ya Fingaz' } },
+      streams: [
+        { codec_type: 'audio' },
+        { codec_type: 'video', tags: { comment: 'Cover (front)' } },
+      ],
+    })
+    expect(m.title).toBe('Snap Ya Fingaz')
+    expect(m.comment).toBe('')
+  })
+
   it('returns empty strings for every absent tag', () => {
     expect(tagsFromProbe({})).toEqual({
       title: '',

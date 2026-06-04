@@ -17,7 +17,7 @@ const run = promisify(execFile)
 
 interface ProbeTags {
   format?: { tags?: Record<string, unknown> }
-  streams?: { tags?: Record<string, unknown> }[]
+  streams?: { codec_type?: string; tags?: Record<string, unknown> }[]
 }
 
 // Maps an ffprobe tag dump onto our metadata fields so a freshly loaded track
@@ -25,9 +25,12 @@ interface ProbeTags {
 // stream.tags for some containers); keys vary in case across muxers, so we match
 // case-insensitively and accept the common aliases each writer uses.
 export function tagsFromProbe(data: ProbeTags): TrackMetadata {
+  // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
+  // description as a comment tag on that video stream, which would otherwise be read
+  // as the track's comment whenever the file carries embedded art.
   const sources: Record<string, unknown>[] = [
     data.format?.tags,
-    ...(data.streams ?? []).map((s) => s.tags),
+    ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
   ].filter((t): t is Record<string, unknown> => Boolean(t))
   const pick = (...names: string[]): string => {
     for (const tags of sources) {
@@ -84,7 +87,7 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     '-v',
     'error',
     '-show_entries',
-    'format_tags:stream_tags',
+    'format_tags:stream_tags:stream=codec_type',
     '-of',
     'json',
     input,
