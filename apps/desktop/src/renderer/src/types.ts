@@ -1,4 +1,4 @@
-import type { ProcessStage, SpectrumResult, TrackMetadata } from '../../shared/types'
+import type { OutputFormat, ProcessStage, SpectrumResult, TrackMetadata } from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
@@ -17,6 +17,10 @@ export interface TrackItem {
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage
+  // The format this track is being / was last converted to, captured when the
+  // run starts so the progress label reflects the user's pick rather than the
+  // Settings default.
+  format?: OutputFormat
   outputPath?: string
   // Snapshot of the editor (via trackSignature) taken when the track last
   // finished, so later edits flip it "stale" and bring back the convert button.

@@ -86,6 +86,14 @@ describe('TrackList', () => {
     expect(stages[0]).toHaveTextContent(/AIFF/)
   })
 
+  // A track converted via the Export menu carries its own chosen format; the
+  // stage label must show that, not the Settings default, or it lies about what
+  // the user picked.
+  it('labels the stage with the track’s own format over the default', () => {
+    renderList([track({ id: 'busy', status: 'processing', stage: 'converting', format: 'mp3' })])
+    expect(screen.getByTestId('track-stage')).toHaveTextContent(/MP3/)
+  })
+
   it('shows the track length so similar takes can be told apart by time', () => {
     // Vinyl rips of one title differ mostly by length (radio edit vs extended
     // mix); surfacing the duration on the row lets the user pick by time.

@@ -68,7 +68,9 @@ const TrackRow = memo(function TrackRow({
           {t.status === 'processing' && t.stage ? (
             <span data-testid="track-stage" className="mt-1 block">
               <span className="block truncate text-xs text-[var(--color-accent)]">
-                {tr(`trackList.stage.${t.stage}`, { format: outputFormat.toUpperCase() })}
+                {tr(`trackList.stage.${t.stage}`, {
+                  format: (t.format ?? outputFormat).toUpperCase(),
+                })}
               </span>
               <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
                 <span

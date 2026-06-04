@@ -321,6 +321,7 @@ export default function App(): React.JSX.Element {
       status: 'processing',
       error: undefined,
       stage: undefined,
+      format: formatOverride ?? settings?.outputFormat ?? 'aiff',
       musicStatus: undefined,
       musicError: undefined,
     })
