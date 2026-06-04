@@ -4,6 +4,7 @@ import type {
   DiscogsTrack,
   TrackMetadata,
 } from '../../../shared/types'
+import { parseDuration } from './duration'
 import { splitPosition } from './position'
 
 export function cleanName(name: string): string {
@@ -40,29 +41,109 @@ function normalize(s: string): string {
     .trim()
 }
 
-// Mirrors Meta's "Match Tracks: Automatically": picks the tracklist entry whose
-// title best matches the title parsed from the file name, so the right mix
-// (e.g. "Beeper's Mix") is preselected instead of the user hunting for it.
-export function bestTrack(tracks: DiscogsTrack[], title: string): DiscogsTrack | undefined {
-  const target = normalize(title)
-  if (!target) return undefined
-  const targetWords = new Set(target.split(' '))
-  let best: DiscogsTrack | undefined
-  let bestScore = 0
-  for (const t of tracks) {
-    const nt = normalize(t.title)
-    if (!nt) continue
-    let score: number
-    if (nt === target) score = 1000
-    else if (target.includes(nt) || nt.includes(target))
-      score = 500 + Math.min(nt.length, target.length)
-    else score = nt.split(' ').filter((w) => targetWords.has(w)).length
-    if (score > bestScore) {
-      bestScore = score
-      best = t
-    }
+// What we know about the file, used to score each tracklist entry. Every field
+// past the title is optional: a release may carry no track durations, and a file
+// may have no track number or artist tag — a missing signal is simply not scored.
+export interface TrackMatchTarget {
+  title: string
+  durationSec?: number
+  trackNumber?: string
+  artist?: string
+}
+
+export interface ScoredTrack {
+  track: DiscogsTrack
+  confidence: number
+}
+
+// Each signal's share of the confidence. Title leads, but duration is nearly as
+// telling: within one release the titles can be near-identical ("Mix", "Edit")
+// while the lengths are unique, so a close duration is what pins the right track.
+const TITLE_WEIGHT = 0.45
+const DURATION_WEIGHT = 0.4
+const POSITION_WEIGHT = 0.1
+const ARTIST_WEIGHT = 0.05
+
+// A file's probed length and Discogs' rounded "m:ss" rarely agree to the second,
+// so treat anything within DURATION_EXACT_SEC as a perfect hit and fade linearly
+// to nothing by DURATION_MISS_SEC, past which it's a different track.
+const DURATION_EXACT_SEC = 2
+const DURATION_MISS_SEC = 8
+
+function titleSimilarity(target: string, candidate: string): number {
+  const a = normalize(target)
+  const b = normalize(candidate)
+  if (!a || !b) return 0
+  if (a === b) return 1
+  if (a.includes(b) || b.includes(a)) return 0.7
+  const targetWords = a.split(' ')
+  const candidateWords = new Set(b.split(' '))
+  const shared = targetWords.filter((w) => candidateWords.has(w)).length
+  return shared ? 0.6 * (shared / targetWords.length) : 0
+}
+
+function durationProximity(
+  localSec: number,
+  trackDuration: string | undefined,
+): number | undefined {
+  const trackSec = parseDuration(trackDuration)
+  if (trackSec === undefined) return undefined
+  const delta = Math.abs(localSec - trackSec)
+  if (delta <= DURATION_EXACT_SEC) return 1
+  if (delta >= DURATION_MISS_SEC) return 0
+  return (DURATION_MISS_SEC - delta) / (DURATION_MISS_SEC - DURATION_EXACT_SEC)
+}
+
+function positionMatch(trackNumber: string, position: string): number | undefined {
+  const candidate = splitPosition(position).track
+  if (!candidate) return undefined
+  return candidate === trackNumber ? 1 : 0
+}
+
+function artistMatch(target: string, artists: { name: string }[] | undefined): number | undefined {
+  if (!artists?.length) return undefined
+  const a = normalize(target)
+  const b = normalize(joinArtists(artists))
+  if (!b) return undefined
+  if (a === b) return 1
+  if (a.includes(b) || b.includes(a)) return 0.7
+  return 0
+}
+
+// Scores how strongly a tracklist entry matches the file, 0–1. Each signal
+// contributes its weight only when both sides carry it, and the weights are
+// renormalised over the signals actually present — so a release with no track
+// durations is judged on title alone rather than dragged down by the gap.
+export function scoreTrack(track: DiscogsTrack, target: TrackMatchTarget): number {
+  let weighted = 0
+  let total = 0
+  const add = (weight: number, score: number | undefined): void => {
+    if (score === undefined) return
+    weighted += weight * score
+    total += weight
   }
-  return bestScore > 0 ? best : undefined
+  if (normalize(target.title)) add(TITLE_WEIGHT, titleSimilarity(target.title, track.title))
+  if (target.durationSec !== undefined)
+    add(DURATION_WEIGHT, durationProximity(target.durationSec, track.duration))
+  if (target.trackNumber) add(POSITION_WEIGHT, positionMatch(target.trackNumber, track.position))
+  if (target.artist) add(ARTIST_WEIGHT, artistMatch(target.artist, track.artists))
+  return total === 0 ? 0 : weighted / total
+}
+
+// Mirrors Meta's "Match Tracks: Automatically": picks the tracklist entry that
+// best matches the file (title, then duration, position and artist), so the
+// right mix is preselected instead of the user hunting for it. Returns the
+// winner with its confidence, or undefined when nothing scores above zero.
+export function bestMatch(
+  tracks: DiscogsTrack[],
+  target: TrackMatchTarget,
+): ScoredTrack | undefined {
+  let best: ScoredTrack | undefined
+  for (const track of tracks) {
+    const confidence = scoreTrack(track, target)
+    if (confidence > 0 && (!best || confidence > best.confidence)) best = { track, confidence }
+  }
+  return best
 }
 
 export interface ReleaseMetaPatch {

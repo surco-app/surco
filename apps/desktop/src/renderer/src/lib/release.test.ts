@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { DiscogsRelease, DiscogsTrack, TrackMetadata } from '../../../shared/types'
 import {
-  bestTrack,
+  bestMatch,
   buildReleaseMeta,
   cleanName,
   coverOf,
   joinArtists,
   resultFromRelease,
+  scoreTrack,
 } from './release'
 
 function release(over: Partial<DiscogsRelease> = {}): DiscogsRelease {
@@ -110,7 +111,65 @@ describe('resultFromRelease', () => {
   })
 })
 
-describe('bestTrack', () => {
+describe('scoreTrack', () => {
+  it('scores an exact title match as fully confident when nothing else is known', () => {
+    expect(scoreTrack({ position: 'A1', title: 'Nannou' }, { title: 'Nannou' })).toBe(1)
+  })
+
+  it('drops confidence for a partial title match', () => {
+    const s = scoreTrack({ position: 'B1', title: 'Nannou' }, { title: 'the nannou theme' })
+    expect(s).toBeGreaterThan(0)
+    expect(s).toBeLessThan(1)
+  })
+
+  it('scores a track that shares no signal as zero', () => {
+    expect(scoreTrack({ position: 'A1', title: 'Windowlicker' }, { title: 'unrelated' })).toBe(0)
+  })
+
+  it('rewards a duration within a couple of seconds and rejects a far one', () => {
+    // The title is blank so duration alone decides — a release's track length vs
+    // the file's probed seconds is the strongest within-release discriminator.
+    const close = scoreTrack(
+      { position: 'A1', title: '', duration: '3:00' },
+      { title: '', durationSec: 178 },
+    )
+    const far = scoreTrack(
+      { position: 'A1', title: '', duration: '3:00' },
+      { title: '', durationSec: 240 },
+    )
+    expect(close).toBe(1)
+    expect(far).toBe(0)
+  })
+
+  it('lets duration separate two identically titled mixes', () => {
+    const target = { title: 'Acid', durationSec: 358 }
+    const slow = scoreTrack({ position: 'A1', title: 'Acid', duration: '3:00' }, target)
+    const fast = scoreTrack({ position: 'A2', title: 'Acid', duration: '5:58' }, target)
+    expect(fast).toBeGreaterThan(slow)
+  })
+
+  it('matches on track position when the file carries a track number', () => {
+    const target = { title: 'Acid', trackNumber: '2' }
+    const right = scoreTrack({ position: '2', title: 'Acid' }, target)
+    const wrong = scoreTrack({ position: '1', title: 'Acid' }, target)
+    expect(right).toBeGreaterThan(wrong)
+  })
+
+  it('matches a per-track artist on a compilation', () => {
+    const target = { title: 'Track', artist: 'Daft Punk' }
+    const mine = scoreTrack(
+      { position: '1', title: 'Track', artists: [{ name: 'Daft Punk' }] },
+      target,
+    )
+    const other = scoreTrack(
+      { position: '2', title: 'Track', artists: [{ name: 'Justice' }] },
+      target,
+    )
+    expect(mine).toBeGreaterThan(other)
+  })
+})
+
+describe('bestMatch', () => {
   const tracks: DiscogsTrack[] = [
     { position: 'A1', title: 'Windowlicker' },
     { position: 'A2', title: 'Windowlicker (Acid Edit)' },
@@ -118,23 +177,35 @@ describe('bestTrack', () => {
   ]
 
   it('returns the exact title match over a partial one', () => {
-    expect(bestTrack(tracks, 'Windowlicker')?.position).toBe('A1')
+    expect(bestMatch(tracks, { title: 'Windowlicker' })?.track.position).toBe('A1')
   })
 
   it('matches a longer parsed title to its containing tracklist entry', () => {
-    expect(bestTrack(tracks, 'Windowlicker Acid Edit')?.position).toBe('A2')
+    expect(bestMatch(tracks, { title: 'Windowlicker Acid Edit' })?.track.position).toBe('A2')
   })
 
-  it('falls back to word overlap when nothing contains the other', () => {
-    expect(bestTrack(tracks, 'the nannou theme')?.position).toBe('B1')
+  it('falls back to a partial title match when nothing matches exactly', () => {
+    expect(bestMatch(tracks, { title: 'the nannou theme' })?.track.position).toBe('B1')
   })
 
-  it('returns undefined when the title is empty', () => {
-    expect(bestTrack(tracks, '')).toBeUndefined()
+  it('returns undefined when the title is empty and nothing else is known', () => {
+    expect(bestMatch(tracks, { title: '' })).toBeUndefined()
   })
 
-  it('returns undefined when no track shares a word', () => {
-    expect(bestTrack(tracks, 'completely unrelated')).toBeUndefined()
+  it('returns undefined when no track shares any signal', () => {
+    expect(bestMatch(tracks, { title: 'completely unrelated' })).toBeUndefined()
+  })
+
+  it('uses duration to pick the right mix when the titles tie', () => {
+    const mixes: DiscogsTrack[] = [
+      { position: 'A1', title: 'Acid', duration: '3:00' },
+      { position: 'A2', title: 'Acid', duration: '5:58' },
+    ]
+    expect(bestMatch(mixes, { title: 'Acid', durationSec: 358 })?.track.position).toBe('A2')
+  })
+
+  it('reports the winner confidence between 0 and 1', () => {
+    expect(bestMatch(tracks, { title: 'Windowlicker' })?.confidence).toBe(1)
   })
 })
 

@@ -15,7 +15,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { bestTrack, buildReleaseMeta, resultFromRelease } from '../lib/release'
+import { bestMatch, buildReleaseMeta, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -250,7 +250,15 @@ export function Editor({
   // right mix is preselected the moment the release loads. Fuzzy, so the
   // filename's case and punctuation don't have to match Discogs exactly. The user
   // still picks deliberately — this only points; it never applies on its own.
-  const matchedTrack = release ? bestTrack(release.tracklist, item.meta.title) : undefined
+  const match = release
+    ? bestMatch(release.tracklist, {
+        title: item.meta.title,
+        durationSec: item.duration,
+        trackNumber: item.meta.trackNumber,
+        artist: item.meta.artist,
+      })
+    : undefined
+  const matchedTrack = match?.track
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
