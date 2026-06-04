@@ -81,6 +81,7 @@
     "output": "Salida:",
     "outputName": "Nombre del archivo",
     "outputNameHint": "Se genera con el artista y el título. Cambia el patrón en Ajustes → Edición.",
+    "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra — no se crea ninguna copia en la carpeta de salida.",
     "regenerate": "Regenerar",
     "regenerateHint": "Reconstruir el nombre del archivo a partir de los metadatos",
     "convert": "Convertir a {{format}} + Apple Music",

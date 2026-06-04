@@ -14,7 +14,7 @@ import { canAddToAppleMusic } from './lib/appleMusic'
 import { eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
-import { trackSignature } from './lib/dirty'
+import { exportedPatch } from './lib/export'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
@@ -237,7 +237,7 @@ export default function App(): React.JSX.Element {
     const format = settings?.filenameFormat ?? '{artist} - {title}'
     const outputName = track.outputName?.trim() || renderOutputName(format, meta) || track.fileName
     try {
-      const { outputPath, inPlace } = await window.api.processTrack({
+      const result = await window.api.processTrack({
         id: track.id,
         inputPath: track.inputPath,
         outputName,
@@ -246,16 +246,7 @@ export default function App(): React.JSX.Element {
         coverPath: track.coverPath,
         format: formatOverride,
       })
-      updateTrack(id, {
-        status: 'done',
-        outputPath,
-        // An in-place export rewrote (and possibly renamed) the source file itself,
-        // so the path we loaded from is gone — repoint the track at the new file so a
-        // later edit, re-export or playback reads it instead of the deleted original.
-        ...(inPlace && { inputPath: outputPath, fileName: parseFileName(outputPath).fileName }),
-        stage: undefined,
-        processedSignature: trackSignature(track),
-      })
+      updateTrack(id, exportedPatch(track, result))
     } catch (e) {
       updateTrack(id, {
         status: 'error',

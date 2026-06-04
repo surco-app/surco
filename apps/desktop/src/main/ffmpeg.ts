@@ -9,6 +9,10 @@ import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
 import { preservesCuesInPlace, writeTags } from './tags'
 import { tmpName } from './tmp'
 
+// Re-exported so the existing main-process imports (index.ts, tests) keep their
+// path; the canonical definition lives in shared/ so the renderer can use it too.
+export { formatMatchesInput } from '../shared/format'
+
 const run = promisify(execFile)
 
 interface ProbeTags {
@@ -195,17 +199,6 @@ export function convertArgs(
   args.push(...metadataArgs(meta))
   args.push(output)
   return args
-}
-
-// True when the chosen export format is the one the source is already in — the
-// exact condition under which planConversion stream-copies (codec 'copy'). The
-// caller uses it to edit the original file in place (rewrite tags, rename if the
-// name changed) instead of spawning a converted copy in the output folder.
-export function formatMatchesInput(format: OutputFormat, input: string): boolean {
-  if (format === 'mp3') return MP3_INPUT.test(input)
-  if (format === 'wav') return WAV_INPUT.test(input)
-  if (format === 'flac') return FLAC_INPUT.test(input)
-  return AIFF_INPUT.test(input)
 }
 
 export interface ConversionPlan {

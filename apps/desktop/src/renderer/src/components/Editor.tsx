@@ -7,6 +7,7 @@ import type {
   DiscogsTrack,
   OutputFormat,
 } from '../../../shared/types'
+import { formatMatchesInput } from '../../../shared/format'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
@@ -252,6 +253,10 @@ export function Editor({
   const showRequiredErrors = item.status === 'error'
   const genreChips = genrePresets(release)
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
+  // Exporting to the source's own format edits the original file in place (and
+  // renames it on disk) rather than writing a copy to the output folder — warn the
+  // user before they hit the button so the rename isn't a surprise.
+  const willEditInPlace = formatMatchesInput(outputFormat, item.inputPath)
 
   return (
     <div className="flex h-full min-h-0">
@@ -613,7 +618,9 @@ export function Editor({
               </label>
             )}
             {outputOpen && (
-              <p className="mt-2 text-xs text-fg-dim">{tr('editor.outputNameHint')}</p>
+              <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
+                {willEditInPlace ? tr('editor.outputNameHintInPlace') : tr('editor.outputNameHint')}
+              </p>
             )}
           </div>
         </div>

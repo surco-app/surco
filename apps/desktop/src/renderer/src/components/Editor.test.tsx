@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import type { OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
@@ -93,5 +93,23 @@ describe('Editor export control', () => {
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onProcess).toHaveBeenCalledWith('mp3')
+  })
+})
+
+describe('Editor in-place hint', () => {
+  // A WAV source exported as WAV is edited (and renamed) in place; the user should
+  // know the original file changes rather than a copy appearing in the output folder.
+  it('warns about the in-place edit when the format matches the source', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'wav')
+    expect(screen.getByTestId('output-name-hint')).toHaveTextContent(
+      i18n.t('editor.outputNameHintInPlace'),
+    )
+  })
+
+  it('shows the generic hint when the export converts to a different format', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
+    expect(screen.getByTestId('output-name-hint')).toHaveTextContent(
+      i18n.t('editor.outputNameHint'),
+    )
   })
 })

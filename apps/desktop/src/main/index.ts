@@ -1,5 +1,5 @@
-import { copyFile, mkdir, readFile, stat, unlink } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { copyFile, mkdir, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
@@ -19,12 +19,12 @@ import {
   buildSpectrum,
   convertAudio,
   extractCover,
-  formatMatchesInput,
   generateSpectrogram,
   probeAudio,
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
+import { removeRenamedOriginal, resolveOutputTarget } from './inplace'
 import { getSettings, saveSettings } from './settings'
 
 function sanitizeFilename(name: string): string {
@@ -32,20 +32,6 @@ function sanitizeFilename(name: string): string {
     .replace(/[/\\:*?"<>|]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-// After an in-place edit, convertAudio has already written the (possibly renamed)
-// file; drop the original only when the rename left it behind as a genuinely
-// different file. We compare device+inode rather than the path string because a
-// rename that only changes case (Song.WAV → Song.wav) is the *same* file on the
-// case-insensitive macOS/Windows volumes Surco runs on — unlinking the old path
-// there would delete the file we just wrote.
-async function removeRenamedOriginal(input: string, output: string): Promise<void> {
-  if (input === output) return
-  const [inStat, outStat] = await Promise.all([stat(input).catch(() => null), stat(output)])
-  if (inStat && (inStat.ino !== outStat.ino || inStat.dev !== outStat.dev)) {
-    await unlink(input)
-  }
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
@@ -291,14 +277,13 @@ function registerIpc(): void {
 
       stage('converting')
       const format = job.format ?? settings.outputFormat
-      // Same format as the source: edit the original file (rewrite tags, rename if
-      // the name changed) right where it lives instead of breeding a copy in the
-      // output folder. Only a real conversion (e.g. WAV→MP3) writes a fresh file
-      // out, leaving the original untouched.
-      const inPlace = formatMatchesInput(format, job.inputPath)
-      const outputDir = inPlace ? dirname(job.inputPath) : settings.outputDir
-      if (!inPlace) await mkdir(outputDir, { recursive: true })
-      const outputPath = join(outputDir, `${sanitizeFilename(job.outputName)}.${format}`)
+      const { outputPath, inPlace } = resolveOutputTarget(
+        job.inputPath,
+        sanitizeFilename(job.outputName),
+        format,
+        settings.outputDir,
+      )
+      if (!inPlace) await mkdir(settings.outputDir, { recursive: true })
       await convertAudio(job.inputPath, outputPath, format, job.meta, coverPath)
       if (inPlace) await removeRenamedOriginal(job.inputPath, outputPath)
 
