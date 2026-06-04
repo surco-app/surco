@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
+import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -14,16 +14,7 @@ const defaults: Settings = {
   groupingPresets: ['Bases', 'Cantaditas'],
   trimWhitespace: true,
   zeroPadTrack: true,
-  visibleFields: [
-    'title',
-    'artist',
-    'albumArtist',
-    'album',
-    'year',
-    'genre',
-    'grouping',
-    'comment',
-  ],
+  visibleFields: DEFAULT_FIELDS,
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   coverMaxSize: 1200,
   coverSquare: false,

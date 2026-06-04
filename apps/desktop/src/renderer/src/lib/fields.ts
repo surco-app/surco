@@ -23,24 +23,9 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'catalogNumber' },
 ]
 
-// The core tags shown by default. The advanced ones above (disc, bpm, key,
-// remixer, label, catalog) ship hidden so the editor stays uncluttered; users
-// turn them on per taste in Settings → Fields.
-export const DEFAULT_FIELDS: string[] = [
-  'title',
-  'artist',
-  'albumArtist',
-  'album',
-  'year',
-  'genre',
-  'grouping',
-  'trackNumber',
-  'comment',
-]
-
-// Re-exported from shared so renderer code can keep importing it from here while
-// main/settings reads the same source — see shared/defaults.
-export { DEFAULT_REQUIRED_FIELDS } from '../../../shared/defaults'
+// Re-exported from shared so renderer code can keep importing them from here
+// while main/settings reads the same source — see shared/defaults.
+export { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../../../shared/defaults'
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())
