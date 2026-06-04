@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
-import type { OutputFormat } from '../../../shared/types'
+import type { OutputFormat, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -20,7 +20,9 @@ beforeEach(() => {
   }
 })
 
-function item(over: Partial<TrackItem> & { id: string }): TrackItem {
+function item(
+  over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
+): TrackItem {
   return {
     inputPath: `/music/${over.id}.wav`,
     fileName: `${over.id}.wav`,
@@ -49,8 +51,9 @@ function item(over: Partial<TrackItem> & { id: string }): TrackItem {
 }
 
 function renderEditor(
-  over: Partial<TrackItem> & { id: string },
+  over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
   outputFormat: OutputFormat = 'wav',
+  props: { requiredFields?: string[]; visibleFields?: string[] } = {},
 ): { onProcess: ReturnType<typeof vi.fn> } {
   const onProcess = vi.fn()
   render(
@@ -61,8 +64,8 @@ function renderEditor(
       addToAppleMusic={false}
       filenameFormat="{artist} - {title}"
       groupingPresets={[]}
-      visibleFields={[]}
-      requiredFields={[]}
+      visibleFields={props.visibleFields ?? []}
+      requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={vi.fn()}
@@ -93,6 +96,34 @@ describe('Editor export control', () => {
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onProcess).toHaveBeenCalledWith('mp3')
+  })
+})
+
+describe('Editor required-field gate', () => {
+  // The convert button used to fail late: it stayed enabled with empty required
+  // fields and only surfaced the error after the click. Disabling it until the
+  // fields are filled turns a dead-end error into clear, upfront guidance.
+  it('disables both convert buttons while a required field is empty', () => {
+    renderEditor({ id: 'a', meta: { artist: '' } }, 'wav', { requiredFields: ['artist'] })
+    expect(screen.getByTestId('process-btn')).toBeDisabled()
+    expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
+  })
+
+  it('enables the convert button once every required field has a value', () => {
+    renderEditor({ id: 'a', meta: { artist: 'Alex Ponce' } }, 'wav', {
+      requiredFields: ['artist'],
+    })
+    expect(screen.getByTestId('process-btn')).toBeEnabled()
+  })
+
+  // The disabled button needs a reason: flag the empty required field as invalid
+  // straight away, not only after a (now impossible) failed convert attempt.
+  it('marks an empty required field as invalid before any convert attempt', () => {
+    renderEditor({ id: 'a', status: 'idle', meta: { artist: '' } }, 'wav', {
+      requiredFields: ['artist'],
+      visibleFields: ['artist'],
+    })
+    expect(screen.getByTestId('field-artist')).toHaveAttribute('aria-invalid', 'true')
   })
 })
 

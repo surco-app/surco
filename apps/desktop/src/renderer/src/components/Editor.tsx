@@ -11,7 +11,7 @@ import { formatMatchesInput } from '../../../shared/format'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
-import { FIELD_DEFS } from '../lib/fields'
+import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
@@ -250,7 +250,10 @@ export function Editor({
   const done = item.status === 'done' && !stale
   const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
   const exportedFormat = FORMATS.find((f) => f === exportedExt) ?? null
-  const showRequiredErrors = item.status === 'error'
+  // Required fields are flagged the moment they are empty, not only after a failed
+  // convert: with the button disabled below, the click that produced the error is
+  // no longer reachable, so the red field is what tells the user why.
+  const incomplete = missingRequired(item.meta, requiredFields).length > 0
   const genreChips = genrePresets(release)
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
@@ -499,11 +502,7 @@ export function Editor({
                         value={item.meta[def.key]}
                         onChange={(v) => setField(def.key, v)}
                         wide={def.wide}
-                        invalid={
-                          showRequiredErrors &&
-                          requiredFields.includes(def.key) &&
-                          !item.meta[def.key].trim()
-                        }
+                        invalid={requiredFields.includes(def.key) && !item.meta[def.key].trim()}
                         suggestions={
                           def.key === 'genre'
                             ? genreChips
@@ -650,6 +649,7 @@ export function Editor({
               withAppleMusic={
                 window.api.platform === 'darwin' && outputFormat !== 'flac' && addToAppleMusic
               }
+              incomplete={incomplete}
               onProcess={onProcess}
             />
             {done && (
@@ -695,6 +695,7 @@ interface ExportButtonProps {
   outputFormat: OutputFormat
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
+  incomplete: boolean
   onProcess: (format: OutputFormat) => void
 }
 
@@ -709,12 +710,16 @@ function ExportButton({
   outputFormat,
   exportedFormat,
   withAppleMusic,
+  incomplete,
   onProcess,
 }: ExportButtonProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const processing = status === 'processing'
+  // A track missing required tags cannot be converted, so the gate covers the
+  // main action and the format menu alike.
+  const blocked = processing || incomplete
 
   useEffect(() => {
     if (!open) return
@@ -746,7 +751,7 @@ function ExportButton({
         type="button"
         data-testid="process-btn"
         onClick={() => onProcess(outputFormat)}
-        disabled={processing}
+        disabled={blocked}
         className="press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
       >
         {label}
@@ -757,7 +762,7 @@ function ExportButton({
         aria-label={tr('editor.chooseFormat')}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        disabled={processing}
+        disabled={blocked}
         className="press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
       >
         <svg
