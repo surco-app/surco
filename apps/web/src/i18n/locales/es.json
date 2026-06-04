@@ -55,7 +55,7 @@
     "title": "Todo el flujo, en una app",
     "items": [
       { "kick": "importa", "title": "Importa y escucha", "body": "Suelta tus WAV, FLAC, AIFF o MP3 — hasta carpetas enteras. Surco lee las etiquetas y la carátula que ya traen, y preescuchas cualquier pista en el reproductor integrado antes de convertir." },
-      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco y trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic, sin configurar nada. Y completa los campos por los que ordenas en rekordbox: BPM, tonalidad, remixer y grouping." },
+      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco: Surco resalta el tema correcto del tracklist según el nombre del archivo y trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic, sin configurar nada. Y completas los campos de DJ: BPM, tonalidad, remixer y grouping." },
       { "kick": "convierte", "title": "Convierte a cualquier formato", "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar, y si ya está en el formato de destino lo copia tal cual: mismos bits, al instante. Convierte una pista o la cola entera de una pasada." },
       { "kick": "traktor", "title": "Respeta tus CUE de Traktor", "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor." },
       { "kick": "calidad", "title": "Sin fakes ni duplicados", "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
