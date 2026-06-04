@@ -13,7 +13,9 @@
   --color-red: #f7768e;
   --color-fg: #c0caf5;
   --color-muted: #9aa6cf;
-  --color-faint: #6b7396;
+  /* Lightened from #6b7396 (3.7:1, fails WCAG AA) to clear 4.5:1 on --color-bg
+     while staying the dimmest tier below --color-muted. */
+  --color-faint: #828bb8;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 }
 
