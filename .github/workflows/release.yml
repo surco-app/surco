@@ -120,3 +120,58 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: gh release upload "$GITHUB_REF_NAME" latest-mac.yml --clobber --repo vigosan/surco-releases
+
+  # Point the Homebrew tap at the freshly published version so `brew install` of a
+  # clean machine grabs a current build. Existing installs ignore this — they
+  # self-update via electron-updater (the cask is auto_updates true), so this only
+  # matters for first-time installs, hence it's a best-effort tail job.
+  update-tap:
+    needs: [release, merge-mac-feed]
+    runs-on: ubuntu-latest
+    steps:
+      # GitHub computes a sha256 for every release asset, so read those instead of
+      # re-downloading ~300 MB of dmg just to hash it.
+      - name: Read the published dmg checksums
+        id: dmg
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          digest() {
+            gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+              --json assets --jq ".assets[] | select(.name == \"$1\") | .digest" \
+              | sed 's/^sha256://'
+          }
+          arm="$(digest "Surco-$version-arm64.dmg")"
+          intel="$(digest "Surco-$version-x64.dmg")"
+          # Fail loud rather than push a cask with empty checksums that breaks install.
+          [ -n "$arm" ] && [ -n "$intel" ] || { echo "missing dmg digest"; exit 1; }
+          {
+            echo "version=$version"
+            echo "arm=$arm"
+            echo "intel=$intel"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check out the tap
+        uses: actions/checkout@v4
+        with:
+          repository: vigosan/homebrew-surco
+          # Dedicated deploy key, write-scoped to homebrew-surco only, so the push
+          # doesn't depend on RELEASES_TOKEN's scope. checkout wires the remote to
+          # SSH, so the later `git push` authenticates with this key.
+          ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
+
+      - name: Bump the cask
+        env:
+          V: ${{ steps.dmg.outputs.version }}
+          ARM: ${{ steps.dmg.outputs.arm }}
+          INTEL: ${{ steps.dmg.outputs.intel }}
+        run: |
+          cask=Casks/surco.rb
+          sed -i -E "s/  version \"[^\"]+\"/  version \"$V\"/" "$cask"
+          sed -i -E "s/(arm:   )\"[0-9a-f]{64}\"/\1\"$ARM\"/" "$cask"
+          sed -i -E "s/(intel: )\"[0-9a-f]{64}\"/\1\"$INTEL\"/" "$cask"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -aqm "Update surco cask to v$V" || { echo "cask already current"; exit 0; }
+          git push
