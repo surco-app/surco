@@ -180,6 +180,48 @@ describe('Editor Discogs apply', () => {
   })
 })
 
+describe('Editor track preselection', () => {
+  const searchResult = { id: 2, title: 'Some Album', cover_image: 'cover.jpg' }
+  const release = {
+    id: 2,
+    title: 'Some Album',
+    artists: [{ name: 'The Artist' }],
+    tracklist: [
+      { position: 'A1', title: 'Track One' },
+      { position: 'A2', title: 'Track Two (Remix)' },
+    ],
+  }
+
+  function withDiscogs(): void {
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'win32',
+      reveal: vi.fn(),
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      getRelease: vi.fn().mockResolvedValue(release),
+    }
+  }
+
+  async function loadTracklist(): Promise<HTMLElement[]> {
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    return screen.findAllByTestId('discogs-track')
+  }
+
+  // The file's title rarely matches the Discogs spelling exactly — punctuation and
+  // case differ — so an exact compare would highlight nothing. The fuzzy match
+  // preselects the right mix from the filename so the user doesn't hunt for it.
+  it('preselects the tracklist entry that best matches the file title', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track two remix' } })
+    const rows = await loadTracklist()
+    const remix = rows.find((r) => r.textContent?.includes('Track Two (Remix)'))
+    const other = rows.find((r) => r.textContent?.includes('Track One'))
+    expect(remix).toHaveAttribute('aria-current', 'true')
+    expect(other).not.toHaveAttribute('aria-current')
+  })
+})
+
 describe('Editor in-place hint', () => {
   // A WAV source exported as WAV is edited (and renamed) in place; the user should
   // know the original file changes rather than a copy appearing in the output folder.

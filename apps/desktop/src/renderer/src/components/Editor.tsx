@@ -15,7 +15,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { buildReleaseMeta, resultFromRelease } from '../lib/release'
+import { bestTrack, buildReleaseMeta, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -241,6 +241,11 @@ export function Editor({
   // no longer reachable, so the red field is what tells the user why.
   const incomplete = missingRequired(item.meta, requiredFields).length > 0
   const genreChips = genrePresets(release)
+  // Highlight the tracklist entry whose title best matches the file's, so the
+  // right mix is preselected the moment the release loads. Fuzzy, so the
+  // filename's case and punctuation don't have to match Discogs exactly. The user
+  // still picks deliberately — this only points; it never applies on its own.
+  const matchedTrack = release ? bestTrack(release.tracklist, item.meta.title) : undefined
   const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
@@ -353,9 +358,10 @@ export function Editor({
                             key={`${t.position}-${t.title}`}
                             type="button"
                             data-testid="discogs-track"
+                            aria-current={t === matchedTrack ? 'true' : undefined}
                             onClick={() => selectTrack(t)}
                             className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
-                              t.title === item.meta.title ? 'bg-[var(--color-accent-soft)]' : ''
+                              t === matchedTrack ? 'bg-[var(--color-accent-soft)]' : ''
                             }`}
                           >
                             <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
