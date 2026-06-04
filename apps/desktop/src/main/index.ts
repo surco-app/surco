@@ -28,6 +28,7 @@ import {
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
+import { keymapMenuClick } from './menuCommand'
 import {
   isOutputConflict,
   removeRenamedOriginal,
@@ -74,9 +75,10 @@ function buildAppMenu(win: BrowserWindow): void {
   // Every custom item triggers a command by id, the same registry the palette
   // and keyboard shortcuts use. Items whose accelerator is already owned by the
   // renderer keymap pass registerAccelerator:false so the shortcut shows in the
-  // menu without firing twice — and crucially without losing the keymap's
-  // "not while typing in a field" guard (⌘⌫ would otherwise delete a track
-  // mid-edit).
+  // menu without firing twice — and use keymapMenuClick so the keyboard
+  // accelerator is left to the keymap (preserving its "not while typing in a
+  // field" guard; Space would otherwise start playback mid-search and ⌘⌫ would
+  // delete a track mid-edit), while a mouse click of the item still runs it.
   const run = (id: string): void => win.webContents.send('menu:command', id)
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -89,7 +91,7 @@ function buildAppMenu(win: BrowserWindow): void {
           label: t('settings'),
           accelerator: 'CmdOrCtrl+,',
           registerAccelerator: false,
-          click: () => run('settings'),
+          click: keymapMenuClick(run, 'settings'),
         },
         { type: 'separator' },
         { role: 'services' },
@@ -108,7 +110,7 @@ function buildAppMenu(win: BrowserWindow): void {
           label: t('add'),
           accelerator: 'CmdOrCtrl+O',
           registerAccelerator: false,
-          click: () => run('add'),
+          click: keymapMenuClick(run, 'add'),
         },
         { label: t('reveal'), accelerator: 'CmdOrCtrl+R', click: () => run('reveal') },
         { label: t('addAppleMusic'), click: () => run('add-apple-music') },
@@ -117,20 +119,20 @@ function buildAppMenu(win: BrowserWindow): void {
           label: t('processCurrent'),
           accelerator: 'CmdOrCtrl+Enter',
           registerAccelerator: false,
-          click: () => run('process-current'),
+          click: keymapMenuClick(run, 'process-current'),
         },
         {
           label: t('processAll'),
           accelerator: 'CmdOrCtrl+Shift+Enter',
           registerAccelerator: false,
-          click: () => run('process-all'),
+          click: keymapMenuClick(run, 'process-all'),
         },
         { type: 'separator' },
         {
           label: t('remove'),
           accelerator: 'CmdOrCtrl+Backspace',
           registerAccelerator: false,
-          click: () => run('remove'),
+          click: keymapMenuClick(run, 'remove'),
         },
         { label: t('removeAll'), click: () => run('remove-all') },
         { type: 'separator' },
@@ -145,32 +147,32 @@ function buildAppMenu(win: BrowserWindow): void {
           label: t('palette'),
           accelerator: 'CmdOrCtrl+K',
           registerAccelerator: false,
-          click: () => run('palette'),
+          click: keymapMenuClick(run, 'palette'),
         },
         { type: 'separator' },
         {
           label: t('search'),
           accelerator: '/',
           registerAccelerator: false,
-          click: () => run('search'),
+          click: keymapMenuClick(run, 'search'),
         },
         {
           label: t('play'),
           accelerator: 'Space',
           registerAccelerator: false,
-          click: () => run('play'),
+          click: keymapMenuClick(run, 'play'),
         },
         {
           label: t('prev'),
           accelerator: 'Up',
           registerAccelerator: false,
-          click: () => run('prev'),
+          click: keymapMenuClick(run, 'prev'),
         },
         {
           label: t('next'),
           accelerator: 'Down',
           registerAccelerator: false,
-          click: () => run('next'),
+          click: keymapMenuClick(run, 'next'),
         },
         { type: 'separator' },
         { role: 'togglefullscreen' },
