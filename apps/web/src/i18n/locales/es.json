@@ -54,18 +54,12 @@
     "kicker": "Funciones",
     "title": "Todo el flujo, en una app",
     "items": [
-      { "kick": "importar", "title": "Arrastra y suelta", "body": "Suelta tus WAV, FLAC, AIFF o MP3. Surco lee al vuelo las etiquetas y la carátula que ya traen." },
-      { "kick": "discogs", "title": "Metadatos de Discogs", "body": "Busca el disco y trae artista, álbum, año, género y carátula con un clic." },
-      { "kick": "exportar", "title": "Máxima calidad o MP3 ligero", "body": "Exporta con la calidad original intacta (AIFF, WAV o FLAC comprimido sin pérdida) o en MP3 de alta calidad cuando quieras archivos más ligeros." },
-      { "kick": "carátula", "title": "La carátula viaja con la pista", "body": "La carátula y los datos de la pista se guardan dentro del propio archivo, así que aparecen en Apple Music y rekordbox." },
-      { "kick": "biblioteca", "title": "Directo a Apple Music", "body": "Manda la pista etiquetada a tu biblioteca de Apple Music — el centro desde el que lee rekordbox, así toda tu colección queda organizada en un solo sitio." },
-      { "kick": "espectro", "title": "Caza los fakes", "body": "Comprueba la calidad de un vistazo y caza los MP3 de baja calidad disfrazados de alta." },
-      { "kick": "duplicados", "title": "Sin duplicados por error", "body": "Mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
-      { "kick": "dj", "title": "Tags para DJ", "body": "BPM, tonalidad, número de catálogo, remixer y agrupación — los campos por los que de verdad ordenas en rekordbox." },
-      { "kick": "lote", "title": "Por lotes con un clic", "body": "Añade todas tus pistas y pulsa Convertir todo — cada una etiquetada, convertida y enviada a Apple Music de una vez." },
-      { "kick": "personaliza", "title": "Tus campos, tus nombres", "body": "Muestra solo los tags que usas, marca los obligatorios y nombra los archivos a tu manera con plantillas {artist}-{title}." },
-      { "kick": "match", "title": "El track, ya seleccionado", "body": "Surco lee el nombre del archivo y preselecciona el tema correcto del tracklist de Discogs — hasta el mix exacto." },
-      { "kick": "rápido", "title": "Sin recodificar de más", "body": "¿Ya está en el formato de destino? Surco lo copia tal cual — mismos bits, sin pérdida, al instante." }
+      { "kick": "importa", "title": "Importa y escucha", "body": "Suelta tus WAV, FLAC, AIFF o MP3 — hasta carpetas enteras. Surco lee las etiquetas y la carátula que ya traen, y preescuchas cualquier pista en el reproductor integrado antes de convertir." },
+      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco y trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic, sin configurar nada. Y completa los campos por los que ordenas en rekordbox: BPM, tonalidad, remixer y grouping." },
+      { "kick": "convierte", "title": "Convierte a cualquier formato", "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar, y si ya está en el formato de destino lo copia tal cual: mismos bits, al instante. Convierte una pista o la cola entera de una pasada." },
+      { "kick": "traktor", "title": "Respeta tus CUE de Traktor", "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor." },
+      { "kick": "calidad", "title": "Sin fakes ni duplicados", "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
+      { "kick": "organiza", "title": "Organiza a tu manera", "body": "La carátula y los tags se guardan dentro del archivo, así que aparecen en Apple Music y rekordbox. Manda la pista a tu biblioteca de Apple Music, y muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist}-{title}." }
     ]
   },
   "shortcuts": {
