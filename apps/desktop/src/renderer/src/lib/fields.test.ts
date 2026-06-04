@@ -75,10 +75,10 @@ describe('missingRequired', () => {
 })
 
 describe('DEFAULT_REQUIRED_FIELDS', () => {
-  it('blocks only on the tags that identify a track, so files without a Discogs match still convert', () => {
-    // album, year, genre and grouping are recommended but not gated: a white
-    // label or promo with no release on Discogs should still be convertible
-    // instead of failing the conversion on a tag the user cannot fill.
-    expect(DEFAULT_REQUIRED_FIELDS).toEqual(['title', 'artist', 'albumArtist'])
+  it('blocks only on title and artist, the bare minimum that identifies a track', () => {
+    // Everything else (album artist, album, year, genre, grouping) is recommended
+    // but not gated by default: a white label or promo with no release on Discogs
+    // should still convert. Users add their own required fields in Settings.
+    expect(DEFAULT_REQUIRED_FIELDS).toEqual(['title', 'artist'])
   })
 })

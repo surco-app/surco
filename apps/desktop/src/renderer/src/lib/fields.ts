@@ -38,7 +38,7 @@ export const DEFAULT_FIELDS: string[] = [
   'comment',
 ]
 
-export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist', 'albumArtist']
+export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())

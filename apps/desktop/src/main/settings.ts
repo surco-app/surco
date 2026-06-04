@@ -23,7 +23,7 @@ const defaults: Settings = {
     'grouping',
     'comment',
   ],
-  requiredFields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
+  requiredFields: ['title', 'artist'],
   coverMaxSize: 1200,
   coverSquare: false,
   showSpectrum: true,
