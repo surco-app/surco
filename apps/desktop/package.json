@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "tsc --noEmit && electron-vite build",
+    "build": "tsc --build && electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
