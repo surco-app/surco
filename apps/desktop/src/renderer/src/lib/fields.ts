@@ -38,7 +38,9 @@ export const DEFAULT_FIELDS: string[] = [
   'comment',
 ]
 
-export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
+// Re-exported from shared so renderer code can keep importing it from here while
+// main/settings reads the same source — see shared/defaults.
+export { DEFAULT_REQUIRED_FIELDS } from '../../../shared/defaults'
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())

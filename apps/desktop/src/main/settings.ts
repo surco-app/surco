@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
+import { DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -23,7 +24,7 @@ const defaults: Settings = {
     'grouping',
     'comment',
   ],
-  requiredFields: ['title', 'artist'],
+  requiredFields: DEFAULT_REQUIRED_FIELDS,
   coverMaxSize: 1200,
   coverSquare: false,
   showSpectrum: true,
