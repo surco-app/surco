@@ -46,6 +46,18 @@ describe('expandPaths', () => {
     expect(await expandPaths([dir])).toEqual([join(dir, 'track.flac')])
   })
 
+  it('skips a directly-dropped AppleDouble file, not only ones found inside a folder', async () => {
+    // Dropping a folder can hand the renderer its child files directly rather than the
+    // directory path, so the hidden "._" twin reaches the plain-file branch — it must
+    // be filtered there too or the folder drop still doubles every track.
+    const real = join(dir, 'track.flac')
+    const ghost = join(dir, '._track.flac')
+    await writeFile(real, '')
+    await writeFile(ghost, '')
+
+    expect(await expandPaths([real, ghost])).toEqual([real])
+  })
+
   it('passes plain files through untouched so dropping files still works', async () => {
     // Folder support must not regress the existing multi-file drop: a dropped file
     // is returned as-is and left for the renderer to filter.
