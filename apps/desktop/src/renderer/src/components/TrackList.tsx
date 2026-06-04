@@ -73,16 +73,21 @@ const TrackRow = memo(function TrackRow({
               </span>
             </span>
           ) : (
-            <span className="block truncate text-xs text-fg-dim">
-              {t.meta.artist || tr('trackList.noArtist')}
+            <span className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
+                {t.meta.artist || tr('trackList.noArtist')}
+              </span>
+              {t.duration !== undefined && (
+                <span
+                  data-testid="track-duration"
+                  className="shrink-0 text-xs tabular-nums text-fg-dim"
+                >
+                  {formatTime(t.duration)}
+                </span>
+              )}
             </span>
           )}
         </span>
-        {t.duration !== undefined && (
-          <span data-testid="track-duration" className="shrink-0 text-xs tabular-nums text-fg-dim">
-            {formatTime(t.duration)}
-          </span>
-        )}
       </button>
       <button
         type="button"
