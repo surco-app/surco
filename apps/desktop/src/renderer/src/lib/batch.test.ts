@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { canProcessTrack, eligibleForBatch } from './batch'
+import { canProcessTrack, eligibleForBatch, summarizeBatch } from './batch'
 
 function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {}): TrackItem {
   return {
@@ -70,5 +70,17 @@ describe('canProcessTrack', () => {
   it('blocks tracks already done or currently processing', () => {
     expect(canProcessTrack(track('a', 'done', { title: 'x', artist: 'y' }), ['title'])).toBe(false)
     expect(canProcessTrack(track('a', 'processing', { title: 'x' }), ['title'])).toBe(false)
+  })
+})
+
+describe('summarizeBatch', () => {
+  // After a batch the user needs to know the outcome without scanning the list,
+  // so the run is reduced to how many converted and how many failed.
+  it('counts converted and failed tracks', () => {
+    expect(summarizeBatch([true, false, true])).toEqual({ converted: 2, failed: 1 })
+  })
+
+  it('reports zero failures when every track converted', () => {
+    expect(summarizeBatch([true, true])).toEqual({ converted: 2, failed: 0 })
   })
 })

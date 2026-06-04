@@ -8,7 +8,9 @@
   "header": {
     "add": "Add files",
     "convertAll": "Convert all",
-    "converting": "Converting…",
+    "convertingCount": "Converting… {{done}}/{{total}}",
+    "batchDone": "{{count}} converted",
+    "batchDoneErrors": "{{converted}} converted, {{failed}} failed",
     "palette": "Command palette",
     "settings": "Settings"
   },

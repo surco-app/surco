@@ -8,7 +8,9 @@
   "header": {
     "add": "Añadir archivos",
     "convertAll": "Convertir todo",
-    "converting": "Convirtiendo…",
+    "convertingCount": "Convirtiendo… {{done}}/{{total}}",
+    "batchDone": "{{count}} convertidas",
+    "batchDoneErrors": "{{converted}} convertidas, {{failed}} con error",
     "palette": "Paleta de comandos",
     "settings": "Ajustes"
   },

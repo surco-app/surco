@@ -13,7 +13,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
-import { canProcessTrack, eligibleForBatch } from './lib/batch'
+import { type BatchSummary, canProcessTrack, eligibleForBatch, summarizeBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
 import { exportedPatch } from './lib/export'
@@ -89,6 +89,8 @@ export default function App(): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [batching, setBatching] = useState(false)
+  const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
+  const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then((s) => {
@@ -126,6 +128,14 @@ export default function App(): React.JSX.Element {
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
     [],
   )
+
+  // The batch summary is a transient confirmation, not a persistent banner — it
+  // clears itself a few seconds after a run so it never lingers over later work.
+  useEffect(() => {
+    if (!batchSummary) return
+    const id = setTimeout(() => setBatchSummary(null), 6000)
+    return () => clearTimeout(id)
+  }, [batchSummary])
 
   async function addPaths(paths: string[]): Promise<void> {
     const existing = new Set(tracks.map((t) => t.inputPath))
@@ -222,9 +232,9 @@ export default function App(): React.JSX.Element {
     if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
-  async function processOne(id: string, formatOverride?: OutputFormat): Promise<void> {
+  async function processOne(id: string, formatOverride?: OutputFormat): Promise<boolean> {
     const track = tracks.find((t) => t.id === id)
-    if (!track) return
+    if (!track) return false
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
     if (missing.length) {
       const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
@@ -233,7 +243,7 @@ export default function App(): React.JSX.Element {
         error: tr('editor.missingRequired', { fields: names }),
         stage: undefined,
       })
-      return
+      return false
     }
     // Re-processing an edited (stale) track resets the Apple Music state too, since
     // the file it referred to is being rewritten — the user may want to add it again.
@@ -261,12 +271,14 @@ export default function App(): React.JSX.Element {
         format: formatOverride,
       })
       updateTrack(id, exportedPatch(track, result))
+      return true
     } catch (e) {
       updateTrack(id, {
         status: 'error',
         error: e instanceof Error ? e.message : tr('editor.processError'),
         stage: undefined,
       })
+      return false
     }
   }
 
@@ -300,13 +312,19 @@ export default function App(): React.JSX.Element {
 
   async function processAll(): Promise<void> {
     if (batching) return
+    const ids = eligibleForBatch(tracks)
     setBatching(true)
+    setBatchSummary(null)
+    setBatchProgress({ done: 0, total: ids.length })
+    const results: boolean[] = []
     try {
-      for (const id of eligibleForBatch(tracks)) {
-        await processOne(id)
+      for (const id of ids) {
+        results.push(await processOne(id))
+        setBatchProgress({ done: results.length, total: ids.length })
       }
     } finally {
       setBatching(false)
+      setBatchSummary(summarizeBatch(results))
     }
   }
 
@@ -521,6 +539,16 @@ export default function App(): React.JSX.Element {
           className="flex items-center gap-2"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+          {batchSummary && !batching && (
+            <span data-testid="batch-summary" className="text-sm text-fg-muted">
+              {batchSummary.failed === 0
+                ? tr('header.batchDone', { count: batchSummary.converted })
+                : tr('header.batchDoneErrors', {
+                    converted: batchSummary.converted,
+                    failed: batchSummary.failed,
+                  })}
+            </span>
+          )}
           {tracks.length > 0 && (
             <button
               type="button"
@@ -529,7 +557,12 @@ export default function App(): React.JSX.Element {
               disabled={!canProcessAll}
               className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
-              {batching ? tr('header.converting') : `${tr('header.convertAll')} (${eligibleCount})`}
+              {batching
+                ? tr('header.convertingCount', {
+                    done: batchProgress.done,
+                    total: batchProgress.total,
+                  })
+                : `${tr('header.convertAll')} (${eligibleCount})`}
             </button>
           )}
           <button

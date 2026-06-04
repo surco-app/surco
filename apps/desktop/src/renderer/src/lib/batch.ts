@@ -16,3 +16,15 @@ export function canProcessTrack(track: TrackItem, requiredFields: string[]): boo
   const convertible = track.status === 'idle' || track.status === 'error'
   return convertible && missingRequired(track.meta, requiredFields).length === 0
 }
+
+export interface BatchSummary {
+  converted: number
+  failed: number
+}
+
+// Reduces a batch run (one boolean per track: did it convert?) to a count of
+// successes and failures, so the UI can report the outcome at a glance.
+export function summarizeBatch(results: boolean[]): BatchSummary {
+  const converted = results.filter(Boolean).length
+  return { converted, failed: results.length - converted }
+}
