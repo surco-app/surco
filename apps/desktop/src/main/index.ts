@@ -13,7 +13,7 @@ import type {
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
-import { getRelease, search } from './discogs'
+import { getProvider } from './providers'
 import { expandPaths } from './expand'
 import {
   analyzeCutoff,
@@ -231,8 +231,8 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
-  ipcMain.handle('discogs:search', (_e, query: string) => search(query, getSettings().discogsToken))
-  ipcMain.handle('discogs:release', (_e, id: number) => getRelease(id, getSettings().discogsToken))
+  ipcMain.handle('search:query', (_e, query: string, provider) => getProvider(provider).search(query))
+  ipcMain.handle('search:release', (_e, id: number, provider) => getProvider(provider).getRelease(id))
 
   // The Music AppleScript bridge is macOS-only; off macOS there is no library to
   // query, so report "not present" rather than spawning a missing osascript.

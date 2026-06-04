@@ -2,6 +2,8 @@ export type ThemePref = 'system' | 'light' | 'dark'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
+export type SearchProviderId = 'discogs'
+
 export interface Settings {
   theme: ThemePref
   discogsToken: string

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { ProcessProgress } from '../shared/types'
+import type { ProcessProgress, SearchProviderId } from '../shared/types'
 
 const api = {
   platform: process.platform,
@@ -12,8 +12,10 @@ const api = {
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
-  searchDiscogs: (query: string) => ipcRenderer.invoke('discogs:search', query),
-  getRelease: (id: number) => ipcRenderer.invoke('discogs:release', id),
+  searchDiscogs: (query: string, provider?: SearchProviderId) =>
+    ipcRenderer.invoke('search:query', query, provider),
+  getRelease: (id: number, provider?: SearchProviderId) =>
+    ipcRenderer.invoke('search:release', id, provider),
   lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
     ipcRenderer.invoke('applemusic:lookup', artist, title),
   addToAppleMusic: (job: unknown): Promise<void> => ipcRenderer.invoke('applemusic:add', job),
