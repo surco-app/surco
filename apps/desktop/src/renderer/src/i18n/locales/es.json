@@ -134,7 +134,14 @@
       "general": "General",
       "naming": "Edición",
       "artwork": "Carátula",
-      "fields": "Campos"
+      "fields": "Campos",
+      "stats": "Estadísticas"
+    },
+    "stats": {
+      "count": "conversiones",
+      "timeSaved": "Has ahorrado unos {{time}}",
+      "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
+      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco."
     },
     "theme": "Apariencia",
     "themes": {

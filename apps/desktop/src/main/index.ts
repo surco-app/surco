@@ -31,7 +31,7 @@ import { createMenuT } from './i18n'
 import { removeRenamedOriginal, resolveOutputTarget } from './inplace'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
-import { getSettings, saveSettings } from './settings'
+import { getSettings, recordConversion, saveSettings } from './settings'
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -304,6 +304,7 @@ function registerIpc(): void {
       if (!inPlace) await mkdir(settings.outputDir, { recursive: true })
       await convertAudio(job.inputPath, outputPath, format, job.meta, coverPath)
       if (inPlace) await removeRenamedOriginal(job.inputPath, outputPath)
+      recordConversion()
 
       if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, format)) {
         stage('appleMusic')

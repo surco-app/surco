@@ -5,6 +5,7 @@ import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
+import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
@@ -40,11 +41,12 @@ interface Props {
   onPreviewTheme: (theme: ThemePref) => void
 }
 
-type Tab = 'general' | 'naming' | 'artwork' | 'fields'
+type Tab = 'general' | 'naming' | 'artwork' | 'fields' | 'stats'
 
 // Ordered to mirror Meta's preferences flow: broad app settings, then what the
-// editor shows, then artwork, then editing behavior.
-const TABS: Tab[] = ['general', 'fields', 'artwork', 'naming']
+// editor shows, then artwork, then editing behavior. Stats trails last as the one
+// read-only, informational tab.
+const TABS: Tab[] = ['general', 'fields', 'artwork', 'naming', 'stats']
 
 const TAB_ICONS: Record<Tab, React.JSX.Element> = {
   general: (
@@ -76,6 +78,14 @@ const TAB_ICONS: Record<Tab, React.JSX.Element> = {
     <>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </>
+  ),
+  stats: (
+    <>
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="6" y="12" width="3" height="6" />
+      <rect x="11" y="8" width="3" height="10" />
+      <rect x="16" y="4" width="3" height="14" />
     </>
   ),
 }
@@ -547,6 +557,36 @@ export function SettingsModal({
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {tab === 'stats' && (
+            <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+              {settings.conversionCount > 0 ? (
+                <>
+                  <p
+                    data-testid="stats-count"
+                    className="text-6xl font-semibold tabular-nums text-fg"
+                  >
+                    {settings.conversionCount}
+                  </p>
+                  <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
+                  <p data-testid="stats-time-saved" className="mt-7 text-lg text-fg">
+                    {tr('settings.stats.timeSaved', {
+                      time: formatTimeSaved(timeSavedSeconds(settings.conversionCount)),
+                    })}
+                  </p>
+                  <p className="mt-1 text-xs text-fg-dim">
+                    {tr('settings.stats.perTrack', {
+                      minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
+                    })}
+                  </p>
+                </>
+              ) : (
+                <p data-testid="stats-empty" className="max-w-xs text-sm text-fg-muted">
+                  {tr('settings.stats.empty')}
+                </p>
+              )}
             </div>
           )}
         </div>

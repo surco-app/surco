@@ -100,6 +100,12 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
+  // Conversions bump the persisted count from the main process, so re-read settings
+  // each time the modal opens to keep the Stats tab current within a session.
+  useEffect(() => {
+    if (showSettings) window.api.getSettings().then(setSettings)
+  }, [showSettings])
+
   useEffect(() => {
     const pref = themePreview ?? settings?.theme ?? 'system'
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
@@ -360,7 +366,7 @@ export default function App(): React.JSX.Element {
     setSelectedId(tracks[next].id)
   }
 
-  const sidebar = useResizableWidth(220, 220, 520)
+  const sidebar = useResizableWidth(260, 220, 520)
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
   // Falls back to the selection so the card still renders for the brief moment

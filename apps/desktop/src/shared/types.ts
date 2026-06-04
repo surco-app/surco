@@ -20,6 +20,7 @@ export interface Settings {
   coverSquare: boolean
   showSpectrum: boolean
   hasSeenOnboarding: boolean
+  conversionCount: number
 }
 
 export interface TrackMetadata {

@@ -31,6 +31,7 @@ const settings: Settings = {
   coverSquare: false,
   showSpectrum: true,
   hasSeenOnboarding: true,
+  conversionCount: 0,
 }
 
 function openNaming() {
@@ -113,5 +114,39 @@ describe('SettingsModal organization', () => {
     expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('settings-tab-naming'))
     expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
+  })
+})
+
+describe('SettingsModal stats', () => {
+  // The whole reason for the tab: turn a raw tally into the "time you saved"
+  // story we want to tell users, derived from the count, not the audio length.
+  it('shows the conversion count and the estimated time saved', () => {
+    render(
+      <SettingsModal
+        settings={{ ...settings, conversionCount: 142 }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.getByTestId('stats-count')).toHaveTextContent('142')
+    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('9 h 28 min')
+  })
+
+  // Before the first conversion, "0" and "0 min" would read as broken; explain the
+  // value instead so the empty state still earns its place.
+  it('explains the value instead of showing zeros before the first conversion', () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
+    expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
   })
 })
