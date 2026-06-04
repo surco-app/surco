@@ -29,7 +29,7 @@
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "lede": "Suelta tus pistas: Surco rellena artista, título y carátula desde la base de datos Discogs, las convierte a máxima calidad y las organiza en tu biblioteca de Apple Music — el centro desde el que lee rekordbox. Hasta te avisa cuando un archivo es una copia mala, o cuando ya tienes esa pista.",
+    "lede": "Suelta tus pistas. Surco rellena artista, título y carátula desde Discogs, las convierte a máxima calidad y las añade a tu biblioteca de Apple Music — de donde lee rekordbox. Hasta avisa de copias malas y de pistas que ya tienes.",
     "ledeShort": "Suelta tus pistas y Surco rellena los metadatos desde Discogs, las convierte a máxima calidad y las ordena en tu biblioteca de Apple Music."
   },
   "stats": {
@@ -40,7 +40,7 @@
   "analysis": {
     "kicker": "Análisis anti-fake",
     "title": "El espectro no miente",
-    "lede": "Algunos archivos «lossless» no son más que MP3 de baja calidad convertidos para parecer de alta — y suenan peor en un buen equipo. Surco detecta las frecuencias altas que faltan y marca la pista como sospechosa antes de que acabe sonando en cabina.",
+    "lede": "Algunos archivos «lossless» son MP3 de baja calidad disfrazados de alta — y suenan peor en un buen equipo. Surco detecta los agudos que faltan y marca la pista antes de que llegue a cabina.",
     "good": "● buena calidad",
     "suspect": "● sospechoso",
     "goodCaptionPre": "sonido completo hasta ",
@@ -55,18 +55,18 @@
     "kicker": "Funciones",
     "title": "Todo el flujo, en una app",
     "items": [
-      { "kick": "importa", "title": "Importa y escucha", "body": "Suelta tus WAV, FLAC, AIFF o MP3 — hasta carpetas enteras. Surco lee las etiquetas y la carátula que ya traen, y preescuchas cualquier pista en el reproductor integrado antes de convertir." },
-      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco: Surco resalta el tema correcto del tracklist según el nombre del archivo y trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic, sin configurar nada. Y completas los campos de DJ: BPM, tonalidad, remixer y grouping." },
-      { "kick": "convierte", "title": "Convierte a cualquier formato", "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar, y si ya está en el formato de destino lo copia tal cual: mismos bits, al instante. Convierte una pista o la cola entera de una pasada." },
+      { "kick": "importa", "title": "Importa y escucha", "body": "Suelta tus WAV, FLAC, AIFF o MP3 — hasta carpetas enteras. Surco lee las etiquetas y la carátula que ya traen, y preescuchas cualquier pista antes de convertir." },
+      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco y Surco elige el tema correcto según el nombre del archivo, luego trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic — sin configurar nada. Y añades los campos de DJ: BPM, tonalidad, remixer y grouping." },
+      { "kick": "convierte", "title": "Convierte a cualquier formato", "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar. Si ya está en el formato de destino, lo copia tal cual: mismos bits, al instante. Una pista o la cola entera de una pasada." },
       { "kick": "traktor", "title": "Respeta tus CUE de Traktor", "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor." },
-      { "kick": "calidad", "title": "Sin fakes ni duplicados", "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco consulta tu biblioteca de Apple Music y avisa si la pista ya está." },
-      { "kick": "organiza", "title": "Organiza a tu manera", "body": "La carátula y los tags se guardan dentro del archivo, así que aparecen en Apple Music y rekordbox. Manda la pista a tu biblioteca de Apple Music, y muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist}-{title}." }
+      { "kick": "calidad", "title": "Sin fakes ni duplicados", "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music." },
+      { "kick": "organiza", "title": "Organiza a tu manera", "body": "Los tags y la carátula se guardan dentro del archivo, así que aparecen en Apple Music y rekordbox. Manda las pistas a Apple Music, muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist}-{title}." }
     ]
   },
   "shortcuts": {
     "kicker": "Teclado primero",
     "title": "Vuela sin tocar el ratón",
-    "lede": "Una paleta de comandos y atajos para todo el flujo. Añade, etiqueta, analiza y procesa pista tras pista sin soltar las manos del teclado.",
+    "lede": "Una paleta de comandos y atajos para todo el flujo — añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado.",
     "items": [
       "Añadir archivos",
       "Procesar pista",
@@ -88,7 +88,7 @@
   "speed": {
     "kicker": "Visto y no visto",
     "title": "De minutos a segundos por pista",
-    "lede": "A mano es un proceso de varios pasos —convertir, etiquetar, completar tags, subir— saltando entre herramientas. Tedioso en cuanto lo repites pista tras pista. Surco lo hace todo al pulsar un botón.",
+    "lede": "A mano son varios pasos entre distintas herramientas —convertir, etiquetar, completar tags, subir— y tedioso en cuanto lo repites pista tras pista. Surco lo hace todo con un botón.",
     "manual": "A mano",
     "manualTime": "~3–4 min",
     "manualSteps": [

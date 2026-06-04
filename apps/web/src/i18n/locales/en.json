@@ -29,7 +29,7 @@
   "hero": {
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
-    "lede": "Drop in your tracks: Surco fills in the artist, title and cover art from the Discogs music database, converts them to full quality and organizes them in your Apple Music library — the hub rekordbox reads from. It even warns you when a file is a low-quality fake, or when you already have the track.",
+    "lede": "Drop in your tracks. Surco fills the artist, title and cover art from Discogs, converts them to full quality and adds them to your Apple Music library — where rekordbox reads from. It even flags low-quality fakes and tracks you already own.",
     "ledeShort": "Drop your tracks and Surco fills the metadata from Discogs, converts them to full quality and organizes them in your Apple Music library."
   },
   "stats": {
@@ -40,7 +40,7 @@
   "analysis": {
     "kicker": "Anti-fake analysis",
     "title": "The spectrum doesn't lie",
-    "lede": "Some \"lossless\" files are just low-quality MP3s converted to look hi-fi — and they sound worse on a big system. Surco spots the missing high frequencies and flags the track as suspicious before it ends up in your set.",
+    "lede": "Some \"lossless\" files are just low-quality MP3s dressed up to look hi-fi — and they sound worse on a big system. Surco spots the missing highs and flags the track before it reaches your set.",
     "good": "● good quality",
     "suspect": "● suspicious",
     "goodCaptionPre": "full sound up to ",
@@ -55,18 +55,18 @@
     "kicker": "Features",
     "title": "The whole flow, in one app",
     "items": [
-      { "kick": "import", "title": "Import and listen", "body": "Drop your WAV, FLAC, AIFF or MP3 — even whole folders. Surco reads the tags and cover art they already carry, and you can preview any track in the built-in player before converting." },
-      { "kick": "discogs", "title": "Tag from Discogs", "body": "Search the release: Surco highlights the right track in the tracklist from the filename and pulls artist, album, year, genre, label, catalog number and cover art in one click, with nothing to set up. Then fill the DJ fields: BPM, key, remixer and grouping." },
-      { "kick": "convert", "title": "Convert to any format", "body": "AIFF, WAV, FLAC or MP3, any to any — lossless or a lighter MP3. Switch format anytime without re-importing, and if it's already in the target format Surco copies it untouched: same bits, instantly. Convert one track or the whole crate in one go." },
-      { "kick": "traktor", "title": "Keeps your Traktor cues", "body": "Re-export to the same format (MP3 or AIFF) and Surco copies the audio as-is, keeping your Traktor cue points and beatgrid intact." },
-      { "kick": "quality", "title": "No fakes, no duplicates", "body": "Check the spectrum at a glance and catch low-quality MP3s dressed up as lossless. And as you tag, Surco checks your Apple Music library and warns you if the track is already there." },
-      { "kick": "organize", "title": "Organize it your way", "body": "Artwork and tags are written inside the file, so they show up in Apple Music and rekordbox. Send the track to your Apple Music library, and show only the fields you use, mark what's required and name files with {artist}-{title} templates." }
+      { "kick": "import", "title": "Import and listen", "body": "Drop your WAV, FLAC, AIFF or MP3 — even whole folders. Surco reads the tags and cover art they already carry, and you can preview any track before converting." },
+      { "kick": "discogs", "title": "Tag from Discogs", "body": "Search the release and Surco picks the right track from the filename, then pulls artist, album, year, genre, label, catalog number and cover art in one click — no setup. Add the DJ fields too: BPM, key, remixer and grouping." },
+      { "kick": "convert", "title": "Convert to any format", "body": "AIFF, WAV, FLAC or MP3, any to any — lossless or a lighter MP3. Switch format anytime without re-importing. If it's already in the target format, Surco copies it untouched: same bits, instantly. One track or the whole crate at once." },
+      { "kick": "traktor", "title": "Keeps your Traktor cues", "body": "Re-export to the same format (MP3 or AIFF) and Surco copies the audio untouched, keeping your Traktor cue points and beatgrid intact." },
+      { "kick": "quality", "title": "No fakes, no duplicates", "body": "Check the spectrum at a glance to catch low-quality MP3s posing as lossless. And as you tag, Surco warns you if the track is already in your Apple Music library." },
+      { "kick": "organize", "title": "Organize it your way", "body": "Tags and artwork are written inside the file, so they show in Apple Music and rekordbox. Send tracks to Apple Music, show only the fields you use, mark the required ones, and name files with {artist}-{title} templates." }
     ]
   },
   "shortcuts": {
     "kicker": "Keyboard first",
     "title": "Fly without touching the mouse",
-    "lede": "A command palette and shortcuts for the whole flow. Add, tag, analyze and process track after track without lifting your hands off the keyboard.",
+    "lede": "A command palette and shortcuts for the whole flow — add, tag, analyze and process track after track without leaving the keyboard.",
     "items": [
       "Add files",
       "Process track",
@@ -88,7 +88,7 @@
   "speed": {
     "kicker": "Blink and it's done",
     "title": "From minutes to seconds per track",
-    "lede": "By hand it's a multi-step process —convert, tag, fill in tags, import— jumping between tools. Tedious the moment you repeat it track after track. Surco does it all at the press of a button.",
+    "lede": "By hand it's several steps across different tools — convert, tag, fill the gaps, import — and tedious once you repeat it track after track. Surco does it all with one button.",
     "manual": "By hand",
     "manualTime": "~3–4 min",
     "manualSteps": [
