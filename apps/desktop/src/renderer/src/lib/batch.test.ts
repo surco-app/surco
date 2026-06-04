@@ -75,12 +75,30 @@ describe('canProcessTrack', () => {
 
 describe('summarizeBatch', () => {
   // After a batch the user needs to know the outcome without scanning the list,
-  // so the run is reduced to how many converted and how many failed.
+  // so the run is reduced to how many converted, were skipped and failed.
   it('counts converted and failed tracks', () => {
-    expect(summarizeBatch([true, false, true])).toEqual({ converted: 2, failed: 1 })
+    expect(summarizeBatch(['converted', 'failed', 'converted'])).toEqual({
+      converted: 2,
+      skipped: 0,
+      failed: 1,
+    })
   })
 
   it('reports zero failures when every track converted', () => {
-    expect(summarizeBatch([true, true])).toEqual({ converted: 2, failed: 0 })
+    expect(summarizeBatch(['converted', 'converted'])).toEqual({
+      converted: 2,
+      skipped: 0,
+      failed: 0,
+    })
+  })
+
+  // A skip past a file conflict is a deliberate no-op, not an error, so it must
+  // not inflate the failure count the user reads as "something went wrong".
+  it('counts a skipped track on its own, not as a failure', () => {
+    expect(summarizeBatch(['converted', 'skipped', 'failed'])).toEqual({
+      converted: 1,
+      skipped: 1,
+      failed: 1,
+    })
   })
 })

@@ -80,6 +80,9 @@ export interface ProcessJob {
   coverUrl?: string
   coverPath?: string
   format?: OutputFormat
+  // Where this track's last conversion landed, so re-exporting it overwrites its
+  // own file silently while a collision with an unrelated file still prompts.
+  previousOutputPath?: string
 }
 
 export interface CoverExportJob {
@@ -108,6 +111,9 @@ export interface ProcessResult {
   // (tags + rename) instead of writing a copy to the output folder. The renderer
   // then repoints the track at outputPath, since the original it loaded is gone.
   inPlace: boolean
+  // True when the user chose to skip a conflicting export: nothing was written, so
+  // the renderer leaves the track untouched rather than marking it done.
+  skipped?: boolean
 }
 
 export interface SpectrumResult {

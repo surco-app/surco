@@ -17,14 +17,23 @@ export function canProcessTrack(track: TrackItem, requiredFields: string[]): boo
   return convertible && missingRequired(track.meta, requiredFields).length === 0
 }
 
+// The outcome of converting one track: it wrote a file, the user skipped it past a
+// file conflict, or it errored. Skips are neither success nor failure, so they're
+// counted on their own rather than folded into the failure tally.
+export type BatchOutcome = 'converted' | 'skipped' | 'failed'
+
 export interface BatchSummary {
   converted: number
+  skipped: number
   failed: number
 }
 
-// Reduces a batch run (one boolean per track: did it convert?) to a count of
-// successes and failures, so the UI can report the outcome at a glance.
-export function summarizeBatch(results: boolean[]): BatchSummary {
-  const converted = results.filter(Boolean).length
-  return { converted, failed: results.length - converted }
+// Reduces a batch run (one outcome per track) to per-bucket counts, so the UI can
+// report the result at a glance without lumping skips in with genuine failures.
+export function summarizeBatch(results: BatchOutcome[]): BatchSummary {
+  return {
+    converted: results.filter((r) => r === 'converted').length,
+    skipped: results.filter((r) => r === 'skipped').length,
+    failed: results.filter((r) => r === 'failed').length,
+  }
 }

@@ -13,7 +13,13 @@ import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
-import { type BatchSummary, canProcessTrack, eligibleForBatch, summarizeBatch } from './lib/batch'
+import {
+  type BatchOutcome,
+  type BatchSummary,
+  canProcessTrack,
+  eligibleForBatch,
+  summarizeBatch,
+} from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
 import { exportedPatch } from './lib/export'
@@ -236,7 +242,10 @@ export default function App(): React.JSX.Element {
             .catch(() => {})
             .finally(() => spectrumInFlight.current.delete(id))
         }
-        if (needsDiscogsPrefetch(track, hasTokenRef.current) && !discogsPrefetched.current.has(id)) {
+        if (
+          needsDiscogsPrefetch(track, hasTokenRef.current) &&
+          !discogsPrefetched.current.has(id)
+        ) {
           discogsPrefetched.current.add(id)
           warmDiscogs(track.query).catch(() => discogsPrefetched.current.delete(id))
         }
@@ -293,9 +302,9 @@ export default function App(): React.JSX.Element {
     if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
-  async function processOne(id: string, formatOverride?: OutputFormat): Promise<boolean> {
+  async function processOne(id: string, formatOverride?: OutputFormat): Promise<BatchOutcome> {
     const track = tracks.find((t) => t.id === id)
-    if (!track) return false
+    if (!track) return 'failed'
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
     if (missing.length) {
       const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
@@ -304,7 +313,7 @@ export default function App(): React.JSX.Element {
         error: tr('editor.missingRequired', { fields: names }),
         stage: undefined,
       })
-      return false
+      return 'failed'
     }
     // Re-processing an edited (stale) track resets the Apple Music state too, since
     // the file it referred to is being rewritten — the user may want to add it again.
@@ -330,16 +339,23 @@ export default function App(): React.JSX.Element {
         coverUrl: track.coverUrl,
         coverPath: track.coverPath,
         format: formatOverride,
+        previousOutputPath: track.outputPath,
       })
+      // The user declined to overwrite a conflicting file: nothing was written, so
+      // leave the track convertible (idle) rather than marking it done or failed.
+      if (result.skipped) {
+        updateTrack(id, { status: 'idle', stage: undefined })
+        return 'skipped'
+      }
       updateTrack(id, exportedPatch(track, result))
-      return true
+      return 'converted'
     } catch (e) {
       updateTrack(id, {
         status: 'error',
         error: e instanceof Error ? e.message : tr('editor.processError'),
         stage: undefined,
       })
-      return false
+      return 'failed'
     }
   }
 
@@ -377,7 +393,7 @@ export default function App(): React.JSX.Element {
     setBatching(true)
     setBatchSummary(null)
     setBatchProgress({ done: 0, total: ids.length })
-    const results: boolean[] = []
+    const results: BatchOutcome[] = []
     try {
       for (const id of ids) {
         results.push(await processOne(id))
@@ -614,12 +630,14 @@ export default function App(): React.JSX.Element {
         >
           {batchSummary && !batching && (
             <span data-testid="batch-summary" className="text-sm text-fg-muted">
-              {batchSummary.failed === 0
-                ? tr('header.batchDone', { count: batchSummary.converted })
-                : tr('header.batchDoneErrors', {
-                    converted: batchSummary.converted,
-                    failed: batchSummary.failed,
-                  })}
+              {[
+                tr('header.batchConverted', { count: batchSummary.converted }),
+                batchSummary.skipped > 0 &&
+                  tr('header.batchSkipped', { count: batchSummary.skipped }),
+                batchSummary.failed > 0 && tr('header.batchFailed', { count: batchSummary.failed }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           )}
           {tracks.length > 0 && (

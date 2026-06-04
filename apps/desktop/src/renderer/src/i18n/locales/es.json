@@ -9,8 +9,9 @@
     "add": "Añadir archivos",
     "convertAll": "Convertir todo",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
-    "batchDone": "{{count}} convertidas",
-    "batchDoneErrors": "{{converted}} convertidas, {{failed}} con error",
+    "batchConverted": "{{count}} convertidas",
+    "batchSkipped": "{{count}} saltadas",
+    "batchFailed": "{{count}} con error",
     "palette": "Paleta de comandos",
     "settings": "Ajustes"
   },

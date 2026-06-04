@@ -1,6 +1,6 @@
-import { createReadStream } from 'node:fs'
+import { createReadStream, existsSync } from 'node:fs'
 import { copyFile, mkdir, stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { Readable } from 'node:stream'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
 import log from 'electron-log/main'
@@ -28,7 +28,12 @@ import {
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
-import { removeRenamedOriginal, resolveOutputTarget } from './inplace'
+import {
+  isOutputConflict,
+  removeRenamedOriginal,
+  resolveOutputTarget,
+  uniqueOutputPath,
+} from './inplace'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getSettings, recordConversion, saveSettings } from './settings'
@@ -246,8 +251,12 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
-  ipcMain.handle('search:query', (_e, query: string, provider) => getProvider(provider).search(query))
-  ipcMain.handle('search:release', (_e, id: number, provider) => getProvider(provider).getRelease(id))
+  ipcMain.handle('search:query', (_e, query: string, provider) =>
+    getProvider(provider).search(query),
+  )
+  ipcMain.handle('search:release', (_e, id: number, provider) =>
+    getProvider(provider).getRelease(id),
+  )
 
   // The Music AppleScript bridge is macOS-only; off macOS there is no library to
   // query, so report "not present" rather than spawning a missing osascript.
@@ -301,17 +310,36 @@ function registerIpc(): void {
         format,
         settings.outputDir,
       )
+      let target = outputPath
+      if (isOutputConflict(outputPath, job.previousOutputPath, inPlace, existsSync(outputPath))) {
+        const t = createMenuT(app.getLocale())
+        const win = BrowserWindow.fromWebContents(e.sender)
+        const opts = {
+          type: 'warning' as const,
+          message: basename(outputPath),
+          detail: t('conflictExists'),
+          buttons: [t('conflictOverwrite'), t('conflictKeepBoth'), t('conflictSkip')],
+          defaultId: 1,
+          cancelId: 2,
+        }
+        const { response } = win
+          ? await dialog.showMessageBox(win, opts)
+          : await dialog.showMessageBox(opts)
+        if (response === 2) return { outputPath: '', inPlace, skipped: true }
+        if (response === 1) target = uniqueOutputPath(outputPath, existsSync)
+      }
+
       if (!inPlace) await mkdir(settings.outputDir, { recursive: true })
-      await convertAudio(job.inputPath, outputPath, format, job.meta, coverPath)
-      if (inPlace) await removeRenamedOriginal(job.inputPath, outputPath)
+      await convertAudio(job.inputPath, target, format, job.meta, coverPath)
+      if (inPlace) await removeRenamedOriginal(job.inputPath, target)
       recordConversion()
 
       if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, format)) {
         stage('appleMusic')
-        await addToAppleMusic(outputPath, job.meta, coverPath)
+        await addToAppleMusic(target, job.meta, coverPath)
       }
 
-      return { outputPath, inPlace }
+      return { outputPath: target, inPlace }
     } finally {
       if (prepared) await prepared.cleanup()
     }

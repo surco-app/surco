@@ -9,8 +9,9 @@
     "add": "Add files",
     "convertAll": "Convert all",
     "convertingCount": "Converting… {{done}}/{{total}}",
-    "batchDone": "{{count}} converted",
-    "batchDoneErrors": "{{converted}} converted, {{failed}} failed",
+    "batchConverted": "{{count}} converted",
+    "batchSkipped": "{{count}} skipped",
+    "batchFailed": "{{count}} failed",
     "palette": "Command palette",
     "settings": "Settings"
   },

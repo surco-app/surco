@@ -30,6 +30,10 @@ interface MenuStrings {
   upToDate: string
   updateError: string
   updatesDevOnly: string
+  conflictExists: string
+  conflictOverwrite: string
+  conflictKeepBoth: string
+  conflictSkip: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -57,6 +61,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: 'Ya tienes la última versión de Surco.',
     updateError: 'No se pudo comprobar si hay actualizaciones.',
     updatesDevOnly: 'Las actualizaciones solo están disponibles en la app instalada.',
+    conflictExists: 'Ya existe un archivo con ese nombre en la carpeta de salida.',
+    conflictOverwrite: 'Sobrescribir',
+    conflictKeepBoth: 'Conservar ambos',
+    conflictSkip: 'Saltar',
   },
   en: {
     settings: 'Settings…',
@@ -82,6 +90,10 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: "You're on the latest version of Surco.",
     updateError: 'Could not check for updates.',
     updatesDevOnly: 'Updates are only available in the installed app.',
+    conflictExists: 'A file with this name already exists in the output folder.',
+    conflictOverwrite: 'Overwrite',
+    conflictKeepBoth: 'Keep both',
+    conflictSkip: 'Skip',
   },
 }
 
