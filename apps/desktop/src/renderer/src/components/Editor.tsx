@@ -73,7 +73,7 @@ export function Editor({
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
-  const discogs = useResizableWidth(400, 320, 720)
+  const discogs = useResizableWidth(315, 300, 720)
 
   // startDrag needs a file on disk the instant the drag begins, so prepare the
   // processed cover whenever it changes and stash its path for onDragStart.
@@ -368,6 +368,11 @@ export function Editor({
                               {t.position}
                             </span>
                             <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                            {t.duration && (
+                              <span className="shrink-0 text-xs tabular-nums text-fg-dim">
+                                {t.duration}
+                              </span>
+                            )}
                           </button>
                         ))
                       ) : (
@@ -409,8 +414,8 @@ export function Editor({
             }
           />
           {formOpen && (
-            <div className="mt-4">
-              <div className="flex gap-6">
+            <div className="mt-4 @container">
+              <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
                 {/* Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release. */}
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
                 <div
@@ -481,7 +486,7 @@ export function Editor({
                   )}
                 </div>
 
-                <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3">
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
                   {visibleFields.map((key) => {
                     const def = FIELD_DEFS.find((d) => d.key === key)
                     if (!def) return null

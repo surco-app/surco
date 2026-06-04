@@ -135,8 +135,8 @@ describe('Editor Discogs apply', () => {
     title: 'Some Album',
     artists: [{ name: 'The Artist' }],
     tracklist: [
-      { position: 'A1', title: 'Track One' },
-      { position: 'A2', title: 'Track Two' },
+      { position: 'A1', title: 'Track One', duration: '3:21' },
+      { position: 'A2', title: 'Track Two', duration: '7:45' },
     ],
   }
 
@@ -177,6 +177,18 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('discogs-result'))
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     expect(onChange).toHaveBeenCalled()
+  })
+
+  // Discogs returns each track's length; showing it next to the title is what lets
+  // the user match the rip they have against the right tracklist entry by time.
+  it('shows each track length from the Discogs tracklist', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    const rows = await screen.findAllByTestId('discogs-track')
+    expect(rows[0]).toHaveTextContent('3:21')
+    expect(rows[1]).toHaveTextContent('7:45')
   })
 })
 

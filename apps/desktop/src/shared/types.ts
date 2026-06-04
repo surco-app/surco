@@ -54,6 +54,9 @@ export interface DiscogsTrack {
   position: string
   title: string
   artists?: { name: string }[]
+  // The track length as Discogs returns it, e.g. "5:47". Optional: some releases
+  // (and many tracklist positions like headings) carry no duration.
+  duration?: string
 }
 
 export interface DiscogsRelease {
