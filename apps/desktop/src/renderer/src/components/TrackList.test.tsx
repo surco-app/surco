@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { TrackList } from './TrackList'
 
@@ -10,7 +11,9 @@ afterEach(cleanup)
 
 // A full TrackItem so the list renders exactly as it does in the app; callers
 // override only the fields the assertion cares about.
-function track(over: Partial<TrackItem> & { id: string }): TrackItem {
+function track(
+  over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
+): TrackItem {
   return {
     inputPath: `/music/${over.id}.wav`,
     fileName: `${over.id}.wav`,

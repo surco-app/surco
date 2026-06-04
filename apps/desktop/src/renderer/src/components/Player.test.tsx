@@ -2,13 +2,16 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { Player } from './Player'
 import '../i18n'
 
 afterEach(cleanup)
 
-function track(over: Partial<TrackItem> = {}): TrackItem {
+function track(
+  over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> } = {},
+): TrackItem {
   return {
     id: 't1',
     inputPath: '/music/t1.wav',

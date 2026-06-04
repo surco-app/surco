@@ -2,7 +2,7 @@ import type { TrackMetadata } from '../../../shared/types'
 
 export function renderOutputName(format: string, meta: TrackMetadata): string {
   const filled = format.replace(/\{(\w+)\}/g, (_, key) => {
-    const value = (meta as Record<string, string>)[key]
+    const value = (meta as unknown as Record<string, string>)[key]
     return value ? value.trim() : ''
   })
   return filled

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // SettingsModal reads window.api.platform at module load, so stub it before the
 // component is imported.
 vi.hoisted(() => {
-  ;(globalThis.window as Window & { api?: unknown }).api = { platform: 'darwin' }
+  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
 import '../i18n'

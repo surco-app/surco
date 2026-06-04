@@ -1,4 +1,4 @@
-import type { TrackMetadata } from '../../shared/types'
+import type { TrackMetadata } from '../../../shared/types'
 import type { ParsedName } from './filename'
 
 export interface ResolvedSearch {

@@ -1,8 +1,10 @@
 import type {
   AppleMusicAddJob,
+  CoverExportJob,
   DiscogsRelease,
   DiscogsSearchResult,
   ProcessJob,
+  ProcessProgress,
   ProcessResult,
   SearchProviderId,
   Settings,
@@ -14,19 +16,25 @@ export interface Api {
   platform: NodeJS.Platform
   version: string
   getPathForFile: (file: File) => string
+  expandPaths: (paths: string[]) => Promise<string[]>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
   searchDiscogs: (query: string, provider?: SearchProviderId) => Promise<DiscogsSearchResult[]>
   getRelease: (id: number, provider?: SearchProviderId) => Promise<DiscogsRelease>
+  lookupAppleMusic: (artist: string, title: string) => Promise<boolean>
   addToAppleMusic: (job: AppleMusicAddJob) => Promise<void>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
+  exportCover: (job: CoverExportJob) => Promise<string | null>
+  prepareCoverDrag: (src: { coverUrl?: string; coverPath?: string }) => Promise<string | null>
+  startCoverDrag: (path: string) => void
   reveal: (path: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>
   readTags: (path: string) => Promise<TrackMetadata>
   readCover: (path: string) => Promise<string | null>
   onMenuCommand: (cb: (id: string) => void) => () => void
+  onProcessProgress: (cb: (progress: ProcessProgress) => void) => () => void
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void

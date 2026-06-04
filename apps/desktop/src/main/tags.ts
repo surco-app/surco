@@ -1,6 +1,9 @@
 import {
   Id3v2AttachmentFrame,
+  Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
+  type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
   Picture,
   PictureType,
   File as TagFile,
@@ -27,6 +30,26 @@ const toNumber = (value: string): number => {
 
 const toArray = (value: string): string[] => (value.trim() ? [value] : [])
 
+// node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
+// number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
+// through its public frame API: an empty value clears the frame, otherwise it is
+// created if missing and its text replaced.
+function setUserText(tag: Id3v2Tag, description: string, text: string): void {
+  const frames = tag.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  )
+  let frame = Id3v2UserTextInformationFrame.findUserTextInformationFrame(frames, description)
+  if (!text) {
+    if (frame) tag.removeFrame(frame)
+    return
+  }
+  if (!frame) {
+    frame = Id3v2UserTextInformationFrame.fromDescription(description)
+    tag.addFrame(frame)
+  }
+  frame.text = text.split(';')
+}
+
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
@@ -50,10 +73,10 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
     tag.remixedBy = meta.remixArtist
     tag.publisher = meta.publisher
 
-    const id3 = f.getTag(TagTypes.Id3v2, true)
+    const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
-    id3.setUserTextAsString('CATALOGNUMBER', meta.catalogNumber)
+    setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
 
     if (coverPath) {
       // TagLib models APIC and GEOB as the same attachment kind, so the generic

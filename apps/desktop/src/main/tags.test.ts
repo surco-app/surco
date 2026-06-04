@@ -1,7 +1,13 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { File as TagFile, TagTypes } from 'node-taglib-sharp'
+import {
+  Id3v2FrameClassType,
+  type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
+  File as TagFile,
+  TagTypes,
+} from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { preservesCuesInPlace, writeTags } from './tags'
@@ -98,7 +104,15 @@ describe('writeTags', () => {
     expect(f.tag.title).toBe('Till I Come')
     expect(f.tag.performers).toEqual(['ATB'])
     expect(f.tag.beatsPerMinute).toBe(138)
-    expect(f.getTag(TagTypes.Id3v2, false).getUserTextAsString('CATALOGNUMBER')).toBe('KON-123')
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    expect(
+      Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, 'CATALOGNUMBER')?.text.join(
+        ';',
+      ),
+    ).toBe('KON-123')
     f.dispose()
   })
 
@@ -114,9 +128,9 @@ describe('writeTags', () => {
     expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
 
     const f = TagFile.createFromPath(file)
-    const apic = f
-      .getTag(TagTypes.Id3v2, false)
-      .frames.filter((fr) => fr.frameId.toString() === 'APIC')
+    const apic = (f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).frames.filter(
+      (fr) => fr.frameId.toString() === 'APIC',
+    )
     expect(apic).toHaveLength(1)
     f.dispose()
   })
