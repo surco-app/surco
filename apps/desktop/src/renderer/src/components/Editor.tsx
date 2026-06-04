@@ -327,6 +327,7 @@ export function Editor({
                       <img
                         src={r.thumb}
                         alt=""
+                        loading="lazy"
                         className="h-11 w-11 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
                       />
                     ) : (
