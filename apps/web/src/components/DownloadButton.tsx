@@ -29,7 +29,7 @@ const primary =
 // macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
-export default function DownloadButton() {
+export default function DownloadButton({ showAnalysis = true }: { showAnalysis?: boolean }) {
   const { t } = useTranslation()
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
@@ -83,12 +83,14 @@ export default function DownloadButton() {
             {t('download.cta', { os: LABEL[os] || 'macOS' })}
           </button>
         )}
-        <a
-          href="#analisis"
-          className="text-sm font-medium text-fg transition-colors hover:text-blue"
-        >
-          {t('download.viewAnalysis')}
-        </a>
+        {showAnalysis && (
+          <a
+            href="#analisis"
+            className="text-sm font-medium text-fg transition-colors hover:text-blue"
+          >
+            {t('download.viewAnalysis')}
+          </a>
+        )}
       </div>
       {os === 'mac' && intelHref && (
         <a

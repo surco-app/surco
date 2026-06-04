@@ -142,10 +142,11 @@
     "copyright": "© 2026 Surco · getsurco.app",
     "slogan": "your music, in order"
   },
-  "homebrew": {
-    "kicker": "Homebrew",
-    "title": "Install it from the terminal",
-    "lede": "Use Homebrew? Install Surco with a single command. From there it updates itself, so you never have to touch it again.",
+  "install": {
+    "kicker": "Install",
+    "title": "Download and install",
+    "lede": "Download it for your system. And if you use Homebrew, install it with a single command — either way it updates itself.",
+    "or": "Or with Homebrew",
     "copy": "Copy",
     "copied": "Copied!",
     "note": "macOS only · self-updates after install"
