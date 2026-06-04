@@ -8,6 +8,9 @@ export interface TrackItem {
   fileName: string
   query: string
   meta: TrackMetadata
+  // Total length in seconds, probed when the file is added. Undefined when the
+  // probe failed or has not run yet, so the row simply omits the time.
+  duration?: number
   coverUrl?: string
   coverPath?: string
   spectrum?: SpectrumResult

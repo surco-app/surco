@@ -32,6 +32,7 @@ export interface Api {
   reveal: (path: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>
   readTags: (path: string) => Promise<TrackMetadata>
+  readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<string | null>
   onMenuCommand: (cb: (id: string) => void) => () => void
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => () => void

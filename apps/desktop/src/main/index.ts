@@ -24,6 +24,7 @@ import {
   extractCover,
   generateSpectrogram,
   probeAudio,
+  probeDuration,
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
@@ -375,6 +376,8 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('audio:tags', (_e, inputPath: string) => readTags(inputPath))
+
+  ipcMain.handle('audio:duration', (_e, inputPath: string) => probeDuration(inputPath))
 
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
 

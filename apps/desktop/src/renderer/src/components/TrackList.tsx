@@ -2,6 +2,7 @@ import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
+import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem, TrackStatus } from '../types'
 
@@ -77,6 +78,11 @@ const TrackRow = memo(function TrackRow({
             </span>
           )}
         </span>
+        {t.duration !== undefined && (
+          <span data-testid="track-duration" className="shrink-0 text-xs tabular-nums text-fg-dim">
+            {formatTime(t.duration)}
+          </span>
+        )}
       </button>
       <button
         type="button"

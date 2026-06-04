@@ -27,6 +27,7 @@ const api = {
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
+  readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
   onMenuCommand: (cb: (id: string) => void) => {
     const listener = (_e: unknown, id: string): void => cb(id)

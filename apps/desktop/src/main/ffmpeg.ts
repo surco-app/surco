@@ -57,6 +57,28 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   }
 }
 
+// The container's total duration in seconds, for the track row's time readout.
+// Returns null rather than throwing on a missing/unparseable value, so a probe
+// failure leaves the row without a time instead of aborting the whole file add
+// (which runs this alongside readTags/readCover).
+export async function probeDuration(input: string): Promise<number | null> {
+  try {
+    const { stdout } = await run(ffprobePath, [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-of',
+      'json',
+      input,
+    ])
+    const seconds = Number(JSON.parse(stdout).format?.duration)
+    return Number.isFinite(seconds) ? seconds : null
+  } catch {
+    return null
+  }
+}
+
 export async function readTags(input: string): Promise<TrackMetadata> {
   const { stdout } = await run(ffprobePath, [
     '-v',
@@ -281,7 +303,19 @@ export async function convertAudio(
 // single-stream RIFF container) and re-encode the PCM little-endian, since AIFF
 // stores it big-endian and a stream copy would corrupt every sample.
 export function previewWavArgs(input: string, output: string, codec: string): string[] {
-  return ['-hide_banner', '-loglevel', 'error', '-y', '-i', input, '-map', '0:a', '-c:a', codec, output]
+  return [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    input,
+    '-map',
+    '0:a',
+    '-c:a',
+    codec,
+    output,
+  ]
 }
 
 // Transcodes an AIFF into a WAV the player can decode, preserving the source bit

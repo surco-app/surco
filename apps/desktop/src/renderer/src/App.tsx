@@ -145,14 +145,16 @@ export default function App(): React.JSX.Element {
     const items = await mapWithConcurrency(fresh, READ_CONCURRENCY, async (path) => {
       const base = newTrack(path)
       try {
-        const [tags, cover] = await Promise.all([
+        const [tags, duration, cover] = await Promise.all([
           window.api.readTags(path),
+          window.api.readDuration(path),
           window.api.readCover(path),
         ])
         const s = searchFromTags(parseFileName(path), tags)
         return {
           ...base,
           query: s.query,
+          duration: duration ?? undefined,
           coverUrl: cover ?? undefined,
           meta: {
             ...base.meta,
@@ -358,7 +360,7 @@ export default function App(): React.JSX.Element {
     setSelectedId(tracks[next].id)
   }
 
-  const sidebar = useResizableWidth(288, 220, 520)
+  const sidebar = useResizableWidth(220, 220, 520)
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
   // Falls back to the selection so the card still renders for the brief moment

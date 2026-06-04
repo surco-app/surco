@@ -84,6 +84,18 @@ describe('TrackList', () => {
     expect(stages[0]).toHaveTextContent(/AIFF/)
   })
 
+  it('shows the track length so similar takes can be told apart by time', () => {
+    // Vinyl rips of one title differ mostly by length (radio edit vs extended
+    // mix); surfacing the duration on the row lets the user pick by time.
+    renderList([track({ id: 'a', duration: 287 })])
+    expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
+  })
+
+  it('omits the duration until it has been probed', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-duration')).toBeNull()
+  })
+
   it('selects a track when its row is clicked', () => {
     const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByTestId('track-row')[1])
