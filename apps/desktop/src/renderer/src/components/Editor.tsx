@@ -395,9 +395,7 @@ export function Editor({
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className={`size-4 shrink-0 ${
-                                  matchTier === 'high'
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-amber-600 dark:text-amber-400'
+                                  matchTier === 'high' ? 'text-good' : 'text-warn'
                                 }`}
                               >
                                 <title>{tr('editor.matchSuggested')}</title>
