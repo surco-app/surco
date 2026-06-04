@@ -28,6 +28,7 @@ import {
 } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { removeRenamedOriginal, resolveOutputTarget } from './inplace'
+import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getSettings, saveSettings } from './settings'
 
@@ -409,7 +410,10 @@ app.whenReady().then(() => {
   // slice (rather than net.fetch'ing the whole file:// URL, which ignores Range)
   // is what makes scrubbing work.
   protocol.handle(MEDIA_SCHEME, async (req) => {
-    const filePath = mediaPathFromUrl(req.url)
+    // AIFF can't be decoded by the <audio> element, so resolvePlayable swaps it
+    // for a transcoded WAV (every other format streams untouched). The size,
+    // MIME and ranges below all come from the file we actually serve.
+    const filePath = await resolvePlayable(mediaPathFromUrl(req.url))
     const { size } = await stat(filePath)
     const type = mediaMimeType(filePath)
     const range = parseRange(req.headers.get('range'), size)

@@ -275,6 +275,23 @@ export async function convertAudio(
   }
 }
 
+// The renderer's <audio> element decodes WAV/FLAC/MP3 but not AIFF, so an AIFF
+// source plays nothing. We render it to a WAV the player can decode: keep only
+// the audio (a stray attached-picture stream would make ffmpeg reject the
+// single-stream RIFF container) and re-encode the PCM little-endian, since AIFF
+// stores it big-endian and a stream copy would corrupt every sample.
+export function previewWavArgs(input: string, output: string, codec: string): string[] {
+  return ['-hide_banner', '-loglevel', 'error', '-y', '-i', input, '-map', '0:a', '-c:a', codec, output]
+}
+
+// Transcodes an AIFF into a WAV the player can decode, preserving the source bit
+// depth exactly (the player only needs to play it, but losing precision for a
+// preview would still misrepresent the rip).
+export async function transcodeAiffToWav(input: string, output: string): Promise<void> {
+  const codec = pcmCodec(await probeAudio(input), 'le')
+  await run(ffmpegPath, previewWavArgs(input, output, codec), { maxBuffer: 1024 * 1024 * 32 })
+}
+
 export async function generateSpectrogram(input: string): Promise<string> {
   const out = join(tmpdir(), tmpName('spec', 'png'))
   try {

@@ -11,6 +11,7 @@ import {
   formatMatchesInput,
   parseBands,
   planConversion,
+  previewWavArgs,
   tagsFromProbe,
 } from './ffmpeg'
 
@@ -147,6 +148,23 @@ describe('planConversion', () => {
       ext: '.wav',
     })
     expect(probe).toHaveBeenCalledWith('/in.flac')
+  })
+})
+
+describe('previewWavArgs', () => {
+  it('re-encodes only the audio into the WAV the player can decode, with the given little-endian PCM codec', () => {
+    // The <audio> element has no AIFF decoder, so an AIFF source is transcoded to
+    // a temp WAV for playback. We keep just the audio (a stray cover stream would
+    // make ffmpeg refuse the single-stream RIFF container) and re-encode the PCM
+    // little-endian, since AIFF stores it big-endian and a stream copy would
+    // corrupt every sample.
+    const args = previewWavArgs('/in.aiff', '/out.wav', 'pcm_s24le')
+    expect(args).toContain('/in.aiff')
+    expect(args[args.length - 1]).toBe('/out.wav')
+    const i = args.indexOf('-c:a')
+    expect(args[i + 1]).toBe('pcm_s24le')
+    expect(args).toContain('-map')
+    expect(args[args.indexOf('-map') + 1]).toBe('0:a')
   })
 })
 
