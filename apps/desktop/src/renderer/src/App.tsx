@@ -24,6 +24,7 @@ import { sanitizeMeta } from './lib/hygiene'
 import { keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
+import { needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
 import { formatShortcut } from './lib/shortcuts'
@@ -35,6 +36,10 @@ const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3)$/i
 // Cap on tracks read in parallel when files are dropped: each spawns taglib +
 // ffprobe, so an unbounded drop of a full crate would flood the main process.
 const READ_CONCURRENCY = 6
+
+// Hovering counts as intent only after the cursor rests briefly, so sweeping the
+// pointer across the list while scrolling doesn't fire a prefetch for every row.
+const PREFETCH_HOVER_MS = 150
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
@@ -86,6 +91,14 @@ export default function App(): React.JSX.Element {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const playingIdRef = useRef<string | null>(null)
   playingIdRef.current = playingId
+  // Refs so the prefetch callback can stay stable (memoized rows depend on it)
+  // while still reading the latest tracks and spectrum setting on each hover.
+  const tracksRef = useRef<TrackItem[]>([])
+  tracksRef.current = tracks
+  const showSpectrumRef = useRef(true)
+  showSpectrumRef.current = settings?.showSpectrum ?? true
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const spectrumInFlight = useRef<Set<string>>(new Set())
   const [paused, setPaused] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -189,9 +202,30 @@ export default function App(): React.JSX.Element {
     addPaths(await window.api.expandPaths(dropped))
   }
 
-  function updateTrack(id: string, patch: Partial<TrackItem>): void {
+  const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
-  }
+  }, [])
+
+  // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
+  // only counts as intent once the cursor rests) and guarded by an in-flight set
+  // so a second hover never spawns a duplicate ffmpeg run for the same track.
+  const handlePrefetch = useCallback(
+    (id: string): void => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      hoverTimer.current = setTimeout(() => {
+        const track = tracksRef.current.find((t) => t.id === id)
+        if (!track || spectrumInFlight.current.has(id)) return
+        if (!needsSpectrum(track, showSpectrumRef.current)) return
+        spectrumInFlight.current.add(id)
+        window.api
+          .spectrogram(track.inputPath)
+          .then((spectrum) => updateTrack(id, { spectrum }))
+          .catch(() => {})
+          .finally(() => spectrumInFlight.current.delete(id))
+      }, PREFETCH_HOVER_MS)
+    },
+    [updateTrack],
+  )
 
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
@@ -643,6 +677,7 @@ export default function App(): React.JSX.Element {
                 outputFormat={settings?.outputFormat ?? 'aiff'}
                 onSelect={setSelectedId}
                 onRemove={removeTrack}
+                onPrefetch={handlePrefetch}
               />
             )}
           </div>

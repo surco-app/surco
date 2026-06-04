@@ -12,6 +12,7 @@ interface Props {
   outputFormat: OutputFormat
   onSelect: (id: string) => void
   onRemove: (id: string) => void
+  onPrefetch: (id: string) => void
 }
 
 const statusColor: Record<TrackStatus, string> = {
@@ -27,6 +28,7 @@ interface RowProps {
   outputFormat: OutputFormat
   onSelect: (id: string) => void
   onRemove: (id: string) => void
+  onPrefetch: (id: string) => void
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -38,6 +40,7 @@ const TrackRow = memo(function TrackRow({
   outputFormat,
   onSelect,
   onRemove,
+  onPrefetch,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
@@ -46,6 +49,8 @@ const TrackRow = memo(function TrackRow({
         type="button"
         data-testid="track-row"
         onClick={() => onSelect(t.id)}
+        onMouseEnter={() => onPrefetch(t.id)}
+        onFocus={() => onPrefetch(t.id)}
         className={`relative flex w-full items-center gap-3 rounded-lg py-2.5 pr-10 pl-3 text-left transition-colors ${
           active
             ? 'bg-[var(--color-accent-soft)] before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
@@ -107,6 +112,7 @@ export function TrackList({
   outputFormat,
   onSelect,
   onRemove,
+  onPrefetch,
 }: Props): React.JSX.Element {
   return (
     <ul className="flex flex-col gap-1 p-2">
@@ -118,6 +124,7 @@ export function TrackList({
           outputFormat={outputFormat}
           onSelect={onSelect}
           onRemove={onRemove}
+          onPrefetch={onPrefetch}
         />
       ))}
     </ul>

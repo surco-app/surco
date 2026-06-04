@@ -44,6 +44,7 @@ function track(
 function renderList(tracks: TrackItem[], selectedId: string | null = null) {
   const onSelect = vi.fn()
   const onRemove = vi.fn()
+  const onPrefetch = vi.fn()
   render(
     <TrackList
       tracks={tracks}
@@ -51,9 +52,10 @@ function renderList(tracks: TrackItem[], selectedId: string | null = null) {
       outputFormat="aiff"
       onSelect={onSelect}
       onRemove={onRemove}
+      onPrefetch={onPrefetch}
     />,
   )
-  return { onSelect, onRemove }
+  return { onSelect, onRemove, onPrefetch }
 }
 
 describe('TrackList', () => {
@@ -107,5 +109,20 @@ describe('TrackList', () => {
     fireEvent.click(screen.getAllByLabelText('Remove')[0])
     expect(onRemove).toHaveBeenCalledWith('a')
     expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  // Hovering a row signals intent to open it; the app warms that track's spectrum
+  // (and, with a token, its Discogs match) so opening it feels instant.
+  it('asks to prefetch a track when its row is hovered', () => {
+    const { onPrefetch } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    fireEvent.mouseEnter(screen.getAllByTestId('track-row')[1])
+    expect(onPrefetch).toHaveBeenCalledWith('b')
+  })
+
+  // Keyboard users never fire mouseenter, so focusing a row by tabbing warms it too.
+  it('asks to prefetch a track when its row receives focus', () => {
+    const { onPrefetch } = renderList([track({ id: 'a' })])
+    fireEvent.focus(screen.getByTestId('track-row'))
+    expect(onPrefetch).toHaveBeenCalledWith('a')
   })
 })
