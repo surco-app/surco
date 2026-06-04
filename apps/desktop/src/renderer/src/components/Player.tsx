@@ -1,11 +1,14 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
 
 interface PlayerProps {
   track: TrackItem
   paused: boolean
   progress: number
+  currentTime: number
+  duration: number
   onToggle: () => void
   onSeek: (ratio: number) => void
   onClose: () => void
@@ -17,6 +20,8 @@ export function Player({
   track,
   paused,
   progress,
+  currentTime,
+  duration,
   onToggle,
   onSeek,
   onClose,
@@ -63,6 +68,10 @@ export function Player({
             {track.meta.title || track.fileName}
           </span>
           <span className="block truncate text-fg-dim text-xs">{track.meta.artist}</span>
+        </span>
+
+        <span data-testid="player-time" className="shrink-0 text-fg-dim text-xs tabular-nums">
+          {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
         <button

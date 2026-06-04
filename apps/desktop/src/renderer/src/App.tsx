@@ -643,6 +643,8 @@ export default function App(): React.JSX.Element {
               track={playerTrack}
               paused={paused}
               progress={playProgress}
+              currentTime={currentTime}
+              duration={duration}
               onToggle={pauseResume}
               onSeek={seekToRatio}
               onClose={closePlayer}

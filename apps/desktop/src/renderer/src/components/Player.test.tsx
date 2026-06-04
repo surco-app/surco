@@ -45,6 +45,8 @@ function props(over = {}) {
     track: track(),
     paused: false,
     progress: 0,
+    currentTime: 0,
+    duration: 0,
     onToggle: vi.fn(),
     onSeek: vi.fn(),
     onClose: vi.fn(),
@@ -83,6 +85,11 @@ describe('Player', () => {
     render(<Player {...props({ onClose })} />)
     fireEvent.click(screen.getByTestId('player-close'))
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('shows the elapsed and total time so the listener can place the track', () => {
+    render(<Player {...props({ currentTime: 65, duration: 754 })} />)
+    expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 
   it('seeks to the fraction of the bar the user clicks', () => {
