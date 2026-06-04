@@ -169,10 +169,11 @@ export default function App(): React.JSX.Element {
     addPaths(await window.api.pickFiles())
   }
 
-  function onDrop(e: React.DragEvent): void {
+  async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
     setDragging(false)
-    addPaths(Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f)))
+    const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
+    addPaths(await window.api.expandPaths(dropped))
   }
 
   function updateTrack(id: string, patch: Partial<TrackItem>): void {

@@ -14,6 +14,7 @@ import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './ap
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
 import { getRelease, search } from './discogs'
+import { expandPaths } from './expand'
 import {
   analyzeCutoff,
   buildSpectrum,
@@ -219,6 +220,8 @@ function registerIpc(): void {
     })
     return canceled ? [] : filePaths
   })
+
+  ipcMain.handle('files:expand', (_e, paths: string[]) => expandPaths(paths))
 
   ipcMain.handle('dialog:pickOutputDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

@@ -7,6 +7,7 @@ const api = {
   // stamp feedback with the version synchronously, like platform.
   version: ipcRenderer.sendSync('app:version') as string,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  expandPaths: (paths: string[]): Promise<string[]> => ipcRenderer.invoke('files:expand', paths),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
