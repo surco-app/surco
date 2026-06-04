@@ -40,15 +40,15 @@ export default function Header() {
             alt="Surco"
             className={`transition-all duration-300 ${scrolled ? 'h-10 w-10' : 'h-14 w-14'}`}
           />
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex items-center gap-2">
             <span
-              className={`font-semibold tracking-tight transition-all duration-300 ${
+              className={`font-semibold leading-none tracking-tight transition-all duration-300 ${
                 scrolled ? 'text-2xl' : 'text-3xl'
               }`}
             >
               Surco
             </span>
-            <span className="rounded-full border border-blue/40 bg-blue/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-blue">
+            <span className="rounded-full border border-blue/40 bg-blue/10 px-2 py-0.5 font-mono text-[10px] uppercase leading-none tracking-wider text-blue">
               {t('beta')}
             </span>
           </span>
