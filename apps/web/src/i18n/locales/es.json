@@ -55,12 +55,46 @@
     "kicker": "Funciones",
     "title": "Todo el flujo, en una app",
     "items": [
-      { "kick": "importa", "title": "Importa y escucha", "body": "Suelta tus WAV, FLAC, AIFF o MP3 — hasta carpetas enteras. Surco lee las etiquetas y la carátula que ya traen, y preescuchas cualquier pista antes de convertir." },
-      { "kick": "discogs", "title": "Etiqueta desde Discogs", "body": "Busca el disco y Surco elige el tema correcto según el nombre del archivo, luego trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic — sin configurar nada. Y añades los campos de DJ: BPM, tonalidad, remixer y grouping." },
-      { "kick": "convierte", "title": "Convierte a cualquier formato", "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar. Si ya está en el formato de destino, lo copia tal cual: mismos bits, al instante. Una pista o la cola entera de una pasada." },
-      { "kick": "traktor", "title": "Respeta tus CUE de Traktor", "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor." },
-      { "kick": "calidad", "title": "Sin fakes ni duplicados", "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music." },
-      { "kick": "organiza", "title": "Organiza a tu manera", "body": "Los tags y la carátula se guardan dentro del archivo, así que aparecen en Apple Music y rekordbox. Manda las pistas a Apple Music, muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist}-{title}." }
+      {
+        "kick": "importa",
+        "title": "Importa y escucha",
+        "body": "Suelta tus WAV, FLAC, AIFF y MP3 — o M4A, AAC, Opus y Ogg — incluso carpetas enteras. Surco lee los tags y la carátula que ya traen, y puedes escuchar cualquier pista antes de convertir."
+      },
+      {
+        "kick": "discogs",
+        "title": "Etiqueta desde Discogs",
+        "body": "Busca el disco y Surco elige el tema correcto según el nombre del archivo, luego trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic — sin configurar nada. Y añades los campos de DJ: BPM, tonalidad, remixer y grouping."
+      },
+      {
+        "kick": "álbum",
+        "title": "Empareja un disco entero",
+        "body": "¿Tienes el release completo? Selecciona todas las pistas y Surco asigna cada archivo a su lugar en el tracklist de Discogs — emparejando por duración, así hasta los rips con el mismo nombre caen en su sitio. Corrige las dudosas y etiqueta todas de una vez."
+      },
+      {
+        "kick": "limpieza",
+        "title": "Ordena un lote desordenado",
+        "body": "Rellena los tags desde el nombre del archivo de un clic, busca y reemplaza en todos los tags (texto o regex), y edita los campos que comparte una selección — álbum, año, género — todos a la vez."
+      },
+      {
+        "kick": "convierte",
+        "title": "Convierte a cualquier formato",
+        "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar. Si ya está en el formato de destino, lo copia tal cual: mismos bits, al instante. Una pista o la cola entera de una pasada."
+      },
+      {
+        "kick": "traktor",
+        "title": "Respeta tus CUE de Traktor",
+        "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor."
+      },
+      {
+        "kick": "calidad",
+        "title": "Sin fakes ni duplicados",
+        "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music."
+      },
+      {
+        "kick": "organiza",
+        "title": "Organiza a tu manera",
+        "body": "Los tags y la carátula se escriben dentro del archivo, así que se ven en Apple Music y rekordbox. Envía pistas a Apple Music, muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist} - {title} — en subcarpetas {albumArtist}/{album} si quieres."
+      }
     ]
   },
   "shortcuts": {
@@ -92,10 +126,22 @@
     "manual": "A mano",
     "manualTime": "~3–4 min",
     "manualSteps": [
-      { "app": "otra app", "label": "Convertir a AIFF" },
-      { "app": "app de tags", "label": "Escribir los metadatos" },
-      { "app": "a mano", "label": "Añadir grouping y tags que el tagger no pone" },
-      { "app": "Música", "label": "Importar a Apple Music" }
+      {
+        "app": "otra app",
+        "label": "Convertir a AIFF"
+      },
+      {
+        "app": "app de tags",
+        "label": "Escribir los metadatos"
+      },
+      {
+        "app": "a mano",
+        "label": "Añadir grouping y tags que el tagger no pone"
+      },
+      {
+        "app": "Música",
+        "label": "Importar a Apple Music"
+      }
     ],
     "manualCaption": "saltando entre herramientas · repitiendo en cada pista",
     "withSurco": "Con Surco",
@@ -116,9 +162,18 @@
     "kicker": "Cómo funciona",
     "title": "Tres pasos y a pinchar",
     "steps": [
-      { "title": "Suelta tus pistas", "body": "Arrastra tus WAV, FLAC, AIFF o MP3. Surco lee al vuelo las etiquetas y la carátula." },
-      { "title": "Elige el disco", "body": "Busca en Discogs y aplica artista, álbum, año, género y carátula con un clic." },
-      { "title": "Exporta y listo", "body": "Convierte a AIFF, WAV, FLAC o MP3, revisa el espectro y manda la pista a Apple Music." }
+      {
+        "title": "Suelta tus pistas",
+        "body": "Arrastra tus WAV, FLAC, AIFF o MP3. Surco lee al vuelo las etiquetas y la carátula."
+      },
+      {
+        "title": "Elige el disco",
+        "body": "Busca en Discogs y aplica artista, álbum, año, género y carátula con un clic."
+      },
+      {
+        "title": "Exporta y listo",
+        "body": "Convierte a AIFF, WAV, FLAC o MP3, revisa el espectro y manda la pista a Apple Music."
+      }
     ]
   },
   "mockup": {
