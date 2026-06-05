@@ -74,6 +74,15 @@ describe('AlbumMatchRows', () => {
     expect(patches.find((p) => p.id === 'long')?.patch.meta.title).toBe('Extended Mix')
   })
 
+  it('acknowledges the apply by flashing the button to "Applied"', async () => {
+    renderRows([track('short', 'radio edit', 181)])
+    await screen.findAllByTestId('match-row')
+    const button = screen.getByTestId('match-apply')
+    expect(button).toHaveTextContent('Apply to 1')
+    fireEvent.click(button)
+    expect(button).toHaveTextContent('Applied')
+  })
+
   it('reassigns only the chosen file, leaving the others put', async () => {
     // Duplicates are allowed, so pointing the short file at the extended mix must not
     // reshuffle the long file — a manual pick touches exactly one row.

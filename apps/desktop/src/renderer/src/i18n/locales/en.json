@@ -239,6 +239,7 @@
     "title": "Match album",
     "unassigned": "Unassigned",
     "apply": "Apply to {{count}}",
-    "suggested": "Suggested match"
+    "suggested": "Suggested match",
+    "applied": "Applied"
   }
 }

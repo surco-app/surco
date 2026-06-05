@@ -239,6 +239,7 @@
     "title": "Emparejar álbum",
     "unassigned": "Sin asignar",
     "apply": "Aplicar a {{count}}",
-    "suggested": "Coincidencia sugerida"
+    "suggested": "Coincidencia sugerida",
+    "applied": "Aplicado"
   }
 }

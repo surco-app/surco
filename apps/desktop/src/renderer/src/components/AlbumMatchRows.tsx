@@ -21,8 +21,17 @@ interface Props {
 export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [assignments, setAssignments] = useState<Assignment[]>([])
+  // Applying is otherwise silent, so flash the button to "Applied" for a moment as the
+  // acknowledgement; it reverts so the user can apply again after a correction.
+  const [justApplied, setJustApplied] = useState(false)
   const filesRef = useRef(files)
   filesRef.current = files
+
+  useEffect(() => {
+    if (!justApplied) return
+    const id = setTimeout(() => setJustApplied(false), 2000)
+    return () => clearTimeout(id)
+  }, [justApplied])
 
   // Re-run the assignment only when the release or the set of selected files changes —
   // keyed on the file ids, not the array identity, so a manual reassignment below (or an
@@ -52,7 +61,9 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
       if (!a.track || !file) return []
       return [{ id: a.id, patch: buildReleaseMeta(file.meta, release, a.track, file.coverUrl) }]
     })
-    if (patches.length) onApply(patches)
+    if (!patches.length) return
+    onApply(patches)
+    setJustApplied(true)
   }
 
   const matchedCount = assignments.filter((a) => a.track).length
@@ -81,7 +92,8 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                 <select
                   data-testid={`match-select-${a.id}`}
                   value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setJustApplied(false)
                     setAssignments((prev) =>
                       reassign(
                         prev,
@@ -91,7 +103,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                           : release.tracklist[Number(e.target.value)],
                       ),
                     )
-                  }
+                  }}
                   className="w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pr-8 pl-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 >
                   <option value="">{tr('match.unassigned')}</option>
@@ -136,9 +148,11 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
         data-testid="match-apply"
         onClick={apply}
         disabled={matchedCount === 0}
-        className="press mt-3 w-full rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white disabled:opacity-50"
+        className={`press mt-3 w-full rounded-lg py-2 text-sm font-medium text-white disabled:opacity-50 ${
+          justApplied ? 'bg-good' : 'bg-[var(--color-accent)]'
+        }`}
       >
-        {tr('match.apply', { count: matchedCount })}
+        {justApplied ? `✓ ${tr('match.applied')}` : tr('match.apply', { count: matchedCount })}
       </button>
     </div>
   )
