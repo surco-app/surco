@@ -15,9 +15,16 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
-import { bestMatch, buildReleaseMeta, confidenceTier, resultFromRelease } from '../lib/release'
+import {
+  bestMatch,
+  buildReleaseMeta,
+  confidenceTier,
+  type ReleaseMetaPatch,
+  resultFromRelease,
+} from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
+import { AlbumMatchRows } from './AlbumMatchRows'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
@@ -35,6 +42,13 @@ interface Props {
   requiredFields: string[]
   showSpectrum: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
+  // The whole multi-selection, when more than one track is picked. Its presence flips the
+  // Discogs column to album-match mode (map every file to a tracklist entry at once) and
+  // the convert action to "convert all"; the right-hand editor still shows `item`, the
+  // primary track. Undefined/length<=1 means the ordinary single-track editor.
+  selectedTracks?: TrackItem[]
+  onApplyMatches?: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
+  onProcessAll?: () => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic: () => void
@@ -52,11 +66,15 @@ export function Editor({
   requiredFields,
   showSpectrum,
   searchInputRef,
+  selectedTracks,
+  onApplyMatches,
+  onProcessAll,
   onChange,
   onProcess,
   onAddToAppleMusic,
   onOpenSettings,
 }: Props): React.JSX.Element {
+  const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState(item.query)
   const [results, setResults] = useState<DiscogsSearchResult[]>([])
@@ -370,10 +388,17 @@ export function Editor({
                   <CollapsibleTracks open={expanded}>
                     <div className="pb-1">
                       <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
-                        {tr('editor.chooseTrack')}
+                        {isMulti ? tr('match.title') : tr('editor.chooseTrack')}
                       </p>
                       {loaded && release ? (
-                        release.tracklist.map((t) => (
+                        isMulti && selectedTracks && onApplyMatches ? (
+                          <AlbumMatchRows
+                            files={selectedTracks}
+                            release={release}
+                            onApply={onApplyMatches}
+                          />
+                        ) : (
+                          release.tracklist.map((t) => (
                           <button
                             key={`${t.position}-${t.title}`}
                             type="button"
@@ -413,8 +438,9 @@ export function Editor({
                                 {t.duration}
                               </span>
                             )}
-                          </button>
-                        ))
+                            </button>
+                          ))
+                        )
                       ) : (
                         <TrackSkeleton />
                       )}
@@ -690,19 +716,31 @@ export function Editor({
             </div>
           )}
           <div className="space-y-2">
-            <ExportButton
-              status={item.status}
-              stale={stale}
-              done={done}
-              outputFormat={format}
-              exportedFormat={exportedFormat}
-              withAppleMusic={
-                window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
-              }
-              incomplete={incomplete}
-              onProcess={onProcess}
-              onSelectFormat={setFormat}
-            />
+            {isMulti ? (
+              <button
+                type="button"
+                data-testid="process-all-btn"
+                onClick={onProcessAll}
+                disabled={!onProcessAll}
+                className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              >
+                {tr('editor.convertAll', { count: selectedTracks?.length ?? 0 })}
+              </button>
+            ) : (
+              <ExportButton
+                status={item.status}
+                stale={stale}
+                done={done}
+                outputFormat={format}
+                exportedFormat={exportedFormat}
+                withAppleMusic={
+                  window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
+                }
+                incomplete={incomplete}
+                onProcess={onProcess}
+                onSelectFormat={setFormat}
+              />
+            )}
             {done && (
               <div className="flex gap-2">
                 <button

@@ -112,7 +112,8 @@
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
     "reportError": "Reportar",
     "inLibrary": "Ya está en tu biblioteca de Apple Music",
-    "notInLibrary": "No está en tu biblioteca de Apple Music"
+    "notInLibrary": "No está en tu biblioteca de Apple Music",
+    "convertAll": "Convertir todas ({{count}})"
   },
   "fields": {
     "title": "Título",
@@ -232,20 +233,10 @@
       }
     }
   },
-  "bulk": {
-    "title": "Editando {{count}} pistas",
-    "hint": "Edita los campos que comparten estas pistas. Los cambios se aplican a todas; un campo con valores distintos se deja vacío.",
-    "mixed": "Varios valores",
-    "coverDrop": "Arrastra o haz clic para la carátula de todas",
-    "coverDropActive": "Suelta para aplicarla a todas"
-  },
   "match": {
     "title": "Emparejar álbum",
-    "searchPlaceholder": "Busca el álbum en Discogs",
-    "search": "Buscar",
     "unassigned": "Sin asignar",
     "apply": "Aplicar a {{count}}",
-    "suggested": "Coincidencia sugerida",
-    "error": "No se pudo cargar el álbum"
+    "suggested": "Coincidencia sugerida"
   }
 }

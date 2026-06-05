@@ -2,8 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
-import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
-import { BulkEditor } from './components/BulkEditor'
+import type { OutputFormat, Settings, ThemePref } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
@@ -232,25 +231,6 @@ export default function App(): React.JSX.Element {
 
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
-  }, [])
-
-  // Merges a metadata patch into every selected track at once — the write path behind
-  // the bulk editor, so editing a shared field touches all of them in one update.
-  const updateTracksMeta = useCallback(
-    (ids: string[], metaPatch: Partial<TrackMetadata>): void => {
-      const targets = new Set(ids)
-      setTracks((prev) =>
-        prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
-      )
-    },
-    [],
-  )
-
-  // Top-level (non-metadata) patch across a selection — used to stamp one dropped cover
-  // onto every selected track from the bulk editor.
-  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
   }, [])
 
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
@@ -765,14 +745,7 @@ export default function App(): React.JSX.Element {
         <ResizeHandle onPointerDown={sidebar.onPointerDown} />
 
         <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-          {selectedIds.length > 1 ? (
-            <BulkEditor
-              tracks={selectedTracks}
-              onChangeMeta={(patch) => updateTracksMeta(selectedIds, patch)}
-              onApplyCover={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
-              onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
-            />
-          ) : selected ? (
+          {selected ? (
             <Editor
               key={selected.id}
               item={selected}
@@ -785,6 +758,9 @@ export default function App(): React.JSX.Element {
               requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
               showSpectrum={settings?.showSpectrum ?? true}
               searchInputRef={searchInputRef}
+              selectedTracks={selectedTracks}
+              onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
+              onProcessAll={processAll}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={(format) => processOne(selected.id, format)}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}

@@ -112,7 +112,8 @@
     "missingRequired": "Missing required fields: {{fields}}",
     "reportError": "Report",
     "inLibrary": "Already in your Apple Music library",
-    "notInLibrary": "Not in your Apple Music library"
+    "notInLibrary": "Not in your Apple Music library",
+    "convertAll": "Convert all ({{count}})"
   },
   "fields": {
     "title": "Title",
@@ -232,20 +233,10 @@
       }
     }
   },
-  "bulk": {
-    "title": "Editing {{count}} tracks",
-    "hint": "Edit the fields these tracks share. Changes apply to all of them; a field with differing values is left blank.",
-    "mixed": "Multiple values",
-    "coverDrop": "Drag or click to set artwork for all",
-    "coverDropActive": "Drop to apply to all"
-  },
   "match": {
     "title": "Match album",
-    "searchPlaceholder": "Search Discogs for the album",
-    "search": "Search",
     "unassigned": "Unassigned",
     "apply": "Apply to {{count}}",
-    "suggested": "Suggested match",
-    "error": "Could not load the album"
+    "suggested": "Suggested match"
   }
 }
