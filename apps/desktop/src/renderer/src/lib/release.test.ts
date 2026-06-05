@@ -276,13 +276,21 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.discNumber).toBe('1')
   })
 
-  it('prefers the track artist, then the current artist, then the album artist', () => {
+  it('prefers the track artist, then the album artist, then the current value', () => {
     const rel = release({ artists: [{ name: 'Album Artist' }] })
+    // A track that carries its own artist (compilations) wins.
     expect(
       buildReleaseMeta(meta(), rel, { ...track, artists: [{ name: 'Remixer' }] }).meta.artist,
     ).toBe('Remixer')
-    expect(buildReleaseMeta(meta({ artist: 'Existing' }), rel, track).meta.artist).toBe('Existing')
-    expect(buildReleaseMeta(meta(), rel, track).meta.artist).toBe('Album Artist')
+    // With no per-track artist, the release artist overwrites a wrong existing value — the
+    // artist applies from Discogs like album/year/genre, not kept just because it was set.
+    expect(buildReleaseMeta(meta({ artist: 'Existing' }), rel, track).meta.artist).toBe(
+      'Album Artist',
+    )
+    // Only when Discogs carries no artist at all does the current value stand.
+    expect(
+      buildReleaseMeta(meta({ artist: 'Existing' }), release({ artists: [] }), track).meta.artist,
+    ).toBe('Existing')
   })
 
   it('uses the label catalog number but discards a literal "none"', () => {
