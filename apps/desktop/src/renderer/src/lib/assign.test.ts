@@ -20,18 +20,33 @@ describe('assignTracks', () => {
     expect(out.find((a) => a.id === 'long')?.track?.position).toBe('B')
   })
 
-  it('never assigns one tracklist entry to two files', () => {
-    // Two rips that both look most like track A must not both grab it — the loser takes
-    // its next-best entry instead, which is the whole reason for a 1:1 assignment.
+  it('lets two copies of the same cut both land on the same track', () => {
+    // A repeated file (same title and length) is the same recording twice, so both must
+    // map to the same entry — forcing one onto a different track was the old bug.
     const tracklist = [t('A', 'aaa', '5:00'), t('B', 'bbb', '5:01')]
     const files: AssignInput[] = [
       { id: 'one', target: { title: 'aaa', durationSec: 300 } },
       { id: 'two', target: { title: 'aaa', durationSec: 300 } },
     ]
     const out = assignTracks(files, tracklist)
-    expect(out[0].track).toBeDefined()
-    expect(out[1].track).toBeDefined()
-    expect(out[0].track).not.toBe(out[1].track)
+    expect(out[0].track?.position).toBe('A')
+    expect(out[1].track?.position).toBe('A')
+  })
+
+  it('leaves a file unassigned when no track is within the duration margin', () => {
+    // The file's length is the fingerprint: if the closest track is far off, a matching
+    // title is not enough to claim it — better unassigned than wrong.
+    const tracklist = [t('A1', 'Still Cant (Extended Mix)', '5:42')]
+    const files: AssignInput[] = [
+      { id: 'rip', target: { title: 'Still Cant (Extended Mix)', durationSec: 252 } },
+    ]
+    expect(assignTracks(files, tracklist)[0].track).toBeUndefined()
+  })
+
+  it('tolerates a few seconds of vinyl drift instead of demanding an exact length', () => {
+    const tracklist = [t('A1', 'Some Mix', '4:00')]
+    const files: AssignInput[] = [{ id: 'rip', target: { title: 'x', durationSec: 247 } }]
+    expect(assignTracks(files, tracklist)[0].track?.position).toBe('A1')
   })
 
   it('lets duration win when the title points at a track of the wrong length', () => {
@@ -80,12 +95,12 @@ describe('reassign', () => {
     expect(out.find((a) => a.id === 'short')?.track?.position).toBe('B')
   })
 
-  it('swaps entries when the chosen track is already held by another file', () => {
-    // Picking long's track for short must hand short's old track to long, so the two
-    // simply trade rather than leaving them both pointed at the same entry.
+  it('changes only the chosen file, leaving others even on the same track', () => {
+    // Reassigning short to long's track must not move long: duplicates are allowed, so a
+    // manual pick touches one file and never quietly reshuffles the rest.
     const out = reassign(initial, 'short', tracklist[1])
     expect(out.find((a) => a.id === 'short')?.track?.position).toBe('B')
-    expect(out.find((a) => a.id === 'long')?.track?.position).toBe('A')
+    expect(out.find((a) => a.id === 'long')?.track?.position).toBe('B')
   })
 
   it('unassigns a file when given no track', () => {

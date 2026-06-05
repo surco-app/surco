@@ -107,12 +107,12 @@ describe('AlbumMatch', () => {
     expect(screen.getAllByTestId('match-result')).toHaveLength(2)
   })
 
-  it('swaps the held entry when a file is reassigned to a track another file has', async () => {
-    // Pointing the short file at the extended mix must hand the radio edit to the long
-    // file, so the two trade rather than both claiming one track.
+  it('reassigns only the chosen file, leaving the others put', async () => {
+    // Duplicates are allowed, so pointing the short file at the extended mix must not
+    // reshuffle the long file — a manual pick touches exactly one row.
     await loadMatched([track('short', 'radio edit', 181), track('long', 'extended mix', 359)])
     fireEvent.change(screen.getByTestId('match-select-short'), { target: { value: '1' } })
-    await waitFor(() => expect(screen.getByTestId('match-select-long')).toHaveValue('0'))
-    expect(screen.getByTestId('match-select-short')).toHaveValue('1')
+    await waitFor(() => expect(screen.getByTestId('match-select-short')).toHaveValue('1'))
+    expect(screen.getByTestId('match-select-long')).toHaveValue('1')
   })
 })
