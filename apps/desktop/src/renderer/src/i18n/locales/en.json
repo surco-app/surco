@@ -92,7 +92,7 @@
     "outputName": "File name",
     "outputNameHint": "Built from the artist and title. Change the pattern in Settings → Editing.",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
-    "regenerate": "Regenerate",
+    "regenerate": "Regenerate name from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above",
     "convert": "Convert to {{format}} + Apple Music",
     "convertNoMusic": "Convert to {{format}}",
