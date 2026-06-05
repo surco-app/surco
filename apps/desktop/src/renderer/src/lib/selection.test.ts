@@ -16,12 +16,19 @@ describe('clickSelect', () => {
     expect(clickSelect(state, ORDER, 'd', {})).toEqual({ ids: ['d'], anchor: 'd' })
   })
 
-  it('adds a track to the selection with Cmd-click', () => {
+  it('adds a track with Cmd-click but keeps the anchor so the editor is not re-keyed', () => {
+    // Moving the anchor to the newly added track would remount the editor and refetch its
+    // Discogs search; keeping it lets an in-progress search survive building the selection.
     const state: Selection = { ids: ['a'], anchor: 'a' }
     expect(clickSelect(state, ORDER, 'c', { meta: true })).toEqual({
       ids: ['a', 'c'],
-      anchor: 'c',
+      anchor: 'a',
     })
+  })
+
+  it('keeps the anchor when Cmd-clicking off a track that is not the anchor', () => {
+    const state: Selection = { ids: ['a', 'b', 'c'], anchor: 'a' }
+    expect(clickSelect(state, ORDER, 'c', { meta: true })).toEqual({ ids: ['a', 'b'], anchor: 'a' })
   })
 
   it('removes a track with Cmd-click when it is already selected', () => {

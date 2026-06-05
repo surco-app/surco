@@ -35,9 +35,15 @@ export function clickSelect(
   if (mods.meta) {
     const has = state.ids.includes(id)
     const ids = has ? state.ids.filter((x) => x !== id) : [...state.ids, id]
-    // Toggling the anchor off hands the role to the last remaining pick (or clears it
-    // when nothing is left), so the editor always tracks a still-selected row.
-    return { ids, anchor: has ? (ids[ids.length - 1] ?? null) : id }
+    // Adding keeps the current anchor, so building a multi-selection never re-keys the
+    // editor — its in-flight Discogs search and loaded results survive instead of being
+    // torn down and refetched. Removing only moves the anchor when the anchor itself went.
+    const anchor = has
+      ? state.anchor === id
+        ? (ids[ids.length - 1] ?? null)
+        : state.anchor
+      : (state.anchor ?? id)
+    return { ids, anchor }
   }
   return { ids: [id], anchor: id }
 }
