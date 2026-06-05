@@ -13,7 +13,10 @@
     "batchSkipped": "{{count}} skipped",
     "batchFailed": "{{count}} failed",
     "palette": "Command palette",
-    "settings": "Settings"
+    "settings": "Settings",
+    "selectAll": "Select all",
+    "fillFromName": "Fill all tags from file name",
+    "clearAll": "Clear the list"
   },
   "sidebar": {
     "dropHint": "Drag your WAV or FLAC here, or press “Add files”."

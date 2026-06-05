@@ -23,6 +23,7 @@ import {
 } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
+import { smartDeriveTags } from './lib/deriveTags'
 import { exportedPatch } from './lib/export'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
@@ -301,6 +302,20 @@ export default function App(): React.JSX.Element {
   function clearTracks(): void {
     setTracks([])
     setSelection({ ids: [], anchor: null })
+  }
+
+  function selectAll(): void {
+    if (tracks.length === 0) return
+    setSelection({ ids: tracks.map((t) => t.id), anchor: tracks[0].id })
+  }
+
+  // Fills every loaded track's tags from its own file name — the mouse-driven counterpart
+  // of the editor's per-track "Fill from filename", for cleaning a whole import at once.
+  function deriveAll(): void {
+    const patches = tracks
+      .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
+      .filter((p) => Object.keys(p.meta).length > 0)
+    if (patches.length) deriveTracks(patches)
   }
 
   const startPlayback = useCallback((track: TrackItem): void => {
@@ -715,6 +730,77 @@ export default function App(): React.JSX.Element {
           >
             {tr('header.add')}
           </button>
+          {tracks.length > 0 && (
+            <>
+              <button
+                type="button"
+                data-testid="select-all"
+                onClick={selectAll}
+                aria-label={tr('header.selectAll')}
+                title={tr('header.selectAll')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                data-testid="fill-all"
+                onClick={deriveAll}
+                aria-label={tr('header.fillFromName')}
+                title={tr('header.fillFromName')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+                  <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                data-testid="clear-all"
+                onClick={clearTracks}
+                aria-label={tr('header.clearAll')}
+                title={tr('header.clearAll')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                </svg>
+              </button>
+            </>
+          )}
           <button
             type="button"
             data-testid="open-find-replace"

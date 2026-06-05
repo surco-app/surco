@@ -13,7 +13,10 @@
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",
     "palette": "Paleta de comandos",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "selectAll": "Seleccionar todo",
+    "fillFromName": "Rellenar todo desde el nombre",
+    "clearAll": "Vaciar la lista"
   },
   "sidebar": {
     "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”."
