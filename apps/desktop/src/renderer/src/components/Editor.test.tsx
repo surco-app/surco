@@ -54,9 +54,14 @@ function renderEditor(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
   outputFormat: OutputFormat = 'wav',
   props: { requiredFields?: string[]; visibleFields?: string[] } = {},
-): { onProcess: ReturnType<typeof vi.fn>; onChange: ReturnType<typeof vi.fn> } {
+): {
+  onProcess: ReturnType<typeof vi.fn>
+  onChange: ReturnType<typeof vi.fn>
+  onDeriveTags: ReturnType<typeof vi.fn>
+} {
   const onProcess = vi.fn()
   const onChange = vi.fn()
+  const onDeriveTags = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -71,11 +76,12 @@ function renderEditor(
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
+      onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
       onOpenSettings={vi.fn()}
     />,
   )
-  return { onProcess, onChange }
+  return { onProcess, onChange, onDeriveTags }
 }
 
 describe('Editor cover picker', () => {
@@ -93,15 +99,29 @@ describe('Editor cover picker', () => {
   })
 })
 
+describe('Editor derive from filename', () => {
+  // The control fills tags from the file name (filename → tags), the inverse of File Name's
+  // Regenerate (tags → filename); it lives in the metadata header so the two never look alike.
+  it('fills the track tags from its file name in one click', () => {
+    const { onDeriveTags } = renderEditor({ id: 'a', fileName: '104. kumara - snap.flac' })
+    fireEvent.click(screen.getByTestId('derive-btn'))
+    expect(onDeriveTags).toHaveBeenCalledWith([
+      { id: 'a', meta: { trackNumber: '104', artist: 'kumara', title: 'snap' } },
+    ])
+  })
+})
+
 describe('Editor multi-select', () => {
   function renderMulti(opts: { done?: boolean; platform?: string; music?: boolean } = {}) {
     if (opts.platform) (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
     const onProcessAll = vi.fn()
     const onAddAllToAppleMusic = vi.fn()
+    const onDeriveTags = vi.fn()
     const status = opts.done ? ('done' as const) : ('idle' as const)
     const a = item({
       id: 'a',
+      fileName: 'kumara - one.flac',
       status,
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared' },
@@ -109,6 +129,7 @@ describe('Editor multi-select', () => {
     })
     const b = item({
       id: 'b',
+      fileName: 'cortina - two.flac',
       status,
       outputPath: opts.done ? '/out/b.aiff' : undefined,
       meta: { title: 'B', album: 'Shared' },
@@ -131,13 +152,14 @@ describe('Editor multi-select', () => {
         onAddAllToAppleMusic={onAddAllToAppleMusic}
         onChangeAllMeta={onChangeAllMeta}
         onApplyCoverAll={vi.fn()}
+        onDeriveTags={onDeriveTags}
         onChange={vi.fn()}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
       />,
     )
-    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic }
+    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }
   }
 
   // The spectrum and output filename describe a single file; over a multi-selection they
@@ -174,6 +196,15 @@ describe('Editor multi-select', () => {
     const { onChangeAllMeta } = renderMulti()
     fireEvent.change(screen.getByTestId('field-album'), { target: { value: 'New Album' } })
     expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+  })
+
+  it('derives tags for every selected track from its own file name in one click', () => {
+    const { onDeriveTags } = renderMulti()
+    fireEvent.click(screen.getByTestId('derive-btn'))
+    expect(onDeriveTags).toHaveBeenCalledWith([
+      { id: 'a', meta: { artist: 'kumara', title: 'one' } },
+      { id: 'b', meta: { artist: 'cortina', title: 'two' } },
+    ])
   })
 
   // The same post-convert "Add to Apple Music" button is reused for the selection rather

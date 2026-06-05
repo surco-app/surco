@@ -116,7 +116,8 @@
     "convertAll": "Convertir todas ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
-    "convertAllMusic": "Convertir todas ({{count}}) · {{format}} + Apple Music"
+    "convertAllMusic": "Convertir todas ({{count}}) · {{format}} + Apple Music",
+    "deriveFromName": "Derivar del nombre"
   },
   "fields": {
     "title": "Título",
@@ -242,11 +243,5 @@
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
     "applied": "Aplicado"
-  },
-  "derive": {
-    "title": "Rellenar desde el nombre",
-    "apply": "Aplicar",
-    "applyMany": "Aplicar a {{count}}",
-    "noMatch": "El nombre no encaja con este patrón"
   }
 }

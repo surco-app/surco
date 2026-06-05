@@ -15,6 +15,7 @@ import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
+import { smartDeriveTags } from '../lib/deriveTags'
 import { renderOutputName } from '../lib/outputName'
 import { formatKHz, qualityVerdict } from '../lib/quality'
 import {
@@ -27,7 +28,6 @@ import {
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
-import { DeriveFromFilename } from './DeriveFromFilename'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
@@ -258,6 +258,17 @@ export function Editor({
     onChange({ meta: { ...item.meta, [key]: value } })
   }
 
+  // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
+  // track in single view, every selected track in multi. Merges, so only matched fields change.
+  function deriveFromNames(): void {
+    if (!onDeriveTags) return
+    const targets = isMulti ? (selectedTracks ?? []) : [item]
+    const patches = targets
+      .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
+      .filter((p) => Object.keys(p.meta).length > 0)
+    if (patches.length) onDeriveTags(patches)
+  }
+
   function applyImageFile(file: File | undefined): void {
     if (!file || !file.type.startsWith('image/')) return
     const coverUrl = URL.createObjectURL(file)
@@ -328,6 +339,33 @@ export function Editor({
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise.
   const willEditInPlace = formatMatchesInput(format, item.inputPath)
+
+  // One-click "fill tags from the file name", shown in the File Name section (single) and
+  // the form header (multi, where File Name is hidden).
+  const deriveButton = onDeriveTags ? (
+    <button
+      type="button"
+      data-testid="derive-btn"
+      onClick={deriveFromNames}
+      title={tr('editor.deriveFromName')}
+      className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="h-3 w-3"
+      >
+        <path d="M9 10 4 15l5 5" />
+        <path d="M20 4v7a4 4 0 0 1-4 4H4" />
+      </svg>
+      {tr('editor.deriveFromName')}
+    </button>
+  ) : null
 
   return (
     <div className="flex h-full min-h-0">
@@ -505,21 +543,25 @@ export function Editor({
             open={formOpen}
             onToggle={() => setFormOpen((v) => !v)}
             right={
-              isMulti ? null : inLibrary === 'yes' ? (
-                <span
-                  data-testid="apple-music-status"
-                  className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
-                >
-                  {tr('editor.inLibrary')}
-                </span>
-              ) : inLibrary === 'no' ? (
-                <span
-                  data-testid="apple-music-status"
-                  className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
-                >
-                  {tr('editor.notInLibrary')}
-                </span>
-              ) : null
+              <div className="flex items-center gap-3">
+                {deriveButton}
+                {!isMulti && inLibrary === 'yes' && (
+                  <span
+                    data-testid="apple-music-status"
+                    className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
+                  >
+                    {tr('editor.inLibrary')}
+                  </span>
+                )}
+                {!isMulti && inLibrary === 'no' && (
+                  <span
+                    data-testid="apple-music-status"
+                    className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                  >
+                    {tr('editor.notInLibrary')}
+                  </span>
+                )}
+              </div>
             }
           />
           {formOpen && (
@@ -656,13 +698,6 @@ export function Editor({
                 </div>
               </div>
             </div>
-          )}
-
-          {onDeriveTags && (
-            <DeriveFromFilename
-              files={isMulti ? (selectedTracks ?? []) : [item]}
-              onApply={onDeriveTags}
-            />
           )}
 
           {!isMulti && showSpectrum && (

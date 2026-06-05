@@ -116,7 +116,8 @@
     "convertAll": "Convert all ({{count}}) · {{format}}",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",
-    "convertAllMusic": "Convert all ({{count}}) · {{format}} + Apple Music"
+    "convertAllMusic": "Convert all ({{count}}) · {{format}} + Apple Music",
+    "deriveFromName": "Derive from name"
   },
   "fields": {
     "title": "Title",
@@ -242,11 +243,5 @@
     "apply": "Apply to {{count}}",
     "suggested": "Suggested match",
     "applied": "Applied"
-  },
-  "derive": {
-    "title": "Derive from filename",
-    "apply": "Apply",
-    "applyMany": "Apply to {{count}}",
-    "noMatch": "The file name does not match this pattern"
   }
 }

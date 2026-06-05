@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveTags } from './deriveTags'
+import { deriveTags, smartDeriveTags } from './deriveTags'
 
 describe('deriveTags', () => {
   it('pulls artist and title out of a "{artist} - {title}" name', () => {
@@ -40,5 +40,36 @@ describe('deriveTags', () => {
 
   it('strips the extension before matching so it never leaks into a field', () => {
     expect(deriveTags('only a title.mp3', '{title}')).toEqual({ title: 'only a title' })
+  })
+
+  it('captures a track number as digits only, so a non-numbered name does not match it', () => {
+    expect(deriveTags('kumara. snap.flac', '{trackNumber}. {title}')).toEqual({})
+  })
+})
+
+describe('smartDeriveTags', () => {
+  it('reads a leading track number when present', () => {
+    expect(smartDeriveTags('104. kumara - snap.flac')).toEqual({
+      trackNumber: '104',
+      artist: 'kumara',
+      title: 'snap',
+    })
+  })
+
+  it('handles a space-separated track number too', () => {
+    expect(smartDeriveTags('104 kumara - snap.flac')).toEqual({
+      trackNumber: '104',
+      artist: 'kumara',
+      title: 'snap',
+    })
+  })
+
+  it('falls back to plain Artist - Title and never mistakes the artist for a number', () => {
+    // The digit-only track number is what stops "A - B - C" reading "A" as a track number.
+    expect(smartDeriveTags('A - B - C.flac')).toEqual({ artist: 'A', title: 'B - C' })
+  })
+
+  it('returns nothing when no common naming fits', () => {
+    expect(smartDeriveTags('noseparator.flac')).toEqual({})
   })
 })
