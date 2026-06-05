@@ -91,6 +91,11 @@
         "body": "Check the spectrum at a glance to catch low-quality MP3s posing as lossless. And as you tag, Surco warns you if the track is already in your Apple Music library."
       },
       {
+        "kick": "artwork",
+        "title": "Cover art, sorted",
+        "body": "Pull artwork from the Discogs release, or drop your own — or click to browse — onto one track or a whole selection at once. Surco resizes and squares it, and writes it inside the file so it shows everywhere."
+      },
+      {
         "kick": "organize",
         "title": "Organize it your way",
         "body": "Tags and artwork are written inside the file, so they show in Apple Music and rekordbox. Send tracks to Apple Music, show only the fields you use, mark the required ones, and name files with {artist} - {title} templates — into {albumArtist}/{album} subfolders if you like."

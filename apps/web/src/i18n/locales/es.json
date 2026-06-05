@@ -91,6 +91,11 @@
         "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music."
       },
       {
+        "kick": "carátula",
+        "title": "La carátula, lista",
+        "body": "Trae la carátula del release de Discogs, o suelta la tuya — o haz clic para buscarla — en una pista o en toda una selección a la vez. Surco la redimensiona y cuadra, y la escribe dentro del archivo para que se vea en todas partes."
+      },
+      {
         "kick": "organiza",
         "title": "Organiza a tu manera",
         "body": "Los tags y la carátula se escriben dentro del archivo, así que se ven en Apple Music y rekordbox. Envía pistas a Apple Music, muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist} - {title} — en subcarpetas {albumArtist}/{album} si quieres."
