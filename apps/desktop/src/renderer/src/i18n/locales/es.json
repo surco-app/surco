@@ -262,11 +262,13 @@
   },
   "confirm": {
     "fillTitle": "¿Rellenar tags desde el nombre?",
-    "fillMessage": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de tags no se toca.",
+    "fillMessage_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en 1 pista. El resto de tags no se toca.",
+    "fillMessage_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de tags no se toca.",
     "fillNone": "Ningún nombre encaja con un patrón conocido, así que no hay nada que rellenar.",
-    "fillConfirm": "Rellenar {{count}}",
+    "fillConfirm": "Rellenar tags",
     "clearTitle": "¿Vaciar la lista?",
-    "clearMessage": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",
+    "clearMessage_one": "Quita la única pista de la lista. El archivo en disco no se borra.",
+    "clearMessage_other": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",
     "clearConfirm": "Vaciar"
   }
 }

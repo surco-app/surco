@@ -333,7 +333,7 @@ export default function App(): React.JSX.Element {
     setConfirm({
       title: tr('confirm.fillTitle'),
       message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
-      confirmLabel: tr('confirm.fillConfirm', { count }),
+      confirmLabel: tr('confirm.fillConfirm'),
       confirmDisabled: count === 0,
       onConfirm: deriveAll,
     })
