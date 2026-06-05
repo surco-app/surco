@@ -94,15 +94,25 @@ describe('Editor cover picker', () => {
 })
 
 describe('Editor multi-select', () => {
-  function renderMulti() {
+  function renderMulti(opts: { done?: boolean; platform?: string } = {}) {
+    if (opts.platform) (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
     const onProcessAll = vi.fn()
+    const onAddAllToAppleMusic = vi.fn()
+    const status = opts.done ? ('done' as const) : ('idle' as const)
     const a = item({
       id: 'a',
+      status,
+      outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared' },
       spectrum: { image: '', cutoffHz: null, sampleRateHz: 44100 },
     })
-    const b = item({ id: 'b', meta: { title: 'B', album: 'Shared' } })
+    const b = item({
+      id: 'b',
+      status,
+      outputPath: opts.done ? '/out/b.aiff' : undefined,
+      meta: { title: 'B', album: 'Shared' },
+    })
     render(
       <Editor
         item={a}
@@ -118,6 +128,7 @@ describe('Editor multi-select', () => {
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}
+        onAddAllToAppleMusic={onAddAllToAppleMusic}
         onChangeAllMeta={onChangeAllMeta}
         onApplyCoverAll={vi.fn()}
         onChange={vi.fn()}
@@ -126,7 +137,7 @@ describe('Editor multi-select', () => {
         onOpenSettings={vi.fn()}
       />,
     )
-    return { onChangeAllMeta, onProcessAll }
+    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic }
   }
 
   // The spectrum and output filename describe a single file; over a multi-selection they
@@ -156,6 +167,14 @@ describe('Editor multi-select', () => {
     const { onChangeAllMeta } = renderMulti()
     fireEvent.change(screen.getByTestId('field-album'), { target: { value: 'New Album' } })
     expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+  })
+
+  // The same post-convert "Add to Apple Music" button is reused for the selection rather
+  // than reimplemented, so once every track is converted it adds them all in one click.
+  it('reuses the Apple Music button to add the whole selection once converted', () => {
+    const { onAddAllToAppleMusic } = renderMulti({ done: true, platform: 'darwin' })
+    fireEvent.click(screen.getByTestId('add-apple-music'))
+    expect(onAddAllToAppleMusic).toHaveBeenCalled()
   })
 })
 

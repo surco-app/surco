@@ -51,6 +51,7 @@ interface Props {
   selectedTracks?: TrackItem[]
   onApplyMatches?: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
   onProcessAll?: (format: OutputFormat) => void
+  onAddAllToAppleMusic?: () => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
@@ -75,6 +76,7 @@ export function Editor({
   selectedTracks,
   onApplyMatches,
   onProcessAll,
+  onAddAllToAppleMusic,
   onChangeAllMeta,
   onApplyCoverAll,
   onChange,
@@ -281,6 +283,20 @@ export function Editor({
   const done = item.status === 'done' && !stale
   const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
   const exportedFormat = FORMATS.find((f) => f === exportedExt) ?? null
+  // The post-convert actions (reveal + Apple Music) are reused in multi-select, just fed
+  // aggregate values: the block shows once every selected track is converted, reveal
+  // opens the first output, and the Apple Music button reflects the whole selection.
+  const multiTracks = selectedTracks ?? []
+  const showDone = isMulti ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done') : done
+  const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
+  const musicExt = isMulti ? format : exportedFormat
+  const musicAdding = isMulti ? multiTracks.some((t) => t.musicStatus === 'adding') : item.musicStatus === 'adding'
+  const musicAdded = isMulti
+    ? multiTracks.length > 0 && multiTracks.every((t) => t.musicStatus === 'added')
+    : item.musicStatus === 'added'
+  const musicError = isMulti
+    ? multiTracks.find((t) => t.musicStatus === 'error')?.musicError
+    : item.musicError
   // Required fields are flagged the moment they are empty, not only after a failed
   // convert: with the button disabled below, the click that produced the error is
   // no longer reachable, so the red field is what tells the user why.
@@ -774,35 +790,33 @@ export function Editor({
               onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
               onSelectFormat={setFormat}
             />
-            {!isMulti && done && (
+            {showDone && (
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => item.outputPath && window.api.reveal(item.outputPath)}
+                  onClick={() => revealPath && window.api.reveal(revealPath)}
                   className="press flex-1 rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
                 >
                   {tr('editor.doneReveal')}
                 </button>
-                {window.api.platform === 'darwin' && exportedFormat !== 'flac' && (
+                {window.api.platform === 'darwin' && musicExt !== 'flac' && (
                   <button
                     type="button"
                     data-testid="add-apple-music"
-                    onClick={onAddToAppleMusic}
-                    disabled={item.musicStatus === 'adding' || item.musicStatus === 'added'}
+                    onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
+                    disabled={musicAdding || musicAdded}
                     className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2.5 text-sm font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
                   >
-                    {item.musicStatus === 'adding'
+                    {musicAdding
                       ? tr('editor.appleMusicAdding')
-                      : item.musicStatus === 'added'
+                      : musicAdded
                         ? tr('editor.appleMusicAdded')
                         : tr('editor.appleMusicAdd')}
                   </button>
                 )}
               </div>
             )}
-            {!isMulti && done && item.musicStatus === 'error' && (
-              <p className="text-xs text-danger">{item.musicError}</p>
-            )}
+            {showDone && musicError && <p className="text-xs text-danger">{musicError}</p>}
           </div>
         </div>
       </div>

@@ -410,6 +410,13 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  // Adds every selected track to Apple Music in turn — the multi-select counterpart of
+  // the per-track button, reusing the same single-track add (which skips ones not yet
+  // converted) so the two paths can never drift.
+  async function addAllToAppleMusic(ids: string[]): Promise<void> {
+    for (const id of ids) await addTrackToAppleMusic(id)
+  }
+
   async function processAll(formatOverride?: OutputFormat): Promise<void> {
     if (batching) return
     const ids = eligibleForBatch(tracks)
@@ -775,6 +782,7 @@ export default function App(): React.JSX.Element {
               selectedTracks={selectedTracks}
               onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
               onProcessAll={processAll}
+              onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
               onApplyCoverAll={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
               onChange={(patch) => updateTrack(selected.id, patch)}
