@@ -195,30 +195,47 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
                             <span aria-hidden="true" className="text-fg-faint">
                               →
                             </span>
-                            <select
-                              data-testid={`match-select-${a.id}`}
-                              value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
-                              onChange={(e) =>
-                                setAssignments((prev) =>
-                                  reassign(
-                                    prev,
-                                    a.id,
-                                    e.target.value === ''
-                                      ? undefined
-                                      : release.tracklist[Number(e.target.value)],
-                                  ),
-                                )
-                              }
-                              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
-                            >
-                              <option value="">{tr('match.unassigned')}</option>
-                              {release.tracklist.map((track, i) => (
-                                <option key={`${track.position}-${track.title}-${i}`} value={String(i)}>
-                                  {[track.position, track.title].filter(Boolean).join(' ')}
-                                  {track.duration ? ` (${track.duration})` : ''}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="grid min-w-0 flex-1 grid-cols-1">
+                              <select
+                                data-testid={`match-select-${a.id}`}
+                                value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
+                                onChange={(e) =>
+                                  setAssignments((prev) =>
+                                    reassign(
+                                      prev,
+                                      a.id,
+                                      e.target.value === ''
+                                        ? undefined
+                                        : release.tracklist[Number(e.target.value)],
+                                    ),
+                                  )
+                                }
+                                className="col-start-1 row-start-1 w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pr-8 pl-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                              >
+                                <option value="">{tr('match.unassigned')}</option>
+                                {release.tracklist.map((track, i) => (
+                                  <option
+                                    key={`${track.position}-${track.title}-${i}`}
+                                    value={String(i)}
+                                  >
+                                    {[track.position, track.title].filter(Boolean).join(' ')}
+                                    {track.duration ? ` (${track.duration})` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                              <svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="pointer-events-none col-start-1 row-start-1 mr-2 size-4 self-center justify-self-end text-fg-dim"
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </div>
                             <span className="w-4 shrink-0 text-center">
                               {tier && tier !== 'low' && (
                                 <span
