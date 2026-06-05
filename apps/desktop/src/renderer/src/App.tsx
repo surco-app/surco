@@ -33,6 +33,7 @@ import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
+import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
 import type { TrackItem } from './types'
@@ -90,7 +91,9 @@ export default function App(): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [tracks, setTracks] = useState<TrackItem[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
+  const selectedId = selection.anchor
+  const selectedIds = selection.ids
   const [showSettings, setShowSettings] = useState(false)
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
@@ -207,8 +210,13 @@ export default function App(): React.JSX.Element {
       }
     })
     setTracks((prev) => [...prev, ...items])
-    if (!selectedId) setSelectedId(items[0].id)
+    setSelection((s) => (s.anchor ? s : { ids: [items[0].id], anchor: items[0].id }))
   }
+
+  const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
+    const order = tracksRef.current.map((t) => t.id)
+    setSelection((s) => clickSelect(s, order, id, mods))
+  }, [])
 
   async function pickFiles(): Promise<void> {
     addPaths(await window.api.pickFiles())
@@ -259,12 +267,12 @@ export default function App(): React.JSX.Element {
   // which is what the explicit selectedId check did before.
   const removeTrack = useCallback((id: string): void => {
     setTracks((prev) => prev.filter((t) => t.id !== id))
-    setSelectedId((prev) => (prev === id ? null : prev))
+    setSelection((s) => deselect(s, id))
   }, [])
 
   function clearTracks(): void {
     setTracks([])
-    setSelectedId(null)
+    setSelection({ ids: [], anchor: null })
   }
 
   const startPlayback = useCallback((track: TrackItem): void => {
@@ -432,7 +440,7 @@ export default function App(): React.JSX.Element {
       delta,
     )
     if (next === -1) return
-    setSelectedId(tracks[next].id)
+    setSelection({ ids: [tracks[next].id], anchor: tracks[next].id })
   }
 
   const sidebar = useResizableWidth(260, 220, 520)
@@ -711,8 +719,9 @@ export default function App(): React.JSX.Element {
               <TrackList
                 tracks={tracks}
                 selectedId={selectedId}
+                selectedIds={selectedIds}
                 outputFormat={settings?.outputFormat ?? 'aiff'}
-                onSelect={setSelectedId}
+                onSelect={onSelectTrack}
                 onRemove={removeTrack}
                 onPrefetch={handlePrefetch}
               />

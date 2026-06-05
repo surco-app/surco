@@ -4,13 +4,15 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
+import type { ClickMods } from '../lib/selection'
 import type { TrackItem, TrackStatus } from '../types'
 
 interface Props {
   tracks: TrackItem[]
   selectedId: string | null
+  selectedIds: string[]
   outputFormat: OutputFormat
-  onSelect: (id: string) => void
+  onSelect: (id: string, mods: ClickMods) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
 }
@@ -24,9 +26,10 @@ const statusColor: Record<TrackStatus, string> = {
 
 interface RowProps {
   track: TrackItem
-  active: boolean
+  selected: boolean
+  primary: boolean
   outputFormat: OutputFormat
-  onSelect: (id: string) => void
+  onSelect: (id: string, mods: ClickMods) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
 }
@@ -36,25 +39,31 @@ interface RowProps {
 // the whole list. Relies on App passing stable onSelect/onRemove.
 const TrackRow = memo(function TrackRow({
   track: t,
-  active,
+  selected,
+  primary,
   outputFormat,
   onSelect,
   onRemove,
   onPrefetch,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // Every selected row gets the soft fill; only the primary (the one in the editor)
+  // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
     <li className="group relative">
       <button
         type="button"
         data-testid="track-row"
-        onClick={() => onSelect(t.id)}
+        aria-selected={selected}
+        onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
         className={`relative flex w-full items-center gap-3 rounded-lg py-2.5 pr-10 pl-3 text-left transition-colors ${
-          active
-            ? 'bg-[var(--color-accent-soft)] before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
-            : 'hover:bg-[var(--color-panel-2)]'
+          selected ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-panel-2)]'
+        } ${
+          primary
+            ? 'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
+            : ''
         }`}
       >
         <span
@@ -111,6 +120,7 @@ const TrackRow = memo(function TrackRow({
 export function TrackList({
   tracks,
   selectedId,
+  selectedIds,
   outputFormat,
   onSelect,
   onRemove,
@@ -122,7 +132,8 @@ export function TrackList({
         <TrackRow
           key={t.id}
           track={t}
-          active={t.id === selectedId}
+          selected={selectedIds.includes(t.id)}
+          primary={t.id === selectedId}
           outputFormat={outputFormat}
           onSelect={onSelect}
           onRemove={onRemove}

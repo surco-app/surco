@@ -41,7 +41,11 @@ function track(
   }
 }
 
-function renderList(tracks: TrackItem[], selectedId: string | null = null) {
+function renderList(
+  tracks: TrackItem[],
+  selectedId: string | null = null,
+  selectedIds: string[] = selectedId ? [selectedId] : [],
+) {
   const onSelect = vi.fn()
   const onRemove = vi.fn()
   const onPrefetch = vi.fn()
@@ -49,6 +53,7 @@ function renderList(tracks: TrackItem[], selectedId: string | null = null) {
     <TrackList
       tracks={tracks}
       selectedId={selectedId}
+      selectedIds={selectedIds}
       outputFormat="aiff"
       onSelect={onSelect}
       onRemove={onRemove}
@@ -109,7 +114,29 @@ describe('TrackList', () => {
   it('selects a track when its row is clicked', () => {
     const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByTestId('track-row')[1])
-    expect(onSelect).toHaveBeenCalledWith('b')
+    expect(onSelect).toHaveBeenCalledWith('b', { meta: false, shift: false })
+  })
+
+  // Cmd/Shift reach the reducer so it can toggle or range-extend; without forwarding
+  // the modifiers every click would collapse to a single selection.
+  it('forwards the Cmd modifier so the click can toggle the selection', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', { meta: true, shift: false })
+  })
+
+  it('forwards the Shift modifier so the click can extend a range', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', { meta: false, shift: true })
+  })
+
+  it('marks every selected row, including ones that are not the primary', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {
