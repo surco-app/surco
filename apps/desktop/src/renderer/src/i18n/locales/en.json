@@ -259,5 +259,14 @@
     "noMatches": "No matches in any track.",
     "summary": "{{fields}} fields in {{tracks}} tracks",
     "apply": "Replace in {{count}}"
+  },
+  "confirm": {
+    "fillTitle": "Fill tags from file names?",
+    "fillMessage": "This reads the title, artist and track number from each file’s name and overwrites those fields in {{count}} tracks. Other tags are left untouched.",
+    "fillNone": "None of the file names match a known pattern, so there is nothing to fill.",
+    "fillConfirm": "Fill {{count}}",
+    "clearTitle": "Clear the list?",
+    "clearMessage": "This removes all {{count}} tracks from the list. The files on disk are not deleted.",
+    "clearConfirm": "Clear"
   }
 }

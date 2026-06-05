@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
@@ -100,6 +101,13 @@ export default function App(): React.JSX.Element {
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
+  const [confirm, setConfirm] = useState<{
+    title: string
+    message: string
+    confirmLabel: string
+    confirmDisabled?: boolean
+    onConfirm: () => void
+  } | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -316,6 +324,28 @@ export default function App(): React.JSX.Element {
       .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
       .filter((p) => Object.keys(p.meta).length > 0)
     if (patches.length) deriveTracks(patches)
+  }
+
+  // Fill-all and Clear-all both overwrite/discard work across the whole list, so they ask
+  // first rather than firing on the click; the dialog spells out exactly what changes.
+  function askFillAll(): void {
+    const count = tracks.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
+    setConfirm({
+      title: tr('confirm.fillTitle'),
+      message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
+      confirmLabel: tr('confirm.fillConfirm', { count }),
+      confirmDisabled: count === 0,
+      onConfirm: deriveAll,
+    })
+  }
+
+  function askClearAll(): void {
+    setConfirm({
+      title: tr('confirm.clearTitle'),
+      message: tr('confirm.clearMessage', { count: tracks.length }),
+      confirmLabel: tr('confirm.clearConfirm'),
+      onConfirm: clearTracks,
+    })
   }
 
   const startPlayback = useCallback((track: TrackItem): void => {
@@ -761,7 +791,7 @@ export default function App(): React.JSX.Element {
               <button
                 type="button"
                 data-testid="fill-all"
-                onClick={deriveAll}
+                onClick={askFillAll}
                 aria-label={tr('header.fillFromName')}
                 title={tr('header.fillFromName')}
                 className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
@@ -805,7 +835,7 @@ export default function App(): React.JSX.Element {
               <button
                 type="button"
                 data-testid="clear-all"
-                onClick={clearTracks}
+                onClick={askClearAll}
                 aria-label={tr('header.clearAll')}
                 title={tr('header.clearAll')}
                 className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
@@ -982,6 +1012,16 @@ export default function App(): React.JSX.Element {
           tracks={tracks}
           onApply={deriveTracks}
           onClose={() => setShowFindReplace(false)}
+        />
+      )}
+      {confirm && (
+        <ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          confirmDisabled={confirm.confirmDisabled}
+          onConfirm={confirm.onConfirm}
+          onClose={() => setConfirm(null)}
         />
       )}
 

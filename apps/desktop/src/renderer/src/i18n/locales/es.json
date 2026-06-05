@@ -259,5 +259,14 @@
     "noMatches": "Sin coincidencias en ninguna pista.",
     "summary": "{{fields}} campos en {{tracks}} pistas",
     "apply": "Reemplazar en {{count}}"
+  },
+  "confirm": {
+    "fillTitle": "¿Rellenar tags desde el nombre?",
+    "fillMessage": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de tags no se toca.",
+    "fillNone": "Ningún nombre encaja con un patrón conocido, así que no hay nada que rellenar.",
+    "fillConfirm": "Rellenar {{count}}",
+    "clearTitle": "¿Vaciar la lista?",
+    "clearMessage": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",
+    "clearConfirm": "Vaciar"
   }
 }
