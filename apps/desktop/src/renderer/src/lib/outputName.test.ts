@@ -61,4 +61,26 @@ describe('renderOutputName', () => {
   it('returns empty when no token has a value, so the caller can fall back', () => {
     expect(renderOutputName('{artist} - {title}', meta({}))).toBe('')
   })
+
+  it('keeps a "/" in the template as a subfolder boundary', () => {
+    const r = renderOutputName(
+      '{albumArtist}/{album}/{trackNumber} {title}',
+      meta({ albumArtist: 'Various', album: 'Hard House Nation', trackNumber: '01', title: 'Snap' }),
+    )
+    expect(r).toBe('Various/Hard House Nation/01 Snap')
+  })
+
+  it('drops a folder segment a blank field would have left empty', () => {
+    const r = renderOutputName(
+      '{albumArtist}/{album}/{title}',
+      meta({ album: 'Hard House Nation', title: 'Snap' }),
+    )
+    expect(r).toBe('Hard House Nation/Snap')
+  })
+
+  it('sanitizes a slash inside a value so it never becomes an accidental folder', () => {
+    expect(renderOutputName('{artist} - {title}', meta({ artist: 'AC/DC', title: 'TNT' }))).toBe(
+      'AC-DC - TNT',
+    )
+  })
 })

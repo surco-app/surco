@@ -6,8 +6,28 @@ import {
   isOutputConflict,
   removeRenamedOriginal,
   resolveOutputTarget,
+  sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+
+describe('sanitizeOutputName', () => {
+  it('keeps "/" as a folder boundary while cleaning each segment on its own', () => {
+    expect(sanitizeOutputName('Various/Hard House/01 Snap')).toBe('Various/Hard House/01 Snap')
+  })
+
+  it('replaces filesystem-illegal characters inside a segment, not the separators', () => {
+    expect(sanitizeOutputName('AC:DC/T*NT?')).toBe('AC-DC/T-NT-')
+  })
+
+  it('drops empty segments so a blank leading field makes no stray "" directory', () => {
+    expect(sanitizeOutputName('/Hard House/01 Snap')).toBe('Hard House/01 Snap')
+    expect(sanitizeOutputName('A//B')).toBe('A/B')
+  })
+
+  it('supports arbitrary folder depth', () => {
+    expect(sanitizeOutputName('a/b/c/d/e')).toBe('a/b/c/d/e')
+  })
+})
 
 describe('resolveOutputTarget', () => {
   it('edits the original in its own folder when the format matches the source', () => {

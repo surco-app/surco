@@ -88,6 +88,25 @@ describe('preservesCuesInPlace', () => {
 })
 
 describe('writeTags', () => {
+  // The conversion path writes ID3v2.3 (-id3v2_version 3); the in-place mp3/aiff edit must
+  // too, or a v2.4 source would stay v2.4 and trip the CDJ/rekordbox/Serato setups that
+  // mishandle it.
+  it('downgrades an in-place mp3 to ID3v2.3 to match the conversion path', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    // Make the source a v2.4 tag first, so the assertion proves a real downgrade.
+    const pre = TagFile.createFromPath(file)
+    ;(pre.getTag(TagTypes.Id3v2, true) as Id3v2Tag).version = 4
+    pre.save()
+    pre.dispose()
+
+    writeTags(file, meta)
+
+    const f = TagFile.createFromPath(file)
+    expect((f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).version).toBe(3)
+    f.dispose()
+  })
+
   it("preserves Traktor's GEOB cue frame while overwriting metadata", () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)

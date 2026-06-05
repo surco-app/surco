@@ -3,6 +3,19 @@ import { basename, dirname, extname, join } from 'node:path'
 import { formatMatchesInput } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
+// Cleans a generated output name that may carry "/" separators (subfolders the file-name
+// template asks for). Each segment is sanitized of filesystem-illegal characters on its
+// own so the slashes survive as directory boundaries, and a segment a blank field left
+// empty is dropped so no stray "" directory is created. "/" is the cross-platform
+// separator here; join() turns it into the OS one when the path is built.
+export function sanitizeOutputName(name: string): string {
+  return name
+    .split('/')
+    .map((segment) => segment.replace(/[\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('/')
+}
+
 export interface OutputTarget {
   outputPath: string
   // True when the export matched the source format, so the file is rewritten where

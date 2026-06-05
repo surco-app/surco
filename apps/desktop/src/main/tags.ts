@@ -1,3 +1,4 @@
+import { extname } from 'node:path'
 import {
   Id3v2AttachmentFrame,
   Id3v2FrameClassType,
@@ -10,6 +11,10 @@ import {
   TagTypes,
 } from 'node-taglib-sharp'
 import type { TrackMetadata } from '../shared/types'
+
+// The ID3 containers we edit in place: forcing the global Id3v2Settings would also break
+// WAV (its RIFF "id3 " chunk requires v2.4), so the version is pinned per tag below.
+const ID3_V23 = new Set(['.mp3', '.aiff'])
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -74,6 +79,10 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
     tag.publisher = meta.publisher
 
     const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    // Pin MP3/AIFF to ID3v2.3 so an in-place edit matches the ffmpeg conversion path
+    // (-id3v2_version 3) and stays readable on the CDJ/rekordbox/Serato setups that
+    // mishandle v2.4. WAV is left alone — its RIFF "id3 " chunk needs v2.4.
+    if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)

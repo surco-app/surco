@@ -1,6 +1,6 @@
 import { createReadStream, existsSync } from 'node:fs'
 import { copyFile, mkdir, stat } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
 import log from 'electron-log/main'
@@ -33,6 +33,7 @@ import {
   isOutputConflict,
   removeRenamedOriginal,
   resolveOutputTarget,
+  sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
 import { resolvePlayable } from './playback'
@@ -325,7 +326,7 @@ function registerIpc(): void {
       const format = job.format ?? settings.outputFormat
       const { outputPath, inPlace } = resolveOutputTarget(
         job.inputPath,
-        sanitizeFilename(job.outputName),
+        sanitizeOutputName(job.outputName),
         format,
         settings.outputDir,
       )
@@ -348,7 +349,9 @@ function registerIpc(): void {
         if (response === 1) target = uniqueOutputPath(outputPath, existsSync)
       }
 
-      if (!inPlace) await mkdir(settings.outputDir, { recursive: true })
+      // Create the target's folder (and any subfolders the file-name template asks for)
+      // before writing; recursive so it's a no-op when the directory already exists.
+      await mkdir(dirname(target), { recursive: true })
       await convertAudio(job.inputPath, target, format, job.meta, coverPath)
       if (inPlace) await removeRenamedOriginal(job.inputPath, target)
       recordConversion()
