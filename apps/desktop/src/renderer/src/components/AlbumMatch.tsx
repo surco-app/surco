@@ -195,7 +195,7 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
                             <span aria-hidden="true" className="text-fg-faint">
                               →
                             </span>
-                            <div className="grid min-w-0 flex-1 grid-cols-1">
+                            <div className="relative min-w-0 flex-1">
                               <select
                                 data-testid={`match-select-${a.id}`}
                                 value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
@@ -210,7 +210,7 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
                                     ),
                                   )
                                 }
-                                className="col-start-1 row-start-1 w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pr-8 pl-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                                className="w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pr-8 pl-2 text-sm outline-none focus:border-[var(--color-accent)]"
                               >
                                 <option value="">{tr('match.unassigned')}</option>
                                 {release.tracklist.map((track, i) => (
@@ -231,7 +231,7 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
                                 strokeWidth={2}
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="pointer-events-none col-start-1 row-start-1 mr-2 size-4 self-center justify-self-end text-fg-dim"
+                                className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-fg-dim"
                               >
                                 <path d="m6 9 6 6 6-6" />
                               </svg>

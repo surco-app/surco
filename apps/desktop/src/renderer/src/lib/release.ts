@@ -59,10 +59,19 @@ export interface ScoredTrack {
 // Each signal's share of the confidence. Title leads, but duration is nearly as
 // telling: within one release the titles can be near-identical ("Mix", "Edit")
 // while the lengths are unique, so a close duration is what pins the right track.
-const TITLE_WEIGHT = 0.45
-const DURATION_WEIGHT = 0.4
-const POSITION_WEIGHT = 0.1
-const ARTIST_WEIGHT = 0.05
+export interface ScoreWeights {
+  title: number
+  duration: number
+  position: number
+  artist: number
+}
+
+const DEFAULT_WEIGHTS: ScoreWeights = {
+  title: 0.45,
+  duration: 0.4,
+  position: 0.1,
+  artist: 0.05,
+}
 
 // A file's probed length and Discogs' rounded "m:ss" rarely agree to the second,
 // so treat anything within DURATION_EXACT_SEC as a perfect hit and fade linearly
@@ -114,7 +123,11 @@ function artistMatch(target: string, artists: { name: string }[] | undefined): n
 // contributes its weight only when both sides carry it, and the weights are
 // renormalised over the signals actually present — so a release with no track
 // durations is judged on title alone rather than dragged down by the gap.
-export function scoreTrack(track: DiscogsTrack, target: TrackMatchTarget): number {
+export function scoreTrack(
+  track: DiscogsTrack,
+  target: TrackMatchTarget,
+  weights: ScoreWeights = DEFAULT_WEIGHTS,
+): number {
   let weighted = 0
   let total = 0
   const add = (weight: number, score: number | undefined): void => {
@@ -122,11 +135,11 @@ export function scoreTrack(track: DiscogsTrack, target: TrackMatchTarget): numbe
     weighted += weight * score
     total += weight
   }
-  if (normalize(target.title)) add(TITLE_WEIGHT, titleSimilarity(target.title, track.title))
+  if (normalize(target.title)) add(weights.title, titleSimilarity(target.title, track.title))
   if (target.durationSec !== undefined)
-    add(DURATION_WEIGHT, durationProximity(target.durationSec, track.duration))
-  if (target.trackNumber) add(POSITION_WEIGHT, positionMatch(target.trackNumber, track.position))
-  if (target.artist) add(ARTIST_WEIGHT, artistMatch(target.artist, track.artists))
+    add(weights.duration, durationProximity(target.durationSec, track.duration))
+  if (target.trackNumber) add(weights.position, positionMatch(target.trackNumber, track.position))
+  if (target.artist) add(weights.artist, artistMatch(target.artist, track.artists))
   return total === 0 ? 0 : weighted / total
 }
 

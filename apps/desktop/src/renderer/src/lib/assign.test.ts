@@ -34,6 +34,17 @@ describe('assignTracks', () => {
     expect(out[0].track).not.toBe(out[1].track)
   })
 
+  it('lets duration win when the title points at a track of the wrong length', () => {
+    // Album rips often carry the release name as every file's title, so a title that
+    // matches A1 means little when the file's length is exactly B2's — the duration is
+    // the real fingerprint of which cut this is, and must decide.
+    const tracklist = [t('A1', 'Extended Mix', '5:00'), t('B2', 'Radio Edit', '4:00')]
+    const files: AssignInput[] = [
+      { id: 'rip', target: { title: 'Extended Mix', durationSec: 240 } },
+    ]
+    expect(assignTracks(files, tracklist)[0].track?.position).toBe('B2')
+  })
+
   it('leaves a file with no usable signal unassigned rather than guessing', () => {
     const tracklist = [t('A', 'Some Song', '4:00')]
     const files: AssignInput[] = [{ id: 'mystery', target: { title: '', durationSec: undefined } }]

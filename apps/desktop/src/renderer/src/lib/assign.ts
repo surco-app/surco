@@ -1,5 +1,11 @@
 import type { DiscogsTrack } from '../../../shared/types'
-import { scoreTrack, type TrackMatchTarget } from './release'
+import { scoreTrack, type ScoreWeights, type TrackMatchTarget } from './release'
+
+// When matching a whole album at once the title field is often just the release name
+// repeated across every file, so it cannot tell the cuts apart — the exact, probed
+// duration can. So duration dominates here, unlike the single-track tick (where the
+// user is looking at one specific file and its title is meaningful).
+const ASSIGN_WEIGHTS: ScoreWeights = { title: 0.25, duration: 0.65, position: 0.05, artist: 0.05 }
 
 export interface AssignInput {
   id: string
@@ -25,7 +31,7 @@ export function assignTracks(files: AssignInput[], tracklist: DiscogsTrack[]): A
   const edges: { fileIdx: number; trackIdx: number; confidence: number }[] = []
   files.forEach((file, fileIdx) => {
     tracklist.forEach((track, trackIdx) => {
-      const confidence = scoreTrack(track, file.target)
+      const confidence = scoreTrack(track, file.target, ASSIGN_WEIGHTS)
       if (confidence > 0) edges.push({ fileIdx, trackIdx, confidence })
     })
   })
@@ -67,10 +73,10 @@ export function reassign(
   const holder = track ? assignments.find((a) => a.id !== fileId && a.track === track) : undefined
   return assignments.map((a) => {
     if (a.id === fileId) {
-      return { ...a, track, confidence: track ? scoreTrack(track, a.target) : 0 }
+      return { ...a, track, confidence: track ? scoreTrack(track, a.target, ASSIGN_WEIGHTS) : 0 }
     }
     if (holder && a.id === holder.id) {
-      return { ...a, track: freed, confidence: freed ? scoreTrack(freed, a.target) : 0 }
+      return { ...a, track: freed, confidence: freed ? scoreTrack(freed, a.target, ASSIGN_WEIGHTS) : 0 }
     }
     return a
   })
