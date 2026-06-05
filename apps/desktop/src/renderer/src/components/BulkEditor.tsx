@@ -6,6 +6,7 @@ import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import type { ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
 import { AlbumMatch } from './AlbumMatch'
+import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 
 interface Props {
   tracks: TrackItem[]
@@ -28,6 +29,9 @@ export function BulkEditor({
   const { t: tr } = useTranslation()
   const [coverDragging, setCoverDragging] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  // Mirrors the single-track editor's resizable Discogs column so the multi-track view
+  // reads as the same three-pane layout (list | match | fields).
+  const matchCol = useResizableWidth(340, 280, 680)
   // Show the artwork the tracks already share as a preview; when they differ (or have
   // none) fall back to the placeholder, since there is no single cover to show.
   const sharedCover =
@@ -47,12 +51,22 @@ export function BulkEditor({
   }
 
   return (
-    <div className="@container flex h-full flex-col overflow-y-auto p-6" data-testid="bulk-editor">
-      <header className="mb-5">
-        <h2 className="text-sm font-semibold text-fg">{tr('bulk.title', { count: tracks.length })}</h2>
-        <p className="mt-1 text-xs text-fg-dim">{tr('bulk.hint')}</p>
-      </header>
-      <input
+    <div className="flex h-full min-h-0" data-testid="bulk-editor">
+      <div
+        style={{ width: matchCol.width }}
+        className="shrink-0 overflow-y-auto border-r border-[var(--color-line)]"
+      >
+        <AlbumMatch files={tracks} onApply={onApplyMatches} />
+      </div>
+      <ResizeHandle onPointerDown={matchCol.onPointerDown} />
+      <div className="@container flex-1 overflow-y-auto p-6">
+        <header className="mb-5">
+          <h2 className="text-sm font-semibold text-fg">
+            {tr('bulk.title', { count: tracks.length })}
+          </h2>
+          <p className="mt-1 text-xs text-fg-dim">{tr('bulk.hint')}</p>
+        </header>
+        <input
         ref={coverInputRef}
         type="file"
         accept="image/*"
@@ -121,10 +135,10 @@ export function BulkEditor({
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
             </label>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-      <AlbumMatch files={tracks} onApply={onApplyMatches} />
     </div>
   )
 }

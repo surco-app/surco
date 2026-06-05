@@ -121,7 +121,7 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
   const matchedCount = assignments.filter((a) => a.track).length
 
   return (
-    <section className="mt-6 border-t border-[var(--color-line)] pt-5" data-testid="album-match">
+    <section className="p-3" data-testid="album-match">
       <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-faint">
         {tr('match.title')}
       </h3>
