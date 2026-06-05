@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import type { OutputFormat, TrackMetadata } from '../../../shared/types'
@@ -108,6 +108,64 @@ describe('Editor derive from filename', () => {
     expect(onDeriveTags).toHaveBeenCalledWith([
       { id: 'a', meta: { trackNumber: '104', artist: 'kumara', title: 'snap' } },
     ])
+  })
+})
+
+// Mirrors App's real wiring (tracks in state, updateTracksMeta over the selection) so a
+// reported bug — editing one shared field, then another, only saving the first — can be
+// reproduced or ruled out as a logic problem rather than a focus/UI one.
+function MultiHarness() {
+  const [tracks, setTracks] = useState<TrackItem[]>([
+    item({ id: 'a', meta: { title: 'A', album: 'Shared' } }),
+    item({ id: 'b', meta: { title: 'B', album: 'Shared' } }),
+  ])
+  const ids = ['a', 'b']
+  const selectedTracks = tracks.filter((t) => ids.includes(t.id))
+  const selected = tracks.find((t) => t.id === 'a') as TrackItem
+  const updateAll = (patch: Partial<TrackMetadata>) =>
+    setTracks((prev) =>
+      prev.map((t) => (ids.includes(t.id) ? { ...t, meta: { ...t.meta, ...patch } } : t)),
+    )
+  return (
+    <>
+      <Editor
+        key={selected.id}
+        item={selected}
+        hasToken
+        outputFormat="aiff"
+        addToAppleMusic={false}
+        filenameFormat="{artist} - {title}"
+        groupingPresets={[]}
+        visibleFields={['title', 'album']}
+        requiredFields={[]}
+        showSpectrum={false}
+        searchInputRef={createRef<HTMLInputElement>()}
+        selectedTracks={selectedTracks}
+        onApplyMatches={vi.fn()}
+        onProcessAll={vi.fn()}
+        onAddAllToAppleMusic={vi.fn()}
+        onChangeAllMeta={updateAll}
+        onApplyCoverAll={vi.fn()}
+        onDeriveTags={vi.fn()}
+        onChange={vi.fn()}
+        onProcess={vi.fn()}
+        onAddToAppleMusic={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />
+      <div data-testid="dump">
+        {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
+      </div>
+    </>
+  )
+}
+
+describe('Editor multi-select sequential edits', () => {
+  it('keeps applying every shared-field edit to all tracks, not just the first', () => {
+    render(<MultiHarness />)
+    fireEvent.change(screen.getByTestId('field-year'), { target: { value: '1999' } })
+    fireEvent.change(screen.getByTestId('field-genre'), { target: { value: 'House' } })
+    // Both edits must land on both tracks; the bug report is the second one being dropped.
+    expect(screen.getByTestId('dump')).toHaveTextContent('a:1999,House|b:1999,House')
   })
 })
 

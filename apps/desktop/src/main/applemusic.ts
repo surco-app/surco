@@ -14,7 +14,9 @@ const run = promisify(execFile)
 // `add` returns the track reference before Apple Music finishes importing the
 // file, so writing properties straight away fails with paramErr (-50) on real
 // (large) files. We retry the whole property block until the track settles,
-// re-raise any other error, and fail loud if it never becomes writable.
+// re-raise any other error, and fail loud if it never becomes writable. The
+// 600 tries × 0.1s give a 60s window: a 10s one was not enough for a large
+// extended-mix AIFF copied into the library, which gave up and landed untagged.
 export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?: string): string {
   const sets: string[] = []
 
@@ -58,7 +60,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     'tell application "Music"',
     `  set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
     '  set metaSet to false',
-    '  repeat 100 times',
+    '  repeat 600 times',
     '    try',
     ...sets,
     '      set metaSet to true',

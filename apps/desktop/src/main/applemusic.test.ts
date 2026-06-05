@@ -24,8 +24,11 @@ describe('buildAddScript', () => {
   it('retries property writes so the paramErr (-50) raised while Apple Music is still importing does not abort the add', () => {
     const script = buildAddScript('/Users/vicent/Music/Surco/track.aiff', base)
     // The retry loop is the whole point: without it, setting properties on a
-    // track that is mid-import throws -50 and the track lands untagged.
-    expect(script).toContain('repeat 100 times')
+    // track that is mid-import throws -50 and the track lands untagged. The
+    // count times the delay is the patience window — it must outlast Music
+    // copying a large file into the library, which a 10s window did not, so a
+    // big extended-mix AIFF gave up and landed untagged.
+    expect(script).toContain('repeat 600 times')
     expect(script).toContain('on error errMsg number errNum')
     expect(script).toContain('if errNum is not -50 then error errMsg number errNum')
     expect(script).toContain('delay 0.1')
@@ -69,7 +72,7 @@ describe('buildAddScript', () => {
     // outside it, a cover written while Music is still importing throws -50 and
     // the track lands without art
     const script = buildAddScript('/x.wav', base, '/tmp/cover.jpg')
-    const repeatStart = script.indexOf('repeat 100 times')
+    const repeatStart = script.indexOf('repeat 600 times')
     const artwork = script.indexOf('set data of artwork 1')
     const exitRepeat = script.indexOf('exit repeat')
     expect(repeatStart).toBeLessThan(artwork)
