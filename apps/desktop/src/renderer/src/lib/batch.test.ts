@@ -45,6 +45,14 @@ describe('eligibleForBatch', () => {
   it('returns an empty list when nothing is pending', () => {
     expect(eligibleForBatch([track('a', 'done')])).toEqual([])
   })
+
+  it('re-includes a done track edited since it was converted (stale)', () => {
+    // After converting, the user fills a tag Discogs lacked (e.g. the year) across the
+    // selection; the file no longer matches the editor, so "Convert all" must pick the
+    // track up again rather than skip it as already done — otherwise the edit never lands.
+    const stale = { ...track('a', 'done', { year: '2000' }), processedSignature: 'old-snapshot' }
+    expect(eligibleForBatch([stale])).toEqual(['a'])
+  })
 })
 
 describe('canProcessTrack', () => {
@@ -70,6 +78,11 @@ describe('canProcessTrack', () => {
   it('blocks tracks already done or currently processing', () => {
     expect(canProcessTrack(track('a', 'done', { title: 'x', artist: 'y' }), ['title'])).toBe(false)
     expect(canProcessTrack(track('a', 'processing', { title: 'x' }), ['title'])).toBe(false)
+  })
+
+  it('allows re-converting a done track edited since it was processed', () => {
+    const stale = { ...track('a', 'done', { title: 'x', artist: 'y' }), processedSignature: 'old' }
+    expect(canProcessTrack(stale, ['title', 'artist'])).toBe(true)
   })
 })
 

@@ -1,20 +1,24 @@
 import type { TrackItem } from '../types'
+import { isStale } from './dirty'
 import { missingRequired } from './fields'
 
-// A track is eligible for batch conversion when it has not been processed yet
-// (idle) or a previous attempt failed (error). Tracks already done or currently
-// processing are skipped so "Convert all" never re-runs or duplicates work.
-export function eligibleForBatch(tracks: TrackItem[]): string[] {
-  return tracks.filter((t) => t.status === 'idle' || t.status === 'error').map((t) => t.id)
+// A track is convertible when it has not been processed yet (idle), a previous attempt
+// failed (error), or it was edited after converting (stale — the file no longer matches the
+// editor, e.g. a year filled in across the selection after a Discogs apply). A done track
+// still in sync, or one mid-process, is skipped so "Convert all" never re-runs duplicate work.
+function isConvertible(track: TrackItem): boolean {
+  return track.status === 'idle' || track.status === 'error' || isStale(track)
 }
 
-// Whether a single track can be converted right now: it must be in a convertible
-// state (idle or a previous error) and have every required field filled. This is
-// the same gate the convert button enforces, so the keyboard shortcut and command
-// palette can't bypass it and trigger a process that only fails on missing tags.
+export function eligibleForBatch(tracks: TrackItem[]): string[] {
+  return tracks.filter(isConvertible).map((t) => t.id)
+}
+
+// Whether a single track can be converted right now: a convertible state plus every required
+// field filled. The same gate the convert button enforces, so the keyboard shortcut and
+// command palette can't bypass it and trigger a process that only fails on missing tags.
 export function canProcessTrack(track: TrackItem, requiredFields: string[]): boolean {
-  const convertible = track.status === 'idle' || track.status === 'error'
-  return convertible && missingRequired(track.meta, requiredFields).length === 0
+  return isConvertible(track) && missingRequired(track.meta, requiredFields).length === 0
 }
 
 // The outcome of converting one track: it wrote a file, the user skipped it past a
