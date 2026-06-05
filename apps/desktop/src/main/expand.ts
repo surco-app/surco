@@ -1,10 +1,22 @@
 import { readdir, stat } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 
-// AAC/ALAC live in MP4 containers (.m4a/.mp4) and .aac is raw AAC. They never match an
-// output format, so they always transcode through ffmpeg (which decodes them) — letting
-// the app ingest the format Apple Music libraries are made of, not only its four outputs.
-const AUDIO_EXTS = new Set(['.wav', '.flac', '.aif', '.aiff', '.mp3', '.m4a', '.mp4', '.aac'])
+// Beyond the four output formats, ffmpeg also decodes AAC/ALAC (.m4a/.mp4/.aac — what
+// Apple Music libraries are made of) and Ogg Vorbis/Opus (.ogg/.oga/.opus — Bandcamp and
+// the like). None match an output, so they always transcode rather than stream-copy.
+const AUDIO_EXTS = new Set([
+  '.wav',
+  '.flac',
+  '.aif',
+  '.aiff',
+  '.mp3',
+  '.m4a',
+  '.mp4',
+  '.aac',
+  '.ogg',
+  '.oga',
+  '.opus',
+])
 
 // macOS scatters hidden files beside real ones — most notably the "._name"
 // AppleDouble companions it writes on exFAT/FAT/network volumes, which share the

@@ -239,7 +239,22 @@ function registerIpc(): void {
       title: 'Selecciona pistas',
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'mp3', 'm4a', 'mp4', 'aac'] },
+        {
+          name: 'Audio',
+          extensions: [
+            'wav',
+            'flac',
+            'aif',
+            'aiff',
+            'mp3',
+            'm4a',
+            'mp4',
+            'aac',
+            'ogg',
+            'oga',
+            'opus',
+          ],
+        },
       ],
     })
     return canceled ? [] : filePaths

@@ -27,13 +27,15 @@ describe('expandPaths', () => {
     expect(result.sort()).toEqual([join(dir, 'a.wav'), join(dir, 'sub', 'b.flac')].sort())
   })
 
-  it('collects m4a/aac alongside the lossless formats so an Apple Music library loads', async () => {
-    // The app integrates with Apple Music but its library is full of .m4a (AAC/ALAC); not
-    // ingesting them was the gap. ffmpeg decodes them, so they convert like any other input.
+  it('collects m4a/aac/opus alongside the lossless formats that ffmpeg can decode', async () => {
+    // The app integrates with Apple Music (libraries full of .m4a AAC/ALAC) and Bandcamp
+    // gives .opus/.ogg; not ingesting them was the gap. ffmpeg decodes them, so they
+    // convert like any other input.
     await writeFile(join(dir, 'song.m4a'), '')
     await writeFile(join(dir, 'raw.aac'), '')
+    await writeFile(join(dir, 'bandcamp.opus'), '')
     expect((await expandPaths([dir])).sort()).toEqual(
-      [join(dir, 'song.m4a'), join(dir, 'raw.aac')].sort(),
+      [join(dir, 'song.m4a'), join(dir, 'raw.aac'), join(dir, 'bandcamp.opus')].sort(),
     )
   })
 

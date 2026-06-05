@@ -136,6 +136,14 @@ describe('planConversion', () => {
     })
   })
 
+  it('transcodes an Opus/Ogg source too rather than stream-copying', async () => {
+    expect(await planConversion('/in.opus', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
+    expect(await planConversion('/in.ogg', 'aiff', probe)).toEqual({
+      codec: 'pcm_s24be',
+      ext: '.aiff',
+    })
+  })
+
   it('encodes a lossless source to FLAC without probing, since the flac codec preserves the source bit depth itself', async () => {
     // FLAC is losslessly compressed and derives its bit depth from the input,
     // so there is no endianness or PCM width to pick — unlike AIFF/WAV
