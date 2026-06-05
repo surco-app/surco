@@ -137,12 +137,19 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('output-name')).toBeNull()
   })
 
-  it('shows shared album fields and a convert-all action, not the single-track form', () => {
+  it('shows shared album fields and a convert-all action with the format picker', () => {
     renderMulti()
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
     expect(screen.queryByTestId('field-title')).toBeNull()
-    expect(screen.getByTestId('process-all-btn')).toBeInTheDocument()
-    expect(screen.queryByTestId('process-btn')).toBeNull()
+    // The convert button keeps the format split-control, but converts the whole selection.
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert all (2)')
+    expect(screen.getByTestId('process-format-toggle')).toBeInTheDocument()
+  })
+
+  it('converts every selected track in the chosen format', () => {
+    const { onProcessAll } = renderMulti()
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcessAll).toHaveBeenCalledWith('aiff')
   })
 
   it('writes a shared-field edit to every selected track', () => {

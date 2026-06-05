@@ -410,7 +410,7 @@ export default function App(): React.JSX.Element {
     }
   }
 
-  async function processAll(): Promise<void> {
+  async function processAll(formatOverride?: OutputFormat): Promise<void> {
     if (batching) return
     const ids = eligibleForBatch(tracks)
     setBatching(true)
@@ -419,7 +419,7 @@ export default function App(): React.JSX.Element {
     const results: BatchOutcome[] = []
     try {
       for (const id of ids) {
-        results.push(await processOne(id))
+        results.push(await processOne(id, formatOverride))
         setBatchProgress({ done: results.length, total: ids.length })
       }
     } finally {
@@ -668,7 +668,7 @@ export default function App(): React.JSX.Element {
             <button
               type="button"
               data-testid="convert-all"
-              onClick={processAll}
+              onClick={() => processAll()}
               disabled={!canProcessAll}
               className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >

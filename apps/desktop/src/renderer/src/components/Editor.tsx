@@ -50,7 +50,7 @@ interface Props {
   // primary track. Undefined/length<=1 means the ordinary single-track editor.
   selectedTracks?: TrackItem[]
   onApplyMatches?: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
-  onProcessAll?: () => void
+  onProcessAll?: (format: OutputFormat) => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
@@ -760,32 +760,21 @@ export function Editor({
             </div>
           )}
           <div className="space-y-2">
-            {isMulti ? (
-              <button
-                type="button"
-                data-testid="process-all-btn"
-                onClick={onProcessAll}
-                disabled={!onProcessAll}
-                className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-              >
-                {tr('editor.convertAll', { count: selectedTracks?.length ?? 0 })}
-              </button>
-            ) : (
-              <ExportButton
-                status={item.status}
-                stale={stale}
-                done={done}
-                outputFormat={format}
-                exportedFormat={exportedFormat}
-                withAppleMusic={
-                  window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
-                }
-                incomplete={incomplete}
-                onProcess={onProcess}
-                onSelectFormat={setFormat}
-              />
-            )}
-            {done && (
+            <ExportButton
+              status={isMulti ? 'idle' : item.status}
+              stale={!isMulti && stale}
+              done={!isMulti && done}
+              outputFormat={format}
+              exportedFormat={isMulti ? null : exportedFormat}
+              withAppleMusic={
+                window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
+              }
+              incomplete={!isMulti && incomplete}
+              count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
+              onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+              onSelectFormat={setFormat}
+            />
+            {!isMulti && done && (
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -811,7 +800,7 @@ export function Editor({
                 )}
               </div>
             )}
-            {done && item.musicStatus === 'error' && (
+            {!isMulti && done && item.musicStatus === 'error' && (
               <p className="text-xs text-danger">{item.musicError}</p>
             )}
           </div>
@@ -829,6 +818,10 @@ interface ExportButtonProps {
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
   incomplete: boolean
+  // When set, the button converts the whole selection in the chosen format and labels
+  // itself "Convert all (N)" instead of the single-track convert; the format menu works
+  // the same, it just applies to every selected track.
+  count?: number
   onProcess: (format: OutputFormat) => void
   onSelectFormat: (format: OutputFormat) => void
 }
@@ -847,6 +840,7 @@ function ExportButton({
   exportedFormat,
   withAppleMusic,
   incomplete,
+  count,
   onProcess,
   onSelectFormat,
 }: ExportButtonProps): React.JSX.Element {
@@ -869,13 +863,15 @@ function ExportButton({
 
   const label = processing
     ? tr('editor.processing')
-    : stale
-      ? tr('editor.update')
-      : done
-        ? tr('editor.exportAgain')
-        : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
-            format: outputFormat.toUpperCase(),
-          })
+    : count !== undefined
+      ? tr('editor.convertAll', { count, format: outputFormat.toUpperCase() })
+      : stale
+        ? tr('editor.update')
+        : done
+          ? tr('editor.exportAgain')
+          : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
+              format: outputFormat.toUpperCase(),
+            })
 
   function pick(format: OutputFormat): void {
     setOpen(false)
