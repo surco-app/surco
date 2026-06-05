@@ -5,6 +5,7 @@ import { mediaUrl } from '../../shared/media'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
+import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { Player } from './components/Player'
@@ -97,6 +98,7 @@ export default function App(): React.JSX.Element {
   const [showSettings, setShowSettings] = useState(false)
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [showFindReplace, setShowFindReplace] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -512,6 +514,12 @@ export default function App(): React.JSX.Element {
       run: pickFiles,
     },
     {
+      id: 'find-replace',
+      title: tr('commands.findReplace'),
+      enabled: tracks.length > 0,
+      run: () => setShowFindReplace(true),
+    },
+    {
       id: 'prev',
       title: tr('commands.prev'),
       hint: '↑',
@@ -856,6 +864,13 @@ export default function App(): React.JSX.Element {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showFindReplace && (
+        <FindReplaceModal
+          tracks={tracks}
+          onApply={deriveTracks}
+          onClose={() => setShowFindReplace(false)}
+        />
+      )}
 
       {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
 

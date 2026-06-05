@@ -52,7 +52,8 @@
     "addAppleMusic": "Añadir a Apple Music",
     "help": "Ayuda y FAQ",
     "feedback": "Enviar comentarios",
-    "website": "Sitio web de Surco"
+    "website": "Sitio web de Surco",
+    "findReplace": "Buscar y reemplazar…"
   },
   "trackList": {
     "noArtist": "Sin artista",
@@ -244,5 +245,16 @@
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
     "applied": "Aplicado"
+  },
+  "findReplace": {
+    "title": "Buscar y reemplazar",
+    "find": "Buscar",
+    "replace": "Reemplazar por",
+    "regex": "Regex",
+    "hint": "Escribe algo para buscar en los tags de todas las pistas.",
+    "invalidRegex": "Expresión regular no válida",
+    "noMatches": "Sin coincidencias en ninguna pista.",
+    "summary": "{{fields}} campos en {{tracks}} pistas",
+    "apply": "Reemplazar en {{count}}"
   }
 }

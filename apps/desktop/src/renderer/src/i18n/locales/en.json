@@ -52,7 +52,8 @@
     "addAppleMusic": "Add to Apple Music",
     "help": "Help & FAQ",
     "feedback": "Send feedback",
-    "website": "Surco website"
+    "website": "Surco website",
+    "findReplace": "Find & Replace…"
   },
   "trackList": {
     "noArtist": "No artist",
@@ -244,5 +245,16 @@
     "apply": "Apply to {{count}}",
     "suggested": "Suggested match",
     "applied": "Applied"
+  },
+  "findReplace": {
+    "title": "Find & Replace",
+    "find": "Find",
+    "replace": "Replace with",
+    "regex": "Regex",
+    "hint": "Type something to find across all tracks’ tags.",
+    "invalidRegex": "Invalid regular expression",
+    "noMatches": "No matches in any track.",
+    "summary": "{{fields}} fields in {{tracks}} tracks",
+    "apply": "Replace in {{count}}"
   }
 }
