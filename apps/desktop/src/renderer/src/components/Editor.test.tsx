@@ -93,6 +93,65 @@ describe('Editor cover picker', () => {
   })
 })
 
+describe('Editor multi-select', () => {
+  function renderMulti() {
+    const onChangeAllMeta = vi.fn()
+    const onProcessAll = vi.fn()
+    const a = item({
+      id: 'a',
+      meta: { title: 'A', album: 'Shared' },
+      spectrum: { image: '', cutoffHz: null, sampleRateHz: 44100 },
+    })
+    const b = item({ id: 'b', meta: { title: 'B', album: 'Shared' } })
+    render(
+      <Editor
+        item={a}
+        hasToken
+        outputFormat="aiff"
+        addToAppleMusic={false}
+        filenameFormat="{artist} - {title}"
+        groupingPresets={[]}
+        visibleFields={['title', 'album']}
+        requiredFields={[]}
+        showSpectrum
+        searchInputRef={createRef<HTMLInputElement>()}
+        selectedTracks={[a, b]}
+        onApplyMatches={vi.fn()}
+        onProcessAll={onProcessAll}
+        onChangeAllMeta={onChangeAllMeta}
+        onApplyCoverAll={vi.fn()}
+        onChange={vi.fn()}
+        onProcess={vi.fn()}
+        onAddToAppleMusic={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+    return { onChangeAllMeta, onProcessAll }
+  }
+
+  // The spectrum and output filename describe a single file; over a multi-selection they
+  // are meaningless, so they must drop out rather than show the primary track's by accident.
+  it('hides the per-track spectrum and filename when several tracks are selected', () => {
+    renderMulti()
+    expect(screen.queryByText(i18n.t('editor.qualityTitle'))).toBeNull()
+    expect(screen.queryByTestId('output-name')).toBeNull()
+  })
+
+  it('shows shared album fields and a convert-all action, not the single-track form', () => {
+    renderMulti()
+    expect(screen.getByTestId('field-album')).toHaveValue('Shared')
+    expect(screen.queryByTestId('field-title')).toBeNull()
+    expect(screen.getByTestId('process-all-btn')).toBeInTheDocument()
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+  })
+
+  it('writes a shared-field edit to every selected track', () => {
+    const { onChangeAllMeta } = renderMulti()
+    fireEvent.change(screen.getByTestId('field-album'), { target: { value: 'New Album' } })
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+  })
+})
+
 describe('Editor export control', () => {
   // The original bug: once a track was done its export button vanished, so a user
   // who exported WAV had no way to also export MP3 without reloading the file.

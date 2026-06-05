@@ -6,8 +6,10 @@ import type {
   DiscogsSearchResult,
   DiscogsTrack,
   OutputFormat,
+  TrackMetadata,
 } from '../../../shared/types'
 import { formatMatchesInput } from '../../../shared/format'
+import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
@@ -49,6 +51,10 @@ interface Props {
   selectedTracks?: TrackItem[]
   onApplyMatches?: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
   onProcessAll?: () => void
+  // Multi-select writes: a field edited in the shared form goes to every selected track,
+  // and a dropped/picked cover is stamped onto all of them.
+  onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
+  onApplyCoverAll?: (coverUrl: string, coverPath: string) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic: () => void
@@ -69,12 +75,21 @@ export function Editor({
   selectedTracks,
   onApplyMatches,
   onProcessAll,
+  onChangeAllMeta,
+  onApplyCoverAll,
   onChange,
   onProcess,
   onAddToAppleMusic,
   onOpenSettings,
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  // In multi-select the cover is whatever the tracks already share (or nothing, when they
+  // differ); a drop/pick stamps it onto all of them instead of just the primary track.
+  const sharedCover =
+    isMulti && selectedTracks?.every((t) => t.coverUrl === selectedTracks[0].coverUrl)
+      ? selectedTracks[0].coverUrl
+      : undefined
+  const displayCover = isMulti ? sharedCover : item.coverUrl
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState(item.query)
   const [results, setResults] = useState<DiscogsSearchResult[]>([])
@@ -238,7 +253,10 @@ export function Editor({
 
   function applyImageFile(file: File | undefined): void {
     if (!file || !file.type.startsWith('image/')) return
-    onChange({ coverUrl: URL.createObjectURL(file), coverPath: window.api.getPathForFile(file) })
+    const coverUrl = URL.createObjectURL(file)
+    const coverPath = window.api.getPathForFile(file)
+    if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
+    else onChange({ coverUrl, coverPath })
   }
 
   function onCoverDrop(e: React.DragEvent): void {
@@ -458,11 +476,15 @@ export function Editor({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <SectionHeader
-            title={tr('editor.sectionForm')}
+            title={
+              isMulti
+                ? tr('editor.editingMultiple', { count: selectedTracks?.length ?? 0 })
+                : tr('editor.sectionForm')
+            }
             open={formOpen}
             onToggle={() => setFormOpen((v) => !v)}
             right={
-              inLibrary === 'yes' ? (
+              isMulti ? null : inLibrary === 'yes' ? (
                 <span
                   data-testid="apple-music-status"
                   className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
@@ -510,15 +532,15 @@ export function Editor({
                       e.target.value = ''
                     }}
                   />
-                  {item.coverUrl ? (
+                  {displayCover ? (
                     <>
                       <img
                         data-testid="cover-preview"
-                        src={item.coverUrl}
+                        src={displayCover}
                         alt={tr('editor.coverAlt')}
-                        draggable
+                        draggable={!isMulti}
                         onDragStart={(e) => {
-                          if (!coverDragPath.current) return
+                          if (isMulti || !coverDragPath.current) return
                           e.preventDefault()
                           window.api.startCoverDrag(coverDragPath.current)
                         }}
@@ -526,29 +548,31 @@ export function Editor({
                           coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
                         }`}
                       />
-                      <button
-                        type="button"
-                        data-testid="cover-export"
-                        onClick={onCoverExport}
-                        title={tr('editor.coverExport')}
-                        aria-label={tr('editor.coverExport')}
-                        className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                          className="h-4 w-4"
+                      {!isMulti && (
+                        <button
+                          type="button"
+                          data-testid="cover-export"
+                          onClick={onCoverExport}
+                          title={tr('editor.coverExport')}
+                          aria-label={tr('editor.coverExport')}
+                          className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                         >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <path d="M7 10l5 5 5-5" />
-                          <path d="M12 15V3" />
-                        </svg>
-                      </button>
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                            className="h-4 w-4"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <path d="M7 10l5 5 5-5" />
+                            <path d="M12 15V3" />
+                          </svg>
+                        </button>
+                      )}
                     </>
                   ) : (
                     <button
@@ -567,35 +591,53 @@ export function Editor({
                 </div>
 
                 <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
-                  {visibleFields.map((key) => {
-                    const def = FIELD_DEFS.find((d) => d.key === key)
-                    if (!def) return null
-                    return (
-                      <Field
-                        key={def.key}
-                        name={def.key}
-                        label={tr(`fields.${def.key}`)}
-                        value={item.meta[def.key]}
-                        onChange={(v) => setField(def.key, v)}
-                        wide={def.wide}
-                        invalid={requiredFields.includes(def.key) && !item.meta[def.key].trim()}
-                        suggestions={
-                          def.key === 'genre'
-                            ? genreChips
-                            : def.key === 'grouping'
-                              ? groupingPresets
-                              : undefined
-                        }
-                        multiSuggestions={def.key === 'grouping'}
-                      />
-                    )
-                  })}
+                  {isMulti && selectedTracks
+                    ? BULK_FIELDS.map((key) => {
+                        const shared = commonValue(selectedTracks, key)
+                        return (
+                          <Field
+                            key={key}
+                            name={key}
+                            label={tr(`fields.${key}`)}
+                            value={shared ?? ''}
+                            placeholder={shared === undefined ? tr('editor.multipleValues') : undefined}
+                            onChange={(v) => onChangeAllMeta?.({ [key]: v })}
+                            suggestions={
+                              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined
+                            }
+                            multiSuggestions={key === 'grouping'}
+                          />
+                        )
+                      })
+                    : visibleFields.map((key) => {
+                        const def = FIELD_DEFS.find((d) => d.key === key)
+                        if (!def) return null
+                        return (
+                          <Field
+                            key={def.key}
+                            name={def.key}
+                            label={tr(`fields.${def.key}`)}
+                            value={item.meta[def.key]}
+                            onChange={(v) => setField(def.key, v)}
+                            wide={def.wide}
+                            invalid={requiredFields.includes(def.key) && !item.meta[def.key].trim()}
+                            suggestions={
+                              def.key === 'genre'
+                                ? genreChips
+                                : def.key === 'grouping'
+                                  ? groupingPresets
+                                  : undefined
+                            }
+                            multiSuggestions={def.key === 'grouping'}
+                          />
+                        )
+                      })}
                 </div>
               </div>
             </div>
           )}
 
-          {showSpectrum && (
+          {!isMulti && showSpectrum && (
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
               <SectionHeader
                 title={tr('editor.qualityTitle')}
@@ -648,6 +690,7 @@ export function Editor({
             </div>
           )}
 
+          {!isMulti && (
           <div className="mt-6 border-t border-[var(--color-line)] pt-5">
             <SectionHeader
               title={tr('editor.outputName')}
@@ -699,6 +742,7 @@ export function Editor({
               </p>
             )}
           </div>
+          )}
         </div>
 
         <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
@@ -992,6 +1036,7 @@ interface FieldProps {
   onChange: (v: string) => void
   wide?: boolean
   invalid?: boolean
+  placeholder?: string
   suggestions?: string[]
   multiSuggestions?: boolean
 }
@@ -1003,6 +1048,7 @@ function Field({
   onChange,
   wide,
   invalid,
+  placeholder,
   suggestions,
   multiSuggestions,
 }: FieldProps): React.JSX.Element {
@@ -1014,6 +1060,7 @@ function Field({
         aria-invalid={invalid}
         title={value}
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
           invalid

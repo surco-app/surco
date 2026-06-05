@@ -113,7 +113,9 @@
     "reportError": "Report",
     "inLibrary": "Already in your Apple Music library",
     "notInLibrary": "Not in your Apple Music library",
-    "convertAll": "Convert all ({{count}})"
+    "convertAll": "Convert all ({{count}})",
+    "editingMultiple": "Editing {{count}} tracks",
+    "multipleValues": "Multiple values"
   },
   "fields": {
     "title": "Title",

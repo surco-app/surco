@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
-import type { OutputFormat, Settings, ThemePref } from '../../shared/types'
+import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
@@ -231,6 +231,20 @@ export default function App(): React.JSX.Element {
 
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+  }, [])
+
+  // Writes a shared-field edit (or a dropped cover) onto every selected track at once —
+  // the multi-select write path behind the editor's common-field form.
+  const updateTracksMeta = useCallback((ids: string[], metaPatch: Partial<TrackMetadata>): void => {
+    const targets = new Set(ids)
+    setTracks((prev) =>
+      prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
+    )
+  }, [])
+
+  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
+    const targets = new Set(ids)
+    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
   }, [])
 
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
@@ -761,6 +775,8 @@ export default function App(): React.JSX.Element {
               selectedTracks={selectedTracks}
               onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
               onProcessAll={processAll}
+              onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
+              onApplyCoverAll={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={(format) => processOne(selected.id, format)}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
