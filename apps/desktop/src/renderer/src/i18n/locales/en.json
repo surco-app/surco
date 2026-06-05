@@ -238,5 +238,14 @@
     "mixed": "Multiple values",
     "coverDrop": "Drag artwork here to apply to all",
     "coverDropActive": "Drop to apply to all"
+  },
+  "match": {
+    "title": "Match album",
+    "searchPlaceholder": "Search Discogs for the album",
+    "search": "Search",
+    "unassigned": "Unassigned",
+    "apply": "Apply to {{count}}",
+    "suggested": "Suggested match",
+    "error": "Could not load the album"
   }
 }

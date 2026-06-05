@@ -3,12 +3,15 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
+import type { ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
+import { AlbumMatch } from './AlbumMatch'
 
 interface Props {
   tracks: TrackItem[]
   onChangeMeta: (patch: Partial<TrackMetadata>) => void
   onApplyCover: (coverUrl: string, coverPath: string) => void
+  onApplyMatches: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
 }
 
 // Shown in place of the single-track editor when more than one track is selected. It
@@ -16,7 +19,12 @@ interface Props {
 // that value, one where they differ shows a "multiple values" hint and stays blank, so
 // typing overwrites every selected track but leaving it alone preserves their differences.
 // A dropped image is applied to the whole selection at once — the album-cover case.
-export function BulkEditor({ tracks, onChangeMeta, onApplyCover }: Props): React.JSX.Element {
+export function BulkEditor({
+  tracks,
+  onChangeMeta,
+  onApplyCover,
+  onApplyMatches,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [coverDragging, setCoverDragging] = useState(false)
 
@@ -70,6 +78,7 @@ export function BulkEditor({ tracks, onChangeMeta, onApplyCover }: Props): React
           )
         })}
       </div>
+      <AlbumMatch files={tracks} onApply={onApplyMatches} />
     </div>
   )
 }

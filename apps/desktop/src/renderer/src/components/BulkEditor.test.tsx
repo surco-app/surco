@@ -44,8 +44,16 @@ function track(id: string, meta: Partial<TrackMetadata>): TrackItem {
 function renderBulk(tracks: TrackItem[]) {
   const onChangeMeta = vi.fn()
   const onApplyCover = vi.fn()
-  render(<BulkEditor tracks={tracks} onChangeMeta={onChangeMeta} onApplyCover={onApplyCover} />)
-  return { onChangeMeta, onApplyCover }
+  const onApplyMatches = vi.fn()
+  render(
+    <BulkEditor
+      tracks={tracks}
+      onChangeMeta={onChangeMeta}
+      onApplyCover={onApplyCover}
+      onApplyMatches={onApplyMatches}
+    />,
+  )
+  return { onChangeMeta, onApplyCover, onApplyMatches }
 }
 
 describe('BulkEditor', () => {

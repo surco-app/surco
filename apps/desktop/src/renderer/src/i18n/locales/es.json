@@ -238,5 +238,14 @@
     "mixed": "Varios valores",
     "coverDrop": "Arrastra la carátula para aplicarla a todas",
     "coverDropActive": "Suelta para aplicarla a todas"
+  },
+  "match": {
+    "title": "Emparejar álbum",
+    "searchPlaceholder": "Busca el álbum en Discogs",
+    "search": "Buscar",
+    "unassigned": "Sin asignar",
+    "apply": "Aplicar a {{count}}",
+    "suggested": "Coincidencia sugerida",
+    "error": "No se pudo cargar el álbum"
   }
 }

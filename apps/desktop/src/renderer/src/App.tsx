@@ -770,6 +770,7 @@ export default function App(): React.JSX.Element {
               tracks={selectedTracks}
               onChangeMeta={(patch) => updateTracksMeta(selectedIds, patch)}
               onApplyCover={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
+              onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
             />
           ) : selected ? (
             <Editor
