@@ -27,6 +27,16 @@ describe('expandPaths', () => {
     expect(result.sort()).toEqual([join(dir, 'a.wav'), join(dir, 'sub', 'b.flac')].sort())
   })
 
+  it('collects m4a/aac alongside the lossless formats so an Apple Music library loads', async () => {
+    // The app integrates with Apple Music but its library is full of .m4a (AAC/ALAC); not
+    // ingesting them was the gap. ffmpeg decodes them, so they convert like any other input.
+    await writeFile(join(dir, 'song.m4a'), '')
+    await writeFile(join(dir, 'raw.aac'), '')
+    expect((await expandPaths([dir])).sort()).toEqual(
+      [join(dir, 'song.m4a'), join(dir, 'raw.aac')].sort(),
+    )
+  })
+
   it('skips non-audio files inside a dropped folder', async () => {
     // A folder usually holds cover.jpg, notes.txt, etc.; those must not become tracks.
     await writeFile(join(dir, 'song.mp3'), '')

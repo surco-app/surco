@@ -238,7 +238,9 @@ function registerIpc(): void {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Selecciona pistas',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'mp3'] }],
+      filters: [
+        { name: 'Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'mp3', 'm4a', 'mp4', 'aac'] },
+      ],
     })
     return canceled ? [] : filePaths
   })

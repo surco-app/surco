@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
@@ -104,6 +104,10 @@ describe('planConversion', () => {
     channels: 2,
   }))
 
+  // Each test asserts about its own probe calls, so the shared spy must start clean —
+  // otherwise a test that probes (e.g. the m4a case) leaks into a later "not called" check.
+  beforeEach(() => probe.mockClear())
+
   it('stream-copies a source already in the target format', async () => {
     expect(await planConversion('/in.aiff', 'aiff', probe)).toEqual({ codec: 'copy', ext: '.aiff' })
     expect(await planConversion('/in.mp3', 'mp3', probe)).toEqual({ codec: 'copy', ext: '.mp3' })
@@ -111,6 +115,25 @@ describe('planConversion', () => {
     expect(await planConversion('/in.flac', 'flac', probe)).toEqual({ codec: 'copy', ext: '.flac' })
     // copying never needs to inspect the stream
     expect(probe).not.toHaveBeenCalled()
+  })
+
+  it('transcodes an AAC/M4A source to every target instead of stream-copying', async () => {
+    // AAC/ALAC in .m4a never matches an output format, so each target encodes (the lossless
+    // ones still probe the decoded bit depth). This is what lets the app ingest m4a at all.
+    expect(await planConversion('/in.m4a', 'mp3', probe)).toEqual({
+      codec: 'libmp3lame',
+      bitrate: '320k',
+      ext: '.mp3',
+    })
+    expect(await planConversion('/in.m4a', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
+    expect(await planConversion('/in.m4a', 'wav', probe)).toEqual({
+      codec: 'pcm_s24le',
+      ext: '.wav',
+    })
+    expect(await planConversion('/in.m4a', 'aiff', probe)).toEqual({
+      codec: 'pcm_s24be',
+      ext: '.aiff',
+    })
   })
 
   it('encodes a lossless source to FLAC without probing, since the flac codec preserves the source bit depth itself', async () => {

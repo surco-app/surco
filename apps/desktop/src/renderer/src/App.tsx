@@ -38,7 +38,7 @@ import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
 import type { TrackItem } from './types'
 
-const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3)$/i
+const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac)$/i
 
 // Cap on tracks read in parallel when files are dropped: each spawns taglib +
 // ffprobe, so an unbounded drop of a full crate would flood the main process.
