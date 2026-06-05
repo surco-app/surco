@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next'
 import type { DiscogsRelease, DiscogsSearchResult } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { formatTime } from '../lib/duration'
-import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import {
+  buildReleaseMeta,
+  confidenceTier,
+  type ReleaseMetaPatch,
+  resultFromRelease,
+} from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 
@@ -45,8 +50,9 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
     try {
       const id = parseReleaseId(query)
       if (id !== null) {
-        setResults([])
-        setRelease(await loadRelease(id))
+        const rel = await loadRelease(id)
+        setResults([resultFromRelease(rel)])
+        setRelease(rel)
       } else {
         setResults(await window.api.searchDiscogs(query))
       }
@@ -57,7 +63,14 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
     }
   }
 
+  // Clicking the expanded release collapses it back to the plain list; clicking any
+  // other result switches to it — so the results stay on screen and the user can change
+  // albums without searching again.
   async function pickRelease(result: DiscogsSearchResult): Promise<void> {
+    if (release?.id === result.id) {
+      setRelease(null)
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -135,88 +148,20 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
 
       {error && <p className="mt-2 text-xs text-danger">{error}</p>}
 
-      {release ? (
-        <div className="mt-4">
-          <div className="flex flex-col gap-1">
-            {assignments.map((a) => {
-              const file = files.find((f) => f.id === a.id)
-              if (!file) return null
-              const tier = a.track ? confidenceTier(a.confidence) : undefined
-              return (
-                <div
-                  key={a.id}
-                  data-testid="match-row"
-                  className="flex items-center gap-3 rounded-lg px-2 py-1.5"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm">{file.meta.title || file.fileName}</span>
-                    {file.duration !== undefined && (
-                      <span className="text-xs tabular-nums text-fg-dim">
-                        {formatTime(file.duration)}
-                      </span>
-                    )}
-                  </span>
-                  <span aria-hidden="true" className="text-fg-faint">
-                    →
-                  </span>
-                  <select
-                    data-testid={`match-select-${a.id}`}
-                    value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
-                    onChange={(e) =>
-                      setAssignments((prev) =>
-                        reassign(
-                          prev,
-                          a.id,
-                          e.target.value === '' ? undefined : release.tracklist[Number(e.target.value)],
-                        ),
-                      )
-                    }
-                    className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
-                  >
-                    <option value="">{tr('match.unassigned')}</option>
-                    {release.tracklist.map((track, i) => (
-                      <option key={`${track.position}-${track.title}-${i}`} value={String(i)}>
-                        {[track.position, track.title].filter(Boolean).join(' ')}
-                        {track.duration ? ` (${track.duration})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="w-4 shrink-0 text-center">
-                    {tier && tier !== 'low' && (
-                      <span
-                        data-testid={`match-confidence-${a.id}`}
-                        data-confidence={tier}
-                        title={tr('match.suggested')}
-                        className={tier === 'high' ? 'text-good' : 'text-warn'}
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <button
-            type="button"
-            data-testid="match-apply"
-            onClick={apply}
-            disabled={matchedCount === 0}
-            className="press mt-4 w-full rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {tr('match.apply', { count: matchedCount })}
-          </button>
-        </div>
-      ) : (
-        results.length > 0 && (
-          <ul className="mt-3 flex flex-col gap-1">
-            {results.map((r) => (
-              <li key={r.id}>
+      {results.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-1">
+          {results.map((r) => {
+            const expanded = release?.id === r.id
+            return (
+              <li key={r.id} className="overflow-hidden rounded-lg">
                 <button
                   type="button"
                   data-testid="match-result"
+                  aria-expanded={expanded}
                   onClick={() => void pickRelease(r)}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-[var(--color-panel-2)]"
+                  className={`flex w-full items-center gap-3 px-2 py-1.5 text-left text-sm ${
+                    expanded ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-panel-2)]'
+                  }`}
                 >
                   {r.cover_image && (
                     <img src={r.cover_image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
@@ -224,10 +169,87 @@ export function AlbumMatch({ files, onApply }: Props): React.JSX.Element {
                   <span className="min-w-0 flex-1 truncate">{r.title}</span>
                   {r.year && <span className="shrink-0 text-xs text-fg-dim">{r.year}</span>}
                 </button>
+                {expanded && release && (
+                  <div className="px-2 pt-1 pb-2">
+                    <div className="flex flex-col gap-1">
+                      {assignments.map((a) => {
+                        const file = files.find((f) => f.id === a.id)
+                        if (!file) return null
+                        const tier = a.track ? confidenceTier(a.confidence) : undefined
+                        return (
+                          <div
+                            key={a.id}
+                            data-testid="match-row"
+                            className="flex items-center gap-3 py-1"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm">
+                                {file.meta.title || file.fileName}
+                              </span>
+                              {file.duration !== undefined && (
+                                <span className="text-xs tabular-nums text-fg-dim">
+                                  {formatTime(file.duration)}
+                                </span>
+                              )}
+                            </span>
+                            <span aria-hidden="true" className="text-fg-faint">
+                              →
+                            </span>
+                            <select
+                              data-testid={`match-select-${a.id}`}
+                              value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
+                              onChange={(e) =>
+                                setAssignments((prev) =>
+                                  reassign(
+                                    prev,
+                                    a.id,
+                                    e.target.value === ''
+                                      ? undefined
+                                      : release.tracklist[Number(e.target.value)],
+                                  ),
+                                )
+                              }
+                              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent)]"
+                            >
+                              <option value="">{tr('match.unassigned')}</option>
+                              {release.tracklist.map((track, i) => (
+                                <option key={`${track.position}-${track.title}-${i}`} value={String(i)}>
+                                  {[track.position, track.title].filter(Boolean).join(' ')}
+                                  {track.duration ? ` (${track.duration})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="w-4 shrink-0 text-center">
+                              {tier && tier !== 'low' && (
+                                <span
+                                  data-testid={`match-confidence-${a.id}`}
+                                  data-confidence={tier}
+                                  title={tr('match.suggested')}
+                                  className={tier === 'high' ? 'text-good' : 'text-warn'}
+                                >
+                                  ✓
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="match-apply"
+                      onClick={apply}
+                      disabled={matchedCount === 0}
+                      className="press mt-3 w-full rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      {tr('match.apply', { count: matchedCount })}
+                    </button>
+                  </div>
+                )}
               </li>
-            ))}
-          </ul>
-        )
+            )
+          })}
+        </ul>
       )}
     </section>
   )

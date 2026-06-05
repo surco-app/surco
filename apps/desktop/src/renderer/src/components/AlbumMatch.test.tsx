@@ -90,6 +90,23 @@ describe('AlbumMatch', () => {
     expect(patches.find((p) => p.id === 'long')?.patch.meta.title).toBe('Extended Mix')
   })
 
+  it('keeps the results list on screen after a release is chosen', async () => {
+    // Picking an album used to replace the whole list, stranding the user on one release
+    // with no way back; the list must stay so they can switch albums without re-searching.
+    mockApi()
+    ;(window as unknown as { api: { searchDiscogs: ReturnType<typeof vi.fn> } }).api.searchDiscogs =
+      vi.fn().mockResolvedValue([
+        { id: 5, title: 'Hard House Nation', year: '2000' },
+        { id: 6, title: 'Another Pressing', year: '2001' },
+      ])
+    render(<AlbumMatch files={[track('a', 'x', 200)]} onApply={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('match-search'))
+    const results = await screen.findAllByTestId('match-result')
+    fireEvent.click(results[0])
+    await screen.findAllByTestId('match-row')
+    expect(screen.getAllByTestId('match-result')).toHaveLength(2)
+  })
+
   it('swaps the held entry when a file is reassigned to a track another file has', async () => {
     // Pointing the short file at the extended mix must hand the radio edit to the long
     // file, so the two trade rather than both claiming one track.
