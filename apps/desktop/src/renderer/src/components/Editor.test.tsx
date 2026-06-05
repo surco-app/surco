@@ -94,7 +94,7 @@ describe('Editor cover picker', () => {
 })
 
 describe('Editor multi-select', () => {
-  function renderMulti(opts: { done?: boolean; platform?: string } = {}) {
+  function renderMulti(opts: { done?: boolean; platform?: string; music?: boolean } = {}) {
     if (opts.platform) (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
     const onProcessAll = vi.fn()
@@ -118,7 +118,7 @@ describe('Editor multi-select', () => {
         item={a}
         hasToken
         outputFormat="aiff"
-        addToAppleMusic={false}
+        addToAppleMusic={opts.music ?? false}
         filenameFormat="{artist} - {title}"
         groupingPresets={[]}
         visibleFields={['title', 'album']}
@@ -161,6 +161,13 @@ describe('Editor multi-select', () => {
     const { onProcessAll } = renderMulti()
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
+  })
+
+  // With the Apple Music setting on, the convert button must say so for the selection just
+  // like the single-track button does, so the user knows the batch will be added too.
+  it('shows the convert-all button includes Apple Music when the setting is on', () => {
+    renderMulti({ platform: 'darwin', music: true })
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Apple Music')
   })
 
   it('writes a shared-field edit to every selected track', () => {

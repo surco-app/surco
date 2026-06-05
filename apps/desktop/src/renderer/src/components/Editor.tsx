@@ -878,7 +878,10 @@ function ExportButton({
   const label = processing
     ? tr('editor.processing')
     : count !== undefined
-      ? tr('editor.convertAll', { count, format: outputFormat.toUpperCase() })
+      ? tr(withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll', {
+          count,
+          format: outputFormat.toUpperCase(),
+        })
       : stale
         ? tr('editor.update')
         : done

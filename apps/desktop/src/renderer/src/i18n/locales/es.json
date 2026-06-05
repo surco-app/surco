@@ -115,7 +115,8 @@
     "notInLibrary": "No está en tu biblioteca de Apple Music",
     "convertAll": "Convertir todas ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
-    "multipleValues": "Varios valores"
+    "multipleValues": "Varios valores",
+    "convertAllMusic": "Convertir todas ({{count}}) · {{format}} + Apple Music"
   },
   "fields": {
     "title": "Título",
