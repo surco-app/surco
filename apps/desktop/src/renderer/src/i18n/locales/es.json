@@ -117,7 +117,8 @@
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
     "convertAllMusic": "Convertir todas ({{count}}) · {{format}} + Apple Music",
-    "deriveFromName": "Derivar del nombre"
+    "deriveFromName": "Rellenar del nombre",
+    "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo"
   },
   "fields": {
     "title": "Título",
