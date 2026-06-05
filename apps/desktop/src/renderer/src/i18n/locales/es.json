@@ -77,7 +77,7 @@
     "matchSuggested": "Sugerida",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
     "resultHint": "Un clic para ver las pistas; luego elige una para aplicar",
-    "coverDrop": "Arrastra una carátula",
+    "coverDrop": "Arrastra o haz clic para la carátula",
     "coverDropActive": "Suelta la imagen",
     "coverAlt": "Carátula",
     "coverTitle": "Arrastra una imagen para usarla como carátula",
@@ -236,7 +236,7 @@
     "title": "Editando {{count}} pistas",
     "hint": "Edita los campos que comparten estas pistas. Los cambios se aplican a todas; un campo con valores distintos se deja vacío.",
     "mixed": "Varios valores",
-    "coverDrop": "Arrastra la carátula para aplicarla a todas",
+    "coverDrop": "Arrastra o haz clic para la carátula de todas",
     "coverDropActive": "Suelta para aplicarla a todas"
   },
   "match": {

@@ -77,7 +77,7 @@
     "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "resultHint": "Click to see the tracks, then pick one to apply",
-    "coverDrop": "Drag artwork here",
+    "coverDrop": "Drag or click to add artwork",
     "coverDropActive": "Drop the image",
     "coverAlt": "Artwork",
     "coverTitle": "Drag an image to use it as the artwork",
@@ -236,7 +236,7 @@
     "title": "Editing {{count}} tracks",
     "hint": "Edit the fields these tracks share. Changes apply to all of them; a field with differing values is left blank.",
     "mixed": "Multiple values",
-    "coverDrop": "Drag artwork here to apply to all",
+    "coverDrop": "Drag or click to set artwork for all",
     "coverDropActive": "Drop to apply to all"
   },
   "match": {

@@ -93,4 +93,15 @@ describe('BulkEditor', () => {
     fireEvent.drop(screen.getByTestId('bulk-cover-drop'), { dataTransfer: { files: [file] } })
     expect(onApplyCover).toHaveBeenCalledWith('blob:cover', '/img/cover.png')
   })
+
+  // Clicking the zone must work the same as a drop, so a user can browse the filesystem
+  // for the artwork instead of having to drag it.
+  it('reports an image picked through the file input', () => {
+    vi.stubGlobal('URL', { createObjectURL: () => 'blob:picked' })
+    ;(window as unknown as { api: unknown }).api = { getPathForFile: () => '/img/picked.jpg' }
+    const { onApplyCover } = renderBulk([track('a', {}), track('b', {})])
+    const file = new File(['x'], 'picked.jpg', { type: 'image/jpeg' })
+    fireEvent.change(screen.getByTestId('bulk-cover-input'), { target: { files: [file] } })
+    expect(onApplyCover).toHaveBeenCalledWith('blob:picked', '/img/picked.jpg')
+  })
 })

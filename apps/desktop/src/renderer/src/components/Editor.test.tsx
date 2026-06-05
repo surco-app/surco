@@ -78,6 +78,21 @@ function renderEditor(
   return { onProcess, onChange }
 }
 
+describe('Editor cover picker', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  // Artwork must be reachable by clicking to browse the filesystem, not only by drag —
+  // many users never think to drag an image onto the empty cover well.
+  it('applies an image chosen through the file input', () => {
+    vi.stubGlobal('URL', { createObjectURL: () => 'blob:cover' })
+    ;(window as unknown as { api: Record<string, unknown> }).api.getPathForFile = () => '/img/c.png'
+    const { onChange } = renderEditor({ id: 'a' })
+    const file = new File(['x'], 'c.png', { type: 'image/png' })
+    fireEvent.change(screen.getByTestId('cover-input'), { target: { files: [file] } })
+    expect(onChange).toHaveBeenCalledWith({ coverUrl: 'blob:cover', coverPath: '/img/c.png' })
+  })
+})
+
 describe('Editor export control', () => {
   // The original bug: once a track was done its export button vanished, so a user
   // who exported WAV had no way to also export MP3 without reloading the file.

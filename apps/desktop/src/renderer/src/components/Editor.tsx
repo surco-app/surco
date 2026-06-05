@@ -78,6 +78,7 @@ export function Editor({
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const discogs = useResizableWidth(315, 300, 720)
 
   // startDrag needs a file on disk the instant the drag begins, so prepare the
@@ -217,13 +218,16 @@ export function Editor({
     onChange({ meta: { ...item.meta, [key]: value } })
   }
 
+  function applyImageFile(file: File | undefined): void {
+    if (!file || !file.type.startsWith('image/')) return
+    onChange({ coverUrl: URL.createObjectURL(file), coverPath: window.api.getPathForFile(file) })
+  }
+
   function onCoverDrop(e: React.DragEvent): void {
     e.preventDefault()
     e.stopPropagation()
     setCoverDragging(false)
-    const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/'))
-    if (!file) return
-    onChange({ coverUrl: URL.createObjectURL(file), coverPath: window.api.getPathForFile(file) })
+    applyImageFile(Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/')))
   }
 
   function onCoverExport(): void {
@@ -469,6 +473,17 @@ export function Editor({
                   className="group relative shrink-0 self-start"
                   title={tr('editor.coverTitle')}
                 >
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    data-testid="cover-input"
+                    className="hidden"
+                    onChange={(e) => {
+                      applyImageFile(e.target.files?.[0])
+                      e.target.value = ''
+                    }}
+                  />
                   {item.coverUrl ? (
                     <>
                       <img
@@ -510,15 +525,18 @@ export function Editor({
                       </button>
                     </>
                   ) : (
-                    <div
-                      className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed text-xs ${
+                    <button
+                      type="button"
+                      data-testid="cover-pick"
+                      onClick={() => coverInputRef.current?.click()}
+                      className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed p-2 text-center text-xs ${
                         coverDragging
                           ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                          : 'border-[var(--color-line)] text-fg-faint'
+                          : 'border-[var(--color-line)] text-fg-faint hover:border-[var(--color-line-strong)]'
                       }`}
                     >
                       {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
-                    </div>
+                    </button>
                   )}
                 </div>
 
