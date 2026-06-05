@@ -2,7 +2,8 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
-import type { OutputFormat, Settings, ThemePref } from '../../shared/types'
+import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
+import { BulkEditor } from './components/BulkEditor'
 import { CommandPalette } from './components/CommandPalette'
 import { Editor } from './components/Editor'
 import { HelpModal } from './components/HelpModal'
@@ -233,6 +234,18 @@ export default function App(): React.JSX.Element {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
 
+  // Merges a metadata patch into every selected track at once — the write path behind
+  // the bulk editor, so editing a shared field touches all of them in one update.
+  const updateTracksMeta = useCallback(
+    (ids: string[], metaPatch: Partial<TrackMetadata>): void => {
+      const targets = new Set(ids)
+      setTracks((prev) =>
+        prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
+      )
+    },
+    [],
+  )
+
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
   // only counts as intent once the cursor rests) and guarded by an in-flight set
   // so a second hover never spawns a duplicate ffmpeg run for the same track.
@@ -446,6 +459,7 @@ export default function App(): React.JSX.Element {
   const sidebar = useResizableWidth(260, 220, 520)
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
+  const selectedTracks = tracks.filter((t) => selectedIds.includes(t.id))
   // Falls back to the selection so the card still renders for the brief moment
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
@@ -744,7 +758,12 @@ export default function App(): React.JSX.Element {
         <ResizeHandle onPointerDown={sidebar.onPointerDown} />
 
         <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-          {selected ? (
+          {selectedIds.length > 1 ? (
+            <BulkEditor
+              tracks={selectedTracks}
+              onChangeMeta={(patch) => updateTracksMeta(selectedIds, patch)}
+            />
+          ) : selected ? (
             <Editor
               key={selected.id}
               item={selected}

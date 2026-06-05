@@ -231,5 +231,10 @@
         "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de procesarla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivar el añadido automático cuando quieras en Ajustes → General."
       }
     }
+  },
+  "bulk": {
+    "title": "Editando {{count}} pistas",
+    "hint": "Edita los campos que comparten estas pistas. Los cambios se aplican a todas; un campo con valores distintos se deja vacío.",
+    "mixed": "Varios valores"
   }
 }
