@@ -732,6 +732,10 @@ export default function App(): React.JSX.Element {
           </button>
           {tracks.length > 0 && (
             <>
+              <div
+                aria-hidden="true"
+                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+              />
               <button
                 type="button"
                 data-testid="select-all"
@@ -778,6 +782,28 @@ export default function App(): React.JSX.Element {
               </button>
               <button
                 type="button"
+                data-testid="open-find-replace"
+                onClick={() => setShowFindReplace(true)}
+                aria-label={tr('commands.findReplace')}
+                title={tr('commands.findReplace')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </button>
+              <button
+                type="button"
                 data-testid="clear-all"
                 onClick={clearTracks}
                 aria-label={tr('header.clearAll')}
@@ -801,29 +827,7 @@ export default function App(): React.JSX.Element {
               </button>
             </>
           )}
-          <button
-            type="button"
-            data-testid="open-find-replace"
-            onClick={() => setShowFindReplace(true)}
-            disabled={tracks.length === 0}
-            aria-label={tr('commands.findReplace')}
-            title={tr('commands.findReplace')}
-            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-40"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="h-4 w-4"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
+          <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
           <button
             type="button"
             data-testid="open-palette"
