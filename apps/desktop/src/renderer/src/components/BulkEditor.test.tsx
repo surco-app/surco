@@ -7,7 +7,10 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BulkEditor } from './BulkEditor'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 const emptyMeta: TrackMetadata = {
   title: '',
@@ -40,8 +43,9 @@ function track(id: string, meta: Partial<TrackMetadata>): TrackItem {
 
 function renderBulk(tracks: TrackItem[]) {
   const onChangeMeta = vi.fn()
-  render(<BulkEditor tracks={tracks} onChangeMeta={onChangeMeta} />)
-  return { onChangeMeta }
+  const onApplyCover = vi.fn()
+  render(<BulkEditor tracks={tracks} onChangeMeta={onChangeMeta} onApplyCover={onApplyCover} />)
+  return { onChangeMeta, onApplyCover }
 }
 
 describe('BulkEditor', () => {
@@ -69,5 +73,16 @@ describe('BulkEditor', () => {
     renderBulk([track('a', {}), track('b', {})])
     expect(screen.queryByTestId('bulk-field-title')).toBeNull()
     expect(screen.queryByTestId('bulk-field-trackNumber')).toBeNull()
+  })
+
+  // One album cover dropped on the bulk panel should hand the same image to the caller,
+  // which stamps it onto every selected track at once.
+  it('reports a dropped image so it can be applied to the whole selection', () => {
+    vi.stubGlobal('URL', { createObjectURL: () => 'blob:cover' })
+    ;(window as unknown as { api: unknown }).api = { getPathForFile: () => '/img/cover.png' }
+    const { onApplyCover } = renderBulk([track('a', {}), track('b', {})])
+    const file = new File(['x'], 'cover.png', { type: 'image/png' })
+    fireEvent.drop(screen.getByTestId('bulk-cover-drop'), { dataTransfer: { files: [file] } })
+    expect(onApplyCover).toHaveBeenCalledWith('blob:cover', '/img/cover.png')
   })
 })

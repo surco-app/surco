@@ -246,6 +246,13 @@ export default function App(): React.JSX.Element {
     [],
   )
 
+  // Top-level (non-metadata) patch across a selection — used to stamp one dropped cover
+  // onto every selected track from the bulk editor.
+  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
+    const targets = new Set(ids)
+    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
+  }, [])
+
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
   // only counts as intent once the cursor rests) and guarded by an in-flight set
   // so a second hover never spawns a duplicate ffmpeg run for the same track.
@@ -762,6 +769,7 @@ export default function App(): React.JSX.Element {
             <BulkEditor
               tracks={selectedTracks}
               onChangeMeta={(patch) => updateTracksMeta(selectedIds, patch)}
+              onApplyCover={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
             />
           ) : selected ? (
             <Editor

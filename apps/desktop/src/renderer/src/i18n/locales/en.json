@@ -235,6 +235,8 @@
   "bulk": {
     "title": "Editing {{count}} tracks",
     "hint": "Edit the fields these tracks share. Changes apply to all of them; a field with differing values is left blank.",
-    "mixed": "Multiple values"
+    "mixed": "Multiple values",
+    "coverDrop": "Drag artwork here to apply to all",
+    "coverDropActive": "Drop to apply to all"
   }
 }
