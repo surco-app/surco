@@ -27,6 +27,7 @@ import {
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
+import { DeriveFromFilename } from './DeriveFromFilename'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
@@ -56,6 +57,9 @@ interface Props {
   // and a dropped/picked cover is stamped onto all of them.
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
   onApplyCoverAll?: (coverUrl: string, coverPath: string) => void
+  // Fills each track's tags from its own file name; applies to the primary in single view
+  // and to the whole selection in multi.
+  onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic: () => void
@@ -79,6 +83,7 @@ export function Editor({
   onAddAllToAppleMusic,
   onChangeAllMeta,
   onApplyCoverAll,
+  onDeriveTags,
   onChange,
   onProcess,
   onAddToAppleMusic,
@@ -651,6 +656,13 @@ export function Editor({
                 </div>
               </div>
             </div>
+          )}
+
+          {onDeriveTags && (
+            <DeriveFromFilename
+              files={isMulti ? (selectedTracks ?? []) : [item]}
+              onApply={onDeriveTags}
+            />
           )}
 
           {!isMulti && showSpectrum && (

@@ -242,5 +242,11 @@
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
     "applied": "Aplicado"
+  },
+  "derive": {
+    "title": "Rellenar desde el nombre",
+    "apply": "Aplicar",
+    "applyMany": "Aplicar a {{count}}",
+    "noMatch": "El nombre no encaja con este patrón"
   }
 }

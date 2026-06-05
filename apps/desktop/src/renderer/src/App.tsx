@@ -247,6 +247,18 @@ export default function App(): React.JSX.Element {
     setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
   }, [])
 
+  // Merges each track's own filename-derived tags into its metadata (one patch per id),
+  // leaving fields the pattern didn't match untouched.
+  const deriveTracks = useCallback(
+    (patches: { id: string; meta: Partial<TrackMetadata> }[]): void => {
+      const byId = new Map(patches.map((p) => [p.id, p.meta]))
+      setTracks((prev) =>
+        prev.map((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t)),
+      )
+    },
+    [],
+  )
+
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
   // only counts as intent once the cursor rests) and guarded by an in-flight set
   // so a second hover never spawns a duplicate ffmpeg run for the same track.
@@ -785,6 +797,7 @@ export default function App(): React.JSX.Element {
               onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
               onApplyCoverAll={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
+              onDeriveTags={deriveTracks}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={(format) => processOne(selected.id, format)}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
