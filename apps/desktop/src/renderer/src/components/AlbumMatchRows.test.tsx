@@ -83,6 +83,20 @@ describe('AlbumMatchRows', () => {
     expect(button).toHaveTextContent('Applied')
   })
 
+  // Bug report: after applying once you can't apply again without reloading. Re-applying —
+  // and re-applying after correcting an assignment — must keep firing.
+  it('can apply again, including after changing a track, without reloading', async () => {
+    const { onApply } = renderRows([track('short', 'radio edit', 181)])
+    await screen.findAllByTestId('match-row')
+    fireEvent.click(screen.getByTestId('match-apply'))
+    expect(onApply).toHaveBeenCalledTimes(1)
+    // Change the assignment, then apply again.
+    fireEvent.change(screen.getByTestId('match-select-short'), { target: { value: '1' } })
+    fireEvent.click(screen.getByTestId('match-apply'))
+    expect(onApply).toHaveBeenCalledTimes(2)
+    expect(onApply.mock.calls[1][0][0].patch.meta.title).toBe('Extended Mix')
+  })
+
   it('reassigns only the chosen file, leaving the others put', async () => {
     // Duplicates are allowed, so pointing the short file at the extended mix must not
     // reshuffle the long file — a manual pick touches exactly one row.

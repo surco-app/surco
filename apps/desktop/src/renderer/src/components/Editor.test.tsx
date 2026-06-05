@@ -288,6 +288,14 @@ describe('Editor export control', () => {
     expect(onProcess).toHaveBeenCalledWith('wav')
   })
 
+  // Exporting to the source's own format edits the original in place rather than
+  // writing a converted copy, so the button must not promise a conversion that
+  // never happens — it offers to update the file instead.
+  it('labels the button "Update" when the export format matches the source', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'wav')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update')
+  })
+
   // Picking a format from the dropdown used to convert on the spot, so a misclick
   // wrote a file. The dropdown now only chooses the format; conversion waits for a
   // deliberate click on the main button.

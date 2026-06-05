@@ -833,6 +833,7 @@ export function Editor({
                 window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
               }
               incomplete={!isMulti && incomplete}
+              inPlace={!isMulti && willEditInPlace}
               count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
               onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
               onSelectFormat={setFormat}
@@ -879,6 +880,10 @@ interface ExportButtonProps {
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
   incomplete: boolean
+  // True when the chosen format is the source's own: the export edits the original in
+  // place and renames it rather than writing a converted copy, so the button offers to
+  // "Update" instead of promising a conversion.
+  inPlace: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
@@ -901,6 +906,7 @@ function ExportButton({
   exportedFormat,
   withAppleMusic,
   incomplete,
+  inPlace,
   count,
   onProcess,
   onSelectFormat,
@@ -929,13 +935,15 @@ function ExportButton({
           count,
           format: outputFormat.toUpperCase(),
         })
-      : stale
-        ? tr('editor.update')
-        : done
-          ? tr('editor.exportAgain')
-          : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
-              format: outputFormat.toUpperCase(),
-            })
+      : inPlace
+        ? tr(withAppleMusic ? 'editor.updateMusic' : 'editor.update')
+        : stale
+          ? tr('editor.update')
+          : done
+            ? tr('editor.exportAgain')
+            : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
+                format: outputFormat.toUpperCase(),
+              })
 
   function pick(format: OutputFormat): void {
     setOpen(false)
