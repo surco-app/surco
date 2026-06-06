@@ -32,7 +32,6 @@ import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
@@ -432,8 +431,10 @@ export default function App(): React.JSX.Element {
       trim: settings?.trimWhitespace ?? true,
       zeroPad: settings?.zeroPadTrack ?? true,
     })
-    const format = settings?.filenameFormat ?? '{artist} - {title}'
-    const outputName = track.outputName?.trim() || renderOutputName(format, meta) || track.fileName
+    // Default to the source file's own name: users expect "load and convert" to keep
+    // their filename. A metadata-derived name is only used when the editor's
+    // "Regenerate from metadata" button (or a manual edit) set track.outputName.
+    const outputName = track.outputName?.trim() || track.fileName
     try {
       const result = await window.api.processTrack({
         id: track.id,

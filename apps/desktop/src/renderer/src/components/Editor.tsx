@@ -344,7 +344,9 @@ export function Editor({
   // 'low' is too weak to trust, so it points at nothing — otherwise loading an
   // unrelated release still badges whichever mix shares an incidental word.
   const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
-  const defaultOutputName = renderOutputName(filenameFormat, item.meta) || item.fileName
+  // Default to the file's own name so converting keeps it; the metadata-derived
+  // name is opt-in via the "Regenerate from metadata" button below.
+  const defaultOutputName = item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise.
@@ -773,7 +775,9 @@ export function Editor({
                 <button
                   type="button"
                   data-testid="regenerate-output-name"
-                  onClick={() => onChange({ outputName: undefined })}
+                  onClick={() =>
+                    onChange({ outputName: renderOutputName(filenameFormat, item.meta) || item.fileName })
+                  }
                   title={tr('editor.regenerateHint')}
                   className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                 >

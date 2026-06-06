@@ -335,6 +335,26 @@ describe('Editor export control', () => {
   })
 })
 
+describe('Editor output file name', () => {
+  // Users complained that loading a file and converting renamed it from metadata.
+  // The field must default to the source file's own name, leaving any rename opt-in.
+  it('defaults the output name to the original file name, not the metadata', () => {
+    renderEditor({ id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } }, 'wav')
+    expect(screen.getByTestId('output-name')).toHaveValue('original track 01')
+  })
+
+  // The rename is opt-in: pressing Regenerate is the one action that swaps the file
+  // name for the metadata-derived one ("{artist} - {title}").
+  it('fills the output name from metadata only when Regenerate is clicked', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
+      'wav',
+    )
+    fireEvent.click(screen.getByTestId('regenerate-output-name'))
+    expect(onChange).toHaveBeenCalledWith({ outputName: 'AR - TI' })
+  })
+})
+
 describe('Editor required-field gate', () => {
   // The convert button used to fail late: it stayed enabled with empty required
   // fields and only surfaced the error after the click. Disabling it until the
