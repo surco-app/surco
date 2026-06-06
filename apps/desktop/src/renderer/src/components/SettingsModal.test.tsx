@@ -104,8 +104,8 @@ describe('SettingsModal theme preview', () => {
 
 describe('SettingsModal organization', () => {
   // The spectrum toggle controls what the editor shows, so it belongs with the
-  // other editing-behavior switches under the Editing tab, not in General.
-  it('shows the audio spectrum toggle under the Editing tab, not General', () => {
+  // other editor-behavior switches under the Editor tab, not in General.
+  it('shows the audio spectrum toggle under the Editor tab, not General', () => {
     render(
       <SettingsModal
         settings={settings}
@@ -115,7 +115,7 @@ describe('SettingsModal organization', () => {
       />,
     )
     expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('settings-tab-naming'))
+    fireEvent.click(screen.getByTestId('settings-tab-editor'))
     expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
   })
 })

@@ -48,13 +48,13 @@ interface Props {
   initialTab?: Tab
 }
 
-type Tab = 'general' | 'conversion' | 'naming' | 'artwork' | 'fields' | 'stats'
+type Tab = 'general' | 'conversion' | 'naming' | 'editor' | 'artwork' | 'fields' | 'stats'
 
 // Ordered to mirror Meta's preferences flow: broad app settings, then what the
 // editor shows, then artwork, then editing behavior. Stats trails last as the one
 // read-only, informational tab.
 // Ordered by workflow: app setup, then output, then per-track editing prefs, then results.
-const TABS: Tab[] = ['general', 'conversion', 'naming', 'fields', 'artwork', 'stats']
+const TABS: Tab[] = ['general', 'conversion', 'naming', 'editor', 'fields', 'artwork', 'stats']
 
 const TAB_ICONS: Record<Tab, React.JSX.Element> = {
   conversion: (
@@ -90,6 +90,14 @@ const TAB_ICONS: Record<Tab, React.JSX.Element> = {
     </>
   ),
   naming: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <line x1="9" y1="8" x2="15" y2="8" />
+      <line x1="9" y1="12" x2="15" y2="12" />
+      <line x1="9" y1="16" x2="13" y2="16" />
+    </>
+  ),
+  editor: (
     <>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -202,7 +210,7 @@ export function SettingsModal({
         className="animate-pop relative z-10 w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-5 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
-          <div className="flex justify-center gap-1">
+          <div className="flex justify-center gap-0.5">
             {TABS.map((id) => (
               <button
                 key={id}
@@ -414,6 +422,33 @@ export function SettingsModal({
                 </span>
               </p>
 
+              <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-trim"
+                    type="checkbox"
+                    checked={trimWhitespace}
+                    onChange={(e) => setTrimWhitespace(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.trimWhitespace')}</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-zeropad"
+                    type="checkbox"
+                    checked={zeroPadTrack}
+                    onChange={(e) => setZeroPadTrack(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
+                </label>
+              </div>
+            </>
+          )}
+
+          {tab === 'editor' && (
+            <>
               <label
                 htmlFor="settings-grouping"
                 className="mb-1.5 block text-sm font-medium text-fg-muted"
@@ -447,26 +482,6 @@ export function SettingsModal({
               <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
 
               <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-trim"
-                    type="checkbox"
-                    checked={trimWhitespace}
-                    onChange={(e) => setTrimWhitespace(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.trimWhitespace')}</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-zeropad"
-                    type="checkbox"
-                    checked={zeroPadTrack}
-                    onChange={(e) => setZeroPadTrack(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
-                </label>
                 <div>
                   <label className="flex cursor-pointer items-center gap-3">
                     <input

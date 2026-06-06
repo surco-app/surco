@@ -138,7 +138,7 @@
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "output": "Output:",
     "outputName": "File name",
-    "outputNameHint": "Defaults to the original file name. Use “Regenerate filename from metadata” to build it from the tags (pattern in Settings → Editing).",
+    "outputNameHint": "Defaults to the original file name. Use “Regenerate filename from metadata” to build it from the tags (pattern in Settings → File names).",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateHint": "Replace the file name with one built from the metadata above",
@@ -214,7 +214,8 @@
     "tabs": {
       "general": "General",
       "conversion": "Conversion",
-      "naming": "Editing",
+      "naming": "File names",
+      "editor": "Editor",
       "artwork": "Artwork",
       "fields": "Fields",
       "stats": "Stats"
