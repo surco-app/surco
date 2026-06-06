@@ -1,13 +1,24 @@
-// Traktor (and Windows Media Player) store a star rating as a single 0–255 byte
-// in steps of 51: 1★ = 51, 2★ = 102, 3★ = 153, 4★ = 204, 5★ = 255. The byte goes
-// in the ID3 POPM frame (MP3/AIFF/WAV); on FLAC, Traktor writes the whole POPM
-// string "<user>|<byte>|<playcount>" into a Vorbis RATING comment.
+// Traktor stores a star rating as a single 0–255 byte in steps of 51: 1★ = 51,
+// 2★ = 102, 3★ = 153, 4★ = 204, 5★ = 255. The byte goes in the ID3 POPM frame
+// (MP3/AIFF/WAV); on FLAC, Traktor writes the whole POPM string
+// "<user>|<byte>|<playcount>" into a Vorbis RATING comment.
 export const RATING_STEP = 51
 export const TRAKTOR_RATING_USER = 'traktor@native-instruments.de'
 
 export function starsToRating(stars: number): number {
   const clamped = Math.max(0, Math.min(5, Math.round(stars)))
   return clamped * RATING_STEP
+}
+
+// Windows Media Player / foobar2000 (%RATING WMP%) read a POPM frame under this
+// user, but with a non-linear byte mapping that differs from Traktor's steps of
+// 51 — so the same rating needs a second POPM frame to round-trip in both.
+export const WMP_RATING_USER = 'Windows Media Player 9 Series'
+const WMP_RATING_BYTES = [0, 1, 64, 128, 196, 255]
+
+export function starsToWmpRating(stars: number): number {
+  const clamped = Math.max(0, Math.min(5, Math.round(stars)))
+  return WMP_RATING_BYTES[clamped]
 }
 
 export function ratingToStars(value: number): number {

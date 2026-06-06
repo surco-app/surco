@@ -12,7 +12,12 @@ import {
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
-import { starsToRating, TRAKTOR_RATING_USER } from '../shared/rating'
+import {
+  starsToRating,
+  starsToWmpRating,
+  TRAKTOR_RATING_USER,
+  WMP_RATING_USER,
+} from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
 
 // The ID3 containers we edit in place: forcing the global Id3v2Settings would also break
@@ -92,21 +97,29 @@ function setUserText(tag: Id3v2Tag, description: string, text: string): void {
   frame.text = text.split(';')
 }
 
-// Writes the Traktor star rating into a POPM frame (0–255 in steps of 51). An
+// Upserts one POPM frame (keyed by its user/email) with the given 0–255 byte.
+function setPopm(tag: Id3v2Tag, user: string, byte: number): void {
+  const frames = tag.getFramesByClassType<Id3v2PopularimeterFrame>(
+    Id3v2FrameClassType.PopularimeterFrame,
+  )
+  let frame = Id3v2PopularimeterFrame.find(frames, user)
+  if (!frame) {
+    frame = Id3v2PopularimeterFrame.fromUser(user)
+    tag.addFrame(frame)
+  }
+  frame.rating = byte
+}
+
+// Writes the star rating into TWO POPM frames so it round-trips in both worlds:
+// Traktor (its own user, linear steps of 51) and Windows Media Player / foobar's
+// %RATING WMP% (the "Windows Media Player 9 Series" user, non-linear ramp). An
 // empty rating is left untouched rather than cleared, so converting a file never
 // wipes a rating we didn't surface in the editor.
 function setRating(tag: Id3v2Tag, stars: string): void {
   const n = Number(stars)
   if (!stars.trim() || !Number.isFinite(n) || n <= 0) return
-  const frames = tag.getFramesByClassType<Id3v2PopularimeterFrame>(
-    Id3v2FrameClassType.PopularimeterFrame,
-  )
-  let frame = Id3v2PopularimeterFrame.find(frames, TRAKTOR_RATING_USER)
-  if (!frame) {
-    frame = Id3v2PopularimeterFrame.fromUser(TRAKTOR_RATING_USER)
-    tag.addFrame(frame)
-  }
-  frame.rating = starsToRating(n)
+  setPopm(tag, TRAKTOR_RATING_USER, starsToRating(n))
+  setPopm(tag, WMP_RATING_USER, starsToWmpRating(n))
 }
 
 // Overwrites the metadata fields we manage and leaves every other frame — most

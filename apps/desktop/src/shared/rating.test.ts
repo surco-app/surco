@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatRatingTag, ratingTagToStars, ratingToStars, starsToRating } from './rating'
+import {
+  formatRatingTag,
+  ratingTagToStars,
+  ratingToStars,
+  starsToRating,
+  starsToWmpRating,
+} from './rating'
 
 describe('formatRatingTag', () => {
   // The FLAC Vorbis RATING value must match Traktor's POPM string byte-for-byte.
@@ -17,6 +23,19 @@ describe('starsToRating', () => {
   it('clamps out-of-range star counts', () => {
     expect(starsToRating(9)).toBe(255)
     expect(starsToRating(-1)).toBe(0)
+  })
+})
+
+describe('starsToWmpRating', () => {
+  // WMP / foobar's %RATING WMP% use a non-linear byte ramp, not Traktor's 51 steps;
+  // these exact values are what those players write and expect for full stars.
+  it('maps 0–5 stars to the Windows Media Player byte ramp', () => {
+    expect([0, 1, 2, 3, 4, 5].map(starsToWmpRating)).toEqual([0, 1, 64, 128, 196, 255])
+  })
+
+  it('clamps out-of-range star counts', () => {
+    expect(starsToWmpRating(9)).toBe(255)
+    expect(starsToWmpRating(-1)).toBe(0)
   })
 })
 
