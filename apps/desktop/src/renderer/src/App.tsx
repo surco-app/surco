@@ -385,6 +385,13 @@ export default function App(): React.JSX.Element {
     setDuration(0)
   }, [])
 
+  // Removing (or clearing) the track that is playing must stop the audio: the
+  // file it streamed is gone from the list, so the player would otherwise keep
+  // sounding it while the card shows a different, still-selected track.
+  useEffect(() => {
+    if (playingId && !tracks.some((t) => t.id === playingId)) closePlayer()
+  }, [tracks, playingId, closePlayer])
+
   // Space toggles the player's visibility; the selection effect below starts
   // playback when it opens.
   function togglePlay(): void {
