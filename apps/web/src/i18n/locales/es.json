@@ -81,6 +81,11 @@
         "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar. Si ya está en el formato de destino, lo copia tal cual: mismos bits, al instante. Una pista o la cola entera de una pasada."
       },
       {
+        "kick": "normaliza",
+        "title": "Iguala el volumen",
+        "body": "Si quieres, lleva cada pista al mismo loudness o pico — objetivo de streaming, club o personalizado — para que nada se dispare al mezclar. Desactivado por defecto, y en MP3 y AIFF conserva tus cue de Traktor."
+      },
+      {
         "kick": "traktor",
         "title": "Respeta tus CUE de Traktor",
         "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor."
@@ -89,6 +94,11 @@
         "kick": "calidad",
         "title": "Sin fakes ni duplicados",
         "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music."
+      },
+      {
+        "kick": "analiza",
+        "title": "Lee cada nivel",
+        "body": "Una lectura con colores de cada pista — loudness (LUFS), pico real, dinámica, balance de canales, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo, para que un clipping o un rip descompensado no se cuele en tu sesión."
       },
       {
         "kick": "carátula",
@@ -199,6 +209,7 @@
         "Todos los formatos — AIFF, WAV, FLAC, MP3",
         "Etiquetado Discogs y emparejado de disco entero",
         "Análisis de espectro para cazar fakes",
+        "Lectura de loudness y normalización",
         "Envío directo a Apple Music",
         "Actualizaciones automáticas"
       ]

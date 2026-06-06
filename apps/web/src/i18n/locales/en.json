@@ -81,6 +81,11 @@
         "body": "AIFF, WAV, FLAC or MP3, any to any — lossless or a lighter MP3. Switch format anytime without re-importing. If it's already in the target format, Surco copies it untouched: same bits, instantly. One track or the whole crate at once."
       },
       {
+        "kick": "normalize",
+        "title": "Even out the loudness",
+        "body": "Optionally match every track to one loudness or peak — a streaming, club or custom target — so nothing jumps out when you mix. Off by default, and on MP3 and AIFF it keeps your Traktor cues."
+      },
+      {
         "kick": "traktor",
         "title": "Keeps your Traktor cues",
         "body": "Re-export to the same format (MP3 or AIFF) and Surco copies the audio untouched, keeping your Traktor cue points and beatgrid intact."
@@ -89,6 +94,11 @@
         "kick": "quality",
         "title": "No fakes, no duplicates",
         "body": "Check the spectrum at a glance to catch low-quality MP3s posing as lossless. And as you tag, Surco warns you if the track is already in your Apple Music library."
+      },
+      {
+        "kick": "analyze",
+        "title": "Read every level",
+        "body": "A colour-coded readout of each track — loudness (LUFS), true peak, dynamics, channel balance, DC offset and noise floor — green, amber or red at a glance, so a clipping or lopsided rip never slips into your set."
       },
       {
         "kick": "artwork",
@@ -199,6 +209,7 @@
         "Every format — AIFF, WAV, FLAC, MP3",
         "Discogs tagging and full-album match",
         "Spectrum analysis to catch fakes",
+        "Loudness readout and normalization",
         "Send straight to Apple Music",
         "Automatic updates"
       ]
