@@ -22,21 +22,6 @@ function Dialog(): React.JSX.Element {
   )
 }
 
-function Harness(): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <button type="button" data-testid="opener" onClick={() => setOpen(true)}>
-        open
-      </button>
-      {open && <Dialog />}
-      <button type="button" data-testid="cancel" onClick={() => setOpen(false)}>
-        close-from-inside
-      </button>
-    </>
-  )
-}
-
 describe('useFocusTrap', () => {
   it('wraps Tab from the last focusable back to the first', () => {
     render(<Dialog />)
