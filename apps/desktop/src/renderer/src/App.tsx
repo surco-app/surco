@@ -662,6 +662,10 @@ export default function App(): React.JSX.Element {
   settingsOpenRef.current = showSettings
   const helpOpenRef = useRef(false)
   helpOpenRef.current = showHelp
+  const findReplaceOpenRef = useRef(false)
+  findReplaceOpenRef.current = showFindReplace
+  const confirmOpenRef = useRef(false)
+  confirmOpenRef.current = !!confirm
   // Every modal/overlay that owns the screen must also swallow the global
   // shortcuts, or space/j/k/⌘⏎ would act on the list behind the dialog (e.g.
   // start a conversion behind the confirm prompt).
@@ -682,6 +686,10 @@ export default function App(): React.JSX.Element {
           setShowSettings(false)
           setThemePreview(null)
         } else if (helpOpenRef.current) setShowHelp(false)
+        else if (findReplaceOpenRef.current) setShowFindReplace(false)
+        // Onboarding is deliberately omitted: it forces a deliberate choice, not an
+        // Escape dismissal.
+        else if (confirmOpenRef.current) setConfirm(null)
         return
       }
       if (overlayOpenRef.current) return
