@@ -3,8 +3,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import i18n from '../i18n'
 import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -64,11 +64,13 @@ function renderEditor(
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
+  onTrashOriginal: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
   const onFormatChange = vi.fn()
+  const onTrashOriginal = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -88,10 +90,11 @@ function renderEditor(
       onFormatChange={onFormatChange}
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
+      onTrashOriginal={onTrashOriginal}
       onOpenSettings={vi.fn()}
     />,
   )
-  return { onProcess, onChange, onDeriveTags, onFormatChange }
+  return { onProcess, onChange, onDeriveTags, onFormatChange, onTrashOriginal }
 }
 
 describe('Editor cover picker', () => {
@@ -486,6 +489,48 @@ describe('Editor export control', () => {
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onFormatChange).toHaveBeenCalledWith('mp3')
+  })
+})
+
+describe('Editor delete original', () => {
+  // A real conversion leaves the source file untouched beside the converted copy,
+  // so once a track is done the user can reclaim the disk by trashing the original
+  // — the converted output (and its row) stays.
+  it('offers to delete the original once a real conversion is done', () => {
+    const { onTrashOriginal } = renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/music/a.wav',
+      outputPath: '/out/a.aiff',
+    })
+    fireEvent.click(screen.getByTestId('delete-original'))
+    expect(onTrashOriginal).toHaveBeenCalledTimes(1)
+  })
+
+  // An in-place export rewrites and renames the original, so inputPath now points at
+  // the output: there is no separate original to delete, and offering it would trash
+  // the only copy the user has.
+  it('hides the delete-original button for an in-place export', () => {
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/out/a.wav',
+      outputPath: '/out/a.wav',
+    })
+    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+  })
+
+  // After the original is trashed the button has nothing left to act on, so it goes
+  // away rather than letting a second click error on a missing file.
+  it('hides the delete-original button once the original is trashed', () => {
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/music/a.wav',
+      outputPath: '/out/a.aiff',
+      originalTrashed: true,
+    })
+    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
   })
 })
 

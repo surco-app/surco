@@ -146,6 +146,7 @@
     "updateMusic": "Actualizar + Apple Music",
     "processing": "Procesando…",
     "doneReveal": "✓ Hecho — mostrar archivo",
+    "deleteOriginal": "Eliminar archivo original",
     "appleMusicAdd": "Añadir a Apple Music",
     "appleMusicAdding": "Añadiendo a Apple Music…",
     "appleMusicAdded": "✓ En tu biblioteca de Apple Music",
@@ -342,6 +343,8 @@
     "trashMessage": "Esto mueve «{{name}}» a la papelera y lo quita de la lista. Puedes restaurarlo desde la papelera.",
     "trashMessageWin": "Esto mueve «{{name}}» a la papelera de reciclaje y lo quita de la lista. Puedes restaurarlo desde ahí.",
     "trashConfirm": "Mover a la papelera",
-    "trashConfirmWin": "Mover a la papelera de reciclaje"
+    "trashConfirmWin": "Mover a la papelera de reciclaje",
+    "deleteOriginalMessage": "Esto mueve el original «{{name}}» a la papelera. El archivo convertido se mantiene. Puedes restaurar el original desde la papelera.",
+    "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí."
   }
 }

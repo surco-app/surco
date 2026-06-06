@@ -146,6 +146,7 @@
     "updateMusic": "Update + Apple Music",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",
+    "deleteOriginal": "Delete original file",
     "appleMusicAdd": "Add to Apple Music",
     "appleMusicAdding": "Adding to Apple Music…",
     "appleMusicAdded": "✓ In your Apple Music library",
@@ -342,6 +343,8 @@
     "trashMessage": "This moves “{{name}}” to the Trash and removes it from the list. You can restore it from the Trash.",
     "trashMessageWin": "This moves “{{name}}” to the Recycle Bin and removes it from the list. You can restore it from there.",
     "trashConfirm": "Move to Trash",
-    "trashConfirmWin": "Move to Recycle Bin"
+    "trashConfirmWin": "Move to Recycle Bin",
+    "deleteOriginalMessage": "This moves the original “{{name}}” to the Trash. Your converted file stays in place. You can restore the original from the Trash.",
+    "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there."
   }
 }

@@ -39,4 +39,7 @@ export interface TrackItem {
   // stays 'done' while it adds. 'error' carries the reason in musicError.
   musicStatus?: 'adding' | 'added' | 'error'
   musicError?: string
+  // Set once the user trashes the source file after a real conversion, so the
+  // "delete original" action disappears — the converted output and this row stay.
+  originalTrashed?: boolean
 }

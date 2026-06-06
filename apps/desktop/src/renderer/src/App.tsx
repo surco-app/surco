@@ -368,6 +368,27 @@ export default function App(): React.JSX.Element {
     })
   }
 
+  // Post-convert "Delete original": a real conversion leaves the source file beside the
+  // converted copy, so this reclaims the disk. Confirm, send the original to the OS
+  // Trash/Recycle Bin (recoverable), then mark the row so the button disappears — unlike
+  // askTrash the row stays, because the converted output it points at is still there.
+  function askDeleteOriginal(track: TrackItem): void {
+    const isWin = window.api.platform === 'win32'
+    setConfirm({
+      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
+      message: tr(isWin ? 'confirm.deleteOriginalMessageWin' : 'confirm.deleteOriginalMessage', {
+        name: track.fileName,
+      }),
+      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      onConfirm: () => {
+        window.api
+          .trashFile(track.inputPath)
+          .then(() => updateTrack(track.id, { originalTrashed: true }))
+          .catch(() => {})
+      },
+    })
+  }
+
   function selectAll(): void {
     if (tracks.length === 0) return
     setSelection({ ids: tracks.map((t) => t.id), anchor: tracks[0].id })
@@ -1075,6 +1096,7 @@ export default function App(): React.JSX.Element {
                 editorNormalizeRef.current = n
               }}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
+              onTrashOriginal={() => askDeleteOriginal(selected)}
               onOpenSettings={() => openSettings()}
             />
           ) : (

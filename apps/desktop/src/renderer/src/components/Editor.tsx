@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
+import { formatMatchesInput } from '../../../shared/format'
 import type {
   DiscogsRelease,
   DiscogsSearchResult,
@@ -9,14 +10,13 @@ import type {
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
-import { formatMatchesInput } from '../../../shared/format'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
+import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
-import { smartDeriveTags } from '../lib/deriveTags'
 import { renderOutputName } from '../lib/outputName'
 import {
   formatDb,
@@ -102,6 +102,9 @@ interface Props {
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
   onAddToAppleMusic: () => void
+  // Trashes the source file after a real conversion; the converted output and the
+  // track's row stay. Confirmation lives in App, so the button just signals intent.
+  onTrashOriginal?: () => void
   onOpenSettings: () => void
 }
 
@@ -130,6 +133,7 @@ export function Editor({
   onFormatChange,
   onNormalizeChange,
   onAddToAppleMusic,
+  onTrashOriginal,
   onOpenSettings,
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
@@ -376,6 +380,11 @@ export function Editor({
     ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done')
     : done
   const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
+  // A real conversion writes a separate file and leaves the source at its own path;
+  // an in-place export rewrites the source, so inputPath === outputPath and there is
+  // nothing distinct to trash. Single-track only, and gone once the original is trashed.
+  const canDeleteOriginal =
+    !isMulti && !!item.outputPath && item.outputPath !== item.inputPath && !item.originalTrashed
   const musicExt = isMulti ? format : exportedFormat
   const musicAdding = isMulti
     ? multiTracks.some((t) => t.musicStatus === 'adding')
@@ -1171,6 +1180,16 @@ export function Editor({
                   </button>
                 )}
               </div>
+            )}
+            {showDone && canDeleteOriginal && (
+              <button
+                type="button"
+                data-testid="delete-original"
+                onClick={onTrashOriginal}
+                className="press w-full rounded-lg border border-danger/40 bg-danger/10 py-2.5 text-sm font-medium text-danger hover:bg-danger/15"
+              >
+                {tr('editor.deleteOriginal')}
+              </button>
             )}
             {showDone && musicError && <p className="text-xs text-danger">{musicError}</p>}
           </div>
