@@ -59,7 +59,20 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
     const patches = assignments.flatMap((a) => {
       const file = files.find((f) => f.id === a.id)
       if (!a.track || !file) return []
-      return [{ id: a.id, patch: buildReleaseMeta(file.meta, release, a.track, file.coverUrl) }]
+      // Match this file's text tags to its track, but keep any cover it already
+      // carries rather than overwriting it with the release image — the same
+      // non-destructive rule as the single-track editor. Files with no cover are
+      // filled from the release.
+      return [
+        {
+          id: a.id,
+          patch: buildReleaseMeta(file.meta, release, a.track, {
+            url: file.coverUrl,
+            path: file.coverPath,
+            keep: !!file.coverUrl,
+          }),
+        },
+      ]
     })
     if (!patches.length) return
     onApply(patches)

@@ -829,8 +829,8 @@ export function Editor({
                         className="text-[11px] tabular-nums text-fg-dim"
                       >
                         {(() => {
-                          const pos = release.images.findIndex((im) => im.uri === item.coverUrl) + 1
-                          return `${pos > 0 ? pos : '–'}/${release.images.length}`
+                          const pos = coverChoices.findIndex((c) => c.uri === item.coverUrl) + 1
+                          return `${pos > 0 ? pos : '–'}/${coverChoices.length}`
                         })()}
                       </span>
                       <button

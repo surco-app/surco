@@ -347,4 +347,35 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.key).toBe('8A')
     expect(patch.meta.comment).toBe('note')
   })
+
+  // The complaint these guard against: applying a release to fill text tags used to
+  // overwrite a perfectly good embedded cover with Discogs' (often smaller) image.
+  // When told to keep the current cover, the release's art is ignored and the
+  // existing url/path stand.
+  it('keeps the current cover when asked, over the release image', () => {
+    const rel = release({ images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }] })
+    const patch = buildReleaseMeta(meta(), rel, undefined, {
+      url: 'embedded.jpg',
+      path: '/local/art.jpg',
+      keep: true,
+    })
+    expect(patch.coverUrl).toBe('embedded.jpg')
+    expect(patch.coverPath).toBe('/local/art.jpg')
+  })
+
+  // A missing or low-res cover is the case the caller does not keep: the release's
+  // image replaces it so the track ends up with art rather than none.
+  it('takes the release image when not keeping the current cover', () => {
+    const rel = release({ images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }] })
+    const patch = buildReleaseMeta(meta(), rel, undefined, { url: 'old.jpg', keep: false })
+    expect(patch.coverUrl).toBe('discogs.jpg')
+    expect(patch.coverPath).toBeUndefined()
+  })
+
+  // Even when replacing, a release that carries no image leaves the current cover
+  // in place rather than blanking it.
+  it('falls back to the current cover when the release has no image', () => {
+    const patch = buildReleaseMeta(meta(), release(), undefined, { url: 'old.jpg', keep: false })
+    expect(patch.coverUrl).toBe('old.jpg')
+  })
 })

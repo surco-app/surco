@@ -698,6 +698,47 @@ describe('Editor Discogs apply', () => {
     expect(onChange).toHaveBeenCalled()
   })
 
+  function withImages(): void {
+    const withImage = {
+      ...release,
+      images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }],
+    }
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'win32',
+      reveal: vi.fn(),
+      prepareCoverDrag: () => Promise.resolve(null),
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      getRelease: vi.fn().mockResolvedValue(withImage),
+    }
+  }
+
+  // The user's complaint these guard against: applying a release to fix text tags
+  // must not throw away a good embedded cover. With a cover already present, picking
+  // a track keeps it and ignores the release's image.
+  it('keeps an existing cover when applying a release', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'embedded.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('embedded.jpg')
+  })
+
+  // A low-res existing cover is the exception: it's replaced by the release image so
+  // the track ends up with sharper art.
+  it('replaces a low-res cover with the release image', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg' })
+    const img = screen.getByTestId('cover-preview')
+    Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
+    Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })
+    fireEvent.load(img)
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
+  })
+
   // Discogs returns each track's length; showing it next to the title is what lets
   // the user match the rip they have against the right tracklist entry by time.
   it('shows each track length from the Discogs tracklist', async () => {

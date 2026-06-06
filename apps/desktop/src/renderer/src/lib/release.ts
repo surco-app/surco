@@ -189,19 +189,22 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 
 export interface ReleaseMetaPatch {
   coverUrl: string | undefined
-  coverPath: undefined
+  coverPath: string | undefined
   meta: TrackMetadata
 }
 
-// Applying a release overwrites the whole right-hand panel — album-level data
-// and cover from the release, plus the chosen track's title/number/artist — so
-// the song ends up fully tagged from Discogs in one action. Fields the release
+// Applying a release overwrites the album-level data and the chosen track's
+// title/number/artist, so the song ends up fully tagged from Discogs in one
+// action. The cover is the exception: a file that already carries a cover keeps
+// it (cover.keep) so the user's good art isn't replaced by Discogs' often-smaller
+// image; only a missing or low-res cover is filled from the release. Either way
+// the release's images stay reachable through the cover picker. Fields the release
 // doesn't carry keep their current value.
 export function buildReleaseMeta(
   current: TrackMetadata,
   rel: DiscogsRelease,
   track: DiscogsTrack | undefined,
-  coverFallback?: string,
+  cover: { url?: string; path?: string; keep?: boolean } = {},
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
   const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
@@ -211,9 +214,10 @@ export function buildReleaseMeta(
   const catno = label?.catno?.trim() ?? ''
   const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
   const pos = track ? splitPosition(track.position) : undefined
+  const keepCover = cover.keep && !!cover.url
   return {
-    coverUrl: coverOf(rel, coverFallback),
-    coverPath: undefined,
+    coverUrl: keepCover ? cover.url : coverOf(rel, cover.url),
+    coverPath: keepCover ? cover.path : undefined,
     meta: {
       ...current,
       title: track ? track.title : current.title,
