@@ -46,9 +46,9 @@ publish:
   # Source stays in the private repo; binaries and the update feed go to a public
   # repo so the web button and electron-updater can reach them without a token.
   repo: surco-releases
-  # Draft, not live: GitHub rejects creating a *published* release whose tag
-  # doesn't already exist in this binaries-only repo (the tag lives in the source
-  # repo, not here), failing with 422 "must have a valid tag". A draft needs no
-  # pre-existing tag — both matrix jobs upload to the same draft and GitHub creates
-  # the tag when you publish it, once the dmg/zip/exe are all attached.
-  releaseType: draft
+  # Publish live, not draft. A published release is bound to its tag, so the three
+  # parallel matrix jobs all reuse the same release; a draft isn't tag-bound, so each
+  # job would race to create its own duplicate draft and split the assets across them.
+  # GitHub rejects a published release whose tag doesn't exist in this binaries-only
+  # repo (422 "must have a valid tag"), so the workflow pre-creates the tag here first.
+  releaseType: release
