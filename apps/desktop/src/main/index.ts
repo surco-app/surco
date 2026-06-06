@@ -2,7 +2,17 @@ import { createReadStream, existsSync } from 'node:fs'
 import { copyFile, mkdir, stat } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  protocol,
+  shell,
+} from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
@@ -23,6 +33,7 @@ import {
   convertAudio,
   extractCover,
   generateSpectrogram,
+  measureLoudness,
   probeAudio,
   probeDuration,
   readTags,
@@ -352,7 +363,14 @@ function registerIpc(): void {
       // Create the target's folder (and any subfolders the file-name template asks for)
       // before writing; recursive so it's a no-op when the directory already exists.
       await mkdir(dirname(target), { recursive: true })
-      await convertAudio(job.inputPath, target, format, job.meta, coverPath)
+      await convertAudio(
+        job.inputPath,
+        target,
+        format,
+        job.meta,
+        coverPath,
+        job.normalize ?? settings.normalize,
+      )
       if (inPlace) await removeRenamedOriginal(job.inputPath, target)
       recordConversion()
 
@@ -411,6 +429,10 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))
+  ipcMain.handle('shell:open', (_e, path: string) => shell.openPath(path))
+  // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.
+  ipcMain.handle('shell:trash', (_e, path: string) => shell.trashItem(path))
+  ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
   // push below — without this handler the toast's "Restart" button rejects.
@@ -447,6 +469,15 @@ function registerIpc(): void {
     } catch (err) {
       log.error('audio:spectrogram failed', err)
       throw err
+    }
+  })
+
+  ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
+    try {
+      return await measureLoudness(inputPath)
+    } catch (err) {
+      log.error('audio:loudness failed', err)
+      return null
     }
   })
 }

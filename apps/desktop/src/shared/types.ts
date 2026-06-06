@@ -4,6 +4,22 @@ export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
 export type SearchProviderId = 'discogs'
 
+// Optional loudness normalization applied during conversion. 'none' is the default
+// so nothing is ever normalized unless the user opts in (globally in Settings or
+// per-track in the editor). 'loudness' targets an integrated LUFS with a true-peak
+// ceiling (two-pass loudnorm); 'peak' simply scales so the loudest sample hits a
+// target dBFS. Both re-encode the audio, so they drop the source's Traktor cues.
+export type NormalizeMode = 'none' | 'loudness' | 'peak'
+
+export interface NormalizeConfig {
+  mode: NormalizeMode
+  // 'loudness' mode: integrated target and true-peak ceiling.
+  targetLufs: number
+  truePeakDb: number
+  // 'peak' mode: the dBFS the loudest sample is scaled to.
+  peakDb: number
+}
+
 export interface Settings {
   theme: ThemePref
   discogsToken: string
@@ -19,6 +35,10 @@ export interface Settings {
   coverMaxSize: number
   coverSquare: boolean
   showSpectrum: boolean
+  showLoudness: boolean
+  // Default normalization applied to every conversion; mode 'none' (the default)
+  // means conversions never touch loudness unless overridden per-track.
+  normalize: NormalizeConfig
   hasSeenOnboarding: boolean
   conversionCount: number
 }
@@ -80,6 +100,9 @@ export interface ProcessJob {
   coverUrl?: string
   coverPath?: string
   format?: OutputFormat
+  // Per-track normalization override; falls back to the Settings default when
+  // undefined. Captured when the conversion starts, like format.
+  normalize?: NormalizeConfig
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.
   previousOutputPath?: string
@@ -122,4 +145,26 @@ export interface SpectrumResult {
   // still rendered — the UI then hides the quality verdict instead of inventing one.
   cutoffHz: number | null
   sampleRateHz: number
+}
+
+// Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass
+// (astats + ebur128). Integrated loudness and true peak can read -Infinity for
+// digital silence, which the UI renders as "−∞" rather than a misleading number.
+export interface LoudnessResult {
+  integratedLufs: number
+  truePeakDb: number
+  lra: number
+  // The astats-derived checks are each null when not measurable (mono, a silent
+  // channel reading -inf, or ffmpeg printing nan) so the UI hides that pill rather
+  // than showing "−∞ dB" / "NaN%".
+  // |L − R| RMS difference in dB; null for mono or a dead channel. A large gap
+  // means a channel imbalance (e.g. a misaligned phono cartridge on the rip).
+  channelBalanceDb: number | null
+  // |DC offset| of the Overall mix (0..1 of full scale). A biased capture wastes
+  // headroom and adds clicks.
+  dcOffset: number | null
+  // Crest factor in dB (peak − RMS): the transient punch. Low means squashed.
+  crestDb: number | null
+  // Estimated noise floor in dB; lower is cleaner.
+  noiseFloorDb: number | null
 }

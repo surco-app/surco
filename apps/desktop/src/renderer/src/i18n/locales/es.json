@@ -72,6 +72,16 @@
       "cover": "Preparando carátula…",
       "converting": "Convirtiendo a {{format}}…",
       "appleMusic": "Añadiendo a Apple Music…"
+    },
+    "context": {
+      "reveal": "Mostrar en Finder",
+      "revealWin": "Mostrar en el Explorador",
+      "open": "Abrir archivo",
+      "copyPath": "Copiar ruta del archivo",
+      "search": "Buscar en Discogs",
+      "remove": "Quitar de la lista",
+      "trash": "Mover a la papelera",
+      "trashWin": "Mover a la papelera de reciclaje"
     }
   },
   "editor": {
@@ -93,6 +103,33 @@
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
+    "loudnessLufsLabel": "Volumen",
+    "loudnessPeakLabel": "Pico",
+    "loudnessRangeLabel": "Rango",
+    "loudnessLufsHint": "Volumen integrado (LUFS): lo fuerte que suena la pista en conjunto",
+    "loudnessPeakHint": "Pico real (dBTP): el instante más alto de la señal",
+    "loudnessRangeHint": "Rango de loudness (LU): la diferencia entre las partes suaves y las fuertes",
+    "loudnessGroupLoudness": "Loudness",
+    "loudnessGroupSignal": "Señal",
+    "loudnessCrestLabel": "Dinámica",
+    "loudnessCrestHint": "Factor de cresta (dB): la pegada entre los picos y el nivel medio",
+    "loudnessBalanceLabel": "Balance",
+    "loudnessBalanceHint": "Balance de canales (dB): la diferencia de nivel entre izquierdo y derecho",
+    "loudnessDcLabel": "DC offset",
+    "loudnessDcHint": "DC offset: un desplazamiento constante que descentra la onda",
+    "loudnessNoiseLabel": "Ruido de fondo",
+    "loudnessNoiseHint": "Suelo de ruido (dB): el nivel de fondo; cuanto más bajo, más limpio",
+    "loudnessHelpTitle": "¿Qué significan?",
+    "loudnessLufsHelp": "(LUFS): lo fuerte que suena la pista en conjunto. Si es muy bajo, sonará más floja que tus otras pistas; si es muy alto, sonará aplastada.",
+    "loudnessPeakHelp": "(dBTP): el instante más alto de la señal. Por encima de 0 puede distorsionar (clipping) al convertir o reproducir.",
+    "loudnessRangeHelp": "(LU): cuánto se diferencian las partes suaves de las fuertes. Un rango muy bajo indica mucha compresión (la guerra del volumen).",
+    "loudnessCrestHelp": "(dB): la diferencia entre los picos y el nivel medio, es decir, la pegada. Un valor bajo significa que la pista está aplastada.",
+    "loudnessBalanceHelp": "(L/D): la diferencia de nivel entre los canales izquierdo y derecho. Unos dB indican que un lado suena más flojo, a menudo por una cápsula desalineada al ripear.",
+    "loudnessDcHelp": "— un desplazamiento constante que descentra toda la onda. Resta headroom y puede meter clics; cerca de 0% es lo sano.",
+    "loudnessNoiseHelp": "(dB): el nivel del siseo/ruido de fondo. Cuanto más bajo (más negativo), más limpia es la captura.",
+    "loudnessGradeGood": "Bien",
+    "loudnessGradeWarn": "Regular",
+    "loudnessGradeBad": "Revisar",
     "spectrumAlt": "Espectrograma",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "output": "Salida:",
@@ -145,9 +182,31 @@
     "publisher": "Sello / Editora",
     "catalogNumber": "Nº catálogo"
   },
+  "normalize": {
+    "title": "Normalización de loudness",
+    "hint": "Desactivado por defecto. Iguala cada pista a un loudness o pico objetivo. Recodifica el audio, así que pierde los cue/beatgrid de Traktor.",
+    "mode": {
+      "none": "Ninguna",
+      "loudness": "Loudness",
+      "peak": "Pico"
+    },
+    "preset": {
+      "streaming": "Streaming −14",
+      "club": "Club −9",
+      "broadcast": "Broadcast −23",
+      "safe": "−1 dBFS",
+      "hot": "−0.1 dBFS",
+      "custom": "Personalizado"
+    },
+    "targetLufs": "Objetivo (LUFS)",
+    "truePeak": "Pico real (dBTP)",
+    "peakDb": "Pico (dBFS)",
+    "cueWarning": "Aviso: esto recodifica el archivo y pierde los marcadores de cue/beatgrid de Traktor."
+  },
   "settings": {
     "tabs": {
       "general": "General",
+      "conversion": "Conversión",
       "naming": "Edición",
       "artwork": "Carátula",
       "fields": "Campos",
@@ -195,6 +254,8 @@
     "coverHint": "Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro para dejarlas cuadradas.",
     "showSpectrum": "Mostrar el espectro de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
+    "showLoudness": "Mostrar el loudness (LUFS)",
+    "showLoudnessHint": "Mide el loudness integrado, el pico real y el rango de loudness (EBU R128) al editar una pista. Si lo desactivas, la medición se omite por completo.",
     "shown": "Mostrados",
     "hidden": "Ocultos",
     "hide": "Ocultar",
@@ -275,6 +336,12 @@
     "clearTitle": "¿Vaciar la lista?",
     "clearMessage_one": "Quita la única pista de la lista. El archivo en disco no se borra.",
     "clearMessage_other": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",
-    "clearConfirm": "Vaciar"
+    "clearConfirm": "Vaciar",
+    "trashTitle": "¿Mover el archivo a la papelera?",
+    "trashTitleWin": "¿Mover el archivo a la papelera de reciclaje?",
+    "trashMessage": "Esto mueve «{{name}}» a la papelera y lo quita de la lista. Puedes restaurarlo desde la papelera.",
+    "trashMessageWin": "Esto mueve «{{name}}» a la papelera de reciclaje y lo quita de la lista. Puedes restaurarlo desde ahí.",
+    "trashConfirm": "Mover a la papelera",
+    "trashConfirmWin": "Mover a la papelera de reciclaje"
   }
 }

@@ -4,6 +4,7 @@ import type {
   DiscogsRelease,
   DiscogsSearchResult,
   ProcessJob,
+  LoudnessResult,
   ProcessProgress,
   ProcessResult,
   SearchProviderId,
@@ -30,7 +31,11 @@ export interface Api {
   prepareCoverDrag: (src: { coverUrl?: string; coverPath?: string }) => Promise<string | null>
   startCoverDrag: (path: string) => void
   reveal: (path: string) => Promise<void>
+  openFile: (path: string) => Promise<string>
+  trashFile: (path: string) => Promise<void>
+  copyText: (text: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>
+  loudness: (path: string) => Promise<LoudnessResult | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<string | null>

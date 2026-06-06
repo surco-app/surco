@@ -2,7 +2,13 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
-import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../shared/types'
+import type {
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+  ThemePref,
+  TrackMetadata,
+} from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
@@ -141,6 +147,9 @@ export default function App(): React.JSX.Element {
   // shortcuts export in it too. Null means "untouched" — fall back to the Settings
   // default. Reset on track switch, matching the editor reseeding per track.
   const editorFormatRef = useRef<OutputFormat | null>(null)
+  // Per-track normalization override picked in the editor; null falls back to the
+  // Settings default at conversion time, mirroring editorFormatRef.
+  const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then((s) => {
@@ -237,6 +246,7 @@ export default function App(): React.JSX.Element {
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the deliberate trigger, not a value read in the body — the reset must fire on every track switch.
   useEffect(() => {
     editorFormatRef.current = null
+    editorNormalizeRef.current = null
   }, [selectedId])
 
   async function pickFiles(): Promise<void> {
@@ -328,6 +338,36 @@ export default function App(): React.JSX.Element {
     discogsPrefetched.current.clear()
   }
 
+  // Right-click "Search Discogs": make the track active, then focus the search box on the
+  // next tick once the editor for the new selection has mounted and bound the ref.
+  const onSearchTrack = useCallback(
+    (id: string): void => {
+      onSelectTrack(id, {})
+      setTimeout(() => searchInputRef.current?.focus(), 0)
+    },
+    [onSelectTrack],
+  )
+
+  // Right-click "Move to Trash": confirm first, then send the original file to the OS
+  // Trash/Recycle Bin and drop the row only once that succeeds, so a failure leaves the
+  // list untouched. Copy switches on platform because the destination differs.
+  function askTrash(track: TrackItem): void {
+    const isWin = window.api.platform === 'win32'
+    setConfirm({
+      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
+      message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
+        name: track.fileName,
+      }),
+      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      onConfirm: () => {
+        window.api
+          .trashFile(track.inputPath)
+          .then(() => removeTrack(track.id))
+          .catch(() => {})
+      },
+    })
+  }
+
   function selectAll(): void {
     if (tracks.length === 0) return
     setSelection({ ids: tracks.map((t) => t.id), anchor: tracks[0].id })
@@ -404,7 +444,11 @@ export default function App(): React.JSX.Element {
     if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
-  async function processOne(id: string, formatOverride?: OutputFormat): Promise<BatchOutcome> {
+  async function processOne(
+    id: string,
+    formatOverride?: OutputFormat,
+    normalizeOverride?: NormalizeConfig,
+  ): Promise<BatchOutcome> {
     const track = tracks.find((t) => t.id === id)
     if (!track) return 'failed'
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
@@ -444,6 +488,7 @@ export default function App(): React.JSX.Element {
         coverUrl: track.coverUrl,
         coverPath: track.coverPath,
         format: formatOverride,
+        normalize: normalizeOverride,
         previousOutputPath: track.outputPath,
       })
       // The user declined to overwrite a conflicting file: nothing was written, so
@@ -499,7 +544,10 @@ export default function App(): React.JSX.Element {
     for (const id of ids) await addTrackToAppleMusic(id)
   }
 
-  async function processAll(formatOverride?: OutputFormat): Promise<void> {
+  async function processAll(
+    formatOverride?: OutputFormat,
+    normalizeOverride?: NormalizeConfig,
+  ): Promise<void> {
     if (batching) return
     const ids = eligibleForBatch(tracks)
     cancelBatchRef.current = false
@@ -512,7 +560,7 @@ export default function App(): React.JSX.Element {
         // Cancel stops the loop before the next track; the one already converting
         // in the main process can't be aborted, so it finishes and is counted.
         if (cancelBatchRef.current) break
-        results.push(await processOne(id, formatOverride))
+        results.push(await processOne(id, formatOverride, normalizeOverride))
         setBatchProgress({ done: results.length, total: ids.length })
       }
     } finally {
@@ -609,14 +657,21 @@ export default function App(): React.JSX.Element {
       title: tr('commands.processCurrent'),
       hint: formatShortcut(['mod', 'enter'], isMac),
       enabled: canProcessSelected,
-      run: () => selected && processOne(selected.id, editorFormatRef.current ?? undefined),
+      run: () =>
+        selected &&
+        processOne(
+          selected.id,
+          editorFormatRef.current ?? undefined,
+          editorNormalizeRef.current ?? undefined,
+        ),
     },
     {
       id: 'process-all',
       title: tr('commands.processAll'),
       hint: formatShortcut(['mod', 'shift', 'enter'], isMac),
       enabled: canProcessAll,
-      run: () => processAll(editorFormatRef.current ?? undefined),
+      run: () =>
+        processAll(editorFormatRef.current ?? undefined, editorNormalizeRef.current ?? undefined),
     },
     {
       id: 'reveal',
@@ -968,6 +1023,8 @@ export default function App(): React.JSX.Element {
                 onSelect={onSelectTrack}
                 onRemove={removeTrack}
                 onPrefetch={handlePrefetch}
+                onSearch={onSearchTrack}
+                onTrash={askTrash}
               />
             )}
           </div>
@@ -991,20 +1048,31 @@ export default function App(): React.JSX.Element {
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
               requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
               showSpectrum={settings?.showSpectrum ?? true}
+              showLoudness={settings?.showLoudness ?? true}
+              normalize={
+                settings?.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+              }
               searchInputRef={searchInputRef}
               selectedTracks={selectedTracks}
               onApplyMatches={(patches) => {
                 for (const p of patches) updateTrack(p.id, p.patch)
               }}
-              onProcessAll={processAll}
+              onProcessAll={(format) => processAll(format, editorNormalizeRef.current ?? undefined)}
               onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
-              onApplyCoverAll={(coverUrl, coverPath) => patchTracks(selectedIds, { coverUrl, coverPath })}
+              onApplyCoverAll={(coverUrl, coverPath) =>
+                patchTracks(selectedIds, { coverUrl, coverPath })
+              }
               onDeriveTags={deriveTracks}
               onChange={(patch) => updateTrack(selected.id, patch)}
-              onProcess={(format) => processOne(selected.id, format)}
+              onProcess={(format) =>
+                processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
+              }
               onFormatChange={(format) => {
                 editorFormatRef.current = format
+              }}
+              onNormalizeChange={(n) => {
+                editorNormalizeRef.current = n
               }}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onOpenSettings={() => openSettings()}

@@ -5,6 +5,7 @@ import type {
   DiscogsRelease,
   DiscogsSearchResult,
   DiscogsTrack,
+  NormalizeConfig,
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
@@ -17,7 +18,20 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { renderOutputName } from '../lib/outputName'
-import { formatKHz, qualityVerdict } from '../lib/quality'
+import {
+  formatDb,
+  formatKHz,
+  formatPercent,
+  type Grade,
+  gradeBalance,
+  gradeCrest,
+  gradeDcOffset,
+  gradeLra,
+  gradeLufs,
+  gradeNoiseFloor,
+  gradeTruePeak,
+  qualityVerdict,
+} from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -28,11 +42,27 @@ import {
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
+import { LoudnessHelpModal } from './LoudnessHelpModal'
+import { NormalizeControls } from './NormalizeControls'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+
+// Per-grade colour for the analysis stat cells, reusing the good/warn/danger
+// tokens (Tokyo Night). The dot is a solid status light; the value text carries
+// the same colour so the verdict reads at a glance.
+const GRADE_DOT: Record<Grade, string> = {
+  good: 'bg-good',
+  warn: 'bg-warn',
+  bad: 'bg-danger',
+}
+const GRADE_TEXT: Record<Grade, string> = {
+  good: 'text-good',
+  warn: 'text-warn',
+  bad: 'text-danger',
+}
 
 interface Props {
   item: TrackItem
@@ -44,6 +74,9 @@ interface Props {
   visibleFields: string[]
   requiredFields: string[]
   showSpectrum: boolean
+  showLoudness: boolean
+  // The Settings normalization default, seeding the per-track override control.
+  normalize: NormalizeConfig
   searchInputRef: React.RefObject<HTMLInputElement | null>
   // The whole multi-selection, when more than one track is picked. Its presence flips the
   // Discogs column to album-match mode (map every file to a tracklist entry at once) and
@@ -65,6 +98,9 @@ interface Props {
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
   onFormatChange?: (format: OutputFormat) => void
+  // Reports the per-track normalization override so the keyboard convert shortcuts
+  // and "convert all" apply it too, mirroring onFormatChange.
+  onNormalizeChange?: (normalize: NormalizeConfig) => void
   onAddToAppleMusic: () => void
   onOpenSettings: () => void
 }
@@ -79,6 +115,8 @@ export function Editor({
   visibleFields,
   requiredFields,
   showSpectrum,
+  showLoudness,
+  normalize,
   searchInputRef,
   selectedTracks,
   onApplyMatches,
@@ -90,6 +128,7 @@ export function Editor({
   onChange,
   onProcess,
   onFormatChange,
+  onNormalizeChange,
   onAddToAppleMusic,
   onOpenSettings,
 }: Props): React.JSX.Element {
@@ -113,12 +152,21 @@ export function Editor({
   const [analyzeError, setAnalyzeError] = useState('')
   const [formOpen, setFormOpen] = useState(true)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
+  // The loudness help is hidden by default and toggled by the ⓘ button: the
+  // figures need explaining once, but shouldn't clutter the panel on every edit.
+  const [loudnessHelpOpen, setLoudnessHelpOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(true)
+  // Normalization is off by default and most users won't touch it, so its section
+  // starts folded — unlike the always-on Metadata/Quality/File name sections.
+  const [normalizeOpen, setNormalizeOpen] = useState(false)
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
   // default rather than inheriting the last track's pick.
   const [format, setFormat] = useState(outputFormat)
+  // Per-track normalization, seeded from the Settings default. Editing it both
+  // updates the control and reports the override up so convert uses it.
+  const [normalizeCfg, setNormalizeCfg] = useState(normalize)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
@@ -190,6 +238,23 @@ export function Editor({
       active = false
     }
   }, [item.inputPath, showSpectrum])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: same once-per-input rule as the spectrum effect above — the Editor remounts per track (key={track.id}), so keying on inputPath measures exactly once; showLoudness is included so enabling the readout later measures the current track instead of waiting for a track switch. item.loudness is intentionally not a dependency: a finished measurement (including a null failure) must not retrigger it.
+  useEffect(() => {
+    if (!showLoudness || item.loudness !== undefined) return
+    let active = true
+    window.api
+      .loudness(item.inputPath)
+      .then((res) => {
+        if (active) onChange({ loudness: res })
+      })
+      .catch(() => {
+        if (active) onChange({ loudness: null })
+      })
+    return () => {
+      active = false
+    }
+  }, [item.inputPath, showLoudness])
 
   // Checking whether the song is already in the Apple Music library is a hint to
   // avoid duplicating tracks, so it tracks the live title/artist (debounced —
@@ -307,10 +372,14 @@ export function Editor({
   // aggregate values: the block shows once every selected track is converted, reveal
   // opens the first output, and the Apple Music button reflects the whole selection.
   const multiTracks = selectedTracks ?? []
-  const showDone = isMulti ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done') : done
+  const showDone = isMulti
+    ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done')
+    : done
   const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
   const musicExt = isMulti ? format : exportedFormat
-  const musicAdding = isMulti ? multiTracks.some((t) => t.musicStatus === 'adding') : item.musicStatus === 'adding'
+  const musicAdding = isMulti
+    ? multiTracks.some((t) => t.musicStatus === 'adding')
+    : item.musicStatus === 'adding'
   const musicAdded = isMulti
     ? multiTracks.length > 0 && multiTracks.every((t) => t.musicStatus === 'added')
     : item.musicStatus === 'added'
@@ -488,45 +557,45 @@ export function Editor({
                           />
                         ) : (
                           release.tracklist.map((t) => (
-                          <button
-                            key={`${t.position}-${t.title}`}
-                            type="button"
-                            data-testid="discogs-track"
-                            aria-current={t === matchedTrack ? 'true' : undefined}
-                            onClick={() => selectTrack(t)}
-                            className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
-                              t === matchedTrack ? 'bg-[var(--color-accent-soft)]' : ''
-                            }`}
-                          >
-                            <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
-                              {t.position}
-                            </span>
-                            <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
-                            {t === matchedTrack && matchTier && (
-                              <svg
-                                data-testid="track-confidence"
-                                data-confidence={matchTier}
-                                aria-label={tr('editor.matchSuggested')}
-                                role="img"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth={3}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className={`size-4 shrink-0 ${
-                                  matchTier === 'high' ? 'text-good' : 'text-warn'
-                                }`}
-                              >
-                                <title>{tr('editor.matchSuggested')}</title>
-                                <path d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                            {t.duration && (
-                              <span className="shrink-0 text-xs tabular-nums text-fg-dim">
-                                {t.duration}
+                            <button
+                              key={`${t.position}-${t.title}`}
+                              type="button"
+                              data-testid="discogs-track"
+                              aria-current={t === matchedTrack ? 'true' : undefined}
+                              onClick={() => selectTrack(t)}
+                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
+                                t === matchedTrack ? 'bg-[var(--color-accent-soft)]' : ''
+                              }`}
+                            >
+                              <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                                {t.position}
                               </span>
-                            )}
+                              <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                              {t === matchedTrack && matchTier && (
+                                <svg
+                                  data-testid="track-confidence"
+                                  data-confidence={matchTier}
+                                  aria-label={tr('editor.matchSuggested')}
+                                  role="img"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={3}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`size-4 shrink-0 ${
+                                    matchTier === 'high' ? 'text-good' : 'text-warn'
+                                  }`}
+                                >
+                                  <title>{tr('editor.matchSuggested')}</title>
+                                  <path d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                              {t.duration && (
+                                <span className="shrink-0 text-xs tabular-nums text-fg-dim">
+                                  {t.duration}
+                                </span>
+                              )}
                             </button>
                           ))
                         )
@@ -675,10 +744,16 @@ export function Editor({
                             name={key}
                             label={tr(`fields.${key}`)}
                             value={shared ?? ''}
-                            placeholder={shared === undefined ? tr('editor.multipleValues') : undefined}
+                            placeholder={
+                              shared === undefined ? tr('editor.multipleValues') : undefined
+                            }
                             onChange={(v) => onChangeAllMeta?.({ [key]: v })}
                             suggestions={
-                              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined
+                              key === 'genre'
+                                ? genreChips
+                                : key === 'grouping'
+                                  ? groupingPresets
+                                  : undefined
                             }
                             multiSuggestions={key === 'grouping'}
                           />
@@ -712,7 +787,7 @@ export function Editor({
             </div>
           )}
 
-          {!isMulti && showSpectrum && (
+          {!isMulti && (showSpectrum || showLoudness) && (
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
               <SectionHeader
                 title={tr('editor.qualityTitle')}
@@ -740,86 +815,269 @@ export function Editor({
               />
               {spectrumOpen && (
                 <div className="mt-3">
-                  {analyzing ? (
-                    <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
-                      <WaveSpinner />
-                      {tr('editor.analyzing')}
-                    </div>
-                  ) : analyzeError ? (
-                    <p className="text-xs text-danger">{analyzeError}</p>
-                  ) : item.spectrum ? (
-                    <>
-                      <Spectrogram spectrum={item.spectrum} />
-                      {item.spectrum.cutoffHz !== null && (
-                        <p className="mt-2 text-xs text-fg-dim">
-                          {tr('editor.qualityCaption', {
-                            cutoff: formatKHz(item.spectrum.cutoffHz),
-                            nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
-                          })}
-                        </p>
-                      )}
-                    </>
-                  ) : null}
+                  {showSpectrum &&
+                    (analyzing ? (
+                      <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
+                        <WaveSpinner />
+                        {tr('editor.analyzing')}
+                      </div>
+                    ) : analyzeError ? (
+                      <p className="text-xs text-danger">{analyzeError}</p>
+                    ) : item.spectrum ? (
+                      <>
+                        <Spectrogram spectrum={item.spectrum} />
+                        {item.spectrum.cutoffHz !== null && (
+                          <p className="mt-2 text-xs text-fg-dim">
+                            {tr('editor.qualityCaption', {
+                              cutoff: formatKHz(item.spectrum.cutoffHz),
+                              nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
+                            })}
+                          </p>
+                        )}
+                      </>
+                    ) : null)}
+                  {showLoudness &&
+                    item.loudness &&
+                    (() => {
+                      const loud = item.loudness
+                      // The astats-derived checks each appear only when measured
+                      // (null = mono, a dead channel, or an unparseable reading).
+                      const cell = (
+                        id: string,
+                        label: string,
+                        value: string,
+                        grade: Grade,
+                        hint: string,
+                      ) => ({ id, label, value, grade, hint })
+                      const groups = [
+                        {
+                          id: 'loudness',
+                          label: tr('editor.loudnessGroupLoudness'),
+                          cells: [
+                            cell(
+                              'lufs',
+                              tr('editor.loudnessLufsLabel'),
+                              `${formatDb(loud.integratedLufs)} LUFS`,
+                              gradeLufs(loud.integratedLufs),
+                              tr('editor.loudnessLufsHint'),
+                            ),
+                            cell(
+                              'peak',
+                              tr('editor.loudnessPeakLabel'),
+                              `${formatDb(loud.truePeakDb)} dBTP`,
+                              gradeTruePeak(loud.truePeakDb),
+                              tr('editor.loudnessPeakHint'),
+                            ),
+                            cell(
+                              'range',
+                              tr('editor.loudnessRangeLabel'),
+                              `${formatDb(loud.lra)} LU`,
+                              gradeLra(loud.lra),
+                              tr('editor.loudnessRangeHint'),
+                            ),
+                            loud.crestDb !== null &&
+                              cell(
+                                'crest',
+                                tr('editor.loudnessCrestLabel'),
+                                `${formatDb(loud.crestDb)} dB`,
+                                gradeCrest(loud.crestDb),
+                                tr('editor.loudnessCrestHint'),
+                              ),
+                          ].filter((c) => c !== false),
+                        },
+                        {
+                          id: 'signal',
+                          label: tr('editor.loudnessGroupSignal'),
+                          cells: [
+                            loud.channelBalanceDb !== null &&
+                              cell(
+                                'balance',
+                                tr('editor.loudnessBalanceLabel'),
+                                `${formatDb(loud.channelBalanceDb)} dB`,
+                                gradeBalance(loud.channelBalanceDb),
+                                tr('editor.loudnessBalanceHint'),
+                              ),
+                            loud.dcOffset !== null &&
+                              cell(
+                                'dc',
+                                tr('editor.loudnessDcLabel'),
+                                formatPercent(loud.dcOffset),
+                                gradeDcOffset(loud.dcOffset),
+                                tr('editor.loudnessDcHint'),
+                              ),
+                            loud.noiseFloorDb !== null &&
+                              cell(
+                                'noise',
+                                tr('editor.loudnessNoiseLabel'),
+                                `${formatDb(loud.noiseFloorDb)} dB`,
+                                gradeNoiseFloor(loud.noiseFloorDb),
+                                tr('editor.loudnessNoiseHint'),
+                              ),
+                          ].filter((c) => c !== false),
+                        },
+                      ].filter((g) => g.cells.length > 0)
+                      return (
+                        <div data-testid="loudness-readout" className="mt-3 space-y-3">
+                          {groups.map((group, gi) => (
+                            <div key={group.id}>
+                              <div className="mb-1.5 flex items-center justify-between">
+                                <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+                                  {group.label}
+                                </span>
+                                {gi === 0 && (
+                                  <button
+                                    type="button"
+                                    data-testid="loudness-help-toggle"
+                                    onClick={() => setLoudnessHelpOpen(true)}
+                                    title={tr('editor.loudnessHelpTitle')}
+                                    className="press flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                                  >
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="h-3.5 w-3.5"
+                                      aria-hidden="true"
+                                    >
+                                      <circle cx="12" cy="12" r="10" />
+                                      <line x1="12" y1="16" x2="12" y2="12" />
+                                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                              <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(6.5rem,1fr))]">
+                                {group.cells.map((c) => (
+                                  <div
+                                    key={c.id}
+                                    data-testid={`loudness-pill-${c.id}`}
+                                    data-grade={c.grade}
+                                    title={c.hint}
+                                    className="rounded-lg bg-[var(--color-field)] px-3 py-2"
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <span
+                                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`}
+                                      />
+                                      <span className="truncate text-[10px] uppercase tracking-wide text-fg-dim">
+                                        {c.label}
+                                      </span>
+                                    </div>
+                                    <div
+                                      className={`mt-0.5 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}
+                                    >
+                                      {c.value}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
                 </div>
               )}
             </div>
           )}
 
+          {loudnessHelpOpen && <LoudnessHelpModal onClose={() => setLoudnessHelpOpen(false)} />}
+
           {!isMulti && (
-          <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-            <SectionHeader
-              title={tr('editor.outputName')}
-              open={outputOpen}
-              onToggle={() => setOutputOpen((v) => !v)}
-              right={
-                <button
-                  type="button"
-                  data-testid="regenerate-output-name"
-                  onClick={() =>
-                    onChange({ outputName: renderOutputName(filenameFormat, item.meta) || item.fileName })
-                  }
-                  title={tr('editor.regenerateHint')}
-                  className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                    className="h-3 w-3"
+            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+              <SectionHeader
+                title={tr('editor.outputName')}
+                open={outputOpen}
+                onToggle={() => setOutputOpen((v) => !v)}
+                right={
+                  <button
+                    type="button"
+                    data-testid="regenerate-output-name"
+                    onClick={() =>
+                      onChange({
+                        outputName: renderOutputName(filenameFormat, item.meta) || item.fileName,
+                      })
+                    }
+                    title={tr('editor.regenerateHint')}
+                    className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                   >
-                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    <path d="M3 21v-5h5" />
-                  </svg>
-                  {tr('editor.regenerate')}
-                </button>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      className="h-3 w-3"
+                    >
+                      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                      <path d="M21 3v5h-5" />
+                      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                      <path d="M3 21v-5h5" />
+                    </svg>
+                    {tr('editor.regenerate')}
+                  </button>
+                }
+              />
+              {outputOpen && (
+                <label className="relative mt-3 block">
+                  <input
+                    data-testid="output-name"
+                    value={item.outputName ?? defaultOutputName}
+                    onChange={(e) => onChange({ outputName: e.target.value })}
+                    className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
+                  />
+                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
+                    .{format}
+                  </span>
+                </label>
+              )}
+              {outputOpen && (
+                <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
+                  {willEditInPlace
+                    ? tr('editor.outputNameHintInPlace')
+                    : tr('editor.outputNameHint')}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div
+            data-testid="editor-normalize"
+            className="mt-6 border-t border-[var(--color-line)] pt-5"
+          >
+            <SectionHeader
+              title={tr('normalize.title')}
+              open={normalizeOpen}
+              onToggle={() => setNormalizeOpen((v) => !v)}
+              right={
+                normalizeCfg.mode !== 'none' ? (
+                  <span
+                    data-testid="normalize-active-badge"
+                    className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
+                  >
+                    {tr(`normalize.mode.${normalizeCfg.mode}`)}
+                  </span>
+                ) : undefined
               }
             />
-            {outputOpen && (
-              <label className="relative mt-3 block">
-                <input
-                  data-testid="output-name"
-                  value={item.outputName ?? defaultOutputName}
-                  onChange={(e) => onChange({ outputName: e.target.value })}
-                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
+            {normalizeOpen && (
+              <div className="mt-3">
+                <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
+                <NormalizeControls
+                  value={normalizeCfg}
+                  onChange={(n) => {
+                    setNormalizeCfg(n)
+                    onNormalizeChange?.(n)
+                  }}
                 />
-                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-                  .{format}
-                </span>
-              </label>
-            )}
-            {outputOpen && (
-              <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
-                {willEditInPlace ? tr('editor.outputNameHintInPlace') : tr('editor.outputNameHint')}
-              </p>
+              </div>
             )}
           </div>
-          )}
         </div>
 
         <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
