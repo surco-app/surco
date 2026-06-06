@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   DiscogsRelease,
@@ -321,19 +321,25 @@ export function Editor({
   // convert: with the button disabled below, the click that produced the error is
   // no longer reachable, so the red field is what tells the user why.
   const incomplete = missingRequired(item.meta, requiredFields).length > 0
-  const genreChips = genrePresets(release)
+  const genreChips = useMemo(() => genrePresets(release), [release])
   // Highlight the tracklist entry whose title best matches the file's, so the
   // right mix is preselected the moment the release loads. Fuzzy, so the
   // filename's case and punctuation don't have to match Discogs exactly. The user
   // still picks deliberately — this only points; it never applies on its own.
-  const match = release
-    ? bestMatch(release.tracklist, {
-        title: item.meta.title,
-        durationSec: item.duration,
-        trackNumber: item.meta.trackNumber,
-        artist: item.meta.artist,
-      })
-    : undefined
+  // Memoized on its inputs so typing in unrelated fields doesn't re-run the fuzzy
+  // match over the whole tracklist on every keystroke.
+  const match = useMemo(
+    () =>
+      release
+        ? bestMatch(release.tracklist, {
+            title: item.meta.title,
+            durationSec: item.duration,
+            trackNumber: item.meta.trackNumber,
+            artist: item.meta.artist,
+          })
+        : undefined,
+    [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
+  )
   const matchTier = match ? confidenceTier(match.confidence) : undefined
   // 'low' is too weak to trust, so it points at nothing — otherwise loading an
   // unrelated release still badges whichever mix shares an incidental word.
