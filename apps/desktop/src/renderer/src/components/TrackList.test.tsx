@@ -150,9 +150,9 @@ describe('TrackList', () => {
   it('marks every selected row, including ones that are not the primary', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
     const rows = screen.getAllByTestId('track-row')
-    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
-    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
-    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[2]).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {

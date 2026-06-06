@@ -274,7 +274,7 @@ export function Editor({
   }
 
   function applyImageFile(file: File | undefined): void {
-    if (!file || !file.type.startsWith('image/')) return
+    if (!file?.type.startsWith('image/')) return
     const coverUrl = URL.createObjectURL(file)
     const coverPath = window.api.getPathForFile(file)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)

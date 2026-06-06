@@ -993,7 +993,9 @@ export default function App(): React.JSX.Element {
               showSpectrum={settings?.showSpectrum ?? true}
               searchInputRef={searchInputRef}
               selectedTracks={selectedTracks}
-              onApplyMatches={(patches) => patches.forEach((p) => updateTrack(p.id, p.patch))}
+              onApplyMatches={(patches) => {
+                for (const p of patches) updateTrack(p.id, p.patch)
+              }}
               onProcessAll={processAll}
               onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}

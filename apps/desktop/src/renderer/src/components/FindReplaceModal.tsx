@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
@@ -23,7 +23,12 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   const [replace, setReplace] = useState('')
   const [regex, setRegex] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const findInputRef = useRef<HTMLInputElement>(null)
   useFocusTrap(dialogRef)
+
+  useEffect(() => {
+    findInputRef.current?.focus()
+  }, [])
 
   const badRegex = regex && find.length > 0 && !isValidRegex(find)
   const patches =
@@ -84,11 +89,11 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
               {tr('findReplace.find')}
             </span>
             <input
+              ref={findInputRef}
               data-testid="find-replace-find"
               value={find}
               onChange={(e) => setFind(e.target.value)}
               aria-invalid={badRegex}
-              autoFocus
               spellCheck={false}
               className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
                 badRegex

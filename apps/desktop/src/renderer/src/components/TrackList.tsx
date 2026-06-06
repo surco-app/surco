@@ -61,7 +61,7 @@ const TrackRow = memo(function TrackRow({
       <button
         type="button"
         data-testid="track-row"
-        aria-selected={selected}
+        aria-pressed={selected}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onContextMenu={(e) => {
           e.preventDefault()
