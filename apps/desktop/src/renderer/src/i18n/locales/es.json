@@ -201,7 +201,7 @@
     "targetLufs": "Objetivo (LUFS)",
     "truePeak": "Pico real (dBTP)",
     "peakDb": "Pico (dBFS)",
-    "cueWarning": "Aviso: esto recodifica el archivo y pierde los marcadores de cue/beatgrid de Traktor."
+    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3 y AIFF, pero se pierden en WAV y FLAC."
   },
   "settings": {
     "tabs": {

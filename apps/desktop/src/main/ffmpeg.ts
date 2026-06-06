@@ -15,7 +15,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { preservesCuesInPlace, writeTags } from './tags'
+import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
 import { tmpName } from './tmp'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -337,6 +337,10 @@ export async function convertAudio(
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
         writeTags(tmp, meta, coverPath)
       }
+      // Normalizing forces this re-encode, which drops Traktor's GEOB cue/beatgrid
+      // frame. A constant gain never moves the cues in time, so carry the frame over
+      // from the source — but only for the ID3 containers it round-trips through.
+      if (normalizing && preservesCuesInPlace(ext)) copyCueFrames(input, tmp)
     }
     await rename(tmp, output)
   } catch (e) {

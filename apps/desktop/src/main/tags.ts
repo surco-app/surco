@@ -1,6 +1,7 @@
 import { extname } from 'node:path'
 import {
   Id3v2AttachmentFrame,
+  type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
   type Id3v2Tag,
@@ -26,6 +27,40 @@ const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 
 export function preservesCuesInPlace(ext: string): boolean {
   return ID3_IN_PLACE.has(ext.toLowerCase())
+}
+
+// Carries Traktor's GEOB cue/beatgrid frame from a source file into a freshly
+// converted one. Normalizing re-encodes the audio through ffmpeg, which drops the
+// frame — but a constant gain never shifts the cues in time, so copying the frame
+// verbatim restores them exactly. GEOB is copied as a whole frame (via clone) and
+// never parsed: its body is an opaque Traktor blob that TagLib's attachment parser
+// can choke on. Best-effort — any failure leaves the (already valid) output as-is
+// rather than aborting the conversion. Only meaningful for ID3 containers.
+export function copyCueFrames(source: string, dest: string): void {
+  try {
+    const src = TagFile.createFromPath(source)
+    let cues: Id3v2Frame[]
+    try {
+      const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      const geob = tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB') ?? []
+      cues = geob.map((fr) => fr.clone())
+    } finally {
+      src.dispose()
+    }
+    if (cues.length === 0) return
+
+    const out = TagFile.createFromPath(dest)
+    try {
+      const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      tag.removeFrames(Id3v2FrameIdentifiers.GEOB)
+      for (const frame of cues) tag.addFrame(frame)
+      out.save()
+    } finally {
+      out.dispose()
+    }
+  } catch {
+    // Cue preservation is a bonus; never let it break a successful conversion.
+  }
 }
 
 const toNumber = (value: string): number => {

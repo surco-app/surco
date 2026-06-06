@@ -201,7 +201,7 @@
     "targetLufs": "Target (LUFS)",
     "truePeak": "True peak (dBTP)",
     "peakDb": "Peak (dBFS)",
-    "cueWarning": "Heads up: this re-encodes the file, dropping any Traktor cue/beatgrid markers."
+    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC."
   },
   "settings": {
     "tabs": {
