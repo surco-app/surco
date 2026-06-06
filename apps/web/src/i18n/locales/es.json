@@ -15,21 +15,21 @@
     "analisis": "Análisis",
     "funciones": "Funciones",
     "atajos": "Atajos",
+    "precio": "Precio",
     "instalar": "Instalar",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú"
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta · gratis por ahora",
-  "betaNote": "Surco está en beta — gratis por ahora mientras lo pulimos. Sin precio decidido aún.",
+  "betaPill": "Beta · gratis para siempre",
+  "betaNote": "Surco está en beta y es gratis — y seguirá siéndolo. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
   },
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "lede": "Suelta tus pistas. Surco rellena artista, título y carátula desde Discogs, las convierte a máxima calidad y las añade a tu biblioteca de Apple Music — de donde lee rekordbox. Hasta avisa de copias malas y de pistas que ya tienes.",
     "ledeShort": "Suelta tus pistas y Surco rellena los metadatos desde Discogs, las convierte a máxima calidad y las ordena en tu biblioteca de Apple Music."
   },
   "stats": {
@@ -187,6 +187,27 @@
     "good": "● buena calidad",
     "spectrum": "espectro"
   },
+  "pricing": {
+    "kicker": "Precio",
+    "title": "Gratis. Todo.",
+    "lede": "Todas las funciones, todos los formatos, todas las actualizaciones. Sin cuenta, sin suscripción, sin sustos.",
+    "card": {
+      "plan": "Gratis",
+      "price": "0 €",
+      "period": "para siempre",
+      "features": [
+        "Todos los formatos — AIFF, WAV, FLAC, MP3",
+        "Etiquetado Discogs y emparejado de disco entero",
+        "Análisis de espectro para cazar fakes",
+        "Envío directo a Apple Music",
+        "Actualizaciones automáticas"
+      ]
+    },
+    "sponsor": {
+      "text": "Surco es gratis y abierto. Si te ahorra tiempo, puedes echar una mano para que siga avanzando.",
+      "cta": "Apóyalo en GitHub"
+    }
+  },
   "footer": {
     "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
     "product": "Producto",
@@ -218,7 +239,7 @@
     "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
     "free": "Descarga gratuita",
     "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
-    "windows": "También llega a Windows, con todo igual salvo el envío automático a Apple Music.",
+    "windows": "Pronto también en Windows.",
     "countSuffix": "descargas y subiendo"
   }
 }

@@ -15,21 +15,21 @@
     "analisis": "Analysis",
     "funciones": "Features",
     "atajos": "Shortcuts",
+    "precio": "Pricing",
     "instalar": "Install",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
   "available": "Available · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta · free for now",
-  "betaNote": "Surco is in beta — free for now while we shape it. No pricing decided yet.",
+  "betaPill": "Beta · free forever",
+  "betaNote": "Surco is in beta and free — and it stays free. No account, no subscription.",
   "keys": {
     "space": "Space"
   },
   "hero": {
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
-    "lede": "Drop in your tracks. Surco fills the artist, title and cover art from Discogs, converts them to full quality and adds them to your Apple Music library — where rekordbox reads from. It even flags low-quality fakes and tracks you already own.",
     "ledeShort": "Drop your tracks and Surco fills the metadata from Discogs, converts them to full quality and organizes them in your Apple Music library."
   },
   "stats": {
@@ -187,6 +187,27 @@
     "good": "● good quality",
     "spectrum": "spectrum"
   },
+  "pricing": {
+    "kicker": "Pricing",
+    "title": "Free. The whole thing.",
+    "lede": "Every feature, every format, every update. No account, no subscription, no upsell.",
+    "card": {
+      "plan": "Free",
+      "price": "€0",
+      "period": "forever",
+      "features": [
+        "Every format — AIFF, WAV, FLAC, MP3",
+        "Discogs tagging and full-album match",
+        "Spectrum analysis to catch fakes",
+        "Send straight to Apple Music",
+        "Automatic updates"
+      ]
+    },
+    "sponsor": {
+      "text": "Surco is free and open. If it saves you time, you can chip in to keep it moving.",
+      "cta": "Sponsor on GitHub"
+    }
+  },
   "footer": {
     "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
     "product": "Product",
@@ -218,7 +239,7 @@
     "intel": "Intel Mac (2020 or earlier)? Download it here",
     "free": "Free download",
     "unavailable": "The download isn't available yet — we're polishing the first version.",
-    "windows": "It's coming to Windows too, with everything the same except the automatic send to Apple Music.",
+    "windows": "Coming soon to Windows, too.",
     "countSuffix": "downloads and counting"
   }
 }

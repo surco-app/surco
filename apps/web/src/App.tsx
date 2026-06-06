@@ -3,6 +3,7 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import Speed from './components/Speed'
 import HowItWorks from './components/HowItWorks'
+import Pricing from './components/Pricing'
 import Spectrogram from './components/Spectrogram'
 import AppMockup from './components/AppMockup'
 import Reveal from './components/Reveal'
@@ -56,7 +57,7 @@ export default function App() {
 
       <Header />
 
-      <main className="relative mx-auto max-w-6xl px-6">
+      <main className="relative mx-auto max-w-5xl px-6">
         <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
           <Reveal>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
@@ -71,11 +72,8 @@ export default function App() {
               <br />
               <span className="text-grad">{t('hero.h1b')}</span>
             </h1>
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted sm:hidden">
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
               {t('hero.ledeShort')}
-            </p>
-            <p className="mt-6 hidden max-w-md text-lg leading-relaxed text-muted sm:block">
-              {t('hero.lede')}
             </p>
             <div className="mt-5 font-mono text-sm text-muted">
               <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
@@ -97,7 +95,7 @@ export default function App() {
 
         <Reveal>
           <section className="pb-24">
-            <div className="grid gap-8 rounded-3xl border border-line bg-surface2/40 p-10 text-center sm:grid-cols-3 sm:p-12">
+            <div className="grid gap-8 rounded-3xl border border-line bg-surface2/40 p-8 text-center sm:grid-cols-3 sm:p-10">
               <div>
                 <div className="text-4xl font-bold text-grad sm:text-5xl">
                   ~<CountUp to={100} />×
@@ -179,7 +177,7 @@ export default function App() {
               {t('features.title')}
             </h2>
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
               <Reveal key={f.title} delay={(i % 3) * 100}>
                 <div className={`h-full rounded-2xl border border-line bg-surface2/40 p-6 ${cardHover}`}>
@@ -194,7 +192,7 @@ export default function App() {
 
         <section id="atajos" className="scroll-mt-24 pb-24">
           <Reveal>
-            <div className="grid gap-10 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+            <div className="grid gap-8 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
               <div>
                 <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('shortcuts.kicker')}</p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -217,6 +215,8 @@ export default function App() {
             </div>
           </Reveal>
         </section>
+
+        <Pricing />
 
         <InstallSection />
 

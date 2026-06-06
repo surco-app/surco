@@ -32,7 +32,7 @@ export default function Header() {
       }`}
     >
       <div
-        className="mx-auto flex max-w-6xl items-center justify-between px-6 transition-all duration-300"
+        className="mx-auto flex max-w-5xl items-center justify-between px-6 transition-all duration-300"
         style={{ paddingTop: scrolled ? '0.7rem' : '1.25rem', paddingBottom: scrolled ? '0.7rem' : '1.25rem' }}
       >
         <a href="#top" className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export default function Header() {
           id="mobile-nav"
           className="border-t border-line/70 bg-bg/95 backdrop-blur-md lg:hidden"
         >
-          <div className="mx-auto max-w-6xl px-6 py-2">
+          <div className="mx-auto max-w-5xl px-6 py-2">
             {SECTIONS.map((id) => (
               <a
                 key={id}
