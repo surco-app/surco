@@ -1,7 +1,76 @@
 import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
+
+// Owns the playback clock by subscribing straight to the shared <audio> element,
+// so the ~4Hz timeupdate stream re-renders only this card — not App, the editor
+// and the whole track list, as it did when currentTime lived in App state.
+export function LivePlayer({
+  track,
+  audioRef,
+  onClose,
+}: {
+  track: TrackItem
+  audioRef: React.RefObject<HTMLAudioElement | null>
+  onClose: () => void
+}): React.JSX.Element {
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [paused, setPaused] = useState(false)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    // Sync immediately: the track may already be loaded and playing by the time
+    // the card mounts, so we can't wait for the next event to show a time.
+    const readDuration = (): number => (Number.isFinite(audio.duration) ? audio.duration : 0)
+    setCurrentTime(audio.currentTime)
+    setDuration(readDuration())
+    setPaused(audio.paused)
+    const onTime = (): void => setCurrentTime(audio.currentTime)
+    const onMeta = (): void => setDuration(readDuration())
+    const onPlay = (): void => setPaused(false)
+    const onPause = (): void => setPaused(true)
+    audio.addEventListener('timeupdate', onTime)
+    audio.addEventListener('loadedmetadata', onMeta)
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('pause', onPause)
+    return () => {
+      audio.removeEventListener('timeupdate', onTime)
+      audio.removeEventListener('loadedmetadata', onMeta)
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
+    }
+  }, [audioRef])
+
+  function onToggle(): void {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audio.paused) audio.play().catch(() => {})
+    else audio.pause()
+  }
+
+  // Reads the live duration off the element rather than closing over state.
+  function onSeek(ratio: number): void {
+    const audio = audioRef.current
+    if (audio && Number.isFinite(audio.duration)) audio.currentTime = ratio * audio.duration
+  }
+
+  return (
+    <Player
+      track={track}
+      paused={paused}
+      progress={duration > 0 ? currentTime / duration : 0}
+      currentTime={currentTime}
+      duration={duration}
+      onToggle={onToggle}
+      onSeek={onSeek}
+      onClose={onClose}
+    />
+  )
+}
 
 interface PlayerProps {
   track: TrackItem

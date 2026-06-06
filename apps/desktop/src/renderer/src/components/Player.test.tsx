@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { Player } from './Player'
+import { LivePlayer, Player } from './Player'
 import '../i18n'
 
 afterEach(cleanup)
@@ -100,5 +101,37 @@ describe('Player', () => {
     bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
     fireEvent.click(bar, { clientX: 50 })
     expect(onSeek).toHaveBeenCalledWith(0.25)
+  })
+})
+
+describe('LivePlayer', () => {
+  // The clock follows the <audio> element through its own events: this is what
+  // lets the rest of the app stop re-rendering on every ~4Hz timeupdate.
+  function audioEl(over: { currentTime?: number; duration?: number; paused?: boolean } = {}) {
+    const audio = document.createElement('audio')
+    Object.defineProperty(audio, 'currentTime', { value: over.currentTime ?? 0, writable: true })
+    Object.defineProperty(audio, 'duration', { value: over.duration ?? 0, writable: true })
+    Object.defineProperty(audio, 'paused', { value: over.paused ?? true, writable: true })
+    return audio
+  }
+
+  it('syncs the displayed time from the audio element on mount', () => {
+    const audio = audioEl({ currentTime: 65, duration: 754 })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    render(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
+  })
+
+  it('advances the time as the audio element fires timeupdate', () => {
+    const audio = audioEl({ duration: 754 })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    render(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    act(() => {
+      ;(audio as unknown as { currentTime: number }).currentTime = 65
+      audio.dispatchEvent(new Event('timeupdate'))
+    })
+    expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 })

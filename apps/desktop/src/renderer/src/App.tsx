@@ -9,7 +9,7 @@ import { Editor } from './components/Editor'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
-import { Player } from './components/Player'
+import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
@@ -132,9 +132,6 @@ export default function App(): React.JSX.Element {
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
-  const [paused, setPaused] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -235,6 +232,7 @@ export default function App(): React.JSX.Element {
 
   // Switching tracks drops a stale format pick so the next ⌘⏎ uses the Settings
   // default, mirroring the editor's per-track reseed.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the deliberate trigger, not a value read in the body — the reset must fire on every track switch.
   useEffect(() => {
     editorFormatRef.current = null
   }, [selectedId])
@@ -381,8 +379,6 @@ export default function App(): React.JSX.Element {
     audio?.removeAttribute('src')
     setPlayerVisible(false)
     setPlayingId(null)
-    setCurrentTime(0)
-    setDuration(0)
   }, [])
 
   // Removing (or clearing) the track that is playing must stop the audio: the
@@ -554,20 +550,6 @@ export default function App(): React.JSX.Element {
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
-  function pauseResume(): void {
-    const audio = audioRef.current
-    if (!audio) return
-    if (audio.paused) audio.play().catch(() => {})
-    else audio.pause()
-  }
-
-  // Reads the live duration off the element rather than closing over state.
-  function seekToRatio(ratio: number): void {
-    const audio = audioRef.current
-    if (audio && Number.isFinite(audio.duration)) audio.currentTime = ratio * audio.duration
-  }
-
-  const playProgress = duration > 0 ? currentTime / duration : 0
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
@@ -739,17 +721,11 @@ export default function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      {/* Music preview playback — there is no speech to caption. */}
+      {/* Music preview playback — there is no speech to caption. The clock
+          (currentTime/duration/paused) is read by LivePlayer, which subscribes to
+          this element directly so playback re-renders only the card. */}
       {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
-      <audio
-        ref={audioRef}
-        hidden
-        onPlay={() => setPaused(false)}
-        onPause={() => setPaused(true)}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onEnded={closePlayer}
-      />
+      <audio ref={audioRef} hidden onEnded={closePlayer} />
       <header
         className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
@@ -948,16 +924,7 @@ export default function App(): React.JSX.Element {
             )}
           </div>
           {playerVisible && playerTrack && (
-            <Player
-              track={playerTrack}
-              paused={paused}
-              progress={playProgress}
-              currentTime={currentTime}
-              duration={duration}
-              onToggle={pauseResume}
-              onSeek={seekToRatio}
-              onClose={closePlayer}
-            />
+            <LivePlayer track={playerTrack} audioRef={audioRef} onClose={closePlayer} />
           )}
         </aside>
 
