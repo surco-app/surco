@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { nextWidth } from '../lib/resize'
 
 export function useResizableWidth(
@@ -8,6 +8,10 @@ export function useResizableWidth(
   max: number,
 ): { width: number; onPointerDown: (e: React.PointerEvent) => void } {
   const [width, setWidth] = useState(initial)
+  // Holds the teardown for an in-flight drag so unmounting mid-drag doesn't leak
+  // the window listeners or leave the body cursor stuck at col-resize.
+  const endDrag = useRef<(() => void) | null>(null)
+  useEffect(() => () => endDrag.current?.(), [])
 
   function onPointerDown(e: React.PointerEvent): void {
     e.preventDefault()
@@ -16,14 +20,16 @@ export function useResizableWidth(
     function onMove(ev: PointerEvent): void {
       setWidth(nextWidth(startWidth, ev.clientX - startX, min, max))
     }
-    function onUp(): void {
+    function cleanup(): void {
       window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointerup', cleanup)
       document.body.style.cursor = ''
+      endDrag.current = null
     }
+    endDrag.current = cleanup
     document.body.style.cursor = 'col-resize'
     window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointerup', cleanup)
   }
 
   return { width, onPointerDown }
