@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
-import type { OutputFormat, TrackMetadata } from '../../../shared/types'
+import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -53,7 +53,12 @@ function item(
 function renderEditor(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
   outputFormat: OutputFormat = 'wav',
-  props: { requiredFields?: string[]; visibleFields?: string[]; showLoudness?: boolean } = {},
+  props: {
+    requiredFields?: string[]
+    visibleFields?: string[]
+    showLoudness?: boolean
+    normalize?: NormalizeConfig
+  } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
@@ -76,7 +81,7 @@ function renderEditor(
       requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
       showLoudness={props.showLoudness ?? false}
-      normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      normalize={props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
@@ -113,6 +118,23 @@ describe('Editor derive from filename', () => {
     expect(onDeriveTags).toHaveBeenCalledWith([
       { id: 'a', meta: { trackNumber: '104', artist: 'kumara', title: 'snap' } },
     ])
+  })
+})
+
+describe('Editor convert button normalization note', () => {
+  // Normalization must be visible at the moment of converting, not just buried in a
+  // folded section — otherwise the user can't tell the export will alter loudness.
+  it('flags the active normalization above the convert button', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    })
+    const note = screen.getByTestId('convert-normalize-note')
+    expect(note).toHaveTextContent('-14')
+  })
+
+  it('shows no note when normalization is off', () => {
+    renderEditor({ id: 'a' }, 'wav')
+    expect(screen.queryByTestId('convert-normalize-note')).toBeNull()
   })
 })
 

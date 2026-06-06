@@ -1095,6 +1095,39 @@ export function Editor({
             </div>
           )}
           <div className="space-y-2">
+            {normalizeCfg.mode !== 'none' && (
+              <button
+                type="button"
+                data-testid="convert-normalize-note"
+                onClick={() => setNormalizeOpen(true)}
+                title={tr('normalize.title')}
+                className="press flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5"
+                >
+                  <line x1="4" y1="21" x2="4" y2="14" />
+                  <line x1="4" y1="10" x2="4" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12" y2="3" />
+                  <line x1="20" y1="21" x2="20" y2="16" />
+                  <line x1="20" y1="12" x2="20" y2="3" />
+                  <line x1="1" y1="14" x2="7" y2="14" />
+                  <line x1="9" y1="8" x2="15" y2="8" />
+                  <line x1="17" y1="16" x2="23" y2="16" />
+                </svg>
+                {tr(`normalize.mode.${normalizeCfg.mode}`)} ·{' '}
+                {normalizeCfg.mode === 'loudness'
+                  ? `${normalizeCfg.targetLufs} LUFS`
+                  : `${normalizeCfg.peakDb} dBFS`}
+              </button>
+            )}
             <ExportButton
               status={isMulti ? 'idle' : item.status}
               stale={!isMulti && stale}
