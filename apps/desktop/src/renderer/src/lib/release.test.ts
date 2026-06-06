@@ -9,11 +9,37 @@ import {
   joinArtists,
   resultFromRelease,
   scoreTrack,
+  stepImageIndex,
 } from './release'
 
 function release(over: Partial<DiscogsRelease> = {}): DiscogsRelease {
   return { id: 1, title: 'Album', artists: [], tracklist: [], ...over }
 }
+
+describe('stepImageIndex', () => {
+  const imgs = [{ uri: 'a' }, { uri: 'b' }, { uri: 'c' }]
+
+  it('moves forward and back from the current image', () => {
+    expect(stepImageIndex(imgs, 'a', 1)).toBe(1)
+    expect(stepImageIndex(imgs, 'b', -1)).toBe(0)
+  })
+
+  it('wraps around at both ends', () => {
+    expect(stepImageIndex(imgs, 'c', 1)).toBe(0)
+    expect(stepImageIndex(imgs, 'a', -1)).toBe(2)
+  })
+
+  // A dropped custom cover isn't in the release list; the first arrow must still
+  // land on a defined image rather than getting stuck.
+  it('starts at the first image when the current cover is not in the list', () => {
+    expect(stepImageIndex(imgs, 'dropped.png', 1)).toBe(0)
+    expect(stepImageIndex(imgs, undefined, -1)).toBe(0)
+  })
+
+  it('returns -1 when there are no images', () => {
+    expect(stepImageIndex([], 'a', 1)).toBe(-1)
+  })
+})
 
 function meta(over: Partial<TrackMetadata> = {}): TrackMetadata {
   return {

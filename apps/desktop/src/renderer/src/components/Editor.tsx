@@ -24,6 +24,7 @@ import {
   confidenceTier,
   type ReleaseMetaPatch,
   resultFromRelease,
+  stepImageIndex,
 } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -294,6 +295,14 @@ export function Editor({
     e.stopPropagation()
     setCoverDragging(false)
     applyImageFile(Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/')))
+  }
+
+  // Switches the cover among the loaded release's images (Discogs often has several).
+  // It only swaps the artwork URL, leaving the rest of the metadata untouched.
+  function pickCoverImage(delta: number): void {
+    const imgs = release?.images ?? []
+    const i = stepImageIndex(imgs, item.coverUrl, delta)
+    if (i >= 0) onChange({ coverUrl: imgs[i].uri, coverPath: undefined })
   }
 
   function onCoverExport(): void {
@@ -676,6 +685,56 @@ export function Editor({
                     >
                       {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
                     </button>
+                  )}
+                  {!isMulti && release?.images && release.images.length > 1 && (
+                    <div
+                      data-testid="cover-image-picker"
+                      className="mt-1.5 flex items-center justify-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        data-testid="cover-prev"
+                        aria-label={tr('editor.coverPrev')}
+                        onClick={() => pickCoverImage(-1)}
+                        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                      >
+                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
+                          <path
+                            d="m7.5 2.5-3.5 3.5 3.5 3.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        data-testid="cover-image-count"
+                        className="text-[11px] tabular-nums text-fg-dim"
+                      >
+                        {(() => {
+                          const pos = release.images.findIndex((im) => im.uri === item.coverUrl) + 1
+                          return `${pos > 0 ? pos : '–'}/${release.images.length}`
+                        })()}
+                      </span>
+                      <button
+                        type="button"
+                        data-testid="cover-next"
+                        aria-label={tr('editor.coverNext')}
+                        onClick={() => pickCoverImage(1)}
+                        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                      >
+                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
+                          <path
+                            d="m4.5 2.5 3.5 3.5-3.5 3.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   )}
                   {displayCover && coverDims && (
                     <p
