@@ -737,15 +737,22 @@ export function Editor({
                     </div>
                   )}
                   {displayCover && coverDims && (
-                    <p
+                    <div
                       data-testid="cover-resolution"
-                      className={`mt-1.5 text-center text-[11px] tabular-nums ${
-                        isLowResCover(coverDims.w, coverDims.h) ? 'text-warn' : 'text-fg-dim'
-                      }`}
+                      className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px]"
                     >
-                      {coverDims.w} × {coverDims.h} px
-                      {isLowResCover(coverDims.w, coverDims.h) && ` · ${tr('editor.coverLowRes')}`}
-                    </p>
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          isLowResCover(coverDims.w, coverDims.h) ? 'bg-warn' : 'bg-good'
+                        }`}
+                      />
+                      <span className="tabular-nums text-fg-dim">
+                        {coverDims.w} × {coverDims.h} px
+                      </span>
+                      {isLowResCover(coverDims.w, coverDims.h) && (
+                        <span className="text-warn">{tr('editor.coverLowRes')}</span>
+                      )}
+                    </div>
                   )}
                 </div>
 
