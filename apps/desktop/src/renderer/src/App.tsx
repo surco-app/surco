@@ -134,6 +134,8 @@ export default function App(): React.JSX.Element {
   const discogsPrefetched = useRef<Set<string>>(new Set())
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
+  // Set by the Cancel button to break the convert-all loop between tracks.
+  const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. Null means "untouched" — fall back to the Settings
@@ -498,12 +500,16 @@ export default function App(): React.JSX.Element {
   async function processAll(formatOverride?: OutputFormat): Promise<void> {
     if (batching) return
     const ids = eligibleForBatch(tracks)
+    cancelBatchRef.current = false
     setBatching(true)
     setBatchSummary(null)
     setBatchProgress({ done: 0, total: ids.length })
     const results: BatchOutcome[] = []
     try {
       for (const id of ids) {
+        // Cancel stops the loop before the next track; the one already converting
+        // in the main process can't be aborted, so it finishes and is counted.
+        if (cancelBatchRef.current) break
         results.push(await processOne(id, formatOverride))
         setBatchProgress({ done: results.length, total: ids.length })
       }
@@ -761,6 +767,18 @@ export default function App(): React.JSX.Element {
                     total: batchProgress.total,
                   })
                 : `${tr('header.convertAll')} (${eligibleCount})`}
+            </button>
+          )}
+          {batching && (
+            <button
+              type="button"
+              data-testid="cancel-convert-all"
+              onClick={() => {
+                cancelBatchRef.current = true
+              }}
+              className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('common.cancel')}
             </button>
           )}
           <button
