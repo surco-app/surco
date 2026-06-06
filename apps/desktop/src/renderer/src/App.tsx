@@ -662,6 +662,12 @@ export default function App(): React.JSX.Element {
   settingsOpenRef.current = showSettings
   const helpOpenRef = useRef(false)
   helpOpenRef.current = showHelp
+  // Every modal/overlay that owns the screen must also swallow the global
+  // shortcuts, or space/j/k/⌘⏎ would act on the list behind the dialog (e.g.
+  // start a conversion behind the confirm prompt).
+  const overlayOpenRef = useRef(false)
+  overlayOpenRef.current =
+    showPalette || showSettings || showHelp || showFindReplace || !!confirm || showOnboarding
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -678,7 +684,7 @@ export default function App(): React.JSX.Element {
         } else if (helpOpenRef.current) setShowHelp(false)
         return
       }
-      if (paletteOpenRef.current || settingsOpenRef.current || helpOpenRef.current) return
+      if (overlayOpenRef.current) return
       const id = keyToCommandId(e, isTypingTarget(document.activeElement))
       if (id) {
         e.preventDefault()
