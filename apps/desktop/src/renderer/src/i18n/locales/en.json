@@ -90,6 +90,7 @@
     "coverLowRes": "low resolution",
     "coverPrev": "Previous image",
     "coverNext": "Next image",
+    "ratingStars": "{{count}} stars",
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",
@@ -147,7 +148,8 @@
     "remixArtist": "Remix artist",
     "publisher": "Label / Publisher",
     "catalogNumber": "Catalog No.",
-    "discogsReleaseId": "Discogs release ID"
+    "discogsReleaseId": "Discogs release ID",
+    "rating": "Rating"
   },
   "settings": {
     "tabs": {

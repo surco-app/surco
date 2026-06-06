@@ -383,6 +383,21 @@ describe('Editor output file name', () => {
   })
 })
 
+describe('Editor star rating', () => {
+  it('sets the rating to the clicked star', () => {
+    const { onChange } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('star-4'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '4' }) })
+  })
+
+  // Clicking the highest filled star again clears the rating, so a misclick is undoable.
+  it('clears the rating when the active star is clicked again', () => {
+    const { onChange } = renderEditor({ id: 'a', meta: { rating: '3' } })
+    fireEvent.click(screen.getByTestId('star-3'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '' }) })
+  })
+})
+
 describe('Editor required-field gate', () => {
   // The convert button used to fail late: it stayed enabled with empty required
   // fields and only surfaced the error after the click. Disabling it until the

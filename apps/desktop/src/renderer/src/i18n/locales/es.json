@@ -90,6 +90,7 @@
     "coverLowRes": "baja resolución",
     "coverPrev": "Imagen anterior",
     "coverNext": "Imagen siguiente",
+    "ratingStars": "{{count}} estrellas",
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",
@@ -147,7 +148,8 @@
     "remixArtist": "Artista remix",
     "publisher": "Sello / Editora",
     "catalogNumber": "Nº catálogo",
-    "discogsReleaseId": "ID de release de Discogs"
+    "discogsReleaseId": "ID de release de Discogs",
+    "rating": "Puntuación"
   },
   "settings": {
     "tabs": {

@@ -595,6 +595,15 @@ export function Editor({
           />
           {formOpen && (
             <div className="mt-4 @container">
+              {!isMulti && (
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="text-xs font-medium text-fg-dim">{tr('fields.rating')}</span>
+                  <StarRating
+                    value={item.meta.rating ?? ''}
+                    onChange={(v) => setField('rating', v)}
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
                 {/* Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release. */}
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
@@ -1202,6 +1211,51 @@ function SectionHeader({ title, open, onToggle, right }: SectionHeaderProps): Re
       </button>
       {right}
     </div>
+  )
+}
+
+// A 0–5 star picker. Clicking a star sets that many; clicking the highest filled
+// star again clears the rating (back to none). Value is the "1"–"5"/"" string the
+// rest of the app stores; the write path turns it into the Traktor POPM byte.
+function StarRating({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (v: string) => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const stars = Number(value) || 0
+  return (
+    <span data-testid="star-rating" className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = n <= stars
+        return (
+          <button
+            key={n}
+            type="button"
+            data-testid={`star-${n}`}
+            aria-pressed={filled}
+            aria-label={tr('editor.ratingStars', { count: n })}
+            onClick={() => onChange(n === stars ? '' : String(n))}
+            className={`press ${filled ? 'text-warn' : 'text-fg-faint hover:text-fg-dim'}`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill={filled ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="h-4 w-4"
+            >
+              <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.9 6.2 20.9l1.1-6.5L2.6 9.3l6.5-.9z" />
+            </svg>
+          </button>
+        )
+      })}
+    </span>
   )
 }
 
