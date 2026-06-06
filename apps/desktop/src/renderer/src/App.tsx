@@ -30,7 +30,7 @@ import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
-import { keyToCommandId, moveIndex } from './lib/keymap'
+import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
@@ -679,9 +679,7 @@ export default function App(): React.JSX.Element {
         return
       }
       if (paletteOpenRef.current || settingsOpenRef.current || helpOpenRef.current) return
-      const el = document.activeElement
-      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
-      const id = keyToCommandId(e, typing)
+      const id = keyToCommandId(e, isTypingTarget(document.activeElement))
       if (id) {
         e.preventDefault()
         runCommand(commandsRef.current, id)

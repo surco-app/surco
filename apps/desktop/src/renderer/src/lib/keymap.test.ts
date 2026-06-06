@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keyToCommandId, moveIndex } from './keymap'
+import { isTypingTarget, keyToCommandId, moveIndex } from './keymap'
 
 function key(
   k: string,
@@ -65,5 +65,28 @@ describe('keyToCommandId', () => {
 
   it('returns null for unmapped keys', () => {
     expect(keyToCommandId(key('x'), false)).toBeNull()
+  })
+})
+
+describe('isTypingTarget', () => {
+  it('treats text inputs and textareas as typing so their keystrokes are theirs', () => {
+    expect(isTypingTarget({ tagName: 'INPUT' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'TEXTAREA' })).toBe(true)
+  })
+
+  // The album-match dropdown is a <select>; without this its arrow keys would be
+  // hijacked by the global next/prev navigation and never reach the options.
+  it('treats a <select> as typing so its own arrow/space keys are not stolen', () => {
+    expect(isTypingTarget({ tagName: 'SELECT' })).toBe(true)
+  })
+
+  it('treats contenteditable elements as typing', () => {
+    expect(isTypingTarget({ tagName: 'DIV', isContentEditable: true })).toBe(true)
+  })
+
+  it('is not typing for plain elements or nothing focused', () => {
+    expect(isTypingTarget({ tagName: 'BUTTON' })).toBe(false)
+    expect(isTypingTarget({ tagName: 'DIV' })).toBe(false)
+    expect(isTypingTarget(null)).toBe(false)
   })
 })

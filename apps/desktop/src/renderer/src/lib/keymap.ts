@@ -11,6 +11,22 @@ interface KeyLike {
   shiftKey: boolean
 }
 
+// Whether the focused element owns the keystroke, so the global shortcuts keep
+// their hands off it. Beyond text fields this includes <select> (its own arrow
+// and space keys drive the options — e.g. the album-match dropdown) and any
+// contenteditable surface.
+export function isTypingTarget(
+  el: { tagName: string; isContentEditable?: boolean } | null,
+): boolean {
+  if (!el) return false
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable === true
+  )
+}
+
 export function keyToCommandId(e: KeyLike, typing: boolean): string | null {
   const mod = e.metaKey || e.ctrlKey
   if (mod && e.key === 'Enter') return e.shiftKey ? 'process-all' : 'process-current'
