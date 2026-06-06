@@ -315,11 +315,17 @@ export default function App(): React.JSX.Element {
   const removeTrack = useCallback((id: string): void => {
     setTracks((prev) => prev.filter((t) => t.id !== id))
     setSelection((s) => deselect(s, id))
+    // Drop the track's prefetch bookkeeping so the sets don't accumulate ids of
+    // tracks that no longer exist across a long session of add/remove.
+    spectrumInFlight.current.delete(id)
+    discogsPrefetched.current.delete(id)
   }, [])
 
   function clearTracks(): void {
     setTracks([])
     setSelection({ ids: [], anchor: null })
+    spectrumInFlight.current.clear()
+    discogsPrefetched.current.clear()
   }
 
   function selectAll(): void {
