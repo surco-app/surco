@@ -18,6 +18,7 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       outputFormat: 'wav',
       grouping: 'Bases, Cantaditas',
+      genre: 'Hard Dance, Techno',
       showSpectrum: false,
       requiredFields: ['title', 'artist', 'genre'],
     })
@@ -25,6 +26,7 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       outputFormat: 'wav',
       groupingPresets: ['Bases', 'Cantaditas'],
+      genrePresets: ['Hard Dance', 'Techno'],
       showSpectrum: false,
       requiredFields: ['title', 'artist', 'genre'],
       hasSeenOnboarding: true,
@@ -39,11 +41,13 @@ describe('buildOnboardingPatch', () => {
       discogsToken: '  tok  ',
       outputFormat: 'aiff',
       grouping: 'Bases, , Cantaditas,',
+      genre: 'Hard Dance, , Techno,',
       showSpectrum: true,
       requiredFields: ['title', 'artist'],
     })
     expect(patch.discogsToken).toBe('tok')
     expect(patch.groupingPresets).toEqual(['Bases', 'Cantaditas'])
+    expect(patch.genrePresets).toEqual(['Hard Dance', 'Techno'])
   })
 
   // Skipping (null choices) must still mark the wizard seen, but must NOT write

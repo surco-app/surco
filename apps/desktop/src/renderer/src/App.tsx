@@ -1066,6 +1066,7 @@ export default function App(): React.JSX.Element {
               addToAppleMusic={settings?.addToAppleMusic ?? false}
               filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
+              genrePresets={settings?.genrePresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
               requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
               showSpectrum={settings?.showSpectrum ?? true}

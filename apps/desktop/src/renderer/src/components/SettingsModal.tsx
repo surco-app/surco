@@ -121,6 +121,7 @@ export function SettingsModal({
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
+  const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
   const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
   const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
@@ -158,6 +159,10 @@ export function SettingsModal({
       .split(',')
       .map((g) => g.trim())
       .filter(Boolean)
+    const genrePresets = genre
+      .split(',')
+      .map((g) => g.trim())
+      .filter(Boolean)
     const max = parseInt(coverMaxSize, 10)
     onSave({
       theme,
@@ -167,6 +172,7 @@ export function SettingsModal({
       addToAppleMusic,
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
       groupingPresets,
+      genrePresets,
       trimWhitespace,
       zeroPadTrack,
       visibleFields,
@@ -423,6 +429,22 @@ export function SettingsModal({
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+
+              <label
+                htmlFor="settings-genre"
+                className="mb-1.5 block text-sm font-medium text-fg-muted"
+              >
+                {tr('settings.genre')}
+              </label>
+              <input
+                id="settings-genre"
+                data-testid="settings-genre"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="Hard Dance, Techno"
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
 
               <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
                 <label className="flex cursor-pointer items-center gap-3">

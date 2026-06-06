@@ -12,6 +12,7 @@ const defaults: Settings = {
   addToAppleMusic: process.platform === 'darwin',
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
+  genrePresets: [],
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: DEFAULT_FIELDS,

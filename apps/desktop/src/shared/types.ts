@@ -28,6 +28,7 @@ export interface Settings {
   addToAppleMusic: boolean
   filenameFormat: string
   groupingPresets: string[]
+  genrePresets: string[]
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]

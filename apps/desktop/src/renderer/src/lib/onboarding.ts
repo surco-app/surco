@@ -4,6 +4,7 @@ export interface OnboardingChoices {
   discogsToken: string
   outputFormat: OutputFormat
   grouping: string
+  genre: string
   showSpectrum: boolean
   requiredFields: string[]
 }
@@ -20,6 +21,10 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     discogsToken: choices.discogsToken.trim(),
     outputFormat: choices.outputFormat,
     groupingPresets: choices.grouping
+      .split(',')
+      .map((g) => g.trim())
+      .filter(Boolean),
+    genrePresets: choices.genre
       .split(',')
       .map((g) => g.trim())
       .filter(Boolean),

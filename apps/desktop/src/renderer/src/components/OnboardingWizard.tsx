@@ -6,7 +6,7 @@ import { buildOnboardingPatch } from '../lib/onboarding'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-const STEPS = ['welcome', 'token', 'format', 'grouping', 'required', 'spectrum'] as const
+const STEPS = ['welcome', 'token', 'format', 'grouping', 'genre', 'required', 'spectrum'] as const
 
 interface Props {
   settings: Settings
@@ -19,6 +19,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [token, setToken] = useState(settings.discogsToken)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
+  const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -32,6 +33,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         discogsToken: token,
         outputFormat,
         grouping,
+        genre,
         showSpectrum,
         requiredFields,
       }),
@@ -141,6 +143,21 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
               <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+            </>
+          )}
+
+          {STEPS[step] === 'genre' && (
+            <>
+              <h2 className="mb-1 text-lg font-semibold">{tr('settings.genre')}</h2>
+              <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.genreBody')}</p>
+              <input
+                data-testid="onboarding-genre"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="Hard Dance, Techno"
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
             </>
           )}
 

@@ -56,6 +56,7 @@ function renderEditor(
   props: {
     requiredFields?: string[]
     visibleFields?: string[]
+    genrePresets?: string[]
     showLoudness?: boolean
     normalize?: NormalizeConfig
   } = {},
@@ -79,6 +80,7 @@ function renderEditor(
       addToAppleMusic={false}
       filenameFormat="{artist} - {title}"
       groupingPresets={[]}
+      genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
       requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
@@ -291,6 +293,7 @@ function MultiHarness() {
         addToAppleMusic={false}
         filenameFormat="{artist} - {title}"
         groupingPresets={[]}
+        genrePresets={[]}
         visibleFields={['title', 'album']}
         requiredFields={[]}
         showSpectrum={false}
@@ -315,6 +318,21 @@ function MultiHarness() {
     </>
   )
 }
+
+describe('Editor genre presets', () => {
+  // A release that isn't on Discogs leaves the Genre field with no quick buttons,
+  // so the user's own default genres must surface as pills on their own and set
+  // the field when clicked — the whole point of asking for them in onboarding.
+  it('offers the user default genres as pills with no Discogs release', () => {
+    const { onChange } = renderEditor(
+      { id: 'a' },
+      'wav',
+      { visibleFields: ['genre'], genrePresets: ['Hard Dance', 'Techno'] },
+    )
+    fireEvent.click(screen.getByTestId('chip-Hard Dance'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ genre: 'Hard Dance' }) })
+  })
+})
 
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
@@ -358,6 +376,7 @@ describe('Editor multi-select', () => {
         addToAppleMusic={opts.music ?? false}
         filenameFormat="{artist} - {title}"
         groupingPresets={[]}
+        genrePresets={[]}
         visibleFields={['title', 'album']}
         requiredFields={[]}
         showSpectrum

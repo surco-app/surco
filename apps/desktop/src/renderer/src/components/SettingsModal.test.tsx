@@ -23,6 +23,7 @@ const settings: Settings = {
   addToAppleMusic: false,
   filenameFormat: '',
   groupingPresets: [],
+  genrePresets: [],
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],

@@ -16,7 +16,7 @@ import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
-import { genrePresets } from '../lib/genre'
+import { genrePresets as discogsGenres } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import {
   formatDb,
@@ -71,6 +71,7 @@ interface Props {
   addToAppleMusic: boolean
   filenameFormat: string
   groupingPresets: string[]
+  genrePresets: string[]
   visibleFields: string[]
   requiredFields: string[]
   showSpectrum: boolean
@@ -115,6 +116,7 @@ export function Editor({
   addToAppleMusic,
   filenameFormat,
   groupingPresets,
+  genrePresets,
   visibleFields,
   requiredFields,
   showSpectrum,
@@ -399,7 +401,13 @@ export function Editor({
   // convert: with the button disabled below, the click that produced the error is
   // no longer reachable, so the red field is what tells the user why.
   const incomplete = missingRequired(item.meta, requiredFields).length > 0
-  const genreChips = useMemo(() => genrePresets(release), [release])
+  // The user's default genres come first so they're always one click away even
+  // when a release isn't on Discogs; the release's own genres/styles follow,
+  // deduped so a shared name shows a single pill.
+  const genreChips = useMemo(
+    () => Array.from(new Set([...genrePresets, ...discogsGenres(release)])),
+    [genrePresets, release],
+  )
   // Highlight the tracklist entry whose title best matches the file's, so the
   // right mix is preselected the moment the release loads. Fuzzy, so the
   // filename's case and punctuation don't have to match Discogs exactly. The user
