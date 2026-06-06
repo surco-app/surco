@@ -41,9 +41,24 @@ jobs:
         shell: bash
         run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/apple-api-key.p8"
 
-      # electron-builder publishes a DRAFT GitHub release keyed by version, so both
-      # matrix jobs upload to the same draft. Review it on GitHub and hit publish
-      # once the .dmg, .zip and .exe are all attached.
+      # GitHub rejects creating a *published* release whose tag doesn't already exist
+      # in surco-releases (422 "must have a valid tag") — the git tag lives in this
+      # source repo, not there. Create it in the releases repo first, pointing at its
+      # default branch HEAD. Idempotent: the parallel matrix jobs race, so the losers'
+      # "already exists" is expected and ignored.
+      - name: Ensure the tag exists in the releases repo
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          branch=$(gh api repos/vigosan/surco-releases --jq .default_branch)
+          sha=$(gh api "repos/vigosan/surco-releases/git/refs/heads/$branch" --jq .object.sha)
+          gh api repos/vigosan/surco-releases/git/refs \
+            -f ref="refs/tags/$GITHUB_REF_NAME" -f sha="$sha" \
+            || echo "tag already exists in the releases repo"
+
+      # electron-builder publishes a LIVE release bound to its tag (releaseType:
+      # release), so the three parallel matrix jobs all upload to the same one.
       - name: Build & publish (macOS)
         if: runner.os == 'macOS'
         working-directory: apps/desktop
