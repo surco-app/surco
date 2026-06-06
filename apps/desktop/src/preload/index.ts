@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { ProcessProgress, SearchProviderId } from '../shared/types'
+import type { LoudnessResult, ProcessProgress, SearchProviderId } from '../shared/types'
 
 const api = {
   platform: process.platform,
@@ -25,7 +25,12 @@ const api = {
     ipcRenderer.invoke('cover:prepareDrag', src),
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
+  openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
+  trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),
+  copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
+  loudness: (path: string): Promise<LoudnessResult | null> =>
+    ipcRenderer.invoke('audio:loudness', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),

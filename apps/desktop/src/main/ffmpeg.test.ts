@@ -9,7 +9,9 @@ import {
   coverArgs,
   cutoffFilter,
   formatMatchesInput,
+  parseAstats,
   parseBands,
+  parseLoudness,
   planConversion,
   previewWavArgs,
   tagsFromProbe,
@@ -46,6 +48,27 @@ describe('convertArgs', () => {
     const args = convertArgs('/in.aiff', '/out.tmp.aiff', 'copy', meta)
     const i = args.indexOf('-c:a')
     expect(args[i + 1]).toBe('copy')
+  })
+
+  it('inserts the normalization audio filter before the codec, ahead of -c:a', () => {
+    const args = convertArgs(
+      '/in.wav',
+      '/o.aiff',
+      'pcm_s16be',
+      meta,
+      undefined,
+      undefined,
+      'volume=3dB',
+    )
+    const af = args.indexOf('-af')
+    expect(af).toBeGreaterThan(-1)
+    expect(args[af + 1]).toBe('volume=3dB')
+    // the filter must apply before the audio codec is selected
+    expect(af).toBeLessThan(args.indexOf('-c:a'))
+  })
+
+  it('omits -af entirely when no filter is given, leaving a plain conversion', () => {
+    expect(convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta)).not.toContain('-af')
   })
 
   it('maps the cover as attached art only when a cover is provided', () => {
@@ -115,6 +138,24 @@ describe('planConversion', () => {
     expect(await planConversion('/in.flac', 'flac', probe)).toEqual({ codec: 'copy', ext: '.flac' })
     // copying never needs to inspect the stream
     expect(probe).not.toHaveBeenCalled()
+  })
+
+  it('never stream-copies when normalizing, since the gain filter must re-encode the samples', async () => {
+    // Same-format sources that would normally copy must encode instead, or the
+    // normalization would be silently dropped (a stream copy emits the source bytes).
+    expect(await planConversion('/in.mp3', 'mp3', probe, true)).toEqual({
+      codec: 'libmp3lame',
+      bitrate: '320k',
+      ext: '.mp3',
+    })
+    expect(await planConversion('/in.aiff', 'aiff', probe, true)).toEqual({
+      codec: 'pcm_s24be',
+      ext: '.aiff',
+    })
+    expect(await planConversion('/in.flac', 'flac', probe, true)).toEqual({
+      codec: 'flac',
+      ext: '.flac',
+    })
   })
 
   it('transcodes an AAC/M4A source to every target instead of stream-copying', async () => {
@@ -272,6 +313,135 @@ describe('parseBands', () => {
       'lavfi.astats.Overall.RMS_level=-31.2',
     ].join('\n')
     expect(parseBands(out).get(9000)).toBe(-31.2)
+  })
+})
+
+describe('parseLoudness', () => {
+  // A real ebur128=peak=true summary, printed to stderr at info level. The "LRA
+  // low/high" lines and the per-section "Threshold" lines must not be mistaken for
+  // the integrated I, the LRA, or the true peak we actually surface.
+  const summary = [
+    '[Parsed_ebur128_0 @ 0x600000] Summary:',
+    '',
+    '  Integrated loudness:',
+    '    I:         -14.7 LUFS',
+    '    Threshold: -25.0 LUFS',
+    '',
+    '  Loudness range:',
+    '    LRA:         7.6 LU',
+    '    Threshold: -35.0 LUFS',
+    '    LRA low:   -19.2 LUFS',
+    '    LRA high:  -11.6 LUFS',
+    '',
+    '  True peak:',
+    '    Peak:       -0.5 dBFS',
+  ].join('\n')
+
+  it('reads integrated loudness, true peak and loudness range, ignoring the threshold and LRA low/high rows', () => {
+    expect(parseLoudness(summary)).toEqual({
+      integratedLufs: -14.7,
+      truePeakDb: -0.5,
+      lra: 7.6,
+    })
+  })
+
+  it('maps a -inf integrated loudness or true peak (digital silence) to -Infinity so the UI can show it rather than NaN', () => {
+    const silent = summary
+      .replace('I:         -14.7 LUFS', 'I:         -inf LUFS')
+      .replace('Peak:       -0.5 dBFS', 'Peak:       -inf dBFS')
+    expect(parseLoudness(silent)).toEqual({
+      integratedLufs: -Infinity,
+      truePeakDb: -Infinity,
+      lra: 7.6,
+    })
+  })
+
+  it('returns null when the summary is absent (e.g. ffmpeg failed before measuring) so the caller hides the readout instead of inventing zeros', () => {
+    expect(parseLoudness('ffmpeg version 7.0\nsome unrelated error\n')).toBeNull()
+  })
+
+  it('reads the final Summary, not the per-frame log: at t≈0 ebur128 prints the -70 LUFS gate floor and 0.0 LU, which would brand a loud track as near-silent', () => {
+    // Real shape: a stream of per-frame lines (each with its own I:/LRA:) followed
+    // by the Summary. The bug was matching the first I: (the gate floor) instead.
+    const withFrames = [
+      '[Parsed_ebur128_0 @ 0x1] t: 0.1  TARGET:-23 LUFS  M:-120.7 S:-120.7  I: -70.0 LUFS  LRA: 0.0 LU  TPK: 2.5 1.4 dBFS',
+      '[Parsed_ebur128_0 @ 0x1] t: 0.4  TARGET:-23 LUFS  M:  -5.2 S:-120.7  I:  -5.2 LUFS  LRA: 0.0 LU  TPK: 2.5 1.7 dBFS',
+      summary
+        .replace('I:         -14.7 LUFS', 'I:          -6.2 LUFS')
+        .replace('LRA:         7.6 LU', 'LRA:         5.2 LU')
+        .replace('Peak:       -0.5 dBFS', 'Peak:        2.5 dBFS'),
+    ].join('\n')
+    expect(parseLoudness(withFrames)).toEqual({
+      integratedLufs: -6.2,
+      truePeakDb: 2.5,
+      lra: 5.2,
+    })
+  })
+})
+
+describe('parseAstats', () => {
+  // astats prints a per-channel block then an Overall block; each line carries a
+  // "[Parsed_astats_0 @ ...] " prefix the parser must strip. Channel RMS gives the
+  // L/R balance; the Overall DC offset flags a biased capture.
+  const stats = [
+    '[Parsed_astats_0 @ 0x1] Channel: 1',
+    '[Parsed_astats_0 @ 0x1] DC offset: 0.000035',
+    '[Parsed_astats_0 @ 0x1] RMS level dB: -15.933728',
+    '[Parsed_astats_0 @ 0x1] Channel: 2',
+    '[Parsed_astats_0 @ 0x1] DC offset: 0.000026',
+    '[Parsed_astats_0 @ 0x1] RMS level dB: -16.689935',
+    '[Parsed_astats_0 @ 0x1] Overall',
+    '[Parsed_astats_0 @ 0x1] DC offset: 0.000040',
+    '[Parsed_astats_0 @ 0x1] Peak level dB: -0.154044',
+    '[Parsed_astats_0 @ 0x1] RMS level dB: -16.295393',
+    '[Parsed_astats_0 @ 0x1] Noise floor dB: -45.202488',
+  ].join('\n')
+
+  it('derives balance from per-channel RMS, and DC/crest/noise floor from the Overall block', () => {
+    const r = parseAstats(stats)
+    expect(r?.balanceDb).toBeCloseTo(0.756, 2)
+    expect(r?.dcOffset).toBeCloseTo(0.00004, 5)
+    // crest = Overall peak − Overall RMS = -0.154 − (-16.295)
+    expect(r?.crestDb).toBeCloseTo(16.141, 2)
+    expect(r?.noiseFloorDb).toBeCloseTo(-45.2, 1)
+  })
+
+  it('reports a null balance for mono, where there is no second channel to compare', () => {
+    const mono = [
+      '[Parsed_astats_0 @ 0x1] Channel: 1',
+      '[Parsed_astats_0 @ 0x1] DC offset: 0.001',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+      '[Parsed_astats_0 @ 0x1] Overall',
+      '[Parsed_astats_0 @ 0x1] DC offset: 0.001',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+    ].join('\n')
+    expect(parseAstats(mono)?.balanceDb).toBeNull()
+  })
+
+  it('takes the absolute DC offset, since a negative bias is just as wrong as a positive one', () => {
+    const negative = stats.replace('DC offset: 0.000040', 'DC offset: -0.030000')
+    expect(parseAstats(negative)?.dcOffset).toBeCloseTo(0.03, 4)
+  })
+
+  // The reported AIFF bug: a dead channel reads "-inf" and DC prints "nan", which
+  // used to surface as "−∞ dB" and "NaN%". Both must be dropped to null and hidden.
+  it('drops non-finite readings (a silent channel reading -inf, a nan DC offset) instead of showing −∞/NaN', () => {
+    const broken = [
+      '[Parsed_astats_0 @ 0x1] Channel: 1',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+      '[Parsed_astats_0 @ 0x1] Channel: 2',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -inf',
+      '[Parsed_astats_0 @ 0x1] Overall',
+      '[Parsed_astats_0 @ 0x1] DC offset: nan',
+      '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+    ].join('\n')
+    const r = parseAstats(broken)
+    expect(r?.balanceDb).toBeNull()
+    expect(r?.dcOffset).toBeNull()
+  })
+
+  it('returns null when no astats block is present so the caller hides the checks', () => {
+    expect(parseAstats('ffmpeg version 7.0\n')).toBeNull()
   })
 })
 

@@ -108,6 +108,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                 >
                   <option value="">{tr('match.unassigned')}</option>
                   {release.tracklist.map((track, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: the index is the option's value (used to index tracklist) on a static, non-reordered list
                     <option key={`${track.position}-${track.title}-${i}`} value={String(i)}>
                       {[track.position, track.title].filter(Boolean).join(' ')}
                       {track.duration ? ` (${track.duration})` : ''}

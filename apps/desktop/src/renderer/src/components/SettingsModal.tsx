@@ -6,6 +6,7 @@ import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
+import { NormalizeControls } from './NormalizeControls'
 import { useFocusTrap } from './useFocusTrap'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
@@ -47,14 +48,22 @@ interface Props {
   initialTab?: Tab
 }
 
-type Tab = 'general' | 'naming' | 'artwork' | 'fields' | 'stats'
+type Tab = 'general' | 'conversion' | 'naming' | 'artwork' | 'fields' | 'stats'
 
 // Ordered to mirror Meta's preferences flow: broad app settings, then what the
 // editor shows, then artwork, then editing behavior. Stats trails last as the one
 // read-only, informational tab.
-const TABS: Tab[] = ['general', 'fields', 'artwork', 'naming', 'stats']
+// Ordered by workflow: app setup, then output, then per-track editing prefs, then results.
+const TABS: Tab[] = ['general', 'conversion', 'naming', 'fields', 'artwork', 'stats']
 
 const TAB_ICONS: Record<Tab, React.JSX.Element> = {
+  conversion: (
+    <>
+      <path d="M12 3v11" />
+      <path d="m7 10 5 5 5-5" />
+      <line x1="4" y1="20" x2="20" y2="20" />
+    </>
+  ),
   general: (
     <>
       <line x1="4" y1="8" x2="20" y2="8" />
@@ -119,6 +128,8 @@ export function SettingsModal({
   const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  const [showLoudness, setShowLoudness] = useState(settings.showLoudness)
+  const [normalize, setNormalize] = useState(settings.normalize)
   const formatRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
@@ -163,6 +174,8 @@ export function SettingsModal({
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
       coverSquare,
       showSpectrum,
+      showLoudness,
+      normalize,
     })
     onClose()
   }
@@ -268,8 +281,12 @@ export function SettingsModal({
                   discogs.com/settings/developers
                 </a>
               </p>
+            </>
+          )}
 
-              <p className="mb-3 border-t border-[var(--color-line)] pt-5 text-xs font-medium uppercase tracking-wide text-fg-dim">
+          {tab === 'conversion' && (
+            <>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
                 {tr('settings.outputSection')}
               </p>
 
@@ -343,6 +360,12 @@ export function SettingsModal({
                   )}
                 </>
               )}
+
+              <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
+                {tr('normalize.title')}
+              </p>
+              <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
+              <NormalizeControls value={normalize} onChange={setNormalize} />
             </>
           )}
 
@@ -434,6 +457,19 @@ export function SettingsModal({
                     <span className="text-sm">{tr('settings.showSpectrum')}</span>
                   </label>
                   <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+                </div>
+                <div>
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      data-testid="settings-show-loudness"
+                      type="checkbox"
+                      checked={showLoudness}
+                      onChange={(e) => setShowLoudness(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr('settings.showLoudness')}</span>
+                  </label>
+                  <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showLoudnessHint')}</p>
                 </div>
               </div>
             </>

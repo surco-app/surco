@@ -58,47 +58,62 @@
       {
         "kick": "import",
         "title": "Import and listen",
-        "body": "Drop your WAV, FLAC, AIFF and MP3 — or M4A, AAC, Opus and Ogg — even whole folders. Surco reads the tags and cover art they already carry, and you can preview any track before converting."
+        "body": "Drop any audio — even whole folders. Surco reads the tags and cover they carry, and previews any track before converting."
       },
       {
         "kick": "discogs",
         "title": "Tag from Discogs",
-        "body": "Search the release and Surco picks the right track from the filename, then pulls artist, album, year, genre, label, catalog number and cover art in one click — no setup. Add the DJ fields too: BPM, key, remixer and grouping."
+        "body": "Search the release and Surco fills artist, album, year, genre, label, catalog and cover — plus BPM, key, remixer and grouping — in one click."
       },
       {
         "kick": "albums",
         "title": "Match a whole record",
-        "body": "Got the full release? Select every track and Surco maps each file to its place on the Discogs tracklist — matching by length, so even identically-named rips land right. Fix any it's unsure about, then tag them all in one go."
+        "body": "Select a full release and Surco maps each file to the Discogs tracklist by length — even identically-named rips — then tags them all at once."
       },
       {
         "kick": "cleanup",
         "title": "Clean a messy batch",
-        "body": "Fill tags straight from the file names in one click, find-and-replace across every tag (plain text or regex), and edit the fields a whole selection shares — album, year, genre — all at once."
+        "body": "Fill tags from filenames, find-and-replace across every tag (text or regex), and bulk-edit the fields a selection shares."
       },
       {
         "kick": "convert",
         "title": "Convert to any format",
-        "body": "AIFF, WAV, FLAC or MP3, any to any — lossless or a lighter MP3. Switch format anytime without re-importing. If it's already in the target format, Surco copies it untouched: same bits, instantly. One track or the whole crate at once."
+        "body": "AIFF, WAV, FLAC or MP3, any to any. Already in that format? Copied untouched, instantly — one track or the whole crate."
+      },
+      {
+        "kick": "normalize",
+        "title": "Even out the loudness",
+        "body": "Optionally match every track to one loudness or peak — streaming, club or custom. Off by default; keeps Traktor cues on MP3 and AIFF."
       },
       {
         "kick": "traktor",
         "title": "Keeps your Traktor cues",
-        "body": "Re-export to the same format (MP3 or AIFF) and Surco copies the audio untouched, keeping your Traktor cue points and beatgrid intact."
+        "body": "Re-export to the same format and Surco copies the audio untouched — your cue points and beatgrid stay intact."
       },
       {
         "kick": "quality",
         "title": "No fakes, no duplicates",
-        "body": "Check the spectrum at a glance to catch low-quality MP3s posing as lossless. And as you tag, Surco warns you if the track is already in your Apple Music library."
+        "body": "Read the spectrum to catch MP3s faking lossless, and get a heads-up if a track is already in your Apple Music library."
+      },
+      {
+        "kick": "analyze",
+        "title": "Read every level",
+        "body": "A colour-coded readout per track — LUFS, true peak, dynamics, balance, DC offset and noise floor — green, amber or red at a glance."
       },
       {
         "kick": "artwork",
         "title": "Cover art, sorted",
-        "body": "Pull artwork from the Discogs release, or drop your own — or click to browse — onto one track or a whole selection at once. Surco resizes and squares it, and writes it inside the file so it shows everywhere."
+        "body": "Pull cover art from Discogs or drop your own onto one track or a whole selection. Surco squares, resizes and embeds it."
       },
       {
-        "kick": "organize",
-        "title": "Organize it your way",
-        "body": "Tags and artwork are written inside the file, so they show in Apple Music and rekordbox. Send tracks to Apple Music, show only the fields you use, mark the required ones, and name files with {artist} - {title} templates — into {albumArtist}/{album} subfolders if you like."
+        "kick": "library",
+        "title": "Shows up everywhere",
+        "body": "Tags and artwork are written inside the file, so they show in Apple Music and rekordbox — and send tracks straight to Apple Music."
+      },
+      {
+        "kick": "naming",
+        "title": "Name and sort files",
+        "body": "Name files with {artist} - {title} templates into {albumArtist}/{album} subfolders, and show only the fields you use."
       }
     ]
   },
@@ -199,6 +214,7 @@
         "Every format — AIFF, WAV, FLAC, MP3",
         "Discogs tagging and full-album match",
         "Spectrum analysis to catch fakes",
+        "Loudness readout and normalization",
         "Send straight to Apple Music",
         "Automatic updates"
       ]

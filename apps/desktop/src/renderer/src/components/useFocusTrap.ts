@@ -13,7 +13,8 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
     const node = ref.current
     if (!node) return
     const previouslyFocused = document.activeElement as HTMLElement | null
-    const focusables = (): HTMLElement[] => Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
+    const focusables = (): HTMLElement[] =>
+      Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
 
     // Pull focus in if it isn't already inside, so the first Tab/Shift+Tab has a
     // known anchor. Components that focus their own input (e.g. the palette) keep

@@ -1,4 +1,10 @@
-import type { OutputFormat, ProcessStage, SpectrumResult, TrackMetadata } from '../../shared/types'
+import type {
+  LoudnessResult,
+  OutputFormat,
+  ProcessStage,
+  SpectrumResult,
+  TrackMetadata,
+} from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
@@ -14,6 +20,9 @@ export interface TrackItem {
   coverUrl?: string
   coverPath?: string
   spectrum?: SpectrumResult
+  // EBU R128 loudness, measured once per input alongside the spectrum and shown
+  // read-only. null when the measurement failed; undefined before it has run.
+  loudness?: LoudnessResult | null
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage
@@ -30,4 +39,7 @@ export interface TrackItem {
   // stays 'done' while it adds. 'error' carries the reason in musicError.
   musicStatus?: 'adding' | 'added' | 'error'
   musicError?: string
+  // Set once the user trashes the source file after a real conversion, so the
+  // "delete original" action disappears — the converted output and this row stay.
+  originalTrashed?: boolean
 }

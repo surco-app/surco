@@ -3,8 +3,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
-import type { OutputFormat, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -53,17 +53,24 @@ function item(
 function renderEditor(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
   outputFormat: OutputFormat = 'wav',
-  props: { requiredFields?: string[]; visibleFields?: string[] } = {},
+  props: {
+    requiredFields?: string[]
+    visibleFields?: string[]
+    showLoudness?: boolean
+    normalize?: NormalizeConfig
+  } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
+  onTrashOriginal: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
   const onFormatChange = vi.fn()
+  const onTrashOriginal = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -75,16 +82,19 @@ function renderEditor(
       visibleFields={props.visibleFields ?? []}
       requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
+      showLoudness={props.showLoudness ?? false}
+      normalize={props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
       onFormatChange={onFormatChange}
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
+      onTrashOriginal={onTrashOriginal}
       onOpenSettings={vi.fn()}
     />,
   )
-  return { onProcess, onChange, onDeriveTags, onFormatChange }
+  return { onProcess, onChange, onDeriveTags, onFormatChange, onTrashOriginal }
 }
 
 describe('Editor cover picker', () => {
@@ -142,6 +152,148 @@ describe('Editor derive from filename', () => {
   })
 })
 
+describe('Editor convert button normalization note', () => {
+  // Normalization must be visible at the moment of converting, not just buried in a
+  // folded section — otherwise the user can't tell the export will alter loudness.
+  it('flags the active normalization above the convert button', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    })
+    const note = screen.getByTestId('convert-normalize-note')
+    expect(note).toHaveTextContent('-14')
+  })
+
+  it('shows no note when normalization is off', () => {
+    renderEditor({ id: 'a' }, 'wav')
+    expect(screen.queryByTestId('convert-normalize-note')).toBeNull()
+  })
+})
+
+describe('Editor loudness pills', () => {
+  // The whole point of the colour is that a non-technical user reads the verdict
+  // without understanding LUFS/dBTP/LU: a near-silent, clipping, flat track is
+  // wrong on all three counts and must read red across the board.
+  it('grades a near-silent, clipping, flat track as bad on every pill', () => {
+    renderEditor(
+      {
+        id: 'a',
+        loudness: {
+          integratedLufs: -70,
+          truePeakDb: 2.5,
+          lra: 0,
+          channelBalanceDb: 6,
+          dcOffset: 0.03,
+          crestDb: 5,
+          noiseFloorDb: -20,
+        },
+      },
+      'wav',
+      { showLoudness: true },
+    )
+    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-crest')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-balance')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-dc')).toHaveAttribute('data-grade', 'bad')
+    expect(screen.getByTestId('loudness-pill-noise')).toHaveAttribute('data-grade', 'bad')
+  })
+
+  it('grades a healthy track green on every pill', () => {
+    renderEditor(
+      {
+        id: 'a',
+        loudness: {
+          integratedLufs: -12,
+          truePeakDb: -1.5,
+          lra: 8,
+          channelBalanceDb: 0.5,
+          dcOffset: 0.0001,
+          crestDb: 16,
+          noiseFloorDb: -55,
+        },
+      },
+      'wav',
+      { showLoudness: true },
+    )
+    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-crest')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-balance')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-dc')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-noise')).toHaveAttribute('data-grade', 'good')
+  })
+
+  it('drops the balance pill for a mono rip, where there is no left/right to compare', () => {
+    renderEditor(
+      {
+        id: 'a',
+        loudness: {
+          integratedLufs: -12,
+          truePeakDb: -1.5,
+          lra: 8,
+          channelBalanceDb: null,
+          dcOffset: 0.0001,
+          crestDb: 16,
+          noiseFloorDb: -55,
+        },
+      },
+      'wav',
+      { showLoudness: true },
+    )
+    expect(screen.queryByTestId('loudness-pill-balance')).toBeNull()
+    expect(screen.getByTestId('loudness-pill-dc')).toBeInTheDocument()
+  })
+
+  // The figures need explaining once, but must not clutter the panel on every edit,
+  // so the explanation stays hidden until the user asks for it.
+  it('reveals the explanation only when the help button is pressed', () => {
+    renderEditor(
+      {
+        id: 'a',
+        loudness: {
+          integratedLufs: -12,
+          truePeakDb: -1.5,
+          lra: 8,
+          channelBalanceDb: 0.5,
+          dcOffset: 0.0001,
+          crestDb: 16,
+          noiseFloorDb: -55,
+        },
+      },
+      'wav',
+      { showLoudness: true },
+    )
+    expect(screen.queryByTestId('loudness-help')).toBeNull()
+    fireEvent.click(screen.getByTestId('loudness-help-toggle'))
+    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
+  })
+
+  it('closes the help modal on Escape, the expected way to dismiss a dialog', () => {
+    renderEditor(
+      {
+        id: 'a',
+        loudness: {
+          integratedLufs: -12,
+          truePeakDb: -1.5,
+          lra: 8,
+          channelBalanceDb: 0.5,
+          dcOffset: 0.0001,
+          crestDb: 16,
+          noiseFloorDb: -55,
+        },
+      },
+      'wav',
+      { showLoudness: true },
+    )
+    fireEvent.click(screen.getByTestId('loudness-help-toggle'))
+    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(screen.queryByTestId('loudness-help')).toBeNull()
+  })
+})
+
 // Mirrors App's real wiring (tracks in state, updateTracksMeta over the selection) so a
 // reported bug — editing one shared field, then another, only saving the first — can be
 // reproduced or ruled out as a logic problem rather than a focus/UI one.
@@ -170,6 +322,8 @@ function MultiHarness() {
         visibleFields={['title', 'album']}
         requiredFields={[]}
         showSpectrum={false}
+        showLoudness={false}
+        normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
         searchInputRef={createRef<HTMLInputElement>()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
@@ -202,7 +356,8 @@ describe('Editor multi-select sequential edits', () => {
 
 describe('Editor multi-select', () => {
   function renderMulti(opts: { done?: boolean; platform?: string; music?: boolean } = {}) {
-    if (opts.platform) (window as unknown as { api: { platform: string } }).api.platform = opts.platform
+    if (opts.platform)
+      (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
     const onProcessAll = vi.fn()
     const onAddAllToAppleMusic = vi.fn()
@@ -234,6 +389,8 @@ describe('Editor multi-select', () => {
         visibleFields={['title', 'album']}
         requiredFields={[]}
         showSpectrum
+        showLoudness={false}
+        normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
         searchInputRef={createRef<HTMLInputElement>()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
@@ -363,11 +520,56 @@ describe('Editor export control', () => {
   })
 })
 
+describe('Editor delete original', () => {
+  // A real conversion leaves the source file untouched beside the converted copy,
+  // so once a track is done the user can reclaim the disk by trashing the original
+  // — the converted output (and its row) stays.
+  it('offers to delete the original once a real conversion is done', () => {
+    const { onTrashOriginal } = renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/music/a.wav',
+      outputPath: '/out/a.aiff',
+    })
+    fireEvent.click(screen.getByTestId('delete-original'))
+    expect(onTrashOriginal).toHaveBeenCalledTimes(1)
+  })
+
+  // An in-place export rewrites and renames the original, so inputPath now points at
+  // the output: there is no separate original to delete, and offering it would trash
+  // the only copy the user has.
+  it('hides the delete-original button for an in-place export', () => {
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/out/a.wav',
+      outputPath: '/out/a.wav',
+    })
+    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+  })
+
+  // After the original is trashed the button has nothing left to act on, so it goes
+  // away rather than letting a second click error on a missing file.
+  it('hides the delete-original button once the original is trashed', () => {
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/music/a.wav',
+      outputPath: '/out/a.aiff',
+      originalTrashed: true,
+    })
+    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+  })
+})
+
 describe('Editor output file name', () => {
   // Users complained that loading a file and converting renamed it from metadata.
   // The field must default to the source file's own name, leaving any rename opt-in.
   it('defaults the output name to the original file name, not the metadata', () => {
-    renderEditor({ id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } }, 'wav')
+    renderEditor(
+      { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
+      'wav',
+    )
     expect(screen.getByTestId('output-name')).toHaveValue('original track 01')
   })
 

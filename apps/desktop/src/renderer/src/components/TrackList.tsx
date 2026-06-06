@@ -1,11 +1,12 @@
 import type React from 'react'
-import { memo } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import type { TrackItem, TrackStatus } from '../types'
+import { TrackContextMenu } from './TrackContextMenu'
 
 interface Props {
   tracks: TrackItem[]
@@ -15,7 +16,11 @@ interface Props {
   onSelect: (id: string, mods: ClickMods) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
+  onSearch: (id: string) => void
+  onTrash: (track: TrackItem) => void
 }
+
+type MenuState = { track: TrackItem; x: number; y: number }
 
 const statusColor: Record<TrackStatus, string> = {
   idle: 'bg-fg-faint',
@@ -32,6 +37,7 @@ interface RowProps {
   onSelect: (id: string, mods: ClickMods) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
+  onOpenMenu: (track: TrackItem, x: number, y: number) => void
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -45,6 +51,7 @@ const TrackRow = memo(function TrackRow({
   onSelect,
   onRemove,
   onPrefetch,
+  onOpenMenu,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Every selected row gets the soft fill; only the primary (the one in the editor)
@@ -54,8 +61,15 @@ const TrackRow = memo(function TrackRow({
       <button
         type="button"
         data-testid="track-row"
-        aria-selected={selected}
+        aria-pressed={selected}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          // Make the right-clicked row the editor's track unless it's already part of
+          // the current selection, so the menu's single-track actions are unambiguous.
+          if (!selected) onSelect(t.id, {})
+          onOpenMenu(t, e.clientX, e.clientY)
+        }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
         className={`relative flex w-full items-center gap-3 rounded-lg py-2.5 pr-10 pl-3 text-left transition-colors ${
@@ -125,7 +139,15 @@ export function TrackList({
   onSelect,
   onRemove,
   onPrefetch,
+  onSearch,
+  onTrash,
 }: Props): React.JSX.Element {
+  const [menu, setMenu] = useState<MenuState | null>(null)
+  // Stable so the memoized rows don't all re-render when the menu opens/closes.
+  const openMenu = useCallback(
+    (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
+    [],
+  )
   return (
     <ul className="flex flex-col gap-1 p-2">
       {tracks.map((t) => (
@@ -138,8 +160,20 @@ export function TrackList({
           onSelect={onSelect}
           onRemove={onRemove}
           onPrefetch={onPrefetch}
+          onOpenMenu={openMenu}
         />
       ))}
+      {menu && (
+        <TrackContextMenu
+          track={menu.track}
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+          onSearch={onSearch}
+          onRemove={onRemove}
+          onTrash={onTrash}
+        />
+      )}
     </ul>
   )
 }

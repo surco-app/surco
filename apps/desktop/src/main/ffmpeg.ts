@@ -4,10 +4,19 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag, ratingTagToStars } from '../shared/rating'
-import type { OutputFormat, TrackMetadata } from '../shared/types'
+import type { LoudnessResult, NormalizeConfig, OutputFormat, TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
-import { preservesCuesInPlace, writeTags } from './tags'
+import {
+  loudnormArgs,
+  loudnormFilter,
+  parseLoudnorm,
+  parseMaxVolume,
+  peakGainDb,
+  volumedetectArgs,
+  volumeFilter,
+} from './normalize'
+import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
 import { tmpName } from './tmp'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -213,6 +222,7 @@ export function convertArgs(
   meta: TrackMetadata,
   coverPath?: string,
   bitrate?: string,
+  audioFilter?: string,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -224,6 +234,8 @@ export function convertArgs(
   args.push('-map', '0:a')
   if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
 
+  // Normalization filter (loudnorm / volume), applied to the audio before encoding.
+  if (audioFilter) args.push('-af', audioFilter)
   args.push('-c:a', codec)
   if (bitrate) args.push('-b:a', bitrate)
   args.push('-write_id3v2', '1', '-id3v2_version', '3')
@@ -249,27 +261,52 @@ export interface ConversionPlan {
 // otherwise it encodes — lossless to bit-depth-preserving PCM for AIFF/WAV
 // (big-endian for AIFF, little-endian for WAV), or to a fixed 320 kbps for MP3.
 // The bit depth only matters for the lossless targets, so MP3 skips the probe.
+// `normalize` forces a re-encode: applying a loudness/peak filter changes the
+// samples, so a stream copy (which would emit the untouched source) is never
+// valid — every matching-format shortcut is gated on it being off.
 export async function planConversion(
   input: string,
   format: OutputFormat,
   probe: (input: string) => Promise<ProbeResult>,
+  normalize = false,
 ): Promise<ConversionPlan> {
   if (format === 'mp3') {
-    if (MP3_INPUT.test(input)) return { codec: 'copy', ext: '.mp3' }
+    if (MP3_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.mp3' }
     return { codec: 'libmp3lame', bitrate: MP3_BITRATE, ext: '.mp3' }
   }
   if (format === 'wav') {
-    if (WAV_INPUT.test(input)) return { codec: 'copy', ext: '.wav' }
+    if (WAV_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.wav' }
     return { codec: pcmCodec(await probe(input), 'le'), ext: '.wav' }
   }
   if (format === 'flac') {
     // FLAC is losslessly compressed and the encoder reads the source bit depth
     // itself, so there is no PCM width or endianness to choose — no probe needed.
-    if (FLAC_INPUT.test(input)) return { codec: 'copy', ext: '.flac' }
+    if (FLAC_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.flac' }
     return { codec: 'flac', ext: '.flac' }
   }
-  if (AIFF_INPUT.test(input)) return { codec: 'copy', ext: '.aiff' }
+  if (AIFF_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.aiff' }
   return { codec: pcmCodec(await probe(input), 'be'), ext: '.aiff' }
+}
+
+// Resolves the audio filter for the chosen normalization, running the required
+// measurement pass first: a two-pass linear loudnorm for the loudness target, or
+// volumedetect + a constant gain for peak. Returns null (no filter) for mode
+// 'none' and whenever the measurement can't be parsed, so a measurement failure
+// degrades to a plain conversion instead of aborting it.
+export async function normalizeFilter(input: string, cfg: NormalizeConfig): Promise<string | null> {
+  if (cfg.mode === 'none') return null
+  if (cfg.mode === 'peak') {
+    const { stderr } = await run(ffmpegPath, volumedetectArgs(input), {
+      maxBuffer: 1024 * 1024 * 16,
+    })
+    const max = parseMaxVolume(stderr)
+    return max === null ? null : volumeFilter(peakGainDb(cfg.peakDb, max))
+  }
+  const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg), {
+    maxBuffer: 1024 * 1024 * 16,
+  })
+  const measured = parseLoudnorm(stderr)
+  return measured ? loudnormFilter(cfg, measured) : null
 }
 
 export async function convertAudio(
@@ -278,12 +315,20 @@ export async function convertAudio(
   format: OutputFormat,
   meta: TrackMetadata,
   coverPath?: string,
+  normalize?: NormalizeConfig,
 ): Promise<void> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
   // output path) overwrites it atomically instead of failing with ffmpeg's
   // "Output same as Input" error.
-  const { codec, bitrate, ext } = await planConversion(input, format, probeAudio)
+  // Re-encoding through ffmpeg drops Traktor's GEOB cues regardless, so the gain
+  // filter only ever rides the encode path — planConversion is told to skip the
+  // stream-copy shortcuts when normalizing.
+  const normalizing = normalize !== undefined && normalize.mode !== 'none'
+  const audioFilter = normalizing
+    ? ((await normalizeFilter(input, normalize)) ?? undefined)
+    : undefined
+  const { codec, bitrate, ext } = await planConversion(input, format, probeAudio, normalizing)
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
   try {
@@ -294,7 +339,7 @@ export async function convertAudio(
       await copyFile(input, tmp)
       writeTags(tmp, meta, coverPath)
     } else {
-      await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate), {
+      await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter), {
         maxBuffer: 1024 * 1024 * 32,
       })
       if (ext === '.wav') {
@@ -309,6 +354,10 @@ export async function convertAudio(
         // avoid a second tag pass on every conversion.
         writeTags(tmp, meta, coverPath)
       }
+      // Normalizing forces this re-encode, which drops Traktor's GEOB cue/beatgrid
+      // frame. A constant gain never moves the cues in time, so carry the frame over
+      // from the source — but only for the ID3 containers it round-trips through.
+      if (normalizing && preservesCuesInPlace(ext)) copyCueFrames(input, tmp)
     }
     await rename(tmp, output)
   } catch (e) {
@@ -463,6 +512,124 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
   const rms = parseBands(stdout)
   const bands = freqs.map((freqHz) => ({ freqHz, rmsDb: rms.get(freqHz) ?? -Infinity }))
   return detectCutoff(bands, nyquist)
+}
+
+// Reads the three figures we surface from ebur128's end-of-run Summary block.
+// ebur128 also prints a per-frame log line (each carrying its own "I:" and
+// "LRA:") for the whole track, and at t≈0 those read the -70 LUFS gate floor and
+// 0.0 LU — so we must parse the final "Summary:" block, not the first match, or a
+// perfectly loud track reports as near-silent. The "I:" / "Peak:" anchors are
+// unique to the integrated-loudness and true-peak rows; "LRA:" matches the
+// range value but not "LRA low/high:" (no colon right after "LRA"). A -inf
+// reading (silence) becomes -Infinity so the UI shows "−∞" instead of NaN.
+export function parseLoudness(
+  stderr: string,
+): Pick<LoudnessResult, 'integratedLufs' | 'truePeakDb' | 'lra'> | null {
+  const start = stderr.lastIndexOf('Summary:')
+  if (start === -1) return null
+  const summary = stderr.slice(start)
+  const num = (m: RegExpMatchArray | null): number | null =>
+    m ? (m[1] === '-inf' ? -Infinity : Number(m[1])) : null
+  const integratedLufs = num(summary.match(/\bI:\s*(-inf|-?[\d.]+)\s*LUFS/))
+  const truePeakDb = num(summary.match(/\bPeak:\s*(-inf|-?[\d.]+)\s*dBFS/))
+  const lra = num(summary.match(/\bLRA:\s*(-inf|-?[\d.]+)\s*LU\b/))
+  if (integratedLufs === null || truePeakDb === null || lra === null) return null
+  return { integratedLufs, truePeakDb, lra }
+}
+
+export interface AstatsResult {
+  balanceDb: number | null
+  dcOffset: number | null
+  crestDb: number | null
+  noiseFloorDb: number | null
+}
+
+// Pulls the channel checks out of astats' summary. Every line carries a
+// "[Parsed_astats_0 @ …]" prefix; sections are introduced by "Channel: N" and
+// "Overall". Per-channel RMS gives the L/R balance; the Overall block gives DC
+// offset, crest (peak − RMS) and the noise floor. ffmpeg can print "nan"/"-inf"
+// (e.g. a silent channel), so every value is finite-checked and a non-finite one
+// is dropped — the caller then hides that pill instead of showing "−∞"/"NaN".
+// Returns null only when there is no astats block at all.
+export function parseAstats(stderr: string): AstatsResult | null {
+  const finite = (s: string): number | null => {
+    const n = Number(s)
+    return Number.isFinite(n) ? n : null
+  }
+  const channelRms: number[] = []
+  const overall: { peak?: number; rms?: number; dc?: number; noise?: number } = {}
+  let section: 'channel' | 'overall' | null = null
+  let seen = false
+  for (const raw of stderr.split('\n')) {
+    const line = raw.replace(/^\[Parsed_astats[^\]]*\]\s*/, '').trim()
+    if (/^Channel:\s*\d+/.test(line)) {
+      section = 'channel'
+      seen = true
+    } else if (line === 'Overall') {
+      section = 'overall'
+      seen = true
+    } else if (section === 'channel') {
+      const m = line.match(/^RMS level dB:\s*(\S+)/)
+      if (m) {
+        const v = finite(m[1])
+        if (v !== null) channelRms.push(v)
+      }
+    } else if (section === 'overall') {
+      const peak = line.match(/^Peak level dB:\s*(\S+)/)
+      if (peak) overall.peak = finite(peak[1]) ?? undefined
+      const rms = line.match(/^RMS level dB:\s*(\S+)/)
+      if (rms) overall.rms = finite(rms[1]) ?? undefined
+      const dc = line.match(/^DC offset:\s*(\S+)/)
+      if (dc) {
+        const v = finite(dc[1])
+        if (v !== null) overall.dc = Math.abs(v)
+      }
+      const noise = line.match(/^Noise floor dB:\s*(\S+)/)
+      if (noise) overall.noise = finite(noise[1]) ?? undefined
+    }
+  }
+  if (!seen) return null
+  return {
+    // Both channels must be finite; a dropped (silent) channel leaves length < 2.
+    balanceDb: channelRms.length >= 2 ? Math.abs(channelRms[0] - channelRms[1]) : null,
+    dcOffset: overall.dc ?? null,
+    crestDb:
+      overall.peak !== undefined && overall.rms !== undefined ? overall.peak - overall.rms : null,
+    noiseFloorDb: overall.noise ?? null,
+  }
+}
+
+// Measures EBU R128 loudness and the per-channel checks (balance, DC offset) in a
+// single decode by chaining astats and ebur128 — both print their summary to
+// stderr at info level, so — unlike the other ffmpeg helpers — we must not pass
+// `-loglevel error`, or there would be nothing to parse; we mute only the periodic
+// progress lines with `-nostats`.
+export async function measureLoudness(input: string): Promise<LoudnessResult | null> {
+  const { stderr } = await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-nostats',
+      '-i',
+      input,
+      '-af',
+      'astats=metadata=1:reset=0,ebur128=peak=true',
+      '-f',
+      'null',
+      '-',
+    ],
+    { maxBuffer: 1024 * 1024 * 16 },
+  )
+  const loud = parseLoudness(stderr)
+  if (!loud) return null
+  const stats = parseAstats(stderr)
+  return {
+    ...loud,
+    channelBalanceDb: stats?.balanceDb ?? null,
+    dcOffset: stats?.dcOffset ?? null,
+    crestDb: stats?.crestDb ?? null,
+    noiseFloorDb: stats?.noiseFloorDb ?? null,
+  }
 }
 
 interface SpectrumDeps {

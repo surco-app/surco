@@ -1,12 +1,24 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// TrackContextMenu reads window.api at render; install a stub before importing it.
+const api = { platform: 'darwin', reveal: vi.fn(), openFile: vi.fn(), copyText: vi.fn() }
+vi.hoisted(() => {
+  ;(globalThis.window as unknown as { api: unknown }).api = {}
+})
+
 import '../i18n'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { TrackList } from './TrackList'
 
+beforeEach(() => {
+  Object.assign(window, { api })
+  api.platform = 'darwin'
+  vi.clearAllMocks()
+})
 afterEach(cleanup)
 
 // A full TrackItem so the list renders exactly as it does in the app; callers
@@ -49,6 +61,8 @@ function renderList(
   const onSelect = vi.fn()
   const onRemove = vi.fn()
   const onPrefetch = vi.fn()
+  const onSearch = vi.fn()
+  const onTrash = vi.fn()
   render(
     <TrackList
       tracks={tracks}
@@ -58,9 +72,11 @@ function renderList(
       onSelect={onSelect}
       onRemove={onRemove}
       onPrefetch={onPrefetch}
+      onSearch={onSearch}
+      onTrash={onTrash}
     />,
   )
-  return { onSelect, onRemove, onPrefetch }
+  return { onSelect, onRemove, onPrefetch, onSearch, onTrash }
 }
 
 describe('TrackList', () => {
@@ -134,9 +150,9 @@ describe('TrackList', () => {
   it('marks every selected row, including ones that are not the primary', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
     const rows = screen.getAllByTestId('track-row')
-    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
-    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
-    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[2]).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {
@@ -159,5 +175,71 @@ describe('TrackList', () => {
     const { onPrefetch } = renderList([track({ id: 'a' })])
     fireEvent.focus(screen.getByTestId('track-row'))
     expect(onPrefetch).toHaveBeenCalledWith('a')
+  })
+})
+
+describe('TrackList context menu', () => {
+  it('opens on right click', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-menu')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    expect(screen.getByTestId('track-menu')).toBeInTheDocument()
+  })
+
+  // Right-clicking an unselected row makes it the active track so the single-track
+  // menu acts on what the user clicked, not the previous selection.
+  it('selects an unselected row before opening', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+    expect(onSelect).toHaveBeenCalledWith('b', {})
+  })
+
+  it('reveals, opens and copies the path of the original file', () => {
+    renderList([track({ id: 'a' })])
+    const row = () => screen.getByTestId('track-row')
+    fireEvent.contextMenu(row())
+    fireEvent.click(screen.getByTestId('track-menu-reveal'))
+    fireEvent.contextMenu(row())
+    fireEvent.click(screen.getByTestId('track-menu-open'))
+    fireEvent.contextMenu(row())
+    fireEvent.click(screen.getByTestId('track-menu-copy'))
+    expect(api.reveal).toHaveBeenCalledWith('/music/a.wav')
+    expect(api.openFile).toHaveBeenCalledWith('/music/a.wav')
+    expect(api.copyText).toHaveBeenCalledWith('/music/a.wav')
+  })
+
+  it('delegates search and trash to the list owner', () => {
+    const t = track({ id: 'a' })
+    const { onSearch, onTrash } = renderList([t])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-search'))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    expect(onSearch).toHaveBeenCalledWith('a')
+    expect(onTrash).toHaveBeenCalledWith(t)
+  })
+
+  it('closes after an action runs', () => {
+    renderList([track({ id: 'a' })])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-reveal'))
+    expect(screen.queryByTestId('track-menu')).toBeNull()
+  })
+
+  it('closes on backdrop click without acting', () => {
+    renderList([track({ id: 'a' })])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-backdrop'))
+    expect(screen.queryByTestId('track-menu')).toBeNull()
+    expect(api.reveal).not.toHaveBeenCalled()
+  })
+
+  // The OS file manager and recycle location are named differently per platform.
+  it('uses Windows labels on win32', () => {
+    api.platform = 'win32'
+    renderList([track({ id: 'a' })])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    expect(screen.getByTestId('track-menu-reveal')).toHaveTextContent('Show in File Explorer')
+    expect(screen.getByTestId('track-menu-trash')).toHaveTextContent('Move to Recycle Bin')
   })
 })

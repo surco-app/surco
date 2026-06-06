@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   Id3v2FrameClassType,
+  Id3v2FrameIdentifiers,
   type Id3v2Tag,
   Id3v2UserTextInformationFrame,
   File as TagFile,
@@ -10,7 +11,16 @@ import {
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { preservesCuesInPlace, writeTags } from './tags'
+import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
+
+// Strips the GEOB cue frame from a file, to model the output of a normalizing
+// ffmpeg re-encode (which drops it) before copyCueFrames puts it back.
+function stripCues(file: string): void {
+  const f = TagFile.createFromPath(file)
+  ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).removeFrames(Id3v2FrameIdentifiers.GEOB)
+  f.save()
+  f.dispose()
+}
 
 const meta: TrackMetadata = {
   title: 'Till I Come',
@@ -163,5 +173,36 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     expect(f.tag.comment).toBeFalsy()
     f.dispose()
+  })
+})
+
+describe('copyCueFrames', () => {
+  // Normalizing re-encodes the audio (ffmpeg drops the GEOB), but a constant gain
+  // never moves the cues in time — so re-injecting the source's frame restores them
+  // exactly. This is what keeps Traktor cues through a normalizing convert.
+  it('re-injects the source GEOB cue frame into an output that lost it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const source = buildSeed(dir)
+    const out = join(dir, 'normalized.mp3')
+    writeFileSync(out, readFileSync(source))
+    stripCues(out)
+    expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
+
+    copyCueFrames(source, out)
+
+    const bytes = readFileSync(out)
+    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+    expect(bytes.includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(true)
+  })
+
+  it('leaves the output untouched when the source carries no cue frame', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const source = buildSeed(dir)
+    stripCues(source)
+    const out = join(dir, 'normalized.mp3')
+    writeFileSync(out, readFileSync(source))
+
+    expect(() => copyCueFrames(source, out)).not.toThrow()
+    expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
   })
 })

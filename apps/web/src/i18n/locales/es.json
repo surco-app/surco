@@ -58,47 +58,62 @@
       {
         "kick": "importa",
         "title": "Importa y escucha",
-        "body": "Suelta tus WAV, FLAC, AIFF y MP3 — o M4A, AAC, Opus y Ogg — incluso carpetas enteras. Surco lee los tags y la carátula que ya traen, y puedes escuchar cualquier pista antes de convertir."
+        "body": "Suelta cualquier audio — hasta carpetas enteras. Surco lee los tags y la carátula que traen, y escuchas cualquier pista antes de convertir."
       },
       {
         "kick": "discogs",
         "title": "Etiqueta desde Discogs",
-        "body": "Busca el disco y Surco elige el tema correcto según el nombre del archivo, luego trae artista, álbum, año, género, sello, nº de catálogo y carátula con un clic — sin configurar nada. Y añades los campos de DJ: BPM, tonalidad, remixer y grouping."
+        "body": "Busca el disco y Surco rellena artista, álbum, año, género, sello, catálogo y carátula — más BPM, tonalidad, remixer y grouping — de un clic."
       },
       {
         "kick": "álbum",
         "title": "Empareja un disco entero",
-        "body": "¿Tienes el release completo? Selecciona todas las pistas y Surco asigna cada archivo a su lugar en el tracklist de Discogs — emparejando por duración, así hasta los rips con el mismo nombre caen en su sitio. Corrige las dudosas y etiqueta todas de una vez."
+        "body": "Selecciona el release completo y Surco asigna cada archivo al tracklist de Discogs por duración — hasta los rips con el mismo nombre — y los etiqueta a la vez."
       },
       {
         "kick": "limpieza",
         "title": "Ordena un lote desordenado",
-        "body": "Rellena los tags desde el nombre del archivo de un clic, busca y reemplaza en todos los tags (texto o regex), y edita los campos que comparte una selección — álbum, año, género — todos a la vez."
+        "body": "Rellena los tags desde el nombre, busca y reemplaza en todos los tags (texto o regex) y edita en bloque los campos que comparte una selección."
       },
       {
         "kick": "convierte",
         "title": "Convierte a cualquier formato",
-        "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera — lossless o un MP3 más ligero. Cambia de formato cuando quieras sin reimportar. Si ya está en el formato de destino, lo copia tal cual: mismos bits, al instante. Una pista o la cola entera de una pasada."
+        "body": "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera. ¿Ya está en ese formato? Lo copia tal cual, al instante — una pista o la cola entera."
+      },
+      {
+        "kick": "normaliza",
+        "title": "Iguala el volumen",
+        "body": "Si quieres, lleva cada pista al mismo loudness o pico — streaming, club o personalizado. Desactivado por defecto; conserva los cue de Traktor en MP3 y AIFF."
       },
       {
         "kick": "traktor",
         "title": "Respeta tus CUE de Traktor",
-        "body": "Al reexportar al mismo formato (MP3 o AIFF), Surco copia el audio tal cual y conserva intactos tus cue points y beatgrid de Traktor."
+        "body": "Al reexportar al mismo formato, Surco copia el audio tal cual — tus cue points y beatgrid quedan intactos."
       },
       {
         "kick": "calidad",
         "title": "Sin fakes ni duplicados",
-        "body": "Comprueba el espectro de un vistazo y caza los MP3 de baja calidad disfrazados de lossless. Y mientras etiquetas, Surco avisa si la pista ya está en tu biblioteca de Apple Music."
+        "body": "Mira el espectro para cazar MP3 disfrazados de lossless, y te avisa si la pista ya está en tu biblioteca de Apple Music."
+      },
+      {
+        "kick": "analiza",
+        "title": "Lee cada nivel",
+        "body": "Una lectura con colores por pista — LUFS, pico real, dinámica, balance, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo."
       },
       {
         "kick": "carátula",
         "title": "La carátula, lista",
-        "body": "Trae la carátula del release de Discogs, o suelta la tuya — o haz clic para buscarla — en una pista o en toda una selección a la vez. Surco la redimensiona y cuadra, y la escribe dentro del archivo para que se vea en todas partes."
+        "body": "Trae la carátula de Discogs o suelta la tuya en una pista o en toda una selección. Surco la cuadra, redimensiona e incrusta."
       },
       {
-        "kick": "organiza",
-        "title": "Organiza a tu manera",
-        "body": "Los tags y la carátula se escriben dentro del archivo, así que se ven en Apple Music y rekordbox. Envía pistas a Apple Music, muestra solo los campos que usas, marca los obligatorios y nombra los archivos con plantillas {artist} - {title} — en subcarpetas {albumArtist}/{album} si quieres."
+        "kick": "biblioteca",
+        "title": "Se ve en todas partes",
+        "body": "Los tags y la carátula se escriben dentro del archivo, así que se ven en Apple Music y rekordbox — y envías pistas directas a Apple Music."
+      },
+      {
+        "kick": "nombres",
+        "title": "Nombra y ordena",
+        "body": "Nombra los archivos con plantillas {artist} - {title} en subcarpetas {albumArtist}/{album}, mostrando solo los campos que usas."
       }
     ]
   },
@@ -199,6 +214,7 @@
         "Todos los formatos — AIFF, WAV, FLAC, MP3",
         "Etiquetado Discogs y emparejado de disco entero",
         "Análisis de espectro para cazar fakes",
+        "Lectura de loudness y normalización",
         "Envío directo a Apple Music",
         "Actualizaciones automáticas"
       ]

@@ -49,11 +49,7 @@ describe('useFocusTrap', () => {
       const [open, setOpen] = useState(false)
       return (
         <>
-          <button
-            type="button"
-            data-testid="trigger"
-            onClick={() => setOpen((v) => !v)}
-          >
+          <button type="button" data-testid="trigger" onClick={() => setOpen((v) => !v)}>
             toggle
           </button>
           {open && <CloseOnMount />}

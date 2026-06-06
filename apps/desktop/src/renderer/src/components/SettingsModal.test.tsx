@@ -30,6 +30,8 @@ const settings: Settings = {
   coverMaxSize: 1200,
   coverSquare: false,
   showSpectrum: true,
+  showLoudness: true,
+  normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   hasSeenOnboarding: true,
   conversionCount: 0,
 }

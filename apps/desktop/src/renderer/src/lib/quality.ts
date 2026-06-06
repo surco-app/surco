@@ -18,3 +18,81 @@ export function isLowResCover(width: number, height: number): boolean {
   const smaller = Math.min(width, height)
   return smaller > 0 && smaller < MIN_COVER_PX
 }
+
+// One-decimal label for a loudness figure (LUFS / dBTP / LU). A silent track
+// measures -Infinity, which would print "-Infinity"; show the ∞ glyph instead.
+export function formatDb(value: number): string {
+  if (!Number.isFinite(value)) return '-∞'
+  return value.toFixed(1)
+}
+
+// Three-step quality grade behind the loudness pills' colour (green/amber/red),
+// so the verdict is readable without understanding the number. Tuned for a
+// DJ/streaming library rather than mastering, and deliberately lenient in the
+// middle band. -Infinity (silence) falls out correctly: no peak is good, no
+// loudness is bad.
+export type Grade = 'good' | 'warn' | 'bad'
+
+// A true peak over 0 dBFS clips once the file is re-encoded to a lossy codec or
+// played through a DAC; the last dB of headroom is where inter-sample peaks bite.
+export function gradeTruePeak(dbtp: number): Grade {
+  if (dbtp > 0) return 'bad'
+  if (dbtp > -1) return 'warn'
+  return 'good'
+}
+
+// Integrated loudness: a wide "loud enough but not crushed" band is good, the
+// edges are a touch quiet/hot, and the extremes mean a broken-quiet rip or a
+// brick-walled master.
+export function gradeLufs(lufs: number): Grade {
+  if (lufs < -20 || lufs > -6) return 'bad'
+  if (lufs < -16 || lufs > -8) return 'warn'
+  return 'good'
+}
+
+// Loudness range is the soft-to-loud spread; a near-zero range is the
+// loudness-war signature of heavy compression.
+export function gradeLra(lra: number): Grade {
+  if (lra < 3) return 'bad'
+  if (lra < 6) return 'warn'
+  return 'good'
+}
+
+// Left/right level difference in dB: a tightly matched pair is fine, a few dB is
+// a noticeable lean, more is a clear imbalance (often a misaligned cartridge).
+export function gradeBalance(diffDb: number): Grade {
+  if (diffDb >= 3) return 'bad'
+  if (diffDb >= 1) return 'warn'
+  return 'good'
+}
+
+// DC offset as a fraction of full scale: digital rips are usually near zero, so
+// anything past ~1% points to a biased capture worth fixing.
+export function gradeDcOffset(offset: number): Grade {
+  if (offset >= 0.01) return 'bad'
+  if (offset >= 0.002) return 'warn'
+  return 'good'
+}
+
+// Crest factor in dB (peak − RMS): the transient punch. A healthy track keeps
+// some headroom over its average level; a squashed, brick-walled master collapses
+// toward the RMS.
+export function gradeCrest(crestDb: number): Grade {
+  if (crestDb < 8) return 'bad'
+  if (crestDb < 12) return 'warn'
+  return 'good'
+}
+
+// Noise floor in dB, lower (more negative) is cleaner. Graded leniently — a
+// continuously loud track has little quiet to measure, so only a clearly audible
+// floor is flagged.
+export function gradeNoiseFloor(floorDb: number): Grade {
+  if (floorDb > -30) return 'bad'
+  if (floorDb > -45) return 'warn'
+  return 'good'
+}
+
+// Renders a 0..1 fraction as a one-decimal percentage for the DC offset pill.
+export function formatPercent(fraction: number): string {
+  return `${(fraction * 100).toFixed(1)}%`
+}

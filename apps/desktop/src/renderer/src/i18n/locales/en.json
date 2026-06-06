@@ -72,6 +72,16 @@
       "cover": "Preparing artwork…",
       "converting": "Converting to {{format}}…",
       "appleMusic": "Adding to Apple Music…"
+    },
+    "context": {
+      "reveal": "Reveal in Finder",
+      "revealWin": "Show in File Explorer",
+      "open": "Open file",
+      "copyPath": "Copy file path",
+      "search": "Search Discogs",
+      "remove": "Remove from list",
+      "trash": "Move to Trash",
+      "trashWin": "Move to Recycle Bin"
     }
   },
   "editor": {
@@ -97,6 +107,33 @@
     "analyzing": "Analyzing spectrum…",
     "sectionForm": "Metadata",
     "qualityCaption": "Reaches ~{{cutoff}} of {{nyquist}} (Nyquist). A sharp cutoff below it reveals an MP3 re-encoded as WAV.",
+    "loudnessLufsLabel": "Loudness",
+    "loudnessPeakLabel": "Peak",
+    "loudnessRangeLabel": "Range",
+    "loudnessLufsHint": "Integrated loudness (LUFS) — how loud the track sounds overall",
+    "loudnessPeakHint": "True peak (dBTP) — the loudest instant of the signal",
+    "loudnessRangeHint": "Loudness range (LU) — the spread between quiet and loud parts",
+    "loudnessGroupLoudness": "Loudness",
+    "loudnessGroupSignal": "Signal",
+    "loudnessCrestLabel": "Dynamics",
+    "loudnessCrestHint": "Crest factor (dB) — the punch between peaks and the average level",
+    "loudnessBalanceLabel": "Balance",
+    "loudnessBalanceHint": "Channel balance (dB) — the level difference between left and right",
+    "loudnessDcLabel": "DC offset",
+    "loudnessDcHint": "DC offset — a constant bias that shifts the waveform off centre",
+    "loudnessNoiseLabel": "Noise floor",
+    "loudnessNoiseHint": "Noise floor (dB) — the background level; lower is cleaner",
+    "loudnessHelpTitle": "What do these mean?",
+    "loudnessLufsHelp": "(LUFS) — how loud the track sounds overall. Too low and it plays quieter than your other tracks; too high and it sounds crushed.",
+    "loudnessPeakHelp": "(dBTP) — the loudest instant of the signal. Above 0 it can distort (clip) when converted or played back.",
+    "loudnessRangeHelp": "(LU) — how much the quiet and loud parts differ. A very low range means heavy compression (the loudness war).",
+    "loudnessCrestHelp": "(dB) — the gap between the peaks and the average level, i.e. the punch. A low figure means the track is squashed flat.",
+    "loudnessBalanceHelp": "(L/R) — the level difference between the left and right channels. A few dB means one side is weaker, often a misaligned cartridge on the rip.",
+    "loudnessDcHelp": "— a constant bias that shifts the whole waveform off centre. It wastes headroom and can add clicks; near 0% is healthy.",
+    "loudnessNoiseHelp": "(dB) — the level of the background hiss/noise. The lower (more negative), the cleaner the capture.",
+    "loudnessGradeGood": "Good",
+    "loudnessGradeWarn": "So-so",
+    "loudnessGradeBad": "Check it",
     "spectrumAlt": "Spectrogram",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "output": "Output:",
@@ -113,6 +150,7 @@
     "updateMusic": "Update + Apple Music",
     "processing": "Processing…",
     "doneReveal": "✓ Done — show file",
+    "deleteOriginal": "Delete original file",
     "appleMusicAdd": "Add to Apple Music",
     "appleMusicAdding": "Adding to Apple Music…",
     "appleMusicAdded": "✓ In your Apple Music library",
@@ -151,9 +189,31 @@
     "discogsReleaseId": "Discogs release ID",
     "rating": "Rating"
   },
+  "normalize": {
+    "title": "Loudness normalization",
+    "hint": "Off by default. Match every track to a target loudness or peak. It re-encodes the audio, so it drops Traktor cue/beatgrid markers.",
+    "mode": {
+      "none": "None",
+      "loudness": "Loudness",
+      "peak": "Peak"
+    },
+    "preset": {
+      "streaming": "Streaming −14",
+      "club": "Club −9",
+      "broadcast": "Broadcast −23",
+      "safe": "−1 dBFS",
+      "hot": "−0.1 dBFS",
+      "custom": "Custom"
+    },
+    "targetLufs": "Target (LUFS)",
+    "truePeak": "True peak (dBTP)",
+    "peakDb": "Peak (dBFS)",
+    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC."
+  },
   "settings": {
     "tabs": {
       "general": "General",
+      "conversion": "Conversion",
       "naming": "Editing",
       "artwork": "Artwork",
       "fields": "Fields",
@@ -201,6 +261,8 @@
     "coverHint": "Applied on embed: shrinks large artwork and, if enabled, center-crops it to square.",
     "showSpectrum": "Show audio spectrum",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
+    "showLoudness": "Show loudness (LUFS)",
+    "showLoudnessHint": "Measures integrated loudness, true peak and loudness range (EBU R128) while editing a track. When off, the measurement is skipped entirely.",
     "shown": "Shown",
     "hidden": "Hidden",
     "hide": "Hide",
@@ -281,6 +343,14 @@
     "clearTitle": "Clear the list?",
     "clearMessage_one": "This removes the only track from the list. The file on disk is not deleted.",
     "clearMessage_other": "This removes all {{count}} tracks from the list. The files on disk are not deleted.",
-    "clearConfirm": "Clear"
+    "clearConfirm": "Clear",
+    "trashTitle": "Move file to Trash?",
+    "trashTitleWin": "Move file to the Recycle Bin?",
+    "trashMessage": "This moves “{{name}}” to the Trash and removes it from the list. You can restore it from the Trash.",
+    "trashMessageWin": "This moves “{{name}}” to the Recycle Bin and removes it from the list. You can restore it from there.",
+    "trashConfirm": "Move to Trash",
+    "trashConfirmWin": "Move to Recycle Bin",
+    "deleteOriginalMessage": "This moves the original “{{name}}” to the Trash. Your converted file stays in place. You can restore the original from the Trash.",
+    "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there."
   }
 }
