@@ -17,7 +17,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets } from '../lib/genre'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { renderOutputName } from '../lib/outputName'
-import { formatKHz, qualityVerdict } from '../lib/quality'
+import { formatKHz, isLowResCover, qualityVerdict } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -120,6 +120,10 @@ export function Editor({
   // default rather than inheriting the last track's pick.
   const [format, setFormat] = useState(outputFormat)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
+  // Natural pixel size of the shown artwork, read on load, so the user can tell
+  // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
+  // and reset whenever the cover changes.
+  const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -140,6 +144,10 @@ export function Editor({
       cancelled = true
     }
   }, [item.coverUrl, item.coverPath])
+
+  // Clear the stale size when the artwork changes; onLoad fills it in again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
+  useEffect(() => setCoverDims(null), [displayCover])
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -614,6 +622,12 @@ export function Editor({
                         src={displayCover}
                         alt={tr('editor.coverAlt')}
                         draggable={!isMulti}
+                        onLoad={(e) =>
+                          setCoverDims({
+                            w: e.currentTarget.naturalWidth,
+                            h: e.currentTarget.naturalHeight,
+                          })
+                        }
                         onDragStart={(e) => {
                           if (isMulti || !coverDragPath.current) return
                           e.preventDefault()
@@ -662,6 +676,17 @@ export function Editor({
                     >
                       {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
                     </button>
+                  )}
+                  {displayCover && coverDims && (
+                    <p
+                      data-testid="cover-resolution"
+                      className={`mt-1.5 text-center text-[11px] tabular-nums ${
+                        isLowResCover(coverDims.w, coverDims.h) ? 'text-warn' : 'text-fg-dim'
+                      }`}
+                    >
+                      {coverDims.w} × {coverDims.h} px
+                      {isLowResCover(coverDims.w, coverDims.h) && ` · ${tr('editor.coverLowRes')}`}
+                    </p>
                   )}
                 </div>
 

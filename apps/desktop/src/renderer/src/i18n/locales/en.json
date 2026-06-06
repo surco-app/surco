@@ -87,6 +87,7 @@
     "coverAlt": "Artwork",
     "coverTitle": "Drag an image to use it as the artwork",
     "coverExport": "Export artwork",
+    "coverLowRes": "low resolution",
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",

@@ -87,6 +87,7 @@
     "coverAlt": "Carátula",
     "coverTitle": "Arrastra una imagen para usarla como carátula",
     "coverExport": "Exportar carátula",
+    "coverLowRes": "baja resolución",
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",
