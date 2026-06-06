@@ -1,17 +1,19 @@
 import type React from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SpectrumResult } from '../../../shared/types'
 import { formatKHz } from '../lib/quality'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
 
 export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const nyquist = spectrum.sampleRateHz / 2
   return (
     <div className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]">
       <img
         data-testid="spectrogram"
         src={spectrum.image}
-        alt="Espectrograma"
+        alt={tr('editor.spectrumAlt')}
         className="block h-60 w-full object-fill"
       />
       {nyquist > 0 &&
@@ -30,7 +32,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
           className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/70"
         >
           <span className="absolute right-1 top-0.5 rounded bg-black/65 px-1 text-[10px] font-medium text-white">
-            corte ~{formatKHz(spectrum.cutoffHz)}
+            {tr('editor.spectrumCutoff', { cutoff: formatKHz(spectrum.cutoffHz) })}
           </span>
         </div>
       )}

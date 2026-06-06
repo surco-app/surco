@@ -92,6 +92,8 @@
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",
+    "spectrumAlt": "Espectrograma",
+    "spectrumCutoff": "corte ~{{cutoff}}",
     "output": "Salida:",
     "outputName": "Nombre del archivo",
     "outputNameHint": "Se genera con el artista y el título. Cambia el patrón en Ajustes → Edición.",
