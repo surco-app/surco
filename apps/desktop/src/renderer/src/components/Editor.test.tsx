@@ -112,6 +112,34 @@ describe('Editor cover picker', () => {
     fireEvent.change(screen.getByTestId('cover-input'), { target: { files: [file] } })
     expect(onChange).toHaveBeenCalledWith({ coverUrl: 'blob:cover', coverPath: '/img/c.png' })
   })
+
+  // Showing the pixel size lets the user judge whether the Discogs cover is sharp
+  // enough; a small one (e.g. 255px) is flagged so they know to find a better one.
+  it('shows the artwork resolution and flags a low-res cover', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve(null)
+    renderEditor({ id: 'a', coverUrl: 'blob:cover' })
+    const img = screen.getByTestId('cover-preview')
+    Object.defineProperty(img, 'naturalWidth', { value: 255, configurable: true })
+    Object.defineProperty(img, 'naturalHeight', { value: 255, configurable: true })
+    fireEvent.load(img)
+    const label = screen.getByTestId('cover-resolution')
+    expect(label).toHaveTextContent('255 × 255 px')
+    expect(label).toHaveTextContent(i18n.t('editor.coverLowRes'))
+  })
+
+  it('does not flag a high-res cover', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve(null)
+    renderEditor({ id: 'a', coverUrl: 'blob:cover' })
+    const img = screen.getByTestId('cover-preview')
+    Object.defineProperty(img, 'naturalWidth', { value: 600, configurable: true })
+    Object.defineProperty(img, 'naturalHeight', { value: 600, configurable: true })
+    fireEvent.load(img)
+    const label = screen.getByTestId('cover-resolution')
+    expect(label).toHaveTextContent('600 × 600 px')
+    expect(label).not.toHaveTextContent(i18n.t('editor.coverLowRes'))
+  })
 })
 
 describe('Editor derive from filename', () => {
@@ -573,6 +601,21 @@ describe('Editor output file name', () => {
     )
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
     expect(onChange).toHaveBeenCalledWith({ outputName: 'AR - TI' })
+  })
+})
+
+describe('Editor star rating', () => {
+  it('sets the rating to the clicked star', () => {
+    const { onChange } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('star-4'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '4' }) })
+  })
+
+  // Clicking the highest filled star again clears the rating, so a misclick is undoable.
+  it('clears the rating when the active star is clicked again', () => {
+    const { onChange } = renderEditor({ id: 'a', meta: { rating: '3' } })
+    fireEvent.click(screen.getByTestId('star-3'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '' }) })
   })
 })
 

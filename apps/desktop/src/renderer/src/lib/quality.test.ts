@@ -10,6 +10,8 @@ import {
   gradeNoiseFloor,
   gradeLufs,
   gradeTruePeak,
+  isLowResCover,
+  MIN_COVER_PX,
   qualityVerdict,
 } from './quality'
 
@@ -37,6 +39,25 @@ describe('formatKHz', () => {
   it('renders hertz as a one-decimal kHz label for the UI', () => {
     expect(formatKHz(19961)).toBe('20.0 kHz')
     expect(formatKHz(16000)).toBe('16.0 kHz')
+  })
+})
+
+describe('isLowResCover', () => {
+  // Discogs usually serves 600px art, but some releases only have a small thumb;
+  // the smaller side is what limits how sharp the embedded cover can look.
+  it('flags artwork whose smaller side is below the minimum', () => {
+    expect(isLowResCover(255, 255)).toBe(true)
+    expect(isLowResCover(600, 300)).toBe(true)
+  })
+
+  it('passes artwork at or above the minimum on both sides', () => {
+    expect(isLowResCover(MIN_COVER_PX, MIN_COVER_PX)).toBe(false)
+    expect(isLowResCover(600, 600)).toBe(false)
+  })
+
+  // Dimensions aren't known until the image loads; treat 0 as "unknown", not low.
+  it('does not flag unknown (zero) dimensions', () => {
+    expect(isLowResCover(0, 0)).toBe(false)
   })
 })
 

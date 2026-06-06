@@ -64,7 +64,7 @@ export function findReplaceTrack(
 ): Partial<TrackMetadata> {
   const out: Partial<TrackMetadata> = {}
   for (const field of FIND_REPLACE_FIELDS) {
-    const next = replaceInValue(meta[field], find, replace, opts)
+    const next = replaceInValue(meta[field] ?? '', find, replace, opts)
     if (next !== meta[field]) out[field] = next
   }
   return out

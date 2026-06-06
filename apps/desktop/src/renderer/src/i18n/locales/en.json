@@ -97,6 +97,10 @@
     "coverAlt": "Artwork",
     "coverTitle": "Drag an image to use it as the artwork",
     "coverExport": "Export artwork",
+    "coverLowRes": "low resolution",
+    "coverPrev": "Previous image",
+    "coverNext": "Next image",
+    "ratingStars": "{{count}} stars",
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",
@@ -181,7 +185,9 @@
     "key": "Key",
     "remixArtist": "Remix artist",
     "publisher": "Label / Publisher",
-    "catalogNumber": "Catalog No."
+    "catalogNumber": "Catalog No.",
+    "discogsReleaseId": "Discogs release ID",
+    "rating": "Rating"
   },
   "normalize": {
     "title": "Loudness normalization",

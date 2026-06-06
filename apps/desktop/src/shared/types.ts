@@ -60,6 +60,12 @@ export interface TrackMetadata {
   publisher: string
   catalogNumber: string
   remixArtist: string
+  // The Discogs release this track was tagged from. Optional because most tracks
+  // never carry it; auto-filled when a release is applied and writable as a tag.
+  discogsReleaseId?: string
+  // Star rating "1"–"5" (or "" for none) — written as the Traktor POPM byte on
+  // ID3 and the Vorbis RATING comment on FLAC. Optional like the other extras.
+  rating?: string
 }
 
 export interface DiscogsSearchResult {

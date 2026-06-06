@@ -97,6 +97,10 @@
     "coverAlt": "Carátula",
     "coverTitle": "Arrastra una imagen para usarla como carátula",
     "coverExport": "Exportar carátula",
+    "coverLowRes": "baja resolución",
+    "coverPrev": "Imagen anterior",
+    "coverNext": "Imagen siguiente",
+    "ratingStars": "{{count}} estrellas",
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",
@@ -181,7 +185,9 @@
     "key": "Tonalidad",
     "remixArtist": "Artista remix",
     "publisher": "Sello / Editora",
-    "catalogNumber": "Nº catálogo"
+    "catalogNumber": "Nº catálogo",
+    "discogsReleaseId": "ID de release de Discogs",
+    "rating": "Puntuación"
   },
   "normalize": {
     "title": "Normalización de loudness",

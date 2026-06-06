@@ -30,6 +30,7 @@ import {
   gradeLufs,
   gradeNoiseFloor,
   gradeTruePeak,
+  isLowResCover,
   qualityVerdict,
 } from '../lib/quality'
 import {
@@ -38,6 +39,7 @@ import {
   confidenceTier,
   type ReleaseMetaPatch,
   resultFromRelease,
+  stepImageIndex,
 } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -174,6 +176,10 @@ export function Editor({
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
   const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
+  // Natural pixel size of the shown artwork, read on load, so the user can tell
+  // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
+  // and reset whenever the cover changes.
+  const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -194,6 +200,10 @@ export function Editor({
       cancelled = true
     }
   }, [item.coverUrl, item.coverPath])
+
+  // Clear the stale size when the artwork changes; onLoad fills it in again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
+  useEffect(() => setCoverDims(null), [displayCover])
 
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
@@ -357,6 +367,14 @@ export function Editor({
     e.stopPropagation()
     setCoverDragging(false)
     applyImageFile(Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/')))
+  }
+
+  // Switches the cover among the loaded release's images (Discogs often has several).
+  // It only swaps the artwork URL, leaving the rest of the metadata untouched.
+  function pickCoverImage(delta: number): void {
+    const imgs = release?.images ?? []
+    const i = stepImageIndex(imgs, item.coverUrl, delta)
+    if (i >= 0) onChange({ coverUrl: imgs[i].uri, coverPath: undefined })
   }
 
   function onCoverExport(): void {
@@ -664,6 +682,15 @@ export function Editor({
           />
           {formOpen && (
             <div className="mt-4 @container">
+              {!isMulti && (
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="text-xs font-medium text-fg-dim">{tr('fields.rating')}</span>
+                  <StarRating
+                    value={item.meta.rating ?? ''}
+                    onChange={(v) => setField('rating', v)}
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
                 {/* Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release. */}
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
@@ -700,6 +727,12 @@ export function Editor({
                         src={displayCover}
                         alt={tr('editor.coverAlt')}
                         draggable={!isMulti}
+                        onLoad={(e) =>
+                          setCoverDims({
+                            w: e.currentTarget.naturalWidth,
+                            h: e.currentTarget.naturalHeight,
+                          })
+                        }
                         onDragStart={(e) => {
                           if (isMulti || !coverDragPath.current) return
                           e.preventDefault()
@@ -749,6 +782,74 @@ export function Editor({
                       {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
                     </button>
                   )}
+                  {!isMulti && release?.images && release.images.length > 1 && (
+                    <div
+                      data-testid="cover-image-picker"
+                      className="mt-1.5 flex items-center justify-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        data-testid="cover-prev"
+                        aria-label={tr('editor.coverPrev')}
+                        onClick={() => pickCoverImage(-1)}
+                        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                      >
+                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
+                          <path
+                            d="m7.5 2.5-3.5 3.5 3.5 3.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        data-testid="cover-image-count"
+                        className="text-[11px] tabular-nums text-fg-dim"
+                      >
+                        {(() => {
+                          const pos = release.images.findIndex((im) => im.uri === item.coverUrl) + 1
+                          return `${pos > 0 ? pos : '–'}/${release.images.length}`
+                        })()}
+                      </span>
+                      <button
+                        type="button"
+                        data-testid="cover-next"
+                        aria-label={tr('editor.coverNext')}
+                        onClick={() => pickCoverImage(1)}
+                        className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                      >
+                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
+                          <path
+                            d="m4.5 2.5 3.5 3.5-3.5 3.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                  {displayCover && coverDims && (
+                    <div
+                      data-testid="cover-resolution"
+                      className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px]"
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          isLowResCover(coverDims.w, coverDims.h) ? 'bg-warn' : 'bg-good'
+                        }`}
+                      />
+                      <span className="tabular-nums text-fg-dim">
+                        {coverDims.w} × {coverDims.h} px
+                      </span>
+                      {isLowResCover(coverDims.w, coverDims.h) && (
+                        <span className="text-warn">{tr('editor.coverLowRes')}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
@@ -784,10 +885,10 @@ export function Editor({
                             key={def.key}
                             name={def.key}
                             label={tr(`fields.${def.key}`)}
-                            value={item.meta[def.key]}
+                            value={item.meta[def.key] ?? ''}
                             onChange={(v) => setField(def.key, v)}
                             wide={def.wide}
-                            invalid={requiredFields.includes(def.key) && !item.meta[def.key].trim()}
+                            invalid={requiredFields.includes(def.key) && !item.meta[def.key]?.trim()}
                             suggestions={
                               def.key === 'genre'
                                 ? genreChips
@@ -1429,6 +1530,51 @@ function SectionHeader({ title, open, onToggle, right }: SectionHeaderProps): Re
       </button>
       {right}
     </div>
+  )
+}
+
+// A 0–5 star picker. Clicking a star sets that many; clicking the highest filled
+// star again clears the rating (back to none). Value is the "1"–"5"/"" string the
+// rest of the app stores; the write path turns it into the Traktor POPM byte.
+function StarRating({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (v: string) => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const stars = Number(value) || 0
+  return (
+    <span data-testid="star-rating" className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = n <= stars
+        return (
+          <button
+            key={n}
+            type="button"
+            data-testid={`star-${n}`}
+            aria-pressed={filled}
+            aria-label={tr('editor.ratingStars', { count: n })}
+            onClick={() => onChange(n === stars ? '' : String(n))}
+            className={`press ${filled ? 'text-warn' : 'text-fg-faint hover:text-fg-dim'}`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill={filled ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="h-4 w-4"
+            >
+              <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.9 6.2 20.9l1.1-6.5L2.6 9.3l6.5-.9z" />
+            </svg>
+          </button>
+        )
+      })}
+    </span>
   )
 }
 

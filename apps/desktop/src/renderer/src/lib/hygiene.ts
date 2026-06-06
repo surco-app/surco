@@ -9,7 +9,9 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
   const clean = { ...meta }
   if (opts.trim) {
     for (const key of Object.keys(clean) as (keyof TrackMetadata)[]) {
-      clean[key] = clean[key].replace(/\s+/g, ' ').trim()
+      const value = clean[key]
+      // Optional fields (e.g. discogsReleaseId) may be absent; only clean strings.
+      if (typeof value === 'string') clean[key] = value.replace(/\s+/g, ' ').trim()
     }
   }
   if (opts.zeroPad) {

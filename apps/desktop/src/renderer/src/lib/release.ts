@@ -21,6 +21,21 @@ export function coverOf(release: DiscogsRelease, fallback?: string): string | un
   )
 }
 
+// Steps through a release's images with wraparound, given the URL currently shown.
+// Returns -1 when there are no images. When the current cover isn't one of them
+// (e.g. the user dropped their own), the first step lands on image 0 so the arrows
+// always have a defined starting point.
+export function stepImageIndex(
+  images: { uri: string }[],
+  currentUrl: string | undefined,
+  delta: number,
+): number {
+  if (images.length === 0) return -1
+  const current = images.findIndex((i) => i.uri === currentUrl)
+  if (current === -1) return 0
+  return (current + delta + images.length) % images.length
+}
+
 // A release fetched by id has no search-result row to show, so synthesise one
 // from the release itself — the list and tracklist UI then work unchanged.
 export function resultFromRelease(rel: DiscogsRelease): DiscogsSearchResult {
@@ -214,6 +229,7 @@ export function buildReleaseMeta(
       genre,
       publisher: publisher || current.publisher,
       catalogNumber: catalogNumber || current.catalogNumber,
+      discogsReleaseId: String(rel.id),
     },
   }
 }

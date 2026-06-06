@@ -4,6 +4,7 @@ import {
   type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
+  Id3v2PopularimeterFrame,
   type Id3v2Tag,
   Id3v2UserTextInformationFrame,
   Picture,
@@ -11,6 +12,7 @@ import {
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
+import { starsToRating, TRAKTOR_RATING_USER } from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
 
 // The ID3 containers we edit in place: forcing the global Id3v2Settings would also break
@@ -90,6 +92,23 @@ function setUserText(tag: Id3v2Tag, description: string, text: string): void {
   frame.text = text.split(';')
 }
 
+// Writes the Traktor star rating into a POPM frame (0–255 in steps of 51). An
+// empty rating is left untouched rather than cleared, so converting a file never
+// wipes a rating we didn't surface in the editor.
+function setRating(tag: Id3v2Tag, stars: string): void {
+  const n = Number(stars)
+  if (!stars.trim() || !Number.isFinite(n) || n <= 0) return
+  const frames = tag.getFramesByClassType<Id3v2PopularimeterFrame>(
+    Id3v2FrameClassType.PopularimeterFrame,
+  )
+  let frame = Id3v2PopularimeterFrame.find(frames, TRAKTOR_RATING_USER)
+  if (!frame) {
+    frame = Id3v2PopularimeterFrame.fromUser(TRAKTOR_RATING_USER)
+    tag.addFrame(frame)
+  }
+  frame.rating = starsToRating(n)
+}
+
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
@@ -121,6 +140,9 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
+    // Same TXXX treatment for the Discogs release id — no standard frame either.
+    setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
+    setRating(id3, meta.rating ?? '')
 
     if (coverPath) {
       // TagLib models APIC and GEOB as the same attachment kind, so the generic
