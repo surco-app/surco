@@ -11,7 +11,12 @@ import type { OutputFormat } from '../shared/types'
 export function sanitizeOutputName(name: string): string {
   return name
     .split('/')
-    .map((segment) => segment.replace(/[\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim())
+    .map((segment) =>
+      segment
+        .replace(/[\\:*?"<>|]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
     .filter(Boolean)
     .join('/')
 }

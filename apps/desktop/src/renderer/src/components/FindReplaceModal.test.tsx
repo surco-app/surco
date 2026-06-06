@@ -28,7 +28,14 @@ const emptyMeta: TrackMetadata = {
 }
 
 function track(id: string, meta: Partial<TrackMetadata>): TrackItem {
-  return { id, inputPath: `/m/${id}`, fileName: `${id}.flac`, query: '', status: 'idle', meta: { ...emptyMeta, ...meta } }
+  return {
+    id,
+    inputPath: `/m/${id}`,
+    fileName: `${id}.flac`,
+    query: '',
+    status: 'idle',
+    meta: { ...emptyMeta, ...meta },
+  }
 }
 
 function renderModal(tracks: TrackItem[]) {

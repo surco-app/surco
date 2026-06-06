@@ -65,7 +65,12 @@ describe('renderOutputName', () => {
   it('keeps a "/" in the template as a subfolder boundary', () => {
     const r = renderOutputName(
       '{albumArtist}/{album}/{trackNumber} {title}',
-      meta({ albumArtist: 'Various', album: 'Hard House Nation', trackNumber: '01', title: 'Snap' }),
+      meta({
+        albumArtist: 'Various',
+        album: 'Hard House Nation',
+        trackNumber: '01',
+        title: 'Snap',
+      }),
     )
     expect(r).toBe('Various/Hard House Nation/01 Snap')
   })
