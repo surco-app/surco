@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { ratingTagToStars, ratingToStars, starsToRating } from './rating'
+import { formatRatingTag, ratingTagToStars, ratingToStars, starsToRating } from './rating'
+
+describe('formatRatingTag', () => {
+  // The FLAC Vorbis RATING value must match Traktor's POPM string byte-for-byte.
+  it('builds the Traktor POPM string for the FLAC RATING comment', () => {
+    expect(formatRatingTag(4)).toBe('traktor@native-instruments.de|204|0')
+    expect(formatRatingTag(5)).toBe('traktor@native-instruments.de|255|0')
+  })
+})
 
 describe('starsToRating', () => {
   it('maps 0–5 stars to Traktor steps of 51', () => {
@@ -25,6 +33,11 @@ describe('ratingToStars', () => {
 describe('ratingTagToStars', () => {
   it('parses a numeric tag value into a star string', () => {
     expect(ratingTagToStars('204')).toBe('4')
+  })
+
+  // FLAC stores the whole "user|byte|count" string; pull the byte out of it.
+  it('parses the Traktor POPM string', () => {
+    expect(ratingTagToStars('traktor@native-instruments.de|153|0')).toBe('3')
   })
 
   // No rating must read as empty, so the writer preserves whatever is on disk

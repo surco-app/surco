@@ -3,6 +3,7 @@ import { copyFile, readFile, rename, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
+import { formatRatingTag, ratingTagToStars } from '../shared/rating'
 import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
@@ -58,6 +59,9 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     catalogNumber: pick('catalognumber', 'catalog_number', 'catalogue', 'catalog'),
     remixArtist: pick('tpe4', 'remixer', 'remixed_by', 'remixedby', 'remix_artist'),
     discogsReleaseId: pick('discogs_release_id', 'discogs_releaseid', 'discogsreleaseid'),
+    // ffprobe exposes FLAC's Vorbis RATING comment but not the ID3 POPM frame, so
+    // a rating only round-trips for FLAC; MP3/AIFF start unrated in the editor.
+    rating: ratingTagToStars(pick('rating', 'rating wmp')),
   }
 }
 
@@ -224,6 +228,12 @@ export function convertArgs(
   if (bitrate) args.push('-b:a', bitrate)
   args.push('-write_id3v2', '1', '-id3v2_version', '3')
   args.push(...metadataArgs(meta))
+  // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
+  // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
+  const rating = Number(meta.rating)
+  if (output.toLowerCase().endsWith('.flac') && meta.rating?.trim() && rating > 0) {
+    args.push('-metadata', `RATING=${formatRatingTag(rating)}`)
+  }
   args.push(output)
   return args
 }
@@ -292,6 +302,11 @@ export async function convertAudio(
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
         // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
+        writeTags(tmp, meta, coverPath)
+      } else if (meta.rating?.trim() && (ext === '.mp3' || ext === '.aiff')) {
+        // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
+        // pass to write the Traktor rating. Only done when there's a rating, to
+        // avoid a second tag pass on every conversion.
         writeTags(tmp, meta, coverPath)
       }
     }

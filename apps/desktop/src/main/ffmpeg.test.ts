@@ -309,6 +309,7 @@ describe('tagsFromProbe', () => {
           disc: '2',
           TPE4: 'Airscape',
           DISCOGS_RELEASE_ID: '123456',
+          RATING: 'traktor@native-instruments.de|204|0',
         },
       },
     })
@@ -329,6 +330,7 @@ describe('tagsFromProbe', () => {
       catalogNumber: 'KON123',
       remixArtist: 'Airscape',
       discogsReleaseId: '123456',
+      rating: '4',
     })
   })
 
@@ -383,6 +385,7 @@ describe('tagsFromProbe', () => {
       catalogNumber: '',
       remixArtist: '',
       discogsReleaseId: '',
+      rating: '',
     })
   })
 })
