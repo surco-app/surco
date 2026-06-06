@@ -858,6 +858,8 @@ export function Editor({
                       className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px]"
                     >
                       <span
+                        data-testid="cover-quality-dot"
+                        data-lowres={isLowResCover(coverDims.w, coverDims.h)}
                         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                           isLowResCover(coverDims.w, coverDims.h) ? 'bg-warn' : 'bg-good'
                         }`}
@@ -865,9 +867,6 @@ export function Editor({
                       <span className="tabular-nums text-fg-dim">
                         {coverDims.w} × {coverDims.h} px
                       </span>
-                      {isLowResCover(coverDims.w, coverDims.h) && (
-                        <span className="text-warn">{tr('editor.coverLowRes')}</span>
-                      )}
                     </div>
                   )}
                 </div>
