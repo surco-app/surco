@@ -54,6 +54,22 @@ describe('loudnormFilter', () => {
     // linear=true keeps the dynamics intact instead of pumping per-frame.
     expect(f).toContain('linear=true')
   })
+
+  // loudnorm oversamples to 192 kHz internally and emits its output at that rate;
+  // without restoring the source rate every normalized file would balloon to
+  // 192 kHz and silently change sample rate — wrong for a 44.1 kHz rip.
+  it('restores the source sample rate after loudnorm', () => {
+    const m = {
+      inputI: -14.58,
+      inputTp: -0.16,
+      inputLra: 6.6,
+      inputThresh: -24.79,
+      targetOffset: -0.07,
+    }
+    expect(loudnormFilter(loudness, m, 44100)).toMatch(/loudnorm=.*linear=true,aresample=44100$/)
+    // No rate known → no resampler appended, rather than guessing.
+    expect(loudnormFilter(loudness, m)).not.toContain('aresample')
+  })
 })
 
 describe('loudnormArgs', () => {

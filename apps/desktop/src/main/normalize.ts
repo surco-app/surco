@@ -54,8 +54,15 @@ export function parseLoudnorm(output: string): LoudnormMeasured | null {
 
 // Second pass: the chosen target plus the first pass's measurements, in linear
 // mode so the whole track is shifted by a constant gain (dynamics preserved).
-export function loudnormFilter(cfg: NormalizeConfig, m: LoudnormMeasured): string {
-  return [
+// loudnorm oversamples to 192 kHz for true-peak limiting and emits its output at
+// that rate, so we resample back to the source rate — otherwise every normalized
+// file would be written at 192 kHz, a sample-rate change the user never asked for.
+export function loudnormFilter(
+  cfg: NormalizeConfig,
+  m: LoudnormMeasured,
+  sampleRate?: number,
+): string {
+  const filter = [
     `loudnorm=I=${cfg.targetLufs}`,
     `TP=${cfg.truePeakDb}`,
     `LRA=${LOUDNORM_LRA}`,
@@ -66,6 +73,7 @@ export function loudnormFilter(cfg: NormalizeConfig, m: LoudnormMeasured): strin
     `offset=${m.targetOffset}`,
     'linear=true',
   ].join(':')
+  return sampleRate && sampleRate > 0 ? `${filter},aresample=${sampleRate}` : filter
 }
 
 // Peak mode: a single decode to find the loudest sample.

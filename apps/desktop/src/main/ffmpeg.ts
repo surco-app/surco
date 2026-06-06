@@ -293,9 +293,15 @@ export async function planConversion(
 // volumedetect + a constant gain for peak. Returns null (no filter) for mode
 // 'none' and whenever the measurement can't be parsed, so a measurement failure
 // degrades to a plain conversion instead of aborting it.
-export async function normalizeFilter(input: string, cfg: NormalizeConfig): Promise<string | null> {
+export async function normalizeFilter(
+  input: string,
+  cfg: NormalizeConfig,
+  sampleRate?: number,
+): Promise<string | null> {
   if (cfg.mode === 'none') return null
   if (cfg.mode === 'peak') {
+    // Peak mode is a constant-gain `volume` filter, which doesn't resample, so it
+    // needs no rate restoration.
     const { stderr } = await run(ffmpegPath, volumedetectArgs(input), {
       maxBuffer: 1024 * 1024 * 16,
     })
@@ -306,7 +312,7 @@ export async function normalizeFilter(input: string, cfg: NormalizeConfig): Prom
     maxBuffer: 1024 * 1024 * 16,
   })
   const measured = parseLoudnorm(stderr)
-  return measured ? loudnormFilter(cfg, measured) : null
+  return measured ? loudnormFilter(cfg, measured, sampleRate) : null
 }
 
 export async function convertAudio(
@@ -325,8 +331,14 @@ export async function convertAudio(
   // filter only ever rides the encode path — planConversion is told to skip the
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
+  // loudnorm emits 192 kHz; pass the source rate so the filter can resample back.
+  // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
+  const sampleRate =
+    normalize?.mode === 'loudness'
+      ? Number((await probeAudio(input)).sampleRate) || undefined
+      : undefined
   const audioFilter = normalizing
-    ? ((await normalizeFilter(input, normalize)) ?? undefined)
+    ? ((await normalizeFilter(input, normalize, sampleRate)) ?? undefined)
     : undefined
   const { codec, bitrate, ext } = await planConversion(input, format, probeAudio, normalizing)
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
