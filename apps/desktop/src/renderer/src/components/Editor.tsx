@@ -62,6 +62,9 @@ interface Props {
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
+  // Reports the format chosen in the split-button menu so the keyboard convert
+  // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
+  onFormatChange?: (format: OutputFormat) => void
   onAddToAppleMusic: () => void
   onOpenSettings: () => void
 }
@@ -86,6 +89,7 @@ export function Editor({
   onDeriveTags,
   onChange,
   onProcess,
+  onFormatChange,
   onAddToAppleMusic,
   onOpenSettings,
 }: Props): React.JSX.Element {
@@ -836,7 +840,10 @@ export function Editor({
               inPlace={!isMulti && willEditInPlace}
               count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
               onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
-              onSelectFormat={setFormat}
+              onSelectFormat={(f) => {
+                setFormat(f)
+                onFormatChange?.(f)
+              }}
             />
             {showDone && (
               <div className="flex gap-2">

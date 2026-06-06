@@ -58,10 +58,12 @@ function renderEditor(
   onProcess: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
+  onFormatChange: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
+  const onFormatChange = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -76,12 +78,13 @@ function renderEditor(
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
+      onFormatChange={onFormatChange}
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
       onOpenSettings={vi.fn()}
     />,
   )
-  return { onProcess, onChange, onDeriveTags }
+  return { onProcess, onChange, onDeriveTags, onFormatChange }
 }
 
 describe('Editor cover picker', () => {
@@ -320,6 +323,15 @@ describe('Editor export control', () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcess).toHaveBeenCalledTimes(1)
     expect(onProcess).toHaveBeenCalledWith('mp3')
+  })
+
+  // The keyboard convert shortcuts (⌘⏎) live in App and only know the chosen
+  // format through this callback, so picking one must report it up.
+  it('reports the picked format so the keyboard shortcut can match it', () => {
+    const { onFormatChange } = renderEditor({ id: 'a' }, 'wav')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(onFormatChange).toHaveBeenCalledWith('mp3')
   })
 })
 

@@ -138,6 +138,10 @@ export default function App(): React.JSX.Element {
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
+  // The format picked in the editor's split-button menu, so the keyboard convert
+  // shortcuts export in it too. Null means "untouched" — fall back to the Settings
+  // default. Reset on track switch, matching the editor reseeding per track.
+  const editorFormatRef = useRef<OutputFormat | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then((s) => {
@@ -228,6 +232,12 @@ export default function App(): React.JSX.Element {
     const order = tracksRef.current.map((t) => t.id)
     setSelection((s) => clickSelect(s, order, id, mods))
   }, [])
+
+  // Switching tracks drops a stale format pick so the next ⌘⏎ uses the Settings
+  // default, mirroring the editor's per-track reseed.
+  useEffect(() => {
+    editorFormatRef.current = null
+  }, [selectedId])
 
   async function pickFiles(): Promise<void> {
     addPaths(await window.api.pickFiles())
@@ -591,14 +601,14 @@ export default function App(): React.JSX.Element {
       title: tr('commands.processCurrent'),
       hint: formatShortcut(['mod', 'enter'], isMac),
       enabled: canProcessSelected,
-      run: () => selected && processOne(selected.id),
+      run: () => selected && processOne(selected.id, editorFormatRef.current ?? undefined),
     },
     {
       id: 'process-all',
       title: tr('commands.processAll'),
       hint: formatShortcut(['mod', 'shift', 'enter'], isMac),
       enabled: canProcessAll,
-      run: processAll,
+      run: () => processAll(editorFormatRef.current ?? undefined),
     },
     {
       id: 'reveal',
@@ -963,6 +973,9 @@ export default function App(): React.JSX.Element {
               onDeriveTags={deriveTracks}
               onChange={(patch) => updateTrack(selected.id, patch)}
               onProcess={(format) => processOne(selected.id, format)}
+              onFormatChange={(format) => {
+                editorFormatRef.current = format
+              }}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onOpenSettings={() => setShowSettings(true)}
             />
