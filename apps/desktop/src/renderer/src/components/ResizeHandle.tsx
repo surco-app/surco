@@ -17,10 +17,20 @@ export function useResizableWidth(
     e.preventDefault()
     const startX = e.clientX
     const startWidth = width
+    // Coalesce moves to one state update per frame: pointermove fires far faster
+    // than the screen repaints, and each setWidth re-renders the resized panel.
+    let frame = 0
+    let latestX = startX
     function onMove(ev: PointerEvent): void {
-      setWidth(nextWidth(startWidth, ev.clientX - startX, min, max))
+      latestX = ev.clientX
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        setWidth(nextWidth(startWidth, latestX - startX, min, max))
+      })
     }
     function cleanup(): void {
+      if (frame) cancelAnimationFrame(frame)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', cleanup)
       document.body.style.cursor = ''
