@@ -14,6 +14,7 @@
     "batchFailed": "{{count}} failed",
     "palette": "Command palette",
     "settings": "Settings",
+    "stats": "Stats",
     "selectAll": "Select all",
     "fillFromName": "Fill all tags from file name",
     "clearAll": "Clear the list"
@@ -156,7 +157,9 @@
       "count": "conversions",
       "timeSaved": "You've saved around {{time}}",
       "perTrack": "≈ {{minutes}} min of manual work per track",
-      "empty": "Nothing converted yet. Once you start, you'll see how much time Surco saves you here."
+      "empty": "Nothing converted yet. Once you start, you'll see how much time Surco saves you here.",
+      "donate": "Surco is free. If it's saving you time, you can support its development.",
+      "sponsor": "Sponsor on GitHub"
     },
     "theme": "Appearance",
     "themes": {

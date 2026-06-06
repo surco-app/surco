@@ -14,6 +14,7 @@
     "batchFailed": "{{count}} con error",
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
+    "stats": "Estadísticas",
     "selectAll": "Seleccionar todo",
     "fillFromName": "Rellenar todo desde el nombre",
     "clearAll": "Vaciar la lista"
@@ -156,7 +157,9 @@
       "count": "conversiones",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
-      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco."
+      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
+      "donate": "Surco es gratis. Si te está ahorrando tiempo, puedes apoyar su desarrollo.",
+      "sponsor": "Apóyalo en GitHub"
     },
     "theme": "Apariencia",
     "themes": {

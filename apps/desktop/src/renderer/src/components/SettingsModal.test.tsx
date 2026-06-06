@@ -149,4 +149,48 @@ describe('SettingsModal stats', () => {
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
   })
+
+  // The donate ask only earns its place once there's a saved-time story to back
+  // it — asking before the first conversion would feel like a paywall.
+  it('offers the sponsor link only after time has been saved', () => {
+    const { rerender } = render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.queryByTestId('stats-sponsor')).not.toBeInTheDocument()
+
+    rerender(
+      <SettingsModal
+        settings={{ ...settings, conversionCount: 142 }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.getByTestId('stats-sponsor')).toBeInTheDocument()
+  })
+
+  // The toolbar stats icon opens settings straight on this tab, so a caller can
+  // land the user on the time-saved + donate view without an extra click.
+  it('opens directly on the stats tab when asked', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    render(
+      <SettingsModal
+        settings={{ ...settings, conversionCount: 142 }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        initialTab="stats"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('stats-sponsor'))
+    expect(open).toHaveBeenCalledWith('https://github.com/sponsors/vigosan')
+    open.mockRestore()
+  })
 })

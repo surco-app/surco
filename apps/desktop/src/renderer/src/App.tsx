@@ -98,6 +98,7 @@ export default function App(): React.JSX.Element {
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [showSettings, setShowSettings] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'general' | 'stats'>('general')
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
@@ -528,6 +529,11 @@ export default function App(): React.JSX.Element {
     window.api.saveSettings(patch).then(setSettings)
   }
 
+  function openSettings(tab: 'general' | 'stats' = 'general'): void {
+    setSettingsTab(tab)
+    setShowSettings(true)
+  }
+
   function closeSettings(): void {
     setShowSettings(false)
     setThemePreview(null)
@@ -643,7 +649,7 @@ export default function App(): React.JSX.Element {
       title: tr('commands.settings'),
       hint: formatShortcut(['mod', ','], isMac),
       enabled: true,
-      run: () => setShowSettings(true),
+      run: () => openSettings(),
     },
     {
       id: 'help',
@@ -899,8 +905,31 @@ export default function App(): React.JSX.Element {
           </button>
           <button
             type="button"
+            data-testid="open-stats"
+            onClick={() => openSettings('stats')}
+            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            aria-label={tr('header.stats')}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="h-4 w-4"
+            >
+              <line x1="4" y1="20" x2="20" y2="20" />
+              <rect x="6" y="12" width="3" height="6" />
+              <rect x="11" y="8" width="3" height="10" />
+              <rect x="16" y="4" width="3" height="14" />
+            </svg>
+          </button>
+          <button
+            type="button"
             data-testid="open-settings"
-            onClick={() => setShowSettings(true)}
+            onClick={() => openSettings()}
             className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.settings')}
           >
@@ -975,7 +1004,7 @@ export default function App(): React.JSX.Element {
                 editorFormatRef.current = format
               }}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
-              onOpenSettings={() => setShowSettings(true)}
+              onOpenSettings={() => openSettings()}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
@@ -1022,6 +1051,7 @@ export default function App(): React.JSX.Element {
           onClose={closeSettings}
           onSave={saveSettings}
           onPreviewTheme={setThemePreview}
+          initialTab={settingsTab}
         />
       )}
 
