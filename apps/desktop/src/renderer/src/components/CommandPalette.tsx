@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type Command, filterCommands } from '../lib/commands'
+import { useFocusTrap } from './useFocusTrap'
 
 interface Props {
   commands: Command[]
@@ -13,6 +14,8 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
   const results = filterCommands(commands, query)
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
         className="animate-overlay absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         className="animate-pop relative z-10 w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"

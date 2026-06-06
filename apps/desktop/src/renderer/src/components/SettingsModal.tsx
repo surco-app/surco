@@ -6,6 +6,7 @@ import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
+import { useFocusTrap } from './useFocusTrap'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
@@ -113,6 +114,8 @@ export function SettingsModal({
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const formatRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
 
   // Drops the token where the caret last sat (or over the selection), then
   // restores focus and caret past it so the user can keep typing separators.
@@ -168,6 +171,7 @@ export function SettingsModal({
         className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         className="animate-pop relative z-10 w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"

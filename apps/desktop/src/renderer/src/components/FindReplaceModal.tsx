@@ -1,9 +1,10 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
 import type { TrackItem } from '../types'
+import { useFocusTrap } from './useFocusTrap'
 
 interface Props {
   tracks: TrackItem[]
@@ -21,6 +22,8 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   const [find, setFind] = useState('')
   const [replace, setReplace] = useState('')
   const [regex, setRegex] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
 
   const badRegex = regex && find.length > 0 && !isValidRegex(find)
   const patches =
@@ -57,6 +60,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
         className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         className="animate-pop relative z-10 flex max-h-[80vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"

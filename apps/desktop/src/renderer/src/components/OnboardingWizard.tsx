@@ -1,8 +1,9 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings } from '../../../shared/types'
 import { buildOnboardingPatch } from '../lib/onboarding'
+import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 const STEPS = ['welcome', 'token', 'format', 'grouping', 'required', 'spectrum'] as const
@@ -20,6 +21,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
 
   const isLast = step === STEPS.length - 1
 
@@ -43,7 +46,12 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   return (
     <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+      >
         <div className="min-h-[280px]">
           {STEPS[step] === 'welcome' && (
             <div className="flex h-[280px] flex-col items-center justify-center text-center">

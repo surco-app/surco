@@ -1,5 +1,7 @@
 import type React from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useFocusTrap } from './useFocusTrap'
 
 interface Props {
   title: string
@@ -22,6 +24,8 @@ export function ConfirmDialog({
   onClose,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
@@ -32,6 +36,7 @@ export function ConfirmDialog({
         className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         className="animate-pop relative z-10 w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"

@@ -1,6 +1,7 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useFocusTrap } from './useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -11,6 +12,8 @@ const ITEMS = ['token', 'quality', 'format', 'appleMusic'] as const
 export function HelpModal({ onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState<string | null>(ITEMS[0])
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -22,6 +25,7 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
         className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         className="animate-pop relative z-10 flex max-h-[80vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
