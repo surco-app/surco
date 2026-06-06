@@ -180,6 +180,13 @@ export function Editor({
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
   const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
+  // The artwork the file arrived with, captured once per track (the Editor remounts
+  // per track via key={track.id}). Applying a release can leave it in place, and the
+  // picker lists it first so the user can step to the release's images and back.
+  const [originalCover] = useState<{ url?: string; path?: string }>(() => ({
+    url: item.coverUrl,
+    path: item.coverPath,
+  }))
   const releaseRef = useRef<DiscogsRelease | null>(null)
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -327,16 +334,19 @@ export function Editor({
     }
   }
 
-  function commitMeta(
-    rel: DiscogsRelease,
-    track: DiscogsTrack | undefined,
-    coverFallback?: string,
-  ): void {
-    onChange(buildReleaseMeta(item.meta, rel, track, coverFallback))
-  }
-
   function selectTrack(track: DiscogsTrack): void {
-    if (release) commitMeta(release, track, item.coverUrl)
+    if (!release) return
+    // Keep the file's own cover unless it's missing or measured as low-res, in which
+    // case the release fills it. Keeping is the safe default — when the size hasn't
+    // been measured yet (coverDims null) a present cover is left untouched rather
+    // than overwritten with the release's often-smaller image.
+    onChange(
+      buildReleaseMeta(item.meta, release, track, {
+        url: item.coverUrl,
+        path: item.coverPath,
+        keep: !!item.coverUrl && !(coverDims && isLowResCover(coverDims.w, coverDims.h)),
+      }),
+    )
   }
 
   function setField(key: keyof TrackItem['meta'], value: string): void {
@@ -369,12 +379,22 @@ export function Editor({
     applyImageFile(Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/')))
   }
 
-  // Switches the cover among the loaded release's images (Discogs often has several).
-  // It only swaps the artwork URL, leaving the rest of the metadata untouched.
+  // The covers the picker steps through: the file's own artwork first, then the
+  // release's images (deduped), so the original sits at index 0 and Discogs'
+  // alternatives are one step away — and reachable again after stepping off.
+  const coverChoices = useMemo(() => {
+    const choices: { uri: string; path?: string }[] = []
+    if (originalCover.url) choices.push({ uri: originalCover.url, path: originalCover.path })
+    for (const im of release?.images ?? [])
+      if (im.uri !== originalCover.url) choices.push({ uri: im.uri })
+    return choices
+  }, [release, originalCover])
+
+  // Switches the cover among the picker's choices (the original plus the release's
+  // images). It only swaps the artwork, leaving the rest of the metadata untouched.
   function pickCoverImage(delta: number): void {
-    const imgs = release?.images ?? []
-    const i = stepImageIndex(imgs, item.coverUrl, delta)
-    if (i >= 0) onChange({ coverUrl: imgs[i].uri, coverPath: undefined })
+    const i = stepImageIndex(coverChoices, item.coverUrl, delta)
+    if (i >= 0) onChange({ coverUrl: coverChoices[i].uri, coverPath: coverChoices[i].path })
   }
 
   function onCoverExport(): void {
@@ -706,7 +726,7 @@ export function Editor({
                     setCoverDragging(false)
                   }}
                   onDrop={onCoverDrop}
-                  className="group relative shrink-0 self-start"
+                  className="shrink-0 self-start"
                   title={tr('editor.coverTitle')}
                 >
                   <input
@@ -721,7 +741,7 @@ export function Editor({
                     }}
                   />
                   {displayCover ? (
-                    <>
+                    <div className="group relative w-40">
                       <img
                         data-testid="cover-preview"
                         src={displayCover}
@@ -767,7 +787,7 @@ export function Editor({
                           </svg>
                         </button>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -782,7 +802,7 @@ export function Editor({
                       {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
                     </button>
                   )}
-                  {!isMulti && release?.images && release.images.length > 1 && (
+                  {!isMulti && coverChoices.length > 1 && (
                     <div
                       data-testid="cover-image-picker"
                       className="mt-1.5 flex items-center justify-center gap-2"
