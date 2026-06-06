@@ -308,6 +308,7 @@ describe('tagsFromProbe', () => {
           CATALOGNUMBER: 'KON123',
           disc: '2',
           TPE4: 'Airscape',
+          DISCOGS_RELEASE_ID: '123456',
         },
       },
     })
@@ -327,6 +328,7 @@ describe('tagsFromProbe', () => {
       publisher: 'Kontor',
       catalogNumber: 'KON123',
       remixArtist: 'Airscape',
+      discogsReleaseId: '123456',
     })
   })
 
@@ -380,6 +382,7 @@ describe('tagsFromProbe', () => {
       publisher: '',
       catalogNumber: '',
       remixArtist: '',
+      discogsReleaseId: '',
     })
   })
 })

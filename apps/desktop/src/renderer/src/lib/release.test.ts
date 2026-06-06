@@ -273,6 +273,14 @@ describe('buildReleaseMeta', () => {
     expect(patch.coverPath).toBeUndefined()
   })
 
+  // Applying a release records which one it was, so the id can be written to the
+  // file tag and used in the filename pattern.
+  it('fills the Discogs release id from the applied release', () => {
+    expect(buildReleaseMeta(meta(), release({ id: 249504 }), undefined).meta.discogsReleaseId).toBe(
+      '249504',
+    )
+  })
+
   it('prefers a style over a genre, and falls back to a genre with no style', () => {
     const styled = buildReleaseMeta(
       meta(),

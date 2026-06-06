@@ -146,7 +146,8 @@
     "key": "Tonalidad",
     "remixArtist": "Artista remix",
     "publisher": "Sello / Editora",
-    "catalogNumber": "Nº catálogo"
+    "catalogNumber": "Nº catálogo",
+    "discogsReleaseId": "ID de release de Discogs"
   },
   "settings": {
     "tabs": {

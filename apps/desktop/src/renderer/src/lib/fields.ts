@@ -21,6 +21,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'remixArtist' },
   { key: 'publisher' },
   { key: 'catalogNumber' },
+  { key: 'discogsReleaseId' },
 ]
 
 // Re-exported from shared so renderer code can keep importing them from here

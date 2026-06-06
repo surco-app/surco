@@ -146,7 +146,8 @@
     "key": "Key",
     "remixArtist": "Remix artist",
     "publisher": "Label / Publisher",
-    "catalogNumber": "Catalog No."
+    "catalogNumber": "Catalog No.",
+    "discogsReleaseId": "Discogs release ID"
   },
   "settings": {
     "tabs": {

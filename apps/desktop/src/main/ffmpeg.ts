@@ -57,6 +57,7 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     publisher: pick('publisher', 'tpub', 'label', 'organization'),
     catalogNumber: pick('catalognumber', 'catalog_number', 'catalogue', 'catalog'),
     remixArtist: pick('tpe4', 'remixer', 'remixed_by', 'remixedby', 'remix_artist'),
+    discogsReleaseId: pick('discogs_release_id', 'discogs_releaseid', 'discogsreleaseid'),
   }
 }
 
@@ -190,6 +191,7 @@ function metadataArgs(meta: TrackMetadata): string[] {
     ['TPE4', meta.remixArtist],
     ['publisher', meta.publisher],
     ['CATALOGNUMBER', meta.catalogNumber],
+    ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
   ]
   return pairs.filter(([, v]) => v?.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
 }

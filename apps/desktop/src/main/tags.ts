@@ -86,6 +86,8 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
+    // Same TXXX treatment for the Discogs release id — no standard frame either.
+    setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
 
     if (coverPath) {
       // TagLib models APIC and GEOB as the same attachment kind, so the generic

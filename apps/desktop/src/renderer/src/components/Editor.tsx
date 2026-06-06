@@ -783,10 +783,10 @@ export function Editor({
                             key={def.key}
                             name={def.key}
                             label={tr(`fields.${def.key}`)}
-                            value={item.meta[def.key]}
+                            value={item.meta[def.key] ?? ''}
                             onChange={(v) => setField(def.key, v)}
                             wide={def.wide}
-                            invalid={requiredFields.includes(def.key) && !item.meta[def.key].trim()}
+                            invalid={requiredFields.includes(def.key) && !item.meta[def.key]?.trim()}
                             suggestions={
                               def.key === 'genre'
                                 ? genreChips

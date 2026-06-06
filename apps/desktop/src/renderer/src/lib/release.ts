@@ -229,6 +229,7 @@ export function buildReleaseMeta(
       genre,
       publisher: publisher || current.publisher,
       catalogNumber: catalogNumber || current.catalogNumber,
+      discogsReleaseId: String(rel.id),
     },
   }
 }

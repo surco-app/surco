@@ -39,6 +39,9 @@ export interface TrackMetadata {
   publisher: string
   catalogNumber: string
   remixArtist: string
+  // The Discogs release this track was tagged from. Optional because most tracks
+  // never carry it; auto-filled when a release is applied and writable as a tag.
+  discogsReleaseId?: string
 }
 
 export interface DiscogsSearchResult {
