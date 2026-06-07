@@ -921,7 +921,7 @@ describe('Editor in-place hint', () => {
 
   it('shows the generic hint when the export converts to a different format', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
-    expect(screen.getByTestId('output-name-hint')).toHaveTextContent('Settings → File names')
+    expect(screen.getByTestId('output-name-hint')).toHaveTextContent('Settings → Naming')
     expect(screen.getByTestId('output-name-hint')).not.toHaveTextContent(
       i18n.t('editor.outputNameHintInPlace'),
     )
