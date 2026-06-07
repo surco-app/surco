@@ -1,14 +1,10 @@
+import { type Chord, type KeyLike, eventToChord } from '../../../shared/shortcuts'
+import { matchChord } from '../../../shared/shortcutDefaults'
+
 export function moveIndex(length: number, current: number, delta: number): number {
   if (length === 0) return -1
   if (current === -1) return 0
   return Math.min(length - 1, Math.max(0, current + delta))
-}
-
-interface KeyLike {
-  key: string
-  metaKey: boolean
-  ctrlKey: boolean
-  shiftKey: boolean
 }
 
 // Whether the focused element owns the keystroke, so the global shortcuts keep
@@ -27,19 +23,25 @@ export function isTypingTarget(
   )
 }
 
-export function keyToCommandId(e: KeyLike, typing: boolean): string | null {
-  const mod = e.metaKey || e.ctrlKey
-  if (mod && e.key === 'Enter') return e.shiftKey ? 'process-all' : 'process-current'
-  if (mod && e.key.toLowerCase() === 'o') return 'add'
-  if (mod && e.key === ',') return 'settings'
-  // ⌘⇧R opens the file-name builder. ⌘R alone is Reveal in Finder (owned by the menu),
-  // so the shift is what distinguishes it.
-  if (mod && e.shiftKey && e.key.toLowerCase() === 'r') return 'rename'
-  if (mod && e.key === 'Backspace') return typing ? null : 'remove'
-  if (typing) return null
-  if (e.key === ' ') return 'play'
-  if (e.key === 'ArrowDown' || e.key === 'j') return 'next'
-  if (e.key === 'ArrowUp' || e.key === 'k') return 'prev'
-  if (e.key === '/') return 'search'
+// Resolves a key event to a command id using the configurable bindings, falling back
+// to the fixed vim aliases. `bindings` is the merged defaults+overrides map; `isMac`
+// picks ⌘ vs Ctrl as the `mod` key.
+export function keyToCommandId(
+  e: KeyLike,
+  typing: boolean,
+  bindings: Map<string, Chord>,
+  isMac: boolean,
+): string | null {
+  const chord = eventToChord(e, isMac)
+  if (!chord) return null
+  const id = matchChord(bindings, chord, typing)
+  if (id) return id
+  // j/k are fixed vim aliases for list navigation — deliberately not configurable and
+  // not shown in the Shortcuts tab, so power-user muscle memory keeps working without a
+  // second editable row per command. Only when a field doesn't own the keystroke.
+  if (!typing && chord.length === 1) {
+    if (chord[0] === 'j') return 'next'
+    if (chord[0] === 'k') return 'prev'
+  }
   return null
 }

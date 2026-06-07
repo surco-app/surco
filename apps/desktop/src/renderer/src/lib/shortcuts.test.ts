@@ -15,4 +15,14 @@ describe('formatShortcut', () => {
     expect(formatShortcut(['mod', 'backspace'], false)).toBe('Ctrl+Backspace')
     expect(formatShortcut(['mod', ','], false)).toBe('Ctrl+,')
   })
+
+  // The canonical chords store keys lower-cased and use space/up/down tokens, so the
+  // formatter must upper-case letters and glyph the named keys to read normally.
+  it('upper-cases letters and renders the space/arrow tokens', () => {
+    expect(formatShortcut(['mod', 'r'], true)).toBe('⌘R')
+    expect(formatShortcut(['mod', 'shift', 'm'], false)).toBe('Ctrl+Shift+M')
+    expect(formatShortcut(['space'], true)).toBe('␣')
+    expect(formatShortcut(['up'], true)).toBe('↑')
+    expect(formatShortcut(['down'], false)).toBe('↓')
+  })
 })

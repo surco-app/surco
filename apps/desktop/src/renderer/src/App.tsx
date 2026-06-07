@@ -38,6 +38,7 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/
 import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
+import { resolveBindings } from '../../shared/shortcutDefaults'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
@@ -67,6 +68,10 @@ async function warmDiscogs(query: string): Promise<void> {
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
+
+// The effective key bindings (defaults until per-command overrides from Settings are
+// wired in). Built once: the keydown listener reads it to resolve a keystroke.
+const defaultBindings = resolveBindings()
 
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)
@@ -811,7 +816,7 @@ export default function App(): React.JSX.Element {
         return
       }
       if (overlayOpenRef.current) return
-      const id = keyToCommandId(e, isTypingTarget(document.activeElement))
+      const id = keyToCommandId(e, isTypingTarget(document.activeElement), defaultBindings, isMac)
       if (id) {
         e.preventDefault()
         runCommand(commandsRef.current, id)
