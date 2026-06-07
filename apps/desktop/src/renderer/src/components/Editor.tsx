@@ -596,14 +596,14 @@ export function Editor({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
               placeholder={tr('editor.searchPlaceholder')}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
               type="button"
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
-              className="press rounded-lg border border-transparent bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              className="press inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
@@ -638,10 +638,9 @@ export function Editor({
                   <button
                     type="button"
                     data-testid="discogs-result"
-                    title={tr('editor.resultHint')}
                     aria-expanded={expanded}
                     onClick={() => previewRelease(r)}
-                    className={`flex w-full items-center gap-3 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
+                    className={`group relative flex w-full items-center gap-3 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
                       expanded ? 'bg-[var(--color-accent-soft)]' : ''
                     }`}
                   >
@@ -675,6 +674,7 @@ export function Editor({
                         strokeLinejoin="round"
                       />
                     </svg>
+                    <Tooltip label={tr('editor.resultHint')} align="start" />
                   </button>
                   <CollapsibleTracks open={expanded}>
                     <div className="pb-1">
@@ -842,9 +842,8 @@ export function Editor({
                             type="button"
                             data-testid="cover-remove"
                             onClick={onCoverRemove}
-                            title={tr('editor.coverRemove')}
                             aria-label={tr('editor.coverRemove')}
-                            className="press absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+                            className="press group/cover absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                           >
                             <svg
                               viewBox="0 0 24 24"
@@ -859,14 +858,14 @@ export function Editor({
                               <path d="M18 6 6 18" />
                               <path d="m6 6 12 12" />
                             </svg>
+                            <Tooltip label={tr('editor.coverRemove')} align="end" scope="cover" />
                           </button>
                           <button
                             type="button"
                             data-testid="cover-export"
                             onClick={onCoverExport}
-                            title={tr('editor.coverExport')}
                             aria-label={tr('editor.coverExport')}
-                            className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+                            className="press group/cover absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                           >
                             <svg
                               viewBox="0 0 24 24"
@@ -882,6 +881,7 @@ export function Editor({
                               <path d="M7 10l5 5 5-5" />
                               <path d="M12 15V3" />
                             </svg>
+                            <Tooltip label={tr('editor.coverExport')} align="end" scope="cover" />
                           </button>
                         </>
                       )}
@@ -1327,8 +1327,7 @@ export function Editor({
                                     type="button"
                                     data-testid="loudness-help-toggle"
                                     onClick={() => setLoudnessHelpOpen(true)}
-                                    title={tr('editor.loudnessHelpTitle')}
-                                    className="press flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+                                    className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
                                   >
                                     <svg
                                       viewBox="0 0 24 24"
@@ -1344,6 +1343,7 @@ export function Editor({
                                       <line x1="12" y1="16" x2="12" y2="12" />
                                       <line x1="12" y1="8" x2="12.01" y2="8" />
                                     </svg>
+                                    <Tooltip label={tr('editor.loudnessHelpTitle')} align="end" />
                                   </button>
                                 )}
                               </div>
@@ -1353,8 +1353,7 @@ export function Editor({
                                     key={c.id}
                                     data-testid={`loudness-pill-${c.id}`}
                                     data-grade={c.grade}
-                                    title={c.hint}
-                                    className="rounded-lg bg-[var(--color-field)] px-3 py-2"
+                                    className="group relative rounded-lg bg-[var(--color-field)] px-3 py-2"
                                   >
                                     <div className="flex items-center gap-1.5">
                                       <span
@@ -1369,6 +1368,7 @@ export function Editor({
                                     >
                                       {c.value}
                                     </div>
+                                    <Tooltip label={c.hint} />
                                   </div>
                                 ))}
                               </div>
@@ -1507,8 +1507,7 @@ export function Editor({
                 type="button"
                 data-testid="convert-normalize-note"
                 onClick={() => setNormalizeOpen(true)}
-                title={tr('normalize.title')}
-                className="press flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
+                className="press group relative flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1533,6 +1532,7 @@ export function Editor({
                 {normalizeCfg.mode === 'loudness'
                   ? `${normalizeCfg.targetLufs} LUFS`
                   : `${normalizeCfg.peakDb} dBFS`}
+                <Tooltip label={tr('normalize.title')} />
               </button>
             )}
             {showDone ? (

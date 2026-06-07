@@ -6,6 +6,7 @@ import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
+import { Tooltip } from './Tooltip'
 
 interface Props {
   files: TrackItem[]
@@ -146,10 +147,10 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                   <span
                     data-testid={`match-confidence-${a.id}`}
                     data-confidence={tier}
-                    title={tr('match.suggested')}
-                    className={tier === 'high' ? 'text-good' : 'text-warn'}
+                    className={`group relative ${tier === 'high' ? 'text-good' : 'text-warn'}`}
                   >
                     ✓
+                    <Tooltip label={tr('match.suggested')} align="end" />
                   </span>
                 )}
               </span>

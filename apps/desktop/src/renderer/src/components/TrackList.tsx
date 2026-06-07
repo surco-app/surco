@@ -7,6 +7,7 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
+import { Tooltip } from './Tooltip'
 import { TrackContextMenu } from './TrackContextMenu'
 
 interface Props {
@@ -83,9 +84,10 @@ const TrackRow = memo(function TrackRow({
         }`}
       >
         <span
-          title={tr(`trackList.status.${t.status}`)}
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
-        />
+          className={`group/dot relative h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
+        >
+          <Tooltip label={tr(`trackList.status.${t.status}`)} align="start" scope="dot" />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-fg">
             {t.meta.title || t.fileName}
@@ -113,11 +115,16 @@ const TrackRow = memo(function TrackRow({
                 <span
                   data-testid="track-quality"
                   data-quality={quality}
-                  title={tr(quality === 'good' ? 'editor.qualityGood' : 'editor.qualitySuspect')}
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                  className={`group/dot relative h-1.5 w-1.5 shrink-0 rounded-full ${
                     quality === 'suspect' ? 'bg-warn' : 'bg-good'
                   }`}
-                />
+                >
+                  <Tooltip
+                    label={tr(quality === 'good' ? 'editor.qualityGood' : 'editor.qualitySuspect')}
+                    align="end"
+                    scope="dot"
+                  />
+                </span>
               )}
               {t.duration !== undefined && (
                 <span

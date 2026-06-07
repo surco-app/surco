@@ -1,15 +1,16 @@
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
-import { SHORTCUT_DEFAULTS, findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
+import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
+import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { formatShortcut } from '../lib/shortcuts'
-import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
+import { formatTimeSaved, MANUAL_SECONDS_PER_CONVERSION, timeSavedSeconds } from '../lib/stats'
 import { NormalizeControls } from './NormalizeControls'
+import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
@@ -472,10 +473,10 @@ export function SettingsModal({
                     type="button"
                     data-testid={`settings-token-${f.key}`}
                     onClick={() => addToken(f.key)}
-                    title={`{${f.key}}`}
                     className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
                   >
                     {tr(`fields.${f.key}`)}
+                    <Tooltip label={`{${f.key}}`} />
                   </button>
                 ))}
               </div>
@@ -738,10 +739,10 @@ export function SettingsModal({
                             type="button"
                             data-testid={`shortcut-reset-${def.id}`}
                             onClick={() => resetRow(def.id)}
-                            title={tr('settings.shortcuts.reset')}
                             className="press text-sm text-fg-faint hover:text-fg"
                           >
                             ↺
+                            <Tooltip label={tr('settings.shortcuts.reset')} />
                           </button>
                         )}
                         <button
