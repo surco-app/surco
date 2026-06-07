@@ -1,3 +1,4 @@
+import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -57,20 +58,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         <div className="min-h-[280px]">
           {STEPS[step] === 'welcome' && (
             <div className="flex h-[280px] flex-col items-center justify-center text-center">
-              <svg
-                viewBox="0 0 48 48"
-                fill="currentColor"
+              <AudioLines
                 aria-hidden="true"
+                strokeWidth={1.75}
                 className="mb-5 h-12 w-12 text-[var(--color-accent)]"
-              >
-                <rect x="4" y="19" width="4" height="10" rx="2" />
-                <rect x="10" y="15" width="4" height="18" rx="2" />
-                <rect x="16" y="10" width="4" height="28" rx="2" />
-                <rect x="22" y="5" width="4" height="38" rx="2" />
-                <rect x="28" y="10" width="4" height="28" rx="2" />
-                <rect x="34" y="15" width="4" height="18" rx="2" />
-                <rect x="40" y="19" width="4" height="10" rx="2" />
-              </svg>
+              />
               <h2 className="text-lg font-semibold text-balance">
                 {tr('onboarding.welcomeTitle')}
               </h2>

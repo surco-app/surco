@@ -1,3 +1,14 @@
+import {
+  ChartColumn,
+  Image,
+  Keyboard,
+  List,
+  type LucideIcon,
+  RefreshCw,
+  SlidersHorizontal,
+  SquarePen,
+  Tag,
+} from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -77,70 +88,15 @@ const TABS: Tab[] = [
   'stats',
 ]
 
-const TAB_ICONS: Record<Tab, React.JSX.Element> = {
-  conversion: (
-    <>
-      <path d="M12 3v11" />
-      <path d="m7 10 5 5 5-5" />
-      <line x1="4" y1="20" x2="20" y2="20" />
-    </>
-  ),
-  general: (
-    <>
-      <line x1="4" y1="8" x2="20" y2="8" />
-      <circle cx="9" cy="8" r="2.4" fill="var(--color-panel)" />
-      <line x1="4" y1="16" x2="20" y2="16" />
-      <circle cx="15" cy="16" r="2.4" fill="var(--color-panel)" />
-    </>
-  ),
-  fields: (
-    <>
-      <line x1="9" y1="6" x2="20" y2="6" />
-      <line x1="9" y1="12" x2="20" y2="12" />
-      <line x1="9" y1="18" x2="20" y2="18" />
-      <circle cx="4.5" cy="6" r="1" />
-      <circle cx="4.5" cy="12" r="1" />
-      <circle cx="4.5" cy="18" r="1" />
-    </>
-  ),
-  artwork: (
-    <>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.6" />
-      <path d="m21 15-5-5L5 21" />
-    </>
-  ),
-  naming: (
-    <>
-      <rect x="5" y="3" width="14" height="18" rx="2" />
-      <line x1="9" y1="8" x2="15" y2="8" />
-      <line x1="9" y1="12" x2="15" y2="12" />
-      <line x1="9" y1="16" x2="13" y2="16" />
-    </>
-  ),
-  editor: (
-    <>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </>
-  ),
-  shortcuts: (
-    <>
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <line x1="7" y1="10" x2="7" y2="10" />
-      <line x1="11" y1="10" x2="11" y2="10" />
-      <line x1="15" y1="10" x2="15" y2="10" />
-      <line x1="8" y1="14" x2="16" y2="14" />
-    </>
-  ),
-  stats: (
-    <>
-      <line x1="4" y1="20" x2="20" y2="20" />
-      <rect x="6" y="12" width="3" height="6" />
-      <rect x="11" y="8" width="3" height="10" />
-      <rect x="16" y="4" width="3" height="14" />
-    </>
-  ),
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+  general: SlidersHorizontal,
+  conversion: RefreshCw,
+  naming: Tag,
+  editor: SquarePen,
+  fields: List,
+  artwork: Image,
+  shortcuts: Keyboard,
+  stats: ChartColumn,
 }
 
 export function SettingsModal({
@@ -276,34 +232,26 @@ export function SettingsModal({
       >
         <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
           <div className="flex justify-center gap-0.5">
-            {TABS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                data-testid={`settings-tab-${id}`}
-                onClick={() => setTab(id)}
-                aria-pressed={tab === id}
-                className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
-                  tab === id
-                    ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
-                    : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-6 w-6"
+            {TABS.map((id) => {
+              const Icon = TAB_ICONS[id]
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  data-testid={`settings-tab-${id}`}
+                  onClick={() => setTab(id)}
+                  aria-pressed={tab === id}
+                  className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
+                    tab === id
+                      ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
+                      : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
+                  }`}
                 >
-                  {TAB_ICONS[id]}
-                </svg>
-                {tr(`settings.tabs.${id}`)}
-              </button>
-            ))}
+                  <Icon className="h-6 w-6" strokeWidth={1.7} aria-hidden="true" />
+                  {tr(`settings.tabs.${id}`)}
+                </button>
+              )
+            })}
           </div>
         </div>
 

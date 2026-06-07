@@ -1,3 +1,4 @@
+import { ChevronDown, X } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -39,18 +40,7 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
             aria-label={tr('common.close')}
             className="press flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="h-4 w-4"
-            >
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -67,20 +57,12 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
                   className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-medium hover:text-[var(--color-accent)]"
                 >
                   {tr(`help.items.${id}.q`)}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  <ChevronDown
                     aria-hidden="true"
                     className={`h-4 w-4 shrink-0 text-fg-muted transition-transform ${
                       isOpen ? 'rotate-180' : ''
                     }`}
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                  />
                 </button>
                 {isOpen && (
                   <p className="whitespace-pre-line pb-4 text-sm leading-relaxed text-fg-dim">

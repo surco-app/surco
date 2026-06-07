@@ -1,3 +1,4 @@
+import { Pause, Play } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -124,14 +125,9 @@ export function Player({
           className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
         >
           {paused ? (
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <Play className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
           ) : (
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4">
-              <rect x="6" y="5" width="4" height="14" rx="1" />
-              <rect x="14" y="5" width="4" height="14" rx="1" />
-            </svg>
+            <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
           )}
         </button>
 

@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -129,18 +130,10 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                     </option>
                   ))}
                 </select>
-                <svg
+                <ChevronDown
                   aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
                   className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-fg-dim"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
+                />
               </div>
               <span className="w-4 shrink-0 text-center">
                 {tier && tier !== 'low' && (
