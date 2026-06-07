@@ -9,8 +9,7 @@ import { createPortal } from 'react-dom'
 // light/dark theme automatically. `align`/`scope` are accepted for call-site compatibility
 // but no longer affect placement now that the tooltip is cursor-anchored.
 const WIDTH = 240
-const MARGIN = 8
-const OFFSET = 16
+const OFFSET = 14
 
 export function Tooltip({
   label,
@@ -20,17 +19,21 @@ export function Tooltip({
   scope?: 'default' | 'cover' | 'dot'
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
     if (!trigger) return
     const onMove = (e: PointerEvent): void => {
-      // Anchor below-right of the cursor, but flip/clamp near the viewport edges so a long
-      // label never spills off-screen.
-      const x = Math.min(Math.max(MARGIN, e.clientX + OFFSET), window.innerWidth - WIDTH - MARGIN)
-      const y = Math.min(e.clientY + OFFSET, window.innerHeight - 48)
-      setPos({ x, y })
+      // Hug the cursor on whichever side has room: near the right/bottom edges the tooltip
+      // flips via a transform so it stays next to the pointer instead of clamping far away.
+      const flipX = e.clientX + OFFSET + WIDTH > window.innerWidth
+      const flipY = e.clientY + OFFSET + 56 > window.innerHeight
+      setPos({
+        left: flipX ? e.clientX - OFFSET : e.clientX + OFFSET,
+        top: flipY ? e.clientY - OFFSET : e.clientY + OFFSET,
+        transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
+      })
     }
     const onLeave = (): void => setPos(null)
     trigger.addEventListener('pointermove', onMove)
@@ -49,7 +52,7 @@ export function Tooltip({
         createPortal(
           <span
             role="tooltip"
-            style={{ left: pos.x, top: pos.y, maxWidth: WIDTH }}
+            style={{ left: pos.left, top: pos.top, transform: pos.transform, maxWidth: WIDTH }}
             className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-md ring-1 ring-[var(--color-line-strong)]"
           >
             {label}
