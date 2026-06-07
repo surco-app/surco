@@ -84,9 +84,9 @@ const TrackRow = memo(function TrackRow({
       >
         <span
           title={tr(`trackList.status.${t.status}`)}
-          className={`h-2.5 w-2.5 shrink-0 rounded-full transition-[filter] group-hover:blur-[1px] ${statusColor[t.status]}`}
+          className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
         />
-        <span className="min-w-0 flex-1 transition-[filter] group-hover:blur-[1px]">
+        <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-fg">
             {t.meta.title || t.fileName}
           </span>
