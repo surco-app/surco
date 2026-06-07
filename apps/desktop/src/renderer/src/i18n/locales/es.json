@@ -24,6 +24,7 @@
     "fillFromName": "Rellenar todo desde el nombre",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
+    "exportRekordbox": "Exportar a rekordbox (colección XML)",
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {

@@ -24,6 +24,7 @@
     "fillFromName": "Fill all tags from file name",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "exportRekordbox": "Export to rekordbox (XML collection)",
     "clearAll": "Clear the list"
   },
   "sidebar": {

@@ -41,6 +41,7 @@ import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
+import { buildRekordboxXml } from './lib/rekordbox'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
@@ -374,6 +375,13 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [], anchor: null })
     spectrumInFlight.current.clear()
     discogsPrefetched.current.clear()
+  }
+
+  // Writes the loaded crate to a rekordbox collection XML the user can import. The
+  // native save dialog is the confirmation, so there's nothing more to show after.
+  function exportRekordbox(): void {
+    if (tracksRef.current.length === 0) return
+    void window.api.exportRekordbox(buildRekordboxXml(tracksRef.current))
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
@@ -1047,6 +1055,29 @@ export default function App(): React.JSX.Element {
                     {analysis.done}/{analysis.total}
                   </span>
                 )}
+              </button>
+              <button
+                type="button"
+                data-testid="export-rekordbox"
+                onClick={exportRekordbox}
+                aria-label={tr('header.exportRekordbox')}
+                title={tr('header.exportRekordbox')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                  <path d="M12 3v12" />
+                  <path d="m8 7 4-4 4 4" />
+                </svg>
               </button>
               <button
                 type="button"
