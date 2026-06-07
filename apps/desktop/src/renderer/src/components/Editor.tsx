@@ -163,6 +163,10 @@ export function Editor({
   const [busy, setBusy] = useState(false)
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [error, setError] = useState('')
+  // Audio-fingerprint identification: for a garbage-named rip, identify the track by
+  // sound and seed the search query + title/artist so Discogs can take over.
+  const [identifying, setIdentifying] = useState(false)
+  const [identifyMsg, setIdentifyMsg] = useState('')
   const [coverDragging, setCoverDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
@@ -253,21 +257,68 @@ export function Editor({
     }
   }
 
-  async function doSearch(): Promise<void> {
-    if (!query.trim()) return
+  // Fingerprints the file (Chromaprint → AcoustID) and applies the match to the query
+  // + title/artist, returning the query to hand to Discogs — or '' when there was no
+  // match (the reason is left in identifyMsg). Used both by the manual Identify button
+  // and as doSearch's fallback when Discogs finds nothing for a garbled filename.
+  async function fingerprintQuery(): Promise<string> {
+    setIdentifying(true)
+    setIdentifyMsg('')
+    try {
+      const res = await window.api.identify(item.inputPath)
+      if (!res) {
+        setIdentifyMsg(tr('editor.identifyNoMatch'))
+        return ''
+      }
+      const q = [res.artist, res.title].filter(Boolean).join(' ')
+      setQuery(q)
+      onChange({
+        query: q,
+        meta: {
+          ...item.meta,
+          title: res.title || item.meta.title,
+          artist: res.artist || item.meta.artist,
+        },
+      })
+      return q
+    } catch (e) {
+      setIdentifyMsg(e instanceof Error ? e.message : tr('editor.identifyError'))
+      return ''
+    } finally {
+      setIdentifying(false)
+    }
+  }
+
+  // Manual "Identify by audio": fingerprint, then search Discogs with the match so the
+  // full release (cover, label, year…) loads — not just the bare title/artist.
+  async function doIdentify(): Promise<void> {
+    const q = await fingerprintQuery()
+    if (q) await doSearch(q, false)
+  }
+
+  // fingerprintFallback (explicit searches only) recovers a garbled filename: when
+  // Discogs returns nothing, fingerprint the audio and re-search with what it found.
+  // The debounced auto-search passes false so typing never spawns fpcalc / hits AcoustID.
+  async function doSearch(q: string = query, fingerprintFallback = false): Promise<void> {
+    if (!q.trim()) return
     const token = ++searchToken.current
     setBusy(true)
     setError('')
     setRelease(null)
     try {
-      const id = parseReleaseId(query)
+      const id = parseReleaseId(q)
       if (id !== null) {
         const rel = await loadRelease(id)
         setResults([resultFromRelease(rel)])
         setRelease(rel)
       } else {
-        const found = await window.api.searchDiscogs(query)
+        const found = await window.api.searchDiscogs(q)
         if (searchToken.current !== token) return
+        if (found.length === 0 && fingerprintFallback) {
+          const fq = await fingerprintQuery()
+          if (fq) await doSearch(fq, false)
+          return
+        }
         setResults(found)
         await autoOpenMatch(found, token)
       }
@@ -584,20 +635,49 @@ export function Editor({
               data-testid="discogs-query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+              onKeyDown={(e) => e.key === 'Enter' && doSearch(query, true)}
               placeholder={tr('editor.searchPlaceholder')}
               className="min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
               type="button"
               data-testid="discogs-search"
-              onClick={doSearch}
+              onClick={() => doSearch(query, true)}
               disabled={busy}
               className="press rounded-lg bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
           </div>
+          {!isMulti && (
+            <button
+              type="button"
+              data-testid="identify-track"
+              onClick={doIdentify}
+              disabled={identifying}
+              title={tr('editor.identifyHint')}
+              className="press mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--color-line)] py-1.5 text-xs font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-50"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={`h-3.5 w-3.5 ${identifying ? 'animate-pulse' : ''}`}
+              >
+                <path d="M3 12h3l2-6 4 12 2-6h2" />
+              </svg>
+              {identifying ? tr('editor.identifying') : tr('editor.identify')}
+            </button>
+          )}
+          {identifyMsg && (
+            <p data-testid="identify-msg" className="mt-1.5 text-xs text-fg-dim">
+              {identifyMsg}
+            </p>
+          )}
           {!hasToken && (
             <p className="mt-2 text-xs text-fg-muted">
               <Trans

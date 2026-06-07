@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
@@ -1000,5 +1000,61 @@ describe('Editor properties panel', () => {
     expect(
       (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,
     ).toHaveBeenCalledWith('/Music/Crate/Vol 2/track.wav')
+  })
+})
+
+describe('Editor identify by audio', () => {
+  const setApi = (over: Record<string, unknown>) => {
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'win32',
+      reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
+      getRelease: vi.fn(),
+      ...over,
+    }
+  }
+
+  // The whole point: a garbage-named rip is recognized by sound, and the match is
+  // handed to Discogs so the full release (not just bare title/artist) can load.
+  it('fingerprints the file then searches Discogs with the match', async () => {
+    const identify = vi
+      .fn()
+      .mockResolvedValue({ title: 'Run To Me', artist: 'Ruffcut', album: '', score: 0.9 })
+    const searchDiscogs = vi.fn().mockResolvedValue([])
+    setApi({ identify, searchDiscogs })
+    const { onChange } = renderEditor({ id: 'a', inputPath: '/music/x.wav' })
+    fireEvent.click(screen.getByTestId('identify-track'))
+    await waitFor(() => expect(searchDiscogs).toHaveBeenCalledWith('Ruffcut Run To Me'))
+    expect(identify).toHaveBeenCalledWith('/music/x.wav')
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({ title: 'Run To Me', artist: 'Ruffcut' }),
+      }),
+    )
+  })
+
+  // No match must not fire a Discogs search for an empty query; it shows why instead.
+  it('shows a message and skips Discogs when nothing matched', async () => {
+    const identify = vi.fn().mockResolvedValue(null)
+    const searchDiscogs = vi.fn().mockResolvedValue([])
+    setApi({ identify, searchDiscogs })
+    renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('identify-track'))
+    await waitFor(() => expect(screen.getByTestId('identify-msg')).toBeInTheDocument())
+    expect(searchDiscogs).not.toHaveBeenCalled()
+  })
+
+  // An explicit Discogs search that finds nothing falls back to the fingerprint and
+  // re-searches with what it found — the user's "Discogs first, then huella" flow.
+  it('falls back to fingerprint when an explicit search returns nothing', async () => {
+    const identify = vi
+      .fn()
+      .mockResolvedValue({ title: 'Run To Me', artist: 'Ruffcut', album: '', score: 0.9 })
+    const searchDiscogs = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([])
+    setApi({ identify, searchDiscogs })
+    renderEditor({ id: 'a', query: 'garbled_rip_01' })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    await waitFor(() => expect(identify).toHaveBeenCalled())
+    expect(searchDiscogs).toHaveBeenCalledWith('Ruffcut Run To Me')
   })
 })
