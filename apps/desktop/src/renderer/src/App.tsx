@@ -1142,6 +1142,10 @@ export default function App(): React.JSX.Element {
                   align="end"
                 />
               </button>
+              <div
+                aria-hidden="true"
+                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+              />
               <button
                 type="button"
                 data-testid="export-rekordbox"
@@ -1165,6 +1169,10 @@ export default function App(): React.JSX.Element {
                 </svg>
                 <Tooltip label={tr('header.exportRekordbox')} align="end" />
               </button>
+              <div
+                aria-hidden="true"
+                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+              />
               <button
                 type="button"
                 data-testid="clear-all"
