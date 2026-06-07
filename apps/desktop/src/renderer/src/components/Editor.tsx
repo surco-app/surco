@@ -52,6 +52,11 @@ import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
+// How many search results to probe for the file's track before giving up. The
+// probe loads a full release per result, so this caps the Discogs calls a single
+// search can make and keeps it well under the rate limit.
+const MAX_AUTO_PROBE = 8
+
 // Per-grade colour for the analysis stat cells, reusing the good/warn/danger
 // tokens (Tokyo Night). The dot is a solid status light; the value text carries
 // the same colour so the verdict reads at a glance.
@@ -188,6 +193,9 @@ export function Editor({
     path: item.coverPath,
   }))
   const releaseRef = useRef<DiscogsRelease | null>(null)
+  // Bumped on every search so an in-flight auto-probe from a superseded search
+  // bails instead of opening a release the user is no longer looking for.
+  const searchToken = useRef(0)
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const discogs = useResizableWidth(315, 300, 720)
@@ -212,8 +220,36 @@ export function Editor({
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
   useEffect(() => setCoverDims(null), [displayCover])
 
+  // Walk the results from the top, load each release's tracklist, and open the
+  // first one that confidently holds the file's track — so the user lands on the
+  // right album instead of opening each result by hand. Capped and cancellable so
+  // it bounds the Discogs calls and a newer search wins.
+  async function autoOpenMatch(found: DiscogsSearchResult[], token: number): Promise<void> {
+    if (!item.meta.title.trim()) return
+    for (const result of found.slice(0, MAX_AUTO_PROBE)) {
+      let rel: DiscogsRelease
+      try {
+        rel = await loadRelease(result.id)
+      } catch {
+        continue
+      }
+      if (searchToken.current !== token) return
+      const m = bestMatch(rel.tracklist, {
+        title: item.meta.title,
+        durationSec: item.duration,
+        trackNumber: item.meta.trackNumber,
+        artist: item.meta.artist,
+      })
+      if (m && confidenceTier(m.confidence) !== 'low') {
+        setRelease(rel)
+        return
+      }
+    }
+  }
+
   async function doSearch(): Promise<void> {
     if (!query.trim()) return
+    const token = ++searchToken.current
     setBusy(true)
     setError('')
     setRelease(null)
@@ -224,12 +260,15 @@ export function Editor({
         setResults([resultFromRelease(rel)])
         setRelease(rel)
       } else {
-        setResults(await window.api.searchDiscogs(query))
+        const found = await window.api.searchDiscogs(query)
+        if (searchToken.current !== token) return
+        setResults(found)
+        await autoOpenMatch(found, token)
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : tr('editor.searchError'))
     } finally {
-      setBusy(false)
+      if (searchToken.current === token) setBusy(false)
     }
   }
 
@@ -317,6 +356,12 @@ export function Editor({
   // not touch the song's data, so browsing results never clobbers what the user
   // already entered. Applying the metadata is the deliberate double click.
   async function previewRelease(result: DiscogsSearchResult): Promise<void> {
+    // Clicking the open release again collapses it; the ref keeps the tracklist
+    // cached so reopening doesn't refetch.
+    if (release?.id === result.id) {
+      setRelease(null)
+      return
+    }
     if (releaseRef.current?.id === result.id) {
       setRelease(releaseRef.current)
       return
@@ -627,24 +672,21 @@ export function Editor({
                               </span>
                               <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
                               {t === matchedTrack && matchTier && (
-                                <svg
+                                // A text label, not a tick: a check icon reads as
+                                // "already applied", but the metadata is only applied
+                                // when the row is clicked. The tier color tells the
+                                // user whether to trust the suggestion or double-check.
+                                <span
                                   data-testid="track-confidence"
                                   data-confidence={matchTier}
-                                  aria-label={tr('editor.matchSuggested')}
-                                  role="img"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth={3}
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className={`size-4 shrink-0 ${
-                                    matchTier === 'high' ? 'text-good' : 'text-warn'
+                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                                    matchTier === 'high'
+                                      ? 'bg-good/15 text-good'
+                                      : 'bg-warn/15 text-warn'
                                   }`}
                                 >
-                                  <title>{tr('editor.matchSuggested')}</title>
-                                  <path d="M5 13l4 4L19 7" />
-                                </svg>
+                                  {tr('editor.matchSuggested')}
+                                </span>
                               )}
                               {t.duration && (
                                 <span className="shrink-0 text-xs tabular-nums text-fg-dim">
@@ -907,7 +949,9 @@ export function Editor({
                             value={item.meta[def.key] ?? ''}
                             onChange={(v) => setField(def.key, v)}
                             wide={def.wide}
-                            invalid={requiredFields.includes(def.key) && !item.meta[def.key]?.trim()}
+                            invalid={
+                              requiredFields.includes(def.key) && !item.meta[def.key]?.trim()
+                            }
                             suggestions={
                               def.key === 'genre'
                                 ? genreChips

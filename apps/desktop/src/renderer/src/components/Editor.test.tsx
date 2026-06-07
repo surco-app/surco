@@ -351,13 +351,14 @@ describe('Editor genre presets', () => {
   // so the user's own default genres must surface as pills on their own and set
   // the field when clicked — the whole point of asking for them in onboarding.
   it('offers the user default genres as pills with no Discogs release', () => {
-    const { onChange } = renderEditor(
-      { id: 'a' },
-      'wav',
-      { visibleFields: ['genre'], genrePresets: ['Hard Dance', 'Techno'] },
-    )
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', {
+      visibleFields: ['genre'],
+      genrePresets: ['Hard Dance', 'Techno'],
+    })
     fireEvent.click(screen.getByTestId('chip-Hard Dance'))
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ genre: 'Hard Dance' }) })
+    expect(onChange).toHaveBeenCalledWith({
+      meta: expect.objectContaining({ genre: 'Hard Dance' }),
+    })
   })
 })
 
@@ -716,6 +717,38 @@ describe('Editor Discogs apply', () => {
     expect(onChange).toHaveBeenCalled()
   })
 
+  // Clicking the already-open album closes it again, so the row acts as a toggle
+  // rather than only ever expanding.
+  it('collapses the album when its open row is clicked again', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    expect((await screen.findAllByTestId('discogs-track')).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    expect(screen.getByTestId('discogs-result')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  // After searching, the result that confidently holds the file's track opens on
+  // its own, so the user lands on the right album without clicking each result.
+  it('auto-opens the result whose tracklist matches the file', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'Track One' } })
+    await search()
+    expect((await screen.findAllByTestId('discogs-track')).length).toBeGreaterThan(0)
+    expect(screen.getByTestId('discogs-result')).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  // The probe is a guess that must never mutate the song — only opening the album
+  // does. With no title there is nothing to match, so it doesn't even fetch.
+  it('does not probe releases when the file has no title', async () => {
+    const { getRelease } = withDiscogs()
+    const { onChange } = renderEditor({ id: 'a' })
+    await search()
+    expect(getRelease).not.toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   function withImages(): void {
     const withImage = {
       ...release,
@@ -821,6 +854,18 @@ describe('Editor track preselection', () => {
     expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
   })
 
+  // A check icon reads as "already applied", but nothing is applied until the
+  // user clicks the row — so the suggestion must be a plain text label ("Suggested"),
+  // not a tick, otherwise the user assumes the metadata is already filled in.
+  it('labels the preselection as a suggestion rather than showing an applied-looking tick', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track two remix' } })
+    await loadTracklist()
+    const badge = await screen.findByTestId('track-confidence')
+    expect(badge.tagName).toBe('SPAN')
+    expect(badge).toHaveTextContent(i18n.t('editor.matchSuggested'))
+  })
+
   it('flags a partial-title preselection for review', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two' } })
@@ -832,7 +877,7 @@ describe('Editor track preselection', () => {
   })
 
   // A weak match — one incidental shared word — is "too weak to trust", so it must
-  // neither preselect a row nor show a tick. Otherwise loading an unrelated release
+  // neither preselect a row nor show a badge. Otherwise loading an unrelated release
   // still badges a random mix and invites the user to apply the wrong one.
   it('does not preselect or badge a low-confidence match', async () => {
     withDiscogs()
