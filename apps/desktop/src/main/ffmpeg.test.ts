@@ -14,6 +14,7 @@ import {
   parseLoudness,
   planConversion,
   previewWavArgs,
+  propertiesFromProbe,
   tagsFromProbe,
 } from './ffmpeg'
 
@@ -557,6 +558,78 @@ describe('tagsFromProbe', () => {
       discogsReleaseId: '',
       rating: '',
     })
+  })
+})
+
+describe('propertiesFromProbe', () => {
+  const file = { sizeBytes: 58_400_000, createdMs: 1_700_000_000_000, modifiedMs: 1_700_000_500_000 }
+
+  it('maps a 16-bit stereo WAV stream and container into display properties', () => {
+    const p = propertiesFromProbe(
+      {
+        streams: [
+          {
+            codec_name: 'pcm_s16le',
+            bits_per_raw_sample: '16',
+            sample_rate: '44100',
+            channels: 2,
+          },
+        ],
+        format: { format_name: 'wav', bit_rate: '1411200', size: '58400000' },
+      },
+      file,
+    )
+    expect(p).toEqual({
+      codec: 'pcm_s16le',
+      container: 'wav',
+      sampleRateHz: 44100,
+      bitDepth: 16,
+      channels: 2,
+      bitrateKbps: 1411,
+      sizeBytes: 58_400_000,
+      createdMs: 1_700_000_000_000,
+      modifiedMs: 1_700_000_500_000,
+    })
+  })
+
+  it('reports a null bit depth for lossy streams that omit bits_per_raw_sample', () => {
+    // MP3/AAC have no fixed sample size, so ffprobe leaves the field out; the UI then
+    // hides the bit-depth row rather than inventing a "0 Bit" reading.
+    const p = propertiesFromProbe(
+      { streams: [{ codec_name: 'mp3', sample_rate: '44100', channels: 2 }], format: {} },
+      file,
+    )
+    expect(p.bitDepth).toBeNull()
+  })
+
+  it('keeps only the first name when the container reports an alias list', () => {
+    // ffprobe prints comma-joined names for multi-format demuxers (e.g. "aiff" alone
+    // but "mov,mp4,m4a,..." for MP4); we show the primary one.
+    const p = propertiesFromProbe(
+      { streams: [{ codec_name: 'alac' }], format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' } },
+      file,
+    )
+    expect(p.container).toBe('mov')
+  })
+
+  it('falls back to the stream bitrate when the container omits one, else null', () => {
+    const fromStream = propertiesFromProbe(
+      { streams: [{ bit_rate: '320000' }], format: {} },
+      file,
+    )
+    expect(fromStream.bitrateKbps).toBe(320)
+    const none = propertiesFromProbe({ streams: [{}], format: {} }, file)
+    expect(none.bitrateKbps).toBeNull()
+  })
+
+  it('takes file size and timestamps from the filesystem stat, not the container', () => {
+    const p = propertiesFromProbe(
+      { streams: [{}], format: { size: '999' } },
+      { sizeBytes: 58_400_000, createdMs: 1_700_000_000_000, modifiedMs: 1_700_000_500_000 },
+    )
+    expect(p.sizeBytes).toBe(58_400_000)
+    expect(p.createdMs).toBe(1_700_000_000_000)
+    expect(p.modifiedMs).toBe(1_700_000_500_000)
   })
 })
 

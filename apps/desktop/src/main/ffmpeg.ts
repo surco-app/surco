@@ -1,10 +1,16 @@
 import { execFile } from 'node:child_process'
-import { copyFile, readFile, rename, unlink } from 'node:fs/promises'
+import { copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag, ratingTagToStars } from '../shared/rating'
-import type { LoudnessResult, NormalizeConfig, OutputFormat, TrackMetadata } from '../shared/types'
+import type {
+  LoudnessResult,
+  NormalizeConfig,
+  OutputFormat,
+  TrackMetadata,
+  TrackProperties,
+} from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
 import {
@@ -168,6 +174,65 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
     sampleRate: String(stream.sample_rate ?? ''),
     channels: Number(stream.channels) || 2,
   }
+}
+
+interface PropertiesProbe {
+  streams?: {
+    codec_name?: string
+    bits_per_raw_sample?: string
+    sample_rate?: string
+    channels?: number
+    bit_rate?: string
+  }[]
+  format?: { format_name?: string; bit_rate?: string; size?: string }
+}
+
+interface FileStat {
+  sizeBytes: number
+  createdMs: number | null
+  modifiedMs: number | null
+}
+
+// Maps an ffprobe stream+format dump and an fs.stat onto the read-only facts shown
+// in the Properties panel. Pure so the parsing is unit-tested without spawning
+// ffprobe; probeProperties wires the two real sources in.
+export function propertiesFromProbe(data: PropertiesProbe, file: FileStat): TrackProperties {
+  const stream = data.streams?.[0] ?? {}
+  const format = data.format ?? {}
+  const bitrate = Number(format.bit_rate ?? stream.bit_rate)
+  return {
+    codec: String(stream.codec_name ?? ''),
+    container: String(format.format_name ?? '')
+      .split(',')[0]
+      .trim(),
+    sampleRateHz: Number(stream.sample_rate) || 0,
+    bitDepth: Number(stream.bits_per_raw_sample) || null,
+    channels: Number(stream.channels) || 0,
+    bitrateKbps: Number.isFinite(bitrate) && bitrate > 0 ? Math.round(bitrate / 1000) : null,
+    sizeBytes: file.sizeBytes,
+    createdMs: file.createdMs,
+    modifiedMs: file.modifiedMs,
+  }
+}
+
+export async function probeProperties(input: string): Promise<TrackProperties> {
+  const { stdout } = await run(ffprobePath, [
+    '-v',
+    'error',
+    '-select_streams',
+    'a:0',
+    '-show_entries',
+    'stream=codec_name,bits_per_raw_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
+    '-of',
+    'json',
+    input,
+  ])
+  const s = await stat(input)
+  return propertiesFromProbe(JSON.parse(stdout), {
+    sizeBytes: s.size,
+    createdMs: s.birthtimeMs || null,
+    modifiedMs: s.mtimeMs || null,
+  })
 }
 
 // Picks a PCM codec that preserves the source bit depth exactly (lossless),

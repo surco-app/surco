@@ -175,3 +175,26 @@ export interface LoudnessResult {
   // Estimated noise floor in dB; lower is cleaner.
   noiseFloorDb: number | null
 }
+
+// Read-only technical facts about the source file, shown in the Properties panel.
+// Probed once per file via ffprobe (stream + container) plus an fs.stat for the
+// on-disk size and timestamps that the container doesn't carry.
+export interface TrackProperties {
+  // ffprobe codec_name, e.g. 'pcm_s16le', 'flac', 'mp3' — the encoded form.
+  codec: string
+  // The container's primary short name (first of ffprobe's comma-joined list).
+  container: string
+  sampleRateHz: number
+  // Sample size in bits; null for lossy codecs that have no fixed bit depth, so
+  // the UI hides the row instead of showing "0 Bit".
+  bitDepth: number | null
+  channels: number
+  // Overall bitrate in kbps; null when neither the container nor the stream reports
+  // one (the UI then omits it).
+  bitrateKbps: number | null
+  sizeBytes: number
+  // Filesystem timestamps in epoch milliseconds; null when the platform can't read
+  // a birth time.
+  createdMs: number | null
+  modifiedMs: number | null
+}
