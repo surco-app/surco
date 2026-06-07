@@ -21,7 +21,7 @@ export function Tooltip({
   return (
     <span
       role="tooltip"
-      className={`pointer-events-none absolute top-full z-30 mt-1.5 max-w-[14rem] translate-y-0.5 rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 ${ALIGN[align]}`}
+      className={`pointer-events-none absolute top-full z-30 mt-1.5 w-max max-w-[14rem] translate-y-0.5 rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 ${ALIGN[align]}`}
     >
       {label}
     </span>
