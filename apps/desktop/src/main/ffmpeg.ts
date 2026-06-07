@@ -397,6 +397,7 @@ export async function convertAudio(
   meta: TrackMetadata,
   coverPath?: string,
   normalize?: NormalizeConfig,
+  removeCover?: boolean,
 ): Promise<void> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -424,7 +425,7 @@ export async function convertAudio(
       // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
       // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
       await copyFile(input, tmp)
-      writeTags(tmp, meta, coverPath)
+      writeTags(tmp, meta, coverPath, removeCover)
     } else {
       await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter), {
         maxBuffer: 1024 * 1024 * 32,

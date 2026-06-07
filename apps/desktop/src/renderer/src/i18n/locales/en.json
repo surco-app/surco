@@ -112,6 +112,7 @@
     "coverAlt": "Artwork",
     "coverTitle": "Drag an image to use it as the artwork",
     "coverExport": "Export artwork",
+    "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",
     "coverNext": "Next image",
     "ratingStars": "{{count}} stars",

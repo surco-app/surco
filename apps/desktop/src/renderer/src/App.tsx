@@ -557,6 +557,7 @@ export default function App(): React.JSX.Element {
         meta,
         coverUrl: track.coverUrl,
         coverPath: track.coverPath,
+        removeCover: track.coverRemoved,
         format: formatOverride,
         normalize: normalizeOverride,
         previousOutputPath: track.outputPath,

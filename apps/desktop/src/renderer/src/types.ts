@@ -20,6 +20,9 @@ export interface TrackItem {
   duration?: number
   coverUrl?: string
   coverPath?: string
+  // Set when the user clears the artwork, so the conversion strips the embedded
+  // cover instead of preserving it. Cleared again the moment a new cover is set.
+  coverRemoved?: boolean
   spectrum?: SpectrumResult
   // EBU R128 loudness, measured once per input alongside the spectrum and shown
   // read-only. null when the measurement failed; undefined before it has run.

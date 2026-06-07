@@ -427,6 +427,7 @@ function registerIpc(): void {
         job.meta,
         coverPath,
         job.normalize ?? settings.normalize,
+        job.removeCover,
       )
       if (inPlace) await removeRenamedOriginal(job.inputPath, target)
       recordConversion()

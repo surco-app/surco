@@ -437,7 +437,11 @@ export function Editor({
     const coverUrl = URL.createObjectURL(file)
     const coverPath = window.api.getPathForFile(file)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
-    else onChange({ coverUrl, coverPath })
+    else onChange({ coverUrl, coverPath, coverRemoved: false })
+  }
+
+  function onCoverRemove(): void {
+    onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 
   function onCoverDrop(e: React.DragEvent): void {
@@ -462,7 +466,12 @@ export function Editor({
   // images). It only swaps the artwork, leaving the rest of the metadata untouched.
   function pickCoverImage(delta: number): void {
     const i = stepImageIndex(coverChoices, item.coverUrl, delta)
-    if (i >= 0) onChange({ coverUrl: coverChoices[i].uri, coverPath: coverChoices[i].path })
+    if (i >= 0)
+      onChange({
+        coverUrl: coverChoices[i].uri,
+        coverPath: coverChoices[i].path,
+        coverRemoved: false,
+      })
   }
 
   function onCoverExport(): void {
@@ -828,29 +837,53 @@ export function Editor({
                         }`}
                       />
                       {!isMulti && (
-                        <button
-                          type="button"
-                          data-testid="cover-export"
-                          onClick={onCoverExport}
-                          title={tr('editor.coverExport')}
-                          aria-label={tr('editor.coverExport')}
-                          className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                            className="h-4 w-4"
+                        <>
+                          <button
+                            type="button"
+                            data-testid="cover-remove"
+                            onClick={onCoverRemove}
+                            title={tr('editor.coverRemove')}
+                            aria-label={tr('editor.coverRemove')}
+                            className="press absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                           >
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <path d="M7 10l5 5 5-5" />
-                            <path d="M12 15V3" />
-                          </svg>
-                        </button>
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            >
+                              <path d="M18 6 6 18" />
+                              <path d="m6 6 12 12" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="cover-export"
+                            onClick={onCoverExport}
+                            title={tr('editor.coverExport')}
+                            aria-label={tr('editor.coverExport')}
+                            className="press absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            >
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <path d="M7 10l5 5 5-5" />
+                              <path d="M12 15V3" />
+                            </svg>
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (

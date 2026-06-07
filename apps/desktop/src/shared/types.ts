@@ -111,6 +111,10 @@ export interface ProcessJob {
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
+  // Strips any embedded artwork with no replacement, for when the user cleared
+  // the cover. Only meaningful when no coverUrl/coverPath is supplied — a cover
+  // source always wins over removal.
+  removeCover?: boolean
   format?: OutputFormat
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.

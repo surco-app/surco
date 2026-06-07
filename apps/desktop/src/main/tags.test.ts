@@ -164,6 +164,28 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  it('strips the cover on removeCover while keeping the cue frame', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    const cover = buildCover(dir)
+    writeTags(file, meta, cover)
+
+    // removeCover with no replacement clears the embedded art, but APIC and GEOB
+    // share the attachment kind so the cue blob must survive the removal.
+    writeTags(file, meta, undefined, true)
+
+    const bytes = readFileSync(file)
+    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+
+    const f = TagFile.createFromPath(file)
+    const apic = (f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).frames.filter(
+      (fr) => fr.frameId.toString() === 'APIC',
+    )
+    expect(apic).toHaveLength(0)
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+  })
+
   it('clears a field the user emptied', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)

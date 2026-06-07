@@ -125,7 +125,25 @@ describe('Editor cover picker', () => {
     const { onChange } = renderEditor({ id: 'a' })
     const file = new File(['x'], 'c.png', { type: 'image/png' })
     fireEvent.change(screen.getByTestId('cover-input'), { target: { files: [file] } })
-    expect(onChange).toHaveBeenCalledWith({ coverUrl: 'blob:cover', coverPath: '/img/c.png' })
+    expect(onChange).toHaveBeenCalledWith({
+      coverUrl: 'blob:cover',
+      coverPath: '/img/c.png',
+      coverRemoved: false,
+    })
+  })
+
+  // Clearing the artwork must signal a real removal (coverRemoved), not just drop
+  // the URL — otherwise the conversion's in-place path would keep the embedded art.
+  it('clears the cover and flags removal when the remove button is clicked', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve('/tmp/c.jpg')
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'data:image/png;base64,xxx' })
+    fireEvent.click(screen.getByTestId('cover-remove'))
+    expect(onChange).toHaveBeenCalledWith({
+      coverUrl: undefined,
+      coverPath: undefined,
+      coverRemoved: true,
+    })
   })
 
   // Showing the pixel size lets the user judge whether the Discogs cover is sharp

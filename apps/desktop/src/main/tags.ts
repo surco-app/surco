@@ -125,8 +125,14 @@ function setRating(tag: Id3v2Tag, stars: string): void {
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
-// matching the metadata the ffmpeg path would have produced.
-export function writeTags(file: string, meta: TrackMetadata, coverPath?: string): void {
+// matching the metadata the ffmpeg path would have produced. `removeCover` drops
+// the embedded art with no replacement, for when the user clears the artwork.
+export function writeTags(
+  file: string,
+  meta: TrackMetadata,
+  coverPath?: string,
+  removeCover = false,
+): void {
   const f = TagFile.createFromPath(file)
   try {
     const tag = f.tag
@@ -157,11 +163,14 @@ export function writeTags(file: string, meta: TrackMetadata, coverPath?: string)
     setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
     setRating(id3, meta.rating ?? '')
 
-    if (coverPath) {
+    if (coverPath || removeCover) {
       // TagLib models APIC and GEOB as the same attachment kind, so the generic
       // `pictures` setter would wipe the GEOB cue frame along with the old art.
-      // Removing only APIC and appending the new picture leaves GEOB in place.
+      // Removing only APIC leaves GEOB in place; the new picture (if any) is then
+      // appended, so removeCover with no coverPath simply clears the art.
       id3.removeFrames(Id3v2FrameIdentifiers.APIC)
+    }
+    if (coverPath) {
       const picture = Picture.fromPath(coverPath)
       picture.type = PictureType.FrontCover
       id3.addFrame(Id3v2AttachmentFrame.fromPicture(picture))
