@@ -1036,7 +1036,7 @@ export default function App(): React.JSX.Element {
           style={{ width: sidebar.width }}
           className="relative shrink-0 bg-[var(--color-panel)]"
         >
-          <div className="h-full overflow-y-auto">
+          <div className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}>
             {tracks.length === 0 ? (
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
