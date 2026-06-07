@@ -19,3 +19,25 @@ export function trackQuality(track: TrackItem): TrackQuality {
 export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<string>): TrackItem[] {
   return tracks.filter((t) => !t.spectrum && !inFlight.has(t.id))
 }
+
+// The list filter modes: everything, just the suspect (likely fake-lossless) rips, or
+// the ones still without a verdict.
+export type QualityFilter = 'all' | 'suspect' | 'unanalyzed'
+
+export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
+  if (filter === 'all') return tracks
+  return tracks.filter((t) => trackQuality(t) === filter)
+}
+
+// Tallies for the filter chips, so the bar can show "5 suspect" without the caller
+// walking the list per chip.
+export function qualityCounts(tracks: TrackItem[]): { suspect: number; unanalyzed: number } {
+  let suspect = 0
+  let unanalyzed = 0
+  for (const t of tracks) {
+    const q = trackQuality(t)
+    if (q === 'suspect') suspect += 1
+    else if (q === 'unanalyzed') unanalyzed += 1
+  }
+  return { suspect, unanalyzed }
+}

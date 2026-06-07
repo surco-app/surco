@@ -27,7 +27,12 @@
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”."
+    "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”.",
+    "filter": {
+      "all": "Todas",
+      "suspect": "Sospechosas",
+      "unanalyzed": "Sin analizar"
+    }
   },
   "drop": {
     "release": "Suelta para añadir"

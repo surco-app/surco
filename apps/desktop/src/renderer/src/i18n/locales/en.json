@@ -27,7 +27,12 @@
     "clearAll": "Clear the list"
   },
   "sidebar": {
-    "dropHint": "Drag your WAV or FLAC here, or press “Add files”."
+    "dropHint": "Drag your WAV or FLAC here, or press “Add files”.",
+    "filter": {
+      "all": "All",
+      "suspect": "Suspect",
+      "unanalyzed": "Unanalyzed"
+    }
   },
   "drop": {
     "release": "Drop to add"

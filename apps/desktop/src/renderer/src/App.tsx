@@ -45,7 +45,7 @@ import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
-import { tracksToAnalyze } from './lib/triage'
+import { filterByQuality, type QualityFilter, qualityCounts, tracksToAnalyze } from './lib/triage'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -110,6 +110,9 @@ export default function App(): React.JSX.Element {
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
+  // big crate can be swept for fakes without scrolling past the clean ones.
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
   const [confirm, setConfirm] = useState<{
     title: string
     message: string
@@ -674,6 +677,9 @@ export default function App(): React.JSX.Element {
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
+
+  const qualityTally = qualityCounts(tracks)
+  const visibleTracks = filterByQuality(tracks, qualityFilter)
   const canProcessAll = eligibleCount > 0 && !batching
 
   const commands: Command[] = [
@@ -1134,17 +1140,57 @@ export default function App(): React.JSX.Element {
             {tracks.length === 0 ? (
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
-              <TrackList
-                tracks={tracks}
-                selectedId={selectedId}
-                selectedIds={selectedIds}
-                outputFormat={settings?.outputFormat ?? 'aiff'}
-                onSelect={onSelectTrack}
-                onRemove={removeTrack}
-                onPrefetch={handlePrefetch}
-                onSearch={onSearchTrack}
-                onTrash={askTrash}
-              />
+              <>
+                {(qualityTally.suspect > 0 || qualityFilter !== 'all') && (
+                  <div
+                    data-testid="quality-filter"
+                    className="sticky top-0 z-10 flex gap-1 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-2"
+                  >
+                    {(['all', 'suspect', 'unanalyzed'] as const).map((mode) => {
+                      const count =
+                        mode === 'all'
+                          ? tracks.length
+                          : mode === 'suspect'
+                            ? qualityTally.suspect
+                            : qualityTally.unanalyzed
+                      const active = qualityFilter === mode
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`quality-filter-${mode}`}
+                          aria-pressed={active}
+                          onClick={() => setQualityFilter(mode)}
+                          className={`press flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
+                            active
+                              ? 'bg-[var(--color-accent-soft)] text-fg'
+                              : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
+                          }`}
+                        >
+                          {mode === 'suspect' && (
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-warn' : 'bg-warn/70'}`}
+                            />
+                          )}
+                          {tr(`sidebar.filter.${mode}`)}
+                          <span className="tabular-nums opacity-70">{count}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                <TrackList
+                  tracks={visibleTracks}
+                  selectedId={selectedId}
+                  selectedIds={selectedIds}
+                  outputFormat={settings?.outputFormat ?? 'aiff'}
+                  onSelect={onSelectTrack}
+                  onRemove={removeTrack}
+                  onPrefetch={handlePrefetch}
+                  onSearch={onSearchTrack}
+                  onTrash={askTrash}
+                />
+              </>
             )}
           </div>
           {playerVisible && playerTrack && (

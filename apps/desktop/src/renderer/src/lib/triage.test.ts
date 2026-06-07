@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { trackQuality, tracksToAnalyze } from './triage'
+import { filterByQuality, qualityCounts, trackQuality, tracksToAnalyze } from './triage'
 
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
 const withSpectrum = (spectrum?: Partial<SpectrumResult>): TrackItem =>
@@ -45,5 +45,33 @@ describe('tracksToAnalyze', () => {
   it('returns nothing once every track is analyzed', () => {
     const tracks = [t('a', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100 } })]
     expect(tracksToAnalyze(tracks, new Set())).toEqual([])
+  })
+})
+
+describe('filterByQuality / qualityCounts', () => {
+  const t = (id: string, cutoffHz?: number | null): TrackItem =>
+    ({
+      id,
+      spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
+    }) as TrackItem
+  const tracks = [t('good', 21000), t('bad', 16000), t('fresh'), t('inconclusive', null)]
+
+  it('returns every track when the filter is "all"', () => {
+    expect(filterByQuality(tracks, 'all')).toHaveLength(4)
+  })
+
+  it('keeps only the suspect rips so the fakes are isolated', () => {
+    expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad'])
+  })
+
+  it('treats an inconclusive cutoff as unanalyzed alongside the unmeasured ones', () => {
+    expect(filterByQuality(tracks, 'unanalyzed').map((x) => x.id)).toEqual([
+      'fresh',
+      'inconclusive',
+    ])
+  })
+
+  it('counts suspect and unanalyzed tracks for the filter badges', () => {
+    expect(qualityCounts(tracks)).toEqual({ suspect: 1, unanalyzed: 2 })
   })
 })
