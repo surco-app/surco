@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
 import type {
@@ -68,10 +68,6 @@ async function warmDiscogs(query: string): Promise<void> {
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
-
-// The effective key bindings (defaults until per-command overrides from Settings are
-// wired in). Built once: the keydown listener reads it to resolve a keystroke.
-const defaultBindings = resolveBindings()
 
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)
@@ -648,46 +644,64 @@ export default function App(): React.JSX.Element {
   const eligibleCount = eligibleForBatch(tracks).length
   const canProcessAll = eligibleCount > 0 && !batching
 
+  // Effective key bindings (defaults + the user's overrides): the single source the
+  // palette hints below and the keydown listener (via a ref, since it subscribes once)
+  // both read, so a rebind in Settings updates everywhere at once.
+  const bindings = useMemo(
+    () => resolveBindings(settings?.shortcutOverrides),
+    [settings?.shortcutOverrides],
+  )
+  const bindingsRef = useRef(bindings)
+  bindingsRef.current = bindings
+  const hintFor = (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac)
+
   const commands: Command[] = [
     {
       id: 'add',
       title: tr('commands.add'),
-      hint: formatShortcut(['mod', 'O'], isMac),
+      hint: hintFor('add'),
       enabled: true,
       run: pickFiles,
     },
     {
       id: 'find-replace',
       title: tr('commands.findReplace'),
+      hint: hintFor('find-replace'),
       enabled: tracks.length > 0,
       run: () => setShowFindReplace(true),
     },
     {
       id: 'prev',
       title: tr('commands.prev'),
-      hint: '↑',
+      hint: hintFor('prev'),
       enabled: tracks.length > 1,
       run: () => moveSelection(-1),
     },
     {
       id: 'next',
       title: tr('commands.next'),
-      hint: '↓',
+      hint: hintFor('next'),
       enabled: tracks.length > 1,
       run: () => moveSelection(1),
     },
-    { id: 'play', title: tr('commands.play'), hint: '␣', enabled: !!selected, run: togglePlay },
+    {
+      id: 'play',
+      title: tr('commands.play'),
+      hint: hintFor('play'),
+      enabled: !!selected,
+      run: togglePlay,
+    },
     {
       id: 'search',
       title: tr('commands.search'),
-      hint: '/',
+      hint: hintFor('search'),
       enabled: !!selected,
       run: () => searchInputRef.current?.focus(),
     },
     {
       id: 'process-current',
       title: tr('commands.processCurrent'),
-      hint: formatShortcut(['mod', 'enter'], isMac),
+      hint: hintFor('process-current'),
       enabled: canProcessSelected,
       run: () =>
         selected &&
@@ -700,7 +714,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'process-all',
       title: tr('commands.processAll'),
-      hint: formatShortcut(['mod', 'shift', 'enter'], isMac),
+      hint: hintFor('process-all'),
       enabled: canProcessAll,
       run: () =>
         processAll(editorFormatRef.current ?? undefined, editorNormalizeRef.current ?? undefined),
@@ -708,6 +722,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'reveal',
       title: tr('commands.reveal'),
+      hint: hintFor('reveal'),
       enabled: !!selected?.outputPath,
       run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
     },
@@ -716,13 +731,14 @@ export default function App(): React.JSX.Element {
       // (multi-select hides it), so the command follows the same single-track rule.
       id: 'rename',
       title: tr('commands.rename'),
-      hint: formatShortcut(['mod', 'shift', 'R'], isMac),
+      hint: hintFor('rename'),
       enabled: !!selected && selectedTracks.length <= 1,
       run: () => setShowRename(true),
     },
     {
       id: 'add-apple-music',
       title: tr('commands.addAppleMusic'),
+      hint: hintFor('add-apple-music'),
       enabled:
         !!selected &&
         canAddToAppleMusic(selected, window.api.platform, settings?.outputFormat ?? 'aiff'),
@@ -731,7 +747,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'remove',
       title: tr('commands.remove'),
-      hint: formatShortcut(['mod', 'backspace'], isMac),
+      hint: hintFor('remove'),
       enabled: !!selected,
       run: () => selected && removeTrack(selected.id),
     },
@@ -744,7 +760,7 @@ export default function App(): React.JSX.Element {
     {
       id: 'settings',
       title: tr('commands.settings'),
-      hint: formatShortcut(['mod', ','], isMac),
+      hint: hintFor('settings'),
       enabled: true,
       run: () => openSettings(),
     },
@@ -816,7 +832,12 @@ export default function App(): React.JSX.Element {
         return
       }
       if (overlayOpenRef.current) return
-      const id = keyToCommandId(e, isTypingTarget(document.activeElement), defaultBindings, isMac)
+      const id = keyToCommandId(
+        e,
+        isTypingTarget(document.activeElement),
+        bindingsRef.current,
+        isMac,
+      )
       if (id) {
         e.preventDefault()
         runCommand(commandsRef.current, id)

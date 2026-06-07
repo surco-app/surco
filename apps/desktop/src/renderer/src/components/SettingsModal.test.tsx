@@ -33,6 +33,7 @@ const settings: Settings = {
   showSpectrum: true,
   showLoudness: true,
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  shortcutOverrides: {},
   hasSeenOnboarding: true,
   conversionCount: 0,
 }

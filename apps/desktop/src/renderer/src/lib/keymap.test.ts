@@ -42,9 +42,7 @@ describe('keyToCommandId', () => {
   })
 
   it('processes the whole queue on cmd+shift+enter', () => {
-    expect(press(key('Enter', { metaKey: true, shiftKey: true }), false)).toBe(
-      'process-all',
-    )
+    expect(press(key('Enter', { metaKey: true, shiftKey: true }), false)).toBe('process-all')
   })
 
   // ⌘⇧R opens the file-name builder even while a field is focused (it's a modifier

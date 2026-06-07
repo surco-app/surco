@@ -12,7 +12,7 @@ vi.mock('electron', () => {
 
 import { app } from 'electron'
 import { rmSync } from 'node:fs'
-import { getSettings, recordConversion } from './settings'
+import { getSettings, recordConversion, saveSettings } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -24,5 +24,16 @@ describe('recordConversion', () => {
     recordConversion()
     recordConversion()
     expect(getSettings().conversionCount).toBe(2)
+  })
+})
+
+describe('shortcutOverrides', () => {
+  // Old settings files predate the field, so the defaults merge must supply an empty
+  // map (no overrides) rather than leaving it undefined; a saved override survives a
+  // reload like every other setting.
+  it('defaults to empty and round-trips a saved override', () => {
+    expect(getSettings().shortcutOverrides).toEqual({})
+    saveSettings({ shortcutOverrides: { add: ['mod', 'shift', 'a'] } })
+    expect(getSettings().shortcutOverrides).toEqual({ add: ['mod', 'shift', 'a'] })
   })
 })

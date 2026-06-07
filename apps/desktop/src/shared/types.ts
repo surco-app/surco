@@ -1,3 +1,5 @@
+import type { Chord } from './shortcuts'
+
 export type ThemePref = 'system' | 'light' | 'dark'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
@@ -40,6 +42,9 @@ export interface Settings {
   // Default normalization applied to every conversion; mode 'none' (the default)
   // means conversions never touch loudness unless overridden per-track.
   normalize: NormalizeConfig
+  // Per-command keyboard shortcut overrides (command id → chord). Absent ids use the
+  // default from SHORTCUT_DEFAULTS; an empty-array value unbinds the command.
+  shortcutOverrides: Record<string, Chord>
   hasSeenOnboarding: boolean
   conversionCount: number
 }
