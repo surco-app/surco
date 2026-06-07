@@ -22,10 +22,18 @@
     "stats": "Stats",
     "selectAll": "Select all",
     "fillFromName": "Fill all tags from file name",
+    "analyzeQuality": "Analyze quality of all tracks",
+    "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "exportRekordbox": "Export to rekordbox (XML collection)",
     "clearAll": "Clear the list"
   },
   "sidebar": {
-    "dropHint": "Drag your WAV or FLAC here, or press “Add files”."
+    "dropHint": "Drag your WAV or FLAC here, or press “Add files”.",
+    "filter": {
+      "all": "All",
+      "suspect": "Suspect",
+      "unanalyzed": "Unanalyzed"
+    }
   },
   "drop": {
     "release": "Drop to add"
@@ -94,6 +102,11 @@
   "editor": {
     "searchPlaceholder": "Search Discogs or paste a release id…",
     "search": "Search",
+    "identify": "Identify by audio",
+    "identifying": "Identifying…",
+    "identifyHint": "Recognize the track by its sound (Chromaprint / AcoustID) and fill the search",
+    "identifyNoMatch": "No fingerprint match found",
+    "identifyError": "Could not identify the track",
     "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "chooseTrack": "Choose the track to apply",
     "matchSuggested": "Suggested",

@@ -5,6 +5,7 @@ import type { OutputFormat } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
+import { trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 
@@ -54,6 +55,7 @@ const TrackRow = memo(function TrackRow({
   onOpenMenu,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const quality = trackQuality(t)
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
@@ -107,6 +109,16 @@ const TrackRow = memo(function TrackRow({
               <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
                 {t.meta.artist || tr('trackList.noArtist')}
               </span>
+              {quality !== 'unanalyzed' && (
+                <span
+                  data-testid="track-quality"
+                  data-quality={quality}
+                  title={tr(quality === 'good' ? 'editor.qualityGood' : 'editor.qualitySuspect')}
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                    quality === 'suspect' ? 'bg-warn' : 'bg-good'
+                  }`}
+                />
+              )}
               {t.duration !== undefined && (
                 <span
                   data-testid="track-duration"

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
+  IdentifyResult,
   LoudnessResult,
   ProcessProgress,
   SearchProviderId,
@@ -17,6 +18,8 @@ const api = {
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
+  exportRekordbox: (xml: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportRekordbox', xml),
   searchDiscogs: (query: string, provider?: SearchProviderId) =>
     ipcRenderer.invoke('search:query', query, provider),
   getRelease: (id: number, provider?: SearchProviderId) =>
@@ -38,6 +41,8 @@ const api = {
     ipcRenderer.invoke('audio:loudness', path),
   properties: (path: string): Promise<TrackProperties | null> =>
     ipcRenderer.invoke('audio:properties', path),
+  identify: (path: string): Promise<IdentifyResult | null> =>
+    ipcRenderer.invoke('audio:identify', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),

@@ -243,3 +243,24 @@ describe('TrackList context menu', () => {
     expect(screen.getByTestId('track-menu-trash')).toHaveTextContent('Move to Recycle Bin')
   })
 })
+
+describe('TrackList quality badge', () => {
+  const spectrum = (cutoffHz: number | null) => ({ image: '', cutoffHz, sampleRateHz: 44100 })
+
+  // The badge is the whole point of batch triage: a re-encoded MP3 (cutoff far below
+  // Nyquist) must be flaggable in the list without opening each track.
+  it('flags a suspect track in the row', () => {
+    renderList([track({ id: 'a', spectrum: spectrum(16000) })])
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'suspect')
+  })
+
+  it('marks a clean track as good', () => {
+    renderList([track({ id: 'a', spectrum: spectrum(21000) })])
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
+  })
+
+  it('shows no badge until the track has been analyzed', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-quality')).not.toBeInTheDocument()
+  })
+})

@@ -1,5 +1,5 @@
 import { createReadStream, existsSync } from 'node:fs'
-import { copyFile, mkdir, stat } from 'node:fs/promises'
+import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
@@ -41,8 +41,8 @@ import {
   probeProperties,
   readTags,
 } from './ffmpeg'
+import { identify } from './fingerprint'
 import { createMenuT } from './i18n'
-import { keymapMenuClick } from './menuCommand'
 import {
   isOutputConflict,
   removeRenamedOriginal,
@@ -50,6 +50,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { keymapMenuClick } from './menuCommand'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getSettings, recordConversion, saveSettings } from './settings'
@@ -326,6 +327,19 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
+  // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
+  // Returns the saved path, or null when the save dialog is cancelled.
+  ipcMain.handle('dialog:exportRekordbox', async (_e, xml: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta a rekordbox',
+      defaultPath: 'rekordbox.xml',
+      filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, xml, 'utf8')
+    return filePath
+  })
+
   ipcMain.handle('search:query', (_e, query: string, provider) =>
     getProvider(provider).search(query),
   )
@@ -531,6 +545,17 @@ function registerIpc(): void {
     } catch (err) {
       log.error('audio:properties failed', err)
       return null
+    }
+  })
+
+  // Re-throws (unlike properties/loudness) so the renderer can tell the user why an
+  // identify failed — no key, no fpcalc, rate limit — versus a plain "no match" (null).
+  ipcMain.handle('audio:identify', async (_e, inputPath: string) => {
+    try {
+      return await identify(inputPath)
+    } catch (err) {
+      log.error('audio:identify failed', err)
+      throw err
     }
   })
 }

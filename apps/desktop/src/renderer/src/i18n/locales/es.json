@@ -22,10 +22,18 @@
     "stats": "Estadísticas",
     "selectAll": "Seleccionar todo",
     "fillFromName": "Rellenar todo desde el nombre",
+    "analyzeQuality": "Analizar la calidad de todas las pistas",
+    "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
+    "exportRekordbox": "Exportar a rekordbox (colección XML)",
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”."
+    "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”.",
+    "filter": {
+      "all": "Todas",
+      "suspect": "Sospechosas",
+      "unanalyzed": "Sin analizar"
+    }
   },
   "drop": {
     "release": "Suelta para añadir"
@@ -94,6 +102,11 @@
   "editor": {
     "searchPlaceholder": "Buscar en Discogs o pega un release id…",
     "search": "Buscar",
+    "identify": "Identificar por audio",
+    "identifying": "Identificando…",
+    "identifyHint": "Reconoce la pista por su sonido (Chromaprint / AcoustID) y rellena la búsqueda",
+    "identifyNoMatch": "Sin coincidencias de huella",
+    "identifyError": "No se pudo identificar la pista",
     "tokenTip": "La búsqueda funciona sin configurar nada. Añade tu propio token de Discogs en <0>Ajustes</0> para tener un límite mayor y privado.",
     "chooseTrack": "Elige la pista para aplicar",
     "matchSuggested": "Sugerida",

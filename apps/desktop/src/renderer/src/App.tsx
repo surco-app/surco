@@ -13,10 +13,10 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { FindReplaceModal } from './components/FindReplaceModal'
-import { RenameModal } from './components/RenameModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
+import { RenameModal } from './components/RenameModal'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
@@ -42,10 +42,12 @@ import { resolveBindings } from '../../shared/shortcutDefaults'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
+import { buildRekordboxXml } from './lib/rekordbox'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
+import { filterByQuality, type QualityFilter, qualityCounts, tracksToAnalyze } from './lib/triage'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -112,6 +114,9 @@ export default function App(): React.JSX.Element {
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
+  // big crate can be swept for fakes without scrolling past the clean ones.
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
   const [confirm, setConfirm] = useState<{
     title: string
     message: string
@@ -145,6 +150,11 @@ export default function App(): React.JSX.Element {
   const discogsPrefetched = useRef<Set<string>>(new Set())
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
+  // Batch quality triage: progress of the "analyze quality" run (null when idle), and
+  // a cancel flag the in-flight workers poll so cancelling stops new analyses without
+  // killing the ones already handed to ffmpeg.
+  const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
+  const analyzeCancel = useRef(false)
   // Set by the Cancel button to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -324,6 +334,33 @@ export default function App(): React.JSX.Element {
     [updateTrack],
   )
 
+  // Analyzes every not-yet-measured track's spectrum at once so a whole dropped
+  // folder is triaged for fake-lossless rips without opening each. Capped at 3 in
+  // flight (each is an ffmpeg pass) and cancellable; reuses the hover prefetch's
+  // in-flight guard so a concurrent hover never double-spawns the same track. The
+  // shared spectrogram result also warms the editor for when the track is opened.
+  const analyzeAllQuality = useCallback((): void => {
+    const targets = tracksToAnalyze(tracksRef.current, spectrumInFlight.current)
+    if (analysis || targets.length === 0) return
+    analyzeCancel.current = false
+    let done = 0
+    setAnalysis({ done: 0, total: targets.length })
+    void mapWithConcurrency(targets, 3, async (t) => {
+      if (analyzeCancel.current) return
+      spectrumInFlight.current.add(t.id)
+      try {
+        const spectrum = await window.api.spectrogram(t.inputPath)
+        updateTrack(t.id, { spectrum })
+      } catch {
+        // A single file ffmpeg can't read must not abort the whole sweep.
+      } finally {
+        spectrumInFlight.current.delete(t.id)
+        done += 1
+        setAnalysis((a) => (a ? { ...a, done } : a))
+      }
+    }).finally(() => setAnalysis(null))
+  }, [analysis, updateTrack])
+
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
   // which is what the explicit selectedId check did before.
@@ -341,6 +378,13 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [], anchor: null })
     spectrumInFlight.current.clear()
     discogsPrefetched.current.clear()
+  }
+
+  // Writes the loaded crate to a rekordbox collection XML the user can import. The
+  // native save dialog is the confirmation, so there's nothing more to show after.
+  function exportRekordbox(): void {
+    if (tracksRef.current.length === 0) return
+    void window.api.exportRekordbox(buildRekordboxXml(tracksRef.current))
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
@@ -644,6 +688,9 @@ export default function App(): React.JSX.Element {
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
+
+  const qualityTally = qualityCounts(tracks)
+  const visibleTracks = filterByQuality(tracks, qualityFilter)
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -1005,6 +1052,70 @@ export default function App(): React.JSX.Element {
               </button>
               <button
                 type="button"
+                data-testid="analyze-quality"
+                onClick={
+                  analysis
+                    ? () => {
+                        analyzeCancel.current = true
+                      }
+                    : analyzeAllQuality
+                }
+                disabled={!analysis && tracks.every((t) => Boolean(t.spectrum))}
+                aria-label={tr('header.analyzeQuality')}
+                title={
+                  analysis
+                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+                    : tr('header.analyzeQuality')
+                }
+                className={`press flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                  analysis
+                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                    : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                >
+                  <path d="M3 12h4l2-7 4 14 2-7h4" />
+                </svg>
+                {analysis && (
+                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                    {analysis.done}/{analysis.total}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                data-testid="export-rekordbox"
+                onClick={exportRekordbox}
+                aria-label={tr('header.exportRekordbox')}
+                title={tr('header.exportRekordbox')}
+                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                >
+                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                  <path d="M12 3v12" />
+                  <path d="m8 7 4-4 4 4" />
+                </svg>
+              </button>
+              <button
+                type="button"
                 data-testid="clear-all"
                 onClick={askClearAll}
                 aria-label={tr('header.clearAll')}
@@ -1095,17 +1206,57 @@ export default function App(): React.JSX.Element {
             {tracks.length === 0 ? (
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
-              <TrackList
-                tracks={tracks}
-                selectedId={selectedId}
-                selectedIds={selectedIds}
-                outputFormat={settings?.outputFormat ?? 'aiff'}
-                onSelect={onSelectTrack}
-                onRemove={removeTrack}
-                onPrefetch={handlePrefetch}
-                onSearch={onSearchTrack}
-                onTrash={askTrash}
-              />
+              <>
+                {(qualityTally.suspect > 0 || qualityFilter !== 'all') && (
+                  <div
+                    data-testid="quality-filter"
+                    className="sticky top-0 z-10 flex gap-1 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-2"
+                  >
+                    {(['all', 'suspect', 'unanalyzed'] as const).map((mode) => {
+                      const count =
+                        mode === 'all'
+                          ? tracks.length
+                          : mode === 'suspect'
+                            ? qualityTally.suspect
+                            : qualityTally.unanalyzed
+                      const active = qualityFilter === mode
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`quality-filter-${mode}`}
+                          aria-pressed={active}
+                          onClick={() => setQualityFilter(mode)}
+                          className={`press flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
+                            active
+                              ? 'bg-[var(--color-accent-soft)] text-fg'
+                              : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
+                          }`}
+                        >
+                          {mode === 'suspect' && (
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-warn' : 'bg-warn/70'}`}
+                            />
+                          )}
+                          {tr(`sidebar.filter.${mode}`)}
+                          <span className="tabular-nums opacity-70">{count}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                <TrackList
+                  tracks={visibleTracks}
+                  selectedId={selectedId}
+                  selectedIds={selectedIds}
+                  outputFormat={settings?.outputFormat ?? 'aiff'}
+                  onSelect={onSelectTrack}
+                  onRemove={removeTrack}
+                  onPrefetch={handlePrefetch}
+                  onSearch={onSearchTrack}
+                  onTrash={askTrash}
+                />
+              </>
             )}
           </div>
           {playerVisible && playerTrack && (
