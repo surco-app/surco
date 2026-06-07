@@ -16,7 +16,7 @@ const run = promisify(execFile)
 // https://acoustid.org/new-application and paste its API key here; like the Discogs
 // app key it ships in the binary and is safe to treat as public. Empty until set,
 // which makes identify() fail loudly rather than query AcoustID without one.
-const ACOUSTID_CLIENT_KEY = ''
+const ACOUSTID_CLIENT_KEY = 'EB9AHNCUZ3'
 
 // fpcalc prints a JSON object: { "duration": <seconds>, "fingerprint": "<base64-ish>" }.
 export function parseFpcalc(stdout: string): { fingerprint: string; duration: number } {
