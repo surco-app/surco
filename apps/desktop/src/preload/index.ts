@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { LoudnessResult, ProcessProgress, SearchProviderId } from '../shared/types'
+import type {
+  LoudnessResult,
+  ProcessProgress,
+  SearchProviderId,
+  TrackProperties,
+} from '../shared/types'
 
 const api = {
   platform: process.platform,
@@ -31,6 +36,8 @@ const api = {
   spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
   loudness: (path: string): Promise<LoudnessResult | null> =>
     ipcRenderer.invoke('audio:loudness', path),
+  properties: (path: string): Promise<TrackProperties | null> =>
+    ipcRenderer.invoke('audio:properties', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),

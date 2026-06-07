@@ -36,6 +36,7 @@ import {
   measureLoudness,
   probeAudio,
   probeDuration,
+  probeProperties,
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
@@ -477,6 +478,15 @@ function registerIpc(): void {
       return await measureLoudness(inputPath)
     } catch (err) {
       log.error('audio:loudness failed', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
+    try {
+      return await probeProperties(inputPath)
+    } catch (err) {
+      log.error('audio:properties failed', err)
       return null
     }
   })
