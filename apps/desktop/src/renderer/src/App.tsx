@@ -13,6 +13,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { FindReplaceModal } from './components/FindReplaceModal'
+import { RenameModal } from './components/RenameModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
@@ -107,6 +108,7 @@ export default function App(): React.JSX.Element {
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
+  const [showRename, setShowRename] = useState(false)
   const [confirm, setConfirm] = useState<{
     title: string
     message: string
@@ -705,6 +707,15 @@ export default function App(): React.JSX.Element {
       run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
     },
     {
+      // Builds the output name from a pattern. Only one track has a File name section
+      // (multi-select hides it), so the command follows the same single-track rule.
+      id: 'rename',
+      title: tr('commands.rename'),
+      hint: formatShortcut(['mod', 'shift', 'R'], isMac),
+      enabled: !!selected && selectedTracks.length <= 1,
+      run: () => setShowRename(true),
+    },
+    {
       id: 'add-apple-music',
       title: tr('commands.addAppleMusic'),
       enabled:
@@ -762,6 +773,8 @@ export default function App(): React.JSX.Element {
   helpOpenRef.current = showHelp
   const findReplaceOpenRef = useRef(false)
   findReplaceOpenRef.current = showFindReplace
+  const renameOpenRef = useRef(false)
+  renameOpenRef.current = showRename
   const confirmOpenRef = useRef(false)
   confirmOpenRef.current = !!confirm
   // Every modal/overlay that owns the screen must also swallow the global
@@ -769,7 +782,13 @@ export default function App(): React.JSX.Element {
   // start a conversion behind the confirm prompt).
   const overlayOpenRef = useRef(false)
   overlayOpenRef.current =
-    showPalette || showSettings || showHelp || showFindReplace || !!confirm || showOnboarding
+    showPalette ||
+    showSettings ||
+    showHelp ||
+    showFindReplace ||
+    showRename ||
+    !!confirm ||
+    showOnboarding
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -785,6 +804,7 @@ export default function App(): React.JSX.Element {
           setThemePreview(null)
         } else if (helpOpenRef.current) setShowHelp(false)
         else if (findReplaceOpenRef.current) setShowFindReplace(false)
+        else if (renameOpenRef.current) setShowRename(false)
         // Onboarding is deliberately omitted: it forces a deliberate choice, not an
         // Escape dismissal.
         else if (confirmOpenRef.current) setConfirm(null)
@@ -1068,7 +1088,6 @@ export default function App(): React.JSX.Element {
               hasToken={!!settings?.discogsToken}
               outputFormat={settings?.outputFormat ?? 'aiff'}
               addToAppleMusic={settings?.addToAppleMusic ?? false}
-              filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
               groupingPresets={settings?.groupingPresets ?? []}
               genrePresets={settings?.genrePresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
@@ -1103,6 +1122,7 @@ export default function App(): React.JSX.Element {
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onTrashOriginal={() => askDeleteOriginal(selected)}
               onOpenSettings={openSettings}
+              onOpenRename={() => setShowRename(true)}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
@@ -1163,6 +1183,15 @@ export default function App(): React.JSX.Element {
           tracks={tracks}
           onApply={deriveTracks}
           onClose={() => setShowFindReplace(false)}
+        />
+      )}
+      {showRename && selected && (
+        <RenameModal
+          meta={selected.meta}
+          initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
+          extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
+          onApply={(outputName) => updateTrack(selected.id, { outputName })}
+          onClose={() => setShowRename(false)}
         />
       )}
       {confirm && (

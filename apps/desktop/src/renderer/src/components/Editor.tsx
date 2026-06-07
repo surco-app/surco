@@ -47,7 +47,6 @@ import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
 import { NormalizeControls } from './NormalizeControls'
-import { RenameModal } from './RenameModal'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
@@ -78,7 +77,6 @@ interface Props {
   hasToken: boolean
   outputFormat: OutputFormat
   addToAppleMusic: boolean
-  filenameFormat: string
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
@@ -116,6 +114,9 @@ interface Props {
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
   onOpenSettings: (tab?: 'general' | 'naming') => void
+  // Opens the output-name pattern builder for this track (App owns the modal so the
+  // ⌘⇧R shortcut and the menu can open it too).
+  onOpenRename: () => void
 }
 
 export function Editor({
@@ -123,7 +124,6 @@ export function Editor({
   hasToken,
   outputFormat,
   addToAppleMusic,
-  filenameFormat,
   groupingPresets,
   genrePresets,
   visibleFields,
@@ -146,6 +146,7 @@ export function Editor({
   onAddToAppleMusic,
   onTrashOriginal,
   onOpenSettings,
+  onOpenRename,
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
   // In multi-select the cover is whatever the tracks already share (or nothing, when they
@@ -174,9 +175,6 @@ export function Editor({
   // figures need explaining once, but shouldn't clutter the panel on every edit.
   const [loudnessHelpOpen, setLoudnessHelpOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(true)
-  // Opens the pattern builder for the output name. Editing the pattern there is scoped
-  // to this track (it writes outputName), unlike Settings which sets the global default.
-  const [renameOpen, setRenameOpen] = useState(false)
   // Normalization is off by default and most users won't touch it, so its section
   // starts folded — unlike the always-on Metadata/Quality/File name sections.
   const [normalizeOpen, setNormalizeOpen] = useState(false)
@@ -1353,7 +1351,7 @@ export function Editor({
                   <button
                     type="button"
                     data-testid="regenerate-output-name"
-                    onClick={() => setRenameOpen(true)}
+                    onClick={onOpenRename}
                     title={tr('editor.regenerateHint')}
                     className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                   >
@@ -1408,15 +1406,6 @@ export function Editor({
                     />
                   )}
                 </p>
-              )}
-              {renameOpen && (
-                <RenameModal
-                  meta={item.meta}
-                  initialFormat={filenameFormat}
-                  extension={format}
-                  onApply={(outputName) => onChange({ outputName })}
-                  onClose={() => setRenameOpen(false)}
-                />
               )}
             </div>
           )}

@@ -32,6 +32,9 @@ export function keyToCommandId(e: KeyLike, typing: boolean): string | null {
   if (mod && e.key === 'Enter') return e.shiftKey ? 'process-all' : 'process-current'
   if (mod && e.key.toLowerCase() === 'o') return 'add'
   if (mod && e.key === ',') return 'settings'
+  // ⌘⇧R opens the file-name builder. ⌘R alone is Reveal in Finder (owned by the menu),
+  // so the shift is what distinguishes it.
+  if (mod && e.shiftKey && e.key.toLowerCase() === 'r') return 'rename'
   if (mod && e.key === 'Backspace') return typing ? null : 'remove'
   if (typing) return null
   if (e.key === ' ') return 'play'

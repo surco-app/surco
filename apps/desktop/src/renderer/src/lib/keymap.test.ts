@@ -39,6 +39,14 @@ describe('keyToCommandId', () => {
     )
   })
 
+  // ⌘⇧R opens the file-name builder even while a field is focused (it's a modifier
+  // combo, not a bare letter), and the shift keeps it distinct from ⌘R (Reveal).
+  it('opens the file-name builder on cmd+shift+r, with or without a focused field', () => {
+    expect(keyToCommandId(key('r', { metaKey: true, shiftKey: true }), false)).toBe('rename')
+    expect(keyToCommandId(key('R', { metaKey: true, shiftKey: true }), true)).toBe('rename')
+    expect(keyToCommandId(key('r', { metaKey: true }), false)).toBeNull()
+  })
+
   it('plays the current track on space, but never while typing in a field', () => {
     expect(keyToCommandId(key(' '), false)).toBe('play')
     expect(keyToCommandId(key(' '), true)).toBeNull()

@@ -19,10 +19,6 @@ interface Props {
 // dialog): build a pattern from text + metadata chips, preview it against THIS track, and
 // on apply write the rendered name into the output-name field. Editing here is scoped to
 // the track — it never touches the global default in Settings.
-//
-// Unlike the app's other modals it isn't registered in App's overlay state, so it stops
-// keydown from reaching the window-level shortcut handler (and closes itself on Escape)
-// to keep background commands from firing while it's open.
 export function RenameModal({
   meta,
   initialFormat,
@@ -64,14 +60,7 @@ export function RenameModal({
   }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: traps keys from the window shortcut handler
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Escape') onClose()
-      }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
         data-testid="rename-backdrop"

@@ -126,6 +126,12 @@ function buildAppMenu(win: BrowserWindow): void {
           click: keymapMenuClick(run, 'add'),
         },
         { label: t('reveal'), accelerator: 'CmdOrCtrl+R', click: () => run('reveal') },
+        {
+          label: t('rename'),
+          accelerator: 'CmdOrCtrl+Shift+R',
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'rename'),
+        },
         { label: t('addAppleMusic'), click: () => run('add-apple-music') },
         { type: 'separator' },
         {

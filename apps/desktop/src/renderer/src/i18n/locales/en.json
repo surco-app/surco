@@ -62,7 +62,8 @@
     "help": "Help & FAQ",
     "feedback": "Send feedback",
     "website": "Surco website",
-    "findReplace": "Find & Replace…"
+    "findReplace": "Find & Replace…",
+    "rename": "Build file name…"
   },
   "trackList": {
     "noArtist": "No artist",

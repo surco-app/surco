@@ -69,10 +69,4 @@ describe('RenameModal', () => {
     renderModal({ initialFormat: '', meta: { artist: '', title: '' } })
     expect(screen.getByTestId('rename-apply')).toBeDisabled()
   })
-
-  it('closes on Escape', () => {
-    const { onClose } = renderModal()
-    fireEvent.keyDown(screen.getByTestId('rename-format'), { key: 'Escape' })
-    expect(onClose).toHaveBeenCalled()
-  })
 })

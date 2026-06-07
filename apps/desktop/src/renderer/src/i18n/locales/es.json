@@ -62,7 +62,8 @@
     "help": "Ayuda y FAQ",
     "feedback": "Enviar comentarios",
     "website": "Sitio web de Surco",
-    "findReplace": "Buscar y reemplazar…"
+    "findReplace": "Buscar y reemplazar…",
+    "rename": "Generar nombre del archivo…"
   },
   "trackList": {
     "noArtist": "Sin artista",

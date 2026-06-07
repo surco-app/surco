@@ -70,6 +70,7 @@ function renderEditor(
   onFormatChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
+  onOpenRename: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
@@ -77,13 +78,13 @@ function renderEditor(
   const onFormatChange = vi.fn()
   const onTrashOriginal = vi.fn()
   const onOpenSettings = vi.fn()
+  const onOpenRename = vi.fn()
   render(
     <Editor
       item={item(over)}
       hasToken
       outputFormat={outputFormat}
       addToAppleMusic={false}
-      filenameFormat="{artist} - {title}"
       groupingPresets={[]}
       genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
@@ -99,9 +100,18 @@ function renderEditor(
       onAddToAppleMusic={vi.fn()}
       onTrashOriginal={onTrashOriginal}
       onOpenSettings={onOpenSettings}
+      onOpenRename={onOpenRename}
     />,
   )
-  return { onProcess, onChange, onDeriveTags, onFormatChange, onTrashOriginal, onOpenSettings }
+  return {
+    onProcess,
+    onChange,
+    onDeriveTags,
+    onFormatChange,
+    onTrashOriginal,
+    onOpenSettings,
+    onOpenRename,
+  }
 }
 
 describe('Editor cover picker', () => {
@@ -323,7 +333,6 @@ function MultiHarness() {
         hasToken
         outputFormat="aiff"
         addToAppleMusic={false}
-        filenameFormat="{artist} - {title}"
         groupingPresets={[]}
         genrePresets={[]}
         visibleFields={['title', 'album']}
@@ -343,6 +352,7 @@ function MultiHarness() {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
+        onOpenRename={vi.fn()}
       />
       <div data-testid="dump">
         {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
@@ -407,7 +417,6 @@ describe('Editor multi-select', () => {
         hasToken
         outputFormat="aiff"
         addToAppleMusic={opts.music ?? false}
-        filenameFormat="{artist} - {title}"
         groupingPresets={[]}
         genrePresets={[]}
         visibleFields={['title', 'album']}
@@ -427,6 +436,7 @@ describe('Editor multi-select', () => {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
+        onOpenRename={vi.fn()}
       />,
     )
     return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }
@@ -616,27 +626,16 @@ describe('Editor output file name', () => {
     expect(screen.getByTestId('output-name')).toHaveValue('original track 01')
   })
 
-  // The rename is opt-in and previewed: Regenerate opens the pattern builder rather
-  // than overwriting the name blindly, so the user sees the result before committing.
+  // The rename is opt-in and previewed: Regenerate opens the pattern builder (owned by
+  // App so the ⌘⇧R shortcut shares it) rather than overwriting the name blindly.
   it('opens the rename builder instead of overwriting the name when Regenerate is clicked', () => {
-    const { onChange } = renderEditor(
+    const { onChange, onOpenRename } = renderEditor(
       { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
       'wav',
     )
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
-    expect(screen.getByTestId('rename-preview')).toHaveTextContent('AR - TI.wav')
+    expect(onOpenRename).toHaveBeenCalled()
     expect(onChange).not.toHaveBeenCalled()
-  })
-
-  // Applying the builder writes the rendered name into the output-name field.
-  it('writes the built name to the output name on apply', () => {
-    const { onChange } = renderEditor(
-      { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
-      'wav',
-    )
-    fireEvent.click(screen.getByTestId('regenerate-output-name'))
-    fireEvent.click(screen.getByTestId('rename-apply'))
-    expect(onChange).toHaveBeenCalledWith({ outputName: 'AR - TI' })
   })
 })
 
