@@ -32,7 +32,9 @@
     "filter": {
       "all": "Todas",
       "suspect": "Sospechosas",
-      "unanalyzed": "Sin analizar"
+      "good": "Buenas",
+      "unanalyzed": "Sin analizar",
+      "unconverted": "Sin convertir"
     }
   },
   "drop": {

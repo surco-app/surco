@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
-import type { TrackItem } from '../types'
+import type { TrackItem, TrackStatus } from '../types'
 import { filterByQuality, qualityCounts, trackQuality, tracksToAnalyze } from './triage'
 
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
@@ -49,12 +49,14 @@ describe('tracksToAnalyze', () => {
 })
 
 describe('filterByQuality / qualityCounts', () => {
-  const t = (id: string, cutoffHz?: number | null): TrackItem =>
+  const t = (id: string, cutoffHz?: number | null, status: TrackStatus = 'idle'): TrackItem =>
     ({
       id,
+      status,
       spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
     }) as TrackItem
-  const tracks = [t('good', 21000), t('bad', 16000), t('fresh'), t('inconclusive', null)]
+  // 'good' is the only track already converted; the rest are still pending conversion.
+  const tracks = [t('good', 21000, 'done'), t('bad', 16000), t('fresh'), t('inconclusive', null)]
 
   it('returns every track when the filter is "all"', () => {
     expect(filterByQuality(tracks, 'all')).toHaveLength(4)
@@ -64,6 +66,10 @@ describe('filterByQuality / qualityCounts', () => {
     expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad'])
   })
 
+  it('keeps only the genuine-lossless rips when filtering for good', () => {
+    expect(filterByQuality(tracks, 'good').map((x) => x.id)).toEqual(['good'])
+  })
+
   it('treats an inconclusive cutoff as unanalyzed alongside the unmeasured ones', () => {
     expect(filterByQuality(tracks, 'unanalyzed').map((x) => x.id)).toEqual([
       'fresh',
@@ -71,7 +77,15 @@ describe('filterByQuality / qualityCounts', () => {
     ])
   })
 
-  it('counts suspect and unanalyzed tracks for the filter badges', () => {
-    expect(qualityCounts(tracks)).toEqual({ suspect: 1, unanalyzed: 2 })
+  it('keeps only the tracks not yet converted regardless of quality verdict', () => {
+    expect(filterByQuality(tracks, 'unconverted').map((x) => x.id)).toEqual([
+      'bad',
+      'fresh',
+      'inconclusive',
+    ])
+  })
+
+  it('counts suspect, good, unanalyzed and unconverted tracks for the filter badges', () => {
+    expect(qualityCounts(tracks)).toEqual({ suspect: 1, good: 1, unanalyzed: 2, unconverted: 3 })
   })
 })

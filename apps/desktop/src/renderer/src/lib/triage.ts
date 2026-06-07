@@ -20,24 +20,37 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
   return tracks.filter((t) => !t.spectrum && !inFlight.has(t.id))
 }
 
-// The list filter modes: everything, just the suspect (likely fake-lossless) rips, or
-// the ones still without a verdict.
-export type QualityFilter = 'all' | 'suspect' | 'unanalyzed'
+// The list filter modes: everything, the suspect (likely fake-lossless) rips, the ones
+// that passed as genuine lossless ('good'), the ones still without a verdict, or the ones
+// not yet converted. 'unconverted' is a processing-status filter (status !== 'done'),
+// orthogonal to the quality verdict.
+export type QualityFilter = 'all' | 'suspect' | 'good' | 'unanalyzed' | 'unconverted'
 
 export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
   if (filter === 'all') return tracks
+  if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
   return tracks.filter((t) => trackQuality(t) === filter)
 }
 
 // Tallies for the filter chips, so the bar can show "5 suspect" without the caller
-// walking the list per chip.
-export function qualityCounts(tracks: TrackItem[]): { suspect: number; unanalyzed: number } {
+// walking the list per chip. 'unconverted' overlaps the quality buckets (it's a
+// different dimension), so it's counted independently rather than as an else-branch.
+export function qualityCounts(tracks: TrackItem[]): {
+  suspect: number
+  good: number
+  unanalyzed: number
+  unconverted: number
+} {
   let suspect = 0
+  let good = 0
   let unanalyzed = 0
+  let unconverted = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'suspect') suspect += 1
-    else if (q === 'unanalyzed') unanalyzed += 1
+    else if (q === 'good') good += 1
+    else unanalyzed += 1
+    if (t.status !== 'done') unconverted += 1
   }
-  return { suspect, unanalyzed }
+  return { suspect, good, unanalyzed, unconverted }
 }
