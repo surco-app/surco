@@ -801,9 +801,8 @@ export function Editor({
                     setCoverDragging(false)
                   }}
                   onDrop={onCoverDrop}
-                  className="group relative shrink-0 self-start"
+                  className="shrink-0 self-start"
                 >
-                  <Tooltip label={tr('editor.coverTitle')} align="start" />
                   <input
                     ref={coverInputRef}
                     type="file"
