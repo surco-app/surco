@@ -603,7 +603,7 @@ export function Editor({
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
-              className="press rounded-lg bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              className="press rounded-lg border border-transparent bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
