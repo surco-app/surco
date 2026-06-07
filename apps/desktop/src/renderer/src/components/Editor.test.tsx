@@ -938,6 +938,7 @@ describe('Editor properties panel', () => {
     sizeBytes: 58_400_000,
     createdMs: 1_700_000_000_000,
     modifiedMs: 1_700_000_500_000,
+    tagFormats: ['ID3v2.3', 'INFO'],
   }
 
   // Folded by default so the read-only facts never push the editing fields the user
@@ -957,6 +958,7 @@ describe('Editor properties panel', () => {
     expect(screen.getByTestId('property-channelMode')).toHaveTextContent('Stereo')
     expect(screen.getByTestId('property-bitrate')).toHaveTextContent('1411 kbps')
     expect(screen.getByTestId('property-size')).toHaveTextContent('55.7 MB')
+    expect(screen.getByTestId('property-tagFormats')).toHaveTextContent('ID3v2.3, INFO')
   })
 
   // A lossy source has no fixed bit depth (probe leaves it null); the row must drop
@@ -965,6 +967,14 @@ describe('Editor properties panel', () => {
     renderEditor({ id: 'a', properties: { ...properties, bitDepth: null } })
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
     expect(screen.queryByTestId('property-bitDepth')).not.toBeInTheDocument()
+  })
+
+  // An untagged or unrecognized file sniffs no formats; the row must drop out rather
+  // than render an empty "Tag formats:" line.
+  it('omits the tag-formats row when none were recognized', () => {
+    renderEditor({ id: 'a', properties: { ...properties, tagFormats: [] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    expect(screen.queryByTestId('property-tagFormats')).not.toBeInTheDocument()
   })
 
   // The full path is too long for the row, so Location collapses to the containing

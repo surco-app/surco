@@ -23,6 +23,7 @@ import {
   volumeFilter,
 } from './normalize'
 import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
+import { readTagFormats } from './tagFormats'
 import { tmpName } from './tmp'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -196,7 +197,11 @@ interface FileStat {
 // Maps an ffprobe stream+format dump and an fs.stat onto the read-only facts shown
 // in the Properties panel. Pure so the parsing is unit-tested without spawning
 // ffprobe; probeProperties wires the two real sources in.
-export function propertiesFromProbe(data: PropertiesProbe, file: FileStat): TrackProperties {
+export function propertiesFromProbe(
+  data: PropertiesProbe,
+  file: FileStat,
+  tagFormats: string[] = [],
+): TrackProperties {
   const stream = data.streams?.[0] ?? {}
   const format = data.format ?? {}
   const bitrate = Number(format.bit_rate ?? stream.bit_rate)
@@ -212,6 +217,7 @@ export function propertiesFromProbe(data: PropertiesProbe, file: FileStat): Trac
     sizeBytes: file.sizeBytes,
     createdMs: file.createdMs,
     modifiedMs: file.modifiedMs,
+    tagFormats,
   }
 }
 
@@ -227,12 +233,16 @@ export async function probeProperties(input: string): Promise<TrackProperties> {
     'json',
     input,
   ])
-  const s = await stat(input)
-  return propertiesFromProbe(JSON.parse(stdout), {
-    sizeBytes: s.size,
-    createdMs: s.birthtimeMs || null,
-    modifiedMs: s.mtimeMs || null,
-  })
+  const [s, tagFormats] = await Promise.all([stat(input), readTagFormats(input).catch(() => [])])
+  return propertiesFromProbe(
+    JSON.parse(stdout),
+    {
+      sizeBytes: s.size,
+      createdMs: s.birthtimeMs || null,
+      modifiedMs: s.mtimeMs || null,
+    },
+    tagFormats,
+  )
 }
 
 // Picks a PCM codec that preserves the source bit depth exactly (lossless),

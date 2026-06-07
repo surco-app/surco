@@ -589,7 +589,13 @@ describe('propertiesFromProbe', () => {
       sizeBytes: 58_400_000,
       createdMs: 1_700_000_000_000,
       modifiedMs: 1_700_000_500_000,
+      tagFormats: [],
     })
+  })
+
+  it('carries the sniffed tag formats through onto the result', () => {
+    const p = propertiesFromProbe({ streams: [{}], format: {} }, file, ['ID3v2.3', 'INFO'])
+    expect(p.tagFormats).toEqual(['ID3v2.3', 'INFO'])
   })
 
   it('reports a null bit depth for lossy streams that omit bits_per_raw_sample', () => {

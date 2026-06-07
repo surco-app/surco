@@ -1064,6 +1064,7 @@ export function Editor({
                               tr('editor.propDuration'),
                               item.duration !== undefined ? formatTime(item.duration) : '',
                             ),
+                            row('tagFormats', tr('editor.propTagFormats'), p.tagFormats.join(', ')),
                           ].filter((r) => r !== false),
                         },
                         {

@@ -197,4 +197,8 @@ export interface TrackProperties {
   // a birth time.
   createdMs: number | null
   modifiedMs: number | null
+  // Metadata containers sniffed from the file structure (e.g. ['ID3v2.3', 'INFO']),
+  // since ffprobe reports tag values but not their envelope. Empty when none were
+  // recognized.
+  tagFormats: string[]
 }

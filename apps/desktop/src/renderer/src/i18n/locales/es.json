@@ -122,6 +122,7 @@
     "propBitrate": "Tasa de bits",
     "propBitrateValue": "{{kbps}} kbps",
     "propDuration": "Duración",
+    "propTagFormats": "Formatos de etiqueta",
     "propFileName": "Nombre del archivo",
     "propExtension": "Extensión",
     "propPath": "Ubicación",
