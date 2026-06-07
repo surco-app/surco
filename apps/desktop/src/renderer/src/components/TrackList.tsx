@@ -74,8 +74,8 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`relative flex w-full items-center gap-3 rounded-lg py-2.5 pr-10 pl-3 text-left transition-colors ${
-          selected ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-panel-2)]'
+        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left backdrop-blur-sm transition-colors ${
+          selected ? 'bg-[var(--color-accent-soft)]/85' : 'hover:bg-[var(--color-panel-2)]/85'
         } ${
           primary
             ? 'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
@@ -84,9 +84,9 @@ const TrackRow = memo(function TrackRow({
       >
         <span
           title={tr(`trackList.status.${t.status}`)}
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
+          className={`h-2.5 w-2.5 shrink-0 rounded-full transition-[filter] group-hover:blur-[1px] ${statusColor[t.status]}`}
         />
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 transition-[filter] group-hover:blur-[1px]">
           <span className="block truncate text-sm font-medium text-fg">
             {t.meta.title || t.fileName}
           </span>
@@ -135,7 +135,7 @@ const TrackRow = memo(function TrackRow({
         type="button"
         aria-label={tr('trackList.remove')}
         onClick={() => onRemove(t.id)}
-        className="absolute top-1/2 right-2 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:flex"
+        className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/60 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] backdrop-blur-sm transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
       >
         ✕
       </button>
