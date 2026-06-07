@@ -88,16 +88,21 @@ export function shouldAddToAppleMusic(
   return enabled && platform === 'darwin' && format !== 'flac'
 }
 
-// Counts library tracks matching the given name and artist. AppleScript text
-// comparison ignores case and diacritics by default, so this is forgiving on
-// spelling while still requiring both fields to agree — a different song that
-// shares a title with the release is not flagged as already present. Naming that
-// diverges (e.g. "(Remix)" vs "- Remix") still misses, which is why the result
-// is surfaced as a hint, not a guarantee.
+// Counts library tracks matching the name exactly and the primary artist
+// loosely. We match the artist with `contains` against only the first
+// comma-separated name because our tags join collaborators ("Alfredo Pareja,
+// Saint Etien") while Apple Music stores just the primary artist ("Alfredo
+// Pareja") — an exact `artist is` flagged every feat./multi-artist track as not
+// in the library when it was. AppleScript text comparison ignores case and
+// diacritics by default, so this is also forgiving on spelling while the exact
+// title keeps a different song that shares the primary artist from matching.
+// Naming that diverges (e.g. "(Remix)" vs "- Remix") still misses, which is why
+// the result is surfaced as a hint, not a guarantee.
 export function buildLookupScript(artist: string, title: string): string {
+  const primaryArtist = artist.split(',')[0].trim()
   return [
     'tell application "Music"',
-    `  set theHits to (every track of library playlist 1 whose name is ${JSON.stringify(title.trim())} and artist is ${JSON.stringify(artist.trim())})`,
+    `  set theHits to (every track of library playlist 1 whose name is ${JSON.stringify(title.trim())} and artist contains ${JSON.stringify(primaryArtist)})`,
     '  return (count of theHits)',
     'end tell',
   ].join('\n')

@@ -90,21 +90,30 @@ describe('buildAddScript', () => {
 })
 
 describe('buildLookupScript', () => {
-  it('counts library tracks matching both name and artist so a different song with the same title is not flagged as a duplicate', () => {
+  it('counts library tracks matching the name and the primary artist so a different song with the same title is not flagged as a duplicate', () => {
     const script = buildLookupScript('Tom Hafman', 'ATB (Till I Come)')
     // Querying library playlist 1 (not a specific source) is what scopes the
     // search to the user's whole library; matching name AND artist is what keeps
     // it from flagging unrelated songs that happen to share a title.
     expect(script).toContain('every track of library playlist 1 whose')
     expect(script).toContain('name is "ATB (Till I Come)"')
-    expect(script).toContain('artist is "Tom Hafman"')
+    expect(script).toContain('artist contains "Tom Hafman"')
     expect(script).toContain('return (count of')
   })
 
-  it('trims the values so trailing whitespace from the tag fields does not break the exact match Music performs', () => {
+  it('matches on the first artist only so a feat./multi-artist tag still finds the track Apple Music stored under its primary artist', () => {
+    // Apple Music keeps only the primary artist, so a tag joined as
+    // "Alfredo Pareja, Saint Etien" must still match the library's
+    // "Alfredo Pareja" — otherwise every collaboration reads as "not in library".
+    const script = buildLookupScript('Alfredo Pareja, Saint Etien', 'Sorrow Town (Phone On The Mix)')
+    expect(script).toContain('artist contains "Alfredo Pareja"')
+    expect(script).not.toContain('Saint Etien')
+  })
+
+  it('trims the values so trailing whitespace from the tag fields does not break the match Music performs', () => {
     const script = buildLookupScript('  Tom Hafman  ', '  ATB (Till I Come)  ')
     expect(script).toContain('name is "ATB (Till I Come)"')
-    expect(script).toContain('artist is "Tom Hafman"')
+    expect(script).toContain('artist contains "Tom Hafman"')
   })
 })
 
