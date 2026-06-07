@@ -13,6 +13,7 @@ import type {
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
+import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -43,7 +44,6 @@ import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
-import { buildRekordboxXml } from './lib/rekordbox'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
@@ -161,6 +161,7 @@ export default function App(): React.JSX.Element {
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  const [showExport, setShowExport] = useState(false)
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
   // big crate can be swept for fakes without scrolling past the clean ones.
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
@@ -425,13 +426,6 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [], anchor: null })
     spectrumInFlight.current.clear()
     discogsPrefetched.current.clear()
-  }
-
-  // Writes the loaded crate to a rekordbox collection XML the user can import. The
-  // native save dialog is the confirmation, so there's nothing more to show after.
-  function exportRekordbox(): void {
-    if (tracksRef.current.length === 0) return
-    void window.api.exportRekordbox(buildRekordboxXml(tracksRef.current))
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
@@ -900,6 +894,8 @@ export default function App(): React.JSX.Element {
   findReplaceOpenRef.current = showFindReplace
   const renameOpenRef = useRef(false)
   renameOpenRef.current = showRename
+  const exportOpenRef = useRef(false)
+  exportOpenRef.current = showExport
   const confirmOpenRef = useRef(false)
   confirmOpenRef.current = !!confirm
   // Every modal/overlay that owns the screen must also swallow the global
@@ -912,6 +908,7 @@ export default function App(): React.JSX.Element {
     showHelp ||
     showFindReplace ||
     showRename ||
+    showExport ||
     !!confirm ||
     showOnboarding
 
@@ -930,6 +927,7 @@ export default function App(): React.JSX.Element {
         } else if (helpOpenRef.current) setShowHelp(false)
         else if (findReplaceOpenRef.current) setShowFindReplace(false)
         else if (renameOpenRef.current) setShowRename(false)
+        else if (exportOpenRef.current) setShowExport(false)
         // Onboarding is deliberately omitted: it forces a deliberate choice, not an
         // Escape dismissal.
         else if (confirmOpenRef.current) setConfirm(null)
@@ -1150,9 +1148,9 @@ export default function App(): React.JSX.Element {
               />
               <button
                 type="button"
-                data-testid="export-rekordbox"
-                onClick={exportRekordbox}
-                aria-label={tr('header.exportRekordbox')}
+                data-testid="export-open"
+                onClick={() => setShowExport(true)}
+                aria-label={tr('header.export')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <svg
@@ -1169,7 +1167,7 @@ export default function App(): React.JSX.Element {
                   <path d="M12 3v12" />
                   <path d="m8 7 4-4 4 4" />
                 </svg>
-                <Tooltip label={tr('header.exportRekordbox')} align="end" />
+                <Tooltip label={tr('header.export')} align="end" />
               </button>
               <div
                 aria-hidden="true"
@@ -1471,6 +1469,7 @@ export default function App(): React.JSX.Element {
           onClose={() => setShowRename(false)}
         />
       )}
+      {showExport && <ExportModal tracks={tracks} onClose={() => setShowExport(false)} />}
       {confirm && (
         <ConfirmDialog
           title={confirm.title}

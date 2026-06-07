@@ -10,6 +10,12 @@
     "description": "Combina texto y metadatos para generar el nombre del archivo.",
     "apply": "Aplicar"
   },
+  "export": {
+    "title": "Exportar colección",
+    "subtitle": "Surco guarda un fichero de colección. Tu software DJ lo lee como fuente de importación — no se añade nada a su biblioteca automáticamente; importas las pistas desde ahí.",
+    "rekordboxHint": "En rekordbox: Preferencias → Avanzado → rekordbox xml → elige este fichero, y luego importa desde el nodo “rekordbox xml”.",
+    "traktorHint": "En Traktor: File → Import Collection → elige este fichero."
+  },
   "header": {
     "add": "Añadir archivos",
     "convertAll": "Convertir todo",
@@ -24,7 +30,7 @@
     "fillFromName": "Rellenar todo desde el nombre",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
-    "exportRekordbox": "Exportar a rekordbox (colección XML)",
+    "export": "Exportar a software DJ",
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {

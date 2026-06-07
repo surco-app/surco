@@ -339,6 +339,19 @@ function registerIpc(): void {
     return filePath
   })
 
+  // Writes a Traktor collection the user can import (File ▸ Import Collection). Returns
+  // the saved path, or null when cancelled — same shape as the rekordbox export.
+  ipcMain.handle('dialog:exportTraktor', async (_e, nml: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta a Traktor',
+      defaultPath: 'collection.nml',
+      filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, nml, 'utf8')
+    return filePath
+  })
+
   ipcMain.handle('search:query', (_e, query: string, provider) =>
     getProvider(provider).search(query),
   )

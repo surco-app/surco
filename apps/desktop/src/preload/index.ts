@@ -19,6 +19,8 @@ const api = {
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
   exportRekordbox: (xml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
+  exportTraktor: (nml: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportTraktor', nml),
   searchDiscogs: (query: string, provider?: SearchProviderId) =>
     ipcRenderer.invoke('search:query', query, provider),
   getRelease: (id: number, provider?: SearchProviderId) =>
