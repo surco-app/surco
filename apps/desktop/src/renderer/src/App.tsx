@@ -2,6 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../shared/media'
+import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
   OutputFormat,
@@ -19,6 +20,7 @@ import { LivePlayer } from './components/Player'
 import { RenameModal } from './components/RenameModal'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
+import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
@@ -38,7 +40,6 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/
 import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
-import { resolveBindings } from '../../shared/shortcutDefaults'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
@@ -96,6 +97,52 @@ function newTrack(path: string): TrackItem {
       catalogNumber: '',
       remixArtist: '',
     },
+  }
+}
+
+// The glyph for each list filter chip. Drawn inside a shared 24×24 stroked <svg> so the
+// icons stay visually consistent with the rest of the toolbar.
+function filterIcon(mode: QualityFilter): React.JSX.Element {
+  switch (mode) {
+    case 'suspect':
+      return (
+        <>
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+        </>
+      )
+    case 'good':
+      return (
+        <>
+          <circle cx="12" cy="12" r="10" />
+          <path d="m9 12 2 2 4-4" />
+        </>
+      )
+    case 'unanalyzed':
+      return (
+        <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
+      )
+    case 'unconverted':
+      return (
+        <>
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+          <path d="M3 21v-5h5" />
+        </>
+      )
+    default:
+      return (
+        <>
+          <line x1="8" y1="6" x2="21" y2="6" />
+          <line x1="8" y1="12" x2="21" y2="12" />
+          <line x1="8" y1="18" x2="21" y2="18" />
+          <line x1="3" y1="6" x2="3.01" y2="6" />
+          <line x1="3" y1="12" x2="3.01" y2="12" />
+          <line x1="3" y1="18" x2="3.01" y2="18" />
+        </>
+      )
   }
 }
 
@@ -990,8 +1037,7 @@ export default function App(): React.JSX.Element {
                 data-testid="select-all"
                 onClick={selectAll}
                 aria-label={tr('header.selectAll')}
-                title={tr('header.selectAll')}
-                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1006,14 +1052,14 @@ export default function App(): React.JSX.Element {
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <path d="m9 12 2 2 4-4" />
                 </svg>
+                <Tooltip label={tr('header.selectAll')} align="end" />
               </button>
               <button
                 type="button"
                 data-testid="fill-all"
                 onClick={askFillAll}
                 aria-label={tr('header.fillFromName')}
-                title={tr('header.fillFromName')}
-                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1028,14 +1074,14 @@ export default function App(): React.JSX.Element {
                   <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
                   <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
                 </svg>
+                <Tooltip label={tr('header.fillFromName')} align="end" />
               </button>
               <button
                 type="button"
                 data-testid="open-find-replace"
                 onClick={() => setShowFindReplace(true)}
                 aria-label={tr('commands.findReplace')}
-                title={tr('commands.findReplace')}
-                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1050,6 +1096,7 @@ export default function App(): React.JSX.Element {
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
+                <Tooltip label={tr('commands.findReplace')} align="end" />
               </button>
               <button
                 type="button"
@@ -1063,12 +1110,7 @@ export default function App(): React.JSX.Element {
                 }
                 disabled={!analysis && tracks.every((t) => Boolean(t.spectrum))}
                 aria-label={tr('header.analyzeQuality')}
-                title={
-                  analysis
-                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
-                    : tr('header.analyzeQuality')
-                }
-                className={`press flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                   analysis
                     ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
                     : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
@@ -1091,14 +1133,21 @@ export default function App(): React.JSX.Element {
                     {analysis.done}/{analysis.total}
                   </span>
                 )}
+                <Tooltip
+                  label={
+                    analysis
+                      ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+                      : tr('header.analyzeQuality')
+                  }
+                  align="end"
+                />
               </button>
               <button
                 type="button"
                 data-testid="export-rekordbox"
                 onClick={exportRekordbox}
                 aria-label={tr('header.exportRekordbox')}
-                title={tr('header.exportRekordbox')}
-                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1114,14 +1163,14 @@ export default function App(): React.JSX.Element {
                   <path d="M12 3v12" />
                   <path d="m8 7 4-4 4 4" />
                 </svg>
+                <Tooltip label={tr('header.exportRekordbox')} align="end" />
               </button>
               <button
                 type="button"
                 data-testid="clear-all"
                 onClick={askClearAll}
                 aria-label={tr('header.clearAll')}
-                title={tr('header.clearAll')}
-                className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
+                className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1137,6 +1186,7 @@ export default function App(): React.JSX.Element {
                   <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
                 </svg>
+                <Tooltip label={tr('header.clearAll')} align="end" />
               </button>
             </>
           )}
@@ -1208,44 +1258,74 @@ export default function App(): React.JSX.Element {
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
               <>
-                {(qualityTally.suspect > 0 || qualityFilter !== 'all') && (
-                  <div
-                    data-testid="quality-filter"
-                    className="sticky top-0 z-10 flex gap-1 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-2"
-                  >
-                    {(['all', 'suspect', 'unanalyzed'] as const).map((mode) => {
+                <div
+                  data-testid="quality-filter"
+                  className="sticky top-0 z-10 flex gap-0.5 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-1.5 py-2"
+                >
+                  {(['all', 'unanalyzed', 'suspect', 'good', 'unconverted'] as const).map(
+                    (mode) => {
                       const count =
                         mode === 'all'
                           ? tracks.length
-                          : mode === 'suspect'
-                            ? qualityTally.suspect
-                            : qualityTally.unanalyzed
+                          : mode === 'unanalyzed'
+                            ? qualityTally.unanalyzed
+                            : mode === 'suspect'
+                              ? qualityTally.suspect
+                              : mode === 'good'
+                                ? qualityTally.good
+                                : qualityTally.unconverted
                       const active = qualityFilter === mode
+                      const name = tr(`sidebar.filter.${mode}`)
+                      // Color-coded dot draws the eye to buckets that need attention: amber for
+                      // suspect (likely fake), accent for the still-to-convert backlog.
+                      const dot =
+                        mode === 'suspect' && qualityTally.suspect > 0
+                          ? 'bg-warn'
+                          : mode === 'unconverted' && qualityTally.unconverted > 0
+                            ? 'bg-[var(--color-accent)]'
+                            : null
                       return (
                         <button
                           key={mode}
                           type="button"
                           data-testid={`quality-filter-${mode}`}
                           aria-pressed={active}
+                          aria-label={name}
                           onClick={() => setQualityFilter(mode)}
-                          className={`press flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
+                          className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
                             active
                               ? 'bg-[var(--color-accent-soft)] text-fg'
                               : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
                           }`}
                         >
-                          {mode === 'suspect' && (
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-warn' : 'bg-warn/70'}`}
-                            />
-                          )}
-                          {tr(`sidebar.filter.${mode}`)}
-                          <span className="tabular-nums opacity-70">{count}</span>
+                          <span className="relative">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            >
+                              {filterIcon(mode)}
+                            </svg>
+                            {dot && (
+                              <span
+                                className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
+                              />
+                            )}
+                          </span>
+                          <span className="min-w-[2ch] text-center tabular-nums opacity-70">
+                            {count}
+                          </span>
+                          <Tooltip label={name} />
                         </button>
                       )
-                    })}
-                  </div>
-                )}
+                    },
+                  )}
+                </div>
                 <TrackList
                   tracks={visibleTracks}
                   selectedId={selectedId}
