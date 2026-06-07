@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// fingerprint.ts imports binaries.ts, which reads electron's `app`; stub it so the
+// pure helpers can be imported in the node test environment.
+vi.mock('electron', () => ({ app: { isPackaged: false } }))
+
 import { acoustidUrl, fpcalcArgs, parseAcoustidResponse, parseFpcalc } from './fingerprint'
 
 describe('parseFpcalc', () => {

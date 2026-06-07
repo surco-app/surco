@@ -39,8 +39,8 @@ import {
   probeProperties,
   readTags,
 } from './ffmpeg'
+import { identify } from './fingerprint'
 import { createMenuT } from './i18n'
-import { keymapMenuClick } from './menuCommand'
 import {
   isOutputConflict,
   removeRenamedOriginal,
@@ -48,6 +48,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { keymapMenuClick } from './menuCommand'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getSettings, recordConversion, saveSettings } from './settings'
@@ -494,6 +495,17 @@ function registerIpc(): void {
     } catch (err) {
       log.error('audio:properties failed', err)
       return null
+    }
+  })
+
+  // Re-throws (unlike properties/loudness) so the renderer can tell the user why an
+  // identify failed — no key, no fpcalc, rate limit — versus a plain "no match" (null).
+  ipcMain.handle('audio:identify', async (_e, inputPath: string) => {
+    try {
+      return await identify(inputPath)
+    } catch (err) {
+      log.error('audio:identify failed', err)
+      throw err
     }
   })
 }

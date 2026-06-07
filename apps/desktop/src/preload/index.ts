@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
+  IdentifyResult,
   LoudnessResult,
   ProcessProgress,
   SearchProviderId,
@@ -38,6 +39,8 @@ const api = {
     ipcRenderer.invoke('audio:loudness', path),
   properties: (path: string): Promise<TrackProperties | null> =>
     ipcRenderer.invoke('audio:properties', path),
+  identify: (path: string): Promise<IdentifyResult | null> =>
+    ipcRenderer.invoke('audio:identify', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
