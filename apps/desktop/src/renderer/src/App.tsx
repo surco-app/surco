@@ -990,34 +990,6 @@ export default function App(): React.JSX.Element {
                 .join(' · ')}
             </span>
           )}
-          {tracks.length > 0 && (
-            <button
-              type="button"
-              data-testid="convert-all"
-              onClick={() => processAll()}
-              disabled={!canProcessAll}
-              className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-            >
-              {batching
-                ? tr('header.convertingCount', {
-                    done: batchProgress.done,
-                    total: batchProgress.total,
-                  })
-                : `${tr('header.convertAll')} (${eligibleCount})`}
-            </button>
-          )}
-          {batching && (
-            <button
-              type="button"
-              data-testid="cancel-convert-all"
-              onClick={() => {
-                cancelBatchRef.current = true
-              }}
-              className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('common.cancel')}
-            </button>
-          )}
           <button
             type="button"
             data-testid="add-files"
@@ -1142,6 +1114,36 @@ export default function App(): React.JSX.Element {
                   align="end"
                 />
               </button>
+              <div
+                aria-hidden="true"
+                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+              />
+              <button
+                type="button"
+                data-testid="convert-all"
+                onClick={() => processAll()}
+                disabled={!canProcessAll}
+                className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              >
+                {batching
+                  ? tr('header.convertingCount', {
+                      done: batchProgress.done,
+                      total: batchProgress.total,
+                    })
+                  : `${tr('header.convertAll')} (${eligibleCount})`}
+              </button>
+              {batching && (
+                <button
+                  type="button"
+                  data-testid="cancel-convert-all"
+                  onClick={() => {
+                    cancelBatchRef.current = true
+                  }}
+                  className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+                >
+                  {tr('common.cancel')}
+                </button>
+              )}
               <div
                 aria-hidden="true"
                 className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
