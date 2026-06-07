@@ -1,5 +1,5 @@
 import { createReadStream, existsSync } from 'node:fs'
-import { copyFile, mkdir, stat } from 'node:fs/promises'
+import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
@@ -288,6 +288,19 @@ function registerIpc(): void {
       properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
+  })
+
+  // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
+  // Returns the saved path, or null when the save dialog is cancelled.
+  ipcMain.handle('dialog:exportRekordbox', async (_e, xml: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta a rekordbox',
+      defaultPath: 'rekordbox.xml',
+      filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, xml, 'utf8')
+    return filePath
   })
 
   ipcMain.handle('search:query', (_e, query: string, provider) =>

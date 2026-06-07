@@ -18,6 +18,8 @@ const api = {
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
+  exportRekordbox: (xml: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportRekordbox', xml),
   searchDiscogs: (query: string, provider?: SearchProviderId) =>
     ipcRenderer.invoke('search:query', query, provider),
   getRelease: (id: number, provider?: SearchProviderId) =>
