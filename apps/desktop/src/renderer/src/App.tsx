@@ -283,6 +283,7 @@ export default function App(): React.JSX.Element {
           query: s.query,
           duration: duration ?? undefined,
           coverUrl: cover ?? undefined,
+          embeddedCover: cover ?? undefined,
           meta: {
             ...base.meta,
             ...tags,

@@ -192,12 +192,13 @@ export function Editor({
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
   const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
-  // The artwork the file arrived with, captured once per track (the Editor remounts
-  // per track via key={track.id}). Applying a release can leave it in place, and the
-  // picker lists it first so the user can step to the release's images and back.
+  // The artwork the file arrived with: its embedded cover, not whatever coverUrl
+  // happens to hold when the Editor mounts (a release match may have already filled
+  // it). The picker lists it first so the user can step to the release's images and
+  // back; a file with no embedded art contributes no slot, so only the release's
+  // images appear.
   const [originalCover] = useState<{ url?: string; path?: string }>(() => ({
-    url: item.coverUrl,
-    path: item.coverPath,
+    url: item.embeddedCover,
   }))
   const releaseRef = useRef<DiscogsRelease | null>(null)
   // Bumped on every search so an in-flight auto-probe from a superseded search

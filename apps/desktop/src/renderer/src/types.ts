@@ -20,6 +20,11 @@ export interface TrackItem {
   duration?: number
   coverUrl?: string
   coverPath?: string
+  // The artwork embedded in the file itself, captured once when the file is added
+  // and never overwritten by a release match. The cover picker offers it as a
+  // choice distinct from the release's images; a file with no embedded art has
+  // none, so it contributes no slot. Undefined when the file carries no cover.
+  embeddedCover?: string
   // Set when the user clears the artwork, so the conversion strips the embedded
   // cover instead of preserving it. Cleared again the moment a new cover is set.
   coverRemoved?: boolean

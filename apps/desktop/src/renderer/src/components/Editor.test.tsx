@@ -828,6 +828,34 @@ describe('Editor Discogs apply', () => {
     expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
   })
 
+  // A file with no embedded artwork must not contribute a phantom "file image" slot
+  // to the cover picker. The cover it currently carries can be a leftover from an
+  // earlier release match, so the picker has to list only the matched release's
+  // images — a 3-image release reads "/3", never "/4".
+  it('lists only the release images when the file has no embedded artwork', async () => {
+    const threeImages = {
+      ...release,
+      images: [
+        { uri: 'new1.jpg', type: 'primary', resource_url: '' },
+        { uri: 'new2.jpg', type: 'secondary', resource_url: '' },
+        { uri: 'new3.jpg', type: 'secondary', resource_url: '' },
+      ],
+    }
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'win32',
+      reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
+      prepareCoverDrag: () => Promise.resolve(null),
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      getRelease: vi.fn().mockResolvedValue(threeImages),
+    }
+    renderEditor({ id: 'a', coverUrl: 'old-release.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    await screen.findAllByTestId('discogs-track')
+    expect(screen.getByTestId('cover-image-count').textContent).toMatch(/\/3$/)
+  })
+
   // Discogs returns each track's length; showing it next to the title is what lets
   // the user match the rip they have against the right tracklist entry by time.
   it('shows each track length from the Discogs tracklist', async () => {
