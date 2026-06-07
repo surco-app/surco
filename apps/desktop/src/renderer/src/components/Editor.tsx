@@ -18,7 +18,6 @@ import { openFeedback } from '../lib/feedback'
 import { formatTime } from '../lib/duration'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
-import { renderOutputName } from '../lib/outputName'
 import { formatFileSize } from '../lib/properties'
 import {
   formatDb,
@@ -48,6 +47,7 @@ import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
 import { NormalizeControls } from './NormalizeControls'
+import { RenameModal } from './RenameModal'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { WaveSpinner } from './WaveSpinner'
@@ -1347,11 +1347,7 @@ export function Editor({
                   <button
                     type="button"
                     data-testid="regenerate-output-name"
-                    onClick={() =>
-                      onChange({
-                        outputName: renderOutputName(filenameFormat, item.meta) || item.fileName,
-                      })
-                    }
+                    onClick={() => setRenameOpen(true)}
                     title={tr('editor.regenerateHint')}
                     className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                   >
@@ -1406,6 +1402,15 @@ export function Editor({
                     />
                   )}
                 </p>
+              )}
+              {renameOpen && (
+                <RenameModal
+                  meta={item.meta}
+                  initialFormat={filenameFormat}
+                  extension={format}
+                  onApply={(outputName) => onChange({ outputName })}
+                  onClose={() => setRenameOpen(false)}
+                />
               )}
             </div>
           )}

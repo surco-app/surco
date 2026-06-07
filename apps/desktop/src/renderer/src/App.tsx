@@ -103,7 +103,7 @@ export default function App(): React.JSX.Element {
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [showSettings, setShowSettings] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'general' | 'stats'>('general')
+  const [settingsTab, setSettingsTab] = useState<'general' | 'stats' | 'naming'>('general')
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
@@ -599,7 +599,7 @@ export default function App(): React.JSX.Element {
     window.api.saveSettings(patch).then(setSettings)
   }
 
-  function openSettings(tab: 'general' | 'stats' = 'general'): void {
+  function openSettings(tab: 'general' | 'stats' | 'naming' = 'general'): void {
     setSettingsTab(tab)
     setShowSettings(true)
   }
@@ -1102,7 +1102,7 @@ export default function App(): React.JSX.Element {
               }}
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onTrashOriginal={() => askDeleteOriginal(selected)}
-              onOpenSettings={() => openSettings()}
+              onOpenSettings={openSettings}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">

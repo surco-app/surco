@@ -616,14 +616,26 @@ describe('Editor output file name', () => {
     expect(screen.getByTestId('output-name')).toHaveValue('original track 01')
   })
 
-  // The rename is opt-in: pressing Regenerate is the one action that swaps the file
-  // name for the metadata-derived one ("{artist} - {title}").
-  it('fills the output name from metadata only when Regenerate is clicked', () => {
+  // The rename is opt-in and previewed: Regenerate opens the pattern builder rather
+  // than overwriting the name blindly, so the user sees the result before committing.
+  it('opens the rename builder instead of overwriting the name when Regenerate is clicked', () => {
     const { onChange } = renderEditor(
       { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
       'wav',
     )
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
+    expect(screen.getByTestId('rename-preview')).toHaveTextContent('AR - TI.wav')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // Applying the builder writes the rendered name into the output-name field.
+  it('writes the built name to the output name on apply', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
+      'wav',
+    )
+    fireEvent.click(screen.getByTestId('regenerate-output-name'))
+    fireEvent.click(screen.getByTestId('rename-apply'))
     expect(onChange).toHaveBeenCalledWith({ outputName: 'AR - TI' })
   })
 })
