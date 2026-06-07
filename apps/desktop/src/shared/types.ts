@@ -202,3 +202,14 @@ export interface TrackProperties {
   // recognized.
   tagFormats: string[]
 }
+
+// The best match an audio fingerprint lookup (Chromaprint → AcoustID) returns for a
+// file, used to seed tags/search when the filename is too garbled to search Discogs.
+// album is '' when AcoustID has no release group for the recording.
+export interface IdentifyResult {
+  title: string
+  artist: string
+  album: string
+  // AcoustID's 0–1 confidence for the match, so the UI can flag a weak guess.
+  score: number
+}
