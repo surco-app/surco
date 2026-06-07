@@ -17,6 +17,9 @@ beforeEach(() => {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
     reveal: vi.fn(),
+    // The Properties effect probes once per single track on mount; resolve to null
+    // so tests that don't care about it don't hit an undefined bridge method.
+    properties: vi.fn().mockResolvedValue(null),
   }
 })
 
@@ -66,12 +69,14 @@ function renderEditor(
   onDeriveTags: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
+  onOpenSettings: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
   const onFormatChange = vi.fn()
   const onTrashOriginal = vi.fn()
+  const onOpenSettings = vi.fn()
   render(
     <Editor
       item={item(over)}
@@ -93,10 +98,10 @@ function renderEditor(
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
       onTrashOriginal={onTrashOriginal}
-      onOpenSettings={vi.fn()}
+      onOpenSettings={onOpenSettings}
     />,
   )
-  return { onProcess, onChange, onDeriveTags, onFormatChange, onTrashOriginal }
+  return { onProcess, onChange, onDeriveTags, onFormatChange, onTrashOriginal, onOpenSettings }
 }
 
 describe('Editor cover picker', () => {
@@ -683,6 +688,7 @@ describe('Editor Discogs apply', () => {
     ;(window as unknown as { api: unknown }).api = {
       platform: 'win32',
       reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease,
     }
@@ -746,7 +752,9 @@ describe('Editor Discogs apply', () => {
     const { onChange } = renderEditor({ id: 'a' })
     await search()
     expect(getRelease).not.toHaveBeenCalled()
-    expect(onChange).not.toHaveBeenCalled()
+    // The Properties probe legitimately patches { properties }; what must not happen
+    // is a metadata apply from a release that was never opened.
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ meta: expect.anything() }))
   })
 
   function withImages(): void {
@@ -757,6 +765,7 @@ describe('Editor Discogs apply', () => {
     ;(window as unknown as { api: unknown }).api = {
       platform: 'win32',
       reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
       prepareCoverDrag: () => Promise.resolve(null),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(withImage),
@@ -819,6 +828,7 @@ describe('Editor track preselection', () => {
     ;(window as unknown as { api: unknown }).api = {
       platform: 'win32',
       reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(release),
     }
@@ -900,8 +910,74 @@ describe('Editor in-place hint', () => {
 
   it('shows the generic hint when the export converts to a different format', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
-    expect(screen.getByTestId('output-name-hint')).toHaveTextContent(
-      i18n.t('editor.outputNameHint'),
+    expect(screen.getByTestId('output-name-hint')).toHaveTextContent('Settings → File names')
+    expect(screen.getByTestId('output-name-hint')).not.toHaveTextContent(
+      i18n.t('editor.outputNameHintInPlace'),
     )
+  })
+
+  // The hint's whole point is to drop the user straight into the pattern editor, so the
+  // link must deep-link to the naming tab rather than the default Settings landing.
+  it('deep-links the generic hint to the file name settings', () => {
+    const { onOpenSettings } = renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
+    fireEvent.click(screen.getByTestId('output-name-hint-settings'))
+    expect(onOpenSettings).toHaveBeenCalledWith('naming')
+  })
+})
+
+describe('Editor properties panel', () => {
+  beforeEach(() => void i18n.changeLanguage('en'))
+
+  const properties = {
+    codec: 'pcm_s16le',
+    container: 'wav',
+    sampleRateHz: 44100,
+    bitDepth: 16,
+    channels: 2,
+    bitrateKbps: 1411,
+    sizeBytes: 58_400_000,
+    createdMs: 1_700_000_000_000,
+    modifiedMs: 1_700_000_500_000,
+  }
+
+  // Folded by default so the read-only facts never push the editing fields the user
+  // came for down the panel; they open it deliberately to inspect the source.
+  it('stays folded until the user opens it', () => {
+    renderEditor({ id: 'a', properties })
+    expect(screen.queryByTestId('properties-readout')).not.toBeInTheDocument()
+  })
+
+  // The panel exists to surface the technical facts ffprobe reads off the source —
+  // formatted for a human (kHz, Bit, kbps, MB), not raw — so a DJ can vet a rip.
+  it('renders the probed audio facts once expanded', () => {
+    renderEditor({ id: 'a', properties })
+    fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    expect(screen.getByTestId('property-sampleRate')).toHaveTextContent('44.1 kHz')
+    expect(screen.getByTestId('property-bitDepth')).toHaveTextContent('16 Bit')
+    expect(screen.getByTestId('property-channelMode')).toHaveTextContent('Stereo')
+    expect(screen.getByTestId('property-bitrate')).toHaveTextContent('1411 kbps')
+    expect(screen.getByTestId('property-size')).toHaveTextContent('55.7 MB')
+  })
+
+  // A lossy source has no fixed bit depth (probe leaves it null); the row must drop
+  // out rather than print "0 Bit" / an empty value.
+  it('omits the bit-depth row when the probe could not read one', () => {
+    renderEditor({ id: 'a', properties: { ...properties, bitDepth: null } })
+    fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    expect(screen.queryByTestId('property-bitDepth')).not.toBeInTheDocument()
+  })
+
+  // The full path is too long for the row, so Location collapses to the containing
+  // folder name and clicking it opens that folder in Finder — the user's quickest
+  // route from "which track is this" to the file on disk.
+  it('reveals the containing folder in Finder from the Location row', () => {
+    renderEditor({ id: 'a', inputPath: '/Music/Crate/Vol 2/track.wav', properties })
+    fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    const reveal = screen.getByTestId('property-reveal')
+    expect(reveal).toHaveTextContent('Vol 2')
+    fireEvent.click(reveal)
+    expect(
+      (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,
+    ).toHaveBeenCalledWith('/Music/Crate/Vol 2/track.wav')
   })
 })

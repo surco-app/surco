@@ -15,9 +15,11 @@ import { csvHas, toggleCsv } from '../lib/csv'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
+import { formatTime } from '../lib/duration'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
+import { formatFileSize } from '../lib/properties'
 import {
   formatDb,
   formatKHz,
@@ -113,7 +115,7 @@ interface Props {
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
-  onOpenSettings: () => void
+  onOpenSettings: (tab?: 'general' | 'naming') => void
 }
 
 export function Editor({
@@ -164,11 +166,17 @@ export function Editor({
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
   const [formOpen, setFormOpen] = useState(true)
+  // Read-only facts, folded by default so they don't push the editing fields down;
+  // the user opens them when they want to inspect the source.
+  const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
   // The loudness help is hidden by default and toggled by the ⓘ button: the
   // figures need explaining once, but shouldn't clutter the panel on every edit.
   const [loudnessHelpOpen, setLoudnessHelpOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(true)
+  // Opens the pattern builder for the output name. Editing the pattern there is scoped
+  // to this track (it writes outputName), unlike Settings which sets the global default.
+  const [renameOpen, setRenameOpen] = useState(false)
   // Normalization is off by default and most users won't touch it, so its section
   // starts folded — unlike the always-on Metadata/Quality/File name sections.
   const [normalizeOpen, setNormalizeOpen] = useState(false)
@@ -317,6 +325,23 @@ export function Editor({
       active = false
     }
   }, [item.inputPath, showLoudness])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: same once-per-input rule — keyed on inputPath so it probes exactly once. Properties are always shown for a single track (no toggle), so unlike spectrum/loudness this isn't gated on a setting; isMulti hides the panel instead. item.properties is intentionally not a dependency so a finished probe (including a null failure) never retriggers.
+  useEffect(() => {
+    if (isMulti || item.properties !== undefined) return
+    let active = true
+    window.api
+      .properties(item.inputPath)
+      .then((res) => {
+        if (active) onChange({ properties: res })
+      })
+      .catch(() => {
+        if (active) onChange({ properties: null })
+      })
+    return () => {
+      active = false
+    }
+  }, [item.inputPath, isMulti])
 
   // Checking whether the song is already in the Apple Music library is a hint to
   // avoid duplicating tracks, so it tracks the live title/artist (debounced —
@@ -583,7 +608,7 @@ export function Editor({
                   <button
                     key="settings"
                     type="button"
-                    onClick={onOpenSettings}
+                    onClick={() => onOpenSettings()}
                     className="underline underline-offset-2 hover:no-underline"
                   />,
                 ]}
@@ -968,6 +993,150 @@ export function Editor({
             </div>
           )}
 
+          {!isMulti && (
+            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+              <SectionHeader
+                title={tr('editor.propertiesTitle')}
+                open={propertiesOpen}
+                onToggle={() => setPropertiesOpen((v) => !v)}
+              />
+              {propertiesOpen &&
+                (item.properties
+                  ? (() => {
+                      const p = item.properties
+                      const ext = item.fileName.includes('.')
+                        ? (item.fileName.split('.').pop() ?? '').toUpperCase()
+                        : ''
+                      // Show only the containing folder's name (the full path lives in
+                      // the tooltip) so the long absolute path doesn't blow out the row.
+                      const folderName =
+                        item.inputPath
+                          .slice(0, Math.max(item.inputPath.lastIndexOf('/'), item.inputPath.lastIndexOf('\\')))
+                          .split(/[/\\]/)
+                          .pop() || item.inputPath
+                      const modeKey =
+                        p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'
+                      const fmtDate = (ms: number | null): string =>
+                        ms === null
+                          ? ''
+                          : new Date(ms).toLocaleString(undefined, {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })
+                      const row = (id: string, label: string, value: string, full?: string) =>
+                        value ? { id, label, value, full } : false
+                      const groups = [
+                        {
+                          id: 'audio',
+                          label: tr('editor.propertiesGroupAudio'),
+                          rows: [
+                            row('kind', tr('editor.propKind'), p.container.toUpperCase()),
+                            row('codec', tr('editor.propCodec'), p.codec),
+                            row(
+                              'sampleRate',
+                              tr('editor.propSampleRate'),
+                              p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
+                            ),
+                            row(
+                              'bitDepth',
+                              tr('editor.propBitDepth'),
+                              p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
+                            ),
+                            row(
+                              'channels',
+                              tr('editor.propChannels'),
+                              p.channels ? String(p.channels) : '',
+                            ),
+                            row(
+                              'channelMode',
+                              tr('editor.propChannelMode'),
+                              p.channels ? tr(`editor.channelMode${modeKey}`) : '',
+                            ),
+                            row(
+                              'bitrate',
+                              tr('editor.propBitrate'),
+                              p.bitrateKbps !== null
+                                ? tr('editor.propBitrateValue', { kbps: p.bitrateKbps })
+                                : '',
+                            ),
+                            row(
+                              'duration',
+                              tr('editor.propDuration'),
+                              item.duration !== undefined ? formatTime(item.duration) : '',
+                            ),
+                          ].filter((r) => r !== false),
+                        },
+                        {
+                          id: 'file',
+                          label: tr('editor.propertiesGroupFile'),
+                          rows: [
+                            row('fileName', tr('editor.propFileName'), item.fileName),
+                            row('extension', tr('editor.propExtension'), ext),
+                            row('path', tr('editor.propPath'), folderName, item.inputPath),
+                            row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes)),
+                            row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
+                            row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),
+                          ].filter((r) => r !== false),
+                        },
+                      ].filter((g) => g.rows.length > 0)
+                      return (
+                        <div data-testid="properties-readout" className="mt-3 space-y-3">
+                          {groups.map((group) => (
+                            <div key={group.id}>
+                              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+                                {group.label}
+                              </div>
+                              <dl className="overflow-hidden rounded-lg bg-[var(--color-field)]">
+                                {group.rows.map((r, i) => (
+                                  <div
+                                    key={r.id}
+                                    data-testid={`property-${r.id}`}
+                                    className={`flex items-center justify-between gap-4 px-3 py-2 ${
+                                      i > 0 ? 'border-t border-[var(--color-line)]' : ''
+                                    }`}
+                                  >
+                                    <dt className="shrink-0 text-xs text-fg-dim">{r.label}</dt>
+                                    <dd className="min-w-0 truncate text-right text-sm font-medium tabular-nums">
+                                      {r.id === 'path' ? (
+                                        <button
+                                          type="button"
+                                          data-testid="property-reveal"
+                                          onClick={() => window.api.reveal(item.inputPath)}
+                                          title={r.full}
+                                          className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
+                                        >
+                                          <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth={2}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            aria-hidden="true"
+                                            className="h-3.5 w-3.5 shrink-0"
+                                          >
+                                            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                          </svg>
+                                          <span className="truncate">{r.value}</span>
+                                        </button>
+                                      ) : (
+                                        <span title={r.full}>{r.value}</span>
+                                      )}
+                                    </dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()
+                  : item.properties === null && (
+                      <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
+                    ))}
+            </div>
+          )}
+
           {!isMulti && (showSpectrum || showLoudness) && (
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
               <SectionHeader
@@ -1219,9 +1388,22 @@ export function Editor({
               )}
               {outputOpen && (
                 <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
-                  {willEditInPlace
-                    ? tr('editor.outputNameHintInPlace')
-                    : tr('editor.outputNameHint')}
+                  {willEditInPlace ? (
+                    tr('editor.outputNameHintInPlace')
+                  ) : (
+                    <Trans
+                      i18nKey="editor.outputNameHint"
+                      components={[
+                        <button
+                          key="settings"
+                          type="button"
+                          data-testid="output-name-hint-settings"
+                          onClick={() => onOpenSettings('naming')}
+                          className="underline underline-offset-2 hover:no-underline"
+                        />,
+                      ]}
+                    />
+                  )}
                 </p>
               )}
             </div>
