@@ -11,6 +11,7 @@ import type {
   Settings,
   SpectrumResult,
   TrackMetadata,
+  TrackProperties,
 } from '../shared/types'
 
 export interface Api {
@@ -36,6 +37,7 @@ export interface Api {
   copyText: (text: string) => Promise<void>
   spectrogram: (path: string) => Promise<SpectrumResult>
   loudness: (path: string) => Promise<LoudnessResult | null>
+  properties: (path: string) => Promise<TrackProperties | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<string | null>

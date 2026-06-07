@@ -1023,8 +1023,14 @@ export function Editor({
                               dateStyle: 'medium',
                               timeStyle: 'short',
                             })
-                      const row = (id: string, label: string, value: string, full?: string) =>
-                        value ? { id, label, value, full } : false
+                      type PropRow = { id: string; label: string; value: string; full?: string }
+                      const row = (
+                        id: string,
+                        label: string,
+                        value: string,
+                        full?: string,
+                      ): PropRow | false => (value ? { id, label, value, full } : false)
+                      const isRow = (r: PropRow | false): r is PropRow => r !== false
                       const groups = [
                         {
                           id: 'audio',
@@ -1065,7 +1071,7 @@ export function Editor({
                               item.duration !== undefined ? formatTime(item.duration) : '',
                             ),
                             row('tagFormats', tr('editor.propTagFormats'), p.tagFormats.join(', ')),
-                          ].filter((r) => r !== false),
+                          ].filter(isRow),
                         },
                         {
                           id: 'file',
@@ -1077,7 +1083,7 @@ export function Editor({
                             row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes)),
                             row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
                             row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),
-                          ].filter((r) => r !== false),
+                          ].filter(isRow),
                         },
                       ].filter((g) => g.rows.length > 0)
                       return (
