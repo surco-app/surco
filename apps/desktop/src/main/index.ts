@@ -16,6 +16,8 @@ import {
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
+import { resolveBindings } from '../shared/shortcutDefaults'
+import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   AppleMusicAddJob,
   CoverExportJob,
@@ -93,6 +95,14 @@ function buildAppMenu(win: BrowserWindow): void {
   // field" guard; Space would otherwise start playback mid-search and ⌘⌫ would
   // delete a track mid-edit), while a mouse click of the item still runs it.
   const run = (id: string): void => win.webContents.send('menu:command', id)
+  // Menu accelerators are display-only labels generated from the same bindings the
+  // renderer keymap uses (registerAccelerator:false leaves the keystroke to it), so a
+  // rebind in Settings shows here too. Undefined when the command was unbound.
+  const bindings = resolveBindings(getSettings().shortcutOverrides)
+  const accel = (id: string): string | undefined => {
+    const chord = bindings.get(id)
+    return chord?.length ? chordToAccelerator(chord) : undefined
+  }
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: app.name,
@@ -102,7 +112,7 @@ function buildAppMenu(win: BrowserWindow): void {
         { type: 'separator' },
         {
           label: t('settings'),
-          accelerator: 'CmdOrCtrl+,',
+          accelerator: accel('settings'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'settings'),
         },
@@ -121,35 +131,53 @@ function buildAppMenu(win: BrowserWindow): void {
       submenu: [
         {
           label: t('add'),
-          accelerator: 'CmdOrCtrl+O',
+          accelerator: accel('add'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'add'),
         },
-        { label: t('reveal'), accelerator: 'CmdOrCtrl+R', click: () => run('reveal') },
+        // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
+        // its chord is configurable, so the keystroke must reach the keymap, not the menu.
+        {
+          label: t('reveal'),
+          accelerator: accel('reveal'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'reveal'),
+        },
         {
           label: t('rename'),
-          accelerator: 'CmdOrCtrl+Shift+R',
+          accelerator: accel('rename'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'rename'),
         },
-        { label: t('addAppleMusic'), click: () => run('add-apple-music') },
+        {
+          label: t('findReplace'),
+          accelerator: accel('find-replace'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'find-replace'),
+        },
+        {
+          label: t('addAppleMusic'),
+          accelerator: accel('add-apple-music'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'add-apple-music'),
+        },
         { type: 'separator' },
         {
           label: t('processCurrent'),
-          accelerator: 'CmdOrCtrl+Enter',
+          accelerator: accel('process-current'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'process-current'),
         },
         {
           label: t('processAll'),
-          accelerator: 'CmdOrCtrl+Shift+Enter',
+          accelerator: accel('process-all'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'process-all'),
         },
         { type: 'separator' },
         {
           label: t('remove'),
-          accelerator: 'CmdOrCtrl+Backspace',
+          accelerator: accel('remove'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'remove'),
         },
@@ -171,25 +199,25 @@ function buildAppMenu(win: BrowserWindow): void {
         { type: 'separator' },
         {
           label: t('search'),
-          accelerator: '/',
+          accelerator: accel('search'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'search'),
         },
         {
           label: t('play'),
-          accelerator: 'Space',
+          accelerator: accel('play'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'play'),
         },
         {
           label: t('prev'),
-          accelerator: 'Up',
+          accelerator: accel('prev'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'prev'),
         },
         {
           label: t('next'),
-          accelerator: 'Down',
+          accelerator: accel('next'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'next'),
         },
@@ -251,7 +279,16 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('settings:get', () => getSettings())
-  ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => saveSettings(patch))
+  ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
+    const next = saveSettings(patch)
+    // Rebinding a shortcut changes the menu accelerators, so rebuild the menu from the
+    // freshly-saved overrides (buildAppMenu re-reads them via getSettings).
+    if (patch.shortcutOverrides !== undefined) {
+      const win = BrowserWindow.fromWebContents(e.sender)
+      if (win) buildAppMenu(win)
+    }
+    return next
+  })
 
   ipcMain.handle('dialog:pickFiles', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

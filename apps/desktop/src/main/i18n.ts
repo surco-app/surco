@@ -13,6 +13,7 @@ interface MenuStrings {
   add: string
   reveal: string
   rename: string
+  findReplace: string
   addAppleMusic: string
   remove: string
   removeAll: string
@@ -45,6 +46,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Añadir pistas…',
     reveal: 'Mostrar en Finder',
     rename: 'Generar nombre del archivo…',
+    findReplace: 'Buscar y reemplazar…',
     addAppleMusic: 'Añadir a Apple Music',
     remove: 'Quitar de la lista',
     removeAll: 'Vaciar la lista',
@@ -75,6 +77,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     add: 'Add tracks…',
     reveal: 'Reveal in Finder',
     rename: 'Build file name…',
+    findReplace: 'Find & Replace…',
     addAppleMusic: 'Add to Apple Music',
     remove: 'Remove from list',
     removeAll: 'Remove all',
