@@ -622,6 +622,10 @@ export default function App(): React.JSX.Element {
     )
     if (next === -1) return
     setSelection({ ids: [tracks[next].id], anchor: tracks[next].id })
+    // Move DOM focus with the selection so the native focus ring follows the
+    // keyboard instead of staying on the last clicked row, which left two rows
+    // looking highlighted at once.
+    document.querySelectorAll<HTMLButtonElement>('[data-testid="track-row"]')[next]?.focus()
   }
 
   const sidebar = useResizableWidth(260, 220, 520)
