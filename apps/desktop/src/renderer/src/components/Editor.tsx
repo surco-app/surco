@@ -14,8 +14,8 @@ import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
-import { openFeedback } from '../lib/feedback'
 import { formatTime } from '../lib/duration'
+import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
 import { formatFileSize } from '../lib/properties'
@@ -49,6 +49,7 @@ import { LoudnessHelpModal } from './LoudnessHelpModal'
 import { NormalizeControls } from './NormalizeControls'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
+import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
@@ -560,8 +561,7 @@ export function Editor({
       type="button"
       data-testid="derive-btn"
       onClick={deriveFromNames}
-      title={tr('editor.deriveFromNameHint')}
-      className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
+      className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
     >
       <svg
         viewBox="0 0 24 24"
@@ -577,6 +577,7 @@ export function Editor({
         <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
       </svg>
       {tr('editor.deriveFromName')}
+      <Tooltip label={tr('editor.deriveFromNameHint')} align="start" />
     </button>
   ) : null
 
@@ -800,9 +801,9 @@ export function Editor({
                     setCoverDragging(false)
                   }}
                   onDrop={onCoverDrop}
-                  className="shrink-0 self-start"
-                  title={tr('editor.coverTitle')}
+                  className="group relative shrink-0 self-start"
                 >
+                  <Tooltip label={tr('editor.coverTitle')} align="start" />
                   <input
                     ref={coverInputRef}
                     type="file"
@@ -1042,7 +1043,13 @@ export function Editor({
                       // the tooltip) so the long absolute path doesn't blow out the row.
                       const folderName =
                         item.inputPath
-                          .slice(0, Math.max(item.inputPath.lastIndexOf('/'), item.inputPath.lastIndexOf('\\')))
+                          .slice(
+                            0,
+                            Math.max(
+                              item.inputPath.lastIndexOf('/'),
+                              item.inputPath.lastIndexOf('\\'),
+                            ),
+                          )
                           .split(/[/\\]/)
                           .pop() || item.inputPath
                       const modeKey =
@@ -1077,7 +1084,9 @@ export function Editor({
                             row(
                               'bitDepth',
                               tr('editor.propBitDepth'),
-                              p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
+                              p.bitDepth !== null
+                                ? tr('editor.propBitDepthValue', { bits: p.bitDepth })
+                                : '',
                             ),
                             row(
                               'channels',
@@ -1170,7 +1179,9 @@ export function Editor({
                       )
                     })()
                   : item.properties === null && (
-                      <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
+                      <p className="mt-3 text-xs text-fg-dim">
+                        {tr('editor.propertiesUnavailable')}
+                      </p>
                     ))}
             </div>
           )}
@@ -1385,8 +1396,7 @@ export function Editor({
                     type="button"
                     data-testid="regenerate-output-name"
                     onClick={onOpenRename}
-                    title={tr('editor.regenerateHint')}
-                    className="press flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
+                    className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -1404,6 +1414,7 @@ export function Editor({
                       <path d="M3 21v-5h5" />
                     </svg>
                     {tr('editor.regenerate')}
+                    <Tooltip label={tr('editor.regenerateHint')} align="end" />
                   </button>
                 }
               />
