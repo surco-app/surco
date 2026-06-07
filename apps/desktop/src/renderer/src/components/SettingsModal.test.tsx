@@ -198,3 +198,71 @@ describe('SettingsModal stats', () => {
     open.mockRestore()
   })
 })
+
+describe('SettingsModal shortcuts', () => {
+  function openShortcuts(onSave: (p: Partial<Settings>) => void = () => {}) {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        initialTab="shortcuts"
+      />,
+    )
+  }
+
+  function record(id: string, keyInit: Partial<KeyboardEventInit> & { key: string }) {
+    fireEvent.click(screen.getByTestId(`shortcut-record-${id}`))
+    fireEvent.keyDown(screen.getByTestId(`shortcut-record-${id}`), keyInit)
+  }
+
+  // Recording a keystroke must rebind the command and persist it like any setting, so
+  // the user's choice survives the save and reaches the keymap.
+  it('records a new chord and saves it as an override', () => {
+    const onSave = vi.fn()
+    openShortcuts(onSave)
+    record('add', { key: 'a', metaKey: true, shiftKey: true })
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧A')
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ shortcutOverrides: { add: ['mod', 'shift', 'a'] } }),
+    )
+  })
+
+  it('resets a single command back to its default', () => {
+    openShortcuts()
+    record('add', { key: 'a', metaKey: true, shiftKey: true })
+    fireEvent.click(screen.getByTestId('shortcut-reset-add'))
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
+  })
+
+  it('reset all clears every override', () => {
+    const onSave = vi.fn()
+    openShortcuts(onSave)
+    record('add', { key: 'a', metaKey: true, shiftKey: true })
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
+  })
+
+  // Two commands on one chord is ambiguous, so the clash is surfaced and saving is
+  // blocked until it's resolved — no silently-broken binding gets persisted.
+  it('flags a conflict and disables save when two commands share a chord', () => {
+    openShortcuts()
+    record('add', { key: 'r', metaKey: true }) // ⌘R already belongs to reveal
+    expect(screen.getByTestId('shortcuts-conflict')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-save')).toBeDisabled()
+  })
+
+  // ⌘K opens the palette and isn't reconfigurable; recording it must be rejected so it
+  // can't be stolen.
+  it('rejects the reserved palette chord (⌘K)', () => {
+    const onSave = vi.fn()
+    openShortcuts(onSave)
+    record('add', { key: 'k', metaKey: true })
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
+  })
+})

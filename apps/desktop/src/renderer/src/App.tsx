@@ -105,7 +105,9 @@ export default function App(): React.JSX.Element {
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [showSettings, setShowSettings] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'general' | 'stats' | 'naming'>('general')
+  const [settingsTab, setSettingsTab] = useState<'general' | 'stats' | 'naming' | 'shortcuts'>(
+    'general',
+  )
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [showFindReplace, setShowFindReplace] = useState(false)
@@ -602,7 +604,7 @@ export default function App(): React.JSX.Element {
     window.api.saveSettings(patch).then(setSettings)
   }
 
-  function openSettings(tab: 'general' | 'stats' | 'naming' = 'general'): void {
+  function openSettings(tab: 'general' | 'stats' | 'naming' | 'shortcuts' = 'general'): void {
     setSettingsTab(tab)
     setShowSettings(true)
   }
@@ -763,6 +765,13 @@ export default function App(): React.JSX.Element {
       hint: hintFor('settings'),
       enabled: true,
       run: () => openSettings(),
+    },
+    {
+      id: 'shortcuts',
+      title: tr('commands.shortcuts'),
+      hint: hintFor('shortcuts'),
+      enabled: true,
+      run: () => openSettings('shortcuts'),
     },
     {
       id: 'help',

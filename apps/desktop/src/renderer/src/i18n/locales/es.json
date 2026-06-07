@@ -63,7 +63,8 @@
     "feedback": "Enviar comentarios",
     "website": "Sitio web de Surco",
     "findReplace": "Buscar y reemplazar…",
-    "rename": "Generar nombre del archivo…"
+    "rename": "Generar nombre del archivo…",
+    "shortcuts": "Atajos de teclado…"
   },
   "trackList": {
     "noArtist": "Sin artista",
@@ -252,7 +253,16 @@
       "editor": "Editor",
       "artwork": "Carátula",
       "fields": "Campos",
+      "shortcuts": "Atajos",
       "stats": "Estadísticas"
+    },
+    "shortcuts": {
+      "intro": "Pulsa un atajo y luego las teclas nuevas. Esc cancela.",
+      "recording": "Pulsa las teclas…",
+      "unbound": "Sin asignar",
+      "reset": "Restablecer al valor por defecto",
+      "resetAll": "Restablecer todo",
+      "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar."
     },
     "stats": {
       "count": "conversiones",

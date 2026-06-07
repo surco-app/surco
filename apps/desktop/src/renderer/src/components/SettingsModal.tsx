@@ -2,9 +2,12 @@ import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
+import { SHORTCUT_DEFAULTS, findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
+import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
+import { formatShortcut } from '../lib/shortcuts'
 import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from '../lib/stats'
 import { NormalizeControls } from './NormalizeControls'
 import { useFocusTrap } from './useFocusTrap'
@@ -48,13 +51,30 @@ interface Props {
   initialTab?: Tab
 }
 
-type Tab = 'general' | 'conversion' | 'naming' | 'editor' | 'artwork' | 'fields' | 'stats'
+type Tab =
+  | 'general'
+  | 'conversion'
+  | 'naming'
+  | 'editor'
+  | 'artwork'
+  | 'fields'
+  | 'shortcuts'
+  | 'stats'
 
 // Ordered to mirror Meta's preferences flow: broad app settings, then what the
 // editor shows, then artwork, then editing behavior. Stats trails last as the one
 // read-only, informational tab.
 // Ordered by workflow: app setup, then output, then per-track editing prefs, then results.
-const TABS: Tab[] = ['general', 'conversion', 'naming', 'editor', 'fields', 'artwork', 'stats']
+const TABS: Tab[] = [
+  'general',
+  'conversion',
+  'naming',
+  'editor',
+  'fields',
+  'artwork',
+  'shortcuts',
+  'stats',
+]
 
 const TAB_ICONS: Record<Tab, React.JSX.Element> = {
   conversion: (
@@ -103,6 +123,15 @@ const TAB_ICONS: Record<Tab, React.JSX.Element> = {
       <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </>
   ),
+  shortcuts: (
+    <>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <line x1="7" y1="10" x2="7" y2="10" />
+      <line x1="11" y1="10" x2="11" y2="10" />
+      <line x1="15" y1="10" x2="15" y2="10" />
+      <line x1="8" y1="14" x2="16" y2="14" />
+    </>
+  ),
   stats: (
     <>
       <line x1="4" y1="20" x2="20" y2="20" />
@@ -139,6 +168,9 @@ export function SettingsModal({
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [showLoudness, setShowLoudness] = useState(settings.showLoudness)
   const [normalize, setNormalize] = useState(settings.normalize)
+  const [shortcutOverrides, setShortcutOverrides] = useState(settings.shortcutOverrides)
+  // The command whose next keystroke is being recorded, or null when idle.
+  const [recording, setRecording] = useState<string | null>(null)
   const formatRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
@@ -190,8 +222,40 @@ export function SettingsModal({
       showSpectrum,
       showLoudness,
       normalize,
+      shortcutOverrides,
     })
     onClose()
+  }
+
+  // Effective bindings shown in the Shortcuts tab, plus the clashes that block saving.
+  const bindings = resolveBindings(shortcutOverrides)
+  const conflictIds = new Set(findConflicts(bindings).flat())
+
+  // A command id is kebab-case ('find-replace'); its i18n title lives under the
+  // camelCase key (commands.findReplace).
+  const commandTitle = (id: string): string =>
+    tr(`commands.${id.replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`)
+
+  // Records the next keystroke as the binding for `id`. A lone modifier press is ignored
+  // (wait for the full chord), Escape cancels, and ⌘K stays reserved for the palette.
+  function captureChord(id: string, e: React.KeyboardEvent): void {
+    if (e.key === 'Shift' || e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt') return
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.key === 'Escape') {
+      setRecording(null)
+      return
+    }
+    const chord = eventToChord(e, isMac)
+    if (!chord || chordEquals(chord, ['mod', 'k'])) return
+    setShortcutOverrides({ ...shortcutOverrides, [id]: chord })
+    setRecording(null)
+  }
+
+  function resetRow(id: string): void {
+    const rest = { ...shortcutOverrides }
+    delete rest[id]
+    setShortcutOverrides(rest)
   }
 
   return (
@@ -643,6 +707,77 @@ export function SettingsModal({
             </div>
           )}
 
+          {tab === 'shortcuts' && (
+            <div className="min-h-[280px]">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-fg-dim">{tr('settings.shortcuts.intro')}</p>
+                <button
+                  type="button"
+                  data-testid="shortcuts-reset-all"
+                  onClick={() => setShortcutOverrides({})}
+                  className="press shrink-0 text-xs text-fg-muted hover:text-fg"
+                >
+                  {tr('settings.shortcuts.resetAll')}
+                </button>
+              </div>
+              <div className="max-h-[360px] overflow-y-auto">
+                {SHORTCUT_DEFAULTS.map((def) => {
+                  const chord = bindings.get(def.id) ?? []
+                  const overridden = def.id in shortcutOverrides
+                  const isRecording = recording === def.id
+                  return (
+                    <div
+                      key={def.id}
+                      data-testid={`shortcut-row-${def.id}`}
+                      className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
+                    >
+                      <span className="text-sm text-fg">{commandTitle(def.id)}</span>
+                      <div className="flex items-center gap-2">
+                        {overridden && (
+                          <button
+                            type="button"
+                            data-testid={`shortcut-reset-${def.id}`}
+                            onClick={() => resetRow(def.id)}
+                            title={tr('settings.shortcuts.reset')}
+                            className="press text-sm text-fg-faint hover:text-fg"
+                          >
+                            ↺
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          data-testid={`shortcut-record-${def.id}`}
+                          onClick={() => setRecording(isRecording ? null : def.id)}
+                          onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
+                          onBlur={() => isRecording && setRecording(null)}
+                          aria-pressed={isRecording}
+                          className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
+                            isRecording
+                              ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                              : conflictIds.has(def.id)
+                                ? 'border-danger text-danger'
+                                : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
+                          }`}
+                        >
+                          {isRecording
+                            ? tr('settings.shortcuts.recording')
+                            : chord.length
+                              ? formatShortcut(chord, isMac)
+                              : tr('settings.shortcuts.unbound')}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {conflictIds.size > 0 && (
+                <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
+                  {tr('settings.shortcuts.conflict')}
+                </p>
+              )}
+            </div>
+          )}
+
           {tab === 'stats' && (
             <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
               {settings.conversionCount > 0 ? (
@@ -697,7 +832,8 @@ export function SettingsModal({
             type="button"
             data-testid="settings-save"
             onClick={save}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+            disabled={conflictIds.size > 0}
+            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
             {tr('common.save')}
           </button>

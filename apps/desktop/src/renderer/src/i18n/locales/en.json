@@ -63,7 +63,8 @@
     "feedback": "Send feedback",
     "website": "Surco website",
     "findReplace": "Find & Replace…",
-    "rename": "Build file name…"
+    "rename": "Build file name…",
+    "shortcuts": "Keyboard shortcuts…"
   },
   "trackList": {
     "noArtist": "No artist",
@@ -252,7 +253,16 @@
       "editor": "Editor",
       "artwork": "Artwork",
       "fields": "Fields",
+      "shortcuts": "Shortcuts",
       "stats": "Stats"
+    },
+    "shortcuts": {
+      "intro": "Click a shortcut, then press the new keys. Esc cancels.",
+      "recording": "Press keys…",
+      "unbound": "Unassigned",
+      "reset": "Reset to default",
+      "resetAll": "Reset all",
+      "conflict": "Two commands share a shortcut. Resolve it to save."
     },
     "stats": {
       "count": "conversions",
