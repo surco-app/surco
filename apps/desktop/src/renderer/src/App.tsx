@@ -13,10 +13,10 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { FindReplaceModal } from './components/FindReplaceModal'
-import { RenameModal } from './components/RenameModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
+import { RenameModal } from './components/RenameModal'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { TrackList } from './components/TrackList'
@@ -45,6 +45,7 @@ import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
+import { tracksToAnalyze } from './lib/triage'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -142,6 +143,11 @@ export default function App(): React.JSX.Element {
   const discogsPrefetched = useRef<Set<string>>(new Set())
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
+  // Batch quality triage: progress of the "analyze quality" run (null when idle), and
+  // a cancel flag the in-flight workers poll so cancelling stops new analyses without
+  // killing the ones already handed to ffmpeg.
+  const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
+  const analyzeCancel = useRef(false)
   // Set by the Cancel button to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -320,6 +326,33 @@ export default function App(): React.JSX.Element {
     },
     [updateTrack],
   )
+
+  // Analyzes every not-yet-measured track's spectrum at once so a whole dropped
+  // folder is triaged for fake-lossless rips without opening each. Capped at 3 in
+  // flight (each is an ffmpeg pass) and cancellable; reuses the hover prefetch's
+  // in-flight guard so a concurrent hover never double-spawns the same track. The
+  // shared spectrogram result also warms the editor for when the track is opened.
+  const analyzeAllQuality = useCallback((): void => {
+    const targets = tracksToAnalyze(tracksRef.current, spectrumInFlight.current)
+    if (analysis || targets.length === 0) return
+    analyzeCancel.current = false
+    let done = 0
+    setAnalysis({ done: 0, total: targets.length })
+    void mapWithConcurrency(targets, 3, async (t) => {
+      if (analyzeCancel.current) return
+      spectrumInFlight.current.add(t.id)
+      try {
+        const spectrum = await window.api.spectrogram(t.inputPath)
+        updateTrack(t.id, { spectrum })
+      } catch {
+        // A single file ffmpeg can't read must not abort the whole sweep.
+      } finally {
+        spectrumInFlight.current.delete(t.id)
+        done += 1
+        setAnalysis((a) => (a ? { ...a, done } : a))
+      }
+    }).finally(() => setAnalysis(null))
+  }, [analysis, updateTrack])
 
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
@@ -967,6 +1000,47 @@ export default function App(): React.JSX.Element {
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
+              </button>
+              <button
+                type="button"
+                data-testid="analyze-quality"
+                onClick={
+                  analysis
+                    ? () => {
+                        analyzeCancel.current = true
+                      }
+                    : analyzeAllQuality
+                }
+                disabled={!analysis && tracks.every((t) => Boolean(t.spectrum))}
+                aria-label={tr('header.analyzeQuality')}
+                title={
+                  analysis
+                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+                    : tr('header.analyzeQuality')
+                }
+                className={`press flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                  analysis
+                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                    : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                >
+                  <path d="M3 12h4l2-7 4 14 2-7h4" />
+                </svg>
+                {analysis && (
+                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                    {analysis.done}/{analysis.total}
+                  </span>
+                )}
               </button>
               <button
                 type="button"

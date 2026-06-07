@@ -22,6 +22,8 @@
     "stats": "Stats",
     "selectAll": "Select all",
     "fillFromName": "Fill all tags from file name",
+    "analyzeQuality": "Analyze quality of all tracks",
+    "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
     "clearAll": "Clear the list"
   },
   "sidebar": {

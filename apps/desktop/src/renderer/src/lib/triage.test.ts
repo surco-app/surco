@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { trackQuality } from './triage'
+import { trackQuality, tracksToAnalyze } from './triage'
 
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
 const withSpectrum = (spectrum?: Partial<SpectrumResult>): TrackItem =>
-  ({ spectrum: spectrum && { image: '', cutoffHz: null, sampleRateHz: 44100, ...spectrum } }) as TrackItem
+  ({
+    spectrum: spectrum && { image: '', cutoffHz: null, sampleRateHz: 44100, ...spectrum },
+  }) as TrackItem
 
 describe('trackQuality', () => {
   it('is unanalyzed before the spectrum has been measured', () => {
@@ -24,5 +26,24 @@ describe('trackQuality', () => {
 
   it('is suspect when the cutoff falls short of Nyquist (a re-encoded MP3)', () => {
     expect(trackQuality(withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100 }))).toBe('suspect')
+  })
+})
+
+describe('tracksToAnalyze', () => {
+  const t = (id: string, over: Partial<TrackItem> = {}): TrackItem => ({ id, ...over }) as TrackItem
+
+  it('picks only tracks without a spectrum that are not already in flight', () => {
+    const tracks = [
+      t('done', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100 } }),
+      t('flying'),
+      t('fresh'),
+    ]
+    const targets = tracksToAnalyze(tracks, new Set(['flying']))
+    expect(targets.map((x) => x.id)).toEqual(['fresh'])
+  })
+
+  it('returns nothing once every track is analyzed', () => {
+    const tracks = [t('a', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100 } })]
+    expect(tracksToAnalyze(tracks, new Set())).toEqual([])
   })
 })

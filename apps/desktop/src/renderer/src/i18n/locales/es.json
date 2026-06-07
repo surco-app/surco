@@ -22,6 +22,8 @@
     "stats": "Estadísticas",
     "selectAll": "Seleccionar todo",
     "fillFromName": "Rellenar todo desde el nombre",
+    "analyzeQuality": "Analizar la calidad de todas las pistas",
+    "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
