@@ -1265,61 +1265,95 @@ export function Editor({
                   : `${normalizeCfg.peakDb} dBFS`}
               </button>
             )}
-            <ExportButton
-              status={isMulti ? 'idle' : item.status}
-              stale={!isMulti && stale}
-              done={!isMulti && done}
-              outputFormat={format}
-              exportedFormat={isMulti ? null : exportedFormat}
-              withAppleMusic={
-                window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
-              }
-              incomplete={!isMulti && incomplete}
-              inPlace={!isMulti && willEditInPlace}
-              count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
-              onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
-              onSelectFormat={(f) => {
-                setFormat(f)
-                onFormatChange?.(f)
-              }}
-            />
-            {showDone && (
-              <div className="flex gap-2">
+            {showDone ? (
+              // A finished export led with four equal buttons, the loudest of which
+              // (re-export) is the rarest next step. Now the outcome line confirms
+              // the write and a single primary "Show file" carries the likely next
+              // action; re-export and Apple Music drop to a quiet row, and trashing
+              // the original — destructive and rare — is a plain link at the bottom.
+              <>
+                <p
+                  data-testid="export-success"
+                  className="text-center text-xs font-medium text-good"
+                >
+                  {isMulti
+                    ? tr('editor.exportedCount', { count: multiTracks.length })
+                    : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
+                </p>
                 <button
                   type="button"
+                  data-testid="show-file"
                   onClick={() => revealPath && window.api.reveal(revealPath)}
-                  className="press flex-1 rounded-lg border border-good/40 bg-good/10 py-2.5 text-sm font-medium text-good hover:bg-good/15"
+                  className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
                 >
-                  {tr('editor.doneReveal')}
+                  {tr('editor.showFile')}
                 </button>
-                {window.api.platform === 'darwin' && musicExt !== 'flac' && (
+                <div className="flex gap-2">
+                  {window.api.platform === 'darwin' && musicExt !== 'flac' && (
+                    <button
+                      type="button"
+                      data-testid="add-apple-music"
+                      onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
+                      disabled={musicAdding || musicAdded}
+                      className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                    >
+                      {musicAdding
+                        ? tr('editor.appleMusicAdding')
+                        : musicAdded
+                          ? tr('editor.appleMusicAdded')
+                          : tr('editor.appleMusicAdd')}
+                    </button>
+                  )}
+                  <ExportButton
+                    quiet
+                    status={isMulti ? 'idle' : item.status}
+                    stale={false}
+                    done={false}
+                    outputFormat={format}
+                    exportedFormat={isMulti ? null : exportedFormat}
+                    withAppleMusic={false}
+                    incomplete={false}
+                    inPlace={false}
+                    count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
+                    onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+                    onSelectFormat={(f) => {
+                      setFormat(f)
+                      onFormatChange?.(f)
+                    }}
+                  />
+                </div>
+                {canDeleteOriginal && (
                   <button
                     type="button"
-                    data-testid="add-apple-music"
-                    onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
-                    disabled={musicAdding || musicAdded}
-                    className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2.5 text-sm font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                    data-testid="delete-original"
+                    onClick={onTrashOriginal}
+                    className="press mx-auto block text-xs text-fg-dim hover:text-danger"
                   >
-                    {musicAdding
-                      ? tr('editor.appleMusicAdding')
-                      : musicAdded
-                        ? tr('editor.appleMusicAdded')
-                        : tr('editor.appleMusicAdd')}
+                    {tr('editor.deleteOriginal')}
                   </button>
                 )}
-              </div>
+                {musicError && <p className="text-xs text-danger">{musicError}</p>}
+              </>
+            ) : (
+              <ExportButton
+                status={isMulti ? 'idle' : item.status}
+                stale={!isMulti && stale}
+                done={!isMulti && done}
+                outputFormat={format}
+                exportedFormat={isMulti ? null : exportedFormat}
+                withAppleMusic={
+                  window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
+                }
+                incomplete={!isMulti && incomplete}
+                inPlace={!isMulti && willEditInPlace}
+                count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
+                onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+                onSelectFormat={(f) => {
+                  setFormat(f)
+                  onFormatChange?.(f)
+                }}
+              />
             )}
-            {showDone && canDeleteOriginal && (
-              <button
-                type="button"
-                data-testid="delete-original"
-                onClick={onTrashOriginal}
-                className="press w-full rounded-lg border border-danger/40 bg-danger/10 py-2.5 text-sm font-medium text-danger hover:bg-danger/15"
-              >
-                {tr('editor.deleteOriginal')}
-              </button>
-            )}
-            {showDone && musicError && <p className="text-xs text-danger">{musicError}</p>}
           </div>
         </div>
       </div>
@@ -1343,6 +1377,10 @@ interface ExportButtonProps {
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
   count?: number
+  // The demoted variant shown after a successful export: a bordered, muted control
+  // that sits in the secondary row labelled "Re-export", rather than the prominent
+  // accent button used to convert.
+  quiet?: boolean
   onProcess: (format: OutputFormat) => void
   onSelectFormat: (format: OutputFormat) => void
 }
@@ -1363,6 +1401,7 @@ function ExportButton({
   incomplete,
   inPlace,
   count,
+  quiet,
   onProcess,
   onSelectFormat,
 }: ExportButtonProps): React.JSX.Element {
@@ -1385,20 +1424,22 @@ function ExportButton({
 
   const label = processing
     ? tr('editor.processing')
-    : count !== undefined
-      ? tr(withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll', {
-          count,
-          format: outputFormat.toUpperCase(),
-        })
-      : inPlace
-        ? tr(withAppleMusic ? 'editor.updateMusic' : 'editor.update')
-        : stale
-          ? tr('editor.update')
-          : done
-            ? tr('editor.exportAgain')
-            : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
-                format: outputFormat.toUpperCase(),
-              })
+    : quiet
+      ? tr('editor.reexport')
+      : count !== undefined
+        ? tr(withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll', {
+            count,
+            format: outputFormat.toUpperCase(),
+          })
+        : inPlace
+          ? tr(withAppleMusic ? 'editor.updateMusic' : 'editor.update')
+          : stale
+            ? tr('editor.update')
+            : done
+              ? tr('editor.exportAgain')
+              : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
+                  format: outputFormat.toUpperCase(),
+                })
 
   function pick(format: OutputFormat): void {
     setOpen(false)
@@ -1406,13 +1447,17 @@ function ExportButton({
   }
 
   return (
-    <div ref={ref} className="relative flex">
+    <div ref={ref} className={`relative flex ${quiet ? 'flex-1' : ''}`}>
       <button
         type="button"
         data-testid="process-btn"
         onClick={() => onProcess(outputFormat)}
         disabled={blocked}
-        className="press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+        className={
+          quiet
+            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-50'
+            : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
+        }
       >
         {label}
       </button>
@@ -1423,7 +1468,11 @@ function ExportButton({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         disabled={blocked}
-        className="press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+        className={
+          quiet
+            ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:opacity-50'
+            : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
+        }
       >
         <svg
           viewBox="0 0 12 12"

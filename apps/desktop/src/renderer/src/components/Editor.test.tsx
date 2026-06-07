@@ -478,6 +478,13 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('add-apple-music'))
     expect(onAddAllToAppleMusic).toHaveBeenCalled()
   })
+
+  // The single-track outcome line names the format; over a selection that's
+  // meaningless, so it reports how many tracks were exported instead.
+  it('reports how many tracks were exported once the selection is done', () => {
+    renderMulti({ done: true })
+    expect(screen.getByTestId('export-success')).toHaveTextContent('2')
+  })
 })
 
 describe('Editor export control', () => {
@@ -486,6 +493,18 @@ describe('Editor export control', () => {
   it('keeps the export button visible after the track is done', () => {
     renderEditor({ id: 'a', status: 'done', outputPath: '/out/a.wav' })
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+  })
+
+  // Once done, the noise of four equal buttons is replaced by a single primary
+  // action: the outcome line confirms what was written and "Show file" is the one
+  // thing most users want next, so it earns the only prominent button.
+  it('confirms the export outcome and reveals the file with the primary action', () => {
+    renderEditor({ id: 'a', status: 'done', inputPath: '/music/a.flac', outputPath: '/out/a.wav' })
+    expect(screen.getByTestId('export-success')).toHaveTextContent('WAV')
+    fireEvent.click(screen.getByTestId('show-file'))
+    expect(
+      (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,
+    ).toHaveBeenCalledWith('/out/a.wav')
   })
 
   it('exports in the settings default format when the main button is clicked', () => {
