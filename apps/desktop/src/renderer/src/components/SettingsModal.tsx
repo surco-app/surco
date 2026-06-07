@@ -259,7 +259,7 @@ export function SettingsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh]">
       <button
         type="button"
         data-testid="settings-backdrop"
@@ -271,9 +271,9 @@ export function SettingsModal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className="animate-pop relative z-10 w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+        className="animate-pop relative z-10 flex max-h-[84vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
-        <div className="-mx-6 -mt-6 mb-5 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
+        <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
           <div className="flex justify-center gap-0.5">
             {TABS.map((id) => (
               <button
@@ -306,7 +306,7 @@ export function SettingsModal({
           </div>
         </div>
 
-        <div className="min-h-[280px]">
+        <div className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2">
           {tab === 'general' && (
             <>
               <span className="mb-1.5 block text-sm font-medium text-fg-muted">
@@ -720,7 +720,7 @@ export function SettingsModal({
                   {tr('settings.shortcuts.resetAll')}
                 </button>
               </div>
-              <div className="max-h-[360px] overflow-y-auto">
+              <div>
                 {SHORTCUT_DEFAULTS.map((def) => {
                   const chord = bindings.get(def.id) ?? []
                   const overridden = def.id in shortcutOverrides
@@ -820,7 +820,7 @@ export function SettingsModal({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-6 flex shrink-0 justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
