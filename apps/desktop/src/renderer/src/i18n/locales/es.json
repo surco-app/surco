@@ -292,9 +292,7 @@
       "count": "conversiones",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
-      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
-      "donate": "Surco es gratis. Si te está ahorrando tiempo, puedes apoyar su desarrollo.",
-      "sponsor": "Apóyalo en GitHub"
+      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco."
     },
     "theme": "Apariencia",
     "themes": {

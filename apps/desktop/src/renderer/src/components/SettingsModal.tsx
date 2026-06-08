@@ -29,10 +29,6 @@ import { useFocusTrap } from './useFocusTrap'
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
-// Surco is free; the Stats tab is the natural place to ask for support, right
-// after showing the time saved. Kept as one constant so it's trivial to repoint.
-const SPONSOR_URL = 'https://github.com/sponsors/vigosan'
-
 // A representative track so the filename preview shows real-looking output
 // instead of empty braces, and every token has something to render.
 const SAMPLE_META: TrackMetadata = {
@@ -766,17 +762,6 @@ export function SettingsModal({
                       minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
                     })}
                   </p>
-                  <div className="mt-8 w-full border-t border-[var(--color-line)] pt-6">
-                    <p className="text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
-                    <button
-                      type="button"
-                      data-testid="stats-sponsor"
-                      onClick={() => window.open(SPONSOR_URL)}
-                      className="press mt-3 rounded-lg border border-[var(--color-line)] px-4 py-2 text-sm font-medium text-fg hover:bg-[var(--color-panel-2)]"
-                    >
-                      {tr('settings.stats.sponsor')}
-                    </button>
-                  </div>
                 </>
               ) : (
                 <p data-testid="stats-empty" className="max-w-xs text-sm text-fg-muted">
