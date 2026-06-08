@@ -40,7 +40,8 @@
       "suspect": "Sospechosas",
       "good": "Buenas",
       "unanalyzed": "Sin analizar",
-      "unconverted": "Sin convertir"
+      "unconverted": "Sin convertir",
+      "automatched": "Auto-emparejadas"
     }
   },
   "drop": {
@@ -84,6 +85,7 @@
   },
   "trackList": {
     "noArtist": "Sin artista",
+    "autoMatched": "Auto-emparejada desde Discogs",
     "remove": "Quitar",
     "status": {
       "idle": "Pendiente",

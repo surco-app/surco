@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Sparkles, X } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -112,6 +112,15 @@ const TrackRow = memo(function TrackRow({
               <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
                 {t.meta.artist || tr('trackList.noArtist')}
               </span>
+              {t.autoMatched && (
+                <span
+                  data-testid="track-automatched"
+                  className="group/dot relative flex shrink-0 items-center text-[var(--color-accent)]"
+                >
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={tr('trackList.autoMatched')} align="end" scope="dot" />
+                </span>
+              )}
               {quality !== 'unanalyzed' && (
                 <span
                   data-testid="track-quality"

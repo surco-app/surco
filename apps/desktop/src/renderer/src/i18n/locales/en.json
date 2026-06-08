@@ -40,7 +40,8 @@
       "suspect": "Suspect",
       "good": "Good",
       "unanalyzed": "Unanalyzed",
-      "unconverted": "Unconverted"
+      "unconverted": "Unconverted",
+      "automatched": "Auto-matched"
     }
   },
   "drop": {
@@ -84,6 +85,7 @@
   },
   "trackList": {
     "noArtist": "No artist",
+    "autoMatched": "Auto-matched from Discogs",
     "remove": "Remove",
     "status": {
       "idle": "Pending",

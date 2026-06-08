@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Search,
   Settings as SettingsIcon,
+  Sparkles,
   SquareCheckBig,
   Tag,
   Trash2,
@@ -125,6 +126,7 @@ const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
   good: CircleCheckBig,
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
+  automatched: Sparkles,
 }
 
 export default function App(): React.JSX.Element {
@@ -1192,59 +1194,70 @@ export default function App(): React.JSX.Element {
                   data-testid="quality-filter"
                   className="sticky top-0 z-10 flex gap-0.5 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-1.5 py-2"
                 >
-                  {(['all', 'unanalyzed', 'suspect', 'good', 'unconverted'] as const).map(
-                    (mode) => {
-                      const count =
-                        mode === 'all'
-                          ? tracks.length
-                          : mode === 'unanalyzed'
-                            ? qualityTally.unanalyzed
-                            : mode === 'suspect'
-                              ? qualityTally.suspect
-                              : mode === 'good'
-                                ? qualityTally.good
-                                : qualityTally.unconverted
-                      const active = qualityFilter === mode
-                      const name = tr(`sidebar.filter.${mode}`)
-                      const Icon = FILTER_ICONS[mode]
-                      // Color-coded dot draws the eye to buckets that need attention: amber for
-                      // suspect (likely fake), accent for the still-to-convert backlog.
-                      const dot =
-                        mode === 'suspect' && qualityTally.suspect > 0
-                          ? 'bg-warn'
-                          : mode === 'unconverted' && qualityTally.unconverted > 0
-                            ? 'bg-[var(--color-accent)]'
-                            : null
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`quality-filter-${mode}`}
-                          aria-pressed={active}
-                          aria-label={name}
-                          onClick={() => setQualityFilter(mode)}
-                          className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
-                            active
-                              ? 'bg-[var(--color-accent-soft)] text-fg'
-                              : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
-                          }`}
-                        >
-                          <span className="relative">
-                            <Icon className="h-4 w-4" aria-hidden="true" />
-                            {dot && (
-                              <span
-                                className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
-                              />
-                            )}
-                          </span>
-                          <span className="min-w-[2ch] text-center tabular-nums opacity-70">
-                            {count}
-                          </span>
-                          <Tooltip label={name} />
-                        </button>
-                      )
-                    },
-                  )}
+                  {(
+                    [
+                      'all',
+                      'unanalyzed',
+                      'suspect',
+                      'good',
+                      'unconverted',
+                      // Provenance chip, shown only once something has been auto-filled so the
+                      // bar isn't cluttered with a permanently-empty filter when auto-match is off.
+                      ...(qualityTally.automatched > 0 ? (['automatched'] as const) : []),
+                    ] as const
+                  ).map((mode) => {
+                    const count =
+                      mode === 'all'
+                        ? tracks.length
+                        : mode === 'unanalyzed'
+                          ? qualityTally.unanalyzed
+                          : mode === 'suspect'
+                            ? qualityTally.suspect
+                            : mode === 'good'
+                              ? qualityTally.good
+                              : mode === 'unconverted'
+                                ? qualityTally.unconverted
+                                : qualityTally.automatched
+                    const active = qualityFilter === mode
+                    const name = tr(`sidebar.filter.${mode}`)
+                    const Icon = FILTER_ICONS[mode]
+                    // Color-coded dot draws the eye to buckets that need attention: amber for
+                    // suspect (likely fake), accent for the still-to-convert backlog.
+                    const dot =
+                      mode === 'suspect' && qualityTally.suspect > 0
+                        ? 'bg-warn'
+                        : mode === 'unconverted' && qualityTally.unconverted > 0
+                          ? 'bg-[var(--color-accent)]'
+                          : null
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        data-testid={`quality-filter-${mode}`}
+                        aria-pressed={active}
+                        aria-label={name}
+                        onClick={() => setQualityFilter(mode)}
+                        className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
+                          active
+                            ? 'bg-[var(--color-accent-soft)] text-fg'
+                            : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
+                        }`}
+                      >
+                        <span className="relative">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                          {dot && (
+                            <span
+                              className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
+                            />
+                          )}
+                        </span>
+                        <span className="min-w-[2ch] text-center tabular-nums opacity-70">
+                          {count}
+                        </span>
+                        <Tooltip label={name} />
+                      </button>
+                    )
+                  })}
                 </div>
                 <TrackList
                   tracks={visibleTracks}

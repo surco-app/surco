@@ -24,11 +24,18 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
 // that passed as genuine lossless ('good'), the ones still without a verdict, or the ones
 // not yet converted. 'unconverted' is a processing-status filter (status !== 'done'),
 // orthogonal to the quality verdict.
-export type QualityFilter = 'all' | 'suspect' | 'good' | 'unanalyzed' | 'unconverted'
+export type QualityFilter =
+  | 'all'
+  | 'suspect'
+  | 'good'
+  | 'unanalyzed'
+  | 'unconverted'
+  | 'automatched'
 
 export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
   if (filter === 'all') return tracks
   if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
+  if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
   return tracks.filter((t) => trackQuality(t) === filter)
 }
 
@@ -40,17 +47,20 @@ export function qualityCounts(tracks: TrackItem[]): {
   good: number
   unanalyzed: number
   unconverted: number
+  automatched: number
 } {
   let suspect = 0
   let good = 0
   let unanalyzed = 0
   let unconverted = 0
+  let automatched = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'suspect') suspect += 1
     else if (q === 'good') good += 1
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
+    if (t.autoMatched) automatched += 1
   }
-  return { suspect, good, unanalyzed, unconverted }
+  return { suspect, good, unanalyzed, unconverted, automatched }
 }

@@ -86,6 +86,28 @@ describe('filterByQuality / qualityCounts', () => {
   })
 
   it('counts suspect, good, unanalyzed and unconverted tracks for the filter badges', () => {
-    expect(qualityCounts(tracks)).toEqual({ suspect: 1, good: 1, unanalyzed: 2, unconverted: 3 })
+    expect(qualityCounts(tracks)).toEqual({
+      suspect: 1,
+      good: 1,
+      unanalyzed: 2,
+      unconverted: 3,
+      automatched: 0,
+    })
+  })
+})
+
+describe('automatched filter', () => {
+  const t = (id: string, autoMatched?: boolean): TrackItem =>
+    ({ id, status: 'idle', autoMatched }) as TrackItem
+  // Auto-match is a provenance flag, orthogonal to the quality verdict, so it gets its
+  // own filter and tally rather than folding into the quality buckets.
+  const tracks = [t('filled', true), t('manual'), t('also-filled', true)]
+
+  it('keeps only the tracks whose metadata was filled by auto-match', () => {
+    expect(filterByQuality(tracks, 'automatched').map((x) => x.id)).toEqual(['filled', 'also-filled'])
+  })
+
+  it('tallies the auto-matched tracks for its filter badge', () => {
+    expect(qualityCounts(tracks).automatched).toBe(2)
   })
 })
