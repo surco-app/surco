@@ -87,13 +87,13 @@
       },
       {
         "kick": "traktor",
-        "title": "Respeta tus CUE de Traktor",
-        "body": "Al reexportar al mismo formato, Surco copia el audio tal cual — tus cue points y beatgrid quedan intactos."
+        "title": "CUE y valoración, intactos",
+        "body": "Reexporta al mismo formato y tus cue points y beatgrid quedan intactos — y las estrellas que pongas, escritas para que Traktor y foobar las lean."
       },
       {
         "kick": "calidad",
         "title": "Sin fakes ni duplicados",
-        "body": "Mira el espectro para cazar MP3 disfrazados de lossless, y te avisa si la pista ya está en tu biblioteca de Apple Music."
+        "body": "Barre la cola entera para cazar MP3 disfrazados de lossless, filtra los sospechosos y te avisa si la pista ya está en Apple Music."
       },
       {
         "kick": "analiza",
@@ -107,8 +107,8 @@
       },
       {
         "kick": "biblioteca",
-        "title": "Se ve en todas partes",
-        "body": "Los tags y la carátula se escriben dentro del archivo, así que se ven en Apple Music y rekordbox — y envías pistas directas a Apple Music."
+        "title": "Directo a tus platos",
+        "body": "Envía pistas directas a Apple Music, o exporta la cola entera como colección de rekordbox o Traktor — los tags y la carátula viajan dentro del archivo."
       },
       {
         "kick": "nombres",
@@ -120,7 +120,7 @@
   "shortcuts": {
     "kicker": "Teclado primero",
     "title": "Vuela sin tocar el ratón",
-    "lede": "Una paleta de comandos y atajos para todo el flujo — añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado.",
+    "lede": "Una paleta de comandos y atajos para todo el flujo — añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado, y reasigna los que quieras.",
     "items": [
       "Añadir archivos",
       "Procesar pista",

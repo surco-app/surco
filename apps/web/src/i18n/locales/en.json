@@ -87,13 +87,13 @@
       },
       {
         "kick": "traktor",
-        "title": "Keeps your Traktor cues",
-        "body": "Re-export to the same format and Surco copies the audio untouched — your cue points and beatgrid stay intact."
+        "title": "Cues and ratings, intact",
+        "body": "Re-export to the same format and your cue points and beatgrid stay untouched — plus the star ratings you set, written for Traktor and foobar to read."
       },
       {
         "kick": "quality",
         "title": "No fakes, no duplicates",
-        "body": "Read the spectrum to catch MP3s faking lossless, and get a heads-up if a track is already in your Apple Music library."
+        "body": "Sweep the whole crate to catch MP3s faking lossless, filter the suspects, and get a heads-up when a track's already in Apple Music."
       },
       {
         "kick": "analyze",
@@ -107,8 +107,8 @@
       },
       {
         "kick": "library",
-        "title": "Shows up everywhere",
-        "body": "Tags and artwork are written inside the file, so they show in Apple Music and rekordbox — and send tracks straight to Apple Music."
+        "title": "Hands off to your decks",
+        "body": "Send tracks straight to Apple Music, or export the whole crate as a rekordbox or Traktor collection — tags and artwork ride inside the file."
       },
       {
         "kick": "naming",
@@ -120,7 +120,7 @@
   "shortcuts": {
     "kicker": "Keyboard first",
     "title": "Fly without touching the mouse",
-    "lede": "A command palette and shortcuts for the whole flow — add, tag, analyze and process track after track without leaving the keyboard.",
+    "lede": "A command palette and shortcuts for the whole flow — add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
     "items": [
       "Add files",
       "Process track",
