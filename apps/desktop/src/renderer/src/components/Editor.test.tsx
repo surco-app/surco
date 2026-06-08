@@ -1035,3 +1035,48 @@ describe('Editor properties panel', () => {
     ).toHaveBeenCalledWith('/Music/Crate/Vol 2/track.wav')
   })
 })
+
+describe('Editor Apple Music library badge', () => {
+  beforeEach(() => void i18n.changeLanguage('en'))
+
+  function setApi(platform: string, found: boolean): void {
+    ;(window as unknown as { api: unknown }).api = {
+      platform,
+      reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
+      lookupAppleMusic: vi.fn().mockResolvedValue(found),
+    }
+  }
+
+  // The badge exists so a DJ doesn't re-import a song they already own; on macOS it
+  // checks the live title/artist against the library and flags a match.
+  it('flags a track already in the Apple Music library on macOS', async () => {
+    setApi('darwin', true)
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
+    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
+      'Already in your Apple Music library',
+    )
+  })
+
+  // The complement: a song not found in the library reassures the user it's safe to add.
+  it('flags a track that is not in the library', async () => {
+    setApi('darwin', false)
+    renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } })
+    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
+      'Not in your Apple Music library',
+    )
+  })
+
+  // Off macOS there is no Apple Music library to query, so the lookup never runs and
+  // the badge stays hidden rather than making a promise the platform can't keep.
+  it('never queries or shows the badge off macOS', async () => {
+    setApi('win32', true)
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
+    await Promise.resolve()
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(
+      (window as unknown as { api: { lookupAppleMusic: ReturnType<typeof vi.fn> } }).api
+        .lookupAppleMusic,
+    ).not.toHaveBeenCalled()
+  })
+})

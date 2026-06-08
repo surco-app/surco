@@ -24,6 +24,7 @@ import type {
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
+import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
@@ -203,7 +204,6 @@ export function Editor({
   // Per-track normalization, seeded from the Settings default. Editing it both
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
-  const [inLibrary, setInLibrary] = useState<'idle' | 'yes' | 'no'>('idle')
   // Natural pixel size of the shown artwork, read on load, so the user can tell
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
@@ -339,32 +339,10 @@ export function Editor({
     !isMulti,
   )
 
-  // Checking whether the song is already in the Apple Music library is a hint to
-  // avoid duplicating tracks, so it tracks the live title/artist (debounced —
-  // each lookup spawns an osascript) rather than only firing on a Discogs apply.
-  // It is macOS-only; elsewhere there is no library to query, so the badge hides.
-  const { title: metaTitle, artist: metaArtist } = item.meta
-  useEffect(() => {
-    if (window.api.platform !== 'darwin' || !metaTitle.trim() || !metaArtist.trim()) {
-      setInLibrary('idle')
-      return
-    }
-    let active = true
-    const id = setTimeout(() => {
-      window.api
-        .lookupAppleMusic(metaArtist, metaTitle)
-        .then((found) => {
-          if (active) setInLibrary(found ? 'yes' : 'no')
-        })
-        .catch(() => {
-          if (active) setInLibrary('idle')
-        })
-    }, 600)
-    return () => {
-      active = false
-      clearTimeout(id)
-    }
-  }, [metaTitle, metaArtist])
+  // Hint of whether the song is already in the Apple Music library, so the user doesn't
+  // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
+  // 'idle' off macOS, where the badge hides.
+  const inLibrary = useAppleMusicLookup(item.meta.artist, item.meta.title)
 
   async function loadRelease(id: number): Promise<DiscogsRelease> {
     if (releaseRef.current?.id === id) return releaseRef.current
