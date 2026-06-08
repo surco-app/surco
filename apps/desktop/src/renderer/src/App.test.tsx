@@ -1,0 +1,111 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Settings } from '../../shared/types'
+import './i18n'
+
+afterEach(cleanup)
+
+function settings(over: Partial<Settings> = {}): Settings {
+  return {
+    theme: 'system',
+    discogsToken: '',
+    outputDir: '',
+    outputFormat: 'aiff',
+    addToAppleMusic: false,
+    filenameFormat: '{artist} - {title}',
+    groupingPresets: [],
+    genrePresets: [],
+    trimWhitespace: true,
+    zeroPadTrack: true,
+    visibleFields: ['title', 'artist'],
+    requiredFields: ['title', 'artist'],
+    coverMaxSize: 1000,
+    coverSquare: false,
+    showSpectrum: true,
+    showLoudness: false,
+    normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    shortcutOverrides: {},
+    hasSeenOnboarding: true,
+    conversionCount: 0,
+    ...over,
+  }
+}
+
+// A clear cutoff well below Nyquist so the verdict is a real value (not 'unanalyzed'),
+// which is what makes a quality dot appear on the row.
+const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateHz: 44100 }
+
+function setApi(over: Record<string, unknown> = {}): void {
+  ;(window as unknown as { api: unknown }).api = {
+    platform: 'win32',
+    version: '0.0.0-test',
+    getSettings: vi.fn().mockResolvedValue(settings()),
+    onMenuCommand: () => () => {},
+    onProcessProgress: () => () => {},
+    onUpdateDownloaded: () => () => {},
+    onUpdateError: () => () => {},
+    pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+    readTags: vi.fn().mockResolvedValue({}),
+    readDuration: vi.fn().mockResolvedValue(180),
+    readCover: vi.fn().mockResolvedValue(null),
+    properties: vi.fn().mockResolvedValue(null),
+    loudness: vi.fn().mockResolvedValue(null),
+    searchDiscogs: vi.fn().mockResolvedValue([]),
+    getRelease: vi.fn().mockResolvedValue(null),
+    spectrogram: vi.fn().mockResolvedValue(spectrum),
+    ...over,
+  }
+}
+
+beforeEach(() => {
+  setApi()
+  // jsdom ships neither, and App's theme effect reads matchMedia on mount while
+  // newTrack mints ids with crypto.randomUUID.
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }) as unknown as typeof window.matchMedia
+})
+
+// App and parts of its tree read window.api.platform at module scope, so it must be
+// imported only after the bridge mock is in place — a dynamic import after beforeEach.
+async function renderApp(): Promise<void> {
+  const { default: App } = await import('./App')
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={client}>
+      <App />
+    </QueryClientProvider>,
+  )
+}
+
+async function addTwoTracks(): Promise<HTMLElement[]> {
+  fireEvent.click(await screen.findByTestId('add-files'))
+  await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  return screen.getAllByTestId('track-row')
+}
+
+describe('App quality triage', () => {
+  // The "analyze quality" sweep exists to triage a whole dropped crate for fake-lossless
+  // rips at once: every track gets measured and flagged with a verdict dot, so the user
+  // never has to open each one. This is the behaviour the spectrum data layer must keep.
+  it('measures every track and flags each with a quality verdict on demand', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('analyze-quality'))
+    await waitFor(() => expect(screen.getAllByTestId('track-quality')).toHaveLength(2))
+  })
+
+  // Hovering a track warms its spectrum so its quality verdict shows in the list without
+  // the user opening it — the prefetch that hides the ffmpeg latency behind the cursor.
+  it('warms a hovered track so its verdict appears without opening it', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.mouseEnter(rows[1])
+    await waitFor(() => expect(within(rows[1]).getByTestId('track-quality')).toBeInTheDocument())
+  })
+})
