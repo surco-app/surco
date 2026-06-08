@@ -18,7 +18,7 @@
   },
   "header": {
     "add": "Add files",
-    "convertAll": "Convert all",
+    "convert": "Convert",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "batchConverted": "{{count}} converted",
     "batchSkipped": "{{count}} skipped",

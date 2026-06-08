@@ -720,6 +720,7 @@ export default function App(): React.JSX.Element {
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
+  const selectedEligibleCount = eligibleForBatch(selectedTracks).length
 
   // Each track's spectrum, read from the shared React Query cache the hover prefetch,
   // the analyze sweep and the editor all fill. enabled:false so the list only observes —
@@ -1091,9 +1092,9 @@ export default function App(): React.JSX.Element {
               />
               <button
                 type="button"
-                data-testid="convert-all"
-                onClick={() => processAll(tracks)}
-                disabled={!canProcessAll}
+                data-testid="convert-selected"
+                onClick={() => processAll(selectedTracks)}
+                disabled={selectedEligibleCount === 0 || batching}
                 className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
               >
                 {batching
@@ -1101,7 +1102,7 @@ export default function App(): React.JSX.Element {
                       done: batchProgress.done,
                       total: batchProgress.total,
                     })
-                  : `${tr('header.convertAll')} (${eligibleCount})`}
+                  : `${tr('header.convert')} (${selectedEligibleCount})`}
               </button>
               {batching && (
                 <button

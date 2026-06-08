@@ -136,3 +136,29 @@ describe('App multi-select convert', () => {
     expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
   })
 })
+
+describe('App header convert button', () => {
+  // The header button must act on the current selection, not the whole crate: the same reason
+  // as the editor — a user picks the few tracks they've finished and expects only those to run.
+  // The label carries the selection count so it never promises to convert more than it will.
+  it('converts only the selected tracks and labels the selection count', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    const button = screen.getByTestId('convert-selected')
+    expect(button).toHaveTextContent('Convert (2)')
+    fireEvent.click(button)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
+    expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
+})

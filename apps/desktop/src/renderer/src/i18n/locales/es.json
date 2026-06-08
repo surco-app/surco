@@ -18,7 +18,7 @@
   },
   "header": {
     "add": "Añadir archivos",
-    "convertAll": "Convertir todo",
+    "convert": "Convertir",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
