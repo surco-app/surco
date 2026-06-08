@@ -58,4 +58,20 @@ describe('buildOnboardingPatch', () => {
   it('marks onboarding seen without overwriting defaults when skipped', () => {
     expect(buildOnboardingPatch(null)).toEqual({ hasSeenOnboarding: true })
   })
+
+  // Auto-match needs the user's own Discogs token (its own rate-limit bucket). Ticking it in the
+  // wizard without entering a token must never persist as on, or a folder drop would hammer the
+  // shared key and earn 429s.
+  it('refuses to enable auto-match when no token was entered', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '   ',
+      outputFormat: 'aiff',
+      grouping: '',
+      genre: '',
+      showSpectrum: true,
+      autoMatch: true,
+      requiredFields: ['title', 'artist'],
+    })
+    expect(patch.autoMatch).toBe(false)
+  })
 })

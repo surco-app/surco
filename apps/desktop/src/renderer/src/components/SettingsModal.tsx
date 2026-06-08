@@ -176,7 +176,8 @@ export function SettingsModal({
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
       coverSquare,
       showSpectrum,
-      autoMatch,
+      // Auto-match needs a token to run, so a token-less save can't leave it enabled.
+      autoMatch: token.trim() !== '' && autoMatch,
       showLoudness,
       normalize,
       shortcutOverrides,
@@ -310,17 +311,24 @@ export function SettingsModal({
               </p>
 
               <div className="border-t border-[var(--color-line)] pt-5">
-                <label className="flex cursor-pointer items-center gap-3">
+                <label
+                  className={`flex items-center gap-3 ${
+                    token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                  }`}
+                >
                   <input
                     data-testid="settings-auto-match"
                     type="checkbox"
-                    checked={autoMatch}
+                    checked={autoMatch && token.trim() !== ''}
+                    disabled={token.trim() === ''}
                     onChange={(e) => setAutoMatch(e.target.checked)}
                     className="h-4 w-4 accent-[var(--color-accent)]"
                   />
                   <span className="text-sm">{tr('settings.autoMatch')}</span>
                 </label>
-                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.autoMatchHint')}</p>
+                <p className="mt-1.5 text-xs text-fg-dim">
+                  {token.trim() ? tr('settings.autoMatchHint') : tr('settings.autoMatchNeedsToken')}
+                </p>
               </div>
             </>
           )}

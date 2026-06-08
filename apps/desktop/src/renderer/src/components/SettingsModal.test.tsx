@@ -51,6 +51,39 @@ function openNaming() {
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
+describe('SettingsModal auto-match', () => {
+  function openGeneral(onSave: (patch: Partial<Settings>) => void = () => {}) {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+      />,
+    )
+  }
+
+  // Auto-match spends Discogs requests across a whole import, so it needs the user's own token
+  // (its own rate-limit bucket). The toggle stays inert until one is entered.
+  it('disables the auto-match toggle until a Discogs token is entered', () => {
+    openGeneral()
+    expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
+    fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
+    expect(screen.getByTestId('settings-auto-match')).toBeEnabled()
+  })
+
+  it('saves auto-match enabled only once a token backs it', () => {
+    const onSave = vi.fn()
+    openGeneral(onSave)
+    fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
+    fireEvent.click(screen.getByTestId('settings-auto-match'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ discogsToken: 'tok', autoMatch: true }),
+    )
+  })
+})
+
 describe('SettingsModal filename tokens', () => {
   // The whole point of the feature: users who don't know the token names just
   // click the field they want and it lands in the format.

@@ -46,6 +46,9 @@ export function getSettings(): Settings {
 
 export function saveSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
+  // Auto-match requires the user's own Discogs token (its own rate-limit bucket), so it can
+  // never be on without one — whatever the UI sent, and clearing the token also turns it off.
+  if (!next.discogsToken.trim()) next.autoMatch = false
   writeFileSync(file(), JSON.stringify(next, null, 2), 'utf-8')
   return next
 }

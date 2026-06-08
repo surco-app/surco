@@ -18,8 +18,9 @@ export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding
 // never reappears, leaving the existing (default) settings untouched.
 export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial<Settings> {
   if (!choices) return { hasSeenOnboarding: true }
+  const discogsToken = choices.discogsToken.trim()
   return {
-    discogsToken: choices.discogsToken.trim(),
+    discogsToken,
     outputFormat: choices.outputFormat,
     groupingPresets: choices.grouping
       .split(',')
@@ -30,7 +31,9 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
       .map((g) => g.trim())
       .filter(Boolean),
     showSpectrum: choices.showSpectrum,
-    autoMatch: choices.autoMatch,
+    // Auto-match needs the user's own token; without one it can't be turned on, so never persist
+    // it as enabled even if the checkbox was somehow left ticked.
+    autoMatch: discogsToken !== '' && choices.autoMatch,
     requiredFields: choices.requiredFields,
     hasSeenOnboarding: true,
   }

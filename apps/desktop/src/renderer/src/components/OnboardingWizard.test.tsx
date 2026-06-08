@@ -1,0 +1,55 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+// OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
+vi.hoisted(() => {
+  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
+})
+
+import '../i18n'
+import type { Settings } from '../../../shared/types'
+import { OnboardingWizard } from './OnboardingWizard'
+
+afterEach(cleanup)
+
+const settings: Settings = {
+  theme: 'system',
+  discogsToken: '',
+  outputDir: '/out',
+  outputFormat: 'aiff',
+  addToAppleMusic: false,
+  filenameFormat: '',
+  groupingPresets: [],
+  genrePresets: [],
+  trimWhitespace: true,
+  zeroPadTrack: true,
+  visibleFields: [],
+  requiredFields: [],
+  coverMaxSize: 1200,
+  coverSquare: false,
+  showSpectrum: true,
+  showLoudness: true,
+  autoMatch: false,
+  normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  shortcutOverrides: {},
+  hasSeenOnboarding: false,
+  conversionCount: 0,
+}
+
+function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
+  render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+  fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token step
+}
+
+describe('OnboardingWizard auto-match', () => {
+  // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
+  // of requests, so the wizard can't let it be turned on until a token is entered.
+  it('disables the auto-match toggle until a token is entered', () => {
+    openTokenStep()
+    expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
+    fireEvent.change(screen.getByTestId('onboarding-token'), { target: { value: 'tok' } })
+    expect(screen.getByTestId('onboarding-auto-match')).toBeEnabled()
+  })
+})

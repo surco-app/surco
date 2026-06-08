@@ -96,18 +96,25 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   discogs.com/settings/developers
                 </a>
               </p>
-              <label className="mt-5 flex cursor-pointer items-center gap-3 border-t border-[var(--color-line)] pt-4">
+              <label
+                className={`mt-5 flex items-center gap-3 border-t border-[var(--color-line)] pt-4 ${
+                  token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                }`}
+              >
                 <input
                   data-testid="onboarding-auto-match"
                   type="checkbox"
-                  checked={autoMatch}
+                  checked={autoMatch && token.trim() !== ''}
+                  disabled={token.trim() === ''}
                   onChange={(e) => setAutoMatch(e.target.checked)}
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
                 <span className="text-sm">
                   {tr('settings.autoMatch')}
                   <span className="mt-0.5 block text-xs text-fg-dim">
-                    {tr('onboarding.autoMatchBody')}
+                    {token.trim()
+                      ? tr('onboarding.autoMatchBody')
+                      : tr('onboarding.autoMatchNeedsToken')}
                   </span>
                 </span>
               </label>
