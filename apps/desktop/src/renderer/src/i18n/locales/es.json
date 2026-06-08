@@ -356,6 +356,7 @@
     "welcomeTitle": "Te damos la bienvenida a Surco",
     "welcomeBody": "Vamos a configurar lo esencial. Tardas menos de un minuto y podrás cambiarlo todo después en Ajustes.",
     "tokenBody": "Surco etiqueta tus pistas con datos de Discogs y funciona sin configurar nada. Si quieres, pega un token personal gratuito para tener tu propio límite, más alto.",
+    "autoMatchBody": "Empareja los archivos que sueltes con Discogs y rellena automáticamente las coincidencias fiables.",
     "formatBody": "Elige a qué formato exporta Surco tus pistas.",
     "groupingBody": "Opcional. Añade tus propias etiquetas para clasificar pistas más rápido al editar.",
     "genreBody": "Opcional. Añade tus géneros habituales para tenerlos a un clic aunque un lanzamiento no esté en Discogs.",

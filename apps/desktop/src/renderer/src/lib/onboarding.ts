@@ -6,6 +6,7 @@ export interface OnboardingChoices {
   grouping: string
   genre: string
   showSpectrum: boolean
+  autoMatch: boolean
   requiredFields: string[]
 }
 
@@ -29,6 +30,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
       .map((g) => g.trim())
       .filter(Boolean),
     showSpectrum: choices.showSpectrum,
+    autoMatch: choices.autoMatch,
     requiredFields: choices.requiredFields,
     hasSeenOnboarding: true,
   }

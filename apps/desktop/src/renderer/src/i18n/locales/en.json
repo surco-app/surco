@@ -356,6 +356,7 @@
     "welcomeTitle": "Welcome to Surco",
     "welcomeBody": "Let's set up the essentials. It takes less than a minute, and you can change everything later in Settings.",
     "tokenBody": "Surco tags your tracks with data from Discogs and works without any setup. Optionally paste a free personal token for your own, higher rate limit.",
+    "autoMatchBody": "Match dropped files against Discogs and fill confident matches automatically.",
     "formatBody": "Choose the format Surco exports your tracks to.",
     "groupingBody": "Optional. Add your own labels to tag tracks faster while editing.",
     "genreBody": "Optional. Add your usual genres so they're one click away even when a release isn't on Discogs.",

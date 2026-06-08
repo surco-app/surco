@@ -20,6 +20,7 @@ describe('buildOnboardingPatch', () => {
       grouping: 'Bases, Cantaditas',
       genre: 'Hard Dance, Techno',
       showSpectrum: false,
+      autoMatch: true,
       requiredFields: ['title', 'artist', 'genre'],
     })
     expect(patch).toEqual({
@@ -28,6 +29,7 @@ describe('buildOnboardingPatch', () => {
       groupingPresets: ['Bases', 'Cantaditas'],
       genrePresets: ['Hard Dance', 'Techno'],
       showSpectrum: false,
+      autoMatch: true,
       requiredFields: ['title', 'artist', 'genre'],
       hasSeenOnboarding: true,
     })
@@ -43,6 +45,7 @@ describe('buildOnboardingPatch', () => {
       grouping: 'Bases, , Cantaditas,',
       genre: 'Hard Dance, , Techno,',
       showSpectrum: true,
+      autoMatch: false,
       requiredFields: ['title', 'artist'],
     })
     expect(patch.discogsToken).toBe('tok')

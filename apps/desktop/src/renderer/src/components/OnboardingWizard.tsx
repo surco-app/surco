@@ -22,6 +22,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
@@ -36,6 +37,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         grouping,
         genre,
         showSpectrum,
+        autoMatch,
         requiredFields,
       }),
     )
@@ -94,6 +96,21 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   discogs.com/settings/developers
                 </a>
               </p>
+              <label className="mt-5 flex cursor-pointer items-center gap-3 border-t border-[var(--color-line)] pt-4">
+                <input
+                  data-testid="onboarding-auto-match"
+                  type="checkbox"
+                  checked={autoMatch}
+                  onChange={(e) => setAutoMatch(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">
+                  {tr('settings.autoMatch')}
+                  <span className="mt-0.5 block text-xs text-fg-dim">
+                    {tr('onboarding.autoMatchBody')}
+                  </span>
+                </span>
+              </label>
             </>
           )}
 
