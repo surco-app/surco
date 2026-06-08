@@ -215,10 +215,10 @@
     "reportError": "Reportar",
     "inLibrary": "Ya está en tu biblioteca de Apple Music",
     "notInLibrary": "No está en tu biblioteca de Apple Music",
-    "convertAll": "Convertir todas ({{count}}) · {{format}}",
+    "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
-    "convertAllMusic": "Convertir todas ({{count}}) · {{format}} + Apple Music",
+    "convertAllMusic": "Convertir ({{count}}) · {{format}} + Apple Music",
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo"
   },

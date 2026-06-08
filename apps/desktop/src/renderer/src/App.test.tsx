@@ -127,9 +127,9 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    // Multi-select reuses the single editor; its convert button reads "Convert all (2)".
+    // Multi-select reuses the single editor; its convert button reads "Convert (2)".
     const convert = await screen.findByTestId('process-btn')
-    expect(convert).toHaveTextContent('Convert all (2)')
+    expect(convert).toHaveTextContent('Convert (2)')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()

@@ -450,7 +450,7 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
     expect(screen.queryByTestId('field-title')).toBeNull()
     // The convert button keeps the format split-control, but converts the whole selection.
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert all (2)')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert (2)')
     expect(screen.getByTestId('process-format-toggle')).toBeInTheDocument()
   })
 
