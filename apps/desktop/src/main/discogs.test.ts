@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getRelease, retryDelayMs, search } from './discogs'
+import { getRelease, hasCachedRelease, hasCachedSearch, retryDelayMs, search } from './discogs'
 
 // A response double covering the fields api() reads: status/ok, the JSON body, and
 // a headers.get used only on the 429 path.
@@ -59,6 +59,16 @@ describe('search', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  // The rate limiter peeks this to let a cached repeat through without spending a token —
+  // a cache hit makes no network call, so it must not be paced. Keyed like the cache itself.
+  it('reports a query as cached only once it has been fetched, normalizing the key', async () => {
+    mockFetch([{ id: 1 }])
+    expect(hasCachedSearch('plaid')).toBe(false)
+    await search('plaid', 'tok')
+    expect(hasCachedSearch('plaid')).toBe(true)
+    expect(hasCachedSearch('  PLAID ')).toBe(true)
+  })
+
   // A user's own token gets its own 60 req/min bucket, so when set it must win.
   it('authenticates with the user token when one is set', async () => {
     const fetchMock = mockFetch([{ id: 3 }])
@@ -91,6 +101,13 @@ describe('getRelease', () => {
     const second = await getRelease(7001, 'tok')
     expect(second).toEqual(first)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a release id as cached only once it has been fetched', async () => {
+    mockRelease({ id: 7100, title: 'X', artists: [], tracklist: [] })
+    expect(hasCachedRelease(7100)).toBe(false)
+    await getRelease(7100, 'tok')
+    expect(hasCachedRelease(7100)).toBe(true)
   })
 
   it('keys the cache by id so a different release still fetches', async () => {

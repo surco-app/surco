@@ -69,7 +69,6 @@ import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
-import { createRateLimiter } from './lib/rateLimiter'
 import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { searchFromTags } from './lib/search'
@@ -98,8 +97,9 @@ const AUTO_MATCH_CONCURRENCY = 2
 // runs on open, plus the top release behind it. Both are cached by the main
 // process, so opening the track (and clicking that release) then hits no network.
 async function warmDiscogs(query: string): Promise<void> {
-  const results = await window.api.searchDiscogs(query)
-  if (results[0]) await window.api.getRelease(results[0].id)
+  // Background warming yields to the editor's own search, so it acquires at low priority.
+  const results = await window.api.searchDiscogs(query, undefined, 'low')
+  if (results[0]) await window.api.getRelease(results[0].id, undefined, 'low')
 }
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
@@ -225,21 +225,16 @@ export default function App(): React.JSX.Element {
   // everything. The drain reads this together with which rows are currently visible.
   const matchQueue = useRef<Map<string, boolean>>(new Map())
   const visibleIds = useRef<Set<string>>(new Set())
-  // One shared 60-requests-per-minute bucket across every auto-match probe (import sweep and
-  // toolbar sweep alike), so a big crate can't blow past Discogs' rate limit and earn 429s.
-  const discogs = useMemo<DiscogsApi>(() => {
-    const limiter = createRateLimiter(60, 60_000)
-    return {
-      searchDiscogs: async (q) => {
-        await limiter.acquire()
-        return window.api.searchDiscogs(q)
-      },
-      getRelease: async (id) => {
-        await limiter.acquire()
-        return window.api.getRelease(id)
-      },
-    }
-  }, [])
+  // Auto-match is background work: it probes Discogs at low priority so the editor's own search
+  // (high priority) always jumps ahead, and the main process paces every Discogs call through one
+  // shared per-minute bucket so a big crate can't earn 429s.
+  const discogs = useMemo<DiscogsApi>(
+    () => ({
+      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, 'low'),
+      getRelease: (id) => window.api.getRelease(id, undefined, 'low'),
+    }),
+    [],
+  )
   // Set by the Cancel button to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)

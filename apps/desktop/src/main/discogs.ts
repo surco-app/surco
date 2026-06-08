@@ -53,6 +53,12 @@ async function api<T>(path: string, token: string): Promise<T> {
 
 const searchCache = new Map<string, DiscogsSearchResult[]>()
 
+// Whether a query/id is already cached, so the rate limiter can let a repeat through without
+// spending a token — a cache hit makes no network call.
+export function hasCachedSearch(query: string): boolean {
+  return searchCache.has(query.trim().toLowerCase())
+}
+
 export async function search(query: string, token: string): Promise<DiscogsSearchResult[]> {
   const key = query.trim().toLowerCase()
   const cached = searchCache.get(key)
@@ -67,6 +73,10 @@ export async function search(query: string, token: string): Promise<DiscogsSearc
 }
 
 const releaseCache = new Map<number, DiscogsRelease>()
+
+export function hasCachedRelease(id: number): boolean {
+  return releaseCache.has(id)
+}
 
 export async function getRelease(id: number, token: string): Promise<DiscogsRelease> {
   const cached = releaseCache.get(id)

@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId } from '../../shared/types'
 
-const { search, getRelease, getSettings } = vi.hoisted(() => ({
+const { search, getRelease, hasCachedSearch, hasCachedRelease, getSettings } = vi.hoisted(() => ({
   search: vi.fn(),
   getRelease: vi.fn(),
+  // Report nothing cached so the provider takes a rate-limiter token and calls the client.
+  hasCachedSearch: vi.fn(() => false),
+  hasCachedRelease: vi.fn(() => false),
   getSettings: vi.fn(() => ({ discogsToken: 'tok' })),
 }))
 
-vi.mock('../discogs', () => ({ search, getRelease }))
+vi.mock('../discogs', () => ({ search, getRelease, hasCachedSearch, hasCachedRelease }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'

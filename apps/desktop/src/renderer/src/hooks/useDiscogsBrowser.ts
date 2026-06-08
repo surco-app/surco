@@ -50,7 +50,9 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     (id: number) =>
       queryClient.fetchQuery<DiscogsRelease>({
         queryKey: ['discogs-release', id],
-        queryFn: () => window.api.getRelease(id),
+        // The track the user is looking at: high priority so it jumps ahead of the
+        // background auto-match sweep at the main process's Discogs rate limiter.
+        queryFn: () => window.api.getRelease(id, undefined, 'high'),
       }),
     [queryClient],
   )
@@ -76,7 +78,7 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
         const rel = await loadRelease(id)
         return { results: [resultFromRelease(rel)], directId: rel.id as number | null }
       }
-      const results = await window.api.searchDiscogs(searchTerm)
+      const results = await window.api.searchDiscogs(searchTerm, undefined, 'high')
       return { results, directId: null as number | null }
     },
     enabled: searchTerm.trim() !== '',
@@ -133,7 +135,7 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
 
   const releaseQuery = useQuery({
     queryKey: ['discogs-release', openId],
-    queryFn: () => window.api.getRelease(openId as number),
+    queryFn: () => window.api.getRelease(openId as number, undefined, 'high'),
     enabled: openId !== null,
   })
   const release = openId !== null ? (releaseQuery.data ?? null) : null

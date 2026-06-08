@@ -6,6 +6,11 @@ export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
 export type SearchProviderId = 'discogs'
 
+// How a search request competes for the provider's rate-limited budget. 'high' is the track
+// the user is actively looking at (the editor's own search); 'low' is background work
+// (auto-match, hover prefetch) that must yield to it. Defaults to 'low' when omitted.
+export type SearchPriority = 'high' | 'low'
+
 // Optional loudness normalization applied during conversion. 'none' is the default
 // so nothing is ever normalized unless the user opts in (globally in Settings or
 // per-track in the editor). 'loudness' targets an integrated LUFS with a true-peak

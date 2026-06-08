@@ -42,7 +42,6 @@ import {
   readTags,
 } from './ffmpeg'
 import { createMenuT } from './i18n'
-import { keymapMenuClick } from './menuCommand'
 import {
   isOutputConflict,
   removeRenamedOriginal,
@@ -50,6 +49,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { keymapMenuClick } from './menuCommand'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getSettings, recordConversion, saveSettings } from './settings'
@@ -352,11 +352,11 @@ function registerIpc(): void {
     return filePath
   })
 
-  ipcMain.handle('search:query', (_e, query: string, provider) =>
-    getProvider(provider).search(query),
+  ipcMain.handle('search:query', (_e, query: string, provider, priority) =>
+    getProvider(provider).search(query, priority),
   )
-  ipcMain.handle('search:release', (_e, id: number, provider) =>
-    getProvider(provider).getRelease(id),
+  ipcMain.handle('search:release', (_e, id: number, provider, priority) =>
+    getProvider(provider).getRelease(id, priority),
   )
 
   // The Music AppleScript bridge is macOS-only; off macOS there is no library to

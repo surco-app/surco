@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   LoudnessResult,
   ProcessProgress,
+  SearchPriority,
   SearchProviderId,
   TrackProperties,
 } from '../shared/types'
@@ -21,10 +22,10 @@ const api = {
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportTraktor', nml),
-  searchDiscogs: (query: string, provider?: SearchProviderId) =>
-    ipcRenderer.invoke('search:query', query, provider),
-  getRelease: (id: number, provider?: SearchProviderId) =>
-    ipcRenderer.invoke('search:release', id, provider),
+  searchDiscogs: (query: string, provider?: SearchProviderId, priority?: SearchPriority) =>
+    ipcRenderer.invoke('search:query', query, provider, priority),
+  getRelease: (id: number, provider?: SearchProviderId, priority?: SearchPriority) =>
+    ipcRenderer.invoke('search:release', id, provider, priority),
   lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
     ipcRenderer.invoke('applemusic:lookup', artist, title),
   addToAppleMusic: (job: unknown): Promise<void> => ipcRenderer.invoke('applemusic:add', job),

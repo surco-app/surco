@@ -3,10 +3,11 @@ import type {
   CoverExportJob,
   DiscogsRelease,
   DiscogsSearchResult,
-  ProcessJob,
   LoudnessResult,
+  ProcessJob,
   ProcessProgress,
   ProcessResult,
+  SearchPriority,
   SearchProviderId,
   Settings,
   SpectrumResult,
@@ -23,8 +24,16 @@ export interface Api {
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
-  searchDiscogs: (query: string, provider?: SearchProviderId) => Promise<DiscogsSearchResult[]>
-  getRelease: (id: number, provider?: SearchProviderId) => Promise<DiscogsRelease>
+  searchDiscogs: (
+    query: string,
+    provider?: SearchProviderId,
+    priority?: SearchPriority,
+  ) => Promise<DiscogsSearchResult[]>
+  getRelease: (
+    id: number,
+    provider?: SearchProviderId,
+    priority?: SearchPriority,
+  ) => Promise<DiscogsRelease>
   lookupAppleMusic: (artist: string, title: string) => Promise<boolean>
   addToAppleMusic: (job: AppleMusicAddJob) => Promise<void>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
