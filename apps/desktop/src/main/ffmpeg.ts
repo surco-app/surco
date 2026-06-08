@@ -22,8 +22,8 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
 import { readTagFormats } from './tagFormats'
+import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
 import { tmpName } from './tmp'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -481,6 +481,30 @@ export function previewWavArgs(input: string, output: string, codec: string): st
 export async function transcodeAiffToWav(input: string, output: string): Promise<void> {
   const codec = pcmCodec(await probeAudio(input), 'le')
   await run(ffmpegPath, previewWavArgs(input, output, codec), { maxBuffer: 1024 * 1024 * 32 })
+}
+
+// Re-muxes a FLAC keeping only its audio, dropping a malformed embedded picture
+// (see flac.ts) that Chromium's <audio> demuxer refuses to open. `-c:a copy` is a
+// lossless stream copy — instant and bit-identical — so the served preview is the
+// same audio, just without the unreadable art. Global tags ride along by default.
+export function stripPictureArgs(input: string, output: string): string[] {
+  return [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    input,
+    '-map',
+    '0:a',
+    '-c:a',
+    'copy',
+    output,
+  ]
+}
+
+export async function stripFlacPicture(input: string, output: string): Promise<void> {
+  await run(ffmpegPath, stripPictureArgs(input, output), { maxBuffer: 1024 * 1024 * 32 })
 }
 
 export async function generateSpectrogram(input: string): Promise<string> {

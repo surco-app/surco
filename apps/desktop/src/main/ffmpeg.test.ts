@@ -15,6 +15,7 @@ import {
   planConversion,
   previewWavArgs,
   propertiesFromProbe,
+  stripPictureArgs,
   tagsFromProbe,
 } from './ffmpeg'
 
@@ -238,6 +239,19 @@ describe('previewWavArgs', () => {
     expect(args[i + 1]).toBe('pcm_s24le')
     expect(args).toContain('-map')
     expect(args[args.indexOf('-map') + 1]).toBe('0:a')
+  })
+})
+
+describe('stripPictureArgs', () => {
+  it('stream-copies only the audio into a new FLAC, dropping the malformed embedded art Chromium chokes on', () => {
+    // A FLAC whose PICTURE block has an empty MIME type makes the <audio> demuxer
+    // refuse the whole file. Re-muxing audio-only (a lossless stream copy, so it's
+    // instant and bit-identical) leaves a file the player can decode.
+    const args = stripPictureArgs('/in.flac', '/out.flac')
+    expect(args).toContain('/in.flac')
+    expect(args[args.length - 1]).toBe('/out.flac')
+    expect(args[args.indexOf('-map') + 1]).toBe('0:a')
+    expect(args[args.indexOf('-c:a') + 1]).toBe('copy')
   })
 })
 
@@ -562,7 +576,11 @@ describe('tagsFromProbe', () => {
 })
 
 describe('propertiesFromProbe', () => {
-  const file = { sizeBytes: 58_400_000, createdMs: 1_700_000_000_000, modifiedMs: 1_700_000_500_000 }
+  const file = {
+    sizeBytes: 58_400_000,
+    createdMs: 1_700_000_000_000,
+    modifiedMs: 1_700_000_500_000,
+  }
 
   it('maps a 16-bit stereo WAV stream and container into display properties', () => {
     const p = propertiesFromProbe(
@@ -619,10 +637,7 @@ describe('propertiesFromProbe', () => {
   })
 
   it('falls back to the stream bitrate when the container omits one, else null', () => {
-    const fromStream = propertiesFromProbe(
-      { streams: [{ bit_rate: '320000' }], format: {} },
-      file,
-    )
+    const fromStream = propertiesFromProbe({ streams: [{ bit_rate: '320000' }], format: {} }, file)
     expect(fromStream.bitrateKbps).toBe(320)
     const none = propertiesFromProbe({ streams: [{}], format: {} }, file)
     expect(none.bitrateKbps).toBeNull()
