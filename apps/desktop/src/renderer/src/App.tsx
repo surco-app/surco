@@ -771,7 +771,7 @@ export default function App(): React.JSX.Element {
     document.querySelectorAll<HTMLButtonElement>('[data-testid="track-row"]')[next]?.focus()
   }
 
-  const sidebar = useResizableWidth(260, 220, 520)
+  const sidebar = useResizableWidth(300, 300, 600)
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
   const selectedTracks = tracks.filter((t) => selectedIds.includes(t.id))
