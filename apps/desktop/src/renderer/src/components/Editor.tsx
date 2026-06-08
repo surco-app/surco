@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
@@ -40,6 +40,7 @@ import {
   type ReleaseMetaPatch,
   stepImageIndex,
 } from '../lib/release'
+import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
@@ -176,6 +177,20 @@ export function Editor({
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const discogs = useResizableWidth(315, 300, 720)
+
+  // Double-clicking the divider fits the Discogs column to its results: measure how far each
+  // release and track title is clipped (or has to spare) and resize by the widest, so long
+  // album names stop truncating — and a column left too wide tightens back up.
+  const autoFitDiscogs = useCallback((): void => {
+    const spans = document.querySelectorAll<HTMLElement>(
+      '[data-testid="discogs-result"] [data-fit], [data-testid="discogs-track"] [data-fit]',
+    )
+    const rows = Array.from(spans, (s) => ({
+      scrollWidth: s.scrollWidth,
+      clientWidth: s.clientWidth,
+    }))
+    discogs.autoFit(contentDeficit(rows))
+  }, [discogs.autoFit])
 
   // startDrag needs a file on disk the instant the drag begins, so prepare the
   // processed cover whenever it changes and stash its path for onDragStart.
@@ -469,7 +484,9 @@ export function Editor({
                       <div className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm">{r.title}</span>
+                      <span data-fit className="block truncate text-sm">
+                        {r.title}
+                      </span>
                       <span className="block truncate text-xs text-fg-dim">
                         {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
                       </span>
@@ -507,7 +524,9 @@ export function Editor({
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.position}
                               </span>
-                              <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                              <span data-fit className="min-w-0 flex-1 truncate text-sm">
+                                {t.title}
+                              </span>
                               {t === matchedTrack && matchTier && (
                                 // A text label, not a tick: a check icon reads as
                                 // "already applied", but the metadata is only applied
@@ -545,7 +564,11 @@ export function Editor({
         </div>
       </div>
 
-      <ResizeHandle onPointerDown={discogs.onPointerDown} />
+      <ResizeHandle
+        onPointerDown={discogs.onPointerDown}
+        onDoubleClick={autoFitDiscogs}
+        title={tr('editor.fitHint')}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
