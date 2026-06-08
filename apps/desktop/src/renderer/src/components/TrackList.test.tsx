@@ -26,11 +26,13 @@ afterEach(cleanup)
 function track(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
 ): TrackItem {
+  const fileName = over.fileName ?? `${over.id}.wav`
   return {
     inputPath: `/music/${over.id}.wav`,
-    fileName: `${over.id}.wav`,
+    fileName,
     query: '',
     status: 'idle',
+    listLabel: over.meta?.title || fileName,
     ...over,
     meta: {
       title: '',
@@ -89,6 +91,14 @@ describe('TrackList', () => {
     renderList([track({ id: 'a', meta: { title: 'Song A', artist: 'Artist A' } })])
     expect(screen.getByText('Song A')).toBeInTheDocument()
     expect(screen.getByText('Artist A')).toBeInTheDocument()
+  })
+
+  it('shows the stable list label, not in-progress metadata edits', () => {
+    // The label freezes what the row was when imported (or last applied a match), so typing
+    // a new title into the editor on the right never renames the pill on the left mid-edit.
+    renderList([track({ id: 'a', listLabel: 'Frozen Name', meta: { title: 'Edited Title' } })])
+    expect(screen.getByText('Frozen Name')).toBeInTheDocument()
+    expect(screen.queryByText('Edited Title')).not.toBeInTheDocument()
   })
 
   it('falls back to the file name and a no-artist label when metadata is empty', () => {

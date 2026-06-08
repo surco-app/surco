@@ -7,6 +7,7 @@ function track(overrides: Partial<TrackItem> = {}): TrackItem {
     id: 'a',
     inputPath: '/a.wav',
     fileName: 'a',
+    listLabel: 'a',
     query: '',
     status: 'done',
     outputPath: '/out/a.aiff',

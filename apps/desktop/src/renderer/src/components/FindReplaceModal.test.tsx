@@ -32,6 +32,7 @@ function track(id: string, meta: Partial<TrackMetadata>): TrackItem {
     id,
     inputPath: `/m/${id}`,
     fileName: `${id}.flac`,
+    listLabel: meta.title ?? `${id}.flac`,
     query: '',
     status: 'idle',
     meta: { ...emptyMeta, ...meta },

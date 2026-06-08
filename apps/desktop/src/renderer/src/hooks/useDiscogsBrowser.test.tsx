@@ -33,6 +33,7 @@ function item(over: { query?: string; title?: string } = {}): TrackItem {
     id: 'a',
     inputPath: '/m/a.wav',
     fileName: 'a.wav',
+    listLabel: over.title ?? 'a.wav',
     query: over.query ?? '',
     meta,
     status: 'idle',

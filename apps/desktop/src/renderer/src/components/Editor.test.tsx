@@ -49,6 +49,7 @@ function item(
   return {
     inputPath: `/music/${over.id}.wav`,
     fileName: `${over.id}.wav`,
+    listLabel: over.meta?.title || `${over.id}.wav`,
     query: '',
     status: 'idle',
     ...over,

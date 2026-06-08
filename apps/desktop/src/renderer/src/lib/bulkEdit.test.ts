@@ -26,6 +26,7 @@ function track(meta: Partial<TrackMetadata>): TrackItem {
     id: Math.random().toString(),
     inputPath: '/x.flac',
     fileName: 'x.flac',
+    listLabel: meta.title ?? 'x.flac',
     query: '',
     meta: { ...emptyMeta, ...meta },
     status: 'idle',

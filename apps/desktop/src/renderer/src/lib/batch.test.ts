@@ -8,6 +8,7 @@ function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {
     id,
     inputPath: `/${id}.wav`,
     fileName: id,
+    listLabel: meta.title ?? id,
     query: '',
     status,
     meta: {

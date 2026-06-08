@@ -9,6 +9,7 @@ function converted(overrides: Partial<TrackItem> = {}): TrackItem {
     id: 'a',
     inputPath: '/a.aiff',
     fileName: 'a',
+    listLabel: 'Still Can’t',
     query: '',
     status: 'done',
     outputPath: '/out/a.aiff',

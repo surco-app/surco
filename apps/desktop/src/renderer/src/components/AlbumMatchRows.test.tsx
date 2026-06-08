@@ -32,6 +32,7 @@ function track(id: string, title: string, durationSec: number): TrackItem {
     id,
     inputPath: `/music/${id}.flac`,
     fileName: `${id}.flac`,
+    listLabel: title,
     query: '',
     status: 'idle',
     duration: durationSec,

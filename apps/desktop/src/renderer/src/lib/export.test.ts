@@ -8,6 +8,7 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
     id: 'a',
     inputPath: '/music/old name.wav',
     fileName: 'old name.wav',
+    listLabel: 'Till I Come',
     query: '',
     status: 'processing',
     meta: {

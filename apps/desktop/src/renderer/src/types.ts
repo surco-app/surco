@@ -8,6 +8,10 @@ export interface TrackItem {
   fileName: string
   query: string
   meta: TrackMetadata
+  // The name shown in the track list. Frozen to the title (or file name) the file
+  // had when it was imported and never changed afterward, so the list stays a stable
+  // reference — editing metadata in the form on the right never renames the row.
+  listLabel: string
   // Total length in seconds, probed when the file is added. Undefined when the
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number

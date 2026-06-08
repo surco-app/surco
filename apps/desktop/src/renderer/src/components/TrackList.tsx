@@ -91,7 +91,7 @@ const TrackRow = memo(function TrackRow({
         </span>
         <span className="min-w-0 flex-1">
           <span data-fit className="block truncate text-sm font-medium text-fg">
-            {t.meta.title || t.fileName}
+            {t.listLabel}
           </span>
           {t.status === 'processing' && t.stage ? (
             <span data-testid="track-stage" className="mt-1 block">

@@ -7,6 +7,7 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
     id: 'a',
     inputPath: '/music/a.wav',
     fileName: 'a.wav',
+    listLabel: 'a.wav',
     query: '',
     status: 'idle',
     meta: {

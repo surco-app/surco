@@ -107,6 +107,7 @@ function newTrack(path: string): TrackItem {
     fileName,
     query,
     status: 'idle',
+    listLabel: title || fileName,
     meta: {
       title,
       artist,
@@ -290,6 +291,7 @@ export default function App(): React.JSX.Element {
           duration: duration ?? undefined,
           coverUrl: cover ?? undefined,
           embeddedCover: cover ?? undefined,
+          listLabel: s.title || base.fileName,
           meta: {
             ...base.meta,
             ...tags,

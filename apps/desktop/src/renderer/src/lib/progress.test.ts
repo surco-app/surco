@@ -7,6 +7,7 @@ function track(id: string): TrackItem {
     id,
     inputPath: `/${id}.wav`,
     fileName: `${id}.wav`,
+    listLabel: `${id}.wav`,
     query: '',
     status: 'processing',
     meta: {

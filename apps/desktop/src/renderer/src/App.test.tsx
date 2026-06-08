@@ -149,6 +149,29 @@ describe('App auto-match', () => {
   })
 })
 
+describe('App track list label', () => {
+  // The left list is a stable reference: it shows what each file was when imported and never
+  // moves while the metadata form on the right is edited. Otherwise the row renames itself
+  // under the cursor as you type a title — which is disorienting on a big crate.
+  it('keeps the row label fixed while the title is edited in the form', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const row = screen.getByTestId('track-row')
+    expect(within(row).getByText('Imported Title')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Hand Typed' } })
+
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
+    expect(within(row).getByText('Imported Title')).toBeInTheDocument()
+    expect(within(row).queryByText('Hand Typed')).not.toBeInTheDocument()
+  })
+})
+
 describe('App multi-select convert', () => {
   // The reason this matters: users with a large crate (e.g. 400 tracks) tag a handful, select
   // just those, and hit convert expecting only the selection to run. Converting the whole list

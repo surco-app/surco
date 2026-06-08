@@ -17,6 +17,7 @@ function track(
     id: 't1',
     inputPath: '/music/t1.wav',
     fileName: 't1.wav',
+    listLabel: 't1.wav',
     query: '',
     status: 'idle',
     ...over,
