@@ -21,6 +21,9 @@ export interface TrackItem {
   // Set when the user clears the artwork, so the conversion strips the embedded
   // cover instead of preserving it. Cleared again the moment a new cover is set.
   coverRemoved?: boolean
+  // The spectrogram/cutoff verdict, not stored on the canonical track but merged in
+  // from the React Query cache at the App boundary so the quality triage and the list
+  // can read each track's verdict. Undefined until its analysis lands in the cache.
   spectrum?: SpectrumResult
   outputName?: string
   status: TrackStatus

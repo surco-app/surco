@@ -24,6 +24,7 @@ import type {
 } from '../../../shared/types'
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
@@ -170,8 +171,6 @@ export function Editor({
   const { query, setQuery, doSearch, results, release, loadingId, busy, error, previewRelease } =
     useDiscogsBrowser(item, tr)
   const [coverDragging, setCoverDragging] = useState(false)
-  const [analyzing, setAnalyzing] = useState(false)
-  const [analyzeError, setAnalyzeError] = useState('')
   const [formOpen, setFormOpen] = useState(true)
   // Read-only facts, folded by default so they don't push the editing fields down;
   // the user opens them when they want to inspect the source.
@@ -228,27 +227,18 @@ export function Editor({
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
   useEffect(() => setCoverDims(null), [displayCover])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once. showSpectrum is included so enabling the section later analyzes the current track instead of waiting for a track switch.
-  useEffect(() => {
-    if (!showSpectrum || item.spectrum) return
-    let active = true
-    setAnalyzing(true)
-    setAnalyzeError('')
-    window.api
-      .spectrogram(item.inputPath)
-      .then((res) => {
-        if (active) onChange({ spectrum: res })
-      })
-      .catch((e) => {
-        if (active) setAnalyzeError(e instanceof Error ? e.message : tr('editor.analyzeError'))
-      })
-      .finally(() => {
-        if (active) setAnalyzing(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [item.inputPath, showSpectrum])
+  // Spectrogram (and the lossless-cutoff verdict it implies) for the shown track. The
+  // hover prefetch and the "analyze all" sweep warm the same cache keys, so an
+  // already-warmed track shows instantly. Gated on the Quality toggle; a failed
+  // analysis surfaces as analyzeError.
+  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum)
+  const spectrum = spectrumQuery.data
+  const analyzing = spectrumQuery.isFetching
+  const analyzeError = spectrumQuery.isError
+    ? spectrumQuery.error instanceof Error
+      ? spectrumQuery.error.message
+      : tr('editor.analyzeError')
+    : ''
 
   // EBU R128 loudness for the shown track. Keyed by input path, so it measures once
   // per file and reads the right figures on a track switch; gated on the Settings
@@ -984,9 +974,9 @@ export function Editor({
                 open={spectrumOpen}
                 onToggle={() => setSpectrumOpen((v) => !v)}
                 right={
-                  item.spectrum &&
-                  item.spectrum.cutoffHz !== null &&
-                  (qualityVerdict(item.spectrum.cutoffHz, item.spectrum.sampleRateHz) === 'good' ? (
+                  spectrum &&
+                  spectrum.cutoffHz !== null &&
+                  (qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz) === 'good' ? (
                     <span
                       data-testid="quality-badge"
                       className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
@@ -1013,14 +1003,14 @@ export function Editor({
                       </div>
                     ) : analyzeError ? (
                       <p className="text-xs text-danger">{analyzeError}</p>
-                    ) : item.spectrum ? (
+                    ) : spectrum ? (
                       <>
-                        <Spectrogram spectrum={item.spectrum} />
-                        {item.spectrum.cutoffHz !== null && (
+                        <Spectrogram spectrum={spectrum} />
+                        {spectrum.cutoffHz !== null && (
                           <p className="mt-2 text-xs text-fg-dim">
                             {tr('editor.qualityCaption', {
-                              cutoff: formatKHz(item.spectrum.cutoffHz),
-                              nyquist: formatKHz(item.spectrum.sampleRateHz / 2),
+                              cutoff: formatKHz(spectrum.cutoffHz),
+                              nyquist: formatKHz(spectrum.sampleRateHz / 2),
                             })}
                           </p>
                         )}

@@ -36,6 +36,10 @@ beforeEach(() => {
     // The Properties effect probes once per single track on mount; resolve to null
     // so tests that don't care about it don't hit an undefined bridge method.
     properties: vi.fn().mockResolvedValue(null),
+    // The Quality panel analyses the spectrum whenever showSpectrum is on (the
+    // multi-select editor does); resolve to null so that fetch never hits an
+    // undefined bridge method.
+    spectrogram: vi.fn().mockResolvedValue(null),
   }
 })
 

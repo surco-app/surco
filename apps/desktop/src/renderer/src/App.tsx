@@ -1,3 +1,4 @@
+import { useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
   AudioLines,
@@ -23,6 +24,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   Settings,
+  SpectrumResult,
   ThemePref,
   TrackMetadata,
 } from '../../shared/types'
@@ -58,7 +60,7 @@ import { parseFileName } from './lib/filename'
 import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { needsDiscogsPrefetch, needsSpectrum } from './lib/prefetch'
+import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
@@ -171,7 +173,17 @@ export default function App(): React.JSX.Element {
   const hasTokenRef = useRef(false)
   hasTokenRef.current = !!settings?.discogsToken
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const spectrumInFlight = useRef<Set<string>>(new Set())
+  const queryClient = useQueryClient()
+  // The latest spectrum-merged view of the tracks, so the hover-prefetch and analyze
+  // callbacks (which read refs to stay stable) can see each track's cached spectrum
+  // without re-subscribing.
+  const tracksViewRef = useRef<TrackItem[]>([])
+  // Merging a cached spectrum onto a track mints a new object; caching it by id keeps
+  // the reference stable across renders so memoized rows only re-render when their own
+  // spectrum lands.
+  const viewCache = useRef(
+    new Map<string, { track: TrackItem; spectrum: SpectrumResult; view: TrackItem }>(),
+  )
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
@@ -333,22 +345,20 @@ export default function App(): React.JSX.Element {
     [],
   )
 
-  // Warms a hovered track's spectrum so opening it is instant. Debounced (the row
-  // only counts as intent once the cursor rests) and guarded by an in-flight set
-  // so a second hover never spawns a duplicate ffmpeg run for the same track.
+  // Warms a hovered track's spectrum so opening it is instant. Debounced (the row only
+  // counts as intent once the cursor rests). prefetchQuery skips a track already in the
+  // cache and dedups concurrent hovers, so it needs no in-flight guard of its own.
   const handlePrefetch = useCallback(
     (id: string): void => {
       if (hoverTimer.current) clearTimeout(hoverTimer.current)
       hoverTimer.current = setTimeout(() => {
         const track = tracksRef.current.find((t) => t.id === id)
         if (!track) return
-        if (needsSpectrum(track, showSpectrumRef.current) && !spectrumInFlight.current.has(id)) {
-          spectrumInFlight.current.add(id)
-          window.api
-            .spectrogram(track.inputPath)
-            .then((spectrum) => updateTrack(id, { spectrum }))
-            .catch(() => {})
-            .finally(() => spectrumInFlight.current.delete(id))
+        if (showSpectrumRef.current) {
+          void queryClient.prefetchQuery({
+            queryKey: ['spectrogram', track.inputPath],
+            queryFn: () => window.api.spectrogram(track.inputPath),
+          })
         }
         if (
           needsDiscogsPrefetch(track, hasTokenRef.current) &&
@@ -359,35 +369,34 @@ export default function App(): React.JSX.Element {
         }
       }, PREFETCH_HOVER_MS)
     },
-    [updateTrack],
+    [queryClient],
   )
 
-  // Analyzes every not-yet-measured track's spectrum at once so a whole dropped
-  // folder is triaged for fake-lossless rips without opening each. Capped at 3 in
-  // flight (each is an ffmpeg pass) and cancellable; reuses the hover prefetch's
-  // in-flight guard so a concurrent hover never double-spawns the same track. The
-  // shared spectrogram result also warms the editor for when the track is opened.
+  // Analyzes every not-yet-measured track's spectrum at once so a whole dropped folder
+  // is triaged for fake-lossless rips without opening each. Capped at 3 in flight (each
+  // is an ffmpeg pass) and cancellable; fetchQuery fills the shared cache the list reads
+  // its verdicts from, and dedups with a concurrent hover for the same file.
   const analyzeAllQuality = useCallback((): void => {
-    const targets = tracksToAnalyze(tracksRef.current, spectrumInFlight.current)
+    const targets = tracksToAnalyze(tracksViewRef.current, new Set())
     if (analysis || targets.length === 0) return
     analyzeCancel.current = false
     let done = 0
     setAnalysis({ done: 0, total: targets.length })
     void mapWithConcurrency(targets, 3, async (t) => {
       if (analyzeCancel.current) return
-      spectrumInFlight.current.add(t.id)
       try {
-        const spectrum = await window.api.spectrogram(t.inputPath)
-        updateTrack(t.id, { spectrum })
+        await queryClient.fetchQuery({
+          queryKey: ['spectrogram', t.inputPath],
+          queryFn: () => window.api.spectrogram(t.inputPath),
+        })
       } catch {
         // A single file ffmpeg can't read must not abort the whole sweep.
       } finally {
-        spectrumInFlight.current.delete(t.id)
         done += 1
         setAnalysis((a) => (a ? { ...a, done } : a))
       }
     }).finally(() => setAnalysis(null))
-  }, [analysis, updateTrack])
+  }, [analysis, queryClient])
 
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
@@ -395,17 +404,17 @@ export default function App(): React.JSX.Element {
   const removeTrack = useCallback((id: string): void => {
     setTracks((prev) => prev.filter((t) => t.id !== id))
     setSelection((s) => deselect(s, id))
-    // Drop the track's prefetch bookkeeping so the sets don't accumulate ids of
+    // Drop the track's prefetch/view bookkeeping so they don't accumulate ids of
     // tracks that no longer exist across a long session of add/remove.
-    spectrumInFlight.current.delete(id)
     discogsPrefetched.current.delete(id)
+    viewCache.current.delete(id)
   }, [])
 
   function clearTracks(): void {
     setTracks([])
     setSelection({ ids: [], anchor: null })
-    spectrumInFlight.current.clear()
     discogsPrefetched.current.clear()
+    viewCache.current.clear()
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
@@ -711,8 +720,31 @@ export default function App(): React.JSX.Element {
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
   const eligibleCount = eligibleForBatch(tracks).length
 
-  const qualityTally = qualityCounts(tracks)
-  const visibleTracks = filterByQuality(tracks, qualityFilter)
+  // Each track's spectrum, read from the shared React Query cache the hover prefetch,
+  // the analyze sweep and the editor all fill. enabled:false so the list only observes —
+  // it never triggers an analysis itself.
+  const spectrumQueries = useQueries({
+    queries: tracks.map((t) => ({
+      queryKey: ['spectrogram', t.inputPath],
+      queryFn: () => window.api.spectrogram(t.inputPath),
+      enabled: false,
+    })),
+  })
+  // Merge each cached spectrum onto its track for the quality triage and the list,
+  // preserving object identity (via viewCache) so memoized rows don't all re-render.
+  const tracksView = tracks.map((t, i) => {
+    const spectrum = spectrumQueries[i]?.data
+    if (!spectrum) return t
+    const cached = viewCache.current.get(t.id)
+    if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
+    const view: TrackItem = { ...t, spectrum }
+    viewCache.current.set(t.id, { track: t, spectrum, view })
+    return view
+  })
+  tracksViewRef.current = tracksView
+
+  const qualityTally = qualityCounts(tracksView)
+  const visibleTracks = filterByQuality(tracksView, qualityFilter)
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -1022,7 +1054,7 @@ export default function App(): React.JSX.Element {
                       }
                     : analyzeAllQuality
                 }
-                disabled={!analysis && tracks.every((t) => Boolean(t.spectrum))}
+                disabled={!analysis && tracksView.every((t) => Boolean(t.spectrum))}
                 aria-label={tr('header.analyzeQuality')}
                 className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                   analysis
