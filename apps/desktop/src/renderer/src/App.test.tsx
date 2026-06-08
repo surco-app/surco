@@ -109,3 +109,30 @@ describe('App quality triage', () => {
     await waitFor(() => expect(within(rows[1]).getByTestId('track-quality')).toBeInTheDocument())
   })
 })
+
+describe('App multi-select convert', () => {
+  // The reason this matters: users with a large crate (e.g. 400 tracks) tag a handful, select
+  // just those, and hit convert expecting only the selection to run. Converting the whole list
+  // would rewrite files they hadn't finished — the multi-select convert must honour the selection.
+  it('converts only the selected tracks, not the whole list', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    // Multi-select reuses the single editor; its convert button reads "Convert all (2)".
+    const convert = await screen.findByTestId('process-btn')
+    expect(convert).toHaveTextContent('Convert all (2)')
+    fireEvent.click(convert)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
+    expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
+})

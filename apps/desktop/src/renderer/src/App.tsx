@@ -646,11 +646,12 @@ export default function App(): React.JSX.Element {
   }
 
   async function processAll(
+    targets: TrackItem[],
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
   ): Promise<void> {
     if (batching) return
-    const ids = eligibleForBatch(tracks)
+    const ids = eligibleForBatch(targets)
     cancelBatchRef.current = false
     setBatching(true)
     setBatchSummary(null)
@@ -820,7 +821,11 @@ export default function App(): React.JSX.Element {
       hint: hintFor('process-all'),
       enabled: canProcessAll,
       run: () =>
-        processAll(editorFormatRef.current ?? undefined, editorNormalizeRef.current ?? undefined),
+        processAll(
+          tracks,
+          editorFormatRef.current ?? undefined,
+          editorNormalizeRef.current ?? undefined,
+        ),
     },
     {
       id: 'reveal',
@@ -1087,7 +1092,7 @@ export default function App(): React.JSX.Element {
               <button
                 type="button"
                 data-testid="convert-all"
-                onClick={() => processAll()}
+                onClick={() => processAll(tracks)}
                 disabled={!canProcessAll}
                 className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
               >
@@ -1283,7 +1288,9 @@ export default function App(): React.JSX.Element {
               onApplyMatches={(patches) => {
                 for (const p of patches) updateTrack(p.id, p.patch)
               }}
-              onProcessAll={(format) => processAll(format, editorNormalizeRef.current ?? undefined)}
+              onProcessAll={(format) =>
+                processAll(selectedTracks, format, editorNormalizeRef.current ?? undefined)
+              }
               onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
               onApplyCoverAll={(coverUrl, coverPath) =>
