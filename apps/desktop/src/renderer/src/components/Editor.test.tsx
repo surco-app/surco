@@ -6,6 +6,7 @@ import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
+  LoudnessResult,
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
@@ -219,27 +220,39 @@ describe('Editor convert button normalization note', () => {
 })
 
 describe('Editor loudness pills', () => {
+  const healthy: LoudnessResult = {
+    integratedLufs: -12,
+    truePeakDb: -1.5,
+    lra: 8,
+    channelBalanceDb: 0.5,
+    dcOffset: 0.0001,
+    crestDb: 16,
+    noiseFloorDb: -55,
+  }
+
+  // The figures come from the main-process measure (window.api.loudness) the readout
+  // runs on mount, so each test seeds what that measure returns for this file.
+  function seedLoudness(value: LoudnessResult): void {
+    ;(window as unknown as { api: { loudness: unknown } }).api.loudness = vi
+      .fn()
+      .mockResolvedValue(value)
+  }
+
   // The whole point of the colour is that a non-technical user reads the verdict
   // without understanding LUFS/dBTP/LU: a near-silent, clipping, flat track is
   // wrong on all three counts and must read red across the board.
-  it('grades a near-silent, clipping, flat track as bad on every pill', () => {
-    renderEditor(
-      {
-        id: 'a',
-        loudness: {
-          integratedLufs: -70,
-          truePeakDb: 2.5,
-          lra: 0,
-          channelBalanceDb: 6,
-          dcOffset: 0.03,
-          crestDb: 5,
-          noiseFloorDb: -20,
-        },
-      },
-      'wav',
-      { showLoudness: true },
-    )
-    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'bad')
+  it('grades a near-silent, clipping, flat track as bad on every pill', async () => {
+    seedLoudness({
+      integratedLufs: -70,
+      truePeakDb: 2.5,
+      lra: 0,
+      channelBalanceDb: 6,
+      dcOffset: 0.03,
+      crestDb: 5,
+      noiseFloorDb: -20,
+    })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    expect(await screen.findByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'bad')
     expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'bad')
     expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
     expect(screen.getByTestId('loudness-pill-crest')).toHaveAttribute('data-grade', 'bad')
@@ -248,24 +261,10 @@ describe('Editor loudness pills', () => {
     expect(screen.getByTestId('loudness-pill-noise')).toHaveAttribute('data-grade', 'bad')
   })
 
-  it('grades a healthy track green on every pill', () => {
-    renderEditor(
-      {
-        id: 'a',
-        loudness: {
-          integratedLufs: -12,
-          truePeakDb: -1.5,
-          lra: 8,
-          channelBalanceDb: 0.5,
-          dcOffset: 0.0001,
-          crestDb: 16,
-          noiseFloorDb: -55,
-        },
-      },
-      'wav',
-      { showLoudness: true },
-    )
-    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
+  it('grades a healthy track green on every pill', async () => {
+    seedLoudness(healthy)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    expect(await screen.findByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-crest')).toHaveAttribute('data-grade', 'good')
@@ -274,69 +273,28 @@ describe('Editor loudness pills', () => {
     expect(screen.getByTestId('loudness-pill-noise')).toHaveAttribute('data-grade', 'good')
   })
 
-  it('drops the balance pill for a mono rip, where there is no left/right to compare', () => {
-    renderEditor(
-      {
-        id: 'a',
-        loudness: {
-          integratedLufs: -12,
-          truePeakDb: -1.5,
-          lra: 8,
-          channelBalanceDb: null,
-          dcOffset: 0.0001,
-          crestDb: 16,
-          noiseFloorDb: -55,
-        },
-      },
-      'wav',
-      { showLoudness: true },
-    )
+  it('drops the balance pill for a mono rip, where there is no left/right to compare', async () => {
+    seedLoudness({ ...healthy, channelBalanceDb: null })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    await screen.findByTestId('loudness-pill-lufs')
     expect(screen.queryByTestId('loudness-pill-balance')).toBeNull()
     expect(screen.getByTestId('loudness-pill-dc')).toBeInTheDocument()
   })
 
   // The figures need explaining once, but must not clutter the panel on every edit,
   // so the explanation stays hidden until the user asks for it.
-  it('reveals the explanation only when the help button is pressed', () => {
-    renderEditor(
-      {
-        id: 'a',
-        loudness: {
-          integratedLufs: -12,
-          truePeakDb: -1.5,
-          lra: 8,
-          channelBalanceDb: 0.5,
-          dcOffset: 0.0001,
-          crestDb: 16,
-          noiseFloorDb: -55,
-        },
-      },
-      'wav',
-      { showLoudness: true },
-    )
+  it('reveals the explanation only when the help button is pressed', async () => {
+    seedLoudness(healthy)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
     expect(screen.queryByTestId('loudness-help')).toBeNull()
-    fireEvent.click(screen.getByTestId('loudness-help-toggle'))
+    fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
     expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
   })
 
-  it('closes the help modal on Escape, the expected way to dismiss a dialog', () => {
-    renderEditor(
-      {
-        id: 'a',
-        loudness: {
-          integratedLufs: -12,
-          truePeakDb: -1.5,
-          lra: 8,
-          channelBalanceDb: 0.5,
-          dcOffset: 0.0001,
-          crestDb: 16,
-          noiseFloorDb: -55,
-        },
-      },
-      'wav',
-      { showLoudness: true },
-    )
-    fireEvent.click(screen.getByTestId('loudness-help-toggle'))
+  it('closes the help modal on Escape, the expected way to dismiss a dialog', async () => {
+    seedLoudness(healthy)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
     expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
     fireEvent.keyDown(document.body, { key: 'Escape' })
     expect(screen.queryByTestId('loudness-help')).toBeNull()

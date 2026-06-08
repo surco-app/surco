@@ -24,6 +24,7 @@ import type {
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
+import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
@@ -324,22 +325,10 @@ export function Editor({
     }
   }, [item.inputPath, showSpectrum])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: same once-per-input rule as the spectrum effect above — the Editor remounts per track (key={track.id}), so keying on inputPath measures exactly once; showLoudness is included so enabling the readout later measures the current track instead of waiting for a track switch. item.loudness is intentionally not a dependency: a finished measurement (including a null failure) must not retrigger it.
-  useEffect(() => {
-    if (!showLoudness || item.loudness !== undefined) return
-    let active = true
-    window.api
-      .loudness(item.inputPath)
-      .then((res) => {
-        if (active) onChange({ loudness: res })
-      })
-      .catch(() => {
-        if (active) onChange({ loudness: null })
-      })
-    return () => {
-      active = false
-    }
-  }, [item.inputPath, showLoudness])
+  // EBU R128 loudness for the shown track. Keyed by input path, so it measures once
+  // per file and reads the right figures on a track switch; gated on the Settings
+  // toggle. A failed measure resolves null and the readout hides.
+  const { data: loudness } = useTrackLoudness(item.inputPath, showLoudness)
 
   // Read-only technical facts for the shown track. Keyed by input path, so it probes
   // once per file and reads the right facts on a track switch; disabled in multi-select,
@@ -1169,9 +1158,9 @@ export function Editor({
                       </>
                     ) : null)}
                   {showLoudness &&
-                    item.loudness &&
+                    loudness &&
                     (() => {
-                      const loud = item.loudness
+                      const loud = loudness
                       // The astats-derived checks each appear only when measured
                       // (null = mono, a dead channel, or an unparseable reading).
                       const cell = (
