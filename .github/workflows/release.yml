@@ -11,6 +11,10 @@ permissions:
 jobs:
   release:
     strategy:
+      # A transient install hiccup on one runner (e.g. ffmpeg-static's binary
+      # download getting a 504 from GitHub) shouldn't cancel the other arches'
+      # otherwise-healthy builds.
+      fail-fast: false
       matrix:
         # macos-14 = Apple Silicon (arm64), macos-15-intel = Intel (x64). Each
         # runner installs ffmpeg/ffprobe natively for its arch, so its .dmg bundles
@@ -31,8 +35,18 @@ jobs:
       # install skip the platform-specific rollup binary when the lockfile was
       # generated on another OS. Installing fresh lets npm resolve the right one
       # for each runner (same workaround the web build uses on Vercel).
-      - run: rm -f package-lock.json && npm install
+      # ffmpeg-static's postinstall downloads its binary from GitHub Releases,
+      # which intermittently 504s. Retry the whole install a few times so a single
+      # transient network failure doesn't kill the release.
+      - name: Install dependencies
         shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            rm -f package-lock.json && npm install && exit 0
+            echo "npm install failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       # The App Store Connect API key arrives base64-encoded as a secret; notarize
       # needs it as a file on disk.
