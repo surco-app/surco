@@ -298,6 +298,8 @@
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
     "tokenHelp": "Genera uno gratis en",
+    "autoMatch": "Auto-emparejar al importar",
+    "autoMatchHint": "Al soltar archivos, busca cada uno en Discogs y aplica automáticamente los metadatos de cualquier coincidencia fiable. Necesita un token; desactivado por defecto porque consume el límite de peticiones en toda la importación.",
     "outputSection": "Salida",
     "outputDir": "Carpeta de salida",
     "outputFormat": "Formato por defecto",

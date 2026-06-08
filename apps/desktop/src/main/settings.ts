@@ -21,6 +21,7 @@ const defaults: Settings = {
   coverSquare: false,
   showSpectrum: true,
   showLoudness: true,
+  autoMatch: false,
   // Off by default: a conversion never changes loudness unless the user enables it.
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},

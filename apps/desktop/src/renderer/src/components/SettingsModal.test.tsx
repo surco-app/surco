@@ -32,6 +32,7 @@ const settings: Settings = {
   coverSquare: false,
   showSpectrum: true,
   showLoudness: true,
+  autoMatch: false,
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
   hasSeenOnboarding: true,

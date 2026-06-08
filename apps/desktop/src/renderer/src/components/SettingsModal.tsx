@@ -125,6 +125,7 @@ export function SettingsModal({
   const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
   const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [showLoudness, setShowLoudness] = useState(settings.showLoudness)
   const [normalize, setNormalize] = useState(settings.normalize)
   const [shortcutOverrides, setShortcutOverrides] = useState(settings.shortcutOverrides)
@@ -179,6 +180,7 @@ export function SettingsModal({
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
       coverSquare,
       showSpectrum,
+      autoMatch,
       showLoudness,
       normalize,
       shortcutOverrides,
@@ -310,6 +312,20 @@ export function SettingsModal({
                   discogs.com/settings/developers
                 </a>
               </p>
+
+              <div className="border-t border-[var(--color-line)] pt-5">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-auto-match"
+                    type="checkbox"
+                    checked={autoMatch}
+                    onChange={(e) => setAutoMatch(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.autoMatch')}</span>
+                </label>
+                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.autoMatchHint')}</p>
+              </div>
             </>
           )}
 
