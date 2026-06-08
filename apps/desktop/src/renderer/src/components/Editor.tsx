@@ -24,6 +24,7 @@ import type {
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
+import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { smartDeriveTags } from '../lib/deriveTags'
@@ -340,22 +341,14 @@ export function Editor({
     }
   }, [item.inputPath, showLoudness])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: same once-per-input rule — keyed on inputPath so it probes exactly once. Properties are always shown for a single track (no toggle), so unlike spectrum/loudness this isn't gated on a setting; isMulti hides the panel instead. item.properties is intentionally not a dependency so a finished probe (including a null failure) never retriggers.
-  useEffect(() => {
-    if (isMulti || item.properties !== undefined) return
-    let active = true
-    window.api
-      .properties(item.inputPath)
-      .then((res) => {
-        if (active) onChange({ properties: res })
-      })
-      .catch(() => {
-        if (active) onChange({ properties: null })
-      })
-    return () => {
-      active = false
-    }
-  }, [item.inputPath, isMulti])
+  // Read-only technical facts for the shown track. Keyed by input path, so it probes
+  // once per file and reads the right facts on a track switch; disabled in multi-select,
+  // where the panel is hidden and there is no single source to inspect. A failed probe
+  // surfaces as propertiesError, which the panel renders as "unavailable".
+  const { data: properties, isError: propertiesError } = useTrackProperties(
+    item.inputPath,
+    !isMulti,
+  )
 
   // Checking whether the song is already in the Apple Music library is a hint to
   // avoid duplicating tracks, so it tracks the live title/artist (debounced —
@@ -984,9 +977,9 @@ export function Editor({
                 onToggle={() => setPropertiesOpen((v) => !v)}
               />
               {propertiesOpen &&
-                (item.properties
+                (properties
                   ? (() => {
-                      const p = item.properties
+                      const p = properties
                       const ext = item.fileName.includes('.')
                         ? (item.fileName.split('.').pop() ?? '').toUpperCase()
                         : ''
@@ -1118,7 +1111,7 @@ export function Editor({
                         </div>
                       )
                     })()
-                  : item.properties === null && (
+                  : (properties === null || propertiesError) && (
                       <p className="mt-3 text-xs text-fg-dim">
                         {tr('editor.propertiesUnavailable')}
                       </p>

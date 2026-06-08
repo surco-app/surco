@@ -4,7 +4,6 @@ import type {
   ProcessStage,
   SpectrumResult,
   TrackMetadata,
-  TrackProperties,
 } from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
@@ -32,10 +31,6 @@ export interface TrackItem {
   // EBU R128 loudness, measured once per input alongside the spectrum and shown
   // read-only. null when the measurement failed; undefined before it has run.
   loudness?: LoudnessResult | null
-  // Read-only technical facts (codec, bit depth, channels, bitrate, file size and
-  // timestamps), probed once per input. null when the probe failed; undefined
-  // before it has run.
-  properties?: TrackProperties | null
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage

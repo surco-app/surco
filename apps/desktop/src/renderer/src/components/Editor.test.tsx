@@ -1,14 +1,29 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
+import type {
+  NormalizeConfig,
+  OutputFormat,
+  TrackMetadata,
+  TrackProperties,
+} from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
 afterEach(cleanup)
+
+// The Editor's read-only data (currently Properties) is fetched through React Query,
+// so every mount needs a client in context. A fresh client per render keeps tests
+// isolated; retry:false lets a rejected probe settle into isError within waitFor.
+function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+}
 
 // Editor mounts effects that touch window.api; a non-darwin platform skips the
 // Apple Music lookup and showSpectrum={false} skips the spectrogram analysis, so
@@ -79,7 +94,7 @@ function renderEditor(
   const onTrashOriginal = vi.fn()
   const onOpenSettings = vi.fn()
   const onOpenRename = vi.fn()
-  render(
+  renderWithQuery(
     <Editor
       item={item(over)}
       hasToken
@@ -397,7 +412,7 @@ describe('Editor genre presets', () => {
 
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
-    render(<MultiHarness />)
+    renderWithQuery(<MultiHarness />)
     fireEvent.change(screen.getByTestId('field-year'), { target: { value: '1999' } })
     fireEvent.change(screen.getByTestId('field-genre'), { target: { value: 'House' } })
     // Both edits must land on both tracks; the bug report is the second one being dropped.
@@ -429,7 +444,7 @@ describe('Editor multi-select', () => {
       outputPath: opts.done ? '/out/b.aiff' : undefined,
       meta: { title: 'B', album: 'Shared' },
     })
-    render(
+    renderWithQuery(
       <Editor
         item={a}
         hasToken
@@ -781,8 +796,7 @@ describe('Editor Discogs apply', () => {
     const { onChange } = renderEditor({ id: 'a' })
     await search()
     expect(getRelease).not.toHaveBeenCalled()
-    // The Properties probe legitimately patches { properties }; what must not happen
-    // is a metadata apply from a release that was never opened.
+    // What must not happen is a metadata apply from a release that was never opened.
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ meta: expect.anything() }))
   })
 
@@ -985,7 +999,7 @@ describe('Editor in-place hint', () => {
 describe('Editor properties panel', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
-  const properties = {
+  const properties: TrackProperties = {
     codec: 'pcm_s16le',
     container: 'wav',
     sampleRateHz: 44100,
@@ -998,19 +1012,29 @@ describe('Editor properties panel', () => {
     tagFormats: ['ID3v2.3', 'INFO'],
   }
 
+  // The facts come from the main-process probe (window.api.properties) the panel runs
+  // on mount, so each test seeds what that probe returns for this file.
+  function seedProperties(value: TrackProperties | null): void {
+    ;(window as unknown as { api: { properties: unknown } }).api.properties = vi
+      .fn()
+      .mockResolvedValue(value)
+  }
+
   // Folded by default so the read-only facts never push the editing fields the user
   // came for down the panel; they open it deliberately to inspect the source.
   it('stays folded until the user opens it', () => {
-    renderEditor({ id: 'a', properties })
+    seedProperties(properties)
+    renderEditor({ id: 'a' })
     expect(screen.queryByTestId('properties-readout')).not.toBeInTheDocument()
   })
 
   // The panel exists to surface the technical facts ffprobe reads off the source —
   // formatted for a human (kHz, Bit, kbps, MB), not raw — so a DJ can vet a rip.
-  it('renders the probed audio facts once expanded', () => {
-    renderEditor({ id: 'a', properties })
+  it('renders the probed audio facts once expanded', async () => {
+    seedProperties(properties)
+    renderEditor({ id: 'a' })
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
-    expect(screen.getByTestId('property-sampleRate')).toHaveTextContent('44.1 kHz')
+    expect(await screen.findByTestId('property-sampleRate')).toHaveTextContent('44.1 kHz')
     expect(screen.getByTestId('property-bitDepth')).toHaveTextContent('16 Bit')
     expect(screen.getByTestId('property-channelMode')).toHaveTextContent('Stereo')
     expect(screen.getByTestId('property-bitrate')).toHaveTextContent('1411 kbps')
@@ -1020,27 +1044,32 @@ describe('Editor properties panel', () => {
 
   // A lossy source has no fixed bit depth (probe leaves it null); the row must drop
   // out rather than print "0 Bit" / an empty value.
-  it('omits the bit-depth row when the probe could not read one', () => {
-    renderEditor({ id: 'a', properties: { ...properties, bitDepth: null } })
+  it('omits the bit-depth row when the probe could not read one', async () => {
+    seedProperties({ ...properties, bitDepth: null })
+    renderEditor({ id: 'a' })
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    await screen.findByTestId('property-sampleRate')
     expect(screen.queryByTestId('property-bitDepth')).not.toBeInTheDocument()
   })
 
   // An untagged or unrecognized file sniffs no formats; the row must drop out rather
   // than render an empty "Tag formats:" line.
-  it('omits the tag-formats row when none were recognized', () => {
-    renderEditor({ id: 'a', properties: { ...properties, tagFormats: [] } })
+  it('omits the tag-formats row when none were recognized', async () => {
+    seedProperties({ ...properties, tagFormats: [] })
+    renderEditor({ id: 'a' })
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
+    await screen.findByTestId('property-sampleRate')
     expect(screen.queryByTestId('property-tagFormats')).not.toBeInTheDocument()
   })
 
   // The full path is too long for the row, so Location collapses to the containing
   // folder name and clicking it opens that folder in Finder — the user's quickest
   // route from "which track is this" to the file on disk.
-  it('reveals the containing folder in Finder from the Location row', () => {
-    renderEditor({ id: 'a', inputPath: '/Music/Crate/Vol 2/track.wav', properties })
+  it('reveals the containing folder in Finder from the Location row', async () => {
+    seedProperties(properties)
+    renderEditor({ id: 'a', inputPath: '/Music/Crate/Vol 2/track.wav' })
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
-    const reveal = screen.getByTestId('property-reveal')
+    const reveal = await screen.findByTestId('property-reveal')
     expect(reveal).toHaveTextContent('Vol 2')
     fireEvent.click(reveal)
     expect(
