@@ -1,3 +1,17 @@
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Folder,
+  Info,
+  RefreshCw,
+  SlidersVertical,
+  Star,
+  Tag,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -564,19 +578,7 @@ export function Editor({
       onClick={deriveFromNames}
       className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-        className="h-3 w-3"
-      >
-        <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
-        <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
-      </svg>
+      <Tag className="h-3 w-3" aria-hidden="true" />
       {tr('editor.deriveFromName')}
       <Tooltip label={tr('editor.deriveFromNameHint')} align="start" />
     </button>
@@ -661,20 +663,10 @@ export function Editor({
                         {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
                       </span>
                     </span>
-                    <svg
-                      viewBox="0 0 12 12"
-                      fill="none"
+                    <ChevronRight
                       aria-hidden="true"
                       className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
-                    >
-                      <path
-                        d="m4.5 2.5 3.5 3.5-3.5 3.5"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    />
                     <Tooltip label={tr('editor.resultHint')} align="start" />
                   </button>
                   <CollapsibleTracks open={expanded}>
@@ -846,19 +838,7 @@ export function Editor({
                             aria-label={tr('editor.coverRemove')}
                             className="press group/cover absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                           >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
-                              className="h-4 w-4"
-                            >
-                              <path d="M18 6 6 18" />
-                              <path d="m6 6 12 12" />
-                            </svg>
+                            <X className="h-4 w-4" aria-hidden="true" />
                             <Tooltip label={tr('editor.coverRemove')} align="end" scope="cover" />
                           </button>
                           <button
@@ -868,20 +848,7 @@ export function Editor({
                             aria-label={tr('editor.coverExport')}
                             className="press group/cover absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
                           >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
-                              className="h-4 w-4"
-                            >
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <path d="M7 10l5 5 5-5" />
-                              <path d="M12 15V3" />
-                            </svg>
+                            <Download className="h-4 w-4" aria-hidden="true" />
                             <Tooltip label={tr('editor.coverExport')} align="end" scope="cover" />
                           </button>
                         </>
@@ -913,15 +880,7 @@ export function Editor({
                         onClick={() => pickCoverImage(-1)}
                         className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
                       >
-                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
-                          <path
-                            d="m7.5 2.5-3.5 3.5 3.5 3.5"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <ChevronLeft className="h-3 w-3" aria-hidden="true" />
                       </button>
                       <span
                         data-testid="cover-image-count"
@@ -939,15 +898,7 @@ export function Editor({
                         onClick={() => pickCoverImage(1)}
                         className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
                       >
-                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true" className="h-3 w-3">
-                          <path
-                            d="m4.5 2.5 3.5 3.5-3.5 3.5"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <ChevronRight className="h-3 w-3" aria-hidden="true" />
                       </button>
                     </div>
                   )}
@@ -1152,18 +1103,7 @@ export function Editor({
                                           title={r.full}
                                           className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
                                         >
-                                          <svg
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            aria-hidden="true"
-                                            className="h-3.5 w-3.5 shrink-0"
-                                          >
-                                            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                          </svg>
+                                          <Folder className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                                           <span className="truncate">{r.value}</span>
                                         </button>
                                       ) : (
@@ -1330,20 +1270,7 @@ export function Editor({
                                     onClick={() => setLoudnessHelpOpen(true)}
                                     className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
                                   >
-                                    <svg
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="h-3.5 w-3.5"
-                                      aria-hidden="true"
-                                    >
-                                      <circle cx="12" cy="12" r="10" />
-                                      <line x1="12" y1="16" x2="12" y2="12" />
-                                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                                    </svg>
+                                    <Info className="h-3.5 w-3.5" aria-hidden="true" />
                                     <Tooltip label={tr('editor.loudnessHelpTitle')} align="end" />
                                   </button>
                                 )}
@@ -1398,21 +1325,7 @@ export function Editor({
                     onClick={onOpenRename}
                     className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                      className="h-3 w-3"
-                    >
-                      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                      <path d="M21 3v5h-5" />
-                      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                      <path d="M3 21v-5h5" />
-                    </svg>
+                    <RefreshCw className="h-3 w-3" aria-hidden="true" />
                     {tr('editor.regenerate')}
                     <Tooltip label={tr('editor.regenerateHint')} align="end" />
                   </button>
@@ -1510,25 +1423,7 @@ export function Editor({
                 onClick={() => setNormalizeOpen(true)}
                 className="press group relative flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5"
-                >
-                  <line x1="4" y1="21" x2="4" y2="14" />
-                  <line x1="4" y1="10" x2="4" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12" y2="3" />
-                  <line x1="20" y1="21" x2="20" y2="16" />
-                  <line x1="20" y1="12" x2="20" y2="3" />
-                  <line x1="1" y1="14" x2="7" y2="14" />
-                  <line x1="9" y1="8" x2="15" y2="8" />
-                  <line x1="17" y1="16" x2="23" y2="16" />
-                </svg>
+                <SlidersVertical className="h-3.5 w-3.5" aria-hidden="true" />
                 {tr(`normalize.mode.${normalizeCfg.mode}`)} ·{' '}
                 {normalizeCfg.mode === 'loudness'
                   ? `${normalizeCfg.targetLufs} LUFS`
@@ -1745,20 +1640,10 @@ function ExportButton({
             : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
         }
       >
-        <svg
-          viewBox="0 0 12 12"
-          fill="none"
+        <ChevronDown
           aria-hidden="true"
           className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-        >
-          <path
-            d="m2.5 4.5 3.5 3.5 3.5-3.5"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        />
       </button>
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
@@ -1775,18 +1660,7 @@ function ExportButton({
             >
               {tr(`settings.formats.${id}`)}
               {id === exportedFormat && (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5 text-good"
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
               )}
             </button>
           ))}
@@ -1851,20 +1725,10 @@ function SectionHeader({ title, open, onToggle, right }: SectionHeaderProps): Re
         onClick={onToggle}
         className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
       >
-        <svg
-          viewBox="0 0 12 12"
-          fill="none"
+        <ChevronRight
           aria-hidden="true"
           className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
-        >
-          <path
-            d="m4.5 2.5 3.5 3.5-3.5 3.5"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        />
         {title}
       </button>
       {right}
@@ -1898,18 +1762,12 @@ function StarRating({
             onClick={() => onChange(n === stars ? '' : String(n))}
             className={`press ${filled ? 'text-warn' : 'text-fg-faint hover:text-fg-dim'}`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill={filled ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+            <Star
               className="h-4 w-4"
-            >
-              <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.9 6.2 20.9l1.1-6.5L2.6 9.3l6.5-.9z" />
-            </svg>
+              fill={filled ? 'currentColor' : 'none'}
+              strokeWidth={1.6}
+              aria-hidden="true"
+            />
           </button>
         )
       })}

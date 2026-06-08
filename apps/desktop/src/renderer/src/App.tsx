@@ -1,3 +1,19 @@
+import {
+  Activity,
+  AudioLines,
+  ChartColumn,
+  CircleCheckBig,
+  List,
+  type LucideIcon,
+  RefreshCw,
+  Search,
+  Settings as SettingsIcon,
+  SquareCheckBig,
+  Tag,
+  Trash2,
+  TriangleAlert,
+  Upload,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -100,50 +116,13 @@ function newTrack(path: string): TrackItem {
   }
 }
 
-// The glyph for each list filter chip. Drawn inside a shared 24×24 stroked <svg> so the
-// icons stay visually consistent with the rest of the toolbar.
-function filterIcon(mode: QualityFilter): React.JSX.Element {
-  switch (mode) {
-    case 'suspect':
-      return (
-        <>
-          <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-          <path d="M12 9v4" />
-          <path d="M12 17h.01" />
-        </>
-      )
-    case 'good':
-      return (
-        <>
-          <circle cx="12" cy="12" r="10" />
-          <path d="m9 12 2 2 4-4" />
-        </>
-      )
-    case 'unanalyzed':
-      return (
-        <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
-      )
-    case 'unconverted':
-      return (
-        <>
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-          <path d="M21 3v5h-5" />
-          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-          <path d="M3 21v-5h5" />
-        </>
-      )
-    default:
-      return (
-        <>
-          <line x1="8" y1="6" x2="21" y2="6" />
-          <line x1="8" y1="12" x2="21" y2="12" />
-          <line x1="8" y1="18" x2="21" y2="18" />
-          <line x1="3" y1="6" x2="3.01" y2="6" />
-          <line x1="3" y1="12" x2="3.01" y2="12" />
-          <line x1="3" y1="18" x2="3.01" y2="18" />
-        </>
-      )
-  }
+// One Lucide glyph per list-filter chip, kept visually consistent with the toolbar.
+const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
+  all: List,
+  suspect: TriangleAlert,
+  good: CircleCheckBig,
+  unanalyzed: AudioLines,
+  unconverted: RefreshCw,
 }
 
 export default function App(): React.JSX.Element {
@@ -1010,19 +989,7 @@ export default function App(): React.JSX.Element {
                 aria-label={tr('header.selectAll')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
+                <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
                 <Tooltip label={tr('header.selectAll')} align="end" />
               </button>
               <button
@@ -1032,19 +999,7 @@ export default function App(): React.JSX.Element {
                 aria-label={tr('header.fillFromName')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                >
-                  <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
-                  <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
-                </svg>
+                <Tag className="h-4 w-4" aria-hidden="true" />
                 <Tooltip label={tr('header.fillFromName')} align="end" />
               </button>
               <button
@@ -1054,19 +1009,7 @@ export default function App(): React.JSX.Element {
                 aria-label={tr('commands.findReplace')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
+                <Search className="h-4 w-4" aria-hidden="true" />
                 <Tooltip label={tr('commands.findReplace')} align="end" />
               </button>
               <button
@@ -1087,18 +1030,10 @@ export default function App(): React.JSX.Element {
                     : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
                 }`}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+                <Activity
                   className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
-                >
-                  <path d="M3 12h4l2-7 4 14 2-7h4" />
-                </svg>
+                  aria-hidden="true"
+                />
                 {analysis && (
                   <span data-testid="analyze-progress" className="text-xs tabular-nums">
                     {analysis.done}/{analysis.total}
@@ -1154,20 +1089,7 @@ export default function App(): React.JSX.Element {
                 aria-label={tr('header.export')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                >
-                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                  <path d="M12 3v12" />
-                  <path d="m8 7 4-4 4 4" />
-                </svg>
+                <Upload className="h-4 w-4" aria-hidden="true" />
                 <Tooltip label={tr('header.export')} align="end" />
               </button>
               <div
@@ -1181,20 +1103,7 @@ export default function App(): React.JSX.Element {
                 aria-label={tr('header.clearAll')}
                 className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                </svg>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
                 <Tooltip label={tr('header.clearAll')} align="end" />
               </button>
             </>
@@ -1217,21 +1126,7 @@ export default function App(): React.JSX.Element {
             className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.stats')}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="h-4 w-4"
-            >
-              <line x1="4" y1="20" x2="20" y2="20" />
-              <rect x="6" y="12" width="3" height="6" />
-              <rect x="11" y="8" width="3" height="10" />
-              <rect x="16" y="4" width="3" height="14" />
-            </svg>
+            <ChartColumn className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -1240,19 +1135,7 @@ export default function App(): React.JSX.Element {
             className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             aria-label={tr('header.settings')}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="h-4 w-4"
-            >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+            <SettingsIcon className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -1285,6 +1168,7 @@ export default function App(): React.JSX.Element {
                                 : qualityTally.unconverted
                       const active = qualityFilter === mode
                       const name = tr(`sidebar.filter.${mode}`)
+                      const Icon = FILTER_ICONS[mode]
                       // Color-coded dot draws the eye to buckets that need attention: amber for
                       // suspect (likely fake), accent for the still-to-convert backlog.
                       const dot =
@@ -1308,18 +1192,7 @@ export default function App(): React.JSX.Element {
                           }`}
                         >
                           <span className="relative">
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
-                              className="h-4 w-4"
-                            >
-                              {filterIcon(mode)}
-                            </svg>
+                            <Icon className="h-4 w-4" aria-hidden="true" />
                             {dot && (
                               <span
                                 className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
@@ -1403,20 +1276,11 @@ export default function App(): React.JSX.Element {
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
               <div className="max-w-sm">
-                <svg
-                  viewBox="0 0 48 48"
-                  fill="currentColor"
+                <AudioLines
                   aria-hidden="true"
+                  strokeWidth={1.75}
                   className="mx-auto mb-5 h-12 w-12 text-fg-faint"
-                >
-                  <rect x="4" y="19" width="4" height="10" rx="2" />
-                  <rect x="10" y="15" width="4" height="18" rx="2" />
-                  <rect x="16" y="10" width="4" height="28" rx="2" />
-                  <rect x="22" y="5" width="4" height="38" rx="2" />
-                  <rect x="28" y="10" width="4" height="28" rx="2" />
-                  <rect x="34" y="15" width="4" height="18" rx="2" />
-                  <rect x="40" y="19" width="4" height="10" rx="2" />
-                </svg>
+                />
                 <p className="text-[15px] font-medium text-balance text-fg-muted">
                   {tr('empty.title')}
                 </p>
