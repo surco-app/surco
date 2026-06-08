@@ -22,8 +22,8 @@
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta · gratis para siempre",
-  "betaNote": "Surco está en beta y es gratis — y seguirá siéndolo. Sin cuenta, sin suscripción.",
+  "betaPill": "Beta · gratis durante la beta",
+  "betaNote": "Surco está en beta y es gratis. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
   },
