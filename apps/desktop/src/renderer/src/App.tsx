@@ -71,6 +71,7 @@ import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
+import { pageScrollTop } from './lib/scroll'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
@@ -838,8 +839,29 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [tracks[next].id], anchor: tracks[next].id })
     // Move DOM focus with the selection so the native focus ring follows the
     // keyboard instead of staying on the last clicked row, which left two rows
-    // looking highlighted at once.
-    document.querySelectorAll<HTMLButtonElement>('[data-testid="track-row"]')[next]?.focus()
+    // looking highlighted at once. preventScroll: we page the list ourselves below
+    // rather than let the browser nudge the row flush to the margin.
+    const row = document.querySelectorAll<HTMLButtonElement>('[data-testid="track-row"]')[next]
+    if (!row) return
+    row.focus({ preventScroll: true })
+    const container = listScrollRef.current
+    if (!container) return
+    const cRect = container.getBoundingClientRect()
+    const rRect = row.getBoundingClientRect()
+    const header = container.querySelector<HTMLElement>('[data-testid="quality-filter"]')
+    const top = pageScrollTop({
+      delta,
+      rowTop: rRect.top - cRect.top,
+      rowBottom: rRect.bottom - cRect.top,
+      viewport: container.clientHeight,
+      headerH: header?.offsetHeight ?? 0,
+      // The floating player reserves the list's bottom 128px (pb-32 above).
+      footerH: playerVisible && playerTrack ? 128 : 0,
+      rowStep: rRect.height + 4, // row height + the gap-1 between rows
+      scrollTop: container.scrollTop,
+    })
+    // Ease into the new page rather than snapping, so the eye can follow the jump.
+    if (top !== null) container.scrollTo({ top, behavior: 'smooth' })
   }
 
   const sidebar = useResizableWidth(300, 300, 600)
