@@ -17,14 +17,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
-  DiscogsRelease,
-  DiscogsSearchResult,
   DiscogsTrack,
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
+import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
@@ -56,10 +55,8 @@ import {
   buildReleaseMeta,
   confidenceTier,
   type ReleaseMetaPatch,
-  resultFromRelease,
   stepImageIndex,
 } from '../lib/release'
-import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
@@ -70,11 +67,6 @@ import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-
-// How many search results to probe for the file's track before giving up. The
-// probe loads a full release per result, so this caps the Discogs calls a single
-// search can make and keeps it well under the rate limit.
-const MAX_AUTO_PROBE = 8
 
 // Per-grade colour for the analysis stat cells, reusing the good/warn/danger
 // tokens (Tokyo Night). The dot is a solid status light; the value text carries
@@ -175,12 +167,8 @@ export function Editor({
       : undefined
   const displayCover = isMulti ? sharedCover : item.coverUrl
   const { t: tr } = useTranslation()
-  const [query, setQuery] = useState(item.query)
-  const [results, setResults] = useState<DiscogsSearchResult[]>([])
-  const [release, setRelease] = useState<DiscogsRelease | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [loadingId, setLoadingId] = useState<number | null>(null)
-  const [error, setError] = useState('')
+  const { query, setQuery, doSearch, results, release, loadingId, busy, error, previewRelease } =
+    useDiscogsBrowser(item, tr)
   const [coverDragging, setCoverDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
@@ -216,10 +204,6 @@ export function Editor({
   const [originalCover] = useState<{ url?: string; path?: string }>(() => ({
     url: item.embeddedCover,
   }))
-  const releaseRef = useRef<DiscogsRelease | null>(null)
-  // Bumped on every search so an in-flight auto-probe from a superseded search
-  // bails instead of opening a release the user is no longer looking for.
-  const searchToken = useRef(0)
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const discogs = useResizableWidth(315, 300, 720)
@@ -243,65 +227,6 @@ export function Editor({
   // Clear the stale size when the artwork changes; onLoad fills it in again.
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
   useEffect(() => setCoverDims(null), [displayCover])
-
-  // Walk the results from the top, load each release's tracklist, and open the
-  // first one that confidently holds the file's track — so the user lands on the
-  // right album instead of opening each result by hand. Capped and cancellable so
-  // it bounds the Discogs calls and a newer search wins.
-  async function autoOpenMatch(found: DiscogsSearchResult[], token: number): Promise<void> {
-    if (!item.meta.title.trim()) return
-    for (const result of found.slice(0, MAX_AUTO_PROBE)) {
-      let rel: DiscogsRelease
-      try {
-        rel = await loadRelease(result.id)
-      } catch {
-        continue
-      }
-      if (searchToken.current !== token) return
-      const m = bestMatch(rel.tracklist, {
-        title: item.meta.title,
-        durationSec: item.duration,
-        trackNumber: item.meta.trackNumber,
-        artist: item.meta.artist,
-      })
-      if (m && confidenceTier(m.confidence) !== 'low') {
-        setRelease(rel)
-        return
-      }
-    }
-  }
-
-  async function doSearch(): Promise<void> {
-    if (!query.trim()) return
-    const token = ++searchToken.current
-    setBusy(true)
-    setError('')
-    setRelease(null)
-    try {
-      const id = parseReleaseId(query)
-      if (id !== null) {
-        const rel = await loadRelease(id)
-        setResults([resultFromRelease(rel)])
-        setRelease(rel)
-      } else {
-        const found = await window.api.searchDiscogs(query)
-        if (searchToken.current !== token) return
-        setResults(found)
-        await autoOpenMatch(found, token)
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tr('editor.searchError'))
-    } finally {
-      if (searchToken.current === token) setBusy(false)
-    }
-  }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: must depend on the query value, not doSearch's identity — with doSearch the effect re-ran every render and looped search requests until Discogs returned 429. Debounced so a search fires once, 500ms after typing stops.
-  useEffect(() => {
-    if (!query.trim()) return
-    const id = setTimeout(() => void doSearch(), 500)
-    return () => clearTimeout(id)
-  }, [query])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: must analyze once per input, not on onChange/tr/spectrum identity — depending on those restarted analysis mid-flight, and a superseded run's cleanup left the spinner stranded (its finally never ran). The Editor remounts per track (key={track.id}), so keying on inputPath runs it exactly once. showSpectrum is included so enabling the section later analyzes the current track instead of waiting for a track switch.
   useEffect(() => {
@@ -343,40 +268,6 @@ export function Editor({
   // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
   // 'idle' off macOS, where the badge hides.
   const inLibrary = useAppleMusicLookup(item.meta.artist, item.meta.title)
-
-  async function loadRelease(id: number): Promise<DiscogsRelease> {
-    if (releaseRef.current?.id === id) return releaseRef.current
-    const rel = await window.api.getRelease(id)
-    releaseRef.current = rel
-    return rel
-  }
-
-  // A single click only previews the release (loads its tracklist) — it must
-  // not touch the song's data, so browsing results never clobbers what the user
-  // already entered. Applying the metadata is the deliberate double click.
-  async function previewRelease(result: DiscogsSearchResult): Promise<void> {
-    // Clicking the open release again collapses it; the ref keeps the tracklist
-    // cached so reopening doesn't refetch.
-    if (release?.id === result.id) {
-      setRelease(null)
-      return
-    }
-    if (releaseRef.current?.id === result.id) {
-      setRelease(releaseRef.current)
-      return
-    }
-    setBusy(true)
-    setLoadingId(result.id)
-    setError('')
-    try {
-      setRelease(await loadRelease(result.id))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tr('editor.releaseError'))
-    } finally {
-      setBusy(false)
-      setLoadingId(null)
-    }
-  }
 
   function selectTrack(track: DiscogsTrack): void {
     if (!release) return
