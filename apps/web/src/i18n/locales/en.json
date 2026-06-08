@@ -204,12 +204,12 @@
   },
   "pricing": {
     "kicker": "Pricing",
-    "title": "Free. The whole thing.",
-    "lede": "Every feature, every format, every update. No account, no subscription, no upsell.",
+    "title": "Free during the beta",
+    "lede": "Every feature, every format. No account, no subscription while the beta lasts.",
     "card": {
       "plan": "Free",
       "price": "€0",
-      "period": "forever",
+      "period": "during the beta",
       "features": [
         "Every format — AIFF, WAV, FLAC, MP3",
         "Discogs tagging and full-album match",

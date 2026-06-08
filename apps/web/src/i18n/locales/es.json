@@ -204,12 +204,12 @@
   },
   "pricing": {
     "kicker": "Precio",
-    "title": "Gratis. Todo.",
-    "lede": "Todas las funciones, todos los formatos, todas las actualizaciones. Sin cuenta, sin suscripción, sin sustos.",
+    "title": "Gratis durante la beta",
+    "lede": "Todas las funciones, todos los formatos. Sin cuenta y sin suscripción mientras dura la beta.",
     "card": {
       "plan": "Gratis",
       "price": "0 €",
-      "period": "para siempre",
+      "period": "durante la beta",
       "features": [
         "Todos los formatos — AIFF, WAV, FLAC, MP3",
         "Etiquetado Discogs y emparejado de disco entero",
