@@ -44,6 +44,7 @@ import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
+import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './lib/autoMatch'
 import {
   type BatchOutcome,
   type BatchSummary,
@@ -63,6 +64,7 @@ import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
+import { buildReleaseMeta } from './lib/release'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
@@ -79,6 +81,11 @@ const READ_CONCURRENCY = 6
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
+
+// Auto-match fires a Discogs search plus release loads per track, so the sweep stays
+// at two in flight: Discogs' ~60 req/min is shared across the whole crate, and a
+// wider fan-out would burn the quota (and risk 429s) faster than it helps.
+const AUTO_MATCH_CONCURRENCY = 2
 
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
@@ -196,6 +203,11 @@ export default function App(): React.JSX.Element {
   // killing the ones already handed to ffmpeg.
   const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
   const analyzeCancel = useRef(false)
+  // Auto-match sweep: progress (null when idle), a cancel flag the workers poll, and a
+  // ref guard so an import landing mid-sweep doesn't start a second concurrent run.
+  const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
+  const matchCancel = useRef(false)
+  const matchingRef = useRef(false)
   // Set by the Cancel button to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -291,6 +303,9 @@ export default function App(): React.JSX.Element {
     })
     setTracks((prev) => [...prev, ...items])
     setSelection((s) => (s.anchor ? s : { ids: [items[0].id], anchor: items[0].id }))
+    // Opt-in: a fresh drop kicks off the Discogs auto-match for just these files, so the
+    // crate tags itself as it lands. Needs a token to search, so it's gated on both.
+    if (settings?.autoMatch && settings.discogsToken) autoMatchTracks(items)
   }
 
   const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
@@ -399,6 +414,51 @@ export default function App(): React.JSX.Element {
       }
     }).finally(() => setAnalysis(null))
   }, [analysis, queryClient])
+
+  // Auto-matches a batch of tracks against Discogs and applies any high-confidence
+  // release outright (the bar autoMatchRelease enforces), marking each so the row badges
+  // it and the filter can isolate the auto-filled ones for a spot-check. Runs on import
+  // when the setting is on, and on demand from the toolbar; tracksToAutoMatch skips the
+  // already-matched so a re-run only fills gaps. Capped and cancellable like the quality
+  // sweep, with a ref guard so a drop mid-run doesn't spawn a rival sweep on the quota.
+  const autoMatchTracks = useCallback(
+    (candidates: TrackItem[]): void => {
+      const targets = tracksToAutoMatch(candidates)
+      if (matchingRef.current || targets.length === 0) return
+      matchingRef.current = true
+      matchCancel.current = false
+      let done = 0
+      setMatching({ done: 0, total: targets.length })
+      void mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
+        if (matchCancel.current) return
+        try {
+          const m = await autoMatchRelease(t.query, matchTargetOf(t), window.api)
+          if (m && !matchCancel.current) {
+            // Keep the file's own cover (the release's is often smaller); fill from the
+            // release only when the file carries none — mirroring the editor's apply.
+            const patch = buildReleaseMeta(t.meta, m.release, m.track, {
+              url: t.coverUrl,
+              path: t.coverPath,
+              keep: !!t.coverUrl,
+            })
+            updateTrack(t.id, {
+              meta: patch.meta,
+              coverUrl: patch.coverUrl,
+              coverPath: patch.coverPath,
+              autoMatched: true,
+            })
+          }
+        } finally {
+          done += 1
+          setMatching((s) => (s ? { ...s, done } : s))
+        }
+      }).finally(() => {
+        matchingRef.current = false
+        setMatching(null)
+      })
+    },
+    [updateTrack],
+  )
 
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
@@ -749,6 +809,9 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = qualityCounts(tracksView)
   const visibleTracks = filterByQuality(tracksView, qualityFilter)
+  // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
+  // so it disables once every track is matched (or there's nothing to match).
+  const autoMatchable = tracksToAutoMatch(tracksView).length
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -1084,6 +1147,47 @@ export default function App(): React.JSX.Element {
                     analysis
                       ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
                       : tr('header.analyzeQuality')
+                  }
+                  align="end"
+                />
+              </button>
+              <button
+                type="button"
+                data-testid="auto-match"
+                onClick={
+                  matching
+                    ? () => {
+                        matchCancel.current = true
+                      }
+                    : () => autoMatchTracks(tracksView)
+                }
+                disabled={!matching && (!settings?.discogsToken || autoMatchable === 0)}
+                aria-label={tr('header.autoMatch')}
+                className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                  matching
+                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                    : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+                }`}
+              >
+                <Sparkles
+                  className={`h-4 w-4 ${matching ? 'animate-pulse' : ''}`}
+                  aria-hidden="true"
+                />
+                {matching && (
+                  <span data-testid="auto-match-progress" className="text-xs tabular-nums">
+                    {matching.done}/{matching.total}
+                  </span>
+                )}
+                <Tooltip
+                  label={
+                    matching
+                      ? tr('header.autoMatchingCount', {
+                          done: matching.done,
+                          total: matching.total,
+                        })
+                      : !settings?.discogsToken
+                        ? tr('header.autoMatchNoToken')
+                        : tr('header.autoMatch')
                   }
                   align="end"
                 />

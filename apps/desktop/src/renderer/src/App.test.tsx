@@ -111,6 +111,44 @@ describe('App quality triage', () => {
   })
 })
 
+describe('App auto-match', () => {
+  // Auto-match exists to tag a crate from Discogs without a click per track: the toolbar
+  // sweep searches each file, and when a release matches confidently it applies the
+  // metadata outright and badges the row so the user can spot-check what was filled. This
+  // is the end-to-end wiring (button → headless probe → apply → badge) that must hold.
+  const release = {
+    id: 1,
+    title: 'Album',
+    artists: [{ name: 'Artist' }],
+    tracklist: [{ position: '1', title: 'My Song', duration: '3:00' }],
+  }
+
+  it('applies a confident Discogs match unattended and flags the row', async () => {
+    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    const getRelease = vi.fn().mockResolvedValue(release)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      // A title + duration the release agrees with scores 'high', the bar for applying.
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      searchDiscogs,
+      getRelease,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    expect(searchDiscogs).toHaveBeenCalled()
+  })
+
+  it('leaves the button disabled without a Discogs token to search', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }) })
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('auto-match')).toBeDisabled()
+  })
+})
+
 describe('App multi-select convert', () => {
   // The reason this matters: users with a large crate (e.g. 400 tracks) tag a handful, select
   // just those, and hit convert expecting only the selection to run. Converting the whole list

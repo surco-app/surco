@@ -1,5 +1,30 @@
 import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
+import type { TrackItem } from '../types'
 import { bestMatch, confidenceTier, type TrackMatchTarget } from './release'
+
+// The tracks an auto-match sweep should attempt: those not already carrying a Discogs
+// match and holding the title plus search query a probe needs. Skipping tracks that
+// already have a release id (auto-filled earlier or matched by hand) means a re-run
+// only fills the gaps instead of re-tagging — and never clobbers the user's own pick.
+export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
+  return tracks.filter(
+    (t) =>
+      !t.autoMatched &&
+      !t.meta.discogsReleaseId &&
+      t.query.trim() !== '' &&
+      t.meta.title.trim() !== '',
+  )
+}
+
+// What the sweep reads off a track to score release candidates against it.
+export function matchTargetOf(track: TrackItem): TrackMatchTarget {
+  return {
+    title: track.meta.title,
+    durationSec: track.duration,
+    trackNumber: track.meta.trackNumber,
+    artist: track.meta.artist,
+  }
+}
 
 // How many search results to probe before giving up. Each probe loads a full
 // release (one Discogs call), so this caps the calls one file can make — matching

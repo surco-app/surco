@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { DiscogsRelease, DiscogsSearchResult } from '../../../shared/types'
-import { autoMatchRelease } from './autoMatch'
+import type { TrackItem } from '../types'
+import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
 
 function release(id: number, over: Partial<DiscogsRelease> = {}): DiscogsRelease {
   return { id, title: 'Album', artists: [], tracklist: [], ...over }
@@ -84,5 +85,53 @@ describe('autoMatchRelease', () => {
     }
     await autoMatchRelease('my song', target, api, 8)
     expect(api.getRelease).toHaveBeenCalledTimes(8)
+  })
+})
+
+describe('tracksToAutoMatch', () => {
+  const track = (over: Partial<TrackItem> = {}): TrackItem =>
+    ({
+      query: 'artist title',
+      autoMatched: false,
+      meta: { title: 'Title', discogsReleaseId: undefined },
+      ...over,
+    }) as TrackItem
+
+  it('keeps tracks that have a query and title but no match yet', () => {
+    expect(tracksToAutoMatch([track()])).toHaveLength(1)
+  })
+
+  it('skips tracks already auto-matched so a re-run only fills the gaps', () => {
+    expect(tracksToAutoMatch([track({ autoMatched: true })])).toHaveLength(0)
+  })
+
+  it('skips tracks the user already tagged from a release, never clobbering their pick', () => {
+    expect(
+      tracksToAutoMatch([
+        track({ meta: { title: 'Title', discogsReleaseId: '99' } as TrackItem['meta'] }),
+      ]),
+    ).toHaveLength(0)
+  })
+
+  it('skips tracks with nothing to search or score on', () => {
+    expect(tracksToAutoMatch([track({ query: '   ' })])).toHaveLength(0)
+    expect(tracksToAutoMatch([track({ meta: { title: '  ' } as TrackItem['meta'] })])).toHaveLength(
+      0,
+    )
+  })
+})
+
+describe('matchTargetOf', () => {
+  it('reads the title, duration, track number and artist a probe scores against', () => {
+    const t = {
+      duration: 211,
+      meta: { title: 'Song', trackNumber: '3', artist: 'Artist' },
+    } as TrackItem
+    expect(matchTargetOf(t)).toEqual({
+      title: 'Song',
+      durationSec: 211,
+      trackNumber: '3',
+      artist: 'Artist',
+    })
   })
 })

@@ -30,6 +30,9 @@
     "fillFromName": "Rellenar todo desde el nombre",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
+    "autoMatch": "Auto-emparejar todas las pistas en Discogs",
+    "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
+    "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
     "export": "Exportar a software DJ",
     "clearAll": "Vaciar la lista"
   },

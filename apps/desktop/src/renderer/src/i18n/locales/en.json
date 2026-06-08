@@ -30,6 +30,9 @@
     "fillFromName": "Fill all tags from file name",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "autoMatch": "Auto-match all tracks on Discogs",
+    "autoMatchNoToken": "Add a Discogs token in Settings to auto-match",
+    "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
     "export": "Export to DJ software",
     "clearAll": "Clear the list"
   },
