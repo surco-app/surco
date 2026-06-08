@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -100,9 +100,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                   </span>
                 )}
               </span>
-              <span aria-hidden="true" className="text-fg-faint">
-                →
-              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-fg-faint" aria-hidden="true" />
               <div className="relative min-w-0 flex-1">
                 <select
                   data-testid={`match-select-${a.id}`}
@@ -142,7 +140,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                     data-confidence={tier}
                     className={`group relative ${tier === 'high' ? 'text-good' : 'text-warn'}`}
                   >
-                    ✓
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
                     <Tooltip label={tr('match.suggested')} align="end" />
                   </span>
                 )}
@@ -160,7 +158,14 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
           justApplied ? 'bg-good' : 'bg-[var(--color-accent)]'
         }`}
       >
-        {justApplied ? `✓ ${tr('match.applied')}` : tr('match.apply', { count: matchedCount })}
+        {justApplied ? (
+          <span className="inline-flex items-center justify-center gap-1.5">
+            <Check className="h-4 w-4" aria-hidden="true" />
+            {tr('match.applied')}
+          </span>
+        ) : (
+          tr('match.apply', { count: matchedCount })
+        )}
       </button>
     </div>
   )

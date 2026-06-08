@@ -1,5 +1,7 @@
 import {
   ChartColumn,
+  ChevronDown,
+  ChevronUp,
   Image,
   Keyboard,
   List,
@@ -601,7 +603,7 @@ export function SettingsModal({
                           className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                           aria-label={tr('settings.moveUp')}
                         >
-                          ↑
+                          <ChevronUp className="h-4 w-4" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
@@ -610,7 +612,7 @@ export function SettingsModal({
                           className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                           aria-label={tr('settings.moveDown')}
                         >
-                          ↓
+                          <ChevronDown className="h-4 w-4" aria-hidden="true" />
                         </button>
                         <button
                           type="button"

@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -135,7 +136,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
                   <li key={`${ex.id}-${ex.field}`} className="flex items-center gap-2 truncate">
                     <span className="shrink-0 text-fg-faint">{tr(`fields.${ex.field}`)}</span>
                     <span className="truncate text-fg-dim line-through">{ex.before}</span>
-                    <span className="shrink-0 text-fg-faint">→</span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-fg-faint" aria-hidden="true" />
                     <span className="truncate text-fg">{ex.after}</span>
                   </li>
                 ))}

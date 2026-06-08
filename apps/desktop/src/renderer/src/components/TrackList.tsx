@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -144,7 +145,7 @@ const TrackRow = memo(function TrackRow({
         onClick={() => onRemove(t.id)}
         className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/60 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] backdrop-blur-sm transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
       >
-        ✕
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </li>
   )
