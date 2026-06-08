@@ -4,8 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Folder,
-  Info,
   RefreshCw,
   SlidersVertical,
   Star,
@@ -31,26 +29,10 @@ import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
-import { formatTime } from '../lib/duration'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
-import { formatFileSize } from '../lib/properties'
-import {
-  formatDb,
-  formatKHz,
-  formatPercent,
-  type Grade,
-  gradeBalance,
-  gradeCrest,
-  gradeDcOffset,
-  gradeLra,
-  gradeLufs,
-  gradeNoiseFloor,
-  gradeTruePeak,
-  isLowResCover,
-  qualityVerdict,
-} from '../lib/quality'
+import { formatKHz, isLowResCover, qualityVerdict } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -61,27 +43,15 @@ import {
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
+import { LoudnessReadout } from './LoudnessReadout'
 import { NormalizeControls } from './NormalizeControls'
+import { PropertiesReadout } from './PropertiesReadout'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { Spectrogram } from './Spectrogram'
 import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-
-// Per-grade colour for the analysis stat cells, reusing the good/warn/danger
-// tokens (Tokyo Night). The dot is a solid status light; the value text carries
-// the same colour so the verdict reads at a glance.
-const GRADE_DOT: Record<Grade, string> = {
-  good: 'bg-good',
-  warn: 'bg-warn',
-  bad: 'bg-danger',
-}
-const GRADE_TEXT: Record<Grade, string> = {
-  good: 'text-good',
-  warn: 'text-warn',
-  bad: 'text-danger',
-}
 
 interface Props {
   item: TrackItem
@@ -825,145 +795,18 @@ export function Editor({
                 onToggle={() => setPropertiesOpen((v) => !v)}
               />
               {propertiesOpen &&
-                (properties
-                  ? (() => {
-                      const p = properties
-                      const ext = item.fileName.includes('.')
-                        ? (item.fileName.split('.').pop() ?? '').toUpperCase()
-                        : ''
-                      // Show only the containing folder's name (the full path lives in
-                      // the tooltip) so the long absolute path doesn't blow out the row.
-                      const folderName =
-                        item.inputPath
-                          .slice(
-                            0,
-                            Math.max(
-                              item.inputPath.lastIndexOf('/'),
-                              item.inputPath.lastIndexOf('\\'),
-                            ),
-                          )
-                          .split(/[/\\]/)
-                          .pop() || item.inputPath
-                      const modeKey =
-                        p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'
-                      const fmtDate = (ms: number | null): string =>
-                        ms === null
-                          ? ''
-                          : new Date(ms).toLocaleString(undefined, {
-                              dateStyle: 'medium',
-                              timeStyle: 'short',
-                            })
-                      type PropRow = { id: string; label: string; value: string; full?: string }
-                      const row = (
-                        id: string,
-                        label: string,
-                        value: string,
-                        full?: string,
-                      ): PropRow | false => (value ? { id, label, value, full } : false)
-                      const isRow = (r: PropRow | false): r is PropRow => r !== false
-                      const groups = [
-                        {
-                          id: 'audio',
-                          label: tr('editor.propertiesGroupAudio'),
-                          rows: [
-                            row('kind', tr('editor.propKind'), p.container.toUpperCase()),
-                            row('codec', tr('editor.propCodec'), p.codec),
-                            row(
-                              'sampleRate',
-                              tr('editor.propSampleRate'),
-                              p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
-                            ),
-                            row(
-                              'bitDepth',
-                              tr('editor.propBitDepth'),
-                              p.bitDepth !== null
-                                ? tr('editor.propBitDepthValue', { bits: p.bitDepth })
-                                : '',
-                            ),
-                            row(
-                              'channels',
-                              tr('editor.propChannels'),
-                              p.channels ? String(p.channels) : '',
-                            ),
-                            row(
-                              'channelMode',
-                              tr('editor.propChannelMode'),
-                              p.channels ? tr(`editor.channelMode${modeKey}`) : '',
-                            ),
-                            row(
-                              'bitrate',
-                              tr('editor.propBitrate'),
-                              p.bitrateKbps !== null
-                                ? tr('editor.propBitrateValue', { kbps: p.bitrateKbps })
-                                : '',
-                            ),
-                            row(
-                              'duration',
-                              tr('editor.propDuration'),
-                              item.duration !== undefined ? formatTime(item.duration) : '',
-                            ),
-                            row('tagFormats', tr('editor.propTagFormats'), p.tagFormats.join(', ')),
-                          ].filter(isRow),
-                        },
-                        {
-                          id: 'file',
-                          label: tr('editor.propertiesGroupFile'),
-                          rows: [
-                            row('fileName', tr('editor.propFileName'), item.fileName),
-                            row('extension', tr('editor.propExtension'), ext),
-                            row('path', tr('editor.propPath'), folderName, item.inputPath),
-                            row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes)),
-                            row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
-                            row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),
-                          ].filter(isRow),
-                        },
-                      ].filter((g) => g.rows.length > 0)
-                      return (
-                        <div data-testid="properties-readout" className="mt-3 space-y-3">
-                          {groups.map((group) => (
-                            <div key={group.id}>
-                              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-                                {group.label}
-                              </div>
-                              <dl className="overflow-hidden rounded-lg bg-[var(--color-field)]">
-                                {group.rows.map((r, i) => (
-                                  <div
-                                    key={r.id}
-                                    data-testid={`property-${r.id}`}
-                                    className={`flex items-center justify-between gap-4 px-3 py-2 ${
-                                      i > 0 ? 'border-t border-[var(--color-line)]' : ''
-                                    }`}
-                                  >
-                                    <dt className="shrink-0 text-xs text-fg-dim">{r.label}</dt>
-                                    <dd className="min-w-0 truncate text-right text-sm font-medium tabular-nums">
-                                      {r.id === 'path' ? (
-                                        <button
-                                          type="button"
-                                          data-testid="property-reveal"
-                                          onClick={() => window.api.reveal(item.inputPath)}
-                                          title={r.full}
-                                          className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
-                                        >
-                                          <Folder className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                          <span className="truncate">{r.value}</span>
-                                        </button>
-                                      ) : (
-                                        <span title={r.full}>{r.value}</span>
-                                      )}
-                                    </dd>
-                                  </div>
-                                ))}
-                              </dl>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })()
-                  : (properties === null || propertiesError) && (
-                      <p className="mt-3 text-xs text-fg-dim">
-                        {tr('editor.propertiesUnavailable')}
-                      </p>
-                    ))}
+                (properties ? (
+                  <PropertiesReadout
+                    properties={properties}
+                    fileName={item.fileName}
+                    inputPath={item.inputPath}
+                    duration={item.duration}
+                  />
+                ) : (
+                  (properties === null || propertiesError) && (
+                    <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
+                  )
+                ))}
             </div>
           )}
 
@@ -1016,136 +859,12 @@ export function Editor({
                         )}
                       </>
                     ) : null)}
-                  {showLoudness &&
-                    loudness &&
-                    (() => {
-                      const loud = loudness
-                      // The astats-derived checks each appear only when measured
-                      // (null = mono, a dead channel, or an unparseable reading).
-                      const cell = (
-                        id: string,
-                        label: string,
-                        value: string,
-                        grade: Grade,
-                        hint: string,
-                      ) => ({ id, label, value, grade, hint })
-                      const groups = [
-                        {
-                          id: 'loudness',
-                          label: tr('editor.loudnessGroupLoudness'),
-                          cells: [
-                            cell(
-                              'lufs',
-                              tr('editor.loudnessLufsLabel'),
-                              `${formatDb(loud.integratedLufs)} LUFS`,
-                              gradeLufs(loud.integratedLufs),
-                              tr('editor.loudnessLufsHint'),
-                            ),
-                            cell(
-                              'peak',
-                              tr('editor.loudnessPeakLabel'),
-                              `${formatDb(loud.truePeakDb)} dBTP`,
-                              gradeTruePeak(loud.truePeakDb),
-                              tr('editor.loudnessPeakHint'),
-                            ),
-                            cell(
-                              'range',
-                              tr('editor.loudnessRangeLabel'),
-                              `${formatDb(loud.lra)} LU`,
-                              gradeLra(loud.lra),
-                              tr('editor.loudnessRangeHint'),
-                            ),
-                            loud.crestDb !== null &&
-                              cell(
-                                'crest',
-                                tr('editor.loudnessCrestLabel'),
-                                `${formatDb(loud.crestDb)} dB`,
-                                gradeCrest(loud.crestDb),
-                                tr('editor.loudnessCrestHint'),
-                              ),
-                          ].filter((c) => c !== false),
-                        },
-                        {
-                          id: 'signal',
-                          label: tr('editor.loudnessGroupSignal'),
-                          cells: [
-                            loud.channelBalanceDb !== null &&
-                              cell(
-                                'balance',
-                                tr('editor.loudnessBalanceLabel'),
-                                `${formatDb(loud.channelBalanceDb)} dB`,
-                                gradeBalance(loud.channelBalanceDb),
-                                tr('editor.loudnessBalanceHint'),
-                              ),
-                            loud.dcOffset !== null &&
-                              cell(
-                                'dc',
-                                tr('editor.loudnessDcLabel'),
-                                formatPercent(loud.dcOffset),
-                                gradeDcOffset(loud.dcOffset),
-                                tr('editor.loudnessDcHint'),
-                              ),
-                            loud.noiseFloorDb !== null &&
-                              cell(
-                                'noise',
-                                tr('editor.loudnessNoiseLabel'),
-                                `${formatDb(loud.noiseFloorDb)} dB`,
-                                gradeNoiseFloor(loud.noiseFloorDb),
-                                tr('editor.loudnessNoiseHint'),
-                              ),
-                          ].filter((c) => c !== false),
-                        },
-                      ].filter((g) => g.cells.length > 0)
-                      return (
-                        <div data-testid="loudness-readout" className="mt-3 space-y-3">
-                          {groups.map((group, gi) => (
-                            <div key={group.id}>
-                              <div className="mb-1.5 flex items-center justify-between">
-                                <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-                                  {group.label}
-                                </span>
-                                {gi === 0 && (
-                                  <button
-                                    type="button"
-                                    data-testid="loudness-help-toggle"
-                                    onClick={() => setLoudnessHelpOpen(true)}
-                                    className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
-                                  >
-                                    <Info className="h-3.5 w-3.5" aria-hidden="true" />
-                                    <Tooltip label={tr('editor.loudnessHelpTitle')} align="end" />
-                                  </button>
-                                )}
-                              </div>
-                              <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(6.5rem,1fr))]">
-                                {group.cells.map((c) => (
-                                  <div
-                                    key={c.id}
-                                    data-testid={`loudness-pill-${c.id}`}
-                                    data-grade={c.grade}
-                                    className="group relative rounded-lg bg-[var(--color-field)] px-3 py-2"
-                                  >
-                                    <div className="flex items-center gap-1.5">
-                                      <span
-                                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`}
-                                      />
-                                      <span className="truncate text-[10px] uppercase tracking-wide text-fg-dim">
-                                        {c.label}
-                                      </span>
-                                    </div>
-                                    <div
-                                      className={`mt-0.5 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}
-                                    >
-                                      {c.value}
-                                    </div>
-                                    <Tooltip label={c.hint} />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })()}
+                  {showLoudness && loudness && (
+                    <LoudnessReadout
+                      loudness={loudness}
+                      onShowHelp={() => setLoudnessHelpOpen(true)}
+                    />
+                  )}
                 </div>
               )}
             </div>
