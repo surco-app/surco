@@ -39,6 +39,42 @@ function settings(over: Partial<Settings> = {}): Settings {
 // which is what makes a quality dot appear on the row.
 const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateHz: 44100 }
 
+// jsdom ships no IntersectionObserver. This stub records what each row observes and reports
+// nothing visible by default, so a test can scroll a specific row into view on demand and
+// assert the visible-gated auto-match only fires for what's on screen.
+const observers: { cb: IntersectionObserverCallback; els: Set<Element> }[] = []
+class MockIntersectionObserver {
+  cb: IntersectionObserverCallback
+  els = new Set<Element>()
+  constructor(cb: IntersectionObserverCallback) {
+    this.cb = cb
+    observers.push({ cb, els: this.els })
+  }
+  observe(el: Element): void {
+    this.els.add(el)
+  }
+  unobserve(el: Element): void {
+    this.els.delete(el)
+  }
+  disconnect(): void {
+    this.els.clear()
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return []
+  }
+}
+
+function scrollRowIntoView(row: HTMLElement): void {
+  const li = row.closest('li')
+  if (!li) return
+  for (const o of observers)
+    if (o.els.has(li))
+      o.cb(
+        [{ target: li, isIntersecting: true } as unknown as IntersectionObserverEntry],
+        o as unknown as IntersectionObserver,
+      )
+}
+
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
@@ -63,6 +99,9 @@ function setApi(over: Record<string, unknown> = {}): void {
 
 beforeEach(() => {
   setApi()
+  observers.length = 0
+  globalThis.IntersectionObserver =
+    MockIntersectionObserver as unknown as typeof IntersectionObserver
   // jsdom ships neither, and App's theme effect reads matchMedia on mount while
   // newTrack mints ids with crypto.randomUUID.
   window.matchMedia = vi.fn().mockReturnValue({
@@ -146,6 +185,30 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
     expect(screen.getByTestId('auto-match')).toBeDisabled()
+  })
+
+  // Dropping a folder of 100 must not fire 100 Discogs searches at once and trip the rate
+  // limit. Import auto-match is gated to the rows on screen: nothing probes until a row is
+  // scrolled into view, and then only that row's file is searched.
+  it('probes only the tracks scrolled into view on import, not the whole drop', async () => {
+    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      searchDiscogs,
+      getRelease: vi.fn().mockResolvedValue(release),
+    })
+    await renderApp()
+    await addTwoTracks()
+
+    // No row is reported visible yet, so the import enqueued both but probed neither.
+    await Promise.resolve()
+    expect(searchDiscogs).not.toHaveBeenCalled()
+
+    scrollRowIntoView(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+    expect(searchDiscogs).toHaveBeenCalledTimes(1)
   })
 })
 

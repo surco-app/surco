@@ -1,6 +1,6 @@
 import { Sparkles, X } from 'lucide-react'
 import type React from 'react'
-import { memo, useCallback, useState } from 'react'
+import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
@@ -21,6 +21,10 @@ interface Props {
   onPrefetch: (id: string) => void
   onSearch: (id: string) => void
   onTrash: (track: TrackItem) => void
+  // Optional viewport tracking: the scroll pane each row observes against and a callback
+  // reporting when a row enters or leaves it, so App can gate auto-match to the rows on screen.
+  scrollRootRef?: RefObject<HTMLElement | null>
+  onVisible?: (id: string, visible: boolean) => void
 }
 
 type MenuState = { track: TrackItem; x: number; y: number }
@@ -41,6 +45,8 @@ interface RowProps {
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
+  scrollRootRef?: RefObject<HTMLElement | null>
+  onVisible?: (id: string, visible: boolean) => void
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -55,13 +61,30 @@ const TrackRow = memo(function TrackRow({
   onRemove,
   onPrefetch,
   onOpenMenu,
+  scrollRootRef,
+  onVisible,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const quality = trackQuality(t)
+  const rowRef = useRef<HTMLLIElement>(null)
+  // Report this row entering/leaving the scroll pane so App can run auto-match for what's on
+  // screen. rootMargin warms rows a little before they're scrolled fully into view.
+  useEffect(() => {
+    const el = rowRef.current
+    if (!onVisible || !el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) onVisible(t.id, entry.isIntersecting)
+      },
+      { root: scrollRootRef?.current ?? null, rootMargin: '300px 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [t.id, onVisible, scrollRootRef])
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
-    <li className="group relative">
+    <li ref={rowRef} className="group relative">
       <button
         type="button"
         data-testid="track-row"
@@ -170,6 +193,8 @@ export function TrackList({
   onPrefetch,
   onSearch,
   onTrash,
+  scrollRootRef,
+  onVisible,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
@@ -190,6 +215,8 @@ export function TrackList({
           onRemove={onRemove}
           onPrefetch={onPrefetch}
           onOpenMenu={openMenu}
+          scrollRootRef={scrollRootRef}
+          onVisible={onVisible}
         />
       ))}
       {menu && (

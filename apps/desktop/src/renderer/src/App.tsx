@@ -44,7 +44,12 @@ import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { canAddToAppleMusic } from './lib/appleMusic'
-import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './lib/autoMatch'
+import {
+  autoMatchRelease,
+  type DiscogsApi,
+  matchTargetOf,
+  tracksToAutoMatch,
+} from './lib/autoMatch'
 import {
   type BatchOutcome,
   type BatchSummary,
@@ -64,6 +69,7 @@ import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
+import { createRateLimiter } from './lib/rateLimiter'
 import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { searchFromTags } from './lib/search'
@@ -168,6 +174,9 @@ export default function App(): React.JSX.Element {
   const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
+  // "on screen" means within this pane, not the whole window.
+  const listScrollRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   // The floating player follows the selection: while it's open, picking another
   // track plays it. Space toggles its visibility; the X (or Space again) closes.
@@ -210,6 +219,27 @@ export default function App(): React.JSX.Element {
   const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
   const matchCancel = useRef(false)
   const matchingRef = useRef(false)
+  // Track ids waiting for an auto-match, mapped to whether the row must be on screen before
+  // it runs. An import enqueues its files visible-only so a 100-track drop probes Discogs for
+  // the handful in view rather than the whole crate at once; the toolbar sweep enqueues
+  // everything. The drain reads this together with which rows are currently visible.
+  const matchQueue = useRef<Map<string, boolean>>(new Map())
+  const visibleIds = useRef<Set<string>>(new Set())
+  // One shared 60-requests-per-minute bucket across every auto-match probe (import sweep and
+  // toolbar sweep alike), so a big crate can't blow past Discogs' rate limit and earn 429s.
+  const discogs = useMemo<DiscogsApi>(() => {
+    const limiter = createRateLimiter(60, 60_000)
+    return {
+      searchDiscogs: async (q) => {
+        await limiter.acquire()
+        return window.api.searchDiscogs(q)
+      },
+      getRelease: async (id) => {
+        await limiter.acquire()
+        return window.api.getRelease(id)
+      },
+    }
+  }, [])
   // Set by the Cancel button to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -306,9 +336,10 @@ export default function App(): React.JSX.Element {
     })
     setTracks((prev) => [...prev, ...items])
     setSelection((s) => (s.anchor ? s : { ids: [items[0].id], anchor: items[0].id }))
-    // Opt-in: a fresh drop kicks off the Discogs auto-match for just these files, so the
-    // crate tags itself as it lands. Needs a token to search, so it's gated on both.
-    if (settings?.autoMatch && settings.discogsToken) autoMatchTracks(items)
+    // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the crate
+    // tags itself as it lands. Queued visible-only, so a big folder probes the rows in view as
+    // they scroll past rather than firing every file at the rate limit. Gated on a token.
+    if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch(items, true)
   }
 
   const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
@@ -418,49 +449,91 @@ export default function App(): React.JSX.Element {
     }).finally(() => setAnalysis(null))
   }, [analysis, queryClient])
 
-  // Auto-matches a batch of tracks against Discogs and applies any high-confidence
-  // release outright (the bar autoMatchRelease enforces), marking each so the row badges
-  // it and the filter can isolate the auto-filled ones for a spot-check. Runs on import
-  // when the setting is on, and on demand from the toolbar; tracksToAutoMatch skips the
-  // already-matched so a re-run only fills gaps. Capped and cancellable like the quality
-  // sweep, with a ref guard so a drop mid-run doesn't spawn a rival sweep on the quota.
-  const autoMatchTracks = useCallback(
-    (candidates: TrackItem[]): void => {
-      const targets = tracksToAutoMatch(candidates)
-      if (matchingRef.current || targets.length === 0) return
-      matchingRef.current = true
-      matchCancel.current = false
-      let done = 0
-      setMatching({ done: 0, total: targets.length })
-      void mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
-        if (matchCancel.current) return
-        try {
-          const m = await autoMatchRelease(t.query, matchTargetOf(t), window.api)
-          if (m && !matchCancel.current) {
-            // Keep the file's own cover (the release's is often smaller); fill from the
-            // release only when the file carries none — mirroring the editor's apply.
-            const patch = buildReleaseMeta(t.meta, m.release, m.track, {
-              url: t.coverUrl,
-              path: t.coverPath,
-              keep: !!t.coverUrl,
-            })
-            updateTrack(t.id, {
-              meta: patch.meta,
-              coverUrl: patch.coverUrl,
-              coverPath: patch.coverPath,
-              autoMatched: true,
-            })
-          }
-        } finally {
-          done += 1
-          setMatching((s) => (s ? { ...s, done } : s))
-        }
-      }).finally(() => {
-        matchingRef.current = false
-        setMatching(null)
+  // Probes Discogs for one track and applies a high-confidence release outright (the bar
+  // autoMatchRelease enforces). Keeps the file's own cover — the release's is often smaller —
+  // and only fills from the release when the file carries none, mirroring the editor's apply.
+  const applyAutoMatch = useCallback(
+    async (t: TrackItem): Promise<void> => {
+      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogs)
+      if (!m || matchCancel.current) return
+      const patch = buildReleaseMeta(t.meta, m.release, m.track, {
+        url: t.coverUrl,
+        path: t.coverPath,
+        keep: !!t.coverUrl,
+      })
+      updateTrack(t.id, {
+        meta: patch.meta,
+        coverUrl: patch.coverUrl,
+        coverPath: patch.coverPath,
+        autoMatched: true,
       })
     },
-    [updateTrack],
+    [discogs, updateTrack],
+  )
+
+  // The queued tracks ready to probe right now: a toolbar-enqueued track always, an
+  // import-enqueued one only once its row is on screen. tracksToAutoMatch then drops any
+  // already matched so a re-run only fills gaps.
+  const readyMatchTargets = useCallback((): TrackItem[] => {
+    const visible = visibleIds.current
+    const ready = tracksRef.current.filter((t) => {
+      const visibleOnly = matchQueue.current.get(t.id)
+      return visibleOnly !== undefined && (!visibleOnly || visible.has(t.id))
+    })
+    return tracksToAutoMatch(ready)
+  }, [])
+
+  // Drains the auto-match queue against Discogs, capped and cancellable. Each pass takes the
+  // tracks ready right now and probes them, so scrolling a big crate feeds the sweep the rows
+  // the user is actually looking at instead of firing all hundred at import. Loops until
+  // nothing's ready, then idles; a fresh drop or a row scrolling into view pumps it again. The
+  // ref guard keeps a single drain running so rival pumps share one budget rather than racing.
+  const pumpAutoMatch = useCallback(async (): Promise<void> => {
+    if (matchingRef.current) return
+    matchingRef.current = true
+    matchCancel.current = false
+    try {
+      while (!matchCancel.current) {
+        const targets = readyMatchTargets()
+        if (targets.length === 0) break
+        for (const t of targets) matchQueue.current.delete(t.id)
+        setMatching((s) => ({ done: s?.done ?? 0, total: (s?.total ?? 0) + targets.length }))
+        await mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
+          if (!matchCancel.current) await applyAutoMatch(t)
+          setMatching((s) => (s ? { ...s, done: s.done + 1 } : s))
+        })
+      }
+    } finally {
+      matchingRef.current = false
+      setMatching(null)
+      // A track enqueued in the instant the loop was exiting would otherwise strand until the
+      // next pump; restart if anything's already ready (e.g. the toolbar "match all" click).
+      if (!matchCancel.current && readyMatchTargets().length > 0) void pumpAutoMatch()
+    }
+  }, [applyAutoMatch, readyMatchTargets])
+
+  // Queues tracks for auto-match and kicks the drain. visibleOnly holds an import's files back
+  // until their rows are seen; the toolbar sweep passes false to match the whole view now.
+  const enqueueAutoMatch = useCallback(
+    (candidates: TrackItem[], visibleOnly: boolean): void => {
+      for (const t of tracksToAutoMatch(candidates)) matchQueue.current.set(t.id, visibleOnly)
+      void pumpAutoMatch()
+    },
+    [pumpAutoMatch],
+  )
+
+  // Records which rows are on screen (the list reports it via an IntersectionObserver) and
+  // pumps the drain when one appears, so an import's auto-match follows the user's scroll.
+  const onTrackVisible = useCallback(
+    (id: string, visible: boolean): void => {
+      if (visible) {
+        visibleIds.current.add(id)
+        void pumpAutoMatch()
+      } else {
+        visibleIds.current.delete(id)
+      }
+    },
+    [pumpAutoMatch],
   )
 
   // Stable identity so the memoized TrackRow only re-renders the row that
@@ -1174,7 +1247,7 @@ export default function App(): React.JSX.Element {
                     ? () => {
                         matchCancel.current = true
                       }
-                    : () => autoMatchTracks(tracksView)
+                    : () => enqueueAutoMatch(tracksView, false)
                 }
                 disabled={!matching && (!settings?.discogsToken || autoMatchable === 0)}
                 aria-label={tr('header.autoMatch')}
@@ -1304,7 +1377,10 @@ export default function App(): React.JSX.Element {
           style={{ width: sidebar.width }}
           className="relative shrink-0 bg-[var(--color-panel)]"
         >
-          <div className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}>
+          <div
+            ref={listScrollRef}
+            className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}
+          >
             {tracks.length === 0 ? (
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
@@ -1388,6 +1464,8 @@ export default function App(): React.JSX.Element {
                   onPrefetch={handlePrefetch}
                   onSearch={onSearchTrack}
                   onTrash={askTrash}
+                  scrollRootRef={listScrollRef}
+                  onVisible={onTrackVisible}
                 />
               </>
             )}
