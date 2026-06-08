@@ -38,6 +38,7 @@
   },
   "sidebar": {
     "dropHint": "Arrastra aquí tus WAV o FLAC, o pulsa “Añadir archivos”.",
+    "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
       "all": "Todas",
       "suspect": "Sospechosas",

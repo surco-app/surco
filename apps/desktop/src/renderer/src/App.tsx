@@ -65,6 +65,7 @@ import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { buildReleaseMeta } from './lib/release'
+import { contentDeficit } from './lib/resize'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
@@ -773,6 +774,18 @@ export default function App(): React.JSX.Element {
 
   const sidebar = useResizableWidth(300, 300, 600)
 
+  // Double-clicking the divider fits the list to its tracks: measure how far each title and
+  // artist is clipped (or has to spare) and resize by the widest, so long names stop
+  // truncating without the user dragging — and an over-wide column tightens back up.
+  const autoFitSidebar = useCallback((): void => {
+    const spans = document.querySelectorAll<HTMLElement>('[data-testid="track-row"] [data-fit]')
+    const rows = Array.from(spans, (s) => ({
+      scrollWidth: s.scrollWidth,
+      clientWidth: s.clientWidth,
+    }))
+    sidebar.autoFit(contentDeficit(rows))
+  }, [sidebar.autoFit])
+
   const selected = tracks.find((t) => t.id === selectedId) ?? null
   const selectedTracks = tracks.filter((t) => selectedIds.includes(t.id))
   // Falls back to the selection so the card still renders for the brief moment
@@ -1382,7 +1395,11 @@ export default function App(): React.JSX.Element {
           )}
         </aside>
 
-        <ResizeHandle onPointerDown={sidebar.onPointerDown} />
+        <ResizeHandle
+          onPointerDown={sidebar.onPointerDown}
+          onDoubleClick={autoFitSidebar}
+          title={tr('sidebar.fitHint')}
+        />
 
         <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
           {selected ? (

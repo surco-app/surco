@@ -1,12 +1,18 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextWidth } from '../lib/resize'
 
 export function useResizableWidth(
   initial: number,
   min: number,
   max: number,
-): { width: number; onPointerDown: (e: React.PointerEvent) => void } {
+): {
+  width: number
+  onPointerDown: (e: React.PointerEvent) => void
+  // Resizes the panel by `deficit` px (the content overflow/slack from contentDeficit),
+  // clamped to [min, max] — the double-click-to-fit gesture. A zero deficit is a no-op.
+  autoFit: (deficit: number) => void
+} {
   const [width, setWidth] = useState(initial)
   // Holds the teardown for an in-flight drag so unmounting mid-drag doesn't leak
   // the window listeners or leave the body cursor stuck at col-resize.
@@ -42,13 +48,27 @@ export function useResizableWidth(
     window.addEventListener('pointerup', cleanup)
   }
 
-  return { width, onPointerDown }
+  const autoFit = useCallback(
+    (deficit: number): void => {
+      if (deficit === 0) return
+      setWidth((w) => nextWidth(w, deficit, min, max))
+    },
+    [min, max],
+  )
+
+  return { width, onPointerDown, autoFit }
 }
 
 export function ResizeHandle({
   onPointerDown,
+  onDoubleClick,
+  title,
 }: {
   onPointerDown: (e: React.PointerEvent) => void
+  // Double-clicking the divider auto-fits the panel to its content (the Finder/Excel
+  // gesture); omitted on panels that have nothing to measure.
+  onDoubleClick?: () => void
+  title?: string
 }): React.JSX.Element {
   return (
     // A pointer-only resize affordance: the panels are fully usable at their
@@ -61,6 +81,8 @@ export function ResizeHandle({
       role="separator"
       aria-orientation="vertical"
       onPointerDown={onPointerDown}
+      onDoubleClick={onDoubleClick}
+      title={title}
       className="relative z-10 w-px shrink-0 cursor-col-resize bg-[var(--color-line)] transition-colors hover:bg-[var(--color-accent)]"
     >
       <div className="absolute inset-y-0 -left-1 -right-1" />

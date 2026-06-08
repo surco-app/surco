@@ -38,6 +38,7 @@
   },
   "sidebar": {
     "dropHint": "Drag your WAV or FLAC here, or press “Add files”.",
+    "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "all": "All",
       "suspect": "Suspect",
