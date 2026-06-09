@@ -133,6 +133,30 @@ const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
   automatched: Sparkles,
 }
 
+type SettingsTab = 'general' | 'stats' | 'naming' | 'shortcuts'
+
+interface ConfirmModal {
+  title: string
+  message: string
+  confirmLabel: string
+  confirmDisabled?: boolean
+  onConfirm: () => void
+}
+
+// The one modal/overlay currently open, or null. A single discriminated union (instead
+// of a boolean per modal) makes the "only one open at a time" invariant impossible to
+// break, and lets the keyboard/overlay logic read a single value.
+type ActiveModal =
+  | { type: 'settings'; tab: SettingsTab }
+  | { type: 'onboarding' }
+  | { type: 'help' }
+  | { type: 'findReplace' }
+  | { type: 'rename' }
+  | { type: 'export' }
+  | { type: 'palette' }
+  | { type: 'confirm'; confirm: ConfirmModal }
+  | null
+
 export default function App(): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -140,27 +164,12 @@ export default function App(): React.JSX.Element {
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
-  const [showSettings, setShowSettings] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'general' | 'stats' | 'naming' | 'shortcuts'>(
-    'general',
-  )
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  // Live theme preview while the Settings modal is open; cleared when it closes.
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
-  const [showHelp, setShowHelp] = useState(false)
-  const [showFindReplace, setShowFindReplace] = useState(false)
-  const [showRename, setShowRename] = useState(false)
-  const [showExport, setShowExport] = useState(false)
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
   // big crate can be swept for fakes without scrolling past the clean ones.
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
-  const [confirm, setConfirm] = useState<{
-    title: string
-    message: string
-    confirmLabel: string
-    confirmDisabled?: boolean
-    onConfirm: () => void
-  } | null>(null)
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [showPalette, setShowPalette] = useState(false)
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
@@ -236,15 +245,16 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     window.api.getSettings().then((s) => {
       setSettings(s)
-      if (shouldShowOnboarding(s)) setShowOnboarding(true)
+      if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
     })
   }, [])
 
   // Conversions bump the persisted count from the main process, so re-read settings
-  // each time the modal opens to keep the Stats tab current within a session.
+  // each time the Settings modal opens to keep the Stats tab current within a session.
+  const settingsOpen = activeModal?.type === 'settings'
   useEffect(() => {
-    if (showSettings) window.api.getSettings().then(setSettings)
-  }, [showSettings])
+    if (settingsOpen) window.api.getSettings().then(setSettings)
+  }, [settingsOpen])
 
   useEffect(() => {
     const pref = themePreview ?? settings?.theme ?? 'system'
@@ -265,7 +275,7 @@ export default function App(): React.JSX.Element {
   useEffect(
     () =>
       window.api.onMenuCommand((id) => {
-        if (id === 'palette') setShowPalette(true)
+        if (id === 'palette') setActiveModal({ type: 'palette' })
         else runCommand(commandsRef.current, id)
       }),
     [],
@@ -568,7 +578,7 @@ export default function App(): React.JSX.Element {
   // list untouched. Copy switches on platform because the destination differs.
   function askTrash(track: TrackItem): void {
     const isWin = window.api.platform === 'win32'
-    setConfirm({
+    askConfirm({
       title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
       message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
         name: track.fileName,
@@ -589,7 +599,7 @@ export default function App(): React.JSX.Element {
   // askTrash the row stays, because the converted output it points at is still there.
   function askDeleteOriginal(track: TrackItem): void {
     const isWin = window.api.platform === 'win32'
-    setConfirm({
+    askConfirm({
       title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
       message: tr(isWin ? 'confirm.deleteOriginalMessageWin' : 'confirm.deleteOriginalMessage', {
         name: track.fileName,
@@ -622,7 +632,7 @@ export default function App(): React.JSX.Element {
   // first rather than firing on the click; the dialog spells out exactly what changes.
   function askFillAll(): void {
     const count = tracks.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
-    setConfirm({
+    askConfirm({
       title: tr('confirm.fillTitle'),
       message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
       confirmLabel: tr('confirm.fillConfirm'),
@@ -632,7 +642,7 @@ export default function App(): React.JSX.Element {
   }
 
   function askClearAll(): void {
-    setConfirm({
+    askConfirm({
       title: tr('confirm.clearTitle'),
       message: tr('confirm.clearMessage', { count: tracks.length }),
       confirmLabel: tr('confirm.clearConfirm'),
@@ -700,19 +710,22 @@ export default function App(): React.JSX.Element {
     window.api.saveSettings(patch).then(setSettings)
   }
 
-  function openSettings(tab: 'general' | 'stats' | 'naming' | 'shortcuts' = 'general'): void {
-    setSettingsTab(tab)
-    setShowSettings(true)
+  function openSettings(tab: SettingsTab = 'general'): void {
+    setActiveModal({ type: 'settings', tab })
   }
 
   function closeSettings(): void {
-    setShowSettings(false)
+    setActiveModal(null)
     setThemePreview(null)
   }
 
   function finishOnboarding(patch: Partial<Settings>): void {
     saveSettings(patch)
-    setShowOnboarding(false)
+    setActiveModal(null)
+  }
+
+  function askConfirm(confirm: ConfirmModal): void {
+    setActiveModal({ type: 'confirm', confirm })
   }
 
   function moveSelection(delta: number): void {
@@ -842,7 +855,7 @@ export default function App(): React.JSX.Element {
       title: tr('commands.findReplace'),
       hint: hintFor('find-replace'),
       enabled: tracks.length > 0,
-      run: () => setShowFindReplace(true),
+      run: () => setActiveModal({ type: 'findReplace' }),
     },
     {
       id: 'prev',
@@ -911,7 +924,7 @@ export default function App(): React.JSX.Element {
       title: tr('commands.rename'),
       hint: hintFor('rename'),
       enabled: !!selected && selectedTracks.length <= 1,
-      run: () => setShowRename(true),
+      run: () => setActiveModal({ type: 'rename' }),
     },
     {
       id: 'add-apple-music',
@@ -953,7 +966,7 @@ export default function App(): React.JSX.Element {
       id: 'help',
       title: tr('commands.help'),
       enabled: true,
-      run: () => setShowHelp(true),
+      run: () => setActiveModal({ type: 'help' }),
     },
     {
       id: 'feedback',
@@ -971,39 +984,25 @@ export default function App(): React.JSX.Element {
 
   const commandsRef = useRef<Command[]>(commands)
   commandsRef.current = commands
-  // Closes the topmost open overlay in priority order. Onboarding is deliberately
-  // omitted: it forces a deliberate choice, not an Escape dismissal.
+  // Closes the open overlay on Escape. Onboarding is deliberately omitted: it forces a
+  // deliberate choice, not an Escape dismissal.
   function closeTopOverlay(): void {
-    if (showPalette) setShowPalette(false)
-    else if (showSettings) {
-      setShowSettings(false)
-      setThemePreview(null)
-    } else if (showHelp) setShowHelp(false)
-    else if (showFindReplace) setShowFindReplace(false)
-    else if (showRename) setShowRename(false)
-    else if (showExport) setShowExport(false)
-    else if (confirm) setConfirm(null)
+    if (!activeModal || activeModal.type === 'onboarding') return
+    if (activeModal.type === 'settings') setThemePreview(null)
+    setActiveModal(null)
   }
 
-  // Every modal/overlay that owns the screen must also swallow the global shortcuts, or
-  // space/j/k/⌘⏎ would act on the list behind the dialog (e.g. start a conversion behind
-  // the confirm prompt).
-  const overlayOpen =
-    showPalette ||
-    showSettings ||
-    showHelp ||
-    showFindReplace ||
-    showRename ||
-    showExport ||
-    !!confirm ||
-    showOnboarding
+  // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
+  // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
+  const overlayOpen = activeModal !== null
 
   useKeyboardShortcuts({
     isMac,
     overlayOpen,
     bindings,
     commands,
-    onTogglePalette: () => setShowPalette((v) => !v),
+    onTogglePalette: () =>
+      setActiveModal((m) => (m?.type === 'palette' ? null : { type: 'palette' })),
     onEscape: closeTopOverlay,
   })
 
@@ -1040,7 +1039,7 @@ export default function App(): React.JSX.Element {
         onAdd={pickFiles}
         onSelectAll={selectAll}
         onFillAll={askFillAll}
-        onFindReplace={() => setShowFindReplace(true)}
+        onFindReplace={() => setActiveModal({ type: 'findReplace' })}
         onAnalyzeAll={analyzeAllQuality}
         onCancelAnalyze={() => {
           analyzeCancel.current = true
@@ -1051,9 +1050,9 @@ export default function App(): React.JSX.Element {
         }}
         onConvertSelected={() => processAll(selectedTracks)}
         onCancelConvert={cancelBatch}
-        onExport={() => setShowExport(true)}
+        onExport={() => setActiveModal({ type: 'export' })}
         onClearAll={askClearAll}
-        onPalette={() => setShowPalette(true)}
+        onPalette={() => setActiveModal({ type: 'palette' })}
         onStats={() => openSettings('stats')}
         onSettings={() => openSettings()}
       />
@@ -1211,7 +1210,7 @@ export default function App(): React.JSX.Element {
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onTrashOriginal={() => askDeleteOriginal(selected)}
               onOpenSettings={openSettings}
-              onOpenRename={() => setShowRename(true)}
+              onOpenRename={() => setActiveModal({ type: 'rename' })}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
@@ -1243,50 +1242,54 @@ export default function App(): React.JSX.Element {
         </div>
       )}
 
-      {showSettings && settings && (
+      {activeModal?.type === 'settings' && settings && (
         <SettingsModal
           settings={settings}
           onClose={closeSettings}
           onSave={saveSettings}
           onPreviewTheme={setThemePreview}
-          initialTab={settingsTab}
+          initialTab={activeModal.tab}
         />
       )}
 
-      {showOnboarding && settings && (
+      {activeModal?.type === 'onboarding' && settings && (
         <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
       )}
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-      {showFindReplace && (
+      {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
+      {activeModal?.type === 'findReplace' && (
         <FindReplaceModal
           tracks={tracks}
           onApply={deriveTracks}
-          onClose={() => setShowFindReplace(false)}
+          onClose={() => setActiveModal(null)}
         />
       )}
-      {showRename && selected && (
+      {activeModal?.type === 'rename' && selected && (
         <RenameModal
           meta={selected.meta}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
           onApply={(outputName) => updateTrack(selected.id, { outputName })}
-          onClose={() => setShowRename(false)}
+          onClose={() => setActiveModal(null)}
         />
       )}
-      {showExport && <ExportModal tracks={tracks} onClose={() => setShowExport(false)} />}
-      {confirm && (
+      {activeModal?.type === 'export' && (
+        <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
+      )}
+      {activeModal?.type === 'confirm' && (
         <ConfirmDialog
-          title={confirm.title}
-          message={confirm.message}
-          confirmLabel={confirm.confirmLabel}
-          confirmDisabled={confirm.confirmDisabled}
-          onConfirm={confirm.onConfirm}
-          onClose={() => setConfirm(null)}
+          title={activeModal.confirm.title}
+          message={activeModal.confirm.message}
+          confirmLabel={activeModal.confirm.confirmLabel}
+          confirmDisabled={activeModal.confirm.confirmDisabled}
+          onConfirm={activeModal.confirm.onConfirm}
+          onClose={() => setActiveModal(null)}
         />
       )}
 
-      {showPalette && <CommandPalette commands={commands} onClose={() => setShowPalette(false)} />}
+      {activeModal?.type === 'palette' && (
+        <CommandPalette commands={commands} onClose={() => setActiveModal(null)} />
+      )}
 
       <UpdateToast />
     </div>
