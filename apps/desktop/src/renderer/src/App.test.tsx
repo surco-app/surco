@@ -407,6 +407,20 @@ describe('App keyboard shortcuts', () => {
   })
 })
 
+describe('App command palette', () => {
+  // A palette command whose action opens another modal (here Settings) must land on that
+  // modal, not be swallowed when the palette closes itself in the same click.
+  it('keeps the command-opened modal up after the palette closes itself', async () => {
+    await renderApp()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'Settings' } })
+    fireEvent.click(screen.getByTestId('palette-item'))
+    await waitFor(() => expect(screen.getByTestId('settings-tab-general')).toBeInTheDocument())
+    expect(screen.queryByTestId('palette-input')).toBeNull()
+  })
+})
+
 describe('App landmarks', () => {
   // A screen reader user lands in an app with no document outline; a single top-level
   // heading names the window so they know where they are.

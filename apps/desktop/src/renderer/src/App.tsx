@@ -1333,7 +1333,13 @@ export default function App(): React.JSX.Element {
       )}
 
       {activeModal?.type === 'palette' && (
-        <CommandPalette commands={commands} onClose={() => setActiveModal(null)} />
+        <CommandPalette
+          commands={commands}
+          // A command's run() may itself open another modal (settings, find & replace,
+          // export…). Closing the palette must not clobber that: only dismiss it when the
+          // palette is still the active modal, so a command that navigated elsewhere wins.
+          onClose={() => setActiveModal((m) => (m?.type === 'palette' ? null : m))}
+        />
       )}
 
       <UpdateToast />
