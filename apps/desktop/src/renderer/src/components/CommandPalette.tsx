@@ -17,6 +17,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
   const results = filterCommands(commands, query)
+  const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -68,32 +69,45 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={results.length > 0}
+          aria-controls="palette-listbox"
+          aria-activedescendant={activeId}
           aria-label={t('palette.placeholder')}
           placeholder={t('palette.placeholder')}
           className="w-full border-b border-[var(--color-line)] bg-transparent px-4 py-3.5 text-sm outline-none"
         />
-        <ul className="max-h-[50vh] overflow-y-auto p-2">
+        <div
+          role="listbox"
+          id="palette-listbox"
+          aria-label={t('palette.placeholder')}
+          className="max-h-[50vh] overflow-y-auto p-2"
+        >
           {results.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-fg-dim">{t('palette.empty')}</li>
+            <p className="px-3 py-6 text-center text-xs text-fg-dim">{t('palette.empty')}</p>
           )}
           {results.map((c, i) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                data-testid="palette-item"
-                onClick={() => runAt(i)}
-                onMouseMove={() => setActive(i)}
-                disabled={!c.enabled}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors disabled:opacity-30 ${
-                  i === active ? 'bg-[var(--color-accent-soft)]' : ''
-                }`}
-              >
-                <span>{c.title}</span>
-                {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
-              </button>
-            </li>
+            // biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row
+            // biome-ignore lint/a11y/useFocusableInteractive: options use virtual focus via aria-activedescendant, so they are intentionally not tab stops
+            <div
+              key={c.id}
+              role="option"
+              id={`palette-option-${c.id}`}
+              data-testid="palette-item"
+              aria-selected={i === active}
+              aria-disabled={!c.enabled}
+              onClick={() => runAt(i)}
+              onMouseMove={() => setActive(i)}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                c.enabled ? 'cursor-pointer' : 'opacity-30'
+              } ${i === active ? 'bg-[var(--color-accent-soft)]' : ''}`}
+            >
+              <span>{c.title}</span>
+              {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   )

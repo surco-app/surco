@@ -28,6 +28,28 @@ describe('CommandPalette', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  // The palette is a combobox over a listbox: the input keeps DOM focus and points at
+  // the active option via aria-activedescendant, so a screen reader announces the
+  // highlighted command as the arrows move it.
+  it('drives a listbox of options through aria-activedescendant', () => {
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'a', title: 'Add' }), cmd({ id: 'b', title: 'Bee' })]}
+        onClose={vi.fn()}
+      />,
+    )
+    const input = screen.getByTestId('palette-input')
+    expect(input).toHaveAttribute('role', 'combobox')
+    expect(input).toHaveAttribute('aria-controls', 'palette-listbox')
+    expect(input).toHaveAttribute('aria-activedescendant', 'palette-option-a')
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(2)
+    expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(input).toHaveAttribute('aria-activedescendant', 'palette-option-b')
+    expect(screen.getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('does not run a disabled command', () => {
     const run = vi.fn()
     render(
