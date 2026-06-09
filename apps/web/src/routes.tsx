@@ -5,12 +5,14 @@ import { I18nextProvider } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import type { i18n } from 'i18next'
 import App from './App'
+import Guide from './components/Guide'
 import CheckoutResult from './components/CheckoutResult'
 import Recover from './components/Recover'
 import { createI18n, type Language } from './i18n'
 
 const SITE = 'https://getsurco.app'
 const PATHS: Record<Language, string> = { es: '/', en: '/en' }
+const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
 
 const I18N: Record<Language, i18n> = { es: createI18n('es'), en: createI18n('en') }
 
@@ -58,6 +60,37 @@ function LocalizedApp({ lng }: { lng: Language }) {
   )
 }
 
+function GuideHead({ lng }: { lng: Language }) {
+  const t = I18N[lng].getFixedT(lng)
+  const url = SITE + GUIDE_PATHS[lng]
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{t('guide.metaTitle')}</title>
+      <meta name="description" content={t('guide.metaDescription')} />
+      <link rel="canonical" href={url} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${GUIDE_PATHS.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${GUIDE_PATHS.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${GUIDE_PATHS.es}`} />
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={t('guide.metaTitle')} />
+      <meta property="og:description" content={t('guide.metaDescription')} />
+      <meta name="twitter:title" content={t('guide.metaTitle')} />
+      <meta name="twitter:description" content={t('guide.metaDescription')} />
+    </Head>
+  )
+}
+
+function LocalizedGuide({ lng }: { lng: Language }) {
+  return (
+    <I18nextProvider i18n={I18N[lng]}>
+      <GuideHead lng={lng} />
+      <Guide />
+    </I18nextProvider>
+  )
+}
+
 // Wraps every page so Vercel Analytics loads once across all routes (it renders
 // nothing during SSG and injects the client script after hydration).
 function RootLayout() {
@@ -77,6 +110,8 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
+      { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
       // Transactional pages: their copy is self-contained and language-detected on the
       // client, so they don't need the localized App shell.
       { path: 'success', element: <CheckoutResult />, entry: 'src/routes.tsx' },

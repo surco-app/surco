@@ -17,6 +17,7 @@
     "atajos": "Shortcuts",
     "precio": "Pricing",
     "instalar": "Install",
+    "guia": "Guide",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
@@ -269,5 +270,230 @@
     "free": "Free download",
     "unavailable": "The download isn't available yet — we're polishing the first version.",
     "countSuffix": "downloads and counting"
+  },
+  "guide": {
+    "metaTitle": "How to use Surco — step-by-step guide",
+    "metaDescription": "The complete Surco guide: import tracks, tag from Discogs, match a whole release, analyze the spectrum, convert and export to Apple Music, rekordbox or Traktor.",
+    "kicker": "Guide",
+    "title": "How to use Surco",
+    "lede": "From dropping your tracks to having them ready to play. This guide walks the whole flow, step by step — no rush, nothing skipped.",
+    "tocLabel": "In this guide",
+    "back": "Back to home",
+    "shotPlaceholder": "Screenshot coming soon",
+    "outroTitle": "Ready to try it",
+    "outroLede": "Download Surco and get your first crate of tracks ready in a couple of minutes.",
+    "sections": [
+      {
+        "id": "instalar",
+        "title": "Install and open Surco",
+        "body": [
+          "Download Surco for your system from the home page, or install it with Homebrew on macOS. The first time you open it, a wizard gets you set up in a minute: pick your default output format, the folder to save to and, if you like, paste your Discogs token.",
+          "No account, no subscription. Surco updates itself, so you'll always have the latest version without downloading again."
+        ],
+        "points": [
+          "Available for macOS (Apple Silicon and Intel) and Windows.",
+          "The welcome wizard sets up format, output folder, genres and visible fields.",
+          "You can change any setting later in Settings (⌘ ,)."
+        ],
+        "shot": "instalar.png",
+        "shotCaption": "The welcome wizard on first launch."
+      },
+      {
+        "id": "importar",
+        "title": "Add your tracks",
+        "body": [
+          "Drag files —or whole folders— onto the Surco window, or click “Add files” (⌘O) to pick them. You can also open an audio file with Surco from Finder or Explorer.",
+          "Surco reads each file's tags, duration and cover art on the fly and shows them in the list instantly. The same file is never added twice."
+        ],
+        "points": [
+          "Formats: WAV, FLAC, AIFF, MP3, M4A, AAC, OGG, OPUS and more.",
+          "Drop whole folders: Surco walks them and adds every audio file it finds.",
+          "Tracks show up immediately; tags and cover art load in the background."
+        ],
+        "shot": "importar.gif",
+        "shotCaption": "Dragging and dropping tracks into the list."
+      },
+      {
+        "id": "lista",
+        "title": "Get to know the track list",
+        "body": [
+          "The left column is your work queue. Each row shows the title, artist, duration and a status dot telling you whether the track is untouched, processing, ready or errored. Once you analyze quality, a green (good) or amber (suspect) dot appears.",
+          "Press Space to preview the selected track in the floating player before converting. Drag the right edge to widen the list, or double-click it to fit the longest track name."
+        ],
+        "points": [
+          "Quick filters up top: All, Unanalyzed, Suspect, Good, Unconverted and Auto-matched.",
+          "Click to select one track; ⌘ (or Ctrl) + click to add several, and Shift + click for a range.",
+          "The ✦ icon marks tracks Surco filled in automatically from Discogs."
+        ],
+        "shot": "lista.png",
+        "shotCaption": "The track list with filters and statuses."
+      },
+      {
+        "id": "editor",
+        "title": "Edit the metadata",
+        "body": [
+          "Select a track and the editor on the right shows every field: title, artist, album, year, genre, label, catalog, BPM, key, grouping, comment and more. Edit anything and you'll get suggestions from your saved genres and groupings as one-click pills.",
+          "Up top you can give it a star rating and manage the cover art: drag to upload, export it, or move between the file's cover and the Discogs ones with the arrows. Track has a tidy filename but no tags? Click “Fill from filename” and Surco infers title and artist."
+        ],
+        "points": [
+          "Only the fields you choose in Settings → Fields are shown.",
+          "Required fields turn red if you leave them empty.",
+          "The cover shows its real pixel dimensions so you can judge sharpness."
+        ],
+        "shot": "editor.png",
+        "shotCaption": "A track's metadata editor."
+      },
+      {
+        "id": "calidad",
+        "title": "Check the real quality",
+        "body": [
+          "Open the quality section and Surco draws the track's spectrum: frequencies from bottom to top across the song. A true lossless file reaches ~22 kHz; an MP3 disguised as WAV cuts off sharply around 16 kHz and leaves a gap up high. A dashed line marks where it cuts.",
+          "Below it, a color-coded readout sums up the levels: integrated LUFS, true peak, dynamics, channel balance, DC offset and noise floor — green, amber or red at a glance. To analyze the whole queue at once, use the toolbar button or ⌘⇧A."
+        ],
+        "points": [
+          "Green “good quality”: the sound reaches all the way up, nothing missing.",
+          "Amber “suspect”: a sharp early cutoff — likely a re-encoded fake.",
+          "You can turn off the spectrum or loudness in Settings → Editor if you don't use them."
+        ],
+        "shot": "calidad.png",
+        "shotCaption": "A track's spectrum and level readout."
+      },
+      {
+        "id": "discogs",
+        "title": "Tag from Discogs",
+        "body": [
+          "In the editor, search the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year and label; expand one to see its tracklist.",
+          "Click the matching track and Surco applies artist, album, year, genre, label, catalog and cover art in one go — the closest match is flagged “Suggested”. Search works with no setup; add your own Discogs token in Settings for a higher, private rate limit."
+        ],
+        "points": [
+          "Search by text or paste a release id if you already know it.",
+          "With a token and the option on, Surco auto-matches tracks right after import.",
+          "Your cover is kept if you already have one; the Discogs cover stays as an alternative."
+        ],
+        "shot": "discogs.png",
+        "shotCaption": "Searching a release and picking the track on Discogs."
+      },
+      {
+        "id": "album",
+        "title": "Match a whole release",
+        "body": [
+          "Imported an album or a multi-track EP? Select them all —⌘ + click one by one, or Shift + click for a range— and the editor switches to multi-track mode: the header reads “Editing N tracks” and any field you edit applies to the whole selection at once.",
+          "In the Discogs column, search the release just once. Surco loads it and builds a grid: your files on the left, a dropdown with the release's tracklist on the right. It auto-assigns each file to its song by duration —even when they all share the same name— and you reassign by hand any that missed. When it's right, hit “Apply to N” and tag them all at once."
+        ],
+        "points": [
+          "“Editing N tracks” header: edit title, artist, album or genre once for all of them.",
+          "The grid pairs each file with a song from the tracklist; change any assignment from its dropdown.",
+          "Duplicates are allowed: two files can point to the same song if needed.",
+          "In multi-track mode the spectrum and filename are hidden, since they're per-track."
+        ],
+        "shot": "album.gif",
+        "shotCaption": "Assigning each file to its song on the release and applying to all."
+      },
+      {
+        "id": "nombres",
+        "title": "Name and organize the files",
+        "body": [
+          "In Settings → Filenames you build the name template with chips: click {artist}, {title}, {album}, {year}… and they're inserted at the cursor. A live preview shows the result. Use the / separator to create subfolders, e.g. {albumArtist}/{album}/{title}.",
+          "By default Surco keeps the original name. In the editor, the regenerate button applies your template to that track in one click, and the pencil opens a custom pattern just for it."
+        ],
+        "points": [
+          "Chips for every field: title, artist, album, year, genre, track #…",
+          "The / separator creates subfolders on export.",
+          "Optional: trim whitespace and zero-pad track numbers (03 instead of 3)."
+        ],
+        "shot": "nombres.png",
+        "shotCaption": "The filename template builder in Settings."
+      },
+      {
+        "id": "convertir",
+        "title": "Convert the track",
+        "body": [
+          "The button at the bottom of the editor converts the selected track. The dropdown next to it picks the format: AIFF, WAV or FLAC lossless, or MP3 at 320 kbps. If the track is already in that format, Surco copies it as-is instantly, without re-encoding.",
+          "In Settings → Conversion you choose the destination: an output folder, your Apple Music library, both, or overwrite the original in place. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+        ],
+        "points": [
+          "Formats: AIFF, WAV, FLAC (lossless) and MP3 320 kbps.",
+          "Re-exporting to the same format keeps Traktor cue points and beatgrid.",
+          "Normalization is off by default; it re-encodes the audio, so it's optional."
+        ],
+        "shot": "convertir.png",
+        "shotCaption": "The convert button and format choice."
+      },
+      {
+        "id": "lote",
+        "title": "Convert the whole crate",
+        "body": [
+          "Once the queue is ready, “Convert all” (⌘⇧Enter) processes every convertible track at once and skips the ones already done. You'll see progress and, at the end, a summary of how many were converted, skipped or errored.",
+          "Heads up: convert all only converts and renames using the metadata they already have — it never reaches out to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
+        ],
+        "points": [
+          "Processes the whole queue at once; cancel mid-way if you need to.",
+          "Uses current metadata only: it downloads nothing from Discogs in the batch.",
+          "Convert all is a Surco Pro feature."
+        ],
+        "shot": "lote.gif",
+        "shotCaption": "Converting the whole queue at once."
+      },
+      {
+        "id": "exportar",
+        "title": "Take it to your decks",
+        "body": [
+          "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) as you convert, or exports the whole queue as a rekordbox (.xml) or Traktor (.nml) collection from the export modal (⌘⇧E).",
+          "Tags and cover art travel inside the file, so your DJ software reads them with no extra steps. Export to rekordbox and Traktor is part of Surco Pro."
+        ],
+        "points": [
+          "To Apple Music in one click, during conversion.",
+          "Export rekordbox (.xml) and Traktor (.nml) collections.",
+          "Surco warns you if a track is already in your Apple Music library."
+        ],
+        "shot": "exportar.png",
+        "shotCaption": "Exporting to rekordbox or Traktor."
+      },
+      {
+        "id": "atajos",
+        "title": "Fly with the keyboard",
+        "body": [
+          "Surco is built to run without a mouse. The command palette (⌘K) puts everything one search away, and almost every action has a shortcut: add files (⌘O), process track (⌘Enter), process all (⌘⇧Enter), analyze quality (⌘⇧A), auto-match (⌘⇧D), search Discogs (/) and navigate the list with the arrows.",
+          "Press ? any time to see the full list, and reassign any of them in Settings → Shortcuts."
+        ],
+        "points": [
+          "⌘K opens the command palette; ? shows every shortcut.",
+          "Space plays or pauses; the arrows move the selection.",
+          "Every shortcut is reassignable in Settings."
+        ],
+        "shot": "atajos.png",
+        "shotCaption": "The command palette and the shortcut list."
+      },
+      {
+        "id": "ajustes",
+        "title": "Tune it to your taste",
+        "body": [
+          "Settings (⌘ ,) holds everything you don't touch day to day: the theme (light, dark or automatic), your Discogs token and auto-matching, the default format and destination, the name template, which fields you see and which are required, the maximum cover size and the shortcuts.",
+          "Set it up once and Surco honors your choices on every track."
+        ],
+        "points": [
+          "General, Conversion, Filenames, Editor, Fields, Artwork, Shortcuts and License.",
+          "Define recurring genres and groupings so they show up as suggestions.",
+          "Choose which fields to show and which to require, and reorder them to taste."
+        ],
+        "shot": "ajustes.png",
+        "shotCaption": "The Settings panel."
+      },
+      {
+        "id": "pro",
+        "title": "Free and Surco Pro",
+        "body": [
+          "You can convert and tag your records for free, with Discogs tagging, full album matching and spectrum analysis included. Surco Pro adds unlimited conversions, converting the whole crate at once and exporting to rekordbox and Traktor — a single payment, yours forever.",
+          "While Surco is in beta, everything is unlocked for free. No account, no subscription."
+        ],
+        "points": [
+          "Free: conversion, Discogs, album match and quality analysis.",
+          "Pro: unlimited conversions, convert all and export to rekordbox/Traktor.",
+          "During the beta, Pro is unlocked for free."
+        ],
+        "shot": "pro.png",
+        "shotCaption": "Free versus Surco Pro."
+      }
+    ]
   }
 }

@@ -10,6 +10,7 @@ export default function Header() {
   const otherLang = i18n.language === 'en' ? '/' : '/en'
   const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
   const otherCode = i18n.language === 'en' ? 'es' : 'en'
+  const guideHref = i18n.language === 'en' ? '/en/guide' : '/guia'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -68,6 +69,9 @@ export default function Header() {
                 {t(`nav.${id}`)}
               </a>
             ))}
+            <a href={guideHref} className="transition-colors hover:text-fg">
+              {t('nav.guia')}
+            </a>
           </nav>
           <a
             href={otherLang}
@@ -113,6 +117,13 @@ export default function Header() {
                 {t(`nav.${id}`)}
               </a>
             ))}
+            <a
+              href={guideHref}
+              onClick={() => setOpen(false)}
+              className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            >
+              {t('nav.guia')}
+            </a>
           </div>
         </nav>
       )}

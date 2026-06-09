@@ -17,6 +17,7 @@
     "atajos": "Atajos",
     "precio": "Precio",
     "instalar": "Instalar",
+    "guia": "Guía",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú"
   },
@@ -269,5 +270,230 @@
     "free": "Descarga gratuita",
     "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
     "countSuffix": "descargas y subiendo"
+  },
+  "guide": {
+    "metaTitle": "Cómo usar Surco — Guía paso a paso",
+    "metaDescription": "Guía completa de Surco: importar pistas, etiquetar desde Discogs, emparejar un disco entero, analizar el espectro, convertir y exportar a Apple Music, rekordbox o Traktor.",
+    "kicker": "Guía",
+    "title": "Cómo usar Surco",
+    "lede": "De soltar tus pistas a tenerlas listas para pinchar. Esta guía recorre todo el flujo, paso a paso — sin prisa y sin saltarte nada.",
+    "tocLabel": "En esta guía",
+    "back": "Volver al inicio",
+    "shotPlaceholder": "Captura próximamente",
+    "outroTitle": "Listo para probarlo",
+    "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
+    "sections": [
+      {
+        "id": "instalar",
+        "title": "Instala y abre Surco",
+        "body": [
+          "Descarga Surco para tu sistema desde la página principal o instálalo con Homebrew en macOS. La primera vez que lo abras, un asistente te deja a punto en un minuto: elige el formato de salida por defecto, la carpeta donde guardar y, si quieres, pega tu token de Discogs.",
+          "No hace falta crear cuenta ni suscribirte. Surco se actualiza solo, así que siempre tendrás la última versión sin volver a descargar."
+        ],
+        "points": [
+          "Disponible para macOS (Apple Silicon e Intel) y Windows.",
+          "El asistente de bienvenida configura formato, carpeta de salida, géneros y campos visibles.",
+          "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
+        ],
+        "shot": "instalar.png",
+        "shotCaption": "El asistente de bienvenida en el primer arranque."
+      },
+      {
+        "id": "importar",
+        "title": "Añade tus pistas",
+        "body": [
+          "Arrastra archivos —o carpetas enteras— a la ventana de Surco, o pulsa «Añadir archivos» (⌘O) para elegirlos. También puedes abrir un audio con Surco desde el Finder o el Explorador.",
+          "Surco lee al vuelo las etiquetas, la duración y la carátula de cada archivo, y los muestra en la lista al instante. El mismo archivo nunca se añade dos veces."
+        ],
+        "points": [
+          "Formatos: WAV, FLAC, AIFF, MP3, M4A, AAC, OGG, OPUS y más.",
+          "Suelta carpetas enteras: Surco las recorre y añade todo el audio que encuentre.",
+          "Las pistas aparecen al momento; los tags y la carátula se cargan en segundo plano."
+        ],
+        "shot": "importar.gif",
+        "shotCaption": "Arrastrar y soltar pistas en la lista."
+      },
+      {
+        "id": "lista",
+        "title": "Conoce la lista de pistas",
+        "body": [
+          "La columna de la izquierda es tu cola de trabajo. Cada fila muestra el título, el artista, la duración y un punto de estado que indica si la pista está sin tocar, procesándose, lista o con error. Cuando analizas la calidad, aparece un punto verde (buena) o ámbar (sospechosa).",
+          "Pulsa Espacio para escuchar la pista seleccionada en el reproductor flotante antes de convertir. Arrastra el borde derecho para ensanchar la lista, o haz doble clic para ajustarla al nombre más largo."
+        ],
+        "points": [
+          "Filtros rápidos arriba: Todas, Sin analizar, Sospechosas, Buenas, Sin convertir y Auto-emparejadas.",
+          "Haz clic para seleccionar una pista; ⌘ (o Ctrl) + clic para sumar varias y Mayús + clic para un rango.",
+          "El icono ✦ marca las pistas que Surco rellenó solo desde Discogs."
+        ],
+        "shot": "lista.png",
+        "shotCaption": "La lista de pistas con filtros y estados."
+      },
+      {
+        "id": "editor",
+        "title": "Edita los metadatos",
+        "body": [
+          "Al seleccionar una pista, el editor de la derecha muestra todos sus campos: título, artista, álbum, año, género, sello, catálogo, BPM, tonalidad, grouping, comentario y más. Edita lo que quieras y verás sugerencias de tus géneros y groupings guardados como pastillas de un clic.",
+          "Arriba puedes ponerle una valoración de estrellas y gestionar la carátula: súbela arrastrando, expórtala o pasa entre la del archivo y las de Discogs con las flechas. ¿La pista viene con el nombre bien puesto pero sin tags? Pulsa «Rellenar del nombre» y Surco deduce título y artista."
+        ],
+        "points": [
+          "Solo se muestran los campos que tú decidas en Ajustes → Campos.",
+          "Los campos obligatorios se marcan en rojo si los dejas vacíos.",
+          "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida."
+        ],
+        "shot": "editor.png",
+        "shotCaption": "El editor de metadatos de una pista."
+      },
+      {
+        "id": "calidad",
+        "title": "Comprueba la calidad real",
+        "body": [
+          "Abre la sección de calidad y Surco dibuja el espectro de la pista: las frecuencias de arriba abajo a lo largo del tema. Un archivo lossless de verdad llega hasta ~22 kHz; un MP3 disfrazado de WAV se corta de golpe sobre los 16 kHz y deja un hueco en la parte alta. Una línea de puntos marca dónde se corta.",
+          "Debajo, una lectura con colores resume el nivel: LUFS integrado, pico real, dinámica, balance entre canales, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo. Para analizar toda la cola de golpe, usa el botón de la barra o ⌘⇧A."
+        ],
+        "points": [
+          "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada.",
+          "Ámbar «sospechoso»: corte brusco antes de tiempo — probablemente un fake recomprimido.",
+          "Puedes desactivar el espectro o el loudness en Ajustes → Editor si no los usas."
+        ],
+        "shot": "calidad.png",
+        "shotCaption": "El espectro y la lectura de niveles de una pista."
+      },
+      {
+        "id": "discogs",
+        "title": "Etiqueta desde Discogs",
+        "body": [
+          "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año y sello; despliega uno para ver su tracklist.",
+          "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe — la más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor y privado."
+        ],
+        "points": [
+          "Busca por texto o pega un release id si ya sabes cuál es.",
+          "Con un token y la opción activada, Surco auto-empareja las pistas nada más importarlas.",
+          "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa."
+        ],
+        "shot": "discogs.png",
+        "shotCaption": "Buscar un disco y elegir la pista en Discogs."
+      },
+      {
+        "id": "album",
+        "title": "Empareja un disco entero",
+        "body": [
+          "¿Importaste un álbum o un EP de varias pistas? Selecciónalas todas —⌘ + clic una a una, o Mayús + clic para un rango— y el editor pasa a modo varias pistas: la cabecera dice «Editando N pistas» y los campos que edites se aplican a toda la selección a la vez.",
+          "En la columna de Discogs busca el release una sola vez. Surco lo carga y monta una rejilla: a la izquierda cada uno de tus archivos, a la derecha un desplegable con el tracklist del disco. Asigna automáticamente cada archivo a su canción por duración —aunque todos tengan el mismo nombre— y tú reasignas a mano cualquiera que no haya acertado. Cuando esté, pulsa «Aplicar a N» y etiqueta todas a la vez."
+        ],
+        "points": [
+          "Cabecera «Editando N pistas»: edita título, artista, álbum o género una vez para todas.",
+          "La rejilla empareja cada archivo con una canción del tracklist; cambia cualquier asignación desde su desplegable.",
+          "Se permiten duplicados: dos archivos pueden apuntar a la misma canción si hace falta.",
+          "En modo varias pistas se ocultan el espectro y el nombre de archivo, porque son cosa de cada pista."
+        ],
+        "shot": "album.gif",
+        "shotCaption": "Asignar cada archivo a su canción del disco y aplicar a todas."
+      },
+      {
+        "id": "nombres",
+        "title": "Nombra y ordena los archivos",
+        "body": [
+          "En Ajustes → Nombres montas la plantilla de nombre con fichas: pulsa {artist}, {title}, {album}, {year}… y se insertan donde tengas el cursor. Una vista previa te muestra el resultado en vivo. Usa la barra / para crear subcarpetas, por ejemplo {albumArtist}/{album}/{title}.",
+          "Por defecto Surco conserva el nombre original. En el editor, el botón de regenerar aplica tu plantilla a esa pista de un clic, y el lápiz abre un patrón a medida solo para ella."
+        ],
+        "points": [
+          "Fichas para cada campo: título, artista, álbum, año, género, nº de pista…",
+          "El separador / crea subcarpetas al exportar.",
+          "Opcional: recortar espacios y rellenar con cero los números de pista (03 en vez de 3)."
+        ],
+        "shot": "nombres.png",
+        "shotCaption": "El constructor de plantillas de nombre en Ajustes."
+      },
+      {
+        "id": "convertir",
+        "title": "Convierte la pista",
+        "body": [
+          "El botón de abajo del editor convierte la pista seleccionada. El desplegable de su derecha elige el formato: AIFF, WAV o FLAC sin pérdida, o MP3 a 320 kbps. Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar.",
+          "En Ajustes → Conversión decides el destino: una carpeta de salida, tu biblioteca de Apple Music, ambas, o sobrescribir el original en su sitio. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+        ],
+        "points": [
+          "Formatos: AIFF, WAV, FLAC (lossless) y MP3 320 kbps.",
+          "Reexportar al mismo formato conserva los cue points y el beatgrid de Traktor.",
+          "La normalización está desactivada por defecto; recodifica el audio, así que es opcional."
+        ],
+        "shot": "convertir.png",
+        "shotCaption": "El botón de conversión y la elección de formato."
+      },
+      {
+        "id": "lote",
+        "title": "Convierte toda la caja",
+        "body": [
+          "Cuando tengas la cola lista, «Convertir todas» (⌘⇧Enter) procesa de una todas las pistas convertibles y se salta las que ya están hechas. Verás el progreso y, al final, un resumen de cuántas se convirtieron, se saltaron o dieron error.",
+          "Ojo: convertir todas solo convierte y renombra con los metadatos que ya tienen — nunca va a Discogs por su cuenta. Si quieres datos frescos antes, usa primero «Auto-emparejar» (⌘⇧D) en la barra de herramientas."
+        ],
+        "points": [
+          "Procesa la cola entera de una; cancela a mitad si lo necesitas.",
+          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
+          "Convertir todas es una función de Surco Pro."
+        ],
+        "shot": "lote.gif",
+        "shotCaption": "Convertir toda la cola de una vez."
+      },
+      {
+        "id": "exportar",
+        "title": "Llévala a tus platos",
+        "body": [
+          "Surco no se queda en convertir: manda las pistas directas a tu biblioteca de Apple Music (en macOS) mientras las conviertes, o exporta la cola entera como colección de rekordbox (.xml) o Traktor (.nml) desde el modal de exportación (⌘⇧E).",
+          "Los tags y la carátula viajan dentro del archivo, así que tu software de DJ los lee sin pasos extra. El export a rekordbox y Traktor es parte de Surco Pro."
+        ],
+        "points": [
+          "A Apple Music con un clic, durante la conversión.",
+          "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
+          "Surco te avisa si una pista ya está en tu biblioteca de Apple Music."
+        ],
+        "shot": "exportar.png",
+        "shotCaption": "Exportar a rekordbox o Traktor."
+      },
+      {
+        "id": "atajos",
+        "title": "Vuela con el teclado",
+        "body": [
+          "Surco está pensado para ir sin ratón. La paleta de comandos (⌘K) te da todo a un buscador, y casi cada acción tiene su atajo: añadir archivos (⌘O), procesar pista (⌘Enter), procesar todas (⌘⇧Enter), analizar calidad (⌘⇧A), auto-emparejar (⌘⇧D), buscar en Discogs (/) y navegar la lista con las flechas.",
+          "Pulsa ? en cualquier momento para ver la lista completa, y reasigna los que quieras en Ajustes → Atajos."
+        ],
+        "points": [
+          "⌘K abre la paleta de comandos; ? muestra todos los atajos.",
+          "Espacio reproduce o pausa; las flechas mueven la selección.",
+          "Todos los atajos son reasignables en Ajustes."
+        ],
+        "shot": "atajos.png",
+        "shotCaption": "La paleta de comandos y la lista de atajos."
+      },
+      {
+        "id": "ajustes",
+        "title": "Ajústalo a tu gusto",
+        "body": [
+          "En Ajustes (⌘ ,) está todo lo que no toca el día a día: el tema (claro, oscuro o automático), tu token de Discogs y el auto-emparejado, el formato y el destino por defecto, la plantilla de nombres, qué campos ves y cuáles son obligatorios, el tamaño máximo de la carátula y los atajos.",
+          "Lo configuras una vez y Surco respeta tus decisiones en cada pista."
+        ],
+        "points": [
+          "General, Conversión, Nombres, Editor, Campos, Carátula, Atajos y Licencia.",
+          "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
+          "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto."
+        ],
+        "shot": "ajustes.png",
+        "shotCaption": "El panel de Ajustes."
+      },
+      {
+        "id": "pro",
+        "title": "Gratis y Surco Pro",
+        "body": [
+          "Puedes convertir y etiquetar tus discos gratis, con el etiquetado de Discogs, el match de álbum completo y el análisis de espectro incluidos. Surco Pro añade las conversiones ilimitadas, convertir toda la caja de una y la exportación a rekordbox y Traktor — un único pago, tuyo para siempre.",
+          "Mientras Surco está en beta, todo está desbloqueado gratis. Sin cuenta y sin suscripción."
+        ],
+        "points": [
+          "Gratis: conversión, Discogs, match de álbum y análisis de calidad.",
+          "Pro: conversiones ilimitadas, convertir todas y export a rekordbox/Traktor.",
+          "Durante la beta, Pro está desbloqueado gratis."
+        ],
+        "shot": "pro.png",
+        "shotCaption": "Gratis frente a Surco Pro."
+      }
+    ]
   }
 }
