@@ -29,7 +29,13 @@ const primary =
 // macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
-export default function DownloadButton({ showAnalysis = true }: { showAnalysis?: boolean }) {
+export default function DownloadButton({
+  showAnalysis = true,
+  showMeta = true,
+}: {
+  showAnalysis?: boolean
+  showMeta?: boolean
+}) {
   const { t } = useTranslation()
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
@@ -100,18 +106,20 @@ export default function DownloadButton({ showAnalysis = true }: { showAnalysis?:
           {t('download.intel')}
         </a>
       )}
-      <div className="mt-4 space-y-1 font-mono text-xs text-faint">
-        <p>
-          {ready ? t('download.free') : t('download.unavailable')}
-          {version && (
-            <span data-testid="app-version" className="text-muted">
-              {' · '}
-              <span className="text-fg">{version}</span>
-            </span>
-          )}
-          {ready && <DownloadCount />}
-        </p>
-      </div>
+      {showMeta && (
+        <div className="mt-4 space-y-1 font-mono text-xs text-faint">
+          <p>
+            {ready ? t('download.free') : t('download.unavailable')}
+            {version && (
+              <span data-testid="app-version" className="text-muted">
+                {' · '}
+                <span className="text-fg">{version}</span>
+              </span>
+            )}
+            {ready && <DownloadCount />}
+          </p>
+        </div>
+      )}
     </>
   )
 }

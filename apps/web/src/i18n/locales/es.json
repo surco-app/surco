@@ -255,11 +255,11 @@
   "install": {
     "kicker": "Instalar",
     "title": "Descárgalo e instálalo",
-    "lede": "Descárgalo para tu sistema. Y si usas Homebrew, instálalo con un solo comando — en ambos casos se actualiza solo.",
+    "lede": "Descárgalo para tu sistema o instálalo con Homebrew. En ambos casos, se actualiza solo.",
     "or": "O con Homebrew",
     "copy": "Copiar",
     "copied": "¡Copiado!",
-    "note": "Solo macOS · se actualiza solo tras instalar"
+    "note": "Solo macOS"
   },
   "download": {
     "viewDownloads": "Ver descargas",

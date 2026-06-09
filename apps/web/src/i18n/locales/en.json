@@ -255,11 +255,11 @@
   "install": {
     "kicker": "Install",
     "title": "Download and install",
-    "lede": "Download it for your system. And if you use Homebrew, install it with a single command — either way it updates itself.",
+    "lede": "Download it for your system or install it with Homebrew. Either way, it updates itself.",
     "or": "Or with Homebrew",
     "copy": "Copy",
     "copied": "Copied!",
-    "note": "macOS only · self-updates after install"
+    "note": "macOS only"
   },
   "download": {
     "viewDownloads": "View downloads",
