@@ -90,7 +90,8 @@ const TABS: Tab[] = [
   'fields',
   'artwork',
   'shortcuts',
-  'license',
+  // 'license' is intentionally omitted for now to hide the tab; the panel,
+  // type, and icon are kept so it can be re-listed without rebuilding it.
   'stats',
 ]
 
