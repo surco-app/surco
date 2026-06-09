@@ -111,7 +111,6 @@ export default function DownloadButton({ showAnalysis = true }: { showAnalysis?:
           )}
           {ready && <DownloadCount />}
         </p>
-        <p className="max-w-md text-pretty">{t('download.windows')}</p>
       </div>
     </>
   )
