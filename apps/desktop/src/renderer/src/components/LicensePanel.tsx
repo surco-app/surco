@@ -107,10 +107,6 @@ export function LicensePanel({ snapshot, onChanged, onClose, lede }: Props): Rea
     <div>
       <div className="flex items-baseline justify-between">
         <h2 className="text-base font-semibold">{tr('upgrade.title')}</h2>
-        <div className="text-sm text-fg-dim">
-          <span className="text-lg font-bold text-[var(--color-fg)]">€{snapshot.proPriceEur}</span>{' '}
-          {tr('upgrade.oneTime')}
-        </div>
       </div>
       {lede && <p className="mt-2 text-sm text-fg-dim">{lede}</p>}
 

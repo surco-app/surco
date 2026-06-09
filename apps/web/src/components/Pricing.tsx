@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BETA_MODE, FREE_MONTHLY_CONVERSIONS, PRO_PRICE_EUR, SPONSOR_URL } from '../config'
+import { BETA_MODE, FREE_MONTHLY_CONVERSIONS, SPONSOR_URL } from '../config'
 import Reveal from './Reveal'
 
 function Check() {
@@ -111,8 +111,7 @@ export default function Pricing() {
               {t('pricing.pro.name')}
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-grad">€{PRO_PRICE_EUR}</span>
-              <span className="text-sm text-muted">{t('pricing.pro.period')}</span>
+              <span className="text-2xl font-bold text-grad">{t('pricing.pro.period')}</span>
             </div>
             {BETA_MODE ? (
               <span className="mt-6 inline-flex w-fit items-center rounded-full border border-blue/40 bg-blue/10 px-4 py-2 text-sm font-medium text-blue">
