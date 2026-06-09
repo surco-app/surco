@@ -97,14 +97,14 @@ export function DiscogsPanel({
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
               aria-label={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
-              className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <button
               type="button"
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
-              className="press inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              className="press inline-flex h-8 items-center justify-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
