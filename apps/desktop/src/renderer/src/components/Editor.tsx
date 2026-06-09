@@ -2,7 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Ellipsis,
+  Pencil,
   RefreshCw,
   SlidersVertical,
   Star,
@@ -516,7 +516,7 @@ export function Editor({
                       onClick={onOpenRename}
                       className="press group relative flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:text-fg"
                     >
-                      <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                       <Tooltip label={tr('editor.regenerateCustom')} align="end" />
                     </button>
                   </span>
