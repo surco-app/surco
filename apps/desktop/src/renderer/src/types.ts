@@ -12,6 +12,10 @@ export interface TrackItem {
   // had when it was imported and never changed afterward, so the list stays a stable
   // reference — editing metadata in the form on the right never renames the row.
   listLabel: string
+  // True from the moment the file lands until its tags, duration and cover are read.
+  // The row renders straight away (parsed from the file name) with a placeholder for
+  // these fields, so a slow cloud/network drop shows progress instead of an empty list.
+  loadingMeta?: boolean
   // Total length in seconds, probed when the file is added. Undefined when the
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number

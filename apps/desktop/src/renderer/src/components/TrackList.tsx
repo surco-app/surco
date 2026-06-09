@@ -116,7 +116,12 @@ const TrackRow = memo(function TrackRow({
           <span data-fit className="block truncate text-sm font-medium text-fg">
             {t.listLabel}
           </span>
-          {t.status === 'processing' && t.stage ? (
+          {t.loadingMeta ? (
+            <span
+              data-testid="track-loading"
+              className="mt-1.5 block h-3 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
+            />
+          ) : t.status === 'processing' && t.stage ? (
             <span data-testid="track-stage" className="mt-1 block">
               <span className="block truncate text-xs text-[var(--color-accent)]">
                 {tr(`trackList.stage.${t.stage}`, {

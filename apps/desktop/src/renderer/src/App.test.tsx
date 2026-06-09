@@ -276,7 +276,7 @@ describe('App track list label', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByText('Imported Title')
     const row = screen.getByTestId('track-row')
     expect(within(row).getByText('Imported Title')).toBeInTheDocument()
 
@@ -285,6 +285,36 @@ describe('App track list label', () => {
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
     expect(within(row).getByText('Imported Title')).toBeInTheDocument()
     expect(within(row).queryByText('Hand Typed')).not.toBeInTheDocument()
+  })
+})
+
+describe('App import skeleton', () => {
+  // Reading tags/duration/cover up front used to block the whole drop behind the slowest
+  // file: a cloud or network folder showed an empty list for seconds and looked broken
+  // even though the import was running. The rows must appear the instant they're dropped,
+  // parsed from the filename, with a loading placeholder until each file's metadata lands.
+  it('shows dropped rows immediately while their metadata is still loading', async () => {
+    let releaseTags: () => void = () => {}
+    const tagsGate = new Promise<void>((res) => {
+      releaseTags = res
+    })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn(async () => {
+        await tagsGate
+        return { title: 'Loaded', artist: 'Artist' }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+
+    // Rows render before any tag read resolves, each carrying a loading placeholder.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.getAllByTestId('track-loading')).toHaveLength(2)
+
+    // Once the reads land, the placeholders clear.
+    releaseTags()
+    await waitFor(() => expect(screen.queryAllByTestId('track-loading')).toHaveLength(0))
   })
 })
 

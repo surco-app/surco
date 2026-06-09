@@ -307,8 +307,15 @@ export default function App(): React.JSX.Element {
     const existing = new Set(tracks.map((t) => t.inputPath))
     const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
     if (fresh.length === 0) return
-    const items = await mapWithConcurrency(fresh, READ_CONCURRENCY, async (path) => {
-      const base = newTrack(path)
+    // Show the rows the instant they're dropped, parsed from the file name, then fill in
+    // tags, duration and cover as each file's read resolves. Reading metadata up front used
+    // to block the whole drop behind the slowest file — on a cloud/network folder that's
+    // seconds of an empty list that looks broken even though the import is running.
+    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
+    setTracks((prev) => [...prev, ...bases])
+    setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
+    void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
+      const path = base.inputPath
       try {
         const [tags, duration, cover] = await Promise.all([
           window.api.readTags(path),
@@ -316,8 +323,7 @@ export default function App(): React.JSX.Element {
           window.api.readCover(path),
         ])
         const s = searchFromTags(parseFileName(path), tags)
-        return {
-          ...base,
+        const patch: Partial<TrackItem> = {
           query: s.query,
           duration: duration ?? undefined,
           coverUrl: cover ?? undefined,
@@ -330,17 +336,19 @@ export default function App(): React.JSX.Element {
             artist: s.artist,
             albumArtist: tags.albumArtist || s.artist,
           },
+          loadingMeta: false,
         }
+        updateTrack(base.id, patch)
+        // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the
+        // crate tags itself as it lands. Queued visible-only, so a big folder probes the rows
+        // in view as they scroll past rather than firing every file at the rate limit. Gated
+        // on a token, and only once a file's own metadata is read so the search has a query.
+        if (settings?.autoMatch && settings.discogsToken)
+          enqueueAutoMatch([{ ...base, ...patch }], true)
       } catch {
-        return base
+        updateTrack(base.id, { loadingMeta: false })
       }
     })
-    setTracks((prev) => [...prev, ...items])
-    setSelection((s) => (s.anchor ? s : { ids: [items[0].id], anchor: items[0].id }))
-    // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the crate
-    // tags itself as it lands. Queued visible-only, so a big folder probes the rows in view as
-    // they scroll past rather than firing every file at the rate limit. Gated on a token.
-    if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch(items, true)
   }
 
   // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
