@@ -51,6 +51,14 @@
       "placeholder": "Buscar pistas",
       "clear": "Borrar búsqueda",
       "empty": "Ninguna pista coincide."
+    },
+    "sort": {
+      "label": "Ordenar pistas",
+      "import": "Por defecto",
+      "name": "Nombre",
+      "artist": "Artista",
+      "duration": "Duración",
+      "quality": "Calidad"
     }
   },
   "drop": {

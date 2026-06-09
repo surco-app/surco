@@ -51,6 +51,35 @@ export function matchesSearch(track: TrackItem, query: string): boolean {
     .some((field) => field.toLowerCase().includes(q))
 }
 
+// The list sort modes: the drop order ('import'), or by name, artist, length or quality.
+export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'quality'
+
+// 'quality' ranks best-first, the way a "sort by quality" control reads: the confirmed-good
+// rips on top, then the suspect (likely-fake) ones, then the still-unanalyzed last — the
+// unknowns sink to the bottom where there's nothing to act on yet.
+const qualityRank: Record<TrackQuality, number> = { good: 0, suspect: 1, unanalyzed: 2 }
+
+// Orders the (already filtered) list for display. 'import' returns the list untouched so the
+// drop order survives verbatim; the rest sort a copy. Array.sort is stable, so equal rows
+// keep their import order and toggling sorts never scrambles ties. Untagged artists and
+// unprobed durations sort to the end, where missing data is least in the way.
+export function sortTracks(tracks: TrackItem[], sort: TrackSort): TrackItem[] {
+  if (sort === 'import') return tracks
+  return [...tracks].sort((a, b) => {
+    if (sort === 'name') return a.listLabel.localeCompare(b.listLabel)
+    if (sort === 'artist') {
+      const aa = a.meta.artist || ''
+      const bb = b.meta.artist || ''
+      if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
+      return aa.localeCompare(bb)
+    }
+    if (sort === 'duration') {
+      return (a.duration ?? Number.POSITIVE_INFINITY) - (b.duration ?? Number.POSITIVE_INFINITY)
+    }
+    return qualityRank[trackQuality(a)] - qualityRank[trackQuality(b)]
+  })
+}
+
 // Tallies for the filter chips, so the bar can show "5 suspect" without the caller
 // walking the list per chip. 'unconverted' overlaps the quality buckets (it's a
 // different dimension), so it's counted independently rather than as an else-branch.

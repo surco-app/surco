@@ -51,6 +51,14 @@
       "placeholder": "Search tracks",
       "clear": "Clear search",
       "empty": "No tracks match."
+    },
+    "sort": {
+      "label": "Sort tracks",
+      "import": "Default",
+      "name": "Name",
+      "artist": "Artist",
+      "duration": "Time",
+      "quality": "Quality"
     }
   },
   "drop": {

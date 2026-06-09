@@ -5,6 +5,7 @@ import {
   filterByQuality,
   matchesSearch,
   qualityCounts,
+  sortTracks,
   trackQuality,
   tracksToAnalyze,
 } from './triage'
@@ -128,6 +129,55 @@ describe('matchesSearch', () => {
     expect(matchesSearch(track, 'floorplan')).toBe(true)
     expect(matchesSearch(track, 'grow')).toBe(true)
     expect(matchesSearch(track, 'paradise')).toBe(true)
+  })
+})
+
+describe('sortTracks', () => {
+  const mk = (over: Partial<TrackItem>): TrackItem =>
+    ({ listLabel: '', meta: {}, status: 'idle', ...over }) as TrackItem
+
+  it('leaves the import order untouched for the default sort', () => {
+    const list = [mk({ id: 'b' }), mk({ id: 'a' })]
+    // Returns the same array reference so the drop order is preserved verbatim.
+    expect(sortTracks(list, 'import')).toBe(list)
+  })
+
+  it('sorts by track name, locale-aware so case does not split the alphabet', () => {
+    const list = [mk({ listLabel: 'Zoo' }), mk({ listLabel: 'apple' }), mk({ listLabel: 'Banana' })]
+    expect(sortTracks(list, 'name').map((t) => t.listLabel)).toEqual(['apple', 'Banana', 'Zoo'])
+  })
+
+  it('sorts by artist and pushes the untagged tracks to the end', () => {
+    const list = [
+      mk({ id: '1', meta: { artist: 'Mr Fingers' } }),
+      mk({ id: '2', meta: { artist: '' } }),
+      mk({ id: '3', meta: { artist: 'Floorplan' } }),
+    ]
+    expect(sortTracks(list, 'artist').map((t) => t.id)).toEqual(['3', '1', '2'])
+  })
+
+  it('sorts by duration ascending with the unprobed tracks last', () => {
+    const list = [
+      mk({ id: 'long', duration: 400 }),
+      mk({ id: 'none' }),
+      mk({ id: 'short', duration: 120 }),
+    ]
+    expect(sortTracks(list, 'duration').map((t) => t.id)).toEqual(['short', 'long', 'none'])
+  })
+
+  it('sorts by quality best-first: good, then suspect, then the unanalyzed last', () => {
+    const cut = (id: string, cutoffHz?: number | null): TrackItem =>
+      mk({
+        id,
+        spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
+      })
+    const list = [cut('bad', 16000), cut('fresh'), cut('good', 21000)]
+    expect(sortTracks(list, 'quality').map((t) => t.id)).toEqual(['good', 'bad', 'fresh'])
+  })
+
+  it('keeps equal rows in their import order so toggling never scrambles ties', () => {
+    const list = [mk({ id: 'x', listLabel: 'Same' }), mk({ id: 'y', listLabel: 'Same' })]
+    expect(sortTracks(list, 'name').map((t) => t.id)).toEqual(['x', 'y'])
   })
 })
 

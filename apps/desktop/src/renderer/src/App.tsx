@@ -1,6 +1,7 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   AudioLines,
+  ChevronDown,
   CircleCheckBig,
   List,
   type LucideIcon,
@@ -73,6 +74,8 @@ import {
   matchesSearch,
   type QualityFilter,
   qualityCounts,
+  sortTracks,
+  type TrackSort,
   tracksToAnalyze,
 } from './lib/triage'
 import { useLicense } from './lib/useLicense'
@@ -193,6 +196,8 @@ export default function App(): React.JSX.Element {
   // Free-text filter over the imported tracks, combined with the quality chip above.
   // Narrows a big dropped crate by name/artist/album without converting anything.
   const [search, setSearch] = useState('')
+  // Display order of the (filtered) list. Defaults to the drop order.
+  const [sortBy, setSortBy] = useState<TrackSort>('import')
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
@@ -873,8 +878,12 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const visibleTracks = useMemo(
-    () => filterByQuality(tracksView, qualityFilter).filter((t) => matchesSearch(t, search)),
-    [tracksView, qualityFilter, search],
+    () =>
+      sortTracks(
+        filterByQuality(tracksView, qualityFilter).filter((t) => matchesSearch(t, search)),
+        sortBy,
+      ),
+    [tracksView, qualityFilter, search, sortBy],
   )
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
@@ -1183,8 +1192,8 @@ export default function App(): React.JSX.Element {
             ) : (
               <>
                 <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
-                  <div className="px-1.5 pt-2">
-                    <div className="relative">
+                  <div className="flex items-center gap-1.5 px-1.5 pt-2">
+                    <div className="relative flex-1">
                       <Search
                         className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
                         aria-hidden="true"
@@ -1208,6 +1217,25 @@ export default function App(): React.JSX.Element {
                           <X className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                       )}
+                    </div>
+                    <div className="relative shrink-0">
+                      <select
+                        data-testid="track-sort"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as TrackSort)}
+                        aria-label={tr('sidebar.sort.label')}
+                        className="h-8 appearance-none rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-6 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
+                      >
+                        <option value="import">{tr('sidebar.sort.import')}</option>
+                        <option value="name">{tr('sidebar.sort.name')}</option>
+                        <option value="artist">{tr('sidebar.sort.artist')}</option>
+                        <option value="duration">{tr('sidebar.sort.duration')}</option>
+                        <option value="quality">{tr('sidebar.sort.quality')}</option>
+                      </select>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-1/2 right-1.5 size-3.5 -translate-y-1/2 text-fg-dim"
+                      />
                     </div>
                   </div>
                   <div data-testid="quality-filter" className="flex gap-0.5 px-1.5 py-2">
