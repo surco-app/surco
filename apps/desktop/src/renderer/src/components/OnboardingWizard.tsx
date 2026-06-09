@@ -367,6 +367,13 @@ function SpectrumPreview(): React.JSX.Element {
             <stop offset="55%" stopColor="#1b3a6b" />
             <stop offset="100%" stopColor="#3f6fb0" />
           </linearGradient>
+          {/* Yellow low-frequency energy fading up into the blue, matching the app's
+              cividis spectrogram (navy at the top, yellow where the energy is loudest). */}
+          <linearGradient id="surco-spectrum-energy" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#ffe24d" stopOpacity="0.9" />
+            <stop offset="16%" stopColor="#e6d24e" stopOpacity="0.4" />
+            <stop offset="40%" stopColor="#e6d24e" stopOpacity="0" />
+          </linearGradient>
         </defs>
         <rect width="320" height="160" fill="url(#surco-spectrum-preview)" />
         {PREVIEW_STREAKS.map((s) => (
@@ -382,7 +389,7 @@ function SpectrumPreview(): React.JSX.Element {
           />
         ))}
         {/* The loudest energy lives in the low frequencies at the bottom. */}
-        <rect y="150" width="320" height="10" fill="#dcebff" opacity="0.45" />
+        <rect y="96" width="320" height="64" fill="url(#surco-spectrum-energy)" />
         {/* A lossy file re-encoded as lossless drops off above the cutoff. */}
         <rect width="320" height={(cutoffTop / 100) * 160} fill="#0a1124" opacity="0.5" />
       </svg>
