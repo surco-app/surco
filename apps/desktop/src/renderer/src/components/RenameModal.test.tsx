@@ -34,6 +34,14 @@ describe('RenameModal', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
   })
 
+  // Enter in the pattern field submits the dialog's form instead of doing nothing.
+  it('applies the rendered name when the form is submitted (Enter)', () => {
+    const { onApply, onClose } = renderModal()
+    fireEvent.submit(screen.getByTestId('rename-format').closest('form') as HTMLFormElement)
+    expect(onApply).toHaveBeenCalledWith('Aladino - Make It Right Now')
+    expect(onClose).toHaveBeenCalled()
+  })
+
   // The dialog opens seeded with the saved pattern so the common case is one click,
   // and the preview proves what the name becomes for THIS track before committing.
   it('seeds the saved pattern and previews it against the track', () => {

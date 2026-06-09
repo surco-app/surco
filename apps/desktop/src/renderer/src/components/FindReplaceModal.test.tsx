@@ -54,6 +54,16 @@ describe('FindReplaceModal a11y', () => {
     renderModal([track('1', { title: 'x' })])
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
   })
+
+  // Enter in the find/replace fields submits the form rather than doing nothing.
+  it('applies the replacement when the form is submitted (Enter)', () => {
+    const { onApply, onClose } = renderModal([track('a', { title: 'Snap (Original Mix)' })])
+    type('find-replace-find', 'Original Mix')
+    type('find-replace-replace', 'Radio Edit')
+    fireEvent.submit(screen.getByTestId('find-replace-find').closest('form') as HTMLFormElement)
+    expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'Snap (Radio Edit)' } }])
+    expect(onClose).toHaveBeenCalled()
+  })
 })
 
 describe('FindReplaceModal', () => {

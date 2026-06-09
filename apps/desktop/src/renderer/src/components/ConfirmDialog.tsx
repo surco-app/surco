@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFocusTrap } from './useFocusTrap'
 
@@ -25,7 +25,11 @@ export function ConfirmDialog({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const confirmRef = useRef<HTMLButtonElement>(null)
   useFocusTrap(dialogRef)
+  // Focus the default button so Enter confirms immediately and the keyboard default
+  // matches the native macOS dialog convention (runs after useFocusTrap's first focus).
+  useEffect(() => confirmRef.current?.focus(), [])
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
@@ -42,32 +46,38 @@ export function ConfirmDialog({
         aria-labelledby="confirm-title"
         className="animate-pop relative z-10 w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
-        <h2 id="confirm-title" className="text-base font-semibold">
-          {title}
-        </h2>
-        <p className="mt-2 text-sm text-fg-dim">{message}</p>
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            data-testid="confirm-cancel"
-            onClick={onClose}
-            className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
-          >
-            {tr('common.cancel')}
-          </button>
-          <button
-            type="button"
-            data-testid="confirm-ok"
-            onClick={() => {
-              onConfirm()
-              onClose()
-            }}
-            disabled={confirmDisabled}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-          >
-            {confirmLabel}
-          </button>
-        </div>
+        <form
+          className="contents"
+          onSubmit={(e) => {
+            e.preventDefault()
+            onConfirm()
+            onClose()
+          }}
+        >
+          <h2 id="confirm-title" className="text-base font-semibold">
+            {title}
+          </h2>
+          <p className="mt-2 text-sm text-fg-dim">{message}</p>
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              data-testid="confirm-cancel"
+              onClick={onClose}
+              className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+            >
+              {tr('common.cancel')}
+            </button>
+            <button
+              ref={confirmRef}
+              type="submit"
+              data-testid="confirm-ok"
+              disabled={confirmDisabled}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

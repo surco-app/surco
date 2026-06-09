@@ -37,6 +37,21 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Clear the list?')
   })
 
+  // The default action must be reachable from the keyboard the instant the dialog
+  // opens: macOS focuses the default button, and that focus is what makes Enter fire it.
+  it('focuses the default confirm button on open', () => {
+    renderDialog()
+    expect(screen.getByTestId('confirm-ok')).toHaveFocus()
+  })
+
+  // Pressing Enter submits the dialog's form; without form wiring it did nothing.
+  it('confirms when the form is submitted (Enter)', () => {
+    const { onConfirm, onClose } = renderDialog()
+    fireEvent.submit(screen.getByTestId('confirm-ok').closest('form') as HTMLFormElement)
+    expect(onConfirm).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
   it('runs the action and closes on confirm', () => {
     const { onConfirm, onClose } = renderDialog()
     fireEvent.click(screen.getByTestId('confirm-ok'))
