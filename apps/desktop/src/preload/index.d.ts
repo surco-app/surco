@@ -20,6 +20,8 @@ export interface Api {
   version: string
   getPathForFile: (file: File) => string
   expandPaths: (paths: string[]) => Promise<string[]>
+  takePendingFiles: () => Promise<string[]>
+  onOpenFiles: (cb: (paths: string[]) => void) => () => void
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   pickFiles: () => Promise<string[]>

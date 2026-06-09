@@ -84,6 +84,9 @@ function setApi(over: Record<string, unknown> = {}): void {
     onProcessProgress: () => () => {},
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
+    onOpenFiles: () => () => {},
+    takePendingFiles: vi.fn().mockResolvedValue([]),
+    expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
@@ -232,6 +235,39 @@ describe('App track list label', () => {
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
     expect(within(row).getByText('Imported Title')).toBeInTheDocument()
     expect(within(row).queryByText('Hand Typed')).not.toBeInTheDocument()
+  })
+})
+
+describe('App open with', () => {
+  // "Open With Surco" in Finder launches the app and hands the chosen file to the OS
+  // open-file event, which the main process buffers (the renderer isn't alive yet on a
+  // cold launch). The renderer must drain that buffer on mount so the file lands in the
+  // list exactly as a drop would — otherwise the menu entry opens an empty window.
+  it('adds files handed over by the OS on launch (Open With)', async () => {
+    setApi({
+      takePendingFiles: vi.fn().mockResolvedValue(['/music/opened.flac']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Opened', artist: 'Artist' }),
+    })
+    await renderApp()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // While the app is already running, opening another file from Finder pushes it straight
+  // to the live window through onOpenFiles. The same path that fed the cold-launch drain
+  // must also accept these so a second "Open With" appends to the existing crate.
+  it('appends files pushed to an already-running window', async () => {
+    let push: ((paths: string[]) => void) | undefined
+    setApi({
+      onOpenFiles: (cb: (paths: string[]) => void) => {
+        push = cb
+        return () => {}
+      },
+      readTags: vi.fn().mockResolvedValue({ title: 'Live', artist: 'Artist' }),
+    })
+    await renderApp()
+    await screen.findByTestId('add-files')
+    push?.(['/music/live.flac'])
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 })
 

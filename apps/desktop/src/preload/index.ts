@@ -14,6 +14,12 @@ const api = {
   version: ipcRenderer.sendSync('app:version') as string,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   expandPaths: (paths: string[]): Promise<string[]> => ipcRenderer.invoke('files:expand', paths),
+  takePendingFiles: (): Promise<string[]> => ipcRenderer.invoke('files:pending'),
+  onOpenFiles: (cb: (paths: string[]) => void) => {
+    const listener = (_e: unknown, paths: string[]): void => cb(paths)
+    ipcRenderer.on('open-files', listener)
+    return () => ipcRenderer.removeListener('open-files', listener)
+  },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),

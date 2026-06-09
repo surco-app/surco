@@ -64,6 +64,20 @@ protocol.registerSchemesAsPrivileged([
   },
 ])
 
+// macOS hands over files opened from Finder ("Open With Surco"), dropped on the dock
+// icon, or double-clicked through the open-file event — never argv. One event per file.
+// On a cold launch it fires before the window (and renderer) exist, so buffer those
+// paths for the renderer to drain on mount via files:pending; once a window is up, push
+// live opens straight to it. Registered at module load so the early cold-launch events
+// aren't missed.
+const pendingFiles: string[] = []
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win) win.webContents.send('open-files', [path])
+  else pendingFiles.push(path)
+})
+
 function sanitizeFilename(name: string): string {
   return name
     .replace(/[/\\:*?"<>|]/g, '-')
@@ -317,6 +331,10 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('files:expand', (_e, paths: string[]) => expandPaths(paths))
+
+  // Drains the cold-launch open-file buffer; the renderer calls this once on mount so
+  // files chosen via "Open With Surco" before it existed land in the list.
+  ipcMain.handle('files:pending', () => pendingFiles.splice(0))
 
   ipcMain.handle('dialog:pickOutputDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

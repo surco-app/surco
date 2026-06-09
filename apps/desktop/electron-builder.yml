@@ -13,6 +13,26 @@ files:
 asarUnpack:
   - node_modules/ffmpeg-static/**
   - node_modules/@ffprobe-installer/**
+# Registers Surco as a handler for the formats it opens so Finder lists "Open With
+# Surco" (these become CFBundleDocumentTypes on macOS). rank Alternate: Surco offers to
+# open them but never claims the default away from Music/Audacity — it just joins the
+# menu. The extensions mirror the AUDIO_EXTS the main process accepts (src/main/expand.ts).
+fileAssociations:
+  - ext:
+      - wav
+      - flac
+      - aif
+      - aiff
+      - mp3
+      - m4a
+      - mp4
+      - aac
+      - ogg
+      - oga
+      - opus
+    name: Audio
+    role: Editor
+    rank: Alternate
 afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
