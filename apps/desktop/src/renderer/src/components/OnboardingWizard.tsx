@@ -3,11 +3,14 @@ import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings } from '../../../shared/types'
+import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 const STEPS = ['welcome', 'token', 'format', 'grouping', 'genre', 'required', 'spectrum'] as const
+// Apple Music exists only on macOS, so the destination choice is offered there alone.
+const isMac = window.api.platform === 'darwin'
 
 interface Props {
   settings: Settings
@@ -24,6 +27,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
+  const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
+  const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
@@ -39,8 +44,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         showSpectrum,
         autoMatch,
         requiredFields,
+        addToAppleMusic,
+        keepOutputCopy,
       }),
     )
+  }
+
+  // FLAC can't go to Apple Music, so the destination pins to the output folder while
+  // it's the format. chooseDestination maps the single radio back onto the two booleans.
+  const destination = toDestination(addToAppleMusic, keepOutputCopy, outputFormat === 'flac')
+  function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
+    const next = fromDestination(d)
+    setAddToAppleMusic(next.addToAppleMusic)
+    setKeepOutputCopy(next.keepOutputCopy)
   }
 
   function toggleRequired(key: string): void {
@@ -157,6 +173,54 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+
+                {isMac && (
+                  <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+                    <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                      {tr('settings.destination')}
+                    </span>
+                    <div
+                      role="radiogroup"
+                      aria-label={tr('settings.destination')}
+                      className="flex flex-col gap-2"
+                    >
+                      {DESTINATIONS.map((d) => {
+                        const disabled = outputFormat === 'flac' && d !== 'folder'
+                        return (
+                          <label
+                            key={d}
+                            className={`flex items-start gap-3 ${
+                              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                            }`}
+                          >
+                            <input
+                              data-testid={`onboarding-destination-${d}`}
+                              type="radio"
+                              name="onboarding-destination"
+                              checked={destination === d}
+                              disabled={disabled}
+                              onChange={() => chooseDestination(d)}
+                              className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                            />
+                            <span className="text-sm">
+                              {tr(`settings.destinations.${d}`)}
+                              {d === 'appleMusic' && (
+                                <span className="block text-xs text-fg-dim">
+                                  {tr('settings.destinationAppleMusicHint')}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {outputFormat === 'flac' && (
+                      <p className="mt-1.5 text-xs text-fg-dim">
+                        {tr('settings.appleMusicFlacNote')}
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
 

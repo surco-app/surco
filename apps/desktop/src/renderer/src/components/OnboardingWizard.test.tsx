@@ -56,6 +56,37 @@ describe('OnboardingWizard keyboard', () => {
   })
 })
 
+describe('OnboardingWizard destination', () => {
+  function openFormatStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token
+    fireEvent.click(screen.getByTestId('onboarding-next')) // token → format
+  }
+
+  // A new macOS user who picks "Apple Music only" in the format step must have it
+  // persisted on finish — otherwise the default would silently keep the folder copy too.
+  it('persists the destination chosen in the format step when the wizard finishes', () => {
+    const onFinish = vi.fn()
+    openFormatStep(onFinish)
+    fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
+    // format → grouping → genre → required → spectrum, then finish.
+    for (let i = 0; i < 5; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
+    )
+  })
+
+  // Apple Music can't ingest FLAC, so choosing it pins the destination to the always-valid
+  // output folder and locks the Apple Music options out.
+  it('pins the destination to the output folder and disables Apple Music for FLAC', () => {
+    openFormatStep()
+    fireEvent.click(screen.getByTestId('onboarding-format-flac'))
+    expect(screen.getByTestId('onboarding-destination-folder')).toBeChecked()
+    expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeDisabled()
+    expect(screen.getByTestId('onboarding-destination-both')).toBeDisabled()
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.

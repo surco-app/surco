@@ -8,6 +8,10 @@ export interface OnboardingChoices {
   showSpectrum: boolean
   autoMatch: boolean
   requiredFields: string[]
+  // The output destination, only chosen on macOS (where Apple Music exists); on other
+  // platforms these stay at their defaults since the wizard never offers the choice.
+  addToAppleMusic: boolean
+  keepOutputCopy: boolean
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -35,6 +39,8 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     // it as enabled even if the checkbox was somehow left ticked.
     autoMatch: discogsToken !== '' && choices.autoMatch,
     requiredFields: choices.requiredFields,
+    addToAppleMusic: choices.addToAppleMusic,
+    keepOutputCopy: choices.keepOutputCopy,
     hasSeenOnboarding: true,
   }
 }

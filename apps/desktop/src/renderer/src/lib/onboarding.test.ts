@@ -22,6 +22,8 @@ describe('buildOnboardingPatch', () => {
       showSpectrum: false,
       autoMatch: true,
       requiredFields: ['title', 'artist', 'genre'],
+      addToAppleMusic: true,
+      keepOutputCopy: false,
     })
     expect(patch).toEqual({
       discogsToken: 'abc123',
@@ -31,6 +33,8 @@ describe('buildOnboardingPatch', () => {
       showSpectrum: false,
       autoMatch: true,
       requiredFields: ['title', 'artist', 'genre'],
+      addToAppleMusic: true,
+      keepOutputCopy: false,
       hasSeenOnboarding: true,
     })
   })
@@ -47,6 +51,8 @@ describe('buildOnboardingPatch', () => {
       showSpectrum: true,
       autoMatch: false,
       requiredFields: ['title', 'artist'],
+      addToAppleMusic: true,
+      keepOutputCopy: true,
     })
     expect(patch.discogsToken).toBe('tok')
     expect(patch.groupingPresets).toEqual(['Bases', 'Cantaditas'])
@@ -71,7 +77,27 @@ describe('buildOnboardingPatch', () => {
       showSpectrum: true,
       autoMatch: true,
       requiredFields: ['title', 'artist'],
+      addToAppleMusic: false,
+      keepOutputCopy: true,
     })
     expect(patch.autoMatch).toBe(false)
+  })
+
+  // The destination chosen in the wizard's format step must reach settings, so a new
+  // macOS user who picks "Apple Music only" doesn't silently keep the folder copy too.
+  it('persists the chosen output destination', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '',
+      outputFormat: 'aiff',
+      grouping: '',
+      genre: '',
+      showSpectrum: true,
+      autoMatch: false,
+      requiredFields: [],
+      addToAppleMusic: true,
+      keepOutputCopy: false,
+    })
+    expect(patch.addToAppleMusic).toBe(true)
+    expect(patch.keepOutputCopy).toBe(false)
   })
 })

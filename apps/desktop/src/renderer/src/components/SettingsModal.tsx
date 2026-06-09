@@ -20,6 +20,7 @@ import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shar
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { LicensePanel } from './LicensePanel'
+import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { FIELD_DEFS, moveItem } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
@@ -31,11 +32,6 @@ import { useFocusTrap } from './useFocusTrap'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-
-// Where a converted track ends up. Modeled as one choice rather than two independent
-// toggles so "no copy anywhere" can't be expressed: every option keeps at least one copy.
-type Destination = 'folder' | 'appleMusic' | 'both'
-const DESTINATIONS: Destination[] = ['folder', 'appleMusic', 'both']
 
 // A representative track so the filename preview shows real-looking output
 // instead of empty braces, and every token has something to render.
@@ -186,11 +182,11 @@ export function SettingsModal({
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the two booleans map onto the single radio choice.
   const flacOnly = outputFormat === 'flac'
-  const destination: Destination =
-    flacOnly || !addToAppleMusic ? 'folder' : keepOutputCopy ? 'both' : 'appleMusic'
-  function chooseDestination(d: Destination): void {
-    setAddToAppleMusic(d !== 'folder')
-    setKeepOutputCopy(d !== 'appleMusic')
+  const destination = toDestination(addToAppleMusic, keepOutputCopy, flacOnly)
+  function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
+    const next = fromDestination(d)
+    setAddToAppleMusic(next.addToAppleMusic)
+    setKeepOutputCopy(next.keepOutputCopy)
   }
 
   function save(): void {
