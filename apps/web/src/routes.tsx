@@ -1,6 +1,8 @@
+import { Analytics } from '@vercel/analytics/react'
 import type { RouteRecord } from 'vite-react-ssg'
 import { Head } from 'vite-react-ssg'
 import { I18nextProvider } from 'react-i18next'
+import { Outlet } from 'react-router-dom'
 import type { i18n } from 'i18next'
 import App from './App'
 import CheckoutResult from './components/CheckoutResult'
@@ -56,11 +58,29 @@ function LocalizedApp({ lng }: { lng: Language }) {
   )
 }
 
+// Wraps every page so Vercel Analytics loads once across all routes (it renders
+// nothing during SSG and injects the client script after hydration).
+function RootLayout() {
+  return (
+    <>
+      <Outlet />
+      <Analytics />
+    </>
+  )
+}
+
 export const routes: RouteRecord[] = [
-  { path: '/', element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' },
-  { path: '/en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
-  // Transactional pages: their copy is self-contained and language-detected on the
-  // client, so they don't need the localized App shell.
-  { path: '/success', element: <CheckoutResult />, entry: 'src/routes.tsx' },
-  { path: '/recover', element: <Recover />, entry: 'src/routes.tsx' },
+  {
+    path: '/',
+    element: <RootLayout />,
+    entry: 'src/routes.tsx',
+    children: [
+      { index: true, element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' },
+      { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
+      // Transactional pages: their copy is self-contained and language-detected on the
+      // client, so they don't need the localized App shell.
+      { path: 'success', element: <CheckoutResult />, entry: 'src/routes.tsx' },
+      { path: 'recover', element: <Recover />, entry: 'src/routes.tsx' },
+    ],
+  },
 ]
