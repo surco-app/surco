@@ -132,7 +132,7 @@ const TrackRow = memo(function TrackRow({
           <Tooltip label={tr(`trackList.status.${t.status}`)} align="start" scope="dot" />
         </span>
         <span className="min-w-0 flex-1">
-          <span data-fit className="block truncate text-sm font-medium text-fg">
+          <span data-fit title={t.listLabel} className="block truncate text-sm font-medium text-fg">
             {t.listLabel}
           </span>
           {t.loadingMeta ? (
@@ -156,7 +156,11 @@ const TrackRow = memo(function TrackRow({
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <span data-fit className="min-w-0 flex-1 truncate text-xs text-fg-dim">
+              <span
+                data-fit
+                title={t.meta.artist || tr('trackList.noArtist')}
+                className="min-w-0 flex-1 truncate text-xs text-fg-dim"
+              >
                 {t.meta.artist || tr('trackList.noArtist')}
               </span>
               {t.autoMatched && (
