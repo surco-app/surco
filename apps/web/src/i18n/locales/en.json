@@ -182,6 +182,7 @@
   "how": {
     "kicker": "How it works",
     "title": "Three steps and you're playing",
+    "guideCta": "See the full guide →",
     "steps": [
       {
         "title": "Drop your tracks",

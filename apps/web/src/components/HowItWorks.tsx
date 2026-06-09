@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next'
 import Reveal from './Reveal'
 
 export default function HowItWorks() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const steps = t('how.steps', { returnObjects: true }) as { title: string; body: string }[]
+  const guideHref = i18n.language === 'en' ? '/en/guide' : '/guia'
 
   return (
     <section id="como" className="scroll-mt-24 pb-24">
@@ -26,6 +27,15 @@ export default function HowItWorks() {
           </Reveal>
         ))}
       </div>
+
+      <Reveal>
+        <a
+          href={guideHref}
+          className="mt-10 inline-flex items-center text-sm font-medium text-fg transition-colors hover:text-blue"
+        >
+          {t('how.guideCta')}
+        </a>
+      </Reveal>
     </section>
   )
 }

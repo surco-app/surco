@@ -182,6 +182,7 @@
   "how": {
     "kicker": "Cómo funciona",
     "title": "Tres pasos y a pinchar",
+    "guideCta": "Ver la guía completa →",
     "steps": [
       {
         "title": "Suelta tus pistas",
