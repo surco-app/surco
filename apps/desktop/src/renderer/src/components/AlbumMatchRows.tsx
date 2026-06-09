@@ -138,6 +138,8 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                   <span
                     data-testid={`match-confidence-${a.id}`}
                     data-confidence={tier}
+                    role="img"
+                    aria-label={tr('match.suggested')}
                     className={`group relative ${tier === 'high' ? 'text-good' : 'text-warn'}`}
                   >
                     <Check className="h-3.5 w-3.5" aria-hidden="true" />

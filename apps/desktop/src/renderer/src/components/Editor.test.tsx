@@ -1051,6 +1051,8 @@ describe('Editor properties panel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Properties' }))
     const reveal = await screen.findByTestId('property-reveal')
     expect(reveal).toHaveTextContent('Vol 2')
+    // The button reads as a path; its name must also say what activating it does.
+    expect(reveal).toHaveAccessibleName(/reveal/i)
     fireEvent.click(reveal)
     expect(
       (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,

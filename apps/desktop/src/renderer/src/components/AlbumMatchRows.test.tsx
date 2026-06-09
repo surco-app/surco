@@ -63,6 +63,13 @@ describe('AlbumMatchRows', () => {
     expect(screen.getByTestId('match-select-long')).toHaveValue('1')
   })
 
+  // The confidence tick is the only signal a row was auto-suggested; as a bare icon it
+  // was invisible to a screen reader, so it carries an explicit name.
+  it('announces the suggested-match badge to screen readers', async () => {
+    renderRows([track('short', 'radio edit', 181)])
+    expect(await screen.findByTestId('match-confidence-short')).toHaveAccessibleName()
+  })
+
   it('applies the matched track title to each file when confirmed', async () => {
     const { onApply } = renderRows([
       track('short', 'radio edit', 181),

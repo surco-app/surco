@@ -113,6 +113,7 @@ export function PropertiesReadout({
                       type="button"
                       data-testid="property-reveal"
                       onClick={() => window.api.reveal(inputPath)}
+                      aria-label={`${tr('commands.reveal')}: ${r.value}`}
                       title={r.full}
                       className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
                     >
