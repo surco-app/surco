@@ -5,6 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "rewrites": [{ "source": "/buy", "destination": "/api/buy" }],
   "headers": [
     {
       "source": "/assets/(.*)",
