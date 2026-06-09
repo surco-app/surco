@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SpectrumResult } from '../../../shared/types'
+import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import {
   filterByQuality,
@@ -104,7 +104,7 @@ describe('filterByQuality / qualityCounts', () => {
 })
 
 describe('matchesSearch', () => {
-  const t = (over: Partial<TrackItem>): TrackItem =>
+  const t = (over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> }): TrackItem =>
     ({ listLabel: '', fileName: '', meta: {}, ...over }) as TrackItem
 
   it('matches every track when the query is blank or whitespace', () => {
@@ -133,7 +133,7 @@ describe('matchesSearch', () => {
 })
 
 describe('sortTracks', () => {
-  const mk = (over: Partial<TrackItem>): TrackItem =>
+  const mk = (over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> }): TrackItem =>
     ({ listLabel: '', meta: {}, status: 'idle', ...over }) as TrackItem
 
   it('leaves the import order untouched for the default sort', () => {
