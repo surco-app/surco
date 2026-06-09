@@ -1230,7 +1230,6 @@ export default function App(): React.JSX.Element {
                         <option value="name">{tr('sidebar.sort.name')}</option>
                         <option value="artist">{tr('sidebar.sort.artist')}</option>
                         <option value="duration">{tr('sidebar.sort.duration')}</option>
-                        <option value="quality">{tr('sidebar.sort.quality')}</option>
                       </select>
                       <ChevronDown
                         aria-hidden="true"

@@ -57,8 +57,7 @@
       "import": "Default",
       "name": "Name",
       "artist": "Artist",
-      "duration": "Time",
-      "quality": "Quality"
+      "duration": "Time"
     }
   },
   "drop": {

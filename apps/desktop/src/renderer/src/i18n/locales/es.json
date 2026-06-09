@@ -57,8 +57,7 @@
       "import": "Por defecto",
       "name": "Nombre",
       "artist": "Artista",
-      "duration": "Duración",
-      "quality": "Calidad"
+      "duration": "Duración"
     }
   },
   "drop": {

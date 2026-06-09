@@ -165,16 +165,6 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'duration').map((t) => t.id)).toEqual(['short', 'long', 'none'])
   })
 
-  it('sorts by quality best-first: good, then suspect, then the unanalyzed last', () => {
-    const cut = (id: string, cutoffHz?: number | null): TrackItem =>
-      mk({
-        id,
-        spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
-      })
-    const list = [cut('bad', 16000), cut('fresh'), cut('good', 21000)]
-    expect(sortTracks(list, 'quality').map((t) => t.id)).toEqual(['good', 'bad', 'fresh'])
-  })
-
   it('keeps equal rows in their import order so toggling never scrambles ties', () => {
     const list = [mk({ id: 'x', listLabel: 'Same' }), mk({ id: 'y', listLabel: 'Same' })]
     expect(sortTracks(list, 'name').map((t) => t.id)).toEqual(['x', 'y'])
