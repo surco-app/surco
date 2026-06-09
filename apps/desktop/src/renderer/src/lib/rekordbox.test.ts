@@ -3,7 +3,7 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { buildRekordboxXml } from './rekordbox'
 
-const track = (over: Partial<TrackItem> & { meta?: Partial<TrackMetadata> }): TrackItem =>
+const track = (over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> }): TrackItem =>
   ({
     id: over.id ?? 'x',
     inputPath: over.inputPath ?? '/music/x.wav',
