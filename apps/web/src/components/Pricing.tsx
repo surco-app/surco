@@ -137,9 +137,12 @@ export default function Pricing() {
 
       <Reveal>
         <div className="mt-6 flex flex-col items-start gap-2 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-          <a href="/recover" className="text-blue transition-colors hover:text-cyan">
-            {t('pricing.pro.recover')}
-          </a>
+          {/* No one can have bought during the beta, so recovery is hidden until then. */}
+          {!BETA_MODE && (
+            <a href="/recover" className="text-blue transition-colors hover:text-cyan">
+              {t('pricing.pro.recover')}
+            </a>
+          )}
           <a
             href={SPONSOR_URL}
             target="_blank"

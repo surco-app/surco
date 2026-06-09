@@ -128,7 +128,9 @@ export function LicensePanel({ snapshot, onChanged, onClose, lede }: Props): Rea
               style={{ width: `${total > 0 ? Math.min(100, (used / total) * 100) : 0}%` }}
             />
           </div>
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('upgrade.usage.left', { count: remaining })}</p>
+          <p className="mt-1.5 text-xs text-fg-dim">
+            {tr('upgrade.usage.left', { count: remaining })}
+          </p>
         </div>
       )}
 
@@ -150,48 +152,54 @@ export function LicensePanel({ snapshot, onChanged, onClose, lede }: Props): Rea
         ))}
       </ul>
 
-      <button
-        type="button"
-        data-testid="license-buy"
-        onClick={() => window.api.buyLicense()}
-        className="press mt-5 w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)]"
-      >
-        {tr('upgrade.buy')}
-      </button>
+      {/* No sales during the beta: everyone is already Pro, so the buy button and
+          activation form would be misleading. The banner above explains why. */}
+      {!snapshot.betaMode && (
+        <>
+          <button
+            type="button"
+            data-testid="license-buy"
+            onClick={() => window.api.buyLicense()}
+            className="press mt-5 w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)]"
+          >
+            {tr('upgrade.buy')}
+          </button>
 
-      <div className="mt-5 border-t border-[var(--color-line-strong)] pt-4">
-        <p className="text-xs font-medium text-fg-dim">{tr('upgrade.haveKey')}</p>
-        <input
-          type="text"
-          data-testid="license-key"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder={tr('upgrade.keyPlaceholder')}
-          className="mt-2 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-        />
-        <input
-          type="email"
-          data-testid="license-email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={tr('upgrade.emailPlaceholder')}
-          className="mt-2 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-        />
-        {error && (
-          <p data-testid="license-error" className="mt-2 text-xs text-[var(--color-danger)]">
-            {error}
-          </p>
-        )}
-        <button
-          type="button"
-          data-testid="license-activate"
-          onClick={activate}
-          disabled={busy || !key.trim()}
-          className="press mt-3 w-full rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-50"
-        >
-          {tr('upgrade.activate')}
-        </button>
-      </div>
+          <div className="mt-5 border-t border-[var(--color-line-strong)] pt-4">
+            <p className="text-xs font-medium text-fg-dim">{tr('upgrade.haveKey')}</p>
+            <input
+              type="text"
+              data-testid="license-key"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder={tr('upgrade.keyPlaceholder')}
+              className="mt-2 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+            <input
+              type="email"
+              data-testid="license-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={tr('upgrade.emailPlaceholder')}
+              className="mt-2 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+            {error && (
+              <p data-testid="license-error" className="mt-2 text-xs text-[var(--color-danger)]">
+                {error}
+              </p>
+            )}
+            <button
+              type="button"
+              data-testid="license-activate"
+              onClick={activate}
+              disabled={busy || !key.trim()}
+              className="press mt-3 w-full rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-50"
+            >
+              {tr('upgrade.activate')}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
