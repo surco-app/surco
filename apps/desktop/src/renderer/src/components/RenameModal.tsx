@@ -73,10 +73,13 @@ export function RenameModal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="rename-title"
         className="animate-pop relative z-10 w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-4 border-b border-[var(--color-line)] px-6 pt-5 pb-3">
-          <h2 className="text-base font-semibold">{tr('rename.title')}</h2>
+          <h2 id="rename-title" className="text-base font-semibold">
+            {tr('rename.title')}
+          </h2>
           <p className="mt-0.5 text-xs text-fg-dim">{tr('rename.description')}</p>
         </div>
 

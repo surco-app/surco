@@ -49,6 +49,13 @@ function renderModal(tracks: TrackItem[]) {
 const type = (testid: string, value: string) =>
   fireEvent.change(screen.getByTestId(testid), { target: { value } })
 
+describe('FindReplaceModal a11y', () => {
+  it('exposes an accessible name on the dialog', () => {
+    renderModal([track('1', { title: 'x' })])
+    expect(screen.getByRole('dialog')).toHaveAccessibleName()
+  })
+})
+
 describe('FindReplaceModal', () => {
   it('applies a plain replacement to the matching field of every track', () => {
     const { onApply, onClose } = renderModal([

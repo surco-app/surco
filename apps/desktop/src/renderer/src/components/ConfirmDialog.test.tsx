@@ -30,6 +30,13 @@ describe('ConfirmDialog', () => {
     expect(screen.getByText('This removes all 4 tracks.')).toBeInTheDocument()
   })
 
+  // A screen reader announces a dialog by its accessible name; without one it just
+  // says "dialog", leaving the user unsure what they're confirming.
+  it('names the dialog after its title for screen readers', () => {
+    renderDialog()
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Clear the list?')
+  })
+
   it('runs the action and closes on confirm', () => {
     const { onConfirm, onClose } = renderDialog()
     fireEvent.click(screen.getByTestId('confirm-ok'))

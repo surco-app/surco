@@ -29,10 +29,13 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="help-title"
         className="animate-pop relative z-10 flex max-h-[80vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-4 flex items-center justify-between border-b border-[var(--color-line)] px-6 pt-5 pb-3">
-          <h2 className="text-base font-semibold">{tr('help.title')}</h2>
+          <h2 id="help-title" className="text-base font-semibold">
+            {tr('help.title')}
+          </h2>
           <button
             type="button"
             data-testid="help-close"

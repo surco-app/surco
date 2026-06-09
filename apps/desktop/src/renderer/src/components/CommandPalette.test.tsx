@@ -13,6 +13,12 @@ function cmd(over: Partial<Command> & { id: string }): Command {
 }
 
 describe('CommandPalette', () => {
+  it('exposes an accessible name on the dialog and search field', () => {
+    render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName()
+    expect(screen.getByTestId('palette-input')).toHaveAccessibleName()
+  })
+
   it('runs an enabled command and closes when its item is clicked', () => {
     const run = vi.fn()
     const onClose = vi.fn()

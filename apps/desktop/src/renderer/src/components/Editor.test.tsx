@@ -294,6 +294,7 @@ describe('Editor loudness pills', () => {
     expect(screen.queryByTestId('loudness-help')).toBeNull()
     fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
     expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
+    expect(screen.getByTestId('loudness-help')).toHaveAccessibleName()
   })
 
   it('closes the help modal on Escape, the expected way to dismiss a dialog', async () => {

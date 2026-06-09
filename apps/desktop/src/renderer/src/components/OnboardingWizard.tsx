@@ -55,6 +55,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="onboarding-step-title"
         className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="min-h-[280px]">
@@ -65,7 +66,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 strokeWidth={1.75}
                 className="mb-5 h-12 w-12 text-[var(--color-accent)]"
               />
-              <h2 className="text-lg font-semibold text-balance">
+              <h2 id="onboarding-step-title" className="text-lg font-semibold text-balance">
                 {tr('onboarding.welcomeTitle')}
               </h2>
               <p className="mt-2 max-w-sm text-sm text-pretty text-fg-dim">
@@ -76,7 +77,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'token' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.discogsToken')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.discogsToken')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.tokenBody')}</p>
               <input
                 data-testid="onboarding-token"
@@ -123,7 +126,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'format' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.outputFormat')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.outputFormat')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
               <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
                 {FORMATS.map((id) => (
@@ -149,7 +154,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'grouping' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.grouping')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.grouping')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.groupingBody')}</p>
               <input
                 data-testid="onboarding-grouping"
@@ -164,7 +171,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'genre' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.genre')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.genre')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.genreBody')}</p>
               <input
                 data-testid="onboarding-genre"
@@ -179,7 +188,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'required' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.required')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.required')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.requiredBody')}</p>
               <div className="flex flex-wrap gap-2">
                 {settings.visibleFields.map((key) => {
@@ -207,7 +218,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
           {STEPS[step] === 'spectrum' && (
             <>
-              <h2 className="mb-1 text-lg font-semibold">{tr('settings.showSpectrum')}</h2>
+              <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                {tr('settings.showSpectrum')}
+              </h2>
               <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.spectrumBody')}</p>
               <label className="flex cursor-pointer items-center gap-3">
                 <input

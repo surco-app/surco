@@ -229,6 +229,7 @@ export function SettingsModal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-label={tr('header.settings')}
         className="animate-pop relative z-10 flex max-h-[84vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">

@@ -50,9 +50,12 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="export-title"
         className="animate-pop relative z-10 w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
-        <h2 className="text-base font-semibold">{tr('export.title')}</h2>
+        <h2 id="export-title" className="text-base font-semibold">
+          {tr('export.title')}
+        </h2>
         <p className="mt-1 text-sm text-fg-dim">{tr('export.subtitle')}</p>
         <div className="mt-4 flex flex-col gap-2">
           {targets.map((t) => (

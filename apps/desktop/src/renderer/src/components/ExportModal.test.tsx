@@ -45,6 +45,11 @@ const track = (): TrackItem =>
   }) as TrackItem
 
 describe('ExportModal', () => {
+  it('exposes an accessible name on the dialog', () => {
+    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName()
+  })
+
   // One Export entry point routes to the right collection writer by what the user picks.
   it('writes a Traktor NML when Traktor is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)

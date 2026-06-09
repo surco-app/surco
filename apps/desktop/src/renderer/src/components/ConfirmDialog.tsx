@@ -39,9 +39,12 @@ export function ConfirmDialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="confirm-title"
         className="animate-pop relative z-10 w-[440px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 id="confirm-title" className="text-base font-semibold">
+          {title}
+        </h2>
         <p className="mt-2 text-sm text-fg-dim">{message}</p>
         <div className="mt-6 flex justify-end gap-2">
           <button

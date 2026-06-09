@@ -59,6 +59,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-label={t('header.palette')}
         className="animate-pop relative z-10 w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
       >
         <input
@@ -67,6 +68,7 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
+          aria-label={t('palette.placeholder')}
           placeholder={t('palette.placeholder')}
           className="w-full border-b border-[var(--color-line)] bg-transparent px-4 py-3.5 text-sm outline-none"
         />

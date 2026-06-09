@@ -29,6 +29,11 @@ function renderModal(over: { initialFormat?: string; meta?: Partial<TrackMetadat
 }
 
 describe('RenameModal', () => {
+  it('exposes an accessible name on the dialog', () => {
+    renderModal()
+    expect(screen.getByRole('dialog')).toHaveAccessibleName()
+  })
+
   // The dialog opens seeded with the saved pattern so the common case is one click,
   // and the preview proves what the name becomes for THIS track before committing.
   it('seeds the saved pattern and previews it against the track', () => {
