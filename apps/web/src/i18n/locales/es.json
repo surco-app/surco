@@ -22,8 +22,8 @@
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta · gratis durante la beta",
-  "betaNote": "Surco está en beta y es gratis. Sin cuenta, sin suscripción.",
+  "betaPill": "Beta",
+  "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
   },
@@ -204,23 +204,36 @@
   },
   "pricing": {
     "kicker": "Precio",
-    "title": "Gratis durante la beta",
-    "lede": "Todas las funciones, todos los formatos. Sin cuenta y sin suscripción mientras dura la beta.",
-    "card": {
-      "plan": "Gratis",
+    "title": "Empieza gratis. Hazte Pro cuando quieras.",
+    "lede": "Convierte y etiqueta tus discos gratis. Surco Pro desbloquea las conversiones ilimitadas y el flujo DJ — un único pago, tuyo para siempre.",
+    "betaBanner": "Surco está en beta, así que ahora mismo todo está desbloqueado gratis. El precio de Pro empieza cuando acabe la beta.",
+    "free": {
+      "name": "Gratis",
       "price": "0 €",
-      "period": "durante la beta",
+      "period": "para empezar",
+      "cta": "Descargar Surco",
       "features": [
-        "Todos los formatos — AIFF, WAV, FLAC, MP3",
-        "Etiquetado Discogs y emparejado de disco entero",
-        "Análisis de espectro para cazar fakes",
-        "Lectura de loudness y normalización",
-        "Envío directo a Apple Music",
-        "Actualizaciones automáticas"
+        "Convierte a AIFF, WAV, FLAC y MP3",
+        "Etiquetado de Discogs y match de álbum completo",
+        "Análisis de espectro para detectar fakes",
+        "Hasta 10 conversiones al mes"
+      ]
+    },
+    "pro": {
+      "name": "Surco Pro",
+      "period": "pago único · tuyo para siempre",
+      "cta": "Consigue Surco Pro",
+      "betaCta": "Gratis durante la beta",
+      "loading": "Redirigiendo…",
+      "recover": "¿Ya lo compraste? Recupera tu licencia",
+      "features": [
+        "Todo lo de Gratis",
+        "Conversiones ilimitadas",
+        "Convertir todo — procesa toda la caja",
+        "Exportar a rekordbox y Traktor"
       ]
     },
     "sponsor": {
-      "text": "Surco es gratis y abierto. Si te ahorra tiempo, puedes echar una mano para que siga avanzando.",
       "cta": "Apóyalo en GitHub"
     }
   },

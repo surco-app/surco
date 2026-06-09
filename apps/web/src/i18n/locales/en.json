@@ -22,8 +22,8 @@
   },
   "available": "Available · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta · free during beta",
-  "betaNote": "Surco is in beta and free. No account, no subscription.",
+  "betaPill": "Beta",
+  "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
     "space": "Space"
   },
@@ -204,23 +204,36 @@
   },
   "pricing": {
     "kicker": "Pricing",
-    "title": "Free during the beta",
-    "lede": "Every feature, every format. No account, no subscription while the beta lasts.",
-    "card": {
-      "plan": "Free",
+    "title": "Start free. Go Pro when you are ready.",
+    "lede": "Convert and tag your records for free. Surco Pro unlocks unlimited conversions and the DJ workflow — one payment, yours forever.",
+    "betaBanner": "Surco is in beta, so everything is unlocked for free right now. Pro pricing starts when the beta ends.",
+    "free": {
+      "name": "Free",
       "price": "€0",
-      "period": "during the beta",
+      "period": "to get started",
+      "cta": "Download Surco",
       "features": [
-        "Every format — AIFF, WAV, FLAC, MP3",
+        "Convert to AIFF, WAV, FLAC and MP3",
         "Discogs tagging and full-album match",
         "Spectrum analysis to catch fakes",
-        "Loudness readout and normalization",
-        "Send straight to Apple Music",
-        "Automatic updates"
+        "Up to 10 conversions a month"
+      ]
+    },
+    "pro": {
+      "name": "Surco Pro",
+      "period": "one-time · yours forever",
+      "cta": "Get Surco Pro",
+      "betaCta": "Free during the beta",
+      "loading": "Redirecting…",
+      "recover": "Already bought? Recover your license",
+      "features": [
+        "Everything in Free",
+        "Unlimited conversions",
+        "Convert all — batch your whole crate",
+        "Export to rekordbox and Traktor"
       ]
     },
     "sponsor": {
-      "text": "Surco is free and open. If it saves you time, you can chip in to keep it moving.",
       "cta": "Sponsor on GitHub"
     }
   },

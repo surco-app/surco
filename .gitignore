@@ -5,3 +5,6 @@ dist
 *.log
 *.tsbuildinfo
 .claude/worktrees
+.env
+.env.local
+.vercel
