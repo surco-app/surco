@@ -164,6 +164,19 @@ textarea {
   animation: overlay-in 0.16s ease;
 }
 
+@keyframes top-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-top-progress {
+  animation: top-progress 1.1s ease-in-out infinite;
+}
+
 .press {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }

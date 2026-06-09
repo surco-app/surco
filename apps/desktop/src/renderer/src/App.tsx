@@ -37,6 +37,7 @@ import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { SettingsModal } from './components/SettingsModal'
 import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
+import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
@@ -61,7 +62,7 @@ import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
-import { applyProgress } from './lib/progress'
+import { applyProgress, topBarProgress } from './lib/progress'
 import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
@@ -1125,12 +1126,19 @@ export default function App(): React.JSX.Element {
     onEscape: closeTopOverlay,
   })
 
+  // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
+  // and a fresh drop still reading its tags shows as an indeterminate run.
+  const progress = topBarProgress(
+    [analysis, matching, batchProgress],
+    tracks.some((t) => t.loadingMeta),
+  )
+
   return (
     // Drag-and-drop is a pointer-only convenience; the "Add files" button is the
     // keyboard-accessible path to the same action.
     // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
-      className="flex h-screen flex-col"
+      className="relative flex h-screen flex-col"
       onDragOver={(e) => {
         e.preventDefault()
         setDragging(true)
@@ -1138,6 +1146,7 @@ export default function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
+      {progress && <TopProgressBar fraction={progress.fraction} />}
       {/* Music preview playback — there is no speech to caption. The clock
           (currentTime/duration/paused) is read by LivePlayer, which subscribes to
           this element directly so playback re-renders only the card. */}
