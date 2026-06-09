@@ -518,7 +518,11 @@ export async function generateSpectrogram(input: string): Promise<string> {
       '-i',
       input,
       '-lavfi',
-      'showspectrumpic=s=1000x280:legend=0:color=intensity:gain=2',
+      // cividis: a deep-navy → blue → yellow ramp. Its dark blue base sits naturally on
+      // the app's dark UI (and reads fine framed in the light theme), while the yellow
+      // peaks keep loud content legible. Bump the cache namespace when this changes so
+      // images cached under the old palette regenerate instead of showing stale colors.
+      'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2',
       out,
     ])
     const buf = await readFile(out)

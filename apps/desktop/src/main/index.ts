@@ -617,7 +617,9 @@ function registerIpc(): void {
       // Cache only a clean run: a cutoff failure yields a valid image but a null
       // cutoff, and we'd rather retry that next open than pin it for the file's life.
       const { image, cutoffHz, sampleRateHz, cutoffError } = await cachedAnalysis(
-        'spectrogram',
+        // Namespace carries the palette so changing it invalidates images cached under
+        // the previous one — they regenerate on next open instead of showing stale colors.
+        'spectrogram-cividis',
         inputPath,
         () =>
           buildSpectrum(inputPath, {

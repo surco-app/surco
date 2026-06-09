@@ -105,6 +105,18 @@ describe('OnboardingWizard fields', () => {
   })
 })
 
+describe('OnboardingWizard spectrum', () => {
+  // The spectrum step shows a faked spectrogram so a brand-new user (no tracks loaded yet)
+  // can see what the feature is — including the lossy-cutoff line it's there to reveal.
+  it('illustrates the spectrum with a preview and a cutoff marker', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    // welcome → token → format → grouping → genre → fields → spectrum
+    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('spectrum-preview')).toBeInTheDocument()
+    expect(screen.getByText(/cutoff/i)).toBeInTheDocument()
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
+import { formatKHz } from '../lib/quality'
 import { FieldsEditor } from './FieldsEditor'
 import { useFocusTrap } from './useFocusTrap'
 
@@ -287,6 +288,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   />
                   <span className="text-sm">{tr('settings.showSpectrum')}</span>
                 </label>
+                <div className="mt-4">
+                  <SpectrumPreview />
+                </div>
               </>
             )}
           </div>
@@ -324,6 +328,80 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+const PREVIEW_NYQUIST = 22050
+const PREVIEW_CUTOFF = 16000
+const PREVIEW_FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
+// Deterministic vertical "transients" so the illustration reads like a real spectrogram
+// without bundling an image; index-derived so it's stable across renders.
+const PREVIEW_STREAKS = Array.from({ length: 64 }, (_, i) => ({
+  x: (i + 0.5) / 64,
+  o: 0.05 + ((i * 37) % 9) / 36,
+}))
+
+// A faked spectrogram shown in the wizard's spectrum step: it teaches what the real
+// analysis looks like (energy fading toward the top, a cutoff line where a re-encoded
+// lossy file falls off) before the user has loaded a track. Blue to match the app's
+// cividis palette; the labels sit on the dark image, so it reads in both themes.
+function SpectrumPreview(): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const cutoffTop = (1 - PREVIEW_CUTOFF / PREVIEW_NYQUIST) * 100
+  return (
+    <div
+      data-testid="spectrum-preview"
+      className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]"
+    >
+      <svg
+        viewBox="0 0 320 160"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        className="block h-40 w-full"
+      >
+        <defs>
+          <linearGradient id="surco-spectrum-preview" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0a1124" />
+            <stop offset="55%" stopColor="#1b3a6b" />
+            <stop offset="100%" stopColor="#3f6fb0" />
+          </linearGradient>
+        </defs>
+        <rect width="320" height="160" fill="url(#surco-spectrum-preview)" />
+        {PREVIEW_STREAKS.map((s) => (
+          <line
+            key={s.x}
+            x1={s.x * 320}
+            x2={s.x * 320}
+            y1="0"
+            y2="160"
+            stroke="#bcdcff"
+            strokeWidth="1"
+            opacity={s.o}
+          />
+        ))}
+        {/* The loudest energy lives in the low frequencies at the bottom. */}
+        <rect y="150" width="320" height="10" fill="#dcebff" opacity="0.45" />
+        {/* A lossy file re-encoded as lossless drops off above the cutoff. */}
+        <rect width="320" height={(cutoffTop / 100) * 160} fill="#0a1124" opacity="0.5" />
+      </svg>
+      {PREVIEW_FREQ_MARKS.map((f) => (
+        <span
+          key={f}
+          style={{ top: `${(1 - f / PREVIEW_NYQUIST) * 100}%` }}
+          className="pointer-events-none absolute left-1 -translate-y-1/2 rounded bg-black/55 px-1 text-[10px] tabular-nums text-white"
+        >
+          {f / 1000}k
+        </span>
+      ))}
+      <div
+        style={{ top: `${cutoffTop}%` }}
+        className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/70"
+      >
+        <span className="absolute right-1 top-0.5 rounded bg-black/65 px-1 text-[10px] font-medium text-white">
+          {tr('editor.spectrumCutoff', { cutoff: formatKHz(PREVIEW_CUTOFF) })}
+        </span>
       </div>
     </div>
   )
