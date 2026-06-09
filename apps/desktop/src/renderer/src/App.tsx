@@ -1028,6 +1028,8 @@ export default function App(): React.JSX.Element {
           this element directly so playback re-renders only the card. */}
       {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
       <audio ref={audioRef} hidden onEnded={closePlayer} />
+      {/* Names the window for screen readers; visually redundant with the title bar. */}
+      <h1 className="sr-only">Surco</h1>
       <Toolbar
         isMac={isMac}
         trackCount={tracks.length}

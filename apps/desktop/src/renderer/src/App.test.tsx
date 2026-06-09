@@ -386,3 +386,12 @@ describe('App keyboard shortcuts', () => {
     await waitFor(() => expect(screen.queryByTestId('palette-input')).toBeNull())
   })
 })
+
+describe('App landmarks', () => {
+  // A screen reader user lands in an app with no document outline; a single top-level
+  // heading names the window so they know where they are.
+  it('exposes a top-level heading for orientation', async () => {
+    await renderApp()
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+  })
+})
