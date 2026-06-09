@@ -264,8 +264,12 @@ export default function App(): React.JSX.Element {
   // each time the Settings modal opens to keep the Stats tab current within a session.
   const settingsOpen = activeModal?.type === 'settings'
   useEffect(() => {
-    if (settingsOpen) window.api.getSettings().then(setSettings)
-  }, [settingsOpen])
+    if (settingsOpen) {
+      window.api.getSettings().then(setSettings)
+      // Refresh the snapshot so the License tab and Stats usage meter are current.
+      license.reload()
+    }
+  }, [settingsOpen, license.reload])
 
   useEffect(() => {
     const pref = themePreview ?? settings?.theme ?? 'system'
@@ -1279,6 +1283,8 @@ export default function App(): React.JSX.Element {
           onSave={saveSettings}
           onPreviewTheme={setThemePreview}
           initialTab={activeModal.tab}
+          license={license.snapshot}
+          onLicenseChanged={license.reload}
         />
       )}
 

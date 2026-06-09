@@ -14,8 +14,11 @@ export type Tier = 'free' | 'pro'
 
 // Free-tier ceiling on track conversions, counted per calendar month. Single source
 // of truth so the number enforced by the meter always matches the number shown in
-// the upgrade copy.
-export const FREE_MONTHLY_CONVERSIONS = 10
+// the upgrade copy. Configurable via SURCO_FREE_MONTHLY (defaults to 25).
+const freeMonthlyEnv =
+  typeof process !== 'undefined' ? Number(process.env?.SURCO_FREE_MONTHLY) : Number.NaN
+export const FREE_MONTHLY_CONVERSIONS: number =
+  Number.isFinite(freeMonthlyEnv) && freeMonthlyEnv > 0 ? freeMonthlyEnv : 25
 
 // How many devices one Pro license may have active at the same time.
 export const MAX_ACTIVATIONS = 3

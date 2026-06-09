@@ -329,7 +329,9 @@ function registerIpc(): void {
   // back to paste the emailed key into the activation screen.
   ipcMain.handle('license:buy', () => {
     const base = process.env.SURCO_LICENSE_API || 'https://getsurco.app'
-    return shell.openExternal(`${base}/buy?src=app`)
+    // Carry the app's language so the Stripe page and the license email match it.
+    const lang = app.getLocale().toLowerCase().startsWith('es') ? 'es' : 'en'
+    return shell.openExternal(`${base}/buy?src=app&lang=${lang}`)
   })
 
   ipcMain.handle('dialog:pickFiles', async () => {

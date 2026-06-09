@@ -121,6 +121,10 @@
       "refunded": "Esta licencia fue reembolsada y ya no está activa.",
       "revoked": "Esta licencia ha sido revocada.",
       "offline": "No se pudo contactar con el servidor de licencias. Revisa tu conexión e inténtalo de nuevo."
+    },
+    "usage": {
+      "title": "Este mes",
+      "left": "Te quedan {{count}} conversiones este mes"
     }
   },
   "trackList": {
@@ -314,7 +318,8 @@
       "artwork": "Carátula",
       "fields": "Campos",
       "shortcuts": "Atajos",
-      "stats": "Estadísticas"
+      "stats": "Estadísticas",
+      "license": "Licencia"
     },
     "shortcuts": {
       "intro": "Pulsa un atajo y luego las teclas nuevas. Esc cancela.",
@@ -328,7 +333,8 @@
       "count": "conversiones",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
-      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco."
+      "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
+      "thisMonth": "{{used}} de {{total}} conversiones usadas este mes"
     },
     "theme": "Apariencia",
     "themes": {
@@ -378,7 +384,10 @@
     "moveUp": "Subir",
     "moveDown": "Bajar",
     "allVisible": "Todos los campos están visibles.",
-    "required": "Obligatorio"
+    "required": "Obligatorio",
+    "license": {
+      "loading": "Cargando…"
+    }
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",
