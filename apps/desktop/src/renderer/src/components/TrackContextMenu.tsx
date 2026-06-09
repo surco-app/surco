@@ -76,6 +76,30 @@ export function TrackContextMenu({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // The menu can be opened from the keyboard (Shift+F10 / the context-menu key), so move
+  // focus to the first item on open and hand it back to the opener once it closes.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+    return () => opener?.focus?.()
+  }, [])
+
+  function onMenuKeyDown(e: React.KeyboardEvent): void {
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+    )
+    if (items.length === 0) return
+    const idx = items.indexOf(document.activeElement as HTMLElement)
+    let next = -1
+    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
+    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = items.length - 1
+    if (next === -1) return
+    e.preventDefault()
+    items[next].focus()
+  }
+
   function run(action: () => void): void {
     action()
     onClose()
@@ -98,6 +122,7 @@ export function TrackContextMenu({
         ref={menuRef}
         role="menu"
         data-testid="track-menu"
+        onKeyDown={onMenuKeyDown}
         style={{ top: pos.y, left: pos.x }}
         className="animate-pop absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
       >
