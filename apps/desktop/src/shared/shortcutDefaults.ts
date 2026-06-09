@@ -28,6 +28,15 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'next', chord: ['down'] },
   { id: 'prev', chord: ['up'] },
   { id: 'search', chord: ['/'] },
+  // List-wide toolbar actions. select-all keeps the typing guard so ⌘A still selects
+  // text inside a field; the rest are mod-combos that stay live while editing, matching
+  // rename (⌘⇧R) and the other toolbar shortcuts.
+  { id: 'select-all', chord: ['mod', 'a'], suppressWhileTyping: true },
+  { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
+  { id: 'analyze-quality', chord: ['mod', 'shift', 'a'] },
+  { id: 'auto-match', chord: ['mod', 'shift', 'd'] },
+  { id: 'export', chord: ['mod', 'shift', 'e'] },
+  { id: 'stats', chord: ['mod', 'shift', 's'] },
 ]
 
 // The effective binding per command id: defaults with the user's overrides applied. An

@@ -429,3 +429,36 @@ describe('App landmarks', () => {
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
   })
 })
+
+describe('App command palette list-wide actions', () => {
+  // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
+  // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
+  // proves the run wiring on its own.
+  it('runs a list-wide action from the palette (Stats opens its settings tab)', async () => {
+    await renderApp()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'Stats' } })
+    const items = screen.getAllByTestId('palette-item')
+    expect(items).toHaveLength(1)
+    fireEvent.click(items[0])
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+
+  // The list-wide commands act on the whole crate, so they stay disabled until something
+  // is loaded — the palette must honour the same gate the toolbar buttons do.
+  it('disables the list-wide commands until tracks are loaded', async () => {
+    await renderApp()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'Export' } })
+    expect(screen.getByTestId('palette-item')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    await addTwoTracks()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'Export' } })
+    expect(screen.getByTestId('palette-item')).toHaveAttribute('aria-disabled', 'false')
+  })
+})

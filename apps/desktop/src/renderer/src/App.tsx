@@ -883,6 +883,20 @@ export default function App(): React.JSX.Element {
       run: () => setActiveModal({ type: 'findReplace' }),
     },
     {
+      id: 'select-all',
+      title: tr('commands.selectAll'),
+      hint: hintFor('select-all'),
+      enabled: tracks.length > 0,
+      run: selectAll,
+    },
+    {
+      id: 'fill-all',
+      title: tr('commands.fillAll'),
+      hint: hintFor('fill-all'),
+      enabled: tracks.length > 0,
+      run: askFillAll,
+    },
+    {
       id: 'prev',
       title: tr('commands.prev'),
       hint: hintFor('prev'),
@@ -934,6 +948,39 @@ export default function App(): React.JSX.Element {
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
         ),
+    },
+    {
+      // Toggles the quality sweep: starts it, or cancels a running one — the same button
+      // the toolbar shows. Disabled once every loaded track is already analyzed.
+      id: 'analyze-quality',
+      title: tr('commands.analyzeQuality'),
+      hint: hintFor('analyze-quality'),
+      enabled: analysis ? true : !tracksView.every((t) => Boolean(t.spectrum)),
+      run: () => {
+        if (analysis) analyzeCancel.current = true
+        else analyzeAllQuality()
+      },
+    },
+    {
+      // Toggles the Discogs auto-match sweep. Needs a user token and at least one
+      // unmatched track, mirroring the toolbar button's disabled rule.
+      id: 'auto-match',
+      title: tr('commands.autoMatch'),
+      hint: hintFor('auto-match'),
+      enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
+      run: () => {
+        if (matching) matchCancel.current = true
+        else enqueueAutoMatch(tracksView, false)
+      },
+    },
+    {
+      // Pro feature: opens the DJ-software export when licensed, otherwise the upgrade
+      // prompt — the same gate the toolbar applies.
+      id: 'export',
+      title: tr('commands.export'),
+      hint: hintFor('export'),
+      enabled: tracks.length > 0,
+      run: () => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export')),
     },
     {
       id: 'upgrade',
@@ -993,6 +1040,13 @@ export default function App(): React.JSX.Element {
       hint: hintFor('shortcuts'),
       enabled: true,
       run: () => openSettings('shortcuts'),
+    },
+    {
+      id: 'stats',
+      title: tr('commands.stats'),
+      hint: hintFor('stats'),
+      enabled: true,
+      run: () => openSettings('stats'),
     },
     {
       id: 'help',

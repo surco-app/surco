@@ -36,6 +36,24 @@ describe('matchChord', () => {
     expect(matchChord(b, ['/'], false)).toBe('search')
   })
 
+  // The list-wide toolbar actions are bindable too, so the palette, the keymap and the
+  // Shortcuts tab all expose them.
+  it('resolves the list-wide action chords', () => {
+    expect(matchChord(b, ['mod', 'a'], false)).toBe('select-all')
+    expect(matchChord(b, ['mod', 'shift', 'f'], false)).toBe('fill-all')
+    expect(matchChord(b, ['mod', 'shift', 'a'], false)).toBe('analyze-quality')
+    expect(matchChord(b, ['mod', 'shift', 'd'], false)).toBe('auto-match')
+    expect(matchChord(b, ['mod', 'shift', 'e'], false)).toBe('export')
+    expect(matchChord(b, ['mod', 'shift', 's'], false)).toBe('stats')
+  })
+
+  // ⌘A has to keep selecting text inside a field; only outside one does it select every
+  // track, so it carries the typing guard despite being a mod-combo.
+  it('suppresses select-all while typing so ⌘A still selects text in a field', () => {
+    expect(matchChord(b, ['mod', 'a'], true)).toBeNull()
+    expect(matchChord(b, ['mod', 'a'], false)).toBe('select-all')
+  })
+
   // Mod-combos still fire while typing (so ⌘⏎ converts mid-edit), but bare keys don't
   // (so Space types a space) and ⌘⌫ is suppressed (so ⌫ deletes text, not the track).
   it('applies the typing guard: mod-combos fire, bare keys and ⌘⌫ do not', () => {

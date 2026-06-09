@@ -329,17 +329,17 @@ describe('SettingsModal shortcuts', () => {
   it('records a new chord and saves it as an override', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
-    record('add', { key: 'a', metaKey: true, shiftKey: true })
-    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧A')
+    record('add', { key: 'x', metaKey: true, shiftKey: true })
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ shortcutOverrides: { add: ['mod', 'shift', 'a'] } }),
+      expect.objectContaining({ shortcutOverrides: { add: ['mod', 'shift', 'x'] } }),
     )
   })
 
   it('resets a single command back to its default', () => {
     openShortcuts()
-    record('add', { key: 'a', metaKey: true, shiftKey: true })
+    record('add', { key: 'x', metaKey: true, shiftKey: true })
     fireEvent.click(screen.getByTestId('shortcut-reset-add'))
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
   })
@@ -347,7 +347,7 @@ describe('SettingsModal shortcuts', () => {
   it('reset all clears every override', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
-    record('add', { key: 'a', metaKey: true, shiftKey: true })
+    record('add', { key: 'x', metaKey: true, shiftKey: true })
     fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
     fireEvent.click(screen.getByTestId('settings-save'))
