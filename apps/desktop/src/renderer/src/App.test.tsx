@@ -352,6 +352,27 @@ describe('App header convert button', () => {
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
     expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
   })
+
+  // A sighted user sees the "2 converted" summary appear; a screen reader only learns
+  // the batch finished if that summary is a live status region.
+  it('announces the batch result through a live status region', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('convert-selected'))
+    const summary = await screen.findByTestId('batch-summary')
+    expect(summary).toHaveAttribute('role', 'status')
+    expect(summary).toHaveTextContent('2 converted')
+  })
 })
 
 describe('App keyboard shortcuts', () => {

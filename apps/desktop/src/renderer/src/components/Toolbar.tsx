@@ -90,7 +90,7 @@ export function Toolbar({
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
         {batchSummary && !batching && (
-          <span data-testid="batch-summary" className="text-sm text-fg-muted">
+          <span data-testid="batch-summary" role="status" className="text-sm text-fg-muted">
             {[
               tr('header.batchConverted', { count: batchSummary.converted }),
               batchSummary.skipped > 0 &&
