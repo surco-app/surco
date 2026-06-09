@@ -93,6 +93,18 @@ textarea {
     outline: none;
     box-shadow: var(--ring);
   }
+  /* The input ring above doesn't cover buttons/links/selects, so keyboard focus
+     on every other control was invisible. :focus-visible keeps it keyboard-only
+     (no ring on mouse clicks), matching the native macOS focus behaviour. */
+  button:not(:disabled):focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [role="option"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+  }
 }
 
 ::selection {
