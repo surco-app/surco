@@ -14,6 +14,9 @@ const defaults: Settings = {
   addToAppleMusic: process.platform === 'darwin',
   // Keep a copy in the output folder by default; "Apple Music only" is opt-in.
   keepOutputCopy: true,
+  // Off by default: exports produce a copy and never touch the source unless the user
+  // opts into overwriting it.
+  overwriteOriginal: false,
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
   genrePresets: [],

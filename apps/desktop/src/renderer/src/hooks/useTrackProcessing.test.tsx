@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { TrackMetadata } from '../../../shared/types'
+import type { Settings, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import '../i18n'
 import { useTrackProcessing } from './useTrackProcessing'
@@ -144,6 +144,49 @@ describe('useTrackProcessing', () => {
     await waitFor(() =>
       expect(result.current.batchSummary).toEqual({ converted: 2, skipped: 0, failed: 0 }),
     )
+  })
+
+  // A per-track custom name (set via rename/regenerate) is normally honored, so the
+  // export lands under the user's chosen file name rather than the source's.
+  it('honors a custom output name when not overwriting', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/custom name.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(() =>
+      useTrackProcessing({
+        tracks: [track({ id: 'a', outputName: 'custom name' })],
+        settings: { overwriteOriginal: false } as unknown as Settings,
+        updateTrack: vi.fn(),
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'custom name' }))
+  })
+
+  // Overwrite rewrites the source itself, so the export must target the original file
+  // name even if a stale custom outputName lingers from before the setting was enabled —
+  // otherwise the rewrite would land on a differently-named file, not the source.
+  it('pins the export name to the original file name in overwrite mode', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+    setApi({ processTrack })
+    const { result } = renderHook(() =>
+      useTrackProcessing({
+        tracks: [track({ id: 'a', outputName: 'custom name' })],
+        settings: { overwriteOriginal: true } as unknown as Settings,
+        updateTrack: vi.fn(),
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
   // "Convert all" is a Pro feature: for a free user it must not touch the conversion

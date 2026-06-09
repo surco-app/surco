@@ -106,7 +106,11 @@ export function useTrackProcessing({
     // Default to the source file's own name: users expect "load and convert" to keep
     // their filename. A metadata-derived name is only used when the editor's
     // "Regenerate from metadata" button (or a manual edit) set track.outputName.
-    const outputName = track.outputName?.trim() || track.fileName
+    // Overwrite mode pins the name to the original regardless of any stale outputName,
+    // so the rewrite lands back on the source file the user means to replace.
+    const outputName = settings?.overwriteOriginal
+      ? track.fileName
+      : track.outputName?.trim() || track.fileName
     try {
       const result = await window.api.processTrack({
         id: track.id,

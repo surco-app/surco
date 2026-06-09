@@ -240,6 +240,9 @@
     "outputName": "File name",
     "outputNameHint": "Defaults to the original file name. Edit the pattern in <0>Settings → Naming</0>.",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
+    "overwriteTitle": "Overwrites the original",
+    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Conversion.",
+    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Conversion.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
     "regenerateCustom": "Customize the filename pattern for this track…",
@@ -372,9 +375,11 @@
     "destinations": {
       "folder": "Output folder",
       "appleMusic": "Apple Music",
-      "both": "Output folder + Apple Music"
+      "both": "Output folder + Apple Music",
+      "overwrite": "Overwrite original"
     },
     "destinationAppleMusicHint": "Adds to Apple Music and keeps no copy in the output folder",
+    "destinationOverwriteHint": "Rewrites each source file in place, keeping its name. No copy goes to the output folder; converting to another format removes the original.",
     "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
     "filenameFolderHint": "Use \"/\" to sort files into folders, e.g.",

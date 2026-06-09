@@ -139,6 +139,7 @@ export function SettingsModal({
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
+  const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
   const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
@@ -181,11 +182,12 @@ export function SettingsModal({
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the two booleans map onto the single radio choice.
   const flacOnly = outputFormat === 'flac'
-  const destination = toDestination(addToAppleMusic, keepOutputCopy, flacOnly)
+  const destination = toDestination(addToAppleMusic, keepOutputCopy, flacOnly, overwriteOriginal)
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
     setKeepOutputCopy(next.keepOutputCopy)
+    setOverwriteOriginal(next.overwriteOriginal)
   }
 
   function save(): void {
@@ -205,6 +207,7 @@ export function SettingsModal({
       outputFormat,
       addToAppleMusic,
       keepOutputCopy,
+      overwriteOriginal,
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
       groupingPresets,
       genrePresets,
@@ -451,52 +454,56 @@ export function SettingsModal({
                 </div>
                 <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
-                {isMac && (
-                  <>
-                    <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-                      {tr('settings.destination')}
-                    </span>
-                    <div
-                      role="radiogroup"
-                      aria-label={tr('settings.destination')}
-                      className="flex flex-col gap-2"
-                    >
-                      {DESTINATIONS.map((d) => {
-                        const disabled = flacOnly && d !== 'folder'
-                        return (
-                          <label
-                            key={d}
-                            className={`flex items-start gap-3 ${
-                              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                            }`}
-                          >
-                            <input
-                              data-testid={`settings-destination-${d}`}
-                              type="radio"
-                              name="destination"
-                              checked={destination === d}
-                              disabled={disabled}
-                              onChange={() => chooseDestination(d)}
-                              className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-                            />
-                            <span className="text-sm">
-                              {tr(`settings.destinations.${d}`)}
-                              {d === 'appleMusic' && (
-                                <span className="block text-xs text-fg-dim">
-                                  {tr('settings.destinationAppleMusicHint')}
-                                </span>
-                              )}
+                <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                  {tr('settings.destination')}
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-label={tr('settings.destination')}
+                  className="flex flex-col gap-2"
+                >
+                  {DESTINATIONS.map((d) => {
+                    // Apple Music destinations only exist on macOS; folder and overwrite
+                    // are platform-independent and always offered.
+                    if (!isMac && (d === 'appleMusic' || d === 'both')) return null
+                    // FLAC pins only the Apple Music options to the folder; overwrite
+                    // rewrites the source in place and is valid for any format.
+                    const disabled = flacOnly && (d === 'appleMusic' || d === 'both')
+                    return (
+                      <label
+                        key={d}
+                        className={`flex items-start gap-3 ${
+                          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                        }`}
+                      >
+                        <input
+                          data-testid={`settings-destination-${d}`}
+                          type="radio"
+                          name="destination"
+                          checked={destination === d}
+                          disabled={disabled}
+                          onChange={() => chooseDestination(d)}
+                          className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                        />
+                        <span className="text-sm">
+                          {tr(`settings.destinations.${d}`)}
+                          {d === 'appleMusic' && (
+                            <span className="block text-xs text-fg-dim">
+                              {tr('settings.destinationAppleMusicHint')}
                             </span>
-                          </label>
-                        )
-                      })}
-                    </div>
-                    {flacOnly && (
-                      <p className="mt-1.5 text-xs text-fg-dim">
-                        {tr('settings.appleMusicFlacNote')}
-                      </p>
-                    )}
-                  </>
+                          )}
+                          {d === 'overwrite' && (
+                            <span className="block text-xs text-fg-dim">
+                              {tr('settings.destinationOverwriteHint')}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                {isMac && flacOnly && (
+                  <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
                 )}
 
                 <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">

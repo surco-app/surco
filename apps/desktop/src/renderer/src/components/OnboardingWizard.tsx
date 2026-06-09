@@ -56,7 +56,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
   // it's the format. chooseDestination maps the single radio back onto the two booleans.
-  const destination = toDestination(addToAppleMusic, keepOutputCopy, outputFormat === 'flac')
+  const destination = toDestination(addToAppleMusic, keepOutputCopy, outputFormat === 'flac', false)
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
@@ -183,7 +183,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       aria-label={tr('settings.destination')}
                       className="flex flex-col gap-2"
                     >
-                      {DESTINATIONS.map((d) => {
+                      {/* Overwriting originals is a destructive, advanced choice kept out
+                          of first-run setup — it lives only in Settings. */}
+                      {DESTINATIONS.filter((d) => d !== 'overwrite').map((d) => {
                         const disabled = outputFormat === 'flac' && d !== 'folder'
                         return (
                           <label

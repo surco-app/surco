@@ -50,6 +50,10 @@ interface Props {
   hasToken: boolean
   outputFormat: OutputFormat
   addToAppleMusic: boolean
+  // When set, exports rewrite the source file in place: the File Name section is hidden
+  // and the rename shortcut disabled (App enforces the latter) because the name is
+  // pinned to the original.
+  overwriteOriginal: boolean
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
@@ -100,6 +104,7 @@ export function Editor({
   hasToken,
   outputFormat,
   addToAppleMusic,
+  overwriteOriginal,
   groupingPresets,
   genrePresets,
   visibleFields,
@@ -264,8 +269,13 @@ export function Editor({
   const defaultOutputName = item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
-  // user before they hit the button so the rename isn't a surprise.
-  const willEditInPlace = formatMatchesInput(format, item.inputPath)
+  // user before they hit the button so the rename isn't a surprise. Overwrite mode
+  // forces this for every format, replacing the source whatever the target.
+  const willEditInPlace = overwriteOriginal || formatMatchesInput(format, item.inputPath)
+  // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
+  // quality-losing case worth a sharper warning before the user commits to it.
+  const lossyOverwrite =
+    overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
   // One-click "fill tags from the file name", shown in the File Name section (single) and
   // the form header (multi, where File Name is hidden).
@@ -491,7 +501,7 @@ export function Editor({
 
           {loudnessHelpOpen && <LoudnessHelpModal onClose={() => setLoudnessHelpOpen(false)} />}
 
-          {!isMulti && (
+          {!isMulti && !overwriteOriginal && (
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
               <SectionHeader
                 title={tr('editor.outputName')}
@@ -555,6 +565,23 @@ export function Editor({
                   )}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Overwrite mode pins the name to the original, so the File Name section is
+              replaced by a notice of what the export will do to the source file. */}
+          {!isMulti && overwriteOriginal && (
+            <div
+              data-testid="overwrite-notice"
+              className="mt-6 border-t border-[var(--color-line)] pt-5"
+            >
+              <p className="text-sm font-medium text-fg-muted">{tr('editor.overwriteTitle')}</p>
+              <p
+                className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
+                data-testid="overwrite-hint"
+              >
+                {lossyOverwrite ? tr('editor.overwriteLossyHint') : tr('editor.overwriteHint')}
+              </p>
             </div>
           )}
 

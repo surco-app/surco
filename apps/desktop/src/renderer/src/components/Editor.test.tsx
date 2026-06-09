@@ -83,6 +83,7 @@ function renderEditor(
     genrePresets?: string[]
     showLoudness?: boolean
     normalize?: NormalizeConfig
+    overwriteOriginal?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -108,6 +109,7 @@ function renderEditor(
       hasToken
       outputFormat={outputFormat}
       addToAppleMusic={false}
+      overwriteOriginal={props.overwriteOriginal ?? false}
       groupingPresets={[]}
       genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
@@ -339,6 +341,7 @@ function MultiHarness() {
       <Editor
         key={selected.id}
         item={selected}
+        overwriteOriginal={false}
         hasToken
         outputFormat="aiff"
         addToAppleMusic={false}
@@ -427,6 +430,7 @@ describe('Editor multi-select', () => {
         hasToken
         outputFormat="aiff"
         addToAppleMusic={opts.music ?? false}
+        overwriteOriginal={false}
         groupingPresets={[]}
         genrePresets={[]}
         visibleFields={['title', 'album']}
@@ -668,6 +672,28 @@ describe('Editor output file name', () => {
     fireEvent.click(screen.getByTestId('customize-output-name'))
     expect(onOpenRename).toHaveBeenCalled()
     expect(onRegenerateName).not.toHaveBeenCalled()
+  })
+
+  // Overwrite mode pins the name to the original, so editing it would be a lie — the
+  // whole File Name section is replaced by a notice of what the export does instead.
+  it('hides the File Name section and shows the overwrite notice in overwrite mode', () => {
+    renderEditor({ id: 'a', fileName: 'original track 01' }, 'wav', { overwriteOriginal: true })
+    expect(screen.queryByTestId('output-name')).toBeNull()
+    expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
+  })
+
+  // The one irreversible case — replacing a lossless master with MP3 — gets the louder
+  // warning so the user isn't surprised that the original is gone.
+  it('warns about losing the master when overwriting a lossless source with MP3', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3', { overwriteOriginal: true })
+    expect(screen.getByTestId('overwrite-hint')).toHaveTextContent(/master is lost/i)
+  })
+
+  // Overwriting MP3 with MP3, or any lossless target, is recoverable enough to skip the
+  // sharper wording — the plain notice is shown.
+  it('shows the plain notice when overwriting without losing quality', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
+    expect(screen.getByTestId('overwrite-hint')).not.toHaveTextContent(/master is lost/i)
   })
 })
 

@@ -31,14 +31,17 @@ export interface OutputTarget {
 // Decides where an export lands. Same format as the source → edit the original
 // file right where it lives (rewrite tags, rename if the name changed); a real
 // conversion (e.g. WAV→MP3) → a fresh file in the output folder, original kept.
-// `name` is the already-sanitized base name, with no extension.
+// `overwriteOriginal` forces the in-place path regardless of format: the converted
+// file replaces the source in its own folder, and removeRenamedOriginal drops the
+// old-extension original afterwards. `name` is the already-sanitized base name.
 export function resolveOutputTarget(
   inputPath: string,
   name: string,
   format: OutputFormat,
   outputDir: string,
+  overwriteOriginal = false,
 ): OutputTarget {
-  const inPlace = formatMatchesInput(format, inputPath)
+  const inPlace = overwriteOriginal || formatMatchesInput(format, inputPath)
   const dir = inPlace ? dirname(inputPath) : outputDir
   return { outputPath: join(dir, `${name}.${format}`), inPlace }
 }

@@ -40,6 +40,11 @@ export interface Settings {
   // behind. Always honored as true when nothing is added to Apple Music, so a
   // conversion can never end up with no copy at all.
   keepOutputCopy: boolean
+  // When true, an export rewrites the source file in place (in its own folder, keeping
+  // the original base name) instead of writing a copy to the output folder — even when
+  // the format differs, in which case the old-extension original is removed. Mutually
+  // exclusive with Apple Music: the file stays put, nothing is added to the library.
+  overwriteOriginal: boolean
   filenameFormat: string
   groupingPresets: string[]
   genrePresets: string[]

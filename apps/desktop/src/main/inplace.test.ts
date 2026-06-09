@@ -47,6 +47,16 @@ describe('resolveOutputTarget', () => {
       inPlace: false,
     })
   })
+
+  it('overwrites in the source folder even across formats when overwrite is on', () => {
+    // With "Overwrite original" the converted file replaces the source where it lives,
+    // keeping the source's base name; the new extension means convertAudio writes
+    // old.aiff and removeRenamedOriginal drops the old.wav. The output folder is ignored.
+    expect(resolveOutputTarget('/music/old.wav', 'old', 'aiff', '/out', true)).toEqual({
+      outputPath: '/music/old.aiff',
+      inPlace: true,
+    })
+  })
 })
 
 describe('isOutputConflict', () => {

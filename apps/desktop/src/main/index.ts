@@ -475,6 +475,7 @@ function registerIpc(): void {
         sanitizeOutputName(job.outputName),
         format,
         settings.outputDir,
+        settings.overwriteOriginal,
       )
       // "Apple Music only": the user wants the track in Apple Music and no copy left in
       // the output folder. Apple Music still imports a real path, so write the conversion

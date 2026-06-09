@@ -22,6 +22,7 @@ const settings: Settings = {
   outputFormat: 'aiff',
   addToAppleMusic: false,
   keepOutputCopy: true,
+  overwriteOriginal: false,
   filenameFormat: '',
   groupingPresets: [],
   genrePresets: [],
@@ -183,6 +184,30 @@ describe('SettingsModal destination', () => {
     expect(screen.getByTestId('settings-destination-folder')).toBeChecked()
     expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
     expect(screen.getByTestId('settings-destination-both')).toBeDisabled()
+  })
+
+  // Overwrite is the one destination that touches the source itself, so picking it must
+  // turn its flag on and clear the Apple Music booleans (the file never reaches a library).
+  it('saves overwrite by setting the flag and clearing Apple Music', () => {
+    const onSave = vi.fn()
+    openConversion({}, onSave)
+    fireEvent.click(screen.getByTestId('settings-destination-overwrite'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ overwriteOriginal: true, addToAppleMusic: false }),
+    )
+  })
+
+  it('reflects a saved overwrite setting as the selected radio', () => {
+    openConversion({ overwriteOriginal: true })
+    expect(screen.getByTestId('settings-destination-overwrite')).toBeChecked()
+  })
+
+  // FLAC only blocks Apple Music; overwrite rewrites the source in place and stays
+  // selectable for any format.
+  it('keeps overwrite available while FLAC is the format', () => {
+    openConversion({ outputFormat: 'flac' })
+    expect(screen.getByTestId('settings-destination-overwrite')).not.toBeDisabled()
   })
 })
 

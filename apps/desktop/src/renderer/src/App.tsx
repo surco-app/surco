@@ -1008,10 +1008,11 @@ export default function App(): React.JSX.Element {
     {
       // Builds the output name from a pattern. Only one track has a File name section
       // (multi-select hides it), so the command follows the same single-track rule.
+      // Overwrite mode pins the name to the original, so renaming is disabled there too.
       id: 'rename',
       title: tr('commands.rename'),
       hint: hintFor('rename'),
-      enabled: !!selected && selectedTracks.length <= 1,
+      enabled: !!selected && selectedTracks.length <= 1 && !settings?.overwriteOriginal,
       run: () => setActiveModal({ type: 'rename' }),
     },
     {
@@ -1271,6 +1272,7 @@ export default function App(): React.JSX.Element {
               hasToken={!!settings?.discogsToken}
               outputFormat={settings?.outputFormat ?? 'aiff'}
               addToAppleMusic={settings?.addToAppleMusic ?? false}
+              overwriteOriginal={settings?.overwriteOriginal ?? false}
               groupingPresets={settings?.groupingPresets ?? []}
               genrePresets={settings?.genrePresets ?? []}
               visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}

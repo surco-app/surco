@@ -21,6 +21,7 @@ const settings: Settings = {
   outputFormat: 'aiff',
   addToAppleMusic: false,
   keepOutputCopy: true,
+  overwriteOriginal: false,
   filenameFormat: '',
   groupingPresets: [],
   genrePresets: [],
