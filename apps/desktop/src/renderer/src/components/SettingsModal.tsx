@@ -106,6 +106,22 @@ export function SettingsModal({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
+  // Roving-tabindex navigation for the tablist: arrows (and Home/End) move the
+  // selection and focus together, wrapping around, per the ARIA tabs pattern.
+  const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
+  function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
+    const last = TABS.length - 1
+    let next = -1
+    if (e.key === 'ArrowRight') next = idx === last ? 0 : idx + 1
+    else if (e.key === 'ArrowLeft') next = idx === 0 ? last : idx - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = last
+    if (next === -1) return
+    e.preventDefault()
+    const id = TABS[next]
+    setTab(id)
+    tabRefs.current[id]?.focus()
+  }
   const [theme, setTheme] = useState(settings.theme)
   const [token, setToken] = useState(settings.discogsToken)
   const [outputDir, setOutputDir] = useState(settings.outputDir)
@@ -233,16 +249,28 @@ export function SettingsModal({
         className="animate-pop relative z-10 flex max-h-[84vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
-          <div className="flex justify-center gap-0.5">
-            {TABS.map((id) => {
+          <div
+            role="tablist"
+            aria-label={tr('header.settings')}
+            className="flex justify-center gap-0.5"
+          >
+            {TABS.map((id, idx) => {
               const Icon = TAB_ICONS[id]
               return (
                 <button
                   key={id}
+                  ref={(el) => {
+                    tabRefs.current[id] = el
+                  }}
                   type="button"
+                  role="tab"
+                  id={`settings-tab-${id}`}
                   data-testid={`settings-tab-${id}`}
+                  aria-selected={tab === id}
+                  aria-controls="settings-tabpanel"
+                  tabIndex={tab === id ? 0 : -1}
                   onClick={() => setTab(id)}
-                  aria-pressed={tab === id}
+                  onKeyDown={(e) => onTabKeyDown(e, idx)}
                   className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
                     tab === id
                       ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
@@ -257,7 +285,12 @@ export function SettingsModal({
           </div>
         </div>
 
-        <div className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2">
+        <div
+          role="tabpanel"
+          id="settings-tabpanel"
+          aria-labelledby={`settings-tab-${tab}`}
+          className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2"
+        >
           {tab === 'general' && (
             <>
               <span className="mb-1.5 block text-sm font-medium text-fg-muted">

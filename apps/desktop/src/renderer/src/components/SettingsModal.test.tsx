@@ -51,6 +51,38 @@ function openNaming() {
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
+describe('SettingsModal tablist', () => {
+  function open() {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+  }
+
+  // The tabs are an ARIA tablist, so a keyboard user moves between them with the
+  // arrow keys (and Home/End) the way every native macOS segmented control behaves —
+  // not by Tabbing through eight separate buttons.
+  it('moves between tabs with the arrow and Home/End keys', () => {
+    open()
+    const general = screen.getByTestId('settings-tab-general')
+    expect(general).toHaveAttribute('role', 'tab')
+    expect(general).toHaveAttribute('aria-selected', 'true')
+    general.focus()
+    fireEvent.keyDown(general, { key: 'ArrowRight' })
+    const conversion = screen.getByTestId('settings-tab-conversion')
+    expect(conversion).toHaveAttribute('aria-selected', 'true')
+    expect(conversion).toHaveFocus()
+    fireEvent.keyDown(conversion, { key: 'Home' })
+    expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowLeft' })
+    expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
+  })
+})
+
 describe('SettingsModal auto-match', () => {
   function openGeneral(onSave: (patch: Partial<Settings>) => void = () => {}) {
     render(
