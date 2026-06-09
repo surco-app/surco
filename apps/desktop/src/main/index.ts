@@ -25,6 +25,7 @@ import type {
   ProcessStage,
   Settings,
 } from '../shared/types'
+import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
 import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
@@ -545,11 +546,19 @@ function registerIpc(): void {
 
   ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
     try {
-      const { image, cutoffHz, sampleRateHz, cutoffError } = await buildSpectrum(inputPath, {
-        probe: probeAudio,
-        spectrogram: generateSpectrogram,
-        cutoff: analyzeCutoff,
-      })
+      // Cache only a clean run: a cutoff failure yields a valid image but a null
+      // cutoff, and we'd rather retry that next open than pin it for the file's life.
+      const { image, cutoffHz, sampleRateHz, cutoffError } = await cachedAnalysis(
+        'spectrogram',
+        inputPath,
+        () =>
+          buildSpectrum(inputPath, {
+            probe: probeAudio,
+            spectrogram: generateSpectrogram,
+            cutoff: analyzeCutoff,
+          }),
+        (b) => b.cutoffError === undefined,
+      )
       // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
       // stderr) rather than reject — this is the only trace when it breaks on a
       // machine we can't reach, e.g. Windows.
@@ -563,7 +572,7 @@ function registerIpc(): void {
 
   ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
     try {
-      return await measureLoudness(inputPath)
+      return await cachedAnalysis('loudness', inputPath, () => measureLoudness(inputPath))
     } catch (err) {
       log.error('audio:loudness failed', err)
       return null
@@ -572,7 +581,7 @@ function registerIpc(): void {
 
   ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
     try {
-      return await probeProperties(inputPath)
+      return await cachedAnalysis('properties', inputPath, () => probeProperties(inputPath))
     } catch (err) {
       log.error('audio:properties failed', err)
       return null
@@ -587,6 +596,8 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  // Bound the on-disk analysis cache once at launch, before any new entries land.
+  void pruneAnalysisCache()
   // Serve the local audio file ourselves with real HTTP range support: the
   // <audio> element seeks by re-requesting a byte range, and it only honours the
   // jump when the server answers 206 with Content-Range. Streaming the exact
