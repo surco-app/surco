@@ -107,6 +107,18 @@ describe('TrackList', () => {
     expect(screen.getByText('No artist')).toBeInTheDocument()
   })
 
+  it('shows the album art so a crate can be scanned by cover, not just by name', () => {
+    renderList([track({ id: 'a', coverUrl: 'file:///cover.jpg' })])
+    expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'file:///cover.jpg')
+    expect(screen.queryByTestId('track-cover-placeholder')).toBeNull()
+  })
+
+  it('falls back to a placeholder thumbnail when the track has no cover', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-cover')).toBeNull()
+    expect(screen.getByTestId('track-cover-placeholder')).toBeInTheDocument()
+  })
+
   it('shows the stage progress only while a track is processing', () => {
     renderList([
       track({ id: 'busy', status: 'processing', stage: 'converting' }),

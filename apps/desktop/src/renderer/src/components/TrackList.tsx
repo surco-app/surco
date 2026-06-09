@@ -1,4 +1,4 @@
-import { Sparkles, X } from 'lucide-react'
+import { Music, Sparkles, X } from 'lucide-react'
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -107,9 +107,28 @@ const TrackRow = memo(function TrackRow({
             : ''
         }`}
       >
-        <span
-          className={`group/dot relative h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[t.status]}`}
-        >
+        {/* The cover doubles as the scan target — DJs recognise a track by its art faster
+            than by its name — so the leading slot shows the artwork with the processing
+            status demoted to a small ringed dot on its corner. */}
+        <span className="group/dot relative shrink-0">
+          {t.coverUrl ? (
+            <img
+              data-testid="track-cover"
+              src={t.coverUrl}
+              alt=""
+              className="h-9 w-9 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            />
+          ) : (
+            <span
+              data-testid="track-cover-placeholder"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
+            >
+              <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
+            </span>
+          )}
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)] ${statusColor[t.status]}`}
+          />
           <Tooltip label={tr(`trackList.status.${t.status}`)} align="start" scope="dot" />
         </span>
         <span className="min-w-0 flex-1">
