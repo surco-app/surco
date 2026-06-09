@@ -37,7 +37,7 @@
     "clearAll": "Clear the list"
   },
   "sidebar": {
-    "dropHint": "Drag your WAV or FLAC here, or press “Add files”.",
+    "dropHint": "Drag your files here, or press “Add files”.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "all": "All",
