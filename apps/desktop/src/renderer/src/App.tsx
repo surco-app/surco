@@ -25,6 +25,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ExportModal } from './components/ExportModal'
+import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -47,6 +48,7 @@ import {
 } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
+import { useLicense } from './lib/useLicense'
 import { mapWithConcurrency } from './lib/concurrency'
 import { smartDeriveTags } from './lib/deriveTags'
 import { openFeedback } from './lib/feedback'
@@ -156,16 +158,24 @@ type ActiveModal =
   | { type: 'export' }
   | { type: 'palette' }
   | { type: 'confirm'; confirm: ConfirmModal }
+  | { type: 'upgrade'; reason: UpgradeReason }
   | null
 
 export default function App(): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
+  // Freemium entitlement. `isPro` defaults to true until the snapshot loads (and is
+  // always true during the beta), so a brief load never blocks a conversion. The
+  // upgrade screen opens with a reason; null means closed.
+  const license = useLicense()
+  const isPro = license.snapshot?.entitlement.isPro ?? true
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  // Opens the freemium upgrade screen with the reason the wall appeared.
+  const openUpgrade = (reason: UpgradeReason): void => setActiveModal({ type: 'upgrade', reason })
   // Live theme preview while the Settings modal is open; cleared when it closes.
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
@@ -703,7 +713,14 @@ export default function App(): React.JSX.Element {
     batchProgress,
     batchSummary,
     cancelBatch,
-  } = useTrackProcessing({ tracks, settings, updateTrack })
+  } = useTrackProcessing({
+    tracks,
+    settings,
+    updateTrack,
+    isPro,
+    onUpgrade: openUpgrade,
+    onLicenseChanged: license.reload,
+  })
 
   function saveSettings(patch: Partial<Settings>): void {
     // Apply the theme optimistically so clearing the live preview on close
@@ -915,6 +932,13 @@ export default function App(): React.JSX.Element {
         ),
     },
     {
+      id: 'upgrade',
+      title: tr('commands.upgrade'),
+      hint: hintFor('upgrade'),
+      enabled: true,
+      run: () => openUpgrade('manage'),
+    },
+    {
       id: 'reveal',
       title: tr('commands.reveal'),
       hint: hintFor('reveal'),
@@ -1056,7 +1080,7 @@ export default function App(): React.JSX.Element {
         }}
         onConvertSelected={() => processAll(selectedTracks)}
         onCancelConvert={cancelBatch}
-        onExport={() => setActiveModal({ type: 'export' })}
+        onExport={() => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export'))}
         onClearAll={askClearAll}
         onPalette={() => setActiveModal({ type: 'palette' })}
         onStats={() => openSettings('stats')}
@@ -1281,6 +1305,14 @@ export default function App(): React.JSX.Element {
       )}
       {activeModal?.type === 'export' && (
         <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
+      )}
+      {activeModal?.type === 'upgrade' && license.snapshot && (
+        <UpgradeModal
+          snapshot={license.snapshot}
+          reason={activeModal.reason}
+          onClose={() => setActiveModal(null)}
+          onChanged={license.reload}
+        />
       )}
       {activeModal?.type === 'confirm' && (
         <ConfirmDialog

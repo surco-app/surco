@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
+import { bumpUsage } from '../shared/license'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -27,6 +29,7 @@ const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
+  deviceId: '',
 }
 
 function file(): string {
@@ -34,14 +37,24 @@ function file(): string {
 }
 
 export function getSettings(): Settings {
+  let parsed: Partial<Settings> = {}
   try {
-    if (existsSync(file())) {
-      return { ...defaults, ...JSON.parse(readFileSync(file(), 'utf-8')) }
-    }
+    if (existsSync(file())) parsed = JSON.parse(readFileSync(file(), 'utf-8'))
   } catch {
     // corrupt file → fall back to defaults
   }
-  return { ...defaults }
+  const merged = { ...defaults, ...parsed }
+  // Mint a stable device id the first time it's needed and persist it, so every
+  // license activation from this install presents the same device identity.
+  if (!merged.deviceId) {
+    merged.deviceId = randomUUID()
+    try {
+      writeFileSync(file(), JSON.stringify(merged, null, 2), 'utf-8')
+    } catch {
+      // best-effort: a non-persisted id still works for this run
+    }
+  }
+  return merged
 }
 
 export function saveSettings(patch: Partial<Settings>): Settings {
@@ -57,5 +70,11 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 // single completion point that covers both one-off and "Convert all" runs. Kept
 // here so the tally is the one source of truth the Stats tab reads back.
 export function recordConversion(): void {
-  saveSettings({ conversionCount: getSettings().conversionCount + 1 })
+  const cur = getSettings()
+  saveSettings({
+    conversionCount: cur.conversionCount + 1,
+    // The free tier is metered per month; fold this conversion into the monthly
+    // tally too, rolling over when the month changes.
+    usage: bumpUsage(cur.usage, Date.now()),
+  })
 }

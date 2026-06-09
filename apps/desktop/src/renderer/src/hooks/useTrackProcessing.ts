@@ -10,12 +10,20 @@ import {
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
+import type { UpgradeReason } from '../components/UpgradeModal'
 import type { TrackItem } from '../types'
 
 interface Params {
   tracks: TrackItem[]
   settings: Settings | null
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  // Freemium gating. `isPro` is true during the beta and for licensed users, so the
+  // gates below are no-ops then. `onUpgrade` opens the upgrade screen with a reason;
+  // `onLicenseChanged` asks the app to re-read its entitlement (e.g. after spending
+  // part of the free allowance).
+  isPro: boolean
+  onUpgrade: (reason: UpgradeReason) => void
+  onLicenseChanged: () => void
 }
 
 export interface TrackProcessing {
@@ -41,7 +49,14 @@ export interface TrackProcessing {
 // progress), and add converted tracks to Apple Music by hand. Owns the batch state so
 // App doesn't carry it; reads the live tracks/settings and writes results back through
 // updateTrack, exactly as the inline App functions did.
-export function useTrackProcessing({ tracks, settings, updateTrack }: Params): TrackProcessing {
+export function useTrackProcessing({
+  tracks,
+  settings,
+  updateTrack,
+  isPro,
+  onUpgrade,
+  onLicenseChanged,
+}: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
@@ -105,6 +120,14 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
         normalize: normalizeOverride,
         previousOutputPath: track.outputPath,
       })
+      // Free-tier monthly limit reached (never during the beta or for Pro): the main
+      // process wrote nothing, so leave the track idle and surface the upgrade screen.
+      if (result.limitReached) {
+        updateTrack(id, { status: 'idle', stage: undefined })
+        onUpgrade('limit')
+        onLicenseChanged()
+        return 'skipped'
+      }
       // The user declined to overwrite a conflicting file: nothing was written, so
       // leave the track convertible (idle) rather than marking it done or failed.
       if (result.skipped) {
@@ -164,6 +187,12 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
     normalizeOverride?: NormalizeConfig,
   ): Promise<void> {
     if (batching) return
+    // "Convert all" is a Pro feature; free users convert tracks one at a time. The
+    // gate is a no-op during the beta and for Pro (isPro stays true).
+    if (!isPro) {
+      onUpgrade('batch')
+      return
+    }
     const ids = eligibleForBatch(targets)
     cancelBatchRef.current = false
     setBatching(true)

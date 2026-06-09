@@ -85,7 +85,43 @@
     "website": "Sitio web de Surco",
     "findReplace": "Buscar y reemplazar…",
     "rename": "Generar nombre del archivo…",
-    "shortcuts": "Atajos de teclado…"
+    "shortcuts": "Atajos de teclado…",
+    "upgrade": "Surco Pro…"
+  },
+  "upgrade": {
+    "title": "Surco Pro",
+    "oneTime": "pago único",
+    "betaNote": "Durante la beta todas las funciones Pro están desbloqueadas gratis — aún no hace falta comprar nada.",
+    "buy": "Comprar Surco Pro",
+    "haveKey": "¿Ya tienes una licencia?",
+    "keyPlaceholder": "Clave de licencia",
+    "emailPlaceholder": "Email de compra",
+    "activate": "Activar",
+    "features": [
+      "Conversiones de pistas ilimitadas",
+      "Convertir todo — procesa toda la caja de golpe",
+      "Exportar a rekordbox y Traktor"
+    ],
+    "reason": {
+      "limit": "Has alcanzado el límite gratuito de conversiones de este mes. Hazte Pro para convertir sin límite.",
+      "batch": "Convertir toda la caja de una vez es una función Pro.",
+      "export": "Exportar a rekordbox y Traktor es una función Pro.",
+      "manage": "Un único pago, tuyo para siempre — desbloquea todas las funciones Pro."
+    },
+    "active": {
+      "title": "Surco Pro está activo",
+      "body": "Con licencia para {{email}} en este dispositivo.",
+      "deactivate": "Desactivar este dispositivo"
+    },
+    "errors": {
+      "generic": "No se pudo activar esa licencia. Revisa la clave e inténtalo de nuevo.",
+      "empty": "Introduce tu clave de licencia.",
+      "not_found": "No reconocemos esa clave de licencia.",
+      "too_many_devices": "Esta licencia ya está activa en el número máximo de dispositivos. Desactiva uno primero.",
+      "refunded": "Esta licencia fue reembolsada y ya no está activa.",
+      "revoked": "Esta licencia ha sido revocada.",
+      "offline": "No se pudo contactar con el servidor de licencias. Revisa tu conexión e inténtalo de nuevo."
+    }
   },
   "trackList": {
     "noArtist": "Sin artista",

@@ -85,7 +85,43 @@
     "website": "Surco website",
     "findReplace": "Find & Replace…",
     "rename": "Build file name…",
-    "shortcuts": "Keyboard shortcuts…"
+    "shortcuts": "Keyboard shortcuts…",
+    "upgrade": "Surco Pro…"
+  },
+  "upgrade": {
+    "title": "Surco Pro",
+    "oneTime": "one-time",
+    "betaNote": "During the beta every Pro feature is unlocked for free — no purchase needed yet.",
+    "buy": "Buy Surco Pro",
+    "haveKey": "Already have a license?",
+    "keyPlaceholder": "License key",
+    "emailPlaceholder": "Purchase email",
+    "activate": "Activate",
+    "features": [
+      "Unlimited track conversions",
+      "Convert all — batch your whole crate at once",
+      "Export to rekordbox and Traktor"
+    ],
+    "reason": {
+      "limit": "You've hit this month's free conversion limit. Go Pro for unlimited conversions.",
+      "batch": "Converting your whole crate at once is a Pro feature.",
+      "export": "Exporting to rekordbox and Traktor is a Pro feature.",
+      "manage": "One purchase, yours forever — unlock every Pro feature."
+    },
+    "active": {
+      "title": "Surco Pro is active",
+      "body": "Licensed to {{email}} on this device.",
+      "deactivate": "Deactivate this device"
+    },
+    "errors": {
+      "generic": "Couldn't activate that license. Check the key and try again.",
+      "empty": "Enter your license key.",
+      "not_found": "We don't recognize that license key.",
+      "too_many_devices": "This license is already active on the maximum number of devices. Deactivate one first.",
+      "refunded": "This license was refunded and is no longer active.",
+      "revoked": "This license has been revoked.",
+      "offline": "Couldn't reach the licensing server. Check your connection and try again."
+    }
   },
   "trackList": {
     "noArtist": "No artist",

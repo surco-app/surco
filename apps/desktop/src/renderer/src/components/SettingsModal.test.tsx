@@ -37,6 +37,7 @@ const settings: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: true,
   conversionCount: 0,
+  deviceId: 'test-device',
 }
 
 function openNaming() {

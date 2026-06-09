@@ -54,7 +54,14 @@ describe('useTrackProcessing', () => {
     setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
     const updateTrack = vi.fn()
     const { result } = renderHook(() =>
-      useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack }),
+      useTrackProcessing({
+        tracks: [track({ id: 'a' })],
+        settings: null,
+        updateTrack,
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
+      }),
     )
     let outcome: string | undefined
     await act(async () => {
@@ -75,6 +82,9 @@ describe('useTrackProcessing', () => {
         tracks: [track({ id: 'a', meta: meta({ artist: '' }) })],
         settings: null,
         updateTrack,
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
       }),
     )
     let outcome: string | undefined
@@ -92,7 +102,14 @@ describe('useTrackProcessing', () => {
     setApi({ processTrack: vi.fn().mockRejectedValue(new Error('disk full')) })
     const updateTrack = vi.fn()
     const { result } = renderHook(() =>
-      useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack }),
+      useTrackProcessing({
+        tracks: [track({ id: 'a' })],
+        settings: null,
+        updateTrack,
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
+      }),
     )
     let outcome: string | undefined
     await act(async () => {
@@ -111,12 +128,74 @@ describe('useTrackProcessing', () => {
     setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' }) })
     const updateTrack = vi.fn()
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
-    const { result } = renderHook(() => useTrackProcessing({ tracks, settings: null, updateTrack }))
+    const { result } = renderHook(() =>
+      useTrackProcessing({
+        tracks,
+        settings: null,
+        updateTrack,
+        isPro: true,
+        onUpgrade: vi.fn(),
+        onLicenseChanged: vi.fn(),
+      }),
+    )
     await act(async () => {
       await result.current.processAll(tracks)
     })
     await waitFor(() =>
       expect(result.current.batchSummary).toEqual({ converted: 2, skipped: 0, failed: 0 }),
     )
+  })
+
+  // "Convert all" is a Pro feature: for a free user it must not touch the conversion
+  // pipeline at all — it opens the upgrade screen instead, so no track is spent.
+  it('blocks Convert all behind Pro and opens the upgrade screen', async () => {
+    const processTrack = vi.fn()
+    setApi({ processTrack })
+    const onUpgrade = vi.fn()
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(() =>
+      useTrackProcessing({
+        tracks,
+        settings: null,
+        updateTrack: vi.fn(),
+        isPro: false,
+        onUpgrade,
+        onLicenseChanged: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(onUpgrade).toHaveBeenCalledWith('batch')
+    expect(processTrack).not.toHaveBeenCalled()
+  })
+
+  // When the main process reports the free monthly limit was hit, nothing was written:
+  // the row stays idle (still convertible) and the upgrade screen is surfaced.
+  it('surfaces the upgrade screen when the free limit is reached', async () => {
+    setApi({
+      processTrack: vi
+        .fn()
+        .mockResolvedValue({ outputPath: '', inPlace: false, limitReached: true }),
+    })
+    const updateTrack = vi.fn()
+    const onUpgrade = vi.fn()
+    const { result } = renderHook(() =>
+      useTrackProcessing({
+        tracks: [track({ id: 'a' })],
+        settings: null,
+        updateTrack,
+        isPro: true,
+        onUpgrade,
+        onLicenseChanged: vi.fn(),
+      }),
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('skipped')
+    expect(onUpgrade).toHaveBeenCalledWith('limit')
+    expect(updateTrack).toHaveBeenLastCalledWith('a', expect.objectContaining({ status: 'idle' }))
   })
 })
