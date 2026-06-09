@@ -158,15 +158,16 @@ export function Player({
           is a poor keyboard target, and Space already toggles the player. The thumb
           surfaces on hover so the bar stays clean while signalling it's draggable. */}
       <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only scrubber by design */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only scrubber by design;
+            exposed as a non-interactive progressbar so it doesn't advertise keyboard
+            seeking it never had */}
         <span
           data-testid="player-seek"
-          role="slider"
+          role="progressbar"
           aria-label={t('player.seek')}
           aria-valuenow={Math.round(progress * 100)}
           aria-valuemin={0}
           aria-valuemax={100}
-          tabIndex={-1}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
             onSeek(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)))

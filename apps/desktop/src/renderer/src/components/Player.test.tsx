@@ -94,6 +94,18 @@ describe('Player', () => {
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 
+  // The scrubber is a pointer-only convenience by design. Advertising role="slider"
+  // promised arrow-key control it never had; it now reports playback position as a
+  // non-interactive progress bar so a screen reader states position without offering
+  // an interaction that does nothing.
+  it('exposes playback position as a progress bar, not an inoperable slider', () => {
+    render(<Player {...props({ progress: 0.5 })} />)
+    const bar = screen.getByTestId('player-seek')
+    expect(bar).toHaveAttribute('role', 'progressbar')
+    expect(bar).toHaveAttribute('aria-valuenow', '50')
+    expect(bar).not.toHaveAttribute('tabindex')
+  })
+
   it('seeks to the fraction of the bar the user clicks', () => {
     const onSeek = vi.fn()
     render(<Player {...props({ onSeek })} />)
