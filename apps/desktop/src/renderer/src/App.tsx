@@ -36,6 +36,7 @@ import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { canAddToAppleMusic } from './lib/appleMusic'
 import {
@@ -52,7 +53,7 @@ import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { createFocusGate } from './lib/focusGate'
-import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
+import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
@@ -826,8 +827,6 @@ export default function App(): React.JSX.Element {
     () => resolveBindings(settings?.shortcutOverrides),
     [settings?.shortcutOverrides],
   )
-  const bindingsRef = useRef(bindings)
-  bindingsRef.current = bindings
   const hintFor = (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac)
 
   const commands: Command[] = [
@@ -972,25 +971,24 @@ export default function App(): React.JSX.Element {
 
   const commandsRef = useRef<Command[]>(commands)
   commandsRef.current = commands
-  const paletteOpenRef = useRef(false)
-  paletteOpenRef.current = showPalette
-  const settingsOpenRef = useRef(false)
-  settingsOpenRef.current = showSettings
-  const helpOpenRef = useRef(false)
-  helpOpenRef.current = showHelp
-  const findReplaceOpenRef = useRef(false)
-  findReplaceOpenRef.current = showFindReplace
-  const renameOpenRef = useRef(false)
-  renameOpenRef.current = showRename
-  const exportOpenRef = useRef(false)
-  exportOpenRef.current = showExport
-  const confirmOpenRef = useRef(false)
-  confirmOpenRef.current = !!confirm
-  // Every modal/overlay that owns the screen must also swallow the global
-  // shortcuts, or space/j/k/⌘⏎ would act on the list behind the dialog (e.g.
-  // start a conversion behind the confirm prompt).
-  const overlayOpenRef = useRef(false)
-  overlayOpenRef.current =
+  // Closes the topmost open overlay in priority order. Onboarding is deliberately
+  // omitted: it forces a deliberate choice, not an Escape dismissal.
+  function closeTopOverlay(): void {
+    if (showPalette) setShowPalette(false)
+    else if (showSettings) {
+      setShowSettings(false)
+      setThemePreview(null)
+    } else if (showHelp) setShowHelp(false)
+    else if (showFindReplace) setShowFindReplace(false)
+    else if (showRename) setShowRename(false)
+    else if (showExport) setShowExport(false)
+    else if (confirm) setConfirm(null)
+  }
+
+  // Every modal/overlay that owns the screen must also swallow the global shortcuts, or
+  // space/j/k/⌘⏎ would act on the list behind the dialog (e.g. start a conversion behind
+  // the confirm prompt).
+  const overlayOpen =
     showPalette ||
     showSettings ||
     showHelp ||
@@ -1000,42 +998,14 @@ export default function App(): React.JSX.Element {
     !!confirm ||
     showOnboarding
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent): void {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setShowPalette((v) => !v)
-        return
-      }
-      if (e.key === 'Escape') {
-        if (paletteOpenRef.current) setShowPalette(false)
-        else if (settingsOpenRef.current) {
-          setShowSettings(false)
-          setThemePreview(null)
-        } else if (helpOpenRef.current) setShowHelp(false)
-        else if (findReplaceOpenRef.current) setShowFindReplace(false)
-        else if (renameOpenRef.current) setShowRename(false)
-        else if (exportOpenRef.current) setShowExport(false)
-        // Onboarding is deliberately omitted: it forces a deliberate choice, not an
-        // Escape dismissal.
-        else if (confirmOpenRef.current) setConfirm(null)
-        return
-      }
-      if (overlayOpenRef.current) return
-      const id = keyToCommandId(
-        e,
-        isTypingTarget(document.activeElement),
-        bindingsRef.current,
-        isMac,
-      )
-      if (id) {
-        e.preventDefault()
-        runCommand(commandsRef.current, id)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useKeyboardShortcuts({
+    isMac,
+    overlayOpen,
+    bindings,
+    commands,
+    onTogglePalette: () => setShowPalette((v) => !v),
+    onEscape: closeTopOverlay,
+  })
 
   return (
     // Drag-and-drop is a pointer-only convenience; the "Add files" button is the

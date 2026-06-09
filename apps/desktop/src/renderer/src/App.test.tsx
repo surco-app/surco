@@ -353,3 +353,15 @@ describe('App header convert button', () => {
     expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
   })
 })
+
+describe('App keyboard shortcuts', () => {
+  // ⌘K (Ctrl+K off macOS) opens the command palette from anywhere, and Escape closes
+  // it — the two keys the global handler special-cases before any track command.
+  it('opens the command palette with the shortcut and closes it on Escape', async () => {
+    await renderApp()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    expect(await screen.findByTestId('palette-input')).toBeInTheDocument()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('palette-input')).toBeNull())
+  })
+})
