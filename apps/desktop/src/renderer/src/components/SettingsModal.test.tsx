@@ -83,6 +83,24 @@ describe('SettingsModal tablist', () => {
   })
 })
 
+describe('SettingsModal save', () => {
+  // The dialog is a form with a default Save button, so Enter from any field commits
+  // the settings instead of doing nothing.
+  it('saves when the form is submitted with Enter', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
+    expect(onSave).toHaveBeenCalled()
+  })
+})
+
 describe('SettingsModal auto-match', () => {
   function openGeneral(onSave: (patch: Partial<Settings>) => void = () => {}) {
     render(

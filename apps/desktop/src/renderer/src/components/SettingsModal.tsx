@@ -248,590 +248,599 @@ export function SettingsModal({
         aria-label={tr('header.settings')}
         className="animate-pop relative z-10 flex max-h-[84vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
-        <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
-          <div
-            role="tablist"
-            aria-label={tr('header.settings')}
-            className="flex justify-center gap-0.5"
-          >
-            {TABS.map((id, idx) => {
-              const Icon = TAB_ICONS[id]
-              return (
-                <button
-                  key={id}
-                  ref={(el) => {
-                    tabRefs.current[id] = el
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`settings-tab-${id}`}
-                  data-testid={`settings-tab-${id}`}
-                  aria-selected={tab === id}
-                  aria-controls="settings-tabpanel"
-                  tabIndex={tab === id ? 0 : -1}
-                  onClick={() => setTab(id)}
-                  onKeyDown={(e) => onTabKeyDown(e, idx)}
-                  className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
-                    tab === id
-                      ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
-                      : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-                  }`}
-                >
-                  <Icon className="h-6 w-6" strokeWidth={1.7} aria-hidden="true" />
-                  {tr(`settings.tabs.${id}`)}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div
-          role="tabpanel"
-          id="settings-tabpanel"
-          aria-labelledby={`settings-tab-${tab}`}
-          className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2"
+        <form
+          className="contents"
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
         >
-          {tab === 'general' && (
-            <>
-              <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-                {tr('settings.theme')}
-              </span>
-              <div className="mb-5 inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-                {THEMES.map((id) => (
+          <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
+            <div
+              role="tablist"
+              aria-label={tr('header.settings')}
+              className="flex justify-center gap-0.5"
+            >
+              {TABS.map((id, idx) => {
+                const Icon = TAB_ICONS[id]
+                return (
                   <button
                     key={id}
-                    type="button"
-                    data-testid={`settings-theme-${id}`}
-                    aria-pressed={theme === id}
-                    onClick={() => {
-                      setTheme(id)
-                      onPreviewTheme(id)
+                    ref={(el) => {
+                      tabRefs.current[id] = el
                     }}
-                    className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                      theme === id
-                        ? 'bg-[var(--color-panel-2)] text-fg'
-                        : 'text-fg-muted hover:text-fg'
-                    }`}
-                  >
-                    {tr(`settings.themes.${id}`)}
-                  </button>
-                ))}
-              </div>
-
-              <label
-                htmlFor="settings-token"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.discogsToken')}
-              </label>
-              <input
-                id="settings-token"
-                data-testid="settings-token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder={tr('settings.tokenPlaceholder')}
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <p className="mt-1.5 mb-5 text-xs text-fg-dim">
-                {tr('settings.tokenHelp')}{' '}
-                <a
-                  href="https://www.discogs.com/settings/developers"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--color-accent)] hover:underline"
-                >
-                  discogs.com/settings/developers
-                </a>
-              </p>
-
-              <div className="border-t border-[var(--color-line)] pt-5">
-                <label
-                  className={`flex items-center gap-3 ${
-                    token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <input
-                    data-testid="settings-auto-match"
-                    type="checkbox"
-                    checked={autoMatch && token.trim() !== ''}
-                    disabled={token.trim() === ''}
-                    onChange={(e) => setAutoMatch(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.autoMatch')}</span>
-                </label>
-                <p className="mt-1.5 text-xs text-fg-dim">
-                  {token.trim() ? tr('settings.autoMatchHint') : tr('settings.autoMatchNeedsToken')}
-                </p>
-              </div>
-            </>
-          )}
-
-          {tab === 'conversion' && (
-            <>
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
-                {tr('settings.outputSection')}
-              </p>
-
-              <label
-                htmlFor="settings-output"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.outputDir')}
-              </label>
-              <div className="mb-5 flex gap-2">
-                <input
-                  id="settings-output"
-                  data-testid="settings-output"
-                  value={outputDir}
-                  readOnly
-                  className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-                />
-                <button
-                  type="button"
-                  onClick={changeDir}
-                  className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-                >
-                  {tr('common.change')}
-                </button>
-              </div>
-
-              <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-                {tr('settings.outputFormat')}
-              </span>
-              <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-                {FORMATS.map((id) => (
-                  <button
-                    key={id}
                     type="button"
-                    data-testid={`settings-format-${id}`}
-                    aria-pressed={outputFormat === id}
-                    onClick={() => setOutputFormat(id)}
-                    className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                      outputFormat === id
-                        ? 'bg-[var(--color-panel-2)] text-fg'
-                        : 'text-fg-muted hover:text-fg'
+                    role="tab"
+                    id={`settings-tab-${id}`}
+                    data-testid={`settings-tab-${id}`}
+                    aria-selected={tab === id}
+                    aria-controls="settings-tabpanel"
+                    tabIndex={tab === id ? 0 : -1}
+                    onClick={() => setTab(id)}
+                    onKeyDown={(e) => onTabKeyDown(e, idx)}
+                    className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
+                      tab === id
+                        ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
+                        : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
                     }`}
                   >
-                    {tr(`settings.formats.${id}`)}
+                    <Icon className="h-6 w-6" strokeWidth={1.7} aria-hidden="true" />
+                    {tr(`settings.tabs.${id}`)}
                   </button>
-                ))}
-              </div>
-              <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+                )
+              })}
+            </div>
+          </div>
 
-              {isMac && (
-                <>
+          <div
+            role="tabpanel"
+            id="settings-tabpanel"
+            aria-labelledby={`settings-tab-${tab}`}
+            className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2"
+          >
+            {tab === 'general' && (
+              <>
+                <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                  {tr('settings.theme')}
+                </span>
+                <div className="mb-5 inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+                  {THEMES.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      data-testid={`settings-theme-${id}`}
+                      aria-pressed={theme === id}
+                      onClick={() => {
+                        setTheme(id)
+                        onPreviewTheme(id)
+                      }}
+                      className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                        theme === id
+                          ? 'bg-[var(--color-panel-2)] text-fg'
+                          : 'text-fg-muted hover:text-fg'
+                      }`}
+                    >
+                      {tr(`settings.themes.${id}`)}
+                    </button>
+                  ))}
+                </div>
+
+                <label
+                  htmlFor="settings-token"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.discogsToken')}
+                </label>
+                <input
+                  id="settings-token"
+                  data-testid="settings-token"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder={tr('settings.tokenPlaceholder')}
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">
+                  {tr('settings.tokenHelp')}{' '}
+                  <a
+                    href="https://www.discogs.com/settings/developers"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--color-accent)] hover:underline"
+                  >
+                    discogs.com/settings/developers
+                  </a>
+                </p>
+
+                <div className="border-t border-[var(--color-line)] pt-5">
                   <label
                     className={`flex items-center gap-3 ${
-                      outputFormat === 'flac' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                      token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                     }`}
                   >
                     <input
-                      data-testid="settings-applemusic"
+                      data-testid="settings-auto-match"
                       type="checkbox"
-                      checked={addToAppleMusic && outputFormat !== 'flac'}
-                      disabled={outputFormat === 'flac'}
-                      onChange={(e) => setAddToAppleMusic(e.target.checked)}
+                      checked={autoMatch && token.trim() !== ''}
+                      disabled={token.trim() === ''}
+                      onChange={(e) => setAutoMatch(e.target.checked)}
                       className="h-4 w-4 accent-[var(--color-accent)]"
                     />
-                    <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
+                    <span className="text-sm">{tr('settings.autoMatch')}</span>
                   </label>
-                  {outputFormat === 'flac' && (
-                    <p className="mt-1.5 text-xs text-fg-dim">
-                      {tr('settings.appleMusicFlacNote')}
-                    </p>
-                  )}
-                </>
-              )}
-
-              <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
-                {tr('normalize.title')}
-              </p>
-              <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
-              <NormalizeControls value={normalize} onChange={setNormalize} />
-            </>
-          )}
-
-          {tab === 'naming' && (
-            <>
-              <label
-                htmlFor="settings-filename-format"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.filenameFormat')}
-              </label>
-              <input
-                ref={formatRef}
-                id="settings-filename-format"
-                data-testid="settings-filename-format"
-                value={filenameFormat}
-                onChange={(e) => setFilenameFormat(e.target.value)}
-                placeholder="{artist} - {title}"
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {FIELD_DEFS.map((f) => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    data-testid={`settings-token-${f.key}`}
-                    onClick={() => addToken(f.key)}
-                    className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-                  >
-                    {tr(`fields.${f.key}`)}
-                    <Tooltip label={`{${f.key}}`} />
-                  </button>
-                ))}
-              </div>
-              <p className="mt-3 mb-5 text-xs text-fg-dim">
-                {tr('settings.preview')}{' '}
-                <span data-testid="settings-format-preview" className="font-mono text-fg-muted">
-                  {renderOutputName(filenameFormat, SAMPLE_META) || '—'}.{outputFormat}
-                </span>
-              </p>
-
-              <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-trim"
-                    type="checkbox"
-                    checked={trimWhitespace}
-                    onChange={(e) => setTrimWhitespace(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.trimWhitespace')}</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="settings-zeropad"
-                    type="checkbox"
-                    checked={zeroPadTrack}
-                    onChange={(e) => setZeroPadTrack(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
-                </label>
-              </div>
-            </>
-          )}
-
-          {tab === 'editor' && (
-            <>
-              <label
-                htmlFor="settings-grouping"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.grouping')}
-              </label>
-              <input
-                id="settings-grouping"
-                data-testid="settings-grouping"
-                value={grouping}
-                onChange={(e) => setGrouping(e.target.value)}
-                placeholder="Bases, Cantaditas"
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
-
-              <label
-                htmlFor="settings-genre"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.genre')}
-              </label>
-              <input
-                id="settings-genre"
-                data-testid="settings-genre"
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                placeholder="Hard Dance, Techno"
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
-
-              <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
-                <div>
-                  <label className="flex cursor-pointer items-center gap-3">
-                    <input
-                      data-testid="settings-show-spectrum"
-                      type="checkbox"
-                      checked={showSpectrum}
-                      onChange={(e) => setShowSpectrum(e.target.checked)}
-                      className="h-4 w-4 accent-[var(--color-accent)]"
-                    />
-                    <span className="text-sm">{tr('settings.showSpectrum')}</span>
-                  </label>
-                  <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+                  <p className="mt-1.5 text-xs text-fg-dim">
+                    {token.trim()
+                      ? tr('settings.autoMatchHint')
+                      : tr('settings.autoMatchNeedsToken')}
+                  </p>
                 </div>
-                <div>
-                  <label className="flex cursor-pointer items-center gap-3">
-                    <input
-                      data-testid="settings-show-loudness"
-                      type="checkbox"
-                      checked={showLoudness}
-                      onChange={(e) => setShowLoudness(e.target.checked)}
-                      className="h-4 w-4 accent-[var(--color-accent)]"
-                    />
-                    <span className="text-sm">{tr('settings.showLoudness')}</span>
-                  </label>
-                  <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showLoudnessHint')}</p>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
 
-          {tab === 'artwork' && (
-            <>
-              <label
-                htmlFor="settings-cover-max"
-                className="mb-1.5 block text-sm font-medium text-fg-muted"
-              >
-                {tr('settings.coverMaxSize')}
-              </label>
-              <div className="mb-5 flex items-center gap-2">
-                <input
-                  id="settings-cover-max"
-                  data-testid="settings-cover-max"
-                  type="number"
-                  min={0}
-                  value={coverMaxSize}
-                  onChange={(e) => setCoverMaxSize(e.target.value)}
-                  className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-                />
-                <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
-              </div>
-
-              <label className="flex cursor-pointer items-center gap-3">
-                <input
-                  data-testid="settings-cover-square"
-                  type="checkbox"
-                  checked={coverSquare}
-                  onChange={(e) => setCoverSquare(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
-                />
-                <span className="text-sm">{tr('settings.coverSquare')}</span>
-              </label>
-              <p className="mt-3 text-xs text-fg-dim">{tr('settings.coverHint')}</p>
-            </>
-          )}
-
-          {tab === 'fields' && (
-            <div className="max-h-[340px] space-y-4 overflow-y-auto">
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-                  {tr('settings.shown')}
+            {tab === 'conversion' && (
+              <>
+                <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
+                  {tr('settings.outputSection')}
                 </p>
-                <div className="space-y-1.5">
-                  {visibleFields.map((key, i) => (
-                    <div
-                      key={key}
-                      data-testid={`field-row-${key}`}
-                      className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
-                    >
-                      <span className="text-sm">{tr(`fields.${key}`)}</span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          data-testid={`field-required-${key}`}
-                          aria-pressed={requiredFields.includes(key)}
-                          onClick={() =>
-                            setRequiredFields(
-                              requiredFields.includes(key)
-                                ? requiredFields.filter((k) => k !== key)
-                                : [...requiredFields, key],
-                            )
-                          }
-                          className={`mr-1 rounded px-2 py-0.5 text-xs ${
-                            requiredFields.includes(key)
-                              ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                              : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
-                          }`}
-                        >
-                          {tr('settings.required')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
-                          disabled={i === 0}
-                          className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                          aria-label={tr('settings.moveUp')}
-                        >
-                          <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
-                          disabled={i === visibleFields.length - 1}
-                          className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                          aria-label={tr('settings.moveDown')}
-                        >
-                          <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVisibleFields(visibleFields.filter((k) => k !== key))
-                            setRequiredFields(requiredFields.filter((k) => k !== key))
-                          }}
-                          className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-                        >
-                          {tr('settings.hide')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-                  {tr('settings.hidden')}
-                </p>
-                <div className="space-y-1.5">
-                  {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
-                    <div
-                      key={d.key}
-                      className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
-                    >
-                      <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
-                      <button
-                        type="button"
-                        onClick={() => setVisibleFields([...visibleFields, d.key])}
-                        className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
-                      >
-                        {tr('settings.show')}
-                      </button>
-                    </div>
-                  ))}
-                  {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
-                    <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === 'shortcuts' && (
-            <div className="min-h-[280px]">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-fg-dim">{tr('settings.shortcuts.intro')}</p>
-                <button
-                  type="button"
-                  data-testid="shortcuts-reset-all"
-                  onClick={() => setShortcutOverrides({})}
-                  className="press shrink-0 text-xs text-fg-muted hover:text-fg"
+                <label
+                  htmlFor="settings-output"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
                 >
-                  {tr('settings.shortcuts.resetAll')}
-                </button>
-              </div>
-              <div>
-                {SHORTCUT_DEFAULTS.map((def) => {
-                  const chord = bindings.get(def.id) ?? []
-                  const overridden = def.id in shortcutOverrides
-                  const isRecording = recording === def.id
-                  return (
-                    <div
-                      key={def.id}
-                      data-testid={`shortcut-row-${def.id}`}
-                      className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
+                  {tr('settings.outputDir')}
+                </label>
+                <div className="mb-5 flex gap-2">
+                  <input
+                    id="settings-output"
+                    data-testid="settings-output"
+                    value={outputDir}
+                    readOnly
+                    className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+                  />
+                  <button
+                    type="button"
+                    onClick={changeDir}
+                    className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                  >
+                    {tr('common.change')}
+                  </button>
+                </div>
+
+                <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                  {tr('settings.outputFormat')}
+                </span>
+                <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+                  {FORMATS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      data-testid={`settings-format-${id}`}
+                      aria-pressed={outputFormat === id}
+                      onClick={() => setOutputFormat(id)}
+                      className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                        outputFormat === id
+                          ? 'bg-[var(--color-panel-2)] text-fg'
+                          : 'text-fg-muted hover:text-fg'
+                      }`}
                     >
-                      <span className="text-sm text-fg">{commandTitle(def.id)}</span>
-                      <div className="flex items-center gap-2">
-                        {overridden && (
+                      {tr(`settings.formats.${id}`)}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+
+                {isMac && (
+                  <>
+                    <label
+                      className={`flex items-center gap-3 ${
+                        outputFormat === 'flac' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                      }`}
+                    >
+                      <input
+                        data-testid="settings-applemusic"
+                        type="checkbox"
+                        checked={addToAppleMusic && outputFormat !== 'flac'}
+                        disabled={outputFormat === 'flac'}
+                        onChange={(e) => setAddToAppleMusic(e.target.checked)}
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
+                    </label>
+                    {outputFormat === 'flac' && (
+                      <p className="mt-1.5 text-xs text-fg-dim">
+                        {tr('settings.appleMusicFlacNote')}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
+                  {tr('normalize.title')}
+                </p>
+                <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
+                <NormalizeControls value={normalize} onChange={setNormalize} />
+              </>
+            )}
+
+            {tab === 'naming' && (
+              <>
+                <label
+                  htmlFor="settings-filename-format"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.filenameFormat')}
+                </label>
+                <input
+                  ref={formatRef}
+                  id="settings-filename-format"
+                  data-testid="settings-filename-format"
+                  value={filenameFormat}
+                  onChange={(e) => setFilenameFormat(e.target.value)}
+                  placeholder="{artist} - {title}"
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {FIELD_DEFS.map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      data-testid={`settings-token-${f.key}`}
+                      onClick={() => addToken(f.key)}
+                      className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                    >
+                      {tr(`fields.${f.key}`)}
+                      <Tooltip label={`{${f.key}}`} />
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 mb-5 text-xs text-fg-dim">
+                  {tr('settings.preview')}{' '}
+                  <span data-testid="settings-format-preview" className="font-mono text-fg-muted">
+                    {renderOutputName(filenameFormat, SAMPLE_META) || '—'}.{outputFormat}
+                  </span>
+                </p>
+
+                <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      data-testid="settings-trim"
+                      type="checkbox"
+                      checked={trimWhitespace}
+                      onChange={(e) => setTrimWhitespace(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr('settings.trimWhitespace')}</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      data-testid="settings-zeropad"
+                      type="checkbox"
+                      checked={zeroPadTrack}
+                      onChange={(e) => setZeroPadTrack(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {tab === 'editor' && (
+              <>
+                <label
+                  htmlFor="settings-grouping"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.grouping')}
+                </label>
+                <input
+                  id="settings-grouping"
+                  data-testid="settings-grouping"
+                  value={grouping}
+                  onChange={(e) => setGrouping(e.target.value)}
+                  placeholder="Bases, Cantaditas"
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+
+                <label
+                  htmlFor="settings-genre"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.genre')}
+                </label>
+                <input
+                  id="settings-genre"
+                  data-testid="settings-genre"
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                  placeholder="Hard Dance, Techno"
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                />
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
+
+                <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+                  <div>
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        data-testid="settings-show-spectrum"
+                        type="checkbox"
+                        checked={showSpectrum}
+                        onChange={(e) => setShowSpectrum(e.target.checked)}
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">{tr('settings.showSpectrum')}</span>
+                    </label>
+                    <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+                  </div>
+                  <div>
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        data-testid="settings-show-loudness"
+                        type="checkbox"
+                        checked={showLoudness}
+                        onChange={(e) => setShowLoudness(e.target.checked)}
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">{tr('settings.showLoudness')}</span>
+                    </label>
+                    <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showLoudnessHint')}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {tab === 'artwork' && (
+              <>
+                <label
+                  htmlFor="settings-cover-max"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.coverMaxSize')}
+                </label>
+                <div className="mb-5 flex items-center gap-2">
+                  <input
+                    id="settings-cover-max"
+                    data-testid="settings-cover-max"
+                    type="number"
+                    min={0}
+                    value={coverMaxSize}
+                    onChange={(e) => setCoverMaxSize(e.target.value)}
+                    className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                  />
+                  <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
+                </div>
+
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    data-testid="settings-cover-square"
+                    type="checkbox"
+                    checked={coverSquare}
+                    onChange={(e) => setCoverSquare(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.coverSquare')}</span>
+                </label>
+                <p className="mt-3 text-xs text-fg-dim">{tr('settings.coverHint')}</p>
+              </>
+            )}
+
+            {tab === 'fields' && (
+              <div className="max-h-[340px] space-y-4 overflow-y-auto">
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
+                    {tr('settings.shown')}
+                  </p>
+                  <div className="space-y-1.5">
+                    {visibleFields.map((key, i) => (
+                      <div
+                        key={key}
+                        data-testid={`field-row-${key}`}
+                        className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+                      >
+                        <span className="text-sm">{tr(`fields.${key}`)}</span>
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            data-testid={`shortcut-reset-${def.id}`}
-                            onClick={() => resetRow(def.id)}
-                            className="press text-sm text-fg-faint hover:text-fg"
+                            data-testid={`field-required-${key}`}
+                            aria-pressed={requiredFields.includes(key)}
+                            onClick={() =>
+                              setRequiredFields(
+                                requiredFields.includes(key)
+                                  ? requiredFields.filter((k) => k !== key)
+                                  : [...requiredFields, key],
+                              )
+                            }
+                            className={`mr-1 rounded px-2 py-0.5 text-xs ${
+                              requiredFields.includes(key)
+                                ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                                : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+                            }`}
                           >
-                            ↺
-                            <Tooltip label={tr('settings.shortcuts.reset')} />
+                            {tr('settings.required')}
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
+                            disabled={i === 0}
+                            className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                            aria-label={tr('settings.moveUp')}
+                          >
+                            <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
+                            disabled={i === visibleFields.length - 1}
+                            className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                            aria-label={tr('settings.moveDown')}
+                          >
+                            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVisibleFields(visibleFields.filter((k) => k !== key))
+                              setRequiredFields(requiredFields.filter((k) => k !== key))
+                            }}
+                            className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                          >
+                            {tr('settings.hide')}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
+                    {tr('settings.hidden')}
+                  </p>
+                  <div className="space-y-1.5">
+                    {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
+                      <div
+                        key={d.key}
+                        className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+                      >
+                        <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
                         <button
                           type="button"
-                          data-testid={`shortcut-record-${def.id}`}
-                          onClick={() => setRecording(isRecording ? null : def.id)}
-                          onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
-                          onBlur={() => isRecording && setRecording(null)}
-                          aria-pressed={isRecording}
-                          className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
-                            isRecording
-                              ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                              : conflictIds.has(def.id)
-                                ? 'border-danger text-danger'
-                                : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-                          }`}
+                          onClick={() => setVisibleFields([...visibleFields, d.key])}
+                          className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
                         >
-                          {isRecording
-                            ? tr('settings.shortcuts.recording')
-                            : chord.length
-                              ? formatShortcut(chord, isMac)
-                              : tr('settings.shortcuts.unbound')}
+                          {tr('settings.show')}
                         </button>
                       </div>
-                    </div>
-                  )
-                })}
+                    ))}
+                    {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
+                      <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
+                    )}
+                  </div>
+                </div>
               </div>
-              {conflictIds.size > 0 && (
-                <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
-                  {tr('settings.shortcuts.conflict')}
-                </p>
-              )}
-            </div>
-          )}
+            )}
 
-          {tab === 'stats' && (
-            <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-              {settings.conversionCount > 0 ? (
-                <>
-                  <p
-                    data-testid="stats-count"
-                    className="text-6xl font-semibold tabular-nums text-fg"
+            {tab === 'shortcuts' && (
+              <div className="min-h-[280px]">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs text-fg-dim">{tr('settings.shortcuts.intro')}</p>
+                  <button
+                    type="button"
+                    data-testid="shortcuts-reset-all"
+                    onClick={() => setShortcutOverrides({})}
+                    className="press shrink-0 text-xs text-fg-muted hover:text-fg"
                   >
-                    {settings.conversionCount}
+                    {tr('settings.shortcuts.resetAll')}
+                  </button>
+                </div>
+                <div>
+                  {SHORTCUT_DEFAULTS.map((def) => {
+                    const chord = bindings.get(def.id) ?? []
+                    const overridden = def.id in shortcutOverrides
+                    const isRecording = recording === def.id
+                    return (
+                      <div
+                        key={def.id}
+                        data-testid={`shortcut-row-${def.id}`}
+                        className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
+                      >
+                        <span className="text-sm text-fg">{commandTitle(def.id)}</span>
+                        <div className="flex items-center gap-2">
+                          {overridden && (
+                            <button
+                              type="button"
+                              data-testid={`shortcut-reset-${def.id}`}
+                              onClick={() => resetRow(def.id)}
+                              className="press text-sm text-fg-faint hover:text-fg"
+                            >
+                              ↺
+                              <Tooltip label={tr('settings.shortcuts.reset')} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            data-testid={`shortcut-record-${def.id}`}
+                            onClick={() => setRecording(isRecording ? null : def.id)}
+                            onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
+                            onBlur={() => isRecording && setRecording(null)}
+                            aria-pressed={isRecording}
+                            className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
+                              isRecording
+                                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                                : conflictIds.has(def.id)
+                                  ? 'border-danger text-danger'
+                                  : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
+                            }`}
+                          >
+                            {isRecording
+                              ? tr('settings.shortcuts.recording')
+                              : chord.length
+                                ? formatShortcut(chord, isMac)
+                                : tr('settings.shortcuts.unbound')}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {conflictIds.size > 0 && (
+                  <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
+                    {tr('settings.shortcuts.conflict')}
                   </p>
-                  <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
-                  <p data-testid="stats-time-saved" className="mt-7 text-lg text-fg">
-                    {tr('settings.stats.timeSaved', {
-                      time: formatTimeSaved(timeSavedSeconds(settings.conversionCount)),
-                    })}
-                  </p>
-                  <p className="mt-1 text-xs text-fg-dim">
-                    {tr('settings.stats.perTrack', {
-                      minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
-                    })}
-                  </p>
-                </>
-              ) : (
-                <p data-testid="stats-empty" className="max-w-xs text-sm text-fg-muted">
-                  {tr('settings.stats.empty')}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
 
-        <div className="mt-6 flex shrink-0 justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
-          >
-            {tr('common.cancel')}
-          </button>
-          <button
-            type="button"
-            data-testid="settings-save"
-            onClick={save}
-            disabled={conflictIds.size > 0}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-          >
-            {tr('common.save')}
-          </button>
-        </div>
+            {tab === 'stats' && (
+              <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+                {settings.conversionCount > 0 ? (
+                  <>
+                    <p
+                      data-testid="stats-count"
+                      className="text-6xl font-semibold tabular-nums text-fg"
+                    >
+                      {settings.conversionCount}
+                    </p>
+                    <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
+                    <p data-testid="stats-time-saved" className="mt-7 text-lg text-fg">
+                      {tr('settings.stats.timeSaved', {
+                        time: formatTimeSaved(timeSavedSeconds(settings.conversionCount)),
+                      })}
+                    </p>
+                    <p className="mt-1 text-xs text-fg-dim">
+                      {tr('settings.stats.perTrack', {
+                        minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <p data-testid="stats-empty" className="max-w-xs text-sm text-fg-muted">
+                    {tr('settings.stats.empty')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex shrink-0 justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
+            >
+              {tr('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              data-testid="settings-save"
+              disabled={conflictIds.size > 0}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            >
+              {tr('common.save')}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

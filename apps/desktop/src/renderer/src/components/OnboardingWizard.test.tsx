@@ -43,6 +43,17 @@ function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) 
   fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token step
 }
 
+describe('OnboardingWizard keyboard', () => {
+  // The wizard is a form whose default button is Next, so pressing Enter in a field
+  // advances the step instead of doing nothing.
+  it('advances to the next step when the form is submitted with Enter', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(screen.queryByTestId('onboarding-token')).toBeNull()
+    fireEvent.submit(screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement)
+    expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.
