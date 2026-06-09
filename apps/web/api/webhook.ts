@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type Stripe from 'stripe'
-import { emailLicense, generateLicenseKey, readRawBody, sql, stripe } from './_lib'
+import { emailLicense, generateLicenseKey, normalizeLang, readRawBody, sql, stripe } from './_lib'
 
 // Stripe needs the exact bytes to verify the signature, so opt out of body parsing.
 export const config = { api: { bodyParser: false } }
@@ -38,7 +38,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           insert into licenses (license_key, email, stripe_session_id, stripe_customer_id, stripe_payment_intent)
           values (${key}, ${email}, ${s.id}, ${(s.customer as string) ?? null}, ${(s.payment_intent as string) ?? null})
         `
-        if (email) await emailLicense(email, key)
+        // Language chosen at checkout (metadata), falling back to Stripe's own locale.
+        const lang = normalizeLang(s.metadata?.lang ?? s.locale)
+        if (email) await emailLicense(email, key, lang)
       }
     } else if (event.type === 'charge.refunded') {
       const charge = event.data.object as Stripe.Charge

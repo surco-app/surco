@@ -13,11 +13,24 @@ export const SITE = process.env.SITE_URL ?? 'https://getsurco.app'
 export const sql = neon(process.env.DATABASE_URL ?? '')
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '')
 
+// The two languages the site, app and emails speak. Anything else falls back to en.
+export type Lang = 'en' | 'es'
+export function normalizeLang(x: unknown): Lang {
+  return typeof x === 'string' && x.toLowerCase().startsWith('es') ? 'es' : 'en'
+}
+
 // One-time Surco Pro checkout. `source` is echoed into metadata so we can tell an
-// in-app "Buy" from a website purchase. Shared by /api/checkout and /api/buy.
-export function createCheckoutSession(source: string): Promise<Stripe.Checkout.Session> {
+// in-app "Buy" from a website purchase; `lang` localizes the Stripe Checkout UI and
+// is carried into metadata so the webhook can email the license in the right language.
+// Shared by /api/checkout and /api/buy.
+export function createCheckoutSession(
+  source: string,
+  lang: Lang = 'en',
+): Promise<Stripe.Checkout.Session> {
   return stripe.checkout.sessions.create({
     mode: 'payment',
+    locale: lang,
+    metadata: { source, lang },
     line_items: [
       {
         price_data: {
@@ -32,7 +45,6 @@ export function createCheckoutSession(source: string): Promise<Stripe.Checkout.S
       },
     ],
     allow_promotion_codes: true,
-    metadata: { source },
     success_url: `${SITE}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE}/?checkout=cancelled`,
   })
@@ -72,17 +84,28 @@ export async function readJson<T>(req: IncomingMessage & { body?: unknown }): Pr
   return raw.length ? (JSON.parse(raw.toString('utf8')) as T) : ({} as T)
 }
 
-// Emails the license key to the buyer. Best-effort: with no RESEND_API_KEY configured
-// it silently no-ops (the success page is the primary delivery channel).
-export async function emailLicense(email: string, key: string): Promise<void> {
+// The license email in each language, so buyers get it in the language they used.
+function licenseEmail(key: string, lang: Lang): { subject: string; text: string } {
+  if (lang === 'es') {
+    return {
+      subject: 'Tu licencia de Surco Pro',
+      text: `¡Gracias por comprar Surco Pro!\n\nTu clave de licencia:\n\n${key}\n\nAbre Surco → pulsa ⌘K → «Surco Pro…» → pega la clave y tu email de compra para activar. Funciona en hasta 3 dispositivos.\n\n¿La perdiste? Recupérala cuando quieras en ${SITE}/recover`,
+    }
+  }
+  return {
+    subject: 'Your Surco Pro license',
+    text: `Thanks for buying Surco Pro!\n\nYour license key:\n\n${key}\n\nOpen Surco → press ⌘K → "Surco Pro…" → paste the key and your purchase email to activate. It works on up to 3 devices.\n\nLost it? Recover it any time at ${SITE}/recover`,
+  }
+}
+
+// Emails the license key to the buyer in their language. Best-effort: with no
+// RESEND_API_KEY configured it silently no-ops (the success page is the primary
+// delivery channel).
+export async function emailLicense(email: string, key: string, lang: Lang = 'en'): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return
   const resend = new Resend(apiKey)
   const from = process.env.LICENSE_EMAIL_FROM ?? 'Surco <license@getsurco.app>'
-  await resend.emails.send({
-    from,
-    to: email,
-    subject: 'Your Surco Pro license',
-    text: `Thanks for buying Surco Pro!\n\nYour license key:\n\n${key}\n\nOpen Surco → ⌘K → "Surco Pro…" → paste the key and your purchase email to activate. It works on up to 3 devices.\n\nLost it? Recover it any time at ${SITE}/recover`,
-  })
+  const { subject, text } = licenseEmail(key, lang)
+  await resend.emails.send({ from, to: email, subject, text })
 }

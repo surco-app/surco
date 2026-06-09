@@ -9,7 +9,8 @@ free-tier limits, the Pro feature gates, and live Stripe checkout — no code ch
 
 - **One-time license** (`mode: payment`), €29 — `PRO_PRICE_EUR` (desktop, web, API all read
   a mirror of this).
-- **Free tier:** unlimited single-track conversions up to **10 per calendar month**;
+- **Free tier:** unlimited single-track conversions up to **25 per calendar month**
+  (configurable via `SURCO_FREE_MONTHLY` desktop / `VITE_SURCO_FREE_MONTHLY` web);
   Discogs tagging and analysis included.
 - **Pro unlocks:** unlimited conversions, **Convert all** (batch), and **rekordbox/Traktor
   export**.

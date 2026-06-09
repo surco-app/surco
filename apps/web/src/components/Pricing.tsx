@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BETA_MODE, PRO_PRICE_EUR, SPONSOR_URL } from '../config'
+import { BETA_MODE, FREE_MONTHLY_CONVERSIONS, PRO_PRICE_EUR, SPONSOR_URL } from '../config'
 import Reveal from './Reveal'
 
 function Check() {
@@ -36,9 +36,12 @@ function Features({ items }: { items: string[] }) {
 }
 
 export default function Pricing() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [loading, setLoading] = useState(false)
-  const free = t('pricing.free.features', { returnObjects: true }) as string[]
+  const free = t('pricing.free.features', {
+    returnObjects: true,
+    limit: FREE_MONTHLY_CONVERSIONS,
+  }) as string[]
   const pro = t('pricing.pro.features', { returnObjects: true }) as string[]
 
   // Starts a Stripe Checkout: ask the serverless function for a session URL, then hand
@@ -46,7 +49,11 @@ export default function Pricing() {
   async function goPro(): Promise<void> {
     setLoading(true)
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' })
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lang: i18n.language }),
+      })
       const data = (await res.json()) as { url?: string }
       if (data.url) {
         window.location.href = data.url

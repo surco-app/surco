@@ -216,7 +216,7 @@
         "Convert to AIFF, WAV, FLAC and MP3",
         "Discogs tagging and full-album match",
         "Spectrum analysis to catch fakes",
-        "Up to 10 conversions a month"
+        "Up to {{limit}} conversions a month"
       ]
     },
     "pro": {

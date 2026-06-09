@@ -12,6 +12,7 @@ import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
+import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
   'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/5'
@@ -26,6 +27,7 @@ function Kbd({ k }: { k: string }) {
 
 export default function App() {
   const { t } = useTranslation()
+  useAutoLanguage()
   const features = t('features.items', { returnObjects: true }) as {
     kick: string
     title: string

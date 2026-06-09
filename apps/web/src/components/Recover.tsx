@@ -41,7 +41,7 @@ export default function Recover() {
       await fetch('/api/recover', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, lang: lang() }),
       })
     } catch {
       // The endpoint is intentionally opaque; show the same confirmation on error.

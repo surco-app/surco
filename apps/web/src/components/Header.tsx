@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SECTIONS } from '../lib/nav'
+import { rememberLanguage } from '../lib/useAutoLanguage'
 
 export default function Header() {
   const { t, i18n } = useTranslation()
@@ -8,6 +9,7 @@ export default function Header() {
   const [open, setOpen] = useState(false)
   const otherLang = i18n.language === 'en' ? '/' : '/en'
   const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
+  const otherCode = i18n.language === 'en' ? 'es' : 'en'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -19,6 +21,9 @@ export default function Header() {
   // Keep the in-page anchor when switching language: both pages share the same
   // section ids, so we send the visitor to the same spot on the other locale.
   const keepHash = (e: React.MouseEvent) => {
+    // A manual switch is an explicit choice: persist it so auto-detection never
+    // overrides it on the next visit.
+    rememberLanguage(otherCode)
     if (typeof window !== 'undefined' && window.location.hash) {
       e.preventDefault()
       window.location.href = otherLang + window.location.hash
