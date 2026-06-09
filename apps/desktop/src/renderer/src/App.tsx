@@ -140,6 +140,7 @@ interface ConfirmModal {
   message: string
   confirmLabel: string
   confirmDisabled?: boolean
+  destructive?: boolean
   onConfirm: () => void
 }
 
@@ -584,6 +585,7 @@ export default function App(): React.JSX.Element {
         name: track.fileName,
       }),
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      destructive: true,
       onConfirm: () => {
         window.api
           .trashFile(track.inputPath)
@@ -605,6 +607,7 @@ export default function App(): React.JSX.Element {
         name: track.fileName,
       }),
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      destructive: true,
       onConfirm: () => {
         window.api
           .trashFile(track.inputPath)
@@ -646,6 +649,7 @@ export default function App(): React.JSX.Element {
       title: tr('confirm.clearTitle'),
       message: tr('confirm.clearMessage', { count: tracks.length }),
       confirmLabel: tr('confirm.clearConfirm'),
+      destructive: true,
       onConfirm: clearTracks,
     })
   }
@@ -1282,6 +1286,7 @@ export default function App(): React.JSX.Element {
           message={activeModal.confirm.message}
           confirmLabel={activeModal.confirm.confirmLabel}
           confirmDisabled={activeModal.confirm.confirmDisabled}
+          destructive={activeModal.confirm.destructive}
           onConfirm={activeModal.confirm.onConfirm}
           onClose={() => setActiveModal(null)}
         />

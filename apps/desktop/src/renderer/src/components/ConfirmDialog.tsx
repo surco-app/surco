@@ -8,6 +8,9 @@ interface Props {
   message: string
   confirmLabel: string
   confirmDisabled?: boolean
+  // Paints the confirm button red for irreversible actions (delete, clear), the macOS
+  // convention that warns before the user commits.
+  destructive?: boolean
   onConfirm: () => void
   onClose: () => void
 }
@@ -20,6 +23,7 @@ export function ConfirmDialog({
   message,
   confirmLabel,
   confirmDisabled,
+  destructive,
   onConfirm,
   onClose,
 }: Props): React.JSX.Element {
@@ -72,7 +76,11 @@ export function ConfirmDialog({
               type="submit"
               data-testid="confirm-ok"
               disabled={confirmDisabled}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className={`press rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                destructive
+                  ? 'bg-[var(--color-danger)] hover:brightness-110'
+                  : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'
+              }`}
             >
               {confirmLabel}
             </button>
