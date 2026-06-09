@@ -188,7 +188,7 @@
     "loudnessGradeGood": "Good",
     "loudnessGradeWarn": "So-so",
     "loudnessGradeBad": "Check it",
-    "spectrumAlt": "Spectrogram",
+    "spectrumAlt": "Frequency spectrogram of the track",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "output": "Output:",
     "outputName": "File name",

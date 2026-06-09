@@ -188,7 +188,7 @@
     "loudnessGradeGood": "Bien",
     "loudnessGradeWarn": "Regular",
     "loudnessGradeBad": "Revisar",
-    "spectrumAlt": "Espectrograma",
+    "spectrumAlt": "Espectrograma de frecuencias de la pista",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "output": "Salida:",
     "outputName": "Nombre del archivo",
