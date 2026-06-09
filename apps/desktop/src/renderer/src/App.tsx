@@ -565,6 +565,8 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [], anchor: null })
     discogsPrefetched.current.clear()
     viewCache.current.clear()
+    matchQueue.current.clear()
+    visibleIds.current.clear()
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
@@ -895,15 +897,21 @@ export default function App(): React.JSX.Element {
   }, [sidebar.autoFit])
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
-  const selectedTracks = tracks.filter((t) => selectedIds.includes(t.id))
+  const selectedTracks = useMemo(
+    () => tracks.filter((t) => selectedIds.includes(t.id)),
+    [tracks, selectedIds],
+  )
   // Falls back to the selection so the card still renders for the brief moment
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-  const eligibleCount = eligibleForBatch(tracks).length
-  const selectedEligibleCount = eligibleForBatch(selectedTracks).length
+  const eligibleCount = useMemo(() => eligibleForBatch(tracks).length, [tracks])
+  const selectedEligibleCount = useMemo(
+    () => eligibleForBatch(selectedTracks).length,
+    [selectedTracks],
+  )
 
   // Each track's spectrum, read from the shared React Query cache the hover prefetch,
   // the analyze sweep and the editor all fill. enabled:false so the list only observes —
@@ -917,22 +925,31 @@ export default function App(): React.JSX.Element {
   })
   // Merge each cached spectrum onto its track for the quality triage and the list,
   // preserving object identity (via viewCache) so memoized rows don't all re-render.
-  const tracksView = tracks.map((t, i) => {
-    const spectrum = spectrumQueries[i]?.data
-    if (!spectrum) return t
-    const cached = viewCache.current.get(t.id)
-    if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
-    const view: TrackItem = { ...t, spectrum }
-    viewCache.current.set(t.id, { track: t, spectrum, view })
-    return view
-  })
+  // Memoized so a progress tick during an analyze/convert/match sweep doesn't rebuild
+  // the whole list (and re-run the quality/auto-match scans below) on every re-render.
+  const tracksView = useMemo(
+    () =>
+      tracks.map((t, i) => {
+        const spectrum = spectrumQueries[i]?.data
+        if (!spectrum) return t
+        const cached = viewCache.current.get(t.id)
+        if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
+        const view: TrackItem = { ...t, spectrum }
+        viewCache.current.set(t.id, { track: t, spectrum, view })
+        return view
+      }),
+    [tracks, spectrumQueries],
+  )
   tracksViewRef.current = tracksView
 
-  const qualityTally = qualityCounts(tracksView)
-  const visibleTracks = filterByQuality(tracksView, qualityFilter)
+  const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
+  const visibleTracks = useMemo(
+    () => filterByQuality(tracksView, qualityFilter),
+    [tracksView, qualityFilter],
+  )
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
-  const autoMatchable = tracksToAutoMatch(tracksView).length
+  const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
