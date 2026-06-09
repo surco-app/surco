@@ -1,0 +1,46 @@
+name: CI
+
+# The release workflow only bundles and ships; nothing gated lint, type-checks or
+# tests, so regressions (e.g. a broken tsc build) could land on main unseen. This runs
+# the checks on every push and PR.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The same fresh-install dance the release uses: npm's optionalDependencies bug
+      # (npm/cli#4828) skips the platform rollup binary from a cross-OS lockfile, and
+      # ffmpeg-static's postinstall download from GitHub Releases intermittently 504s,
+      # so retry the whole install a few times.
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            rm -f package-lock.json && npm install && exit 0
+            echo "npm install failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: Lint
+        run: npm run lint -w apps/desktop
+
+      - name: Type-check
+        run: npx tsc --build
+        working-directory: apps/desktop
+
+      - name: Test
+        run: npm test
