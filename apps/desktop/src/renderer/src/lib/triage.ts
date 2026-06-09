@@ -39,6 +39,18 @@ export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): Tra
   return tracks.filter((t) => trackQuality(t) === filter)
 }
 
+// Free-text list search, applied on top of the quality filter. Matches what the user
+// can actually see or recognise the track by: the frozen list label and the source file
+// name (both available before tags are read), plus the core artist/title/album tags, so
+// typing a name narrows a big crate. Case-insensitive substring; a blank query keeps all.
+export function matchesSearch(track: TrackItem, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return [track.listLabel, track.fileName, track.meta?.title, track.meta?.artist, track.meta?.album]
+    .filter((field): field is string => Boolean(field))
+    .some((field) => field.toLowerCase().includes(q))
+}
+
 // Tallies for the filter chips, so the bar can show "5 suspect" without the caller
 // walking the list per chip. 'unconverted' overlaps the quality buckets (it's a
 // different dimension), so it's counted independently rather than as an else-branch.

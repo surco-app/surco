@@ -46,6 +46,11 @@
       "unanalyzed": "Sin analizar",
       "unconverted": "Sin convertir",
       "automatched": "Auto-emparejadas"
+    },
+    "search": {
+      "placeholder": "Buscar pistas",
+      "clear": "Borrar búsqueda",
+      "empty": "Ninguna pista coincide."
     }
   },
   "drop": {

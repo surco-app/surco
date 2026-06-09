@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { filterByQuality, qualityCounts, trackQuality, tracksToAnalyze } from './triage'
+import {
+  filterByQuality,
+  matchesSearch,
+  qualityCounts,
+  trackQuality,
+  tracksToAnalyze,
+} from './triage'
 
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
 const withSpectrum = (spectrum?: Partial<SpectrumResult>): TrackItem =>
@@ -96,6 +102,35 @@ describe('filterByQuality / qualityCounts', () => {
   })
 })
 
+describe('matchesSearch', () => {
+  const t = (over: Partial<TrackItem>): TrackItem =>
+    ({ listLabel: '', fileName: '', meta: {}, ...over }) as TrackItem
+
+  it('matches every track when the query is blank or whitespace', () => {
+    const track = t({ listLabel: 'Back Now Yall' })
+    expect(matchesSearch(track, '')).toBe(true)
+    expect(matchesSearch(track, '   ')).toBe(true)
+  })
+
+  it('matches the list label the user sees on the row, case-insensitively', () => {
+    const track = t({ listLabel: 'Back Now Yall' })
+    expect(matchesSearch(track, 'now')).toBe(true)
+    expect(matchesSearch(track, 'NOW')).toBe(true)
+    expect(matchesSearch(track, 'house')).toBe(false)
+  })
+
+  it('matches the source file name even before tags are read', () => {
+    expect(matchesSearch(t({ fileName: 'A2 - Untitled.flac' }), 'untitled')).toBe(true)
+  })
+
+  it('matches the artist, title and album tags so a crate can be searched by metadata', () => {
+    const track = t({ meta: { artist: 'Floorplan', title: 'Never Grow Old', album: 'Paradise' } })
+    expect(matchesSearch(track, 'floorplan')).toBe(true)
+    expect(matchesSearch(track, 'grow')).toBe(true)
+    expect(matchesSearch(track, 'paradise')).toBe(true)
+  })
+})
+
 describe('automatched filter', () => {
   const t = (id: string, autoMatched?: boolean): TrackItem =>
     ({ id, status: 'idle', autoMatched }) as TrackItem
@@ -104,7 +139,10 @@ describe('automatched filter', () => {
   const tracks = [t('filled', true), t('manual'), t('also-filled', true)]
 
   it('keeps only the tracks whose metadata was filled by auto-match', () => {
-    expect(filterByQuality(tracks, 'automatched').map((x) => x.id)).toEqual(['filled', 'also-filled'])
+    expect(filterByQuality(tracks, 'automatched').map((x) => x.id)).toEqual([
+      'filled',
+      'also-filled',
+    ])
   })
 
   it('tallies the auto-matched tracks for its filter badge', () => {

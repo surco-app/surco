@@ -46,6 +46,11 @@
       "unanalyzed": "Unanalyzed",
       "unconverted": "Unconverted",
       "automatched": "Auto-matched"
+    },
+    "search": {
+      "placeholder": "Search tracks",
+      "clear": "Clear search",
+      "empty": "No tracks match."
     }
   },
   "drop": {

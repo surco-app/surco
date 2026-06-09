@@ -5,8 +5,10 @@ import {
   List,
   type LucideIcon,
   RefreshCw,
+  Search,
   Sparkles,
   TriangleAlert,
+  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -25,7 +27,6 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ExportModal } from './components/ExportModal'
-import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -37,6 +38,7 @@ import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { canAddToAppleMusic } from './lib/appleMusic'
@@ -48,7 +50,6 @@ import {
 } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
-import { useLicense } from './lib/useLicense'
 import { mapWithConcurrency } from './lib/concurrency'
 import { smartDeriveTags } from './lib/deriveTags'
 import { openFeedback } from './lib/feedback'
@@ -67,7 +68,14 @@ import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { resolveTheme } from './lib/theme'
-import { filterByQuality, type QualityFilter, qualityCounts, tracksToAnalyze } from './lib/triage'
+import {
+  filterByQuality,
+  matchesSearch,
+  type QualityFilter,
+  qualityCounts,
+  tracksToAnalyze,
+} from './lib/triage'
+import { useLicense } from './lib/useLicense'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -182,6 +190,9 @@ export default function App(): React.JSX.Element {
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
   // big crate can be swept for fakes without scrolling past the clean ones.
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
+  // Free-text filter over the imported tracks, combined with the quality chip above.
+  // Narrows a big dropped crate by name/artist/album without converting anything.
+  const [search, setSearch] = useState('')
   const [dragging, setDragging] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
@@ -859,8 +870,8 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const visibleTracks = useMemo(
-    () => filterByQuality(tracksView, qualityFilter),
-    [tracksView, qualityFilter],
+    () => filterByQuality(tracksView, qualityFilter).filter((t) => matchesSearch(t, search)),
+    [tracksView, qualityFilter, search],
   )
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
@@ -1168,88 +1179,118 @@ export default function App(): React.JSX.Element {
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
               <>
-                <div
-                  data-testid="quality-filter"
-                  className="sticky top-0 z-10 flex gap-0.5 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-1.5 py-2"
-                >
-                  {(
-                    [
-                      'all',
-                      'unanalyzed',
-                      'suspect',
-                      'good',
-                      'unconverted',
-                      // Provenance chip, shown only once something has been auto-filled so the
-                      // bar isn't cluttered with a permanently-empty filter when auto-match is off.
-                      ...(qualityTally.automatched > 0 ? (['automatched'] as const) : []),
-                    ] as const
-                  ).map((mode) => {
-                    const count =
-                      mode === 'all'
-                        ? tracks.length
-                        : mode === 'unanalyzed'
-                          ? qualityTally.unanalyzed
-                          : mode === 'suspect'
-                            ? qualityTally.suspect
-                            : mode === 'good'
-                              ? qualityTally.good
-                              : mode === 'unconverted'
-                                ? qualityTally.unconverted
-                                : qualityTally.automatched
-                    const active = qualityFilter === mode
-                    const name = tr(`sidebar.filter.${mode}`)
-                    const Icon = FILTER_ICONS[mode]
-                    // Color-coded dot draws the eye to buckets that need attention: amber for
-                    // suspect (likely fake), accent for the still-to-convert backlog.
-                    const dot =
-                      mode === 'suspect' && qualityTally.suspect > 0
-                        ? 'bg-warn'
-                        : mode === 'unconverted' && qualityTally.unconverted > 0
-                          ? 'bg-[var(--color-accent)]'
-                          : null
-                    return (
+                <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
+                  <div className="relative px-1.5 pt-2">
+                    <Search
+                      className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
+                      aria-hidden="true"
+                    />
+                    <input
+                      data-testid="track-search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      aria-label={tr('sidebar.search.placeholder')}
+                      placeholder={tr('sidebar.search.placeholder')}
+                      className="h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pl-8 pr-7 text-xs outline-none focus:border-[var(--color-accent)]"
+                    />
+                    {search && (
                       <button
-                        key={mode}
                         type="button"
-                        data-testid={`quality-filter-${mode}`}
-                        aria-pressed={active}
-                        aria-label={name}
-                        onClick={() => setQualityFilter(mode)}
-                        className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
-                          active
-                            ? 'bg-[var(--color-accent-soft)] text-fg'
-                            : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
-                        }`}
+                        data-testid="track-search-clear"
+                        aria-label={tr('sidebar.search.clear')}
+                        onClick={() => setSearch('')}
+                        className="press absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-fg-faint hover:text-fg"
                       >
-                        <span className="relative">
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                          {dot && (
-                            <span
-                              className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
-                            />
-                          )}
-                        </span>
-                        <span className="min-w-[2ch] text-center tabular-nums opacity-70">
-                          {count}
-                        </span>
-                        <Tooltip label={name} />
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
-                    )
-                  })}
+                    )}
+                  </div>
+                  <div data-testid="quality-filter" className="flex gap-0.5 px-1.5 py-2">
+                    {(
+                      [
+                        'all',
+                        'unanalyzed',
+                        'suspect',
+                        'good',
+                        'unconverted',
+                        // Provenance chip, shown only once something has been auto-filled so the
+                        // bar isn't cluttered with a permanently-empty filter when auto-match is off.
+                        ...(qualityTally.automatched > 0 ? (['automatched'] as const) : []),
+                      ] as const
+                    ).map((mode) => {
+                      const count =
+                        mode === 'all'
+                          ? tracks.length
+                          : mode === 'unanalyzed'
+                            ? qualityTally.unanalyzed
+                            : mode === 'suspect'
+                              ? qualityTally.suspect
+                              : mode === 'good'
+                                ? qualityTally.good
+                                : mode === 'unconverted'
+                                  ? qualityTally.unconverted
+                                  : qualityTally.automatched
+                      const active = qualityFilter === mode
+                      const name = tr(`sidebar.filter.${mode}`)
+                      const Icon = FILTER_ICONS[mode]
+                      // Color-coded dot draws the eye to buckets that need attention: amber for
+                      // suspect (likely fake), accent for the still-to-convert backlog.
+                      const dot =
+                        mode === 'suspect' && qualityTally.suspect > 0
+                          ? 'bg-warn'
+                          : mode === 'unconverted' && qualityTally.unconverted > 0
+                            ? 'bg-[var(--color-accent)]'
+                            : null
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`quality-filter-${mode}`}
+                          aria-pressed={active}
+                          aria-label={name}
+                          onClick={() => setQualityFilter(mode)}
+                          className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
+                            active
+                              ? 'bg-[var(--color-accent-soft)] text-fg'
+                              : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
+                          }`}
+                        >
+                          <span className="relative">
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                            {dot && (
+                              <span
+                                className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
+                              />
+                            )}
+                          </span>
+                          <span className="min-w-[2ch] text-center tabular-nums opacity-70">
+                            {count}
+                          </span>
+                          <Tooltip label={name} />
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-                <TrackList
-                  tracks={visibleTracks}
-                  selectedId={selectedId}
-                  selectedIds={selectedIds}
-                  outputFormat={settings?.outputFormat ?? 'aiff'}
-                  onSelect={onSelectTrack}
-                  onRemove={removeTrack}
-                  onPrefetch={handlePrefetch}
-                  onSearch={onSearchTrack}
-                  onTrash={askTrash}
-                  scrollRootRef={listScrollRef}
-                  onVisible={onTrackVisible}
-                />
+                {visibleTracks.length === 0 ? (
+                  <p className="p-6 text-center text-xs text-fg-faint">
+                    {tr('sidebar.search.empty')}
+                  </p>
+                ) : (
+                  <TrackList
+                    tracks={visibleTracks}
+                    selectedId={selectedId}
+                    selectedIds={selectedIds}
+                    outputFormat={settings?.outputFormat ?? 'aiff'}
+                    onSelect={onSelectTrack}
+                    onRemove={removeTrack}
+                    onPrefetch={handlePrefetch}
+                    onSearch={onSearchTrack}
+                    onTrash={askTrash}
+                    scrollRootRef={listScrollRef}
+                    onVisible={onTrackVisible}
+                  />
+                )}
               </>
             )}
           </div>
