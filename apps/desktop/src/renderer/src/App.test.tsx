@@ -87,6 +87,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onOpenFiles: () => () => {},
     takePendingFiles: vi.fn().mockResolvedValue([]),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
+    onWindowFocus: () => () => {},
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
@@ -150,6 +151,35 @@ describe('App quality triage', () => {
     const rows = await addTwoTracks()
     fireEvent.mouseEnter(rows[1])
     await waitFor(() => expect(within(rows[1]).getByTestId('track-quality')).toBeInTheDocument())
+  })
+
+  // Starting the sweep then switching away must not keep ffmpeg churning in the
+  // background: the sweep parks until the window is focused again, the whole point of
+  // the blur pause (it must still finish once the app comes back).
+  it('parks the analyze sweep while the window is in the background and resumes on focus', async () => {
+    let setFocus: (focused: boolean) => void = () => {}
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({
+      spectrogram,
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        setFocus = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    await addTwoTracks()
+    // Let the selected track's editor warm its own spectrum first; the sweep is what
+    // we're gating, so we measure new ffmpeg calls against that baseline.
+    await new Promise((r) => setTimeout(r, 0))
+    const baseline = spectrogram.mock.calls.length
+
+    setFocus(false)
+    fireEvent.click(screen.getByTestId('analyze-quality'))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(spectrogram.mock.calls.length).toBe(baseline)
+
+    setFocus(true)
+    await waitFor(() => expect(spectrogram.mock.calls.length).toBeGreaterThan(baseline))
   })
 })
 

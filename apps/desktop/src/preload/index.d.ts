@@ -57,6 +57,7 @@ export interface Api {
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void
+  onWindowFocus: (cb: (focused: boolean) => void) => () => void
 }
 
 declare global {

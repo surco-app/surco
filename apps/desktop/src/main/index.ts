@@ -271,6 +271,10 @@ function createWindow(): BrowserWindow {
   })
 
   win.on('ready-to-show', () => win.show())
+  // Let the renderer pause its background analyze sweep while the window is hidden,
+  // so it stops spawning ffmpeg in the background, and resume it on focus.
+  win.on('blur', () => win.webContents.send('window:focus', false))
+  win.on('focus', () => win.webContents.send('window:focus', true))
   buildAppMenu(win)
 
   win.webContents.setWindowOpenHandler((details) => {

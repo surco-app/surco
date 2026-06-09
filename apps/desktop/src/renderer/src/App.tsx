@@ -64,6 +64,7 @@ import { exportedPatch } from './lib/export'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
 import { parseFileName } from './lib/filename'
+import { createFocusGate } from './lib/focusGate'
 import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
@@ -215,6 +216,9 @@ export default function App(): React.JSX.Element {
   // killing the ones already handed to ffmpeg.
   const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
   const analyzeCancel = useRef(false)
+  // Pauses the analyze-quality sweep while the window is in the background (fed by the
+  // main process's blur/focus events) so it stops spawning ffmpeg until the app returns.
+  const focusGate = useRef(createFocusGate())
   // Auto-match sweep: progress (null when idle), a cancel flag the workers poll, and a
   // ref guard so an import landing mid-sweep doesn't start a second concurrent run.
   const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
@@ -289,6 +293,8 @@ export default function App(): React.JSX.Element {
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
     [],
   )
+
+  useEffect(() => window.api.onWindowFocus((focused) => focusGate.current.set(focused)), [])
 
   // The batch summary is a transient confirmation, not a persistent banner — it
   // clears itself a few seconds after a run so it never lingers over later work.
@@ -446,6 +452,10 @@ export default function App(): React.JSX.Element {
     let done = 0
     setAnalysis({ done: 0, total: targets.length })
     void mapWithConcurrency(targets, 3, async (t) => {
+      if (analyzeCancel.current) return
+      // Hold here while the window is in the background so the sweep doesn't spawn
+      // ffmpeg off-screen; it resumes the moment the app is focused again.
+      await focusGate.current.wait()
       if (analyzeCancel.current) return
       try {
         await queryClient.fetchQuery({

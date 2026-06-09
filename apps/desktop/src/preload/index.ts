@@ -73,6 +73,11 @@ const api = {
     ipcRenderer.on('update:error', listener)
     return () => ipcRenderer.removeListener('update:error', listener)
   },
+  onWindowFocus: (cb: (focused: boolean) => void) => {
+    const listener = (_e: unknown, focused: boolean): void => cb(focused)
+    ipcRenderer.on('window:focus', listener)
+    return () => ipcRenderer.removeListener('window:focus', listener)
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)
