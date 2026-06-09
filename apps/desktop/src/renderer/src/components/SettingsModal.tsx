@@ -524,6 +524,12 @@ export function SettingsModal({
                   placeholder="{artist} - {title}"
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
+                <p className="mt-2 text-xs text-fg-dim">
+                  {tr('settings.filenameFolderHint')}{' '}
+                  <span className="font-mono text-fg-muted">
+                    {'{discogsReleaseId}/{artist} - {title}'}
+                  </span>
+                </p>
                 <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {FIELD_DEFS.map((f) => (

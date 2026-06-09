@@ -377,6 +377,7 @@
     "destinationAppleMusicHint": "Adds to Apple Music and keeps no copy in the output folder",
     "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
+    "filenameFolderHint": "Use \"/\" to sort files into folders, e.g.",
     "insertToken": "Insert a field:",
     "preview": "Preview:",
     "grouping": "Grouping (comma-separated)",

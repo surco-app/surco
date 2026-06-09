@@ -377,6 +377,7 @@
     "destinationAppleMusicHint": "Lo añade a Apple Music y no deja copia en la carpeta",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
+    "filenameFolderHint": "Usa \"/\" para organizar los archivos en carpetas, p. ej.",
     "insertToken": "Insertar un campo:",
     "preview": "Vista previa:",
     "grouping": "Grouping (separados por comas)",
