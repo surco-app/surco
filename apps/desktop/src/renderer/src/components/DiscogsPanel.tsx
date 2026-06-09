@@ -95,6 +95,7 @@ export function DiscogsPanel({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+              aria-label={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
               className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
             />

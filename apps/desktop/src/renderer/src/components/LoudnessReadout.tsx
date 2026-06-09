@@ -127,6 +127,7 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
               <button
                 type="button"
                 data-testid="loudness-help-toggle"
+                aria-label={tr('editor.loudnessHelpTitle')}
                 onClick={onShowHelp}
                 className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
               >

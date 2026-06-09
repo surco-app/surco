@@ -304,6 +304,14 @@ describe('Editor loudness pills', () => {
     fireEvent.keyDown(document.body, { key: 'Escape' })
     expect(screen.queryByTestId('loudness-help')).toBeNull()
   })
+
+  // The toggle is icon-only, so without an accessible name a screen reader just
+  // announces "button" with no clue it opens the loudness explanation.
+  it('gives the icon-only help toggle an accessible name', async () => {
+    seedLoudness(healthy)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    expect(await screen.findByTestId('loudness-help-toggle')).toHaveAccessibleName()
+  })
 })
 
 // Mirrors App's real wiring (tracks in state, updateTracksMeta over the selection) so a
@@ -717,6 +725,14 @@ describe('Editor Discogs apply', () => {
     await search()
     fireEvent.doubleClick(screen.getByTestId('discogs-result'))
     expect(getRelease).not.toHaveBeenCalled()
+  })
+
+  // The search field has only a placeholder, which screen readers don't treat as a
+  // label, so it needs an explicit accessible name.
+  it('gives the Discogs search field an accessible name', () => {
+    withDiscogs()
+    renderEditor({ id: 'a' })
+    expect(screen.getByTestId('discogs-query')).toHaveAccessibleName()
   })
 
   // The discoverable, explicit path: expand the album, then pick the track. That
