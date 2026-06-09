@@ -24,25 +24,41 @@ export function Tooltip({
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
     if (!trigger) return
-    const onMove = (e: PointerEvent): void => {
-      // Hug the cursor on whichever side has room: near the right/bottom edges the tooltip
-      // flips via a transform so it stays next to the pointer instead of clamping far away.
-      const flipX = e.clientX + OFFSET + WIDTH > window.innerWidth
-      const flipY = e.clientY + OFFSET + 56 > window.innerHeight
+    // Hug the given point on whichever side has room: near the right/bottom edges the
+    // tooltip flips via a transform so it stays next to the anchor instead of clamping.
+    const showAt = (x: number, y: number): void => {
+      const flipX = x + OFFSET + WIDTH > window.innerWidth
+      const flipY = y + OFFSET + 56 > window.innerHeight
       setPos({
-        left: flipX ? e.clientX - OFFSET : e.clientX + OFFSET,
-        top: flipY ? e.clientY - OFFSET : e.clientY + OFFSET,
+        left: flipX ? x - OFFSET : x + OFFSET,
+        top: flipY ? y - OFFSET : y + OFFSET,
         transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
       })
     }
+    const onMove = (e: PointerEvent): void => showAt(e.clientX, e.clientY)
     const onLeave = (): void => setPos(null)
+    // Keyboard users get the same hint: with no cursor to follow, anchor it to the
+    // trigger's box, and let Escape dismiss it without moving focus (WCAG 1.4.13).
+    const onFocus = (): void => {
+      const r = trigger.getBoundingClientRect()
+      showAt(r.left + r.width / 2, r.bottom)
+    }
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setPos(null)
+    }
     trigger.addEventListener('pointermove', onMove)
     trigger.addEventListener('pointerleave', onLeave)
     trigger.addEventListener('pointerdown', onLeave)
+    trigger.addEventListener('focusin', onFocus)
+    trigger.addEventListener('focusout', onLeave)
+    trigger.addEventListener('keydown', onKeyDown)
     return () => {
       trigger.removeEventListener('pointermove', onMove)
       trigger.removeEventListener('pointerleave', onLeave)
       trigger.removeEventListener('pointerdown', onLeave)
+      trigger.removeEventListener('focusin', onFocus)
+      trigger.removeEventListener('focusout', onLeave)
+      trigger.removeEventListener('keydown', onKeyDown)
     }
   }, [])
 
