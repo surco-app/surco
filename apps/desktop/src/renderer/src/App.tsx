@@ -774,13 +774,16 @@ export default function App(): React.JSX.Element {
   }
 
   function moveSelection(delta: number): void {
+    // Step through the rows the user can actually see (after the quality filter and the
+    // search), so arrow/j-k navigation never lands on a track hidden by the current view —
+    // and so the index lines up with the rendered rows queried below.
     const next = moveIndex(
-      tracks.length,
-      tracks.findIndex((t) => t.id === selectedId),
+      visibleTracks.length,
+      visibleTracks.findIndex((t) => t.id === selectedId),
       delta,
     )
     if (next === -1) return
-    setSelection({ ids: [tracks[next].id], anchor: tracks[next].id })
+    setSelection({ ids: [visibleTracks[next].id], anchor: visibleTracks[next].id })
     // Move DOM focus with the selection so the native focus ring follows the
     // keyboard instead of staying on the last clicked row, which left two rows
     // looking highlighted at once. preventScroll: we page the list ourselves below
@@ -920,14 +923,14 @@ export default function App(): React.JSX.Element {
       id: 'prev',
       title: tr('commands.prev'),
       hint: hintFor('prev'),
-      enabled: tracks.length > 1,
+      enabled: visibleTracks.length > 1,
       run: () => moveSelection(-1),
     },
     {
       id: 'next',
       title: tr('commands.next'),
       hint: hintFor('next'),
-      enabled: tracks.length > 1,
+      enabled: visibleTracks.length > 1,
       run: () => moveSelection(1),
     },
     {
