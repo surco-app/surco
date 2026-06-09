@@ -9,6 +9,18 @@ import { parseFileName } from './filename'
 // deleted original. A real conversion leaves the source alone, so the track keeps
 // its inputPath/fileName and only records where the converted copy landed.
 export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<TrackItem> {
+  // "Apple Music only": no file was kept in the output folder, so the track records no
+  // outputPath and is flagged added — the editor then shows the Apple-Music confirmation
+  // instead of a "Show file" that would point at nothing.
+  if (result.addedToMusicOnly) {
+    return {
+      status: 'done',
+      outputPath: undefined,
+      musicStatus: 'added',
+      stage: undefined,
+      processedSignature: trackSignature(track),
+    }
+  }
   return {
     status: 'done',
     outputPath: result.outputPath,

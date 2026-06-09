@@ -34,6 +34,12 @@ export interface Settings {
   outputDir: string
   outputFormat: OutputFormat
   addToAppleMusic: boolean
+  // Whether a converted file is kept in the output folder. Default true. When false
+  // and the track is added to Apple Music, Surco drops the output-folder copy after a
+  // successful add (Apple Music keeps its own), so "Apple Music only" leaves no clutter
+  // behind. Always honored as true when nothing is added to Apple Music, so a
+  // conversion can never end up with no copy at all.
+  keepOutputCopy: boolean
   filenameFormat: string
   groupingPresets: string[]
   genrePresets: string[]
@@ -174,6 +180,10 @@ export interface ProcessResult {
   // written and the renderer should surface the upgrade screen. Never set during
   // the beta (BETA_MODE) nor for Pro users.
   limitReached?: boolean
+  // True when the track went to Apple Music only and its output-folder copy was
+  // removed, so outputPath is empty: the renderer marks the track added to Apple
+  // Music instead of offering a "Show file" that points at nothing.
+  addedToMusicOnly?: boolean
 }
 
 export interface SpectrumResult {

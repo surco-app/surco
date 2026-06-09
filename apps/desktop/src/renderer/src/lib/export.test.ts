@@ -61,4 +61,19 @@ describe('exportedPatch', () => {
     expect(patch.inputPath).toBeUndefined()
     expect(patch.fileName).toBeUndefined()
   })
+
+  it('records no file and marks the track added when it went to Apple Music only', () => {
+    // "Apple Music only" removed the output-folder copy, so there is nothing to reveal:
+    // the track must carry no outputPath and show as already in the library.
+    const t = track()
+    const patch = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+    })
+    expect(patch.status).toBe('done')
+    expect(patch.outputPath).toBeUndefined()
+    expect(patch.musicStatus).toBe('added')
+    expect(patch.processedSignature).toBe(trackSignature(t))
+  })
 })

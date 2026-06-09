@@ -21,6 +21,7 @@ const settings: Settings = {
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,
+  keepOutputCopy: true,
   filenameFormat: '',
   groupingPresets: [],
   genrePresets: [],
@@ -132,6 +133,56 @@ describe('SettingsModal auto-match', () => {
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ discogsToken: 'tok', autoMatch: true }),
     )
+  })
+})
+
+describe('SettingsModal destination', () => {
+  function openConversion(over: Partial<Settings> = {}, onSave: (p: Partial<Settings>) => void = () => {}) {
+    render(
+      <SettingsModal
+        settings={{ ...settings, ...over }}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-conversion'))
+  }
+
+  // The single radio choice is what keeps "no copy anywhere" unrepresentable, so the
+  // mapping onto the two stored booleans is the contract worth pinning down.
+  it('saves Apple Music as the only destination by dropping the output-folder copy', () => {
+    const onSave = vi.fn()
+    openConversion({}, onSave)
+    fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
+    )
+  })
+
+  it('saves "output folder + Apple Music" keeping the copy', () => {
+    const onSave = vi.fn()
+    openConversion({}, onSave)
+    fireEvent.click(screen.getByTestId('settings-destination-both'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: true }),
+    )
+  })
+
+  it('reflects a saved "Apple Music only" setting as the selected radio', () => {
+    openConversion({ addToAppleMusic: true, keepOutputCopy: false })
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeChecked()
+  })
+
+  // Apple Music can't ingest FLAC, so its options can't be chosen while FLAC is the
+  // format — the choice falls back to the always-valid output folder.
+  it('pins the destination to the output folder and disables Apple Music for FLAC', () => {
+    openConversion({ outputFormat: 'flac', addToAppleMusic: true, keepOutputCopy: false })
+    expect(screen.getByTestId('settings-destination-folder')).toBeChecked()
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
+    expect(screen.getByTestId('settings-destination-both')).toBeDisabled()
   })
 })
 

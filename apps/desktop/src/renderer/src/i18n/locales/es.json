@@ -247,6 +247,9 @@
     "exportedAs": "✓ Exportado como {{format}}",
     "exportedCount_one": "✓ {{count}} pista exportada",
     "exportedCount_other": "✓ {{count}} pistas exportadas",
+    "addedToAppleMusic": "✓ Añadido a Apple Music",
+    "addedToAppleMusicCount_one": "✓ {{count}} pista añadida a Apple Music",
+    "addedToAppleMusicCount_other": "✓ {{count}} pistas añadidas a Apple Music",
     "showFile": "Mostrar archivo",
     "reexport": "Reexportar",
     "deleteOriginal": "Eliminar archivo original",
@@ -358,8 +361,14 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "AIFF, WAV y FLAC conservan la calidad sin pérdida (FLAC va comprimido); MP3 (320 kbps) ocupa menos. Un archivo que ya esté en el formato elegido se copia sin reconvertir. Puedes elegir otro formato al exportar cada pista.",
-    "addToAppleMusic": "Añadir automáticamente a Apple Music tras procesar",
-    "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que esto se desactiva mientras tu formato de salida sea FLAC.",
+    "destination": "Destino de los archivos convertidos",
+    "destinations": {
+      "folder": "Carpeta de salida",
+      "appleMusic": "Apple Music",
+      "both": "Carpeta de salida + Apple Music"
+    },
+    "destinationAppleMusicHint": "Lo añade a Apple Music y no deja copia en la carpeta",
+    "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "insertToken": "Insertar un campo:",
     "preview": "Vista previa:",

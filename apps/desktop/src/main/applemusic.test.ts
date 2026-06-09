@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { buildAddScript, buildLookupScript, shouldAddToAppleMusic } from './applemusic'
+import {
+  buildAddScript,
+  buildLookupScript,
+  isAppleMusicOnly,
+  shouldAddToAppleMusic,
+} from './applemusic'
 
 const base: TrackMetadata = {
   title: 'ATB (Till I Come)',
@@ -130,5 +135,25 @@ describe('shouldAddToAppleMusic', () => {
 
   it('refuses for FLAC even on macOS with the setting enabled, because Apple Music cannot ingest FLAC — adding the file would either fail or import nothing', () => {
     expect(shouldAddToAppleMusic(true, 'darwin', 'flac')).toBe(false)
+  })
+})
+
+describe('isAppleMusicOnly', () => {
+  it('is true only when the track is added to Apple Music and the user opted out of keeping a copy', () => {
+    expect(isAppleMusicOnly(true, false, 'darwin', 'aiff', false)).toBe(true)
+    // Keeping the copy ("both") writes to the output folder as usual.
+    expect(isAppleMusicOnly(true, true, 'darwin', 'aiff', false)).toBe(false)
+  })
+
+  it('keeps the copy when nothing is added to Apple Music, so a conversion never ends with no file at all', () => {
+    // Setting off, non-macOS, and FLAC each mean no Apple Music add — the output
+    // folder is then the only place the file lives, so it must be kept.
+    expect(isAppleMusicOnly(false, false, 'darwin', 'aiff', false)).toBe(false)
+    expect(isAppleMusicOnly(true, false, 'win32', 'aiff', false)).toBe(false)
+    expect(isAppleMusicOnly(true, false, 'darwin', 'flac', false)).toBe(false)
+  })
+
+  it('never drops an in-place rewrite, which edits the user’s own source file rather than a fresh copy', () => {
+    expect(isAppleMusicOnly(true, false, 'darwin', 'aiff', true)).toBe(false)
   })
 })

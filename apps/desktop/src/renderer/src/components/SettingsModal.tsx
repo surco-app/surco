@@ -32,6 +32,11 @@ import { useFocusTrap } from './useFocusTrap'
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
+// Where a converted track ends up. Modeled as one choice rather than two independent
+// toggles so "no copy anywhere" can't be expressed: every option keeps at least one copy.
+type Destination = 'folder' | 'appleMusic' | 'both'
+const DESTINATIONS: Destination[] = ['folder', 'appleMusic', 'both']
+
 // A representative track so the filename preview shows real-looking output
 // instead of empty braces, and every token has something to render.
 const SAMPLE_META: TrackMetadata = {
@@ -138,6 +143,7 @@ export function SettingsModal({
   const [outputDir, setOutputDir] = useState(settings.outputDir)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
+  const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
@@ -177,6 +183,16 @@ export function SettingsModal({
     if (dir) setOutputDir(dir)
   }
 
+  // FLAC can't go to Apple Music, so the destination is pinned to the output folder
+  // while it's the format. Otherwise the two booleans map onto the single radio choice.
+  const flacOnly = outputFormat === 'flac'
+  const destination: Destination =
+    flacOnly || !addToAppleMusic ? 'folder' : keepOutputCopy ? 'both' : 'appleMusic'
+  function chooseDestination(d: Destination): void {
+    setAddToAppleMusic(d !== 'folder')
+    setKeepOutputCopy(d !== 'appleMusic')
+  }
+
   function save(): void {
     const groupingPresets = grouping
       .split(',')
@@ -193,6 +209,7 @@ export function SettingsModal({
       outputDir,
       outputFormat,
       addToAppleMusic,
+      keepOutputCopy,
       filenameFormat: filenameFormat.trim() || '{artist} - {title}',
       groupingPresets,
       genrePresets,
@@ -441,22 +458,45 @@ export function SettingsModal({
 
                 {isMac && (
                   <>
-                    <label
-                      className={`flex items-center gap-3 ${
-                        outputFormat === 'flac' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                      }`}
+                    <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                      {tr('settings.destination')}
+                    </span>
+                    <div
+                      role="radiogroup"
+                      aria-label={tr('settings.destination')}
+                      className="flex flex-col gap-2"
                     >
-                      <input
-                        data-testid="settings-applemusic"
-                        type="checkbox"
-                        checked={addToAppleMusic && outputFormat !== 'flac'}
-                        disabled={outputFormat === 'flac'}
-                        onChange={(e) => setAddToAppleMusic(e.target.checked)}
-                        className="h-4 w-4 accent-[var(--color-accent)]"
-                      />
-                      <span className="text-sm">{tr('settings.addToAppleMusic')}</span>
-                    </label>
-                    {outputFormat === 'flac' && (
+                      {DESTINATIONS.map((d) => {
+                        const disabled = flacOnly && d !== 'folder'
+                        return (
+                          <label
+                            key={d}
+                            className={`flex items-start gap-3 ${
+                              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                            }`}
+                          >
+                            <input
+                              data-testid={`settings-destination-${d}`}
+                              type="radio"
+                              name="destination"
+                              checked={destination === d}
+                              disabled={disabled}
+                              onChange={() => chooseDestination(d)}
+                              className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                            />
+                            <span className="text-sm">
+                              {tr(`settings.destinations.${d}`)}
+                              {d === 'appleMusic' && (
+                                <span className="block text-xs text-fg-dim">
+                                  {tr('settings.destinationAppleMusicHint')}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {flacOnly && (
                       <p className="mt-1.5 text-xs text-fg-dim">
                         {tr('settings.appleMusicFlacNote')}
                       </p>

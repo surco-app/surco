@@ -528,6 +528,15 @@ describe('Editor export control', () => {
     ).toHaveBeenCalledWith('/out/a.wav')
   })
 
+  // "Apple Music only" leaves no file in the output folder, so there is nothing to
+  // reveal: the outcome must confirm the library add and drop the dead "Show file".
+  it('confirms the Apple Music add without a Show file button when no copy was kept', () => {
+    renderEditor({ id: 'a', status: 'done', musicStatus: 'added' })
+    expect(screen.getByTestId('export-success')).toHaveTextContent('Apple Music')
+    expect(screen.queryByTestId('show-file')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('add-apple-music')).not.toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))

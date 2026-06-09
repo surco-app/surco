@@ -1,5 +1,6 @@
 import { createReadStream, existsSync } from 'node:fs'
-import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
@@ -26,7 +27,12 @@ import type {
   Settings,
 } from '../shared/types'
 import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
-import { addToAppleMusic, lookupInAppleMusic, shouldAddToAppleMusic } from './applemusic'
+import {
+  addToAppleMusic,
+  isAppleMusicOnly,
+  lookupInAppleMusic,
+  shouldAddToAppleMusic,
+} from './applemusic'
 import type { CoverSource } from './cover'
 import { prepareProcessedCover } from './cover'
 import { expandPaths } from './expand'
@@ -449,6 +455,9 @@ function registerIpc(): void {
       e.sender.send('process:progress', { id: job.id, stage: s })
 
     let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+    // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
+    // Apple Music add never leaves the temp conversion behind.
+    let tmpDir: string | undefined
     try {
       if (job.coverPath || job.coverUrl) {
         stage('cover')
@@ -467,8 +476,24 @@ function registerIpc(): void {
         format,
         settings.outputDir,
       )
+      // "Apple Music only": the user wants the track in Apple Music and no copy left in
+      // the output folder. Apple Music still imports a real path, so write the conversion
+      // to a private temp dir (never the output folder — it can't collide with or clobber
+      // anything there), hand it over, then remove it below.
+      const musicOnly = isAppleMusicOnly(
+        settings.addToAppleMusic,
+        settings.keepOutputCopy,
+        process.platform,
+        format,
+        inPlace,
+      )
       let target = outputPath
-      if (isOutputConflict(outputPath, job.previousOutputPath, inPlace, existsSync(outputPath))) {
+      if (musicOnly) {
+        tmpDir = await mkdtemp(join(tmpdir(), 'surco-'))
+        target = join(tmpDir, basename(outputPath))
+      } else if (
+        isOutputConflict(outputPath, job.previousOutputPath, inPlace, existsSync(outputPath))
+      ) {
         const t = createMenuT(app.getLocale())
         const win = BrowserWindow.fromWebContents(e.sender)
         const opts = {
@@ -506,9 +531,15 @@ function registerIpc(): void {
         await addToAppleMusic(target, job.meta, coverPath)
       }
 
+      // The add succeeded (a failure would have thrown above), and the temp dir is
+      // cleaned up in finally — tell the renderer there is no file to reveal, only an
+      // Apple Music entry.
+      if (musicOnly) return { outputPath: '', inPlace, addedToMusicOnly: true }
+
       return { outputPath: target, inPlace }
     } finally {
       if (prepared) await prepared.cleanup()
+      if (tmpDir) await rm(tmpDir, { recursive: true, force: true })
     }
   })
 

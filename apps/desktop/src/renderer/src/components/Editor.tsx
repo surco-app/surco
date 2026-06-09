@@ -225,6 +225,9 @@ export function Editor({
     ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done')
     : done
   const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
+  // "Apple Music only": the conversion left no file in the output folder, so a finished
+  // track carries no path to reveal — confirm the library add instead of a dead button.
+  const inMusicLibraryOnly = showDone && !revealPath
   // A real conversion writes a separate file and leaves the source at its own path;
   // an in-place export rewrites the source, so inputPath === outputPath and there is
   // nothing distinct to trash. Single-track only, and gone once the original is trashed.
@@ -613,20 +616,26 @@ export function Editor({
                   data-testid="export-success"
                   className="text-center text-xs font-medium text-good"
                 >
-                  {isMulti
-                    ? tr('editor.exportedCount', { count: multiTracks.length })
-                    : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
+                  {inMusicLibraryOnly
+                    ? isMulti
+                      ? tr('editor.addedToAppleMusicCount', { count: multiTracks.length })
+                      : tr('editor.addedToAppleMusic')
+                    : isMulti
+                      ? tr('editor.exportedCount', { count: multiTracks.length })
+                      : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
                 </p>
-                <button
-                  type="button"
-                  data-testid="show-file"
-                  onClick={() => revealPath && window.api.reveal(revealPath)}
-                  className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-                >
-                  {tr('editor.showFile')}
-                </button>
+                {revealPath && (
+                  <button
+                    type="button"
+                    data-testid="show-file"
+                    onClick={() => window.api.reveal(revealPath)}
+                    className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+                  >
+                    {tr('editor.showFile')}
+                  </button>
+                )}
                 <div className="flex gap-2">
-                  {window.api.platform === 'darwin' && musicExt !== 'flac' && (
+                  {window.api.platform === 'darwin' && musicExt !== 'flac' && !inMusicLibraryOnly && (
                     <button
                       type="button"
                       data-testid="add-apple-music"

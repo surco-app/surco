@@ -20,6 +20,7 @@ const settings: Settings = {
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,
+  keepOutputCopy: true,
   filenameFormat: '',
   groupingPresets: [],
   genrePresets: [],

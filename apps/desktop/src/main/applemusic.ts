@@ -88,6 +88,22 @@ export function shouldAddToAppleMusic(
   return enabled && platform === 'darwin' && format !== 'flac'
 }
 
+// "Apple Music only" mode: the track is added to Apple Music and no copy is kept in
+// the output folder. The conversion still writes a real file (Apple Music imports a
+// path), but it's written to a temp location and removed after the add. Requires the
+// add to actually happen — when it can't (setting off, non-macOS, FLAC) the file must
+// stay, so this returns false and the conversion keeps its output-folder copy. Never
+// true for an in-place rewrite: that file is the user's own source, never deleted.
+export function isAppleMusicOnly(
+  addToAppleMusic: boolean,
+  keepOutputCopy: boolean,
+  platform: NodeJS.Platform,
+  format: OutputFormat,
+  inPlace: boolean,
+): boolean {
+  return shouldAddToAppleMusic(addToAppleMusic, platform, format) && !keepOutputCopy && !inPlace
+}
+
 // Counts library tracks matching the name exactly and the primary artist
 // loosely. We match the artist with `contains` against only the first
 // comma-separated name because our tags join collaborators ("Alfredo Pareja,

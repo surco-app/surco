@@ -15,6 +15,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     outputDir: '',
     outputFormat: 'aiff',
     addToAppleMusic: false,
+    keepOutputCopy: true,
     filenameFormat: '{artist} - {title}',
     groupingPresets: [],
     genrePresets: [],

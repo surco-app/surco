@@ -247,6 +247,9 @@
     "exportedAs": "✓ Exported as {{format}}",
     "exportedCount_one": "✓ {{count}} track exported",
     "exportedCount_other": "✓ {{count}} tracks exported",
+    "addedToAppleMusic": "✓ Added to Apple Music",
+    "addedToAppleMusicCount_one": "✓ {{count}} track added to Apple Music",
+    "addedToAppleMusicCount_other": "✓ {{count}} tracks added to Apple Music",
     "showFile": "Show file",
     "reexport": "Re-export",
     "deleteOriginal": "Delete original file",
@@ -358,8 +361,14 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "AIFF, WAV and FLAC keep lossless quality (FLAC is compressed); MP3 (320 kbps) takes less space. A file already in the chosen format is copied without re-encoding. You can pick a different format when exporting each track.",
-    "addToAppleMusic": "Automatically add to Apple Music after processing",
-    "appleMusicFlacNote": "Apple Music can't play FLAC, so this stays off while FLAC is your output format.",
+    "destination": "Where converted tracks go",
+    "destinations": {
+      "folder": "Output folder",
+      "appleMusic": "Apple Music",
+      "both": "Output folder + Apple Music"
+    },
+    "destinationAppleMusicHint": "Adds to Apple Music and keeps no copy in the output folder",
+    "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
     "insertToken": "Insert a field:",
     "preview": "Preview:",

@@ -12,6 +12,8 @@ const defaults: Settings = {
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
   addToAppleMusic: process.platform === 'darwin',
+  // Keep a copy in the output folder by default; "Apple Music only" is opt-in.
+  keepOutputCopy: true,
   filenameFormat: '{artist} - {title}',
   groupingPresets: ['Bases', 'Cantaditas'],
   genrePresets: [],
