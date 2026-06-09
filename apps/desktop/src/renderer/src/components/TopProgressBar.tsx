@@ -6,16 +6,17 @@ interface Props {
   fraction: number | null
 }
 
-// A slim, NProgress-style bar pinned to the top edge of the window for long background
-// sweeps (analyze, auto-match, batch convert, import). Kept pointer-events-none so it
-// never blocks the draggable title bar underneath it.
+// A slim, NProgress-style bar for long background sweeps (analyze, auto-match, batch
+// convert, import). Rendered at the bottom edge of its positioned parent — the toolbar —
+// so it rides the divider line above the list. pointer-events-none so it never blocks the
+// controls underneath it.
 export function TopProgressBar({ fraction }: Props): React.JSX.Element {
   const determinate = fraction !== null
   return (
     <div
       data-testid="top-progress"
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 z-50 h-0.5 overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-50 h-0.5 overflow-hidden"
     >
       <div
         className={`h-full bg-[var(--color-accent)] shadow-[0_0_8px_var(--color-accent)] ${

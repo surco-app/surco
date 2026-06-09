@@ -1138,7 +1138,7 @@ export default function App(): React.JSX.Element {
     // keyboard-accessible path to the same action.
     // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
-      className="relative flex h-screen flex-col"
+      className="flex h-screen flex-col"
       onDragOver={(e) => {
         e.preventDefault()
         setDragging(true)
@@ -1146,7 +1146,6 @@ export default function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      {progress && <TopProgressBar fraction={progress.fraction} />}
       {/* Music preview playback — there is no speech to caption. The clock
           (currentTime/duration/paused) is read by LivePlayer, which subscribes to
           this element directly so playback re-renders only the card. */}
@@ -1154,38 +1153,43 @@ export default function App(): React.JSX.Element {
       <audio ref={audioRef} hidden onEnded={closePlayer} />
       {/* Names the window for screen readers; visually redundant with the title bar. */}
       <h1 className="sr-only">Surco</h1>
-      <Toolbar
-        isMac={isMac}
-        trackCount={tracks.length}
-        batchSummary={batchSummary}
-        batching={batching}
-        batchProgress={batchProgress}
-        analysis={analysis}
-        allAnalyzed={tracksView.every((t) => Boolean(t.spectrum))}
-        matching={matching}
-        hasToken={!!settings?.discogsToken}
-        autoMatchable={autoMatchable}
-        selectedEligibleCount={selectedEligibleCount}
-        onAdd={pickFiles}
-        onSelectAll={selectAll}
-        onFillAll={askFillAll}
-        onFindReplace={() => setActiveModal({ type: 'findReplace' })}
-        onAnalyzeAll={analyzeAllQuality}
-        onCancelAnalyze={() => {
-          analyzeCancel.current = true
-        }}
-        onAutoMatch={() => enqueueAutoMatch(tracksView, false)}
-        onCancelAutoMatch={() => {
-          matchCancel.current = true
-        }}
-        onConvertSelected={() => processAll(selectedTracks)}
-        onCancelConvert={cancelBatch}
-        onExport={() => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export'))}
-        onClearAll={askClearAll}
-        onPalette={() => setActiveModal({ type: 'palette' })}
-        onStats={() => openSettings('stats')}
-        onSettings={() => openSettings()}
-      />
+      {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
+          that divider so a long sweep lights up the line between the toolbar and the list. */}
+      <div className="relative">
+        {progress && <TopProgressBar fraction={progress.fraction} />}
+        <Toolbar
+          isMac={isMac}
+          trackCount={tracks.length}
+          batchSummary={batchSummary}
+          batching={batching}
+          batchProgress={batchProgress}
+          analysis={analysis}
+          allAnalyzed={tracksView.every((t) => Boolean(t.spectrum))}
+          matching={matching}
+          hasToken={!!settings?.discogsToken}
+          autoMatchable={autoMatchable}
+          selectedEligibleCount={selectedEligibleCount}
+          onAdd={pickFiles}
+          onSelectAll={selectAll}
+          onFillAll={askFillAll}
+          onFindReplace={() => setActiveModal({ type: 'findReplace' })}
+          onAnalyzeAll={analyzeAllQuality}
+          onCancelAnalyze={() => {
+            analyzeCancel.current = true
+          }}
+          onAutoMatch={() => enqueueAutoMatch(tracksView, false)}
+          onCancelAutoMatch={() => {
+            matchCancel.current = true
+          }}
+          onConvertSelected={() => processAll(selectedTracks)}
+          onCancelConvert={cancelBatch}
+          onExport={() => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export'))}
+          onClearAll={askClearAll}
+          onPalette={() => setActiveModal({ type: 'palette' })}
+          onStats={() => openSettings('stats')}
+          onSettings={() => openSettings()}
+        />
+      </div>
 
       <div className="flex min-h-0 flex-1">
         <aside
