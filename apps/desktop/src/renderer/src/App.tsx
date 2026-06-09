@@ -1180,30 +1180,32 @@ export default function App(): React.JSX.Element {
             ) : (
               <>
                 <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
-                  <div className="relative px-1.5 pt-2">
-                    <Search
-                      className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
-                      aria-hidden="true"
-                    />
-                    <input
-                      data-testid="track-search"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      aria-label={tr('sidebar.search.placeholder')}
-                      placeholder={tr('sidebar.search.placeholder')}
-                      className="h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pl-8 pr-7 text-xs outline-none focus:border-[var(--color-accent)]"
-                    />
-                    {search && (
-                      <button
-                        type="button"
-                        data-testid="track-search-clear"
-                        aria-label={tr('sidebar.search.clear')}
-                        onClick={() => setSearch('')}
-                        className="press absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-fg-faint hover:text-fg"
-                      >
-                        <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    )}
+                  <div className="px-1.5 pt-2">
+                    <div className="relative">
+                      <Search
+                        className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
+                        aria-hidden="true"
+                      />
+                      <input
+                        data-testid="track-search"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        aria-label={tr('sidebar.search.placeholder')}
+                        placeholder={tr('sidebar.search.placeholder')}
+                        className="h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pl-7 pr-7 text-xs outline-none focus:border-[var(--color-accent)]"
+                      />
+                      {search && (
+                        <button
+                          type="button"
+                          data-testid="track-search-clear"
+                          aria-label={tr('sidebar.search.clear')}
+                          onClick={() => setSearch('')}
+                          className="press absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-fg-faint hover:text-fg"
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div data-testid="quality-filter" className="flex gap-0.5 px-1.5 py-2">
                     {(
