@@ -7,6 +7,8 @@ export interface OnboardingChoices {
   genre: string
   showSpectrum: boolean
   autoMatch: boolean
+  // The editor fields the user wants shown (in order) and which of them are required.
+  visibleFields: string[]
   requiredFields: string[]
   // The output destination, only chosen on macOS (where Apple Music exists); on other
   // platforms these stay at their defaults since the wizard never offers the choice.
@@ -38,6 +40,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     // Auto-match needs the user's own token; without one it can't be turned on, so never persist
     // it as enabled even if the checkbox was somehow left ticked.
     autoMatch: discogsToken !== '' && choices.autoMatch,
+    visibleFields: choices.visibleFields,
     requiredFields: choices.requiredFields,
     addToAppleMusic: choices.addToAppleMusic,
     keepOutputCopy: choices.keepOutputCopy,

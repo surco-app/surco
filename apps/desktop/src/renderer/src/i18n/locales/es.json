@@ -416,7 +416,7 @@
     "formatBody": "Elige a qué formato exporta Surco tus pistas.",
     "groupingBody": "Opcional. Añade tus propias etiquetas para clasificar pistas más rápido al editar.",
     "genreBody": "Opcional. Añade tus géneros habituales para tenerlos a un clic aunque un lanzamiento no esté en Discogs.",
-    "requiredBody": "Elige qué campos deben estar rellenos antes de poder convertir una pista. Título y artista es el mínimo habitual; puedes cambiarlo después en Ajustes.",
+    "fieldsBody": "Elige qué campos muestra el editor (y en qué orden) y cuáles deben estar rellenos antes de convertir una pista. Título y artista es el mínimo habitual; puedes cambiar todo esto después en Ajustes.",
     "spectrumBody": "Surco puede mostrar un espectro de cada pista para detectar archivos con pérdida reconvertidos a sin pérdida. Si prefieres no verlo, desactívalo: entonces el análisis se omite por completo. Podrás cambiarlo después en Ajustes.",
     "skip": "Saltar",
     "back": "Atrás",

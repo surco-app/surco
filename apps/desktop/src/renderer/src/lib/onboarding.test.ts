@@ -21,6 +21,7 @@ describe('buildOnboardingPatch', () => {
       genre: 'Hard Dance, Techno',
       showSpectrum: false,
       autoMatch: true,
+      visibleFields: ['title', 'artist', 'album', 'genre'],
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       keepOutputCopy: false,
@@ -32,6 +33,7 @@ describe('buildOnboardingPatch', () => {
       genrePresets: ['Hard Dance', 'Techno'],
       showSpectrum: false,
       autoMatch: true,
+      visibleFields: ['title', 'artist', 'album', 'genre'],
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       keepOutputCopy: false,
@@ -50,6 +52,7 @@ describe('buildOnboardingPatch', () => {
       genre: 'Hard Dance, , Techno,',
       showSpectrum: true,
       autoMatch: false,
+      visibleFields: ['title', 'artist'],
       requiredFields: ['title', 'artist'],
       addToAppleMusic: true,
       keepOutputCopy: true,
@@ -76,6 +79,7 @@ describe('buildOnboardingPatch', () => {
       genre: '',
       showSpectrum: true,
       autoMatch: true,
+      visibleFields: ['title', 'artist'],
       requiredFields: ['title', 'artist'],
       addToAppleMusic: false,
       keepOutputCopy: true,
@@ -93,11 +97,31 @@ describe('buildOnboardingPatch', () => {
       genre: '',
       showSpectrum: true,
       autoMatch: false,
+      visibleFields: [],
       requiredFields: [],
       addToAppleMusic: true,
       keepOutputCopy: false,
     })
     expect(patch.addToAppleMusic).toBe(true)
     expect(patch.keepOutputCopy).toBe(false)
+  })
+
+  // The fields chosen in the wizard's Fields step must reach settings in the picked
+  // order, so a new user's editor matches what they set up rather than the defaults.
+  it('persists the chosen visible fields in order', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '',
+      outputFormat: 'aiff',
+      grouping: '',
+      genre: '',
+      showSpectrum: true,
+      autoMatch: false,
+      visibleFields: ['artist', 'title', 'bpm'],
+      requiredFields: ['artist'],
+      addToAppleMusic: false,
+      keepOutputCopy: true,
+    })
+    expect(patch.visibleFields).toEqual(['artist', 'title', 'bpm'])
+    expect(patch.requiredFields).toEqual(['artist'])
   })
 })

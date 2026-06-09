@@ -1,0 +1,118 @@
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import { FIELD_DEFS, moveItem } from '../lib/fields'
+
+interface Props {
+  visibleFields: string[]
+  requiredFields: string[]
+  onChangeVisible: (next: string[]) => void
+  onChangeRequired: (next: string[]) => void
+}
+
+// The editor's field list: which tags show (and in what order) and which must be filled
+// before a track converts. Shared by Settings → Fields and the onboarding wizard so the
+// two can't drift. Required implies shown, so hiding a field also drops it from required.
+export function FieldsEditor({
+  visibleFields,
+  requiredFields,
+  onChangeVisible,
+  onChangeRequired,
+}: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <div className="max-h-[340px] space-y-4 overflow-y-auto">
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
+          {tr('settings.shown')}
+        </p>
+        <div className="space-y-1.5">
+          {visibleFields.map((key, i) => (
+            <div
+              key={key}
+              data-testid={`field-row-${key}`}
+              className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+            >
+              <span className="text-sm">{tr(`fields.${key}`)}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  data-testid={`field-required-${key}`}
+                  aria-pressed={requiredFields.includes(key)}
+                  onClick={() =>
+                    onChangeRequired(
+                      requiredFields.includes(key)
+                        ? requiredFields.filter((k) => k !== key)
+                        : [...requiredFields, key],
+                    )
+                  }
+                  className={`mr-1 rounded px-2 py-0.5 text-xs ${
+                    requiredFields.includes(key)
+                      ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                      : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+                  }`}
+                >
+                  {tr('settings.required')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
+                  disabled={i === 0}
+                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                  aria-label={tr('settings.moveUp')}
+                >
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
+                  disabled={i === visibleFields.length - 1}
+                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                  aria-label={tr('settings.moveDown')}
+                >
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChangeVisible(visibleFields.filter((k) => k !== key))
+                    onChangeRequired(requiredFields.filter((k) => k !== key))
+                  }}
+                  className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                >
+                  {tr('settings.hide')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
+          {tr('settings.hidden')}
+        </p>
+        <div className="space-y-1.5">
+          {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
+            <div
+              key={d.key}
+              className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+            >
+              <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
+              <button
+                type="button"
+                onClick={() => onChangeVisible([...visibleFields, d.key])}
+                className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+              >
+                {tr('settings.show')}
+              </button>
+            </div>
+          ))}
+          {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
+            <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -87,6 +87,24 @@ describe('OnboardingWizard destination', () => {
   })
 })
 
+describe('OnboardingWizard fields', () => {
+  // The Fields step now embeds the same editor as Settings, so a new user can pick which
+  // fields show and which are required in one place rather than only toggling required.
+  it('shows the shared fields editor reflecting the current visible and required fields', () => {
+    render(
+      <OnboardingWizard
+        settings={{ ...settings, visibleFields: ['title', 'artist'], requiredFields: ['title'] }}
+        onFinish={() => {}}
+      />,
+    )
+    // welcome → token → format → grouping → genre → fields
+    for (let i = 0; i < 5; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('field-row-title')).toBeInTheDocument()
+    expect(screen.getByTestId('field-required-title')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('field-required-artist')).toHaveAttribute('aria-pressed', 'false')
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.

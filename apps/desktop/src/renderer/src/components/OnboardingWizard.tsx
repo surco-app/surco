@@ -5,10 +5,11 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
+import { FieldsEditor } from './FieldsEditor'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-const STEPS = ['welcome', 'token', 'format', 'grouping', 'genre', 'required', 'spectrum'] as const
+const STEPS = ['welcome', 'token', 'format', 'grouping', 'genre', 'fields', 'spectrum'] as const
 // Apple Music exists only on macOS, so the destination choice is offered there alone.
 const isMac = window.api.platform === 'darwin'
 
@@ -26,6 +27,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
+  const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
@@ -43,6 +45,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         genre,
         showSpectrum,
         autoMatch,
+        visibleFields,
         requiredFields,
         addToAppleMusic,
         keepOutputCopy,
@@ -59,11 +62,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setKeepOutputCopy(next.keepOutputCopy)
   }
 
-  function toggleRequired(key: string): void {
-    setRequiredFields((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    )
-  }
 
   return (
     <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -258,33 +256,18 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
               </>
             )}
 
-            {STEPS[step] === 'required' && (
+            {STEPS[step] === 'fields' && (
               <>
                 <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.required')}
+                  {tr('settings.tabs.fields')}
                 </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.requiredBody')}</p>
-                <div className="flex flex-wrap gap-2">
-                  {settings.visibleFields.map((key) => {
-                    const on = requiredFields.includes(key)
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        data-testid={`onboarding-required-${key}`}
-                        aria-pressed={on}
-                        onClick={() => toggleRequired(key)}
-                        className={`press rounded-full border px-3 py-1 text-sm transition-colors ${
-                          on
-                            ? 'border-transparent bg-[var(--color-accent)] text-white'
-                            : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
-                        }`}
-                      >
-                        {tr(`fields.${key}`)}
-                      </button>
-                    )
-                  })}
-                </div>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.fieldsBody')}</p>
+                <FieldsEditor
+                  visibleFields={visibleFields}
+                  requiredFields={requiredFields}
+                  onChangeVisible={setVisibleFields}
+                  onChangeRequired={setRequiredFields}
+                />
               </>
             )}
 

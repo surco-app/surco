@@ -1,7 +1,5 @@
 import {
   ChartColumn,
-  ChevronDown,
-  ChevronUp,
   Image,
   Keyboard,
   KeyRound,
@@ -19,9 +17,10 @@ import type { LicenseSnapshot } from '../../../shared/license'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
+import { FieldsEditor } from './FieldsEditor'
 import { LicensePanel } from './LicensePanel'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { FIELD_DEFS, moveItem } from '../lib/fields'
+import { FIELD_DEFS } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { formatShortcut } from '../lib/shortcuts'
@@ -673,99 +672,12 @@ export function SettingsModal({
             )}
 
             {tab === 'fields' && (
-              <div className="max-h-[340px] space-y-4 overflow-y-auto">
-                <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-                    {tr('settings.shown')}
-                  </p>
-                  <div className="space-y-1.5">
-                    {visibleFields.map((key, i) => (
-                      <div
-                        key={key}
-                        data-testid={`field-row-${key}`}
-                        className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
-                      >
-                        <span className="text-sm">{tr(`fields.${key}`)}</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            data-testid={`field-required-${key}`}
-                            aria-pressed={requiredFields.includes(key)}
-                            onClick={() =>
-                              setRequiredFields(
-                                requiredFields.includes(key)
-                                  ? requiredFields.filter((k) => k !== key)
-                                  : [...requiredFields, key],
-                              )
-                            }
-                            className={`mr-1 rounded px-2 py-0.5 text-xs ${
-                              requiredFields.includes(key)
-                                ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                                : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
-                            }`}
-                          >
-                            {tr('settings.required')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setVisibleFields(moveItem(visibleFields, i, -1))}
-                            disabled={i === 0}
-                            className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                            aria-label={tr('settings.moveUp')}
-                          >
-                            <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setVisibleFields(moveItem(visibleFields, i, 1))}
-                            disabled={i === visibleFields.length - 1}
-                            className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                            aria-label={tr('settings.moveDown')}
-                          >
-                            <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setVisibleFields(visibleFields.filter((k) => k !== key))
-                              setRequiredFields(requiredFields.filter((k) => k !== key))
-                            }}
-                            className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-                          >
-                            {tr('settings.hide')}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-                    {tr('settings.hidden')}
-                  </p>
-                  <div className="space-y-1.5">
-                    {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
-                      <div
-                        key={d.key}
-                        className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
-                      >
-                        <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
-                        <button
-                          type="button"
-                          onClick={() => setVisibleFields([...visibleFields, d.key])}
-                          className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
-                        >
-                          {tr('settings.show')}
-                        </button>
-                      </div>
-                    ))}
-                    {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
-                      <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <FieldsEditor
+                visibleFields={visibleFields}
+                requiredFields={requiredFields}
+                onChangeVisible={setVisibleFields}
+                onChangeRequired={setRequiredFields}
+              />
             )}
 
             {tab === 'shortcuts' && (
