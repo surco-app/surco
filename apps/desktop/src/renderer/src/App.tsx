@@ -43,6 +43,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { Tooltip } from './components/Tooltip'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { canAddToAppleMusic } from './lib/appleMusic'
 import {
   autoMatchRelease,
@@ -50,22 +51,14 @@ import {
   matchTargetOf,
   tracksToAutoMatch,
 } from './lib/autoMatch'
-import {
-  type BatchOutcome,
-  type BatchSummary,
-  canProcessTrack,
-  eligibleForBatch,
-  summarizeBatch,
-} from './lib/batch'
+import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
 import { smartDeriveTags } from './lib/deriveTags'
-import { exportedPatch } from './lib/export'
 import { openFeedback } from './lib/feedback'
-import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, missingRequired } from './lib/fields'
+import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { createFocusGate } from './lib/focusGate'
-import { sanitizeMeta } from './lib/hygiene'
 import { isTypingTarget, keyToCommandId, moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -209,8 +202,6 @@ export default function App(): React.JSX.Element {
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
-  const [batching, setBatching] = useState(false)
-  const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
   // Batch quality triage: progress of the "analyze quality" run (null when idle), and
   // a cancel flag the in-flight workers poll so cancelling stops new analyses without
   // killing the ones already handed to ffmpeg.
@@ -240,9 +231,6 @@ export default function App(): React.JSX.Element {
     }),
     [],
   )
-  // Set by the Cancel button to break the convert-all loop between tracks.
-  const cancelBatchRef = useRef(false)
-  const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. Null means "untouched" — fall back to the Settings
   // default. Reset on track switch, matching the editor reseeding per track.
@@ -295,14 +283,6 @@ export default function App(): React.JSX.Element {
   )
 
   useEffect(() => window.api.onWindowFocus((focused) => focusGate.current.set(focused)), [])
-
-  // The batch summary is a transient confirmation, not a persistent banner — it
-  // clears itself a few seconds after a run so it never lingers over later work.
-  useEffect(() => {
-    if (!batchSummary) return
-    const id = setTimeout(() => setBatchSummary(null), 6000)
-    return () => clearTimeout(id)
-  }, [batchSummary])
 
   async function addPaths(paths: string[]): Promise<void> {
     const existing = new Set(tracks.map((t) => t.inputPath))
@@ -706,132 +686,16 @@ export default function App(): React.JSX.Element {
     if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
-  async function processOne(
-    id: string,
-    formatOverride?: OutputFormat,
-    normalizeOverride?: NormalizeConfig,
-  ): Promise<BatchOutcome> {
-    const track = tracks.find((t) => t.id === id)
-    if (!track) return 'failed'
-    const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-    if (missing.length) {
-      const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
-      updateTrack(id, {
-        status: 'error',
-        error: tr('editor.missingRequired', { fields: names }),
-        stage: undefined,
-      })
-      return 'failed'
-    }
-    // Re-processing an edited (stale) track resets the Apple Music state too, since
-    // the file it referred to is being rewritten — the user may want to add it again.
-    updateTrack(id, {
-      status: 'processing',
-      error: undefined,
-      stage: undefined,
-      format: formatOverride ?? settings?.outputFormat ?? 'aiff',
-      musicStatus: undefined,
-      musicError: undefined,
-    })
-    const meta = sanitizeMeta(track.meta, {
-      trim: settings?.trimWhitespace ?? true,
-      zeroPad: settings?.zeroPadTrack ?? true,
-    })
-    // Default to the source file's own name: users expect "load and convert" to keep
-    // their filename. A metadata-derived name is only used when the editor's
-    // "Regenerate from metadata" button (or a manual edit) set track.outputName.
-    const outputName = track.outputName?.trim() || track.fileName
-    try {
-      const result = await window.api.processTrack({
-        id: track.id,
-        inputPath: track.inputPath,
-        outputName,
-        meta,
-        coverUrl: track.coverUrl,
-        coverPath: track.coverPath,
-        removeCover: track.coverRemoved,
-        format: formatOverride,
-        normalize: normalizeOverride,
-        previousOutputPath: track.outputPath,
-      })
-      // The user declined to overwrite a conflicting file: nothing was written, so
-      // leave the track convertible (idle) rather than marking it done or failed.
-      if (result.skipped) {
-        updateTrack(id, { status: 'idle', stage: undefined })
-        return 'skipped'
-      }
-      updateTrack(id, exportedPatch(track, result))
-      return 'converted'
-    } catch (e) {
-      updateTrack(id, {
-        status: 'error',
-        error: e instanceof Error ? e.message : tr('editor.processError'),
-        stage: undefined,
-      })
-      return 'failed'
-    }
-  }
-
-  // Pushes an already-converted track into Apple Music by hand, the escape hatch
-  // for when the automatic add is off. The meta is sanitized exactly as the
-  // conversion does so the library entry matches the file; musicStatus drives the
-  // button's adding/added/error states without disturbing the track's own status.
-  async function addTrackToAppleMusic(id: string): Promise<void> {
-    const track = tracks.find((t) => t.id === id)
-    if (!track?.outputPath || track.musicStatus === 'adding') return
-    updateTrack(id, { musicStatus: 'adding', musicError: undefined })
-    const meta = sanitizeMeta(track.meta, {
-      trim: settings?.trimWhitespace ?? true,
-      zeroPad: settings?.zeroPadTrack ?? true,
-    })
-    try {
-      await window.api.addToAppleMusic({
-        outputPath: track.outputPath,
-        meta,
-        coverUrl: track.coverUrl,
-        coverPath: track.coverPath,
-      })
-      updateTrack(id, { musicStatus: 'added' })
-    } catch (e) {
-      updateTrack(id, {
-        musicStatus: 'error',
-        musicError: e instanceof Error ? e.message : tr('editor.appleMusicError'),
-      })
-    }
-  }
-
-  // Adds every selected track to Apple Music in turn — the multi-select counterpart of
-  // the per-track button, reusing the same single-track add (which skips ones not yet
-  // converted) so the two paths can never drift.
-  async function addAllToAppleMusic(ids: string[]): Promise<void> {
-    for (const id of ids) await addTrackToAppleMusic(id)
-  }
-
-  async function processAll(
-    targets: TrackItem[],
-    formatOverride?: OutputFormat,
-    normalizeOverride?: NormalizeConfig,
-  ): Promise<void> {
-    if (batching) return
-    const ids = eligibleForBatch(targets)
-    cancelBatchRef.current = false
-    setBatching(true)
-    setBatchSummary(null)
-    setBatchProgress({ done: 0, total: ids.length })
-    const results: BatchOutcome[] = []
-    try {
-      for (const id of ids) {
-        // Cancel stops the loop before the next track; the one already converting
-        // in the main process can't be aborted, so it finishes and is counted.
-        if (cancelBatchRef.current) break
-        results.push(await processOne(id, formatOverride, normalizeOverride))
-        setBatchProgress({ done: results.length, total: ids.length })
-      }
-    } finally {
-      setBatching(false)
-      setBatchSummary(summarizeBatch(results))
-    }
-  }
+  const {
+    processOne,
+    processAll,
+    addTrackToAppleMusic,
+    addAllToAppleMusic,
+    batching,
+    batchProgress,
+    batchSummary,
+    cancelBatch,
+  } = useTrackProcessing({ tracks, settings, updateTrack })
 
   function saveSettings(patch: Partial<Settings>): void {
     // Apply the theme optimistically so clearing the live preview on close
@@ -1362,9 +1226,7 @@ export default function App(): React.JSX.Element {
                 <button
                   type="button"
                   data-testid="cancel-convert-all"
-                  onClick={() => {
-                    cancelBatchRef.current = true
-                  }}
+                  onClick={cancelBatch}
                   className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
                 >
                   {tr('common.cancel')}
