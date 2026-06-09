@@ -176,8 +176,8 @@ const TrackRow = memo(function TrackRow({
                 <span
                   data-testid="track-quality"
                   data-quality={quality}
-                  className={`group/dot relative h-1.5 w-1.5 shrink-0 rounded-full ${
-                    quality === 'suspect' ? 'bg-warn' : 'bg-good'
+                  className={`group/dot relative h-2 w-2 shrink-0 rounded-full ring-2 ${
+                    quality === 'suspect' ? 'bg-warn ring-warn/20' : 'bg-good ring-good/20'
                   }`}
                 >
                   <Tooltip
