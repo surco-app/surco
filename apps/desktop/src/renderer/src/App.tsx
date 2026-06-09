@@ -57,6 +57,7 @@ import { parseFileName } from './lib/filename'
 import { createFocusGate } from './lib/focusGate'
 import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
+import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress } from './lib/progress'
 import { buildReleaseMeta } from './lib/release'
@@ -1307,6 +1308,13 @@ export default function App(): React.JSX.Element {
               onTrashOriginal={() => askDeleteOriginal(selected)}
               onOpenSettings={openSettings}
               onOpenRename={() => setActiveModal({ type: 'rename' })}
+              onRegenerateName={() => {
+                const name = renderOutputName(
+                  settings?.filenameFormat ?? '{artist} - {title}',
+                  selected.meta,
+                )
+                if (name) updateTrack(selected.id, { outputName: name })
+              }}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">

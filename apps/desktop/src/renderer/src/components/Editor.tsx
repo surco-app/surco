@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Ellipsis,
   RefreshCw,
   SlidersVertical,
   Star,
@@ -89,6 +90,9 @@ interface Props {
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
   onOpenRename: () => void
+  // Rebuilds this track's output name from the Settings naming pattern in one click.
+  // App owns the format and writes the result, so the editor just signals intent.
+  onRegenerateName: () => void
 }
 
 export function Editor({
@@ -119,6 +123,7 @@ export function Editor({
   onTrashOriginal,
   onOpenSettings,
   onOpenRename,
+  onRegenerateName,
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
@@ -493,16 +498,28 @@ export function Editor({
                 open={outputOpen}
                 onToggle={() => setOutputOpen((v) => !v)}
                 right={
-                  <button
-                    type="button"
-                    data-testid="regenerate-output-name"
-                    onClick={onOpenRename}
-                    className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
-                  >
-                    <RefreshCw className="h-3 w-3" aria-hidden="true" />
-                    {tr('editor.regenerate')}
-                    <Tooltip label={tr('editor.regenerateHint')} align="end" />
-                  </button>
+                  <span className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      data-testid="regenerate-output-name"
+                      onClick={onRegenerateName}
+                      className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
+                    >
+                      <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                      {tr('editor.regenerate')}
+                      <Tooltip label={tr('editor.regenerateHint')} align="end" />
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="customize-output-name"
+                      aria-label={tr('editor.regenerateCustom')}
+                      onClick={onOpenRename}
+                      className="press group relative flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:text-fg"
+                    >
+                      <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Tooltip label={tr('editor.regenerateCustom')} align="end" />
+                    </button>
+                  </span>
                 }
               />
               {outputOpen && (

@@ -92,6 +92,7 @@ function renderEditor(
   onTrashOriginal: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
   onOpenRename: ReturnType<typeof vi.fn>
+  onRegenerateName: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
@@ -100,6 +101,7 @@ function renderEditor(
   const onTrashOriginal = vi.fn()
   const onOpenSettings = vi.fn()
   const onOpenRename = vi.fn()
+  const onRegenerateName = vi.fn()
   renderWithQuery(
     <Editor
       item={item(over)}
@@ -122,6 +124,7 @@ function renderEditor(
       onTrashOriginal={onTrashOriginal}
       onOpenSettings={onOpenSettings}
       onOpenRename={onOpenRename}
+      onRegenerateName={onRegenerateName}
     />,
   )
   return {
@@ -132,6 +135,7 @@ function renderEditor(
     onTrashOriginal,
     onOpenSettings,
     onOpenRename,
+    onRegenerateName,
   }
 }
 
@@ -358,6 +362,7 @@ function MultiHarness() {
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
         onOpenRename={vi.fn()}
+        onRegenerateName={vi.fn()}
       />
       <div data-testid="dump">
         {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
@@ -442,6 +447,7 @@ describe('Editor multi-select', () => {
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
         onOpenRename={vi.fn()}
+        onRegenerateName={vi.fn()}
       />,
     )
     return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }
@@ -640,16 +646,28 @@ describe('Editor output file name', () => {
     expect(screen.getByTestId('output-name')).toHaveValue('original track 01')
   })
 
-  // The rename is opt-in and previewed: Regenerate opens the pattern builder (owned by
-  // App so the ⌘⇧R shortcut shares it) rather than overwriting the name blindly.
-  it('opens the rename builder instead of overwriting the name when Regenerate is clicked', () => {
-    const { onChange, onOpenRename } = renderEditor(
+  // Regenerate is the fast path: one click rebuilds the name from the Settings naming
+  // pattern (App owns the format, so the click just signals intent) without a modal.
+  it('regenerates the name in one click without opening the builder', () => {
+    const { onOpenRename, onRegenerateName } = renderEditor(
       { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
       'wav',
     )
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
+    expect(onRegenerateName).toHaveBeenCalled()
+    expect(onOpenRename).not.toHaveBeenCalled()
+  })
+
+  // The pattern builder stays one button away for a per-track custom name, behind the
+  // secondary ⋯ control so the common case (regenerate) is the prominent one.
+  it('opens the pattern builder from the customize control', () => {
+    const { onOpenRename, onRegenerateName } = renderEditor(
+      { id: 'a', fileName: 'original track 01', meta: { artist: 'AR', title: 'TI' } },
+      'wav',
+    )
+    fireEvent.click(screen.getByTestId('customize-output-name'))
     expect(onOpenRename).toHaveBeenCalled()
-    expect(onChange).not.toHaveBeenCalled()
+    expect(onRegenerateName).not.toHaveBeenCalled()
   })
 })
 

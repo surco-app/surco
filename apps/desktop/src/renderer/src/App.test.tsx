@@ -318,6 +318,26 @@ describe('App import skeleton', () => {
   })
 })
 
+describe('App regenerate filename', () => {
+  // The fast path: one click on Regenerate rewrites the output name from the Settings
+  // naming pattern, no modal. This is the wiring that lets a user retag and rename in two
+  // clicks instead of opening the builder for every track.
+  it('rewrites the output name from the Settings pattern in one click', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/raw 01.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Bumping', artist: 'Di Carlo' }),
+      getSettings: vi.fn().mockResolvedValue(settings({ filenameFormat: '{artist} - {title}' })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('regenerate-output-name'))
+    await waitFor(() =>
+      expect(screen.getByTestId('output-name')).toHaveValue('Di Carlo - Bumping'),
+    )
+  })
+})
+
 describe('App open with', () => {
   // "Open With Surco" in Finder launches the app and hands the chosen file to the OS
   // open-file event, which the main process buffers (the renderer isn't alive yet on a
