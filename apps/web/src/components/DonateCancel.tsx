@@ -33,7 +33,10 @@ export default function DonateCancel() {
   const t = COPY[useLang()]
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16 text-fg">
+      <a href="/" className="mb-6 inline-block w-fit">
+        <img src="/icon.png" alt="Surco" className="h-14 w-14" />
+      </a>
       <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">{t.body}</p>
       <a
