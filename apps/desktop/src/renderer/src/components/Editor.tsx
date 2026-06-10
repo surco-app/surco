@@ -19,6 +19,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
+import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -185,6 +186,12 @@ export function Editor({
     item.inputPath,
     !isMulti,
   )
+
+  // Tempo detected from the audio, offered as a chip under the bpm field. Detection
+  // can octave-fold (70 vs 140), so it stays a suggestion the user clicks to accept,
+  // never a silent write. Disabled when the field is hidden and in multi-select,
+  // where there is nowhere to suggest it.
+  const { data: detectedBpm } = useBpm(item.inputPath, !isMulti && visibleFields.includes('bpm'))
 
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
   // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
@@ -405,7 +412,11 @@ export function Editor({
                                 ? genreChips
                                 : def.key === 'grouping'
                                   ? groupingPresets
-                                  : undefined
+                                  : def.key === 'bpm' && detectedBpm
+                                    ? // The tag layer stores whole beats per minute, so
+                                      // the chip offers the rounded figure.
+                                      [String(Math.round(detectedBpm.bpm))]
+                                    : undefined
                             }
                             multiSuggestions={def.key === 'grouping'}
                           />

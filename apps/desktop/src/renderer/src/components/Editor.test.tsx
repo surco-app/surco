@@ -390,6 +390,31 @@ describe('Editor genre presets', () => {
   })
 })
 
+describe('Editor bpm suggestion', () => {
+  // Tempo detection can land on the wrong half/double-time octave, so the
+  // detected value must stay a suggestion the user confirms — the chip click is
+  // that confirmation; nothing writes the field unattended.
+  it('offers the detected tempo as a chip that fills the bpm field on click', async () => {
+    ;(window as unknown as { api: { bpm: unknown } }).api.bpm = vi
+      .fn()
+      .mockResolvedValue({ bpm: 123.97, confidence: 0.8 })
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['bpm'] })
+    // The tag layer stores whole beats per minute, so the chip offers the
+    // rounded figure rather than the raw estimate.
+    fireEvent.click(await screen.findByTestId('chip-124'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ bpm: '124' }) })
+  })
+
+  // A beatless track measures null; suggesting a made-up tempo would be worse
+  // than no suggestion, so no chip renders.
+  it('shows no chip when no tempo was detected', async () => {
+    ;(window as unknown as { api: { bpm: unknown } }).api.bpm = vi.fn().mockResolvedValue(null)
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['bpm'] })
+    await screen.findByTestId('field-bpm')
+    expect(screen.queryByTestId(/^chip-/)).not.toBeInTheDocument()
+  })
+})
+
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
     renderWithQuery(<MultiHarness />)
