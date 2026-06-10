@@ -111,7 +111,7 @@
     "autoMatched": "Auto-matched from Discogs",
     "remove": "Remove",
     "status": {
-      "idle": "Pending",
+      "idle": "Not converted",
       "processing": "Processing…",
       "done": "Done",
       "error": "Error"

@@ -111,7 +111,7 @@
     "autoMatched": "Auto-emparejada desde Discogs",
     "remove": "Quitar",
     "status": {
-      "idle": "Pendiente",
+      "idle": "Sin convertir",
       "processing": "Procesando…",
       "done": "Hecho",
       "error": "Error"
