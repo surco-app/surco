@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SECTIONS } from '../lib/nav'
+import { HEADER_SECTIONS } from '../lib/nav'
 import { rememberLanguage } from '../lib/useAutoLanguage'
 
 export default function Header() {
@@ -64,7 +64,7 @@ export default function Header() {
         </a>
         <div className="flex items-center gap-4 sm:gap-7">
           <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
-            {SECTIONS.map((id) => (
+            {HEADER_SECTIONS.map((id) => (
               <a key={id} href={`#${id}`} className="transition-colors hover:text-fg">
                 {t(`nav.${id}`)}
               </a>
@@ -107,7 +107,7 @@ export default function Header() {
           className="border-t border-line/70 bg-bg/95 backdrop-blur-md lg:hidden"
         >
           <div className="mx-auto max-w-5xl px-6 py-2">
-            {SECTIONS.map((id) => (
+            {HEADER_SECTIONS.map((id) => (
               <a
                 key={id}
                 href={`#${id}`}
