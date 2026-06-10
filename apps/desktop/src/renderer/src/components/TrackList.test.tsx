@@ -64,6 +64,7 @@ function renderList(
   const onRemove = vi.fn()
   const onPrefetch = vi.fn()
   const onSearch = vi.fn()
+  const onStartOver = vi.fn()
   const onTrash = vi.fn()
   render(
     <TrackList
@@ -75,10 +76,11 @@ function renderList(
       onRemove={onRemove}
       onPrefetch={onPrefetch}
       onSearch={onSearch}
+      onStartOver={onStartOver}
       onTrash={onTrash}
     />,
   )
-  return { onSelect, onRemove, onPrefetch, onSearch, onTrash }
+  return { onSelect, onRemove, onPrefetch, onSearch, onStartOver, onTrash }
 }
 
 describe('TrackList', () => {
@@ -228,6 +230,16 @@ describe('TrackList context menu', () => {
     expect(api.reveal).toHaveBeenCalledWith('/music/a.wav')
     expect(api.openFile).toHaveBeenCalledWith('/music/a.wav')
     expect(api.copyText).toHaveBeenCalledWith('/music/a.wav')
+  })
+
+  // "Start over" rebuilds the row from the file as if it had just been dropped, so a
+  // bad match or stray edits can be discarded in one move; the reset itself lives in App.
+  it('delegates start over to the list owner', () => {
+    const t = track({ id: 'a' })
+    const { onStartOver } = renderList([t])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-startover'))
+    expect(onStartOver).toHaveBeenCalledWith(t)
   })
 
   it('delegates search and trash to the list owner', () => {

@@ -332,41 +332,62 @@ export default function App(): React.JSX.Element {
     const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
     setTracks((prev) => [...prev, ...bases])
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
-    void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
-      const path = base.inputPath
-      try {
-        const [tags, duration, cover] = await Promise.all([
-          window.api.readTags(path),
-          window.api.readDuration(path),
-          window.api.readCover(path),
-        ])
-        const s = searchFromTags(parseFileName(path), tags)
-        const patch: Partial<TrackItem> = {
-          query: s.query,
-          duration: duration ?? undefined,
-          coverUrl: cover ?? undefined,
-          embeddedCover: cover ?? undefined,
-          listLabel: s.title || base.fileName,
-          meta: {
-            ...base.meta,
-            ...tags,
-            title: s.title,
-            artist: s.artist,
-            albumArtist: tags.albumArtist || s.artist,
-          },
-          loadingMeta: false,
-        }
-        updateTrack(base.id, patch)
-        // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the
-        // crate tags itself as it lands. Queued visible-only, so a big folder probes the rows
-        // in view as they scroll past rather than firing every file at the rate limit. Gated
-        // on a token, and only once a file's own metadata is read so the search has a query.
-        if (settings?.autoMatch && settings.discogsToken)
-          enqueueAutoMatch([{ ...base, ...patch }], true)
-      } catch {
-        updateTrack(base.id, { loadingMeta: false })
+    void mapWithConcurrency(bases, READ_CONCURRENCY, loadTrackMeta)
+  }
+
+  async function loadTrackMeta(base: TrackItem): Promise<void> {
+    const path = base.inputPath
+    try {
+      const [tags, duration, cover] = await Promise.all([
+        window.api.readTags(path),
+        window.api.readDuration(path),
+        window.api.readCover(path),
+      ])
+      const s = searchFromTags(parseFileName(path), tags)
+      const patch: Partial<TrackItem> = {
+        query: s.query,
+        duration: duration ?? undefined,
+        coverUrl: cover ?? undefined,
+        embeddedCover: cover ?? undefined,
+        listLabel: s.title || base.fileName,
+        meta: {
+          ...base.meta,
+          ...tags,
+          title: s.title,
+          artist: s.artist,
+          albumArtist: tags.albumArtist || s.artist,
+        },
+        loadingMeta: false,
       }
-    })
+      updateTrack(base.id, patch)
+      // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the
+      // crate tags itself as it lands. Queued visible-only, so a big folder probes the rows
+      // in view as they scroll past rather than firing every file at the rate limit. Gated
+      // on a token, and only once a file's own metadata is read so the search has a query.
+      if (settings?.autoMatch && settings.discogsToken)
+        enqueueAutoMatch([{ ...base, ...patch }], true)
+    } catch {
+      updateTrack(base.id, { loadingMeta: false })
+    }
+  }
+
+  // Right-click "Start over": rebuild the row from the file alone, exactly as if it had
+  // just been dropped — re-parse the name, re-read tags/duration/cover, and drop every
+  // edit, match and conversion state. The rebuilt track gets a fresh id so the editor
+  // remounts and re-seeds its own state (the Discogs search box included) from the new
+  // read; the selection swaps to the new id so the row stays open.
+  function startOverTrack(track: TrackItem): void {
+    const base = { ...newTrack(track.inputPath), loadingMeta: true }
+    discogsPrefetched.current.delete(track.id)
+    viewCache.current.delete(track.id)
+    matchQueue.current.delete(track.id)
+    visibleIds.current.delete(track.id)
+    setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
+    setSelection((s) => ({
+      ids: s.ids.map((id) => (id === track.id ? base.id : id)),
+      anchor: s.anchor === track.id ? base.id : s.anchor,
+    }))
+    void loadTrackMeta(base)
   }
 
   // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
@@ -1356,6 +1377,7 @@ export default function App(): React.JSX.Element {
                     onRemove={removeTrack}
                     onPrefetch={handlePrefetch}
                     onSearch={onSearchTrack}
+                    onStartOver={startOverTrack}
                     onTrash={askTrash}
                     scrollRootRef={listScrollRef}
                     onVisible={onTrackVisible}

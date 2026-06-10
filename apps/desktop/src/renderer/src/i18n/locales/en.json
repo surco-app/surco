@@ -127,6 +127,7 @@
       "open": "Open file",
       "copyPath": "Copy file path",
       "search": "Search Discogs",
+      "startOver": "Start over",
       "remove": "Remove from list",
       "trash": "Move to Trash",
       "trashWin": "Move to Recycle Bin"

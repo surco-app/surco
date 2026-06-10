@@ -20,6 +20,7 @@ interface Props {
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onSearch: (id: string) => void
+  onStartOver: (track: TrackItem) => void
   onTrash: (track: TrackItem) => void
   // Optional viewport tracking: the scroll pane each row observes against and a callback
   // reporting when a row enters or leaves it, so App can gate auto-match to the rows on screen.
@@ -231,6 +232,7 @@ export function TrackList({
   onRemove,
   onPrefetch,
   onSearch,
+  onStartOver,
   onTrash,
   scrollRootRef,
   onVisible,
@@ -265,6 +267,7 @@ export function TrackList({
           y={menu.y}
           onClose={() => setMenu(null)}
           onSearch={onSearch}
+          onStartOver={onStartOver}
           onRemove={onRemove}
           onTrash={onTrash}
         />

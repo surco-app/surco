@@ -9,6 +9,7 @@ interface Props {
   y: number
   onClose: () => void
   onSearch: (id: string) => void
+  onStartOver: (track: TrackItem) => void
   onRemove: (id: string) => void
   onTrash: (track: TrackItem) => void
 }
@@ -49,6 +50,7 @@ export function TrackContextMenu({
   y,
   onClose,
   onSearch,
+  onStartOver,
   onRemove,
   onTrash,
 }: Props): React.JSX.Element {
@@ -145,6 +147,11 @@ export function TrackContextMenu({
           testid="track-menu-search"
           label={tr('trackList.context.search')}
           onClick={() => run(() => onSearch(track.id))}
+        />
+        <MenuItem
+          testid="track-menu-startover"
+          label={tr('trackList.context.startOver')}
+          onClick={() => run(() => onStartOver(track))}
         />
         <div className="my-1 h-px bg-[var(--color-line)]" />
         <MenuItem

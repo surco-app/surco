@@ -316,6 +316,49 @@ describe('App import skeleton', () => {
   })
 })
 
+describe('App start over', () => {
+  // A bad match or stray edits can leave a track worse than when it landed; the
+  // right-click "Start over" rebuilds the row from the file alone — re-reading its
+  // tags and dropping every edit — exactly as if it had just been dropped again.
+  it('re-reads the file and discards edits when starting over', async () => {
+    const readTags = vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' })
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']), readTags })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Hand Typed' } })
+    const reads = readTags.mock.calls.length
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-startover'))
+
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title'),
+    )
+    expect(readTags.mock.calls.length).toBe(reads + 1)
+  })
+
+  // The other half of the reset: the Discogs box must re-seed from the fresh read so
+  // the search can start over too, not keep whatever query the user had typed into it.
+  it('re-seeds the Discogs search box so the search can start again', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'scribbles' } })
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-startover'))
+
+    await waitFor(() =>
+      expect((screen.getByTestId('discogs-query') as HTMLInputElement).value).not.toBe('scribbles'),
+    )
+  })
+})
+
 describe('App regenerate filename', () => {
   // The fast path: one click on Regenerate rewrites the output name from the Settings
   // naming pattern, no modal. This is the wiring that lets a user retag and rename in two

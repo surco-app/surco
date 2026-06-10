@@ -31,6 +31,7 @@ function renderMenu(over: Record<string, unknown> = {}) {
     y: 0,
     onClose: vi.fn(),
     onSearch: vi.fn(),
+    onStartOver: vi.fn(),
     onRemove: vi.fn(),
     onTrash: vi.fn(),
     ...over,
