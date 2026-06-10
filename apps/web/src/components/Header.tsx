@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DONATE_URL } from '../config'
 import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
 import { rememberLanguage } from '../lib/useAutoLanguage'
 
@@ -83,6 +84,17 @@ export default function Header({ page }: { page?: Page }) {
             </a>
           </nav>
           <a
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden items-center gap-1.5 rounded-full bg-blue px-3.5 py-2 text-xs font-semibold text-bg transition-[background-color,scale] duration-200 hover:bg-cyan active:scale-[0.96] sm:inline-flex"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            {t('nav.donar')}
+          </a>
+          <a
             href={otherHref}
             onClick={keepHash}
             className="inline-flex items-center rounded-full border border-line px-3 py-2 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
@@ -139,6 +151,18 @@ export default function Header({ page }: { page?: Page }) {
               className="block py-3 text-sm text-muted transition-colors hover:text-fg"
             >
               {t('nav.cambios')}
+            </a>
+            <a
+              href={DONATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 py-3 text-sm text-blue transition-colors hover:text-cyan"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              {t('nav.donar')}
             </a>
           </div>
         </nav>

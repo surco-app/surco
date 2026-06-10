@@ -15,16 +15,17 @@
     "analisis": "Analysis",
     "funciones": "Features",
     "atajos": "Shortcuts",
-    "precio": "Pricing",
+    "precio": "Free",
     "instalar": "Install",
     "guia": "Guide",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "cambios": "What's new"
+    "cambios": "What's new",
+    "donar": "Donate"
   },
   "available": "Available · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta",
+  "betaPill": "Beta · Free forever",
   "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
     "space": "Space"

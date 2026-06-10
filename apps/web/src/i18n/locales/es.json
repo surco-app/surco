@@ -15,16 +15,17 @@
     "analisis": "Análisis",
     "funciones": "Funciones",
     "atajos": "Atajos",
-    "precio": "Precio",
+    "precio": "Gratis",
     "instalar": "Instalar",
     "guia": "Guía",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
-    "cambios": "Novedades"
+    "cambios": "Novedades",
+    "donar": "Donar"
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",
-  "betaPill": "Beta",
+  "betaPill": "Beta · Gratis para siempre",
   "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
