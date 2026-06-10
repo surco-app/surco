@@ -231,6 +231,19 @@ export interface BpmResult {
   confidence: number
 }
 
+// Musical key detected from the audio (chromagram × Krumhansl profiles in
+// main). Like BpmResult, surfaced only as an editable suggestion: algorithmic
+// key detection is materially less reliable than tempo, and a wrong key
+// silently trusted ruins a harmonic mix. Both notations are returned so the
+// UI can honour the user's key-notation setting.
+export interface KeyResult {
+  // Camelot wheel position, e.g. '8A'.
+  camelot: string
+  // Musical name in Mixed In Key's display convention, e.g. 'Am'.
+  name: string
+  confidence: number
+}
+
 // Read-only technical facts about the source file, shown in the Properties panel.
 // Probed once per file via ffprobe (stream + container) plus an fs.stat for the
 // on-disk size and timestamps that the container doesn't carry.
