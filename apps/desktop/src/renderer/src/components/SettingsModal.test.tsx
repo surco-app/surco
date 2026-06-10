@@ -35,6 +35,7 @@ const settings: Settings = {
   showSpectrum: true,
   showLoudness: true,
   autoMatch: false,
+  keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
   hasSeenOnboarding: true,
@@ -396,5 +397,34 @@ describe('SettingsModal shortcuts', () => {
     record('add', { key: 'k', metaKey: true })
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
+  })
+})
+
+describe('SettingsModal key notation', () => {
+  function openEditor(onSave: (p: Partial<Settings>) => void = () => {}) {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-editor'))
+  }
+
+  // Camelot is what most DJ tools sort by, so it's the default; musical names
+  // remain a choice because classically-trained users read Am, not 8A. The
+  // setting drives which notation the key suggestion chip offers.
+  it('defaults to Camelot and saves the musical notation when chosen', () => {
+    const onSave = vi.fn()
+    openEditor(onSave)
+    expect(screen.getByTestId('settings-key-notation-camelot')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    fireEvent.click(screen.getByTestId('settings-key-notation-musical'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ keyNotation: 'musical' }))
   })
 })

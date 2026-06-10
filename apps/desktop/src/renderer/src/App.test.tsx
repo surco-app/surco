@@ -29,6 +29,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     showSpectrum: true,
     showLoudness: false,
     autoMatch: false,
+    keyNotation: 'camelot',
     normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
     shortcutOverrides: {},
     hasSeenOnboarding: true,

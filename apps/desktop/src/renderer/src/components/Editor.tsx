@@ -14,6 +14,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
   DiscogsTrack,
+  KeyNotation,
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
@@ -21,6 +22,7 @@ import type {
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { useKey } from '../hooks/useKey'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -61,6 +63,8 @@ interface Props {
   requiredFields: string[]
   showSpectrum: boolean
   showLoudness: boolean
+  // Which notation the key suggestion chip offers (Settings choice).
+  keyNotation: KeyNotation
   // The Settings normalization default, seeding the per-track override control.
   normalize: NormalizeConfig
   searchInputRef: React.RefObject<HTMLInputElement | null>
@@ -112,6 +116,7 @@ export function Editor({
   requiredFields,
   showSpectrum,
   showLoudness,
+  keyNotation,
   normalize,
   searchInputRef,
   selectedTracks,
@@ -192,6 +197,11 @@ export function Editor({
   // never a silent write. Disabled when the field is hidden and in multi-select,
   // where there is nowhere to suggest it.
   const { data: detectedBpm } = useBpm(item.inputPath, !isMulti && visibleFields.includes('bpm'))
+
+  // Key detected from the audio, offered like the BPM above. It is the least
+  // reliable analysis Surco runs (chroma profiles can pick a relative or
+  // neighbouring key), which is exactly why it is a chip and never a write.
+  const { data: detectedKey } = useKey(item.inputPath, !isMulti && visibleFields.includes('key'))
 
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
   // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
@@ -416,7 +426,13 @@ export function Editor({
                                     ? // The tag layer stores whole beats per minute, so
                                       // the chip offers the rounded figure.
                                       [String(Math.round(detectedBpm.bpm))]
-                                    : undefined
+                                    : def.key === 'key' && detectedKey
+                                      ? [
+                                          keyNotation === 'camelot'
+                                            ? detectedKey.camelot
+                                            : detectedKey.name,
+                                        ]
+                                      : undefined
                             }
                             multiSuggestions={def.key === 'grouping'}
                           />

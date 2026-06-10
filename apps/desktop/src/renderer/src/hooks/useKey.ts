@@ -1,0 +1,15 @@
+import { type UseQueryResult, useQuery } from '@tanstack/react-query'
+import type { KeyResult } from '../../../shared/types'
+
+// Detects the musical key of one input by decoding its opening minutes in
+// main. Keyed by path so switching tracks reads the right key and revisiting
+// never re-analyses. Disabled when the key field is hidden (or in
+// multi-select) — there is nowhere to suggest the value. An atonal track
+// resolves null and the suggestion chip simply doesn't render.
+export function useKey(inputPath: string, enabled: boolean): UseQueryResult<KeyResult | null> {
+  return useQuery({
+    queryKey: ['key', inputPath],
+    queryFn: () => window.api.key(inputPath),
+    enabled,
+  })
+}

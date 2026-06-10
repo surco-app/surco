@@ -29,6 +29,7 @@ const defaults: Settings = {
   showSpectrum: true,
   showLoudness: true,
   autoMatch: false,
+  keyNotation: 'camelot',
   // Off by default: a conversion never changes loudness unless the user enables it.
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},

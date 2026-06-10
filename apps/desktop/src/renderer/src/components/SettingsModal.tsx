@@ -153,6 +153,7 @@ export function SettingsModal({
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [showLoudness, setShowLoudness] = useState(settings.showLoudness)
+  const [keyNotation, setKeyNotation] = useState(settings.keyNotation)
   const [normalize, setNormalize] = useState(settings.normalize)
   const [shortcutOverrides, setShortcutOverrides] = useState(settings.shortcutOverrides)
   // The command whose next keystroke is being recorded, or null when idle.
@@ -222,6 +223,7 @@ export function SettingsModal({
       // Auto-match needs a token to run, so a token-less save can't leave it enabled.
       autoMatch: token.trim() !== '' && autoMatch,
       showLoudness,
+      keyNotation,
       normalize,
       shortcutOverrides,
     })
@@ -645,6 +647,30 @@ export function SettingsModal({
                       <span className="text-sm">{tr('settings.showLoudness')}</span>
                     </label>
                     <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showLoudnessHint')}</p>
+                  </div>
+                  <div>
+                    <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                      {tr('settings.keyNotation')}
+                    </span>
+                    <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+                      {(['camelot', 'musical'] as const).map((id) => (
+                        <button
+                          key={id}
+                          type="button"
+                          data-testid={`settings-key-notation-${id}`}
+                          aria-pressed={keyNotation === id}
+                          onClick={() => setKeyNotation(id)}
+                          className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                            keyNotation === id
+                              ? 'bg-[var(--color-panel-2)] text-fg'
+                              : 'text-fg-muted hover:text-fg'
+                          }`}
+                        >
+                          {tr(`settings.keyNotations.${id}`)}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.keyNotationHint')}</p>
                   </div>
                 </div>
               </>

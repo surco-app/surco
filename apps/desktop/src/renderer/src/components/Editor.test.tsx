@@ -6,6 +6,7 @@ import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
+  KeyNotation,
   LoudnessResult,
   NormalizeConfig,
   OutputFormat,
@@ -84,6 +85,7 @@ function renderEditor(
     showLoudness?: boolean
     normalize?: NormalizeConfig
     overwriteOriginal?: boolean
+    keyNotation?: KeyNotation
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -116,6 +118,7 @@ function renderEditor(
       requiredFields={props.requiredFields ?? []}
       showSpectrum={false}
       showLoudness={props.showLoudness ?? false}
+      keyNotation={props.keyNotation ?? 'camelot'}
       normalize={props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
@@ -342,6 +345,7 @@ function MultiHarness() {
         key={selected.id}
         item={selected}
         overwriteOriginal={false}
+        keyNotation="camelot"
         hasToken
         outputFormat="aiff"
         addToAppleMusic={false}
@@ -415,6 +419,40 @@ describe('Editor bpm suggestion', () => {
   })
 })
 
+describe('Editor key suggestion', () => {
+  // Key detection is the least reliable analysis Surco runs, so the detected
+  // value must stay a suggestion the user confirms — the chip click is that
+  // confirmation; nothing writes the field unattended.
+  it('offers the detected key as a Camelot chip by default and fills the field', async () => {
+    ;(window as unknown as { api: { key: unknown } }).api.key = vi
+      .fn()
+      .mockResolvedValue({ camelot: '8A', name: 'Am', confidence: 0.8 })
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['key'] })
+    fireEvent.click(await screen.findByTestId('chip-8A'))
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ key: '8A' }) })
+  })
+
+  // Classically-trained users read Am, not 8A; the Settings choice decides
+  // which notation the chip offers (and therefore writes).
+  it('offers the musical name when the setting says so', async () => {
+    ;(window as unknown as { api: { key: unknown } }).api.key = vi
+      .fn()
+      .mockResolvedValue({ camelot: '8A', name: 'Am', confidence: 0.8 })
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['key'], keyNotation: 'musical' })
+    expect(await screen.findByTestId('chip-Am')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-8A')).not.toBeInTheDocument()
+  })
+
+  // Atonal material measures null; suggesting a key that would ruin a
+  // harmonic mix is worse than no suggestion, so no chip renders.
+  it('shows no chip when no key was detected', async () => {
+    ;(window as unknown as { api: { key: unknown } }).api.key = vi.fn().mockResolvedValue(null)
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['key'] })
+    await screen.findByTestId('field-key')
+    expect(screen.queryByTestId(/^chip-/)).not.toBeInTheDocument()
+  })
+})
+
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
     renderWithQuery(<MultiHarness />)
@@ -456,6 +494,7 @@ describe('Editor multi-select', () => {
         outputFormat="aiff"
         addToAppleMusic={opts.music ?? false}
         overwriteOriginal={false}
+        keyNotation="camelot"
         groupingPresets={[]}
         genrePresets={[]}
         visibleFields={['title', 'album']}

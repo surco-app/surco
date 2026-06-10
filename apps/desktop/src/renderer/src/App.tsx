@@ -1376,6 +1376,7 @@ export default function App(): React.JSX.Element {
               requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
               showSpectrum={settings?.showSpectrum ?? true}
               showLoudness={settings?.showLoudness ?? true}
+              keyNotation={settings?.keyNotation ?? 'camelot'}
               normalize={
                 settings?.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
               }

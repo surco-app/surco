@@ -28,6 +28,8 @@ export interface NormalizeConfig {
   peakDb: number
 }
 
+export type KeyNotation = 'camelot' | 'musical'
+
 export interface Settings {
   theme: ThemePref
   discogsToken: string
@@ -60,6 +62,10 @@ export interface Settings {
   // metadata of any high-confidence release match, without waiting for a click.
   // Off by default since it spends the token's rate limit across the whole crate.
   autoMatch: boolean
+  // Which notation the key suggestion chip offers. Camelot by default — it's
+  // what DJ software sorts by; musical names stay available for users who read
+  // Am rather than 8A.
+  keyNotation: KeyNotation
   // Default normalization applied to every conversion; mode 'none' (the default)
   // means conversions never touch loudness unless overridden per-track.
   normalize: NormalizeConfig
