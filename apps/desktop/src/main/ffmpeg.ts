@@ -82,6 +82,12 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     // ffprobe exposes FLAC's Vorbis RATING comment but not the ID3 POPM frame, so
     // a rating only round-trips for FLAC; MP3/AIFF start unrated in the editor.
     rating: ratingTagToStars(pick('rating', 'rating wmp')),
+    composer: pick('composer', 'tcom'),
+    isrc: pick('tsrc', 'isrc'),
+    mixName: pick('tit3', 'subtitle', 'mixname', 'mix_name'),
+    // TORY is what our own ID3v2.3 writes; TDOR is its v2.4 successor and
+    // ORIGINALYEAR the Picard-convention Vorbis comment.
+    originalYear: pick('tory', 'tdor', 'originalyear', 'original_year'),
   }
 }
 
@@ -284,6 +290,11 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
     [vorbis ? 'INITIALKEY' : 'TKEY', meta.key],
     [vorbis ? 'REMIXER' : 'TPE4', meta.remixArtist],
     ['publisher', meta.publisher],
+    ['composer', meta.composer ?? ''],
+    [vorbis ? 'ISRC' : 'TSRC', meta.isrc ?? ''],
+    [vorbis ? 'SUBTITLE' : 'TIT3', meta.mixName ?? ''],
+    // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist.
+    [vorbis ? 'ORIGINALYEAR' : 'TORY', meta.originalYear ?? ''],
     ['CATALOGNUMBER', meta.catalogNumber],
     ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
   ]

@@ -5,6 +5,7 @@ import {
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
   type Id3v2Tag,
+  type Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
   File as TagFile,
   TagTypes,
@@ -194,6 +195,46 @@ describe('writeTags', () => {
 
     const f = TagFile.createFromPath(file)
     expect(f.tag.comment).toBeFalsy()
+    f.dispose()
+  })
+
+  it('writes composer, ISRC, mix name and original year in place', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, {
+      ...meta,
+      composer: 'André Tanneberger',
+      isrc: 'DEA449900124',
+      mixName: 'Club Mix',
+      originalYear: '1998',
+    })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.composers).toEqual(['André Tanneberger'])
+    expect(f.tag.isrc).toBe('DEA449900124')
+    expect(f.tag.subtitle).toBe('Club Mix')
+    // Original year has no TagLib property, so it rides a text frame: TORY on the
+    // v2.3 tag this file is pinned to (the v2.4 name is TDOR).
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const tory = id3.frames.find(
+      (fr) => fr.frameId === Id3v2FrameIdentifiers.TDOR,
+    ) as Id3v2TextInformationFrame
+    expect(tory?.text).toEqual(['1998'])
+    f.dispose()
+    expect(readFileSync(file).includes(Buffer.from('TORY'))).toBe(true)
+  })
+
+  it('clears the original year frame when the field is emptied', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, originalYear: '1998' })
+
+    writeTags(file, { ...meta, originalYear: '' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(id3.frames.some((fr) => fr.frameId === Id3v2FrameIdentifiers.TDOR)).toBe(false)
     f.dispose()
   })
 })

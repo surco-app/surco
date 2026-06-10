@@ -101,6 +101,14 @@ export interface TrackMetadata {
   // Star rating "1"–"5" (or "" for none) — written as the Traktor POPM byte on
   // ID3 and the Vorbis RATING comment on FLAC. Optional like the other extras.
   rating?: string
+  // The later additions, optional like the extras above so older constructors and
+  // persisted tracks stay valid. Frames: TCOM/COMPOSER, TSRC/ISRC, TIT3/SUBTITLE
+  // (Traktor's "Mix" field), TORY-TDOR/ORIGINALYEAR (the Discogs master year, as
+  // opposed to `year`, the year of the pressing in hand).
+  composer?: string
+  isrc?: string
+  mixName?: string
+  originalYear?: string
 }
 
 export interface DiscogsSearchResult {

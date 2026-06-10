@@ -274,6 +274,10 @@
     "publisher": "Sello / Editora",
     "catalogNumber": "Nº catálogo",
     "discogsReleaseId": "ID de release de Discogs",
+    "composer": "Compositor",
+    "isrc": "ISRC",
+    "mixName": "Mix",
+    "originalYear": "Año original",
     "rating": "Puntuación"
   },
   "normalize": {

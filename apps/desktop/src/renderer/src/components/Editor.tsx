@@ -263,6 +263,10 @@ export function Editor({
       remixArtist: '',
       discogsReleaseId: '',
       rating: '',
+      composer: '',
+      isrc: '',
+      mixName: '',
+      originalYear: '',
     }
     if (isMulti) onChangeAllMeta?.(blank)
     else onChange({ meta: blank })

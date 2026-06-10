@@ -6,6 +6,7 @@ import {
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   type Id3v2Tag,
+  Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
   Picture,
   PictureType,
@@ -150,6 +151,9 @@ export function writeTags(
     tag.initialKey = meta.key
     tag.remixedBy = meta.remixArtist
     tag.publisher = meta.publisher
+    tag.composers = toArray(meta.composer ?? '')
+    tag.isrc = meta.isrc ?? ''
+    tag.subtitle = meta.mixName ?? ''
 
     const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     // Pin MP3/AIFF to ID3v2.3 so an in-place edit matches the ffmpeg conversion path
@@ -161,6 +165,15 @@ export function writeTags(
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
     // Same TXXX treatment for the Discogs release id — no standard frame either.
     setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
+    // Original year has no TagLib property, so it rides the raw frame. The TDOR
+    // identifier is version-aware: it renders as TORY on the v2.3 tags pinned
+    // above and as TDOR on WAV's v2.4 chunk.
+    id3.removeFrames(Id3v2FrameIdentifiers.TDOR)
+    if (meta.originalYear?.trim()) {
+      const tory = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TDOR)
+      tory.text = [meta.originalYear]
+      id3.addFrame(tory)
+    }
     setRating(id3, meta.rating ?? '')
 
     if (coverPath || removeCover) {

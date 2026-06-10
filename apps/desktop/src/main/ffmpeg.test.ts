@@ -98,6 +98,10 @@ describe('convertArgs', () => {
       catalogNumber: 'KON123',
       discNumber: '2',
       remixArtist: 'Airscape',
+      composer: 'André Tanneberger',
+      isrc: 'DEA449900124',
+      mixName: 'Club Mix',
+      originalYear: '1998',
     })
     expect(args).toContain('TBPM=128')
     expect(args).toContain('TKEY=8A')
@@ -105,6 +109,11 @@ describe('convertArgs', () => {
     expect(args).toContain('CATALOGNUMBER=KON123')
     expect(args).toContain('disc=2')
     expect(args).toContain('TPE4=Airscape')
+    expect(args).toContain('composer=André Tanneberger')
+    expect(args).toContain('TSRC=DEA449900124')
+    expect(args).toContain('TIT3=Club Mix')
+    // TORY, not TDOR: the conversion pins ID3v2.3, where TDOR does not exist
+    expect(args).toContain('TORY=1998')
   })
 
   it('writes the Vorbis comment names into a FLAC target, where the ID3 frame ids would be opaque', () => {
@@ -116,11 +125,27 @@ describe('convertArgs', () => {
       bpm: '128',
       key: '8A',
       remixArtist: 'Airscape',
+      isrc: 'DEA449900124',
+      mixName: 'Club Mix',
+      originalYear: '1998',
     })
     expect(args).toContain('INITIALKEY=8A')
     expect(args).toContain('BPM=128')
     expect(args).toContain('REMIXER=Airscape')
-    expect(args.some((a) => a.startsWith('TKEY') || a.startsWith('TBPM') || a.startsWith('TPE4'))).toBe(false)
+    expect(args).toContain('ISRC=DEA449900124')
+    expect(args).toContain('SUBTITLE=Club Mix')
+    expect(args).toContain('ORIGINALYEAR=1998')
+    expect(
+      args.some(
+        (a) =>
+          a.startsWith('TKEY') ||
+          a.startsWith('TBPM') ||
+          a.startsWith('TPE4') ||
+          a.startsWith('TSRC') ||
+          a.startsWith('TIT3') ||
+          a.startsWith('TORY'),
+      ),
+    ).toBe(false)
   })
 
   it('omits an advanced tag when it is blank', () => {
@@ -511,6 +536,10 @@ describe('tagsFromProbe', () => {
           TPE4: 'Airscape',
           DISCOGS_RELEASE_ID: '123456',
           RATING: 'traktor@native-instruments.de|204|0',
+          composer: 'André Tanneberger',
+          TSRC: 'DEA449900124',
+          TIT3: 'Club Mix',
+          TORY: '1998',
         },
       },
     })
@@ -532,7 +561,29 @@ describe('tagsFromProbe', () => {
       remixArtist: 'Airscape',
       discogsReleaseId: '123456',
       rating: '4',
+      composer: 'André Tanneberger',
+      isrc: 'DEA449900124',
+      mixName: 'Club Mix',
+      originalYear: '1998',
     })
+  })
+
+  it('reads the Vorbis comment names a FLAC export carries', () => {
+    // the same fields under their FLAC names must land in the same metadata keys
+    const m = tagsFromProbe({
+      format: {
+        tags: {
+          COMPOSER: 'André Tanneberger',
+          ISRC: 'DEA449900124',
+          SUBTITLE: 'Club Mix',
+          ORIGINALYEAR: '1998',
+        },
+      },
+    })
+    expect(m.composer).toBe('André Tanneberger')
+    expect(m.isrc).toBe('DEA449900124')
+    expect(m.mixName).toBe('Club Mix')
+    expect(m.originalYear).toBe('1998')
   })
 
   it('matches tag keys case-insensitively across muxers', () => {
@@ -587,6 +638,10 @@ describe('tagsFromProbe', () => {
       remixArtist: '',
       discogsReleaseId: '',
       rating: '',
+      composer: '',
+      isrc: '',
+      mixName: '',
+      originalYear: '',
     })
   })
 })

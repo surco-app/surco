@@ -245,6 +245,10 @@ describe('Editor clear metadata', () => {
         remixArtist: '',
         discogsReleaseId: '',
         rating: '',
+        composer: '',
+        isrc: '',
+        mixName: '',
+        originalYear: '',
       },
     })
   })

@@ -274,6 +274,10 @@
     "publisher": "Label / Publisher",
     "catalogNumber": "Catalog No.",
     "discogsReleaseId": "Discogs release ID",
+    "composer": "Composer",
+    "isrc": "ISRC",
+    "mixName": "Mix",
+    "originalYear": "Original year",
     "rating": "Rating"
   },
   "normalize": {
