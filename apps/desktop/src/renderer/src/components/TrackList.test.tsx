@@ -281,13 +281,19 @@ describe('TrackList context menu', () => {
 describe('TrackList format pill', () => {
   // A mixed crate (vinyl rips in WAV next to bought MP3s) reads faster when each
   // row says its source format, so the user can spot what still needs converting.
-  it('shows the source format taken from the file extension', () => {
-    renderList([track({ id: 'a', fileName: 'song.mp3' })])
+  // The format must come from the path — the parsed fileName drops its extension.
+  it('shows the source format taken from the file path', () => {
+    renderList([track({ id: 'a', inputPath: '/music/song.mp3', fileName: 'song' })])
     expect(screen.getByTestId('track-format')).toHaveTextContent('MP3')
   })
 
-  it('omits the pill when the file name has no extension', () => {
-    renderList([track({ id: 'a', fileName: 'song' })])
+  it('omits the pill when the path has no extension', () => {
+    renderList([track({ id: 'a', inputPath: '/music/song', fileName: 'song' })])
+    expect(screen.queryByTestId('track-format')).toBeNull()
+  })
+
+  it('ignores dots in directory names when reading the extension', () => {
+    renderList([track({ id: 'a', inputPath: '/music/My.Crate/song', fileName: 'song' })])
     expect(screen.queryByTestId('track-format')).toBeNull()
   })
 })

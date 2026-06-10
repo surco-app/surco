@@ -67,9 +67,10 @@ const TrackRow = memo(function TrackRow({
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const quality = trackQuality(t)
-  // Source format read off the file name, so a mixed crate (WAV rips next to bought
-  // MP3s) can be scanned for what still needs a conversion without opening each track.
-  const sourceFormat = /\.([^.]+)$/.exec(t.fileName)?.[1]?.toUpperCase()
+  // Source format read off the input path — the parsed fileName drops its extension —
+  // so a mixed crate (WAV rips next to bought MP3s) can be scanned for what still
+  // needs a conversion without opening each track.
+  const sourceFormat = /\.([^./]+)$/.exec(t.inputPath)?.[1]?.toUpperCase()
   const rowRef = useRef<HTMLLIElement>(null)
   // Report this row entering/leaving the scroll pane so App can run auto-match for what's on
   // screen. rootMargin warms rows a little before they're scrolled fully into view.
