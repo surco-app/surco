@@ -494,4 +494,20 @@ describe('App command palette list-wide actions', () => {
     fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'Export' } })
     expect(screen.getByTestId('palette-item')).toHaveAttribute('aria-disabled', 'false')
   })
+
+  // "Remove all" discards every unsaved edit in the session (matches, covers, tags live
+  // only in memory), so the palette — and the native menu, which fires the same command —
+  // must ask first, exactly like the toolbar button it mirrors.
+  it('asks for confirmation before removing all tracks from the palette', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Remove all' },
+    })
+    fireEvent.click(screen.getByTestId('palette-item'))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
 })

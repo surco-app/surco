@@ -1036,7 +1036,7 @@ export default function App(): React.JSX.Element {
       id: 'remove-all',
       title: tr('commands.removeAll'),
       enabled: tracks.length > 0,
-      run: clearTracks,
+      run: askClearAll,
     },
     {
       id: 'settings',
