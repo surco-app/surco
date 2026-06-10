@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { formatRatingTag, ratingTagToStars } from '../shared/rating'
 import type {
   BpmResult,
+  KeyResult,
   LoudnessResult,
   NormalizeConfig,
   OutputFormat,
@@ -14,6 +15,7 @@ import type {
 } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
+import { detectKey } from './musicalKey'
 import {
   loudnormArgs,
   loudnormFilter,
@@ -750,14 +752,14 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
   }
 }
 
-// Decodes the opening four minutes to low-rate mono PCM and runs the tempo
-// detector on it. Four minutes pins a steady DJ tempo while bounding the
-// decoded buffer (~10 MB) regardless of file length; mono because tempo is a
-// property of the mix, not of either channel. ffmpeg emits raw f32le so there
-// is nothing to parse — but the bytes land in Node's shared Buffer pool,
-// whose offset need not be 4-byte aligned, so they are copied out before
-// being viewed as floats.
-export async function measureBpm(input: string): Promise<BpmResult | null> {
+// Decodes the opening four minutes to low-rate mono PCM for the tempo and key
+// detectors. Four minutes pins a steady DJ tempo (and the prevailing key)
+// while bounding the decoded buffer (~10 MB) regardless of file length; mono
+// because both are properties of the mix, not of either channel. ffmpeg emits
+// raw f32le so there is nothing to parse — but the bytes land in Node's
+// shared Buffer pool, whose offset need not be 4-byte aligned, so they are
+// copied out before being viewed as floats.
+async function decodeAnalysisPcm(input: string): Promise<Float32Array> {
   const { stdout } = await run(
     ffmpegPath,
     [
@@ -781,7 +783,15 @@ export async function measureBpm(input: string): Promise<BpmResult | null> {
   const bytes = stdout.length - (stdout.length % 4)
   const pcm = new Uint8Array(bytes)
   pcm.set(stdout.subarray(0, bytes))
-  return detectBpm(new Float32Array(pcm.buffer), TEMPO_SAMPLE_RATE)
+  return new Float32Array(pcm.buffer)
+}
+
+export async function measureBpm(input: string): Promise<BpmResult | null> {
+  return detectBpm(await decodeAnalysisPcm(input), TEMPO_SAMPLE_RATE)
+}
+
+export async function measureKey(input: string): Promise<KeyResult | null> {
+  return detectKey(await decodeAnalysisPcm(input), TEMPO_SAMPLE_RATE)
 }
 
 interface SpectrumDeps {

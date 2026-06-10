@@ -5,6 +5,7 @@ import type {
   CoverExportJob,
   DiscogsRelease,
   DiscogsSearchResult,
+  KeyResult,
   LoudnessResult,
   ProcessJob,
   ProcessProgress,
@@ -59,6 +60,7 @@ export interface Api {
   loudness: (path: string) => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string) => Promise<BpmResult | null>
+  key: (path: string) => Promise<KeyResult | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<string | null>

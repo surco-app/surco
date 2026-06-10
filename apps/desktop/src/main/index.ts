@@ -43,6 +43,7 @@ import {
   extractCover,
   generateSpectrogram,
   measureBpm,
+  measureKey,
   measureLoudness,
   probeAudio,
   probeDuration,
@@ -668,6 +669,17 @@ function registerIpc(): void {
       return await cachedAnalysis('bpm', inputPath, () => measureBpm(inputPath), () => true)
     } catch (err) {
       log.error('audio:bpm failed', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('audio:key', async (_e, inputPath: string) => {
+    try {
+      // Same caching contract as audio:bpm: a null (atonal material) is a real
+      // measurement and is cached; only a decode error retries.
+      return await cachedAnalysis('key', inputPath, () => measureKey(inputPath), () => true)
+    } catch (err) {
+      log.error('audio:key failed', err)
       return null
     }
   })
