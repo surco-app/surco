@@ -59,7 +59,7 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { keymapMenuClick } from './menuCommand'
-import { resolvePlayable } from './playback'
+import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
 
@@ -753,3 +753,8 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+// Previewing an AIFF (or a FLAC with broken art) leaves a transcoded copy in the
+// tmpdir that playback keeps re-serving, so it can only be deleted once the app is
+// done with it — sweep them on the way out rather than letting them pile up.
+app.on('will-quit', () => cleanupPlaybackTemps())

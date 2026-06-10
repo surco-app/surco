@@ -1,3 +1,4 @@
+import { rmSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -27,6 +28,36 @@ const defaultDeps: PlaybackDeps = {
 // source path -> the resolved playback path in flight or done for it, keyed by
 // the source's mtime so an in-place edit invalidates the cached result.
 const cache = new Map<string, { mtime: number; out: Promise<string> }>()
+
+// Every temp path handed to a transcode/re-mux, recorded up front so a failed run's
+// partial output (ffmpeg -y creates it before finishing) is swept along with the
+// finished ones. The files must outlive each playback — the cache re-serves them
+// across range requests and replays — so they're only deleted at quit.
+const tempFiles = new Set<string>()
+
+function trackedTempPath(deps: PlaybackDeps, ext: string): string {
+  const out = deps.tempPath(ext)
+  tempFiles.add(out)
+  return out
+}
+
+// Deletes the session's temp transcodes; wired to app 'will-quit'. Synchronous on
+// purpose: quit won't wait for async unlinks. Crash leftovers fall to the OS tmpdir
+// purge instead. The cache is cleared too so a sweep mid-session (tests) can't serve
+// a deleted path.
+export function cleanupPlaybackTemps(
+  remove: (path: string) => void = (p) => rmSync(p, { force: true }),
+): void {
+  for (const path of tempFiles) {
+    try {
+      remove(path)
+    } catch {
+      // best-effort: a locked or already-gone file must not block the others
+    }
+  }
+  tempFiles.clear()
+  cache.clear()
+}
 
 // One playback fires many requests (the initial load plus a range request per
 // seek), so whatever resolve() decides — a transcode, a re-mux, or the original
@@ -63,7 +94,7 @@ export async function resolvePlayable(
 ): Promise<string> {
   if (AIFF.test(filePath)) {
     return cached(filePath, deps, async () => {
-      const out = deps.tempPath('wav')
+      const out = trackedTempPath(deps, 'wav')
       await deps.transcode(filePath, out)
       return out
     })
@@ -71,7 +102,7 @@ export async function resolvePlayable(
   if (FLAC.test(filePath)) {
     return cached(filePath, deps, async () => {
       if (!(await deps.hasUnreadablePicture(filePath))) return filePath
-      const out = deps.tempPath('flac')
+      const out = trackedTempPath(deps, 'flac')
       await deps.stripPicture(filePath, out)
       return out
     })

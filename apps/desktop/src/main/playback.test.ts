@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
-import { resolvePlayable } from './playback'
+import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 
 function deps(over: Record<string, unknown> = {}) {
   let n = 0
@@ -103,5 +103,45 @@ describe('resolvePlayable', () => {
     await expect(resolvePlayable('/retry-pic.flac', d)).rejects.toThrow('ffmpeg died')
     await expect(resolvePlayable('/retry-pic.flac', d)).resolves.toBe('/tmp/play-1.flac')
     expect(stripPicture).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('cleanupPlaybackTemps', () => {
+  // The temp transcodes must outlive each playback (the cache re-serves them across
+  // range requests and replays), so nothing deletes them mid-session; without this
+  // quit-time sweep every previewed AIFF would leave a multi-MB WAV in the tmpdir.
+  it('removes every temp the session created and only those', async () => {
+    cleanupPlaybackTemps(vi.fn()) // drain temps recorded by the tests above
+    const d = deps({ hasUnreadablePicture: vi.fn(async () => true) })
+    await resolvePlayable('/sweep.aiff', d)
+    await resolvePlayable('/sweep.flac', d)
+    await resolvePlayable('/sweep.mp3', d)
+    const remove = vi.fn()
+    cleanupPlaybackTemps(remove)
+    expect(remove.mock.calls.map((c) => c[0]).sort()).toEqual([
+      '/tmp/play-0.wav',
+      '/tmp/play-1.flac',
+    ])
+  })
+
+  it('forgets what it removed, so a second sweep deletes nothing', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const d = deps()
+    await resolvePlayable('/sweep-twice.aiff', d)
+    cleanupPlaybackTemps(vi.fn())
+    const again = vi.fn()
+    cleanupPlaybackTemps(again)
+    expect(again).not.toHaveBeenCalled()
+  })
+
+  // ffmpeg -y creates the output before it finishes, so a failed transcode can leave
+  // a partial file behind — it must be swept like a successful one.
+  it('sweeps the partial output of a failed transcode too', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const d = deps({ transcode: vi.fn().mockRejectedValue(new Error('ffmpeg died')) })
+    await expect(resolvePlayable('/sweep-fail.aiff', d)).rejects.toThrow('ffmpeg died')
+    const remove = vi.fn()
+    cleanupPlaybackTemps(remove)
+    expect(remove).toHaveBeenCalledWith('/tmp/play-0.wav')
   })
 })
