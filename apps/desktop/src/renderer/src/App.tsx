@@ -1,7 +1,6 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   AudioLines,
-  ChevronDown,
   CircleCheckBig,
   List,
   type LucideIcon,
@@ -35,6 +34,7 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
 import { RenameModal } from './components/RenameModal'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
+import { Select } from './components/Select'
 import { SettingsModal } from './components/SettingsModal'
 import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
@@ -1277,24 +1277,18 @@ export default function App(): React.JSX.Element {
                         </button>
                       )}
                     </div>
-                    <div className="relative shrink-0">
-                      <select
-                        data-testid="track-sort"
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as TrackSort)}
-                        aria-label={tr('sidebar.sort.label')}
-                        className="h-8 appearance-none rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-6 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
-                      >
-                        <option value="import">{tr('sidebar.sort.import')}</option>
-                        <option value="name">{tr('sidebar.sort.name')}</option>
-                        <option value="artist">{tr('sidebar.sort.artist')}</option>
-                        <option value="duration">{tr('sidebar.sort.duration')}</option>
-                      </select>
-                      <ChevronDown
-                        aria-hidden="true"
-                        className="pointer-events-none absolute top-1/2 right-1.5 size-3.5 -translate-y-1/2 text-fg-dim"
-                      />
-                    </div>
+                    <Select
+                      testid="track-sort"
+                      value={sortBy}
+                      onChange={(v) => setSortBy(v as TrackSort)}
+                      label={tr('sidebar.sort.label')}
+                      options={[
+                        { value: 'import', label: tr('sidebar.sort.import') },
+                        { value: 'name', label: tr('sidebar.sort.name') },
+                        { value: 'artist', label: tr('sidebar.sort.artist') },
+                        { value: 'duration', label: tr('sidebar.sort.duration') },
+                      ]}
+                    />
                   </div>
                   <div data-testid="quality-filter" className="flex gap-0.5 px-1.5 py-2">
                     {(
