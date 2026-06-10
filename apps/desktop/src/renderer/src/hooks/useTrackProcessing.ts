@@ -48,6 +48,11 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // Set by cancelBatch to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
+  // The convert-all loop and the Apple Music sweep outlive the render that started
+  // them, while the list stays editable — each track must be read at the moment it's
+  // processed, not from the closure's snapshot, or mid-batch edits never reach disk.
+  const tracksRef = useRef(tracks)
+  tracksRef.current = tracks
 
   // The batch summary is a transient confirmation, not a persistent banner — it
   // clears itself a few seconds after a run so it never lingers over later work.
@@ -62,7 +67,7 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
   ): Promise<BatchOutcome> {
-    const track = tracks.find((t) => t.id === id)
+    const track = tracksRef.current.find((t) => t.id === id)
     if (!track) return 'failed'
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
     if (missing.length) {
@@ -132,7 +137,7 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
   // conversion does so the library entry matches the file; musicStatus drives the
   // button's adding/added/error states without disturbing the track's own status.
   async function addTrackToAppleMusic(id: string): Promise<void> {
-    const track = tracks.find((t) => t.id === id)
+    const track = tracksRef.current.find((t) => t.id === id)
     if (!track?.outputPath || track.musicStatus === 'adding') return
     updateTrack(id, { musicStatus: 'adding', musicError: undefined })
     const meta = sanitizeMeta(track.meta, {

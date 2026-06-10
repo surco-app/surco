@@ -171,4 +171,39 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
+  // The list stays editable while a batch runs, so each track must be read at the
+  // moment it converts — not from the snapshot taken when the batch started. An edit
+  // made while an earlier track converts has to land in the file that gets written.
+  it('converts each track from live state, not the snapshot from the batch start', async () => {
+    let releaseFirst: (v: { outputPath: string }) => void = () => {}
+    const processTrack = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = resolve
+          }),
+      )
+      .mockResolvedValue({ outputPath: '/out/b.aiff' })
+    setApi({ processTrack })
+    const initial = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result, rerender } = renderHook(
+      (props: { tracks: TrackItem[] }) =>
+        useTrackProcessing({ tracks: props.tracks, settings: null, updateTrack: vi.fn() }),
+      { initialProps: { tracks: initial } },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.processAll(initial)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    rerender({ tracks: [initial[0], track({ id: 'b', meta: meta({ title: 'Edited' }) })] })
+    releaseFirst({ outputPath: '/out/a.aiff' })
+    await act(async () => {
+      await run
+    })
+    expect(processTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'b', meta: expect.objectContaining({ title: 'Edited' }) }),
+    )
+  })
 })
