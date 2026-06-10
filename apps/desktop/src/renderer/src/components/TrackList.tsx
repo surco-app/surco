@@ -190,7 +190,7 @@ const TrackRow = memo(function TrackRow({
                   <Tooltip label={tr('trackList.autoMatched')} align="end" scope="dot" />
                 </span>
               )}
-              {quality !== 'unanalyzed' && (
+              {quality !== 'unanalyzed' ? (
                 <span
                   data-testid="track-quality"
                   data-quality={quality}
@@ -198,6 +198,15 @@ const TrackRow = memo(function TrackRow({
                 >
                   <Tooltip label={tr(qualityLabel[quality])} align="end" scope="dot" />
                 </span>
+              ) : (
+                t.analyzing && (
+                  <span
+                    data-testid="track-quality-loading"
+                    className="group/dot relative h-2 w-2 shrink-0 animate-pulse rounded-full bg-fg-faint ring-2 ring-fg-faint/20"
+                  >
+                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                  </span>
+                )
               )}
               {sourceFormat && (
                 <span

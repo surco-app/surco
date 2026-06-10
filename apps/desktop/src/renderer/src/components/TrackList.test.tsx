@@ -322,4 +322,17 @@ describe('TrackList quality badge', () => {
     renderList([track({ id: 'a' })])
     expect(screen.queryByTestId('track-quality')).not.toBeInTheDocument()
   })
+
+  // While the spectrum worker runs, the empty slot would read as "never analyzed";
+  // the pulsing placeholder tells the user the verdict is on its way.
+  it('shows a pulsing placeholder while the spectrum analysis is in flight', () => {
+    renderList([track({ id: 'a', analyzing: true })])
+    expect(screen.getByTestId('track-quality-loading')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-quality')).not.toBeInTheDocument()
+  })
+
+  it('drops the placeholder once the verdict lands', () => {
+    renderList([track({ id: 'a', spectrum: spectrum(21000) })])
+    expect(screen.queryByTestId('track-quality-loading')).not.toBeInTheDocument()
+  })
 })

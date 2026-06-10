@@ -901,17 +901,20 @@ export default function App(): React.JSX.Element {
       queryFn: () => window.api.spectrogram(t.inputPath),
       enabled: false,
     })),
-    combine: (results) => results.map((r) => r.data),
+    combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
   })
   // Merge each cached spectrum onto its track for the quality triage and the list,
   // preserving object identity (via viewCache) so memoized rows don't all re-render.
   // Memoized so a progress tick during an analyze/convert/match sweep doesn't rebuild
   // the whole list (and re-run the quality/auto-match scans below) on every re-render.
+  // A row whose analysis is still in flight gets a transient `analyzing` view so the
+  // list can show a placeholder where the verdict dot will land; it is minted per
+  // recompute (not cached) because it only exists for the duration of the fetch.
   const tracksView = useMemo(
     () =>
       tracks.map((t, i) => {
-        const spectrum = spectra[i]
-        if (!spectrum) return t
+        const { data: spectrum, fetching } = spectra[i]
+        if (!spectrum) return fetching ? { ...t, analyzing: true } : t
         const cached = viewCache.current.get(t.id)
         if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
         const view: TrackItem = { ...t, spectrum }

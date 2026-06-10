@@ -33,6 +33,10 @@ export interface TrackItem {
   // from the React Query cache at the App boundary so the quality triage and the list
   // can read each track's verdict. Undefined until its analysis lands in the cache.
   spectrum?: SpectrumResult
+  // True while this track's spectrum analysis is in flight (hover prefetch, editor
+  // open or the toolbar sweep), merged in from the React Query fetch status like
+  // spectrum above, so the row can show a placeholder instead of an empty slot.
+  analyzing?: boolean
   // Set when a Discogs match was applied automatically (auto-match on import or the
   // toolbar sweep) rather than by the user clicking a suggestion, so the row can flag
   // it and the list can filter for the auto-filled tracks to spot-check them.
