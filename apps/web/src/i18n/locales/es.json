@@ -99,12 +99,7 @@
       {
         "kick": "analiza",
         "title": "Lee cada nivel",
-        "body": "Una lectura con colores por pista — LUFS, pico real, dinámica, balance, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo."
-      },
-      {
-        "kick": "detecta",
-        "title": "BPM y tonalidad, medidos",
-        "body": "Surco escucha el audio y te sugiere el tempo y la tonalidad como pastillas de un clic bajo cada campo — en notación Camelot o musical, tú eliges."
+        "body": "Una lectura con colores por pista — LUFS, pico real, dinámica, balance y ruido — más el BPM y la tonalidad detectados del propio audio, a un clic de aplicarse."
       },
       {
         "kick": "carátula",

@@ -99,12 +99,7 @@
       {
         "kick": "analyze",
         "title": "Read every level",
-        "body": "A colour-coded readout per track — LUFS, true peak, dynamics, balance, DC offset and noise floor — green, amber or red at a glance."
-      },
-      {
-        "kick": "detect",
-        "title": "BPM and key, measured",
-        "body": "Surco listens to the audio and suggests the tempo and key as one-click chips under each field — in Camelot or musical notation, your pick."
+        "body": "A colour-coded readout per track — LUFS, true peak, dynamics, balance and noise — plus the BPM and key detected from the audio itself, one click from applied."
       },
       {
         "kick": "artwork",
