@@ -2,11 +2,13 @@ import type { Settings } from '../../../shared/types'
 
 // The donate nudge is deliberately rare: Surco asks for support, it never nags.
 // Three gates make that hold — enough real usage that the savings summary means
-// something, a hard cooldown between showings, and a per-launch random draw so
-// it lands "every now and then" instead of on a predictable schedule. The
-// dismissed flag (the modal's "don't show again") wins over everything.
+// something, a hard two-week cooldown between showings (the showing is stamped
+// on display, so twice in a day is impossible; a daily user sees it roughly
+// every two and a half weeks), and a per-launch random draw so it lands "every
+// now and then" instead of on a predictable schedule. The dismissed flag (the
+// modal's "don't show again") wins over everything.
 export const MIN_CONVERSIONS = 10
-export const MIN_DAYS_BETWEEN = 7
+export const MIN_DAYS_BETWEEN = 14
 export const SHOW_CHANCE = 0.25
 
 type NudgeState = Pick<
