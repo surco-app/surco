@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getRelease, hasCachedRelease, hasCachedSearch, retryDelayMs, search } from './discogs'
+import {
+  downloadCover,
+  getRelease,
+  hasCachedRelease,
+  hasCachedSearch,
+  retryDelayMs,
+  search,
+} from './discogs'
 
 // A response double covering the fields api() reads: status/ok, the JSON body, and
 // a headers.get used only on the 429 path.
@@ -157,5 +164,28 @@ describe('search rate-limit retry', () => {
     const fetchMock = mockSequence([res(429, {}, '0')])
     await expect(search('always limited query', 'tok')).rejects.toThrow(/[Ll]ímite/)
     expect(fetchMock).toHaveBeenCalledTimes(4)
+  })
+})
+
+describe('request timeout', () => {
+  // A hung connection (sleep/wake, captive portal) must not leave the search pending
+  // forever with its limiter token spent: every request carries an abort signal so a
+  // stalled socket times out instead of hanging the caller.
+  it('sends every API request with an abort signal so a stalled socket times out', async () => {
+    const fetchMock = mockFetch([{ id: 9 }])
+    await search('timeout probe query', '')
+    const opts = fetchMock.mock.calls[0][1] as { signal?: unknown }
+    expect(opts?.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('downloads covers with the same timeout guard', async () => {
+    const fn = vi.fn(async (_url: string, _opts?: { signal?: unknown }) => ({
+      ok: false,
+      status: 500,
+      headers: { get: () => null },
+    }))
+    vi.stubGlobal('fetch', fn)
+    await expect(downloadCover('https://img.discogs.com/x.jpg')).rejects.toThrow()
+    expect(fn.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal)
   })
 })

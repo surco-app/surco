@@ -34,10 +34,18 @@ export function retryDelayMs(attempt: number, retryAfter: string | null): number
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
+// A stalled socket (sleep/wake, captive portal) would otherwise leave the request —
+// and the rate-limiter token it spent — hanging forever; 10s is generous for an API
+// that answers in well under a second.
+const REQUEST_TIMEOUT_MS = 10_000
+
 async function api<T>(path: string, token: string): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+    const res = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    })
     if (res.status === 401) throw new Error('Token de Discogs inválido.')
     if (res.status === 429) {
       // Out of retries: surface the limit so the caller can tell the user to wait.
@@ -87,7 +95,10 @@ export async function getRelease(id: number, token: string): Promise<DiscogsRele
 }
 
 export async function downloadCover(url: string): Promise<string> {
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+  const res = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  })
   if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
   const buf = Buffer.from(await res.arrayBuffer())
   const ext = res.headers.get('content-type')?.includes('png') ? 'png' : 'jpg'
