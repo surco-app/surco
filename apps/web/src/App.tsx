@@ -14,6 +14,7 @@ import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
 import WaveBackdrop from './components/WaveBackdrop'
+import GrooveArcs from './components/GrooveArcs'
 import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
@@ -105,9 +106,12 @@ export default function App() {
               'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)'
           }}
         />
-        <WaveBackdrop className="top-[18%]" />
-        <WaveBackdrop className="top-[47%]" />
-        <WaveBackdrop className="top-[81%]" />
+        <WaveBackdrop className="top-[12%]" side="left" delay="-18s" />
+        <GrooveArcs className="top-[28%]" side="right" />
+        <WaveBackdrop className="top-[44%]" flip delay="-7s" />
+        <WaveBackdrop className="top-[62%]" side="right" delay="-29s" />
+        <GrooveArcs className="top-[76%]" side="left" />
+        <WaveBackdrop className="top-[90%]" flip side="left" delay="-41s" />
         <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
           <div>
             <Reveal>

@@ -116,6 +116,20 @@ html {
   animation: waveDrift linear infinite;
 }
 
+/* near-static rotation for the groove arcs; animating the standalone rotate
+   property keeps it independent from the centering translate */
+@keyframes spinSlow {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+.spin-slow {
+  animation: spinSlow 150s linear infinite;
+}
+
 /* blue→cyan gradient text accent */
 .text-grad {
   background: linear-gradient(100deg, var(--color-blue), var(--color-cyan));
