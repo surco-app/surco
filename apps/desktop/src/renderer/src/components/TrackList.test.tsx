@@ -266,6 +266,20 @@ describe('TrackList context menu', () => {
   })
 })
 
+describe('TrackList format pill', () => {
+  // A mixed crate (vinyl rips in WAV next to bought MP3s) reads faster when each
+  // row says its source format, so the user can spot what still needs converting.
+  it('shows the source format taken from the file extension', () => {
+    renderList([track({ id: 'a', fileName: 'song.mp3' })])
+    expect(screen.getByTestId('track-format')).toHaveTextContent('MP3')
+  })
+
+  it('omits the pill when the file name has no extension', () => {
+    renderList([track({ id: 'a', fileName: 'song' })])
+    expect(screen.queryByTestId('track-format')).toBeNull()
+  })
+})
+
 describe('TrackList quality badge', () => {
   const spectrum = (cutoffHz: number | null) => ({ image: '', cutoffHz, sampleRateHz: 44100 })
 
