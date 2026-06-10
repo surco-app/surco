@@ -26,6 +26,11 @@ import { NormalizeControls } from './NormalizeControls'
 import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
 
+// One-off donations land here. Swap in a Stripe Payment Link (created in the
+// dashboard, no backend needed) once it exists; target=_blank routes through the
+// window-open handler, which hands the URL to the system browser.
+export const DONATE_URL = 'https://github.com/sponsors/vigosan'
+
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
@@ -806,6 +811,15 @@ export function SettingsModal({
                     {tr('settings.stats.empty')}
                   </p>
                 )}
+                <a
+                  data-testid="stats-donate"
+                  href={DONATE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-8 text-sm text-fg-dim transition-colors hover:text-fg"
+                >
+                  {tr('settings.stats.donate')} →
+                </a>
               </div>
             )}
           </div>

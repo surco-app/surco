@@ -11,7 +11,7 @@ vi.hoisted(() => {
 
 import '../i18n'
 import type { Settings } from '../../../shared/types'
-import { SettingsModal } from './SettingsModal'
+import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
 
@@ -313,6 +313,37 @@ describe('SettingsModal stats', () => {
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
+  })
+
+  // Surco is free forever, so the stats tab — the place that shows the hours the
+  // app saved you — is where we ask for support. The link must open in the
+  // system browser (target=_blank routes through the window-open handler) and
+  // exist even before the first conversion.
+  it('offers a donation link in both the filled and empty states', () => {
+    render(
+      <SettingsModal
+        settings={{ ...settings, conversionCount: 142 }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    const donate = screen.getByTestId('stats-donate')
+    expect(donate).toHaveAttribute('href', DONATE_URL)
+    expect(donate).toHaveAttribute('target', '_blank')
+    cleanup()
+
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.getByTestId('stats-donate')).toHaveAttribute('href', DONATE_URL)
   })
 
   // The toolbar stats icon opens settings straight on this tab, so a caller can
