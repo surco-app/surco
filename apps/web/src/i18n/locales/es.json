@@ -296,7 +296,7 @@
           "El asistente de bienvenida configura formato, carpeta de salida, géneros y campos visibles.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
         ],
-        "shot": "instalar.png",
+        "shot": "instalar-es.png",
         "shotCaption": "El asistente de bienvenida en el primer arranque."
       },
       {
@@ -311,7 +311,7 @@
           "Suelta carpetas enteras: Surco las recorre y añade todo el audio que encuentre.",
           "Las pistas aparecen al momento; los tags y la carátula se cargan en segundo plano."
         ],
-        "shot": "importar.gif",
+        "shot": "importar-es.png",
         "shotCaption": "Arrastrar y soltar pistas en la lista."
       },
       {
@@ -326,7 +326,7 @@
           "Haz clic para seleccionar una pista; ⌘ (o Ctrl) + clic para sumar varias y Mayús + clic para un rango.",
           "El icono ✦ marca las pistas que Surco rellenó solo desde Discogs."
         ],
-        "shot": "lista.png",
+        "shot": "lista-es.png",
         "shotCaption": "La lista de pistas con filtros y estados."
       },
       {
@@ -341,7 +341,7 @@
           "Los campos obligatorios se marcan en rojo si los dejas vacíos.",
           "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida."
         ],
-        "shot": "editor.png",
+        "shot": "editor-es.png",
         "shotCaption": "El editor de metadatos de una pista."
       },
       {

@@ -296,7 +296,7 @@
           "The welcome wizard sets up format, output folder, genres and visible fields.",
           "You can change any setting later in Settings (⌘ ,)."
         ],
-        "shot": "instalar.png",
+        "shot": "instalar-en.png",
         "shotCaption": "The welcome wizard on first launch."
       },
       {
@@ -311,7 +311,7 @@
           "Drop whole folders: Surco walks them and adds every audio file it finds.",
           "Tracks show up immediately; tags and cover art load in the background."
         ],
-        "shot": "importar.gif",
+        "shot": "importar-en.png",
         "shotCaption": "Dragging and dropping tracks into the list."
       },
       {
@@ -326,7 +326,7 @@
           "Click to select one track; ⌘ (or Ctrl) + click to add several, and Shift + click for a range.",
           "The ✦ icon marks tracks Surco filled in automatically from Discogs."
         ],
-        "shot": "lista.png",
+        "shot": "lista-en.png",
         "shotCaption": "The track list with filters and statuses."
       },
       {
@@ -341,7 +341,7 @@
           "Required fields turn red if you leave them empty.",
           "The cover shows its real pixel dimensions so you can judge sharpness."
         ],
-        "shot": "editor.png",
+        "shot": "editor-en.png",
         "shotCaption": "A track's metadata editor."
       },
       {
