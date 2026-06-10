@@ -15,7 +15,6 @@ import type {
 } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
-import { detectKey } from './musicalKey'
 import {
   loudnormArgs,
   loudnormFilter,
@@ -26,9 +25,10 @@ import {
   volumeFilter,
 } from './normalize'
 import { readTagFormats } from './tagFormats'
-import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
-import { detectBpm, TEMPO_SAMPLE_RATE } from './tempo'
+import { preservesCuesInPlace } from './tags'
+import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
+import { runInWorker } from './worker'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
 // path; the canonical definition lives in shared/ so the renderer can use it too.
@@ -428,8 +428,10 @@ export async function convertAudio(
       // Source already in the target format: copy the bytes verbatim and edit the
       // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
       // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
+      // TagLib's save is synchronous and rewrites the whole file when the tag
+      // grows, so every tag pass below runs in the worker thread.
       await copyFile(input, tmp)
-      writeTags(tmp, meta, coverPath, removeCover)
+      await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
     } else {
       await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter), {
         maxBuffer: 1024 * 1024 * 32,
@@ -439,17 +441,18 @@ export async function convertAudio(
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
         // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
-        writeTags(tmp, meta, coverPath)
+        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
       } else if (meta.rating?.trim() && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating, to
         // avoid a second tag pass on every conversion.
-        writeTags(tmp, meta, coverPath)
+        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
       }
       // Normalizing forces this re-encode, which drops Traktor's GEOB cue/beatgrid
       // frame. A constant gain never moves the cues in time, so carry the frame over
       // from the source — but only for the ID3 containers it round-trips through.
-      if (normalizing && preservesCuesInPlace(ext)) copyCueFrames(input, tmp)
+      if (normalizing && preservesCuesInPlace(ext))
+        await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp })
     }
     await rename(tmp, output)
   } catch (e) {
@@ -786,12 +789,22 @@ async function decodeAnalysisPcm(input: string): Promise<Float32Array> {
   return new Float32Array(pcm.buffer)
 }
 
+// The detectors crunch hundreds of FFTs in tight JS loops — run on the main process
+// they freeze IPC, the menu and the surco:// audio stream for the whole analysis, so
+// both ship their PCM to the worker thread. The buffer is transferred, not copied:
+// decodeAnalysisPcm mints a fresh one per call, so nothing else holds it.
 export async function measureBpm(input: string): Promise<BpmResult | null> {
-  return detectBpm(await decodeAnalysisPcm(input), TEMPO_SAMPLE_RATE)
+  const pcm = await decodeAnalysisPcm(input)
+  return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE }, [
+    pcm.buffer as ArrayBuffer,
+  ])
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {
-  return detectKey(await decodeAnalysisPcm(input), TEMPO_SAMPLE_RATE)
+  const pcm = await decodeAnalysisPcm(input)
+  return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE }, [
+    pcm.buffer as ArrayBuffer,
+  ])
 }
 
 interface SpectrumDeps {
