@@ -6,8 +6,6 @@ import { Outlet } from 'react-router-dom'
 import type { i18n } from 'i18next'
 import App from './App'
 import Guide from './components/Guide'
-import CheckoutResult from './components/CheckoutResult'
-import Recover from './components/Recover'
 import { createI18n, type Language } from './i18n'
 
 const SITE = 'https://getsurco.app'
@@ -112,10 +110,6 @@ export const routes: RouteRecord[] = [
       { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
       { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
-      // Transactional pages: their copy is self-contained and language-detected on the
-      // client, so they don't need the localized App shell.
-      { path: 'success', element: <CheckoutResult />, entry: 'src/routes.tsx' },
-      { path: 'recover', element: <Recover />, entry: 'src/routes.tsx' },
     ],
   },
 ]

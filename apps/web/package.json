@@ -10,22 +10,18 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
     "@vercel/analytics": "^2.0.1",
     "i18next": "^26.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^17.0.8",
     "react-router-dom": "^6.30.4",
-    "resend": "^4.0.1",
-    "stripe": "^17.5.0",
     "vite-react-ssg": "^0.9.1-beta.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
-    "@vercel/node": "^5.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.7.3",

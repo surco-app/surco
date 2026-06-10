@@ -211,38 +211,10 @@
   },
   "pricing": {
     "kicker": "Pricing",
-    "title": "Start free. Go Pro when you are ready.",
-    "lede": "Convert and tag your records for free. Surco Pro unlocks unlimited conversions and the DJ workflow — one payment, yours forever.",
-    "betaBanner": "Surco is in beta, so everything is unlocked for free right now. Pro pricing starts when the beta ends.",
-    "free": {
-      "name": "Free",
-      "price": "€0",
-      "period": "to get started",
-      "cta": "Download Surco",
-      "features": [
-        "Convert to AIFF, WAV, FLAC and MP3",
-        "Discogs tagging and full-album match",
-        "Spectrum analysis to catch fakes",
-        "Up to {{limit}} conversions a month"
-      ]
-    },
-    "pro": {
-      "name": "Surco Pro",
-      "period": "one-time · yours forever",
-      "cta": "Get Surco Pro",
-      "betaCta": "Free during the beta",
-      "loading": "Redirecting…",
-      "recover": "Already bought? Recover your license",
-      "features": [
-        "Everything in Free",
-        "Unlimited conversions",
-        "Convert all — batch your whole crate",
-        "Export to rekordbox and Traktor"
-      ]
-    },
-    "sponsor": {
-      "cta": "Sponsor on GitHub"
-    }
+    "title": "Free, forever",
+    "lede": "Surco is free and complete — no account, no subscription, no limits. If it saves you hours, you can support its development.",
+    "cta": "Download Surco",
+    "sponsor": "Sponsor on GitHub"
   },
   "footer": {
     "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
@@ -451,8 +423,7 @@
         ],
         "points": [
           "Processes the whole queue at once; cancel mid-way if you need to.",
-          "Uses current metadata only: it downloads nothing from Discogs in the batch.",
-          "Convert all is a Surco Pro feature."
+          "Uses current metadata only: it downloads nothing from Discogs in the batch."
         ],
         "shot": "lote-en.png",
         "shotCaption": "Converting the whole queue at once."
@@ -462,7 +433,7 @@
         "title": "Take it to your decks",
         "body": [
           "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) as you convert, or exports the whole queue as a rekordbox (.xml) or Traktor (.nml) collection from the export modal (⌘⇧E).",
-          "Tags and cover art travel inside the file, so your DJ software reads them with no extra steps. Export to rekordbox and Traktor is part of Surco Pro."
+          "Tags and cover art travel inside the file, so your DJ software reads them with no extra steps."
         ],
         "points": [
           "To Apple Music in one click, during conversion.",
@@ -495,27 +466,12 @@
           "Set it up once and Surco honors your choices on every track."
         ],
         "points": [
-          "General, Conversion, Filenames, Editor, Fields, Artwork, Shortcuts and License.",
+          "General, Conversion, Filenames, Editor, Fields, Artwork and Shortcuts.",
           "Define recurring genres and groupings so they show up as suggestions.",
           "Choose which fields to show and which to require, and reorder them to taste."
         ],
         "shot": "ajustes-en.png",
         "shotCaption": "The Settings panel."
-      },
-      {
-        "id": "pro",
-        "title": "Free and Surco Pro",
-        "body": [
-          "You can convert and tag your records for free, with Discogs tagging, full album matching and spectrum analysis included. Surco Pro adds unlimited conversions, converting the whole crate at once and exporting to rekordbox and Traktor — a single payment, yours forever.",
-          "While Surco is in beta, everything is unlocked for free. No account, no subscription."
-        ],
-        "points": [
-          "Free: conversion, Discogs, album match and quality analysis.",
-          "Pro: unlimited conversions, convert all and export to rekordbox/Traktor.",
-          "During the beta, Pro is unlocked for free."
-        ],
-        "shot": "",
-        "shotCaption": "Free versus Surco Pro."
       }
     ]
   }

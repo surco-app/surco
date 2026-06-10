@@ -211,38 +211,10 @@
   },
   "pricing": {
     "kicker": "Precio",
-    "title": "Empieza gratis. Hazte Pro cuando quieras.",
-    "lede": "Convierte y etiqueta tus discos gratis. Surco Pro desbloquea las conversiones ilimitadas y el flujo DJ — un único pago, tuyo para siempre.",
-    "betaBanner": "Surco está en beta, así que ahora mismo todo está desbloqueado gratis. El precio de Pro empieza cuando acabe la beta.",
-    "free": {
-      "name": "Gratis",
-      "price": "0 €",
-      "period": "para empezar",
-      "cta": "Descargar Surco",
-      "features": [
-        "Convierte a AIFF, WAV, FLAC y MP3",
-        "Etiquetado de Discogs y match de álbum completo",
-        "Análisis de espectro para detectar fakes",
-        "Hasta {{limit}} conversiones al mes"
-      ]
-    },
-    "pro": {
-      "name": "Surco Pro",
-      "period": "pago único · tuyo para siempre",
-      "cta": "Consigue Surco Pro",
-      "betaCta": "Gratis durante la beta",
-      "loading": "Redirigiendo…",
-      "recover": "¿Ya lo compraste? Recupera tu licencia",
-      "features": [
-        "Todo lo de Gratis",
-        "Conversiones ilimitadas",
-        "Convertir todo — procesa toda la caja",
-        "Exportar a rekordbox y Traktor"
-      ]
-    },
-    "sponsor": {
-      "cta": "Apóyalo en GitHub"
-    }
+    "title": "Gratis, para siempre",
+    "lede": "Surco es gratis y completo: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo.",
+    "cta": "Descargar Surco",
+    "sponsor": "Apóyalo en GitHub"
   },
   "footer": {
     "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
@@ -451,8 +423,7 @@
         ],
         "points": [
           "Procesa la cola entera de una; cancela a mitad si lo necesitas.",
-          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
-          "Convertir todas es una función de Surco Pro."
+          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote."
         ],
         "shot": "lote-es.png",
         "shotCaption": "Convertir toda la cola de una vez."
@@ -462,7 +433,7 @@
         "title": "Llévala a tus platos",
         "body": [
           "Surco no se queda en convertir: manda las pistas directas a tu biblioteca de Apple Music (en macOS) mientras las conviertes, o exporta la cola entera como colección de rekordbox (.xml) o Traktor (.nml) desde el modal de exportación (⌘⇧E).",
-          "Los tags y la carátula viajan dentro del archivo, así que tu software de DJ los lee sin pasos extra. El export a rekordbox y Traktor es parte de Surco Pro."
+          "Los tags y la carátula viajan dentro del archivo, así que tu software de DJ los lee sin pasos extra."
         ],
         "points": [
           "A Apple Music con un clic, durante la conversión.",
@@ -495,27 +466,12 @@
           "Lo configuras una vez y Surco respeta tus decisiones en cada pista."
         ],
         "points": [
-          "General, Conversión, Nombres, Editor, Campos, Carátula, Atajos y Licencia.",
+          "General, Conversión, Nombres, Editor, Campos, Carátula y Atajos.",
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
           "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto."
         ],
         "shot": "ajustes-es.png",
         "shotCaption": "El panel de Ajustes."
-      },
-      {
-        "id": "pro",
-        "title": "Gratis y Surco Pro",
-        "body": [
-          "Puedes convertir y etiquetar tus discos gratis, con el etiquetado de Discogs, el match de álbum completo y el análisis de espectro incluidos. Surco Pro añade las conversiones ilimitadas, convertir toda la caja de una y la exportación a rekordbox y Traktor — un único pago, tuyo para siempre.",
-          "Mientras Surco está en beta, todo está desbloqueado gratis. Sin cuenta y sin suscripción."
-        ],
-        "points": [
-          "Gratis: conversión, Discogs, match de álbum y análisis de calidad.",
-          "Pro: conversiones ilimitadas, convertir todas y export a rekordbox/Traktor.",
-          "Durante la beta, Pro está desbloqueado gratis."
-        ],
-        "shot": "",
-        "shotCaption": "Gratis frente a Surco Pro."
       }
     ]
   }
