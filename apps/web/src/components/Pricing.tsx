@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { SPONSOR_URL } from '../config'
+import { DONATE_URL } from '../config'
 import Reveal from './Reveal'
 
 export default function Pricing() {
@@ -24,12 +24,12 @@ export default function Pricing() {
             {t('pricing.cta')} →
           </a>
           <a
-            href={SPONSOR_URL}
+            href={DONATE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-muted transition-colors hover:text-blue"
           >
-            {t('pricing.sponsor')}
+            {t('pricing.donate')}
           </a>
         </div>
       </Reveal>

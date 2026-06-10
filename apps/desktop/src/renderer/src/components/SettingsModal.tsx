@@ -26,10 +26,9 @@ import { NormalizeControls } from './NormalizeControls'
 import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
 
-// One-off donations land here. Swap in a Stripe Payment Link (created in the
-// dashboard, no backend needed) once it exists; target=_blank routes through the
-// window-open handler, which hands the URL to the system browser.
-export const DONATE_URL = 'https://github.com/sponsors/vigosan'
+// PayPal hosted donate button (no backend needed); target=_blank routes through
+// the window-open handler, which hands the URL to the system browser.
+export const DONATE_URL = 'https://www.paypal.com/donate/?hosted_button_id=2WXQ5XRQTPA5S'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
