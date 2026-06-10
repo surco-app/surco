@@ -356,7 +356,7 @@
           "Amber “suspect”: a sharp early cutoff — likely a re-encoded fake.",
           "You can turn off the spectrum or loudness in Settings → Editor if you don't use them."
         ],
-        "shot": "calidad.png",
+        "shot": "calidad-en.png",
         "shotCaption": "A track's spectrum and level readout."
       },
       {
@@ -371,7 +371,7 @@
           "With a token and the option on, Surco auto-matches tracks right after import.",
           "Your cover is kept if you already have one; the Discogs cover stays as an alternative."
         ],
-        "shot": "discogs.png",
+        "shot": "discogs-en.png",
         "shotCaption": "Searching a release and picking the track on Discogs."
       },
       {
@@ -387,7 +387,7 @@
           "Duplicates are allowed: two files can point to the same song if needed.",
           "In multi-track mode the spectrum and filename are hidden, since they're per-track."
         ],
-        "shot": "album.gif",
+        "shot": "album-en.png",
         "shotCaption": "Assigning each file to its song on the release and applying to all."
       },
       {
@@ -402,7 +402,7 @@
           "The / separator creates subfolders on export.",
           "Optional: trim whitespace and zero-pad track numbers (03 instead of 3)."
         ],
-        "shot": "nombres.png",
+        "shot": "nombres-en.png",
         "shotCaption": "The filename template builder in Settings."
       },
       {
@@ -417,7 +417,7 @@
           "Re-exporting to the same format keeps Traktor cue points and beatgrid.",
           "Normalization is off by default; it re-encodes the audio, so it's optional."
         ],
-        "shot": "convertir.png",
+        "shot": "convertir-en.png",
         "shotCaption": "The convert button and format choice."
       },
       {
@@ -432,7 +432,7 @@
           "Uses current metadata only: it downloads nothing from Discogs in the batch.",
           "Convert all is a Surco Pro feature."
         ],
-        "shot": "lote.gif",
+        "shot": "lote-en.png",
         "shotCaption": "Converting the whole queue at once."
       },
       {
@@ -447,7 +447,7 @@
           "Export rekordbox (.xml) and Traktor (.nml) collections.",
           "Surco warns you if a track is already in your Apple Music library."
         ],
-        "shot": "exportar.png",
+        "shot": "",
         "shotCaption": "Exporting to rekordbox or Traktor."
       },
       {
@@ -462,7 +462,7 @@
           "Space plays or pauses; the arrows move the selection.",
           "Every shortcut is reassignable in Settings."
         ],
-        "shot": "atajos.png",
+        "shot": "atajos-en.png",
         "shotCaption": "The command palette and the shortcut list."
       },
       {
@@ -477,7 +477,7 @@
           "Define recurring genres and groupings so they show up as suggestions.",
           "Choose which fields to show and which to require, and reorder them to taste."
         ],
-        "shot": "ajustes.png",
+        "shot": "ajustes-en.png",
         "shotCaption": "The Settings panel."
       },
       {
@@ -492,7 +492,7 @@
           "Pro: unlimited conversions, convert all and export to rekordbox/Traktor.",
           "During the beta, Pro is unlocked for free."
         ],
-        "shot": "pro.png",
+        "shot": "",
         "shotCaption": "Free versus Surco Pro."
       }
     ]

@@ -356,7 +356,7 @@
           "Ámbar «sospechoso»: corte brusco antes de tiempo — probablemente un fake recomprimido.",
           "Puedes desactivar el espectro o el loudness en Ajustes → Editor si no los usas."
         ],
-        "shot": "calidad.png",
+        "shot": "calidad-es.png",
         "shotCaption": "El espectro y la lectura de niveles de una pista."
       },
       {
@@ -371,7 +371,7 @@
           "Con un token y la opción activada, Surco auto-empareja las pistas nada más importarlas.",
           "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa."
         ],
-        "shot": "discogs.png",
+        "shot": "discogs-es.png",
         "shotCaption": "Buscar un disco y elegir la pista en Discogs."
       },
       {
@@ -387,7 +387,7 @@
           "Se permiten duplicados: dos archivos pueden apuntar a la misma canción si hace falta.",
           "En modo varias pistas se ocultan el espectro y el nombre de archivo, porque son cosa de cada pista."
         ],
-        "shot": "album.gif",
+        "shot": "album-es.png",
         "shotCaption": "Asignar cada archivo a su canción del disco y aplicar a todas."
       },
       {
@@ -402,7 +402,7 @@
           "El separador / crea subcarpetas al exportar.",
           "Opcional: recortar espacios y rellenar con cero los números de pista (03 en vez de 3)."
         ],
-        "shot": "nombres.png",
+        "shot": "nombres-es.png",
         "shotCaption": "El constructor de plantillas de nombre en Ajustes."
       },
       {
@@ -417,7 +417,7 @@
           "Reexportar al mismo formato conserva los cue points y el beatgrid de Traktor.",
           "La normalización está desactivada por defecto; recodifica el audio, así que es opcional."
         ],
-        "shot": "convertir.png",
+        "shot": "convertir-es.png",
         "shotCaption": "El botón de conversión y la elección de formato."
       },
       {
@@ -432,7 +432,7 @@
           "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
           "Convertir todas es una función de Surco Pro."
         ],
-        "shot": "lote.gif",
+        "shot": "lote-es.png",
         "shotCaption": "Convertir toda la cola de una vez."
       },
       {
@@ -447,7 +447,7 @@
           "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
           "Surco te avisa si una pista ya está en tu biblioteca de Apple Music."
         ],
-        "shot": "exportar.png",
+        "shot": "",
         "shotCaption": "Exportar a rekordbox o Traktor."
       },
       {
@@ -462,7 +462,7 @@
           "Espacio reproduce o pausa; las flechas mueven la selección.",
           "Todos los atajos son reasignables en Ajustes."
         ],
-        "shot": "atajos.png",
+        "shot": "atajos-es.png",
         "shotCaption": "La paleta de comandos y la lista de atajos."
       },
       {
@@ -477,7 +477,7 @@
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
           "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto."
         ],
-        "shot": "ajustes.png",
+        "shot": "ajustes-es.png",
         "shotCaption": "El panel de Ajustes."
       },
       {
@@ -492,7 +492,7 @@
           "Pro: conversiones ilimitadas, convertir todas y export a rekordbox/Traktor.",
           "Durante la beta, Pro está desbloqueado gratis."
         ],
-        "shot": "pro.png",
+        "shot": "",
         "shotCaption": "Gratis frente a Surco Pro."
       }
     ]
