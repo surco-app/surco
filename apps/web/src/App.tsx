@@ -105,6 +105,9 @@ export default function App() {
               'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)'
           }}
         />
+        <WaveBackdrop className="top-[18%]" />
+        <WaveBackdrop className="top-[47%]" />
+        <WaveBackdrop className="top-[81%]" />
         <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
           <div>
             <Reveal>
@@ -273,11 +276,9 @@ export default function App() {
           </Reveal>
         </section>
 
-        <div className="relative">
-          <WaveBackdrop />
-          <Pricing />
-          <InstallSection />
-        </div>
+        <Pricing />
+
+        <InstallSection />
 
         <section className="pb-24">
           <Reveal>
