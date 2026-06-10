@@ -51,6 +51,15 @@ describe('commonValue', () => {
     expect(commonValue(tracks, 'genre')).toBe('')
   })
 
+  it('treats an optional field no track carries as a shared empty too', () => {
+    // The later fields (composer, originalYear, compilation) are optional on
+    // TrackMetadata, so unset reads as undefined — which must still mean "shared
+    // blank", not "mixed", or the bulk panel would flag untouched files as mixed.
+    const tracks = [track({}), track({})]
+    expect(commonValue(tracks, 'composer')).toBe('')
+    expect(commonValue([track({}), track({ composer: 'ATB' })], 'composer')).toBeUndefined()
+  })
+
   it('returns the single track’s value when only one is selected', () => {
     expect(commonValue([track({ year: '2000' })], 'year')).toBe('2000')
   })

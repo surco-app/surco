@@ -486,6 +486,26 @@ export function Editor({
                   {isMulti && selectedTracks
                     ? BULK_FIELDS.map((key) => {
                         const shared = commonValue(selectedTracks, key)
+                        // Same checkbox as the single view; a mixed selection
+                        // (shared undefined) shows unticked, and ticking it
+                        // stamps '1' onto every selected track.
+                        if (key === 'compilation')
+                          return (
+                            <label key={key} className="flex items-center gap-2 self-end pb-2">
+                              <input
+                                type="checkbox"
+                                data-testid="field-compilation"
+                                checked={shared === '1'}
+                                onChange={(e) =>
+                                  onChangeAllMeta?.({ compilation: e.target.checked ? '1' : '' })
+                                }
+                                className="h-4 w-4 accent-[var(--color-accent)]"
+                              />
+                              <span className="text-xs font-medium text-fg-dim">
+                                {tr(`fields.${key}`)}
+                              </span>
+                            </label>
+                          )
                         return (
                           <Field
                             key={key}

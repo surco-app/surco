@@ -12,6 +12,9 @@ export const BULK_FIELDS: (keyof TrackMetadata)[] = [
   'year',
   'genre',
   'grouping',
+  'composer',
+  'originalYear',
+  'compilation',
   'publisher',
   'catalogNumber',
   'discNumber',
@@ -20,8 +23,10 @@ export const BULK_FIELDS: (keyof TrackMetadata)[] = [
 // The value every selected track shares for a field, or undefined when they disagree.
 // The bulk panel shows the shared value in the input and a "multiple values" hint when
 // it is undefined, so an edit only overwrites the field the user actually touches.
+// Optional fields read undefined when unset — folded to '' so a field no track
+// carries shows as a shared blank, not as mixed.
 export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): string | undefined {
   if (tracks.length === 0) return undefined
-  const first = tracks[0].meta[key]
-  return tracks.every((t) => t.meta[key] === first) ? first : undefined
+  const first = tracks[0].meta[key] ?? ''
+  return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined
 }

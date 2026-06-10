@@ -640,6 +640,19 @@ describe('Editor multi-select', () => {
     ])
   })
 
+  // Composer, original year and the compilation flag are album-level facts, so
+  // they belong in the shared form: marking a VA album as a compilation track by
+  // track is exactly the chore multi-select exists to avoid.
+  it('offers composer, original year and the compilation flag across the selection', () => {
+    const { onChangeAllMeta } = renderMulti()
+    expect(screen.getByTestId('field-composer')).toBeInTheDocument()
+    expect(screen.getByTestId('field-originalYear')).toBeInTheDocument()
+    const box = screen.getByTestId('field-compilation')
+    expect(box).toHaveProperty('checked', false)
+    fireEvent.click(box)
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ compilation: '1' })
+  })
+
   // Clearing over a selection goes through the same shared-form channel as any
   // multi edit, so every selected track is emptied, not just the primary one.
   it('empties the metadata of every selected track in one click', () => {
