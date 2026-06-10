@@ -426,6 +426,43 @@ describe('App header convert button', () => {
     expect(summary).toHaveAttribute('role', 'status')
     expect(summary).toHaveTextContent('2 converted')
   })
+
+  // Overwrite mode rewrites the sources in place — and irreversibly replaces lossless
+  // masters when the target is lossy. The editor shows a per-track warning, but a batch
+  // click touches N originals at once, so it must ask once up front before any write.
+  it('asks for confirmation before a batch convert that overwrites originals', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.wav', inPlace: true })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ overwriteOriginal: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('convert-selected'))
+    expect(processTrack).not.toHaveBeenCalled()
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+  })
+
+  // Outside overwrite mode a conversion writes new files next to the originals, so the
+  // batch keeps its one-click flow — the prompt exists only where data is at risk.
+  it('converts without a prompt when overwrite mode is off', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('convert-selected'))
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+  })
 })
 
 describe('App keyboard shortcuts', () => {

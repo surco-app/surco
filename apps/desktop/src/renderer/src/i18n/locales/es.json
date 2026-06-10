@@ -466,6 +466,10 @@
     "trashConfirm": "Mover a la papelera",
     "trashConfirmWin": "Mover a la papelera de reciclaje",
     "deleteOriginalMessage": "Esto mueve el original «{{name}}» a la papelera. El archivo convertido se mantiene. Puedes restaurar el original desde la papelera.",
-    "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí."
+    "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí.",
+    "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
+    "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
+    "convertInPlaceMessage_other": "Sobrescribir el original está activado: esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
+    "convertInPlaceConfirm": "Sobrescribir y convertir"
   }
 }

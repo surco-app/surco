@@ -683,6 +683,28 @@ export default function App(): React.JSX.Element {
     })
   }
 
+  // Overwrite mode rewrites each source in place (the original is unlinked, not
+  // trashed), so a batch run asks once before touching N files. The editor carries
+  // the same warning per track; outside overwrite mode the batch stays one-click
+  // because conversion only writes new files.
+  function askConvertAll(
+    targets: TrackItem[],
+    format?: OutputFormat,
+    normalize?: NormalizeConfig,
+  ): void {
+    if (!settings?.overwriteOriginal) {
+      void processAll(targets, format, normalize)
+      return
+    }
+    askConfirm({
+      title: tr('confirm.convertInPlaceTitle'),
+      message: tr('confirm.convertInPlaceMessage', { count: eligibleForBatch(targets).length }),
+      confirmLabel: tr('confirm.convertInPlaceConfirm'),
+      destructive: true,
+      onConfirm: () => void processAll(targets, format, normalize),
+    })
+  }
+
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
     if (!audio) return
@@ -962,7 +984,7 @@ export default function App(): React.JSX.Element {
       hint: hintFor('process-all'),
       enabled: canProcessAll,
       run: () =>
-        processAll(
+        askConvertAll(
           tracks,
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
@@ -1168,7 +1190,7 @@ export default function App(): React.JSX.Element {
           onCancelAutoMatch={() => {
             matchCancel.current = true
           }}
-          onConvertSelected={() => processAll(selectedTracks)}
+          onConvertSelected={() => askConvertAll(selectedTracks)}
           onCancelConvert={cancelBatch}
           onExport={() => setActiveModal({ type: 'export' })}
           onClearAll={askClearAll}
@@ -1362,7 +1384,7 @@ export default function App(): React.JSX.Element {
                 for (const p of patches) updateTrack(p.id, p.patch)
               }}
               onProcessAll={(format) =>
-                processAll(selectedTracks, format, editorNormalizeRef.current ?? undefined)
+                askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined)
               }
               onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
               onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}

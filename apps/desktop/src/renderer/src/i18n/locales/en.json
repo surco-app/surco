@@ -466,6 +466,10 @@
     "trashConfirm": "Move to Trash",
     "trashConfirmWin": "Move to Recycle Bin",
     "deleteOriginalMessage": "This moves the original “{{name}}” to the Trash. Your converted file stays in place. You can restore the original from the Trash.",
-    "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there."
+    "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there.",
+    "convertInPlaceTitle": "Overwrite the original files?",
+    "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",
+    "convertInPlaceMessage_other": "Overwrite original is on: this rewrites {{count}} source files in place. The originals are replaced and cannot be recovered.",
+    "convertInPlaceConfirm": "Overwrite and convert"
   }
 }
