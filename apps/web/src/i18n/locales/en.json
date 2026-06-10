@@ -387,8 +387,8 @@
           "It probes rows as they scroll into view, and your manual searches always go first, so it never drains the request limit.",
           "Filter the list by “Auto-matched” to review what it did, or run it on demand with “Auto-match all tracks”."
         ],
-        "shot": "",
-        "shotCaption": ""
+        "shot": "automatch-en.png",
+        "shotCaption": "The best match, flagged “Suggested” in the Discogs search."
       },
       {
         "id": "album",

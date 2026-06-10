@@ -387,8 +387,8 @@
           "Prueba las filas según entran en pantalla y tu búsqueda manual siempre va por delante, para no agotar el límite de peticiones.",
           "Filtra la lista por «Auto-emparejadas» para revisar lo que ha hecho, o lánzalo a demanda con «Auto-emparejar todas las pistas»."
         ],
-        "shot": "",
-        "shotCaption": ""
+        "shot": "automatch-es.png",
+        "shotCaption": "La mejor coincidencia, marcada como «Sugerida» en la búsqueda de Discogs."
       },
       {
         "id": "album",
