@@ -453,6 +453,12 @@
     "summary": "{{fields}} fields in {{tracks}} tracks",
     "apply": "Replace in {{count}}"
   },
+  "donateNudge": {
+    "title": "Your Surco so far",
+    "pitch": "Surco is free and has no ads or tracking. If it keeps saving you time, a small donation helps keep it that way.",
+    "dontShowAgain": "Don't show this again",
+    "later": "Maybe later"
+  },
   "confirm": {
     "fillTitle": "Fill tags from file names?",
     "fillMessage_one": "This reads the title, artist and track number from the file’s name and overwrites those fields in 1 track. Other tags are left untouched.",

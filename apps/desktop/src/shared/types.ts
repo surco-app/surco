@@ -73,6 +73,10 @@ export interface Settings {
   shortcutOverrides: Record<string, Chord>
   hasSeenOnboarding: boolean
   conversionCount: number
+  // The occasional stats + donate modal: "don't show again" and the last time it
+  // appeared (ISO date, '' = never), which lib/donateNudge gates on.
+  donateNudgeDismissed: boolean
+  donateNudgeLastShown: string
 }
 
 export interface TrackMetadata {

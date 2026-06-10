@@ -453,6 +453,12 @@
     "summary": "{{fields}} campos en {{tracks}} pistas",
     "apply": "Reemplazar en {{count}}"
   },
+  "donateNudge": {
+    "title": "Tu Surco hasta ahora",
+    "pitch": "Surco es gratis y no tiene anuncios ni rastreo. Si te sigue ahorrando tiempo, una pequeña donación ayuda a que siga así.",
+    "dontShowAgain": "No volver a mostrar",
+    "later": "Quizá más tarde"
+  },
   "confirm": {
     "fillTitle": "¿Rellenar tags desde el nombre?",
     "fillMessage_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en 1 pista. El resto de tags no se toca.",

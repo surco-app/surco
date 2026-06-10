@@ -33,6 +33,8 @@ const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
+  donateNudgeDismissed: false,
+  donateNudgeLastShown: '',
 }
 
 // Settings that never leave this machine, even when the user points the settings

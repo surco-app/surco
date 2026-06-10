@@ -39,6 +39,8 @@ const settings: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
+  donateNudgeDismissed: false,
+  donateNudgeLastShown: '',
 }
 
 function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {

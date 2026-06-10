@@ -23,13 +23,12 @@ import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { formatShortcut } from '../lib/shortcuts'
 import { formatTimeSaved, MANUAL_SECONDS_PER_CONVERSION, timeSavedSeconds } from '../lib/stats'
+import { DONATE_URL } from '../lib/donate'
 import { NormalizeControls } from './NormalizeControls'
 import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
 
-// PayPal hosted donate button (no backend needed); target=_blank routes through
-// the window-open handler, which hands the URL to the system browser.
-export const DONATE_URL = 'https://www.paypal.com/donate/?hosted_button_id=2WXQ5XRQTPA5S'
+export { DONATE_URL }
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']

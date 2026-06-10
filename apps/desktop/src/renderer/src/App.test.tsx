@@ -46,6 +46,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     shortcutOverrides: {},
     hasSeenOnboarding: true,
     conversionCount: 0,
+    donateNudgeDismissed: false,
+    donateNudgeLastShown: '',
     ...over,
   }
 }
@@ -579,5 +581,56 @@ describe('App derived list stability', () => {
     fireEvent.click(screen.getByTestId('open-find-replace'))
     await screen.findByTestId('find-replace-find')
     expect(sortRuns.count).toBe(before)
+  })
+})
+
+describe('App donate nudge', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // Settles pending settings promises before the test ends, so no setSettings
+  // lands after restoreAllMocks has reset the matchMedia stub.
+  const flush = () =>
+    act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+  function eligible(over: Partial<Settings> = {}): Settings {
+    return settings({ conversionCount: 50, ...over })
+  }
+
+  // The occasional "what Surco saved you" summary: when the random draw lands on an
+  // eligible profile, it appears on launch — and the showing is stamped immediately,
+  // so the cooldown holds even if the app quits right after.
+  it('shows the stats summary when the draw lands and stamps the showing', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    const saveSettings = vi.fn().mockResolvedValue(eligible())
+    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()), saveSettings })
+    await renderApp()
+    expect(await screen.findByTestId('donate-nudge-count')).toHaveTextContent('50')
+    expect(saveSettings).toHaveBeenCalledWith({ donateNudgeLastShown: expect.any(String) })
+    await flush()
+  })
+
+  // "No volver a mostrar" is a promise: ticking it must persist, not just close.
+  it('persists the permanent dismissal from the checkbox', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    const saveSettings = vi.fn().mockResolvedValue(eligible())
+    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()), saveSettings })
+    await renderApp()
+    await screen.findByTestId('donate-nudge-dismiss')
+    fireEvent.click(screen.getByTestId('donate-nudge-dismiss'))
+    fireEvent.click(screen.getByTestId('donate-nudge-close'))
+    expect(saveSettings).toHaveBeenCalledWith({ donateNudgeDismissed: true })
+    expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
+    await flush()
+  })
+
+  // The other side of "random, every now and then": most launches show nothing.
+  it('stays away when the draw misses', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9)
+    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()) })
+    await renderApp()
+    await flush()
+    expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
   })
 })

@@ -29,6 +29,7 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
+import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
@@ -59,6 +60,7 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { createFocusGate } from './lib/focusGate'
 import { moveIndex } from './lib/keymap'
+import { shouldShowDonateNudge } from './lib/donateNudge'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -164,6 +166,7 @@ interface ConfirmModal {
 type ActiveModal =
   | { type: 'settings'; tab: SettingsTab }
   | { type: 'onboarding' }
+  | { type: 'donateNudge' }
   | { type: 'help' }
   | { type: 'findReplace' }
   | { type: 'rename' }
@@ -266,6 +269,14 @@ export default function App(): React.JSX.Element {
     window.api.getSettings().then((s) => {
       setSettings(s)
       if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
+      else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
+        setActiveModal({ type: 'donateNudge' })
+        // Stamp the showing immediately, not on close, so a quick quit still
+        // counts toward the cooldown and the nudge can never appear twice in a
+        // row. Straight to the bridge: only the next launch reads this value,
+        // so the renderer settings state doesn't need the refresh.
+        void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
+      }
     })
   }, [])
 
@@ -1462,6 +1473,16 @@ export default function App(): React.JSX.Element {
 
       {activeModal?.type === 'onboarding' && settings && (
         <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
+      )}
+
+      {activeModal?.type === 'donateNudge' && (
+        <DonateNudgeModal
+          conversionCount={settings?.conversionCount ?? 0}
+          onClose={(dismissForever) => {
+            if (dismissForever) saveSettings({ donateNudgeDismissed: true })
+            setActiveModal(null)
+          }}
+        />
       )}
 
       {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
