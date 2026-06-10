@@ -117,8 +117,10 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left backdrop-blur-sm transition-colors ${
-          selected ? 'bg-[var(--color-accent-soft)]/85' : 'hover:bg-[var(--color-panel-2)]/85'
+        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] backdrop-blur-sm transition-colors ${
+          selected
+            ? 'bg-[var(--color-accent-soft)]/85'
+            : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
         } ${
           primary
             ? 'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
