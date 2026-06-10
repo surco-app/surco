@@ -20,18 +20,24 @@ describe('qualityVerdict', () => {
     expect(qualityVerdict(19961, 44100)).toBe('good')
   })
 
-  it('flags a brick-walled cutoff (MP3 hidden in a WAV) as suspect', () => {
-    expect(qualityVerdict(15500, 44100)).toBe('suspect')
-    expect(qualityVerdict(17000, 44100)).toBe('suspect')
+  it('grades a moderate shortfall (high-bitrate lossy territory) as warn', () => {
+    expect(qualityVerdict(17000, 44100)).toBe('warn')
+    expect(qualityVerdict(18000, 44100)).toBe('warn')
   })
 
-  it('uses the file Nyquist, so the bar scales with sample rate', () => {
+  it('grades a deep brick-wall (low-bitrate MP3 hidden in a WAV) as bad', () => {
+    expect(qualityVerdict(15500, 44100)).toBe('bad')
+    expect(qualityVerdict(16000, 44100)).toBe('bad')
+  })
+
+  it('uses the file Nyquist, so the bands scale with sample rate', () => {
     expect(qualityVerdict(21000, 48000)).toBe('good')
-    expect(qualityVerdict(19000, 48000)).toBe('suspect')
+    expect(qualityVerdict(19000, 48000)).toBe('warn')
+    expect(qualityVerdict(17000, 48000)).toBe('bad')
   })
 
-  it('treats an unknown sample rate as suspect rather than dividing by zero', () => {
-    expect(qualityVerdict(20000, 0)).toBe('suspect')
+  it('treats an unknown sample rate as warn rather than dividing by zero', () => {
+    expect(qualityVerdict(20000, 0)).toBe('warn')
   })
 })
 

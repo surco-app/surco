@@ -303,9 +303,14 @@ describe('TrackList quality badge', () => {
 
   // The badge is the whole point of batch triage: a re-encoded MP3 (cutoff far below
   // Nyquist) must be flaggable in the list without opening each track.
-  it('flags a suspect track in the row', () => {
+  it('flags a deeply brick-walled track in red', () => {
     renderList([track({ id: 'a', spectrum: spectrum(16000) })])
-    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'suspect')
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'bad')
+  })
+
+  it('flags a moderate shortfall in amber', () => {
+    renderList([track({ id: 'a', spectrum: spectrum(18000) })])
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'warn')
   })
 
   it('marks a clean track as good', () => {

@@ -6,6 +6,7 @@ import type { OutputFormat } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
+import type { Verdict } from '../lib/quality'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
 import { Tooltip } from './Tooltip'
@@ -35,6 +36,18 @@ const statusColor: Record<TrackStatus, string> = {
   processing: 'bg-warn animate-pulse',
   done: 'bg-good',
   error: 'bg-danger',
+}
+
+const qualityDot: Record<Verdict, string> = {
+  good: 'bg-good ring-good/20',
+  warn: 'bg-warn ring-warn/20',
+  bad: 'bg-danger ring-danger/20',
+}
+
+const qualityLabel: Record<Verdict, string> = {
+  good: 'editor.qualityGood',
+  warn: 'editor.qualitySuspect',
+  bad: 'editor.qualityBad',
 }
 
 interface RowProps {
@@ -181,15 +194,9 @@ const TrackRow = memo(function TrackRow({
                 <span
                   data-testid="track-quality"
                   data-quality={quality}
-                  className={`group/dot relative h-2 w-2 shrink-0 rounded-full ring-2 ${
-                    quality === 'suspect' ? 'bg-warn ring-warn/20' : 'bg-good ring-good/20'
-                  }`}
+                  className={`group/dot relative h-2 w-2 shrink-0 rounded-full ring-2 ${qualityDot[quality]}`}
                 >
-                  <Tooltip
-                    label={tr(quality === 'good' ? 'editor.qualityGood' : 'editor.qualitySuspect')}
-                    align="end"
-                    scope="dot"
-                  />
+                  <Tooltip label={tr(qualityLabel[quality])} align="end" scope="dot" />
                 </span>
               )}
               {sourceFormat && (

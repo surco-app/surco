@@ -36,6 +36,13 @@ export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): Tra
   if (filter === 'all') return tracks
   if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
   if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
+  // 'suspect' is the triage bucket for everything flagged, so it spans both the
+  // amber (warn) and red (bad) verdicts — one chip isolates all the dubious rips.
+  if (filter === 'suspect')
+    return tracks.filter((t) => {
+      const q = trackQuality(t)
+      return q === 'warn' || q === 'bad'
+    })
   return tracks.filter((t) => trackQuality(t) === filter)
 }
 
@@ -89,7 +96,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   let automatched = 0
   for (const t of tracks) {
     const q = trackQuality(t)
-    if (q === 'suspect') suspect += 1
+    if (q === 'warn' || q === 'bad') suspect += 1
     else if (q === 'good') good += 1
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1

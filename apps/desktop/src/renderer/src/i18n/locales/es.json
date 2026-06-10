@@ -178,6 +178,7 @@
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Sospechoso",
+    "qualityBad": "Mala calidad",
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
     "qualityCaption": "Llega a ~{{cutoff}} de {{nyquist}} (Nyquist). Un corte brusco por debajo delata un MP3 reconvertido a WAV.",

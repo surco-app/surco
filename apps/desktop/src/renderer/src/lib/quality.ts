@@ -1,8 +1,15 @@
-export type Verdict = 'good' | 'suspect'
+// Three-step lossless verdict (green/amber/red), banded on how far the spectral
+// cutoff falls below Nyquist: ≥85% is genuine lossless, 75–85% is the high-bitrate
+// lossy ambiguity zone (warn), and below 75% is the classic low-bitrate MP3
+// (~16 kHz at 44.1 kHz) re-encoded as WAV. An unknown sample rate can't be banded,
+// so it lands in the inconclusive middle rather than dividing by zero.
+export type Verdict = 'good' | 'warn' | 'bad'
 
 export function qualityVerdict(cutoffHz: number, sampleRateHz: number): Verdict {
-  if (sampleRateHz <= 0) return 'suspect'
-  return cutoffHz >= (sampleRateHz / 2) * 0.85 ? 'good' : 'suspect'
+  if (sampleRateHz <= 0) return 'warn'
+  const ratio = cutoffHz / (sampleRateHz / 2)
+  if (ratio >= 0.85) return 'good'
+  return ratio >= 0.75 ? 'warn' : 'bad'
 }
 
 export function formatKHz(hz: number): string {

@@ -178,6 +178,7 @@
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
     "qualitySuspect": "Suspicious",
+    "qualityBad": "Bad quality",
     "analyzing": "Analyzing spectrum…",
     "sectionForm": "Metadata",
     "qualityCaption": "Reaches ~{{cutoff}} of {{nyquist}} (Nyquist). A sharp cutoff below it reveals an MP3 re-encoded as WAV.",

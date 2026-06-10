@@ -34,7 +34,7 @@ import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
-import { formatKHz, isLowResCover, qualityVerdict } from '../lib/quality'
+import { formatKHz, isLowResCover, qualityVerdict, type Verdict } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -54,6 +54,12 @@ import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+
+const qualityBadge: Record<Verdict, { className: string; label: string }> = {
+  good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
+  warn: { className: 'bg-warn/15 text-warn', label: 'editor.qualitySuspect' },
+  bad: { className: 'bg-danger/15 text-danger', label: 'editor.qualityBad' },
+}
 
 interface Props {
   item: TrackItem
@@ -617,22 +623,20 @@ export function Editor({
                 onToggle={() => setSpectrumOpen((v) => !v)}
                 right={
                   spectrum &&
-                  spectrum.cutoffHz !== null &&
-                  (qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz) === 'good' ? (
+                  spectrum.cutoffHz !== null && (
                     <span
                       data-testid="quality-badge"
-                      className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)]
+                          .className
+                      }`}
                     >
-                      {tr('editor.qualityGood')}
+                      {tr(
+                        qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)]
+                          .label,
+                      )}
                     </span>
-                  ) : (
-                    <span
-                      data-testid="quality-badge"
-                      className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
-                    >
-                      {tr('editor.qualitySuspect')}
-                    </span>
-                  ))
+                  )
                 }
               />
               {spectrumOpen && (

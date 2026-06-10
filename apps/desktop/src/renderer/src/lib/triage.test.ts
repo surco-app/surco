@@ -31,8 +31,12 @@ describe('trackQuality', () => {
     expect(trackQuality(withSpectrum({ cutoffHz: 21000, sampleRateHz: 44100 }))).toBe('good')
   })
 
-  it('is suspect when the cutoff falls short of Nyquist (a re-encoded MP3)', () => {
-    expect(trackQuality(withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100 }))).toBe('suspect')
+  it('is warn when the cutoff falls moderately short of Nyquist', () => {
+    expect(trackQuality(withSpectrum({ cutoffHz: 18000, sampleRateHz: 44100 }))).toBe('warn')
+  })
+
+  it('is bad when the cutoff brick-walls deep below Nyquist (a re-encoded MP3)', () => {
+    expect(trackQuality(withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100 }))).toBe('bad')
   })
 })
 
@@ -63,14 +67,20 @@ describe('filterByQuality / qualityCounts', () => {
       spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
     }) as TrackItem
   // 'good' is the only track already converted; the rest are still pending conversion.
-  const tracks = [t('good', 21000, 'done'), t('bad', 16000), t('fresh'), t('inconclusive', null)]
+  const tracks = [
+    t('good', 21000, 'done'),
+    t('bad', 16000),
+    t('borderline', 18000),
+    t('fresh'),
+    t('inconclusive', null),
+  ]
 
   it('returns every track when the filter is "all"', () => {
-    expect(filterByQuality(tracks, 'all')).toHaveLength(4)
+    expect(filterByQuality(tracks, 'all')).toHaveLength(5)
   })
 
-  it('keeps only the suspect rips so the fakes are isolated', () => {
-    expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad'])
+  it('keeps both warn and bad rips under the suspect filter so the fakes are isolated', () => {
+    expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad', 'borderline'])
   })
 
   it('keeps only the genuine-lossless rips when filtering for good', () => {
@@ -87,17 +97,18 @@ describe('filterByQuality / qualityCounts', () => {
   it('keeps only the tracks not yet converted regardless of quality verdict', () => {
     expect(filterByQuality(tracks, 'unconverted').map((x) => x.id)).toEqual([
       'bad',
+      'borderline',
       'fresh',
       'inconclusive',
     ])
   })
 
-  it('counts suspect, good, unanalyzed and unconverted tracks for the filter badges', () => {
+  it('counts suspect (warn + bad), good, unanalyzed and unconverted tracks for the filter badges', () => {
     expect(qualityCounts(tracks)).toEqual({
-      suspect: 1,
+      suspect: 2,
       good: 1,
       unanalyzed: 2,
-      unconverted: 3,
+      unconverted: 4,
       automatched: 0,
     })
   })
