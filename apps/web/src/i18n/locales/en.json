@@ -463,7 +463,8 @@
         "points": [
           "General, Conversion, Filenames, Editor, Fields, Artwork and Shortcuts.",
           "Define recurring genres and groupings so they show up as suggestions.",
-          "Choose which fields to show and which to require, and reorder them to taste."
+          "Choose which fields to show and which to require, and reorder them to taste.",
+          "Point the settings folder at iCloud Drive or Dropbox to share your preferences across Macs; the Discogs token never leaves your machine."
         ],
         "shot": "ajustes-en.png",
         "shotCaption": "The Settings panel."

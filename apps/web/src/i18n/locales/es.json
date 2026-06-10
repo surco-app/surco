@@ -463,7 +463,8 @@
         "points": [
           "General, Conversión, Nombres, Editor, Campos, Carátula y Atajos.",
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
-          "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto."
+          "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto.",
+          "Apunta la carpeta de configuración a iCloud Drive o Dropbox y comparte tus preferencias entre Macs; el token de Discogs nunca sale de tu máquina."
         ],
         "shot": "ajustes-es.png",
         "shotCaption": "El panel de Ajustes."
