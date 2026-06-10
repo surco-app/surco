@@ -62,6 +62,30 @@ describe('renderOutputName', () => {
     expect(renderOutputName('{artist} - {title}', meta({}))).toBe('')
   })
 
+  it('fills a parenthesised token like ({year}) when the field has a value', () => {
+    const r = renderOutputName(
+      '{artist} - {title} ({year})',
+      meta({ artist: 'Chumi Dj', title: 'Open Your Eyes', year: '1999' }),
+    )
+    expect(r).toBe('Chumi Dj - Open Your Eyes (1999)')
+  })
+
+  it('drops the empty "()" a blank year leaves behind instead of shipping it in the name', () => {
+    const r = renderOutputName(
+      '{artist} - {title} ({year})',
+      meta({ artist: 'Chumi Dj', title: 'Open Your Eyes' }),
+    )
+    expect(r).toBe('Chumi Dj - Open Your Eyes')
+  })
+
+  it('drops empty "[]" the same way so bracket styles behave alike', () => {
+    const r = renderOutputName(
+      '{artist} - {title} [{key}]',
+      meta({ artist: 'Chumi Dj', title: 'Open Your Eyes' }),
+    )
+    expect(r).toBe('Chumi Dj - Open Your Eyes')
+  })
+
   it('keeps a "/" in the template as a subfolder boundary', () => {
     const r = renderOutputName(
       '{albumArtist}/{album}/{trackNumber} {title}',

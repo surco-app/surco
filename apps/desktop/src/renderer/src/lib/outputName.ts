@@ -14,6 +14,9 @@ export function renderOutputName(format: string, meta: TrackMetadata): string {
     .split('/')
     .map((segment) =>
       segment
+        // A blank field inside "({year})"-style wrapping leaves empty "()" / "[]" behind;
+        // drop the pair so the name doesn't ship with stray brackets.
+        .replace(/\(\s*\)|\[\s*\]/g, '')
         .replace(/\s*-\s*-\s*/g, ' - ')
         .replace(/\s+/g, ' ')
         .replace(/^[\s\-–·_]+|[\s\-–·_]+$/g, '')
