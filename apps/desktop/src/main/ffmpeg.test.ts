@@ -107,6 +107,22 @@ describe('convertArgs', () => {
     expect(args).toContain('TPE4=Airscape')
   })
 
+  it('writes the Vorbis comment names into a FLAC target, where the ID3 frame ids would be opaque', () => {
+    // verified against ffmpeg: the FLAC muxer has no ID3 mapping and writes the
+    // keys verbatim, so TKEY/TBPM/TPE4 would land as comments Traktor and Mixed
+    // In Key never look for — they read INITIALKEY/BPM/REMIXER in FLAC
+    const args = convertArgs('/in.wav', '/o.flac', 'flac', {
+      ...meta,
+      bpm: '128',
+      key: '8A',
+      remixArtist: 'Airscape',
+    })
+    expect(args).toContain('INITIALKEY=8A')
+    expect(args).toContain('BPM=128')
+    expect(args).toContain('REMIXER=Airscape')
+    expect(args.some((a) => a.startsWith('TKEY') || a.startsWith('TBPM') || a.startsWith('TPE4'))).toBe(false)
+  })
+
   it('omits an advanced tag when it is blank', () => {
     const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', meta)
     expect(args.some((a) => a.startsWith('TBPM'))).toBe(false)

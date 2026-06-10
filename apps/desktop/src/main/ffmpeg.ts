@@ -263,7 +263,7 @@ function pcmCodec(probe: ProbeResult, endian: 'be' | 'le'): string {
   return `pcm_s16${endian}`
 }
 
-function metadataArgs(meta: TrackMetadata): string[] {
+function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   const pairs: [string, string][] = [
     ['title', meta.title],
     ['artist', meta.artist],
@@ -277,10 +277,12 @@ function metadataArgs(meta: TrackMetadata): string[] {
     // ffmpeg maps these to the real ID3 frames DJ software and Music read:
     // disc→TPOS, publisher→TPUB, and the raw frame ids TBPM/TKEY/TPE4; the
     // catalog number has no standard frame so it rides the de-facto TXXX one.
+    // The FLAC muxer has no ID3 mapping and writes keys verbatim, so a Vorbis
+    // target gets the comment names Traktor and Mixed In Key read instead.
     ['disc', meta.discNumber],
-    ['TBPM', meta.bpm],
-    ['TKEY', meta.key],
-    ['TPE4', meta.remixArtist],
+    [vorbis ? 'BPM' : 'TBPM', meta.bpm],
+    [vorbis ? 'INITIALKEY' : 'TKEY', meta.key],
+    [vorbis ? 'REMIXER' : 'TPE4', meta.remixArtist],
     ['publisher', meta.publisher],
     ['CATALOGNUMBER', meta.catalogNumber],
     ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
@@ -318,7 +320,7 @@ export function convertArgs(
   args.push('-c:a', codec)
   if (bitrate) args.push('-b:a', bitrate)
   args.push('-write_id3v2', '1', '-id3v2_version', '3')
-  args.push(...metadataArgs(meta))
+  args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
   const rating = Number(meta.rating)
