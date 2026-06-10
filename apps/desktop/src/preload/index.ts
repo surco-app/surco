@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
+  AppleMusicLookupCandidate,
   BpmResult,
   KeyResult,
   LoudnessResult,
@@ -37,8 +38,8 @@ const api = {
     ipcRenderer.invoke('search:query', query, provider, priority),
   getRelease: (id: number, provider?: SearchProviderId, priority?: SearchPriority) =>
     ipcRenderer.invoke('search:release', id, provider, priority),
-  lookupAppleMusic: (artist: string, title: string): Promise<boolean> =>
-    ipcRenderer.invoke('applemusic:lookup', artist, title),
+  lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]): Promise<boolean> =>
+    ipcRenderer.invoke('applemusic:lookup', candidates),
   addToAppleMusic: (job: unknown): Promise<void> => ipcRenderer.invoke('applemusic:add', job),
   processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
   exportCover: (job: unknown): Promise<string | null> => ipcRenderer.invoke('cover:export', job),

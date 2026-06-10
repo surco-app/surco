@@ -35,7 +35,13 @@ import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
 import { formatKHz, isLowResCover, qualityVerdict } from '../lib/quality'
-import { buildReleaseMeta, type ReleaseMetaPatch } from '../lib/release'
+import {
+  bestMatch,
+  buildReleaseMeta,
+  confidenceTier,
+  joinArtists,
+  type ReleaseMetaPatch,
+} from '../lib/release'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -205,10 +211,45 @@ export function Editor({
   // neighbouring key), which is exactly why it is a chip and never a write.
   const { data: detectedKey } = useKey(item.inputPath, !isMulti && visibleFields.includes('key'))
 
+  // Which tracklist entry of the open release best matches the file. Shared by the
+  // Discogs panel (which highlights it as the suggestion) and the Apple Music lookup
+  // below. Fuzzy, so the filename's case and punctuation don't have to match Discogs
+  // exactly. Memoized on its inputs so typing in unrelated fields doesn't re-run the
+  // fuzzy match over the whole tracklist on every keystroke.
+  const match = useMemo(
+    () =>
+      release
+        ? bestMatch(release.tracklist, {
+            title: item.meta.title,
+            durationSec: item.duration,
+            trackNumber: item.meta.trackNumber,
+            artist: item.meta.artist,
+          })
+        : undefined,
+    [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
+  )
+  const matchTier = match ? confidenceTier(match.confidence) : undefined
+  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
+  // unrelated release still badges whichever mix shares an incidental word.
+  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
+
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
   // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
-  // 'idle' off macOS, where the badge hides.
-  const inLibrary = useAppleMusicLookup(item.meta.artist, item.meta.title)
+  // 'idle' off macOS, where the badge hides. The Discogs-suggested track joins as a
+  // second candidate: the tags may still hold the filename's rough spelling while the
+  // library stores the song under its canonical name, which the tags alone would miss.
+  const inLibrary = useAppleMusicLookup(
+    matchedTrack && release
+      ? [
+          { artist: item.meta.artist, title: item.meta.title },
+          {
+            artist:
+              joinArtists(matchedTrack.artists) || joinArtists(release.artists) || item.meta.artist,
+            title: matchedTrack.title,
+          },
+        ]
+      : [{ artist: item.meta.artist, title: item.meta.title }],
+  )
 
   function selectTrack(track: DiscogsTrack): void {
     if (!release) return
@@ -364,7 +405,8 @@ export function Editor({
     <div className="flex h-full min-h-0">
       <DiscogsPanel
         browser={browser}
-        item={item}
+        matchedTrack={matchedTrack}
+        matchTier={matchTier}
         hasToken={hasToken}
         isMulti={isMulti}
         selectedTracks={selectedTracks}

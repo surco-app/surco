@@ -1,10 +1,10 @@
 import { ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { DiscogsTrack } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
-import { bestMatch, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import type { ReleaseMetaPatch } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
@@ -13,9 +13,13 @@ import { Tooltip } from './Tooltip'
 
 interface Props {
   browser: DiscogsBrowser
-  // The shown track, read only to fuzzy-match its title against the open release's
-  // tracklist; the panel never edits it — selectTrack (owned by the editor) does.
-  item: TrackItem
+  // The tracklist entry that best matches the shown track and its confidence tier,
+  // computed by the Editor — which also feeds the same suggestion to the Apple Music
+  // lookup — so the highlight and the library badge can never disagree. Already gated:
+  // a 'low'-tier match arrives as undefined, since one incidental shared word must not
+  // badge a random mix and invite the user to apply the wrong one.
+  matchedTrack: DiscogsTrack | undefined
+  matchTier: 'high' | 'review' | 'low' | undefined
   hasToken: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -30,7 +34,8 @@ interface Props {
 // in the useDiscogsBrowser hook passed in as `browser`; this component is the view.
 export function DiscogsPanel({
   browser,
-  item,
+  matchedTrack,
+  matchTier,
   hasToken,
   isMulti,
   selectedTracks,
@@ -57,29 +62,6 @@ export function DiscogsPanel({
     }))
     discogs.autoFit(contentDeficit(rows))
   }, [discogs.autoFit])
-
-  // Highlight the tracklist entry whose title best matches the file's, so the
-  // right mix is preselected the moment the release loads. Fuzzy, so the
-  // filename's case and punctuation don't have to match Discogs exactly. The user
-  // still picks deliberately — this only points; it never applies on its own.
-  // Memoized on its inputs so typing in unrelated fields doesn't re-run the fuzzy
-  // match over the whole tracklist on every keystroke.
-  const match = useMemo(
-    () =>
-      release
-        ? bestMatch(release.tracklist, {
-            title: item.meta.title,
-            durationSec: item.duration,
-            trackNumber: item.meta.trackNumber,
-            artist: item.meta.artist,
-          })
-        : undefined,
-    [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
-  )
-  const matchTier = match ? confidenceTier(match.confidence) : undefined
-  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
-  // unrelated release still badges whichever mix shares an incidental word.
-  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
 
   return (
     <>

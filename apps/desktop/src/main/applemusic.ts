@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import type { OutputFormat, TrackMetadata } from '../shared/types'
+import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../shared/types'
 
 const run = promisify(execFile)
 
@@ -104,33 +104,65 @@ export function isAppleMusicOnly(
   return shouldAddToAppleMusic(addToAppleMusic, platform, format) && !keepOutputCopy && !inPlace
 }
 
-// Counts library tracks matching the name exactly and the primary artist
-// loosely. We match the artist with `contains` against only the first
+// Keeps only the candidates worth asking the library about: a pair missing either
+// side can't identify a song (and an empty artist would `contains ""`-match the
+// entire library), and pairs that collapse to the same trimmed title and primary
+// artist are one question — once a Discogs match is applied the tags equal the
+// suggestion, so without the dedupe every lookup would ask Music twice. The key is
+// lowercased because AppleScript compares text case-insensitively.
+export function lookupCandidates(
+  candidates: AppleMusicLookupCandidate[],
+): AppleMusicLookupCandidate[] {
+  const seen = new Set<string>()
+  const kept: AppleMusicLookupCandidate[] = []
+  for (const candidate of candidates) {
+    const title = candidate.title.trim().toLowerCase()
+    const artist = candidate.artist.split(',')[0].trim().toLowerCase()
+    if (!title || !artist) continue
+    const key = `${title}\n${artist}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    kept.push(candidate)
+  }
+  return kept
+}
+
+// Counts library tracks matching any candidate: the name exactly and the primary
+// artist loosely. We match the artist with `contains` against only the first
 // comma-separated name because our tags join collaborators ("Alfredo Pareja,
 // Saint Etien") while Apple Music stores just the primary artist ("Alfredo
 // Pareja") — an exact `artist is` flagged every feat./multi-artist track as not
 // in the library when it was. AppleScript text comparison ignores case and
 // diacritics by default, so this is also forgiving on spelling while the exact
 // title keeps a different song that shares the primary artist from matching.
-// Naming that diverges (e.g. "(Remix)" vs "- Remix") still misses, which is why
-// the result is surfaced as a hint, not a guarantee.
-export function buildLookupScript(artist: string, title: string): string {
-  const primaryArtist = artist.split(',')[0].trim()
+// The candidates (the live tags, plus the Discogs-suggested track when one is on
+// screen) are ORed into a single query so the lookup costs one osascript spawn
+// either way. Naming that diverges from every candidate (e.g. "(Remix)" vs
+// "- Remix") still misses, which is why the result is surfaced as a hint, not a
+// guarantee.
+export function buildLookupScript(candidates: AppleMusicLookupCandidate[]): string {
+  const clauses = candidates.map(({ artist, title }) => {
+    const primaryArtist = artist.split(',')[0].trim()
+    return `(name is ${JSON.stringify(title.trim())} and artist contains ${JSON.stringify(primaryArtist)})`
+  })
   return [
     'tell application "Music"',
-    `  set theHits to (every track of library playlist 1 whose name is ${JSON.stringify(title.trim())} and artist contains ${JSON.stringify(primaryArtist)})`,
+    `  set theHits to (every track of library playlist 1 whose ${clauses.join(' or ')})`,
     '  return (count of theHits)',
     'end tell',
   ].join('\n')
 }
 
 // Returns whether the song already exists in the user's Apple Music library.
-// Mirrors addToAppleMusic in shelling out to osascript; the empty guard avoids a
-// pointless query (and a match on every untitled track) before either field is
-// filled. osascript prints the count followed by a newline.
-export async function lookupInAppleMusic(artist: string, title: string): Promise<boolean> {
-  if (!artist.trim() || !title.trim()) return false
-  const { stdout } = await run('osascript', ['-e', buildLookupScript(artist, title)])
+// Mirrors addToAppleMusic in shelling out to osascript; the empty result guard
+// avoids a pointless query (and a match on every untitled track) before any
+// candidate is filled. osascript prints the count followed by a newline.
+export async function lookupInAppleMusic(
+  candidates: AppleMusicLookupCandidate[],
+): Promise<boolean> {
+  const complete = lookupCandidates(candidates)
+  if (complete.length === 0) return false
+  const { stdout } = await run('osascript', ['-e', buildLookupScript(complete)])
   return parseInt(stdout.trim(), 10) > 0
 }
 

@@ -4,6 +4,7 @@ import {
   buildAddScript,
   buildLookupScript,
   isAppleMusicOnly,
+  lookupCandidates,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -96,7 +97,7 @@ describe('buildAddScript', () => {
 
 describe('buildLookupScript', () => {
   it('counts library tracks matching the name and the primary artist so a different song with the same title is not flagged as a duplicate', () => {
-    const script = buildLookupScript('Tom Hafman', 'ATB (Till I Come)')
+    const script = buildLookupScript([{ artist: 'Tom Hafman', title: 'ATB (Till I Come)' }])
     // Querying library playlist 1 (not a specific source) is what scopes the
     // search to the user's whole library; matching name AND artist is what keeps
     // it from flagging unrelated songs that happen to share a title.
@@ -110,15 +111,51 @@ describe('buildLookupScript', () => {
     // Apple Music keeps only the primary artist, so a tag joined as
     // "Alfredo Pareja, Saint Etien" must still match the library's
     // "Alfredo Pareja" — otherwise every collaboration reads as "not in library".
-    const script = buildLookupScript('Alfredo Pareja, Saint Etien', 'Sorrow Town (Phone On The Mix)')
+    const script = buildLookupScript([
+      { artist: 'Alfredo Pareja, Saint Etien', title: 'Sorrow Town (Phone On The Mix)' },
+    ])
     expect(script).toContain('artist contains "Alfredo Pareja"')
     expect(script).not.toContain('Saint Etien')
   })
 
   it('trims the values so trailing whitespace from the tag fields does not break the match Music performs', () => {
-    const script = buildLookupScript('  Tom Hafman  ', '  ATB (Till I Come)  ')
+    const script = buildLookupScript([{ artist: '  Tom Hafman  ', title: '  ATB (Till I Come)  ' }])
     expect(script).toContain('name is "ATB (Till I Come)"')
     expect(script).toContain('artist contains "Tom Hafman"')
+  })
+
+  it('ORs every candidate into a single query so checking the tags and the Discogs suggestion costs one osascript spawn, not two', () => {
+    const script = buildLookupScript([
+      { artist: 'Jessy', title: 'How long' },
+      { artist: 'Jessy', title: 'How Long (Extended Mix)' },
+    ])
+    expect(script).toContain(
+      '(name is "How long" and artist contains "Jessy") or (name is "How Long (Extended Mix)" and artist contains "Jessy")',
+    )
+    expect(script.match(/every track of library playlist 1/g)).toHaveLength(1)
+  })
+})
+
+describe('lookupCandidates', () => {
+  it('drops candidates missing a title or artist — an empty artist would `contains ""`-match the entire library and flag every track as a duplicate', () => {
+    expect(
+      lookupCandidates([
+        { artist: '', title: 'Strobe' },
+        { artist: 'deadmau5', title: ' ' },
+        { artist: 'deadmau5', title: 'Strobe' },
+      ]),
+    ).toEqual([{ artist: 'deadmau5', title: 'Strobe' }])
+  })
+
+  it('dedupes candidates that collapse to the same title and primary artist, so tags already applied from Discogs do not ask the library the same question twice', () => {
+    // AppleScript compares text case-insensitively and the lookup keeps only the
+    // first comma-separated artist, so these two are one query to Music.
+    expect(
+      lookupCandidates([
+        { artist: 'Jessy, Someone Else', title: 'How Long (Extended Mix) ' },
+        { artist: 'jessy', title: 'how long (extended mix)' },
+      ]),
+    ).toHaveLength(1)
   })
 })
 

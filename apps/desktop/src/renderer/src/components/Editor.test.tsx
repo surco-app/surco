@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -1316,5 +1316,42 @@ describe('Editor Apple Music library badge', () => {
       (window as unknown as { api: { lookupAppleMusic: ReturnType<typeof vi.fn> } }).api
         .lookupAppleMusic,
     ).not.toHaveBeenCalled()
+  })
+
+  // The tags may still hold the filename's rough spelling while Discogs already
+  // points at the canonical track; looking the suggestion up too catches a library
+  // copy stored under the canonical name that the raw tags alone would miss.
+  it('also looks up the Discogs-suggested track so a library copy under the canonical title is caught', async () => {
+    const lookup = vi.fn().mockResolvedValue(false)
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'darwin',
+      reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
+      lookupAppleMusic: lookup,
+      searchDiscogs: vi.fn().mockResolvedValue([{ id: 2, title: 'The Artist - Some Album' }]),
+      getRelease: vi.fn().mockResolvedValue({
+        id: 2,
+        title: 'Some Album',
+        artists: [{ name: 'The Artist' }],
+        tracklist: [
+          { position: 'A1', title: 'Track One' },
+          { position: 'A2', title: 'Track Two (Remix)' },
+        ],
+      }),
+    }
+    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'The Artist' } })
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    // The auto-probe opens the matching release on its own; once its tracklist is
+    // on screen the lookup must re-run with the suggestion as a second candidate.
+    await screen.findAllByTestId('discogs-track')
+    await waitFor(
+      () =>
+        expect(lookup).toHaveBeenCalledWith([
+          { artist: 'The Artist', title: 'track two remix' },
+          { artist: 'The Artist', title: 'Track Two (Remix)' },
+        ]),
+      { timeout: 3000 },
+    )
   })
 })

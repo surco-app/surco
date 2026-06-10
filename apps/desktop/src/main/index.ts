@@ -21,6 +21,7 @@ import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   AppleMusicAddJob,
+  AppleMusicLookupCandidate,
   CoverExportJob,
   ProcessJob,
   ProcessStage,
@@ -405,8 +406,8 @@ function registerIpc(): void {
 
   // The Music AppleScript bridge is macOS-only; off macOS there is no library to
   // query, so report "not present" rather than spawning a missing osascript.
-  ipcMain.handle('applemusic:lookup', (_e, artist: string, title: string) =>
-    process.platform === 'darwin' ? lookupInAppleMusic(artist, title) : false,
+  ipcMain.handle('applemusic:lookup', (_e, candidates: AppleMusicLookupCandidate[]) =>
+    process.platform === 'darwin' ? lookupInAppleMusic(candidates) : false,
   )
 
   // Adds an already-converted track to Apple Music on demand — the tail of

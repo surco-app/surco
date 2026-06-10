@@ -25,21 +25,42 @@ describe('useAppleMusicLookup', () => {
   it('reports idle and never queries off macOS', () => {
     const lookup = vi.fn().mockResolvedValue(true)
     setApi('win32', lookup)
-    const { result } = renderHook(() => useAppleMusicLookup('deadmau5', 'Strobe'), {
-      wrapper: wrapper(),
-    })
+    const { result } = renderHook(
+      () => useAppleMusicLookup([{ artist: 'deadmau5', title: 'Strobe' }]),
+      { wrapper: wrapper() },
+    )
     expect(result.current).toBe('idle')
     expect(lookup).not.toHaveBeenCalled()
   })
 
   // A half-typed entry (missing artist or title) can't be matched, so the lookup waits
   // rather than querying the library for a partial song.
-  it('reports idle and does not query until both title and artist are present', () => {
+  it('reports idle and does not query until some candidate has both title and artist', () => {
     const lookup = vi.fn().mockResolvedValue(true)
     setApi('darwin', lookup)
-    const { result } = renderHook(() => useAppleMusicLookup('', 'Strobe'), { wrapper: wrapper() })
+    const { result } = renderHook(() => useAppleMusicLookup([{ artist: '', title: 'Strobe' }]), {
+      wrapper: wrapper(),
+    })
     expect(result.current).toBe('idle')
     expect(lookup).not.toHaveBeenCalled()
+  })
+
+  // The tags can still be half-filled while Discogs already suggests a complete
+  // canonical pair; the lookup must run on the suggestion alone — and send only the
+  // complete candidates, since a pair with an empty side can't be matched.
+  it('queries with just the complete candidates when others are half-filled', async () => {
+    const lookup = vi.fn().mockResolvedValue(true)
+    setApi('darwin', lookup)
+    const { result } = renderHook(
+      () =>
+        useAppleMusicLookup([
+          { artist: '', title: 'how long extended' },
+          { artist: 'Jessy', title: 'How Long (Extended Mix)' },
+        ]),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current).toBe('yes'), { timeout: 2000 })
+    expect(lookup).toHaveBeenCalledWith([{ artist: 'Jessy', title: 'How Long (Extended Mix)' }])
   })
 
   // Between mount and the verdict (debounce + osascript) there is no answer yet; a
@@ -47,27 +68,30 @@ describe('useAppleMusicLookup', () => {
   // unmounting and shifting the header controls.
   it('reports pending while the verdict is still in flight', () => {
     setApi('darwin', vi.fn().mockReturnValue(new Promise(() => {})))
-    const { result } = renderHook(() => useAppleMusicLookup('deadmau5', 'Strobe'), {
-      wrapper: wrapper(),
-    })
+    const { result } = renderHook(
+      () => useAppleMusicLookup([{ artist: 'deadmau5', title: 'Strobe' }]),
+      { wrapper: wrapper() },
+    )
     expect(result.current).toBe('pending')
   })
 
   // The match drives the "already in library" badge that stops a duplicate import.
   it('reports yes once a present song is found in the library', async () => {
     setApi('darwin', vi.fn().mockResolvedValue(true))
-    const { result } = renderHook(() => useAppleMusicLookup('deadmau5', 'Strobe'), {
-      wrapper: wrapper(),
-    })
+    const { result } = renderHook(
+      () => useAppleMusicLookup([{ artist: 'deadmau5', title: 'Strobe' }]),
+      { wrapper: wrapper() },
+    )
     await waitFor(() => expect(result.current).toBe('yes'), { timeout: 2000 })
   })
 
   // The complement reassures the user the track is safe to add.
   it('reports no when the song is not in the library', async () => {
     setApi('darwin', vi.fn().mockResolvedValue(false))
-    const { result } = renderHook(() => useAppleMusicLookup('Nobody', 'Unknown'), {
-      wrapper: wrapper(),
-    })
+    const { result } = renderHook(
+      () => useAppleMusicLookup([{ artist: 'Nobody', title: 'Unknown' }]),
+      { wrapper: wrapper() },
+    )
     await waitFor(() => expect(result.current).toBe('no'), { timeout: 2000 })
   })
 })

@@ -1,5 +1,6 @@
 import type {
   AppleMusicAddJob,
+  AppleMusicLookupCandidate,
   BpmResult,
   CoverExportJob,
   DiscogsRelease,
@@ -41,7 +42,7 @@ export interface Api {
     provider?: SearchProviderId,
     priority?: SearchPriority,
   ) => Promise<DiscogsRelease>
-  lookupAppleMusic: (artist: string, title: string) => Promise<boolean>
+  lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]) => Promise<boolean>
   addToAppleMusic: (job: AppleMusicAddJob) => Promise<void>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   exportCover: (job: CoverExportJob) => Promise<string | null>

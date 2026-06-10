@@ -179,6 +179,14 @@ export interface AppleMusicAddJob {
   coverPath?: string
 }
 
+// One artist/title pair to probe for in the Apple Music library. The lookup takes
+// several — the live tags plus the Discogs-suggested track — so a song whose tags
+// still hold the filename's rough spelling is found under its canonical name too.
+export interface AppleMusicLookupCandidate {
+  artist: string
+  title: string
+}
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
 
 export interface ProcessProgress {
