@@ -1,10 +1,22 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Settings } from '../../shared/types'
 import './i18n'
+
+// Pass-through triage that counts sort runs, so the derived-list stability test can
+// assert renders without track changes skip the whole filter+sort pipeline.
+const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
+vi.mock('./lib/triage', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./lib/triage')>()
+  const sortTracks: typeof real.sortTracks = (tracks, sortBy) => {
+    sortRuns.count++
+    return real.sortTracks(tracks, sortBy)
+  }
+  return { ...real, sortTracks }
+})
 
 afterEach(cleanup)
 
@@ -546,5 +558,25 @@ describe('App command palette list-wide actions', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+})
+
+describe('App derived list stability', () => {
+  // The triage pipeline (quality filter + search match + sort) is memoized on the
+  // tracks view. A render that changes neither tracks nor spectra — opening a modal,
+  // a progress counter tick — must not re-run it: on a big crate that pipeline is an
+  // O(n log n) scan paid on every keystroke and sweep event otherwise.
+  it('does not re-run the list sort on a render that changes no track data', async () => {
+    await renderApp()
+    await addTwoTracks()
+    // Let pending meta reads (tags/duration/cover) settle so their setTracks renders
+    // are behind us before sampling the baseline.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const before = sortRuns.count
+    fireEvent.click(screen.getByTestId('open-find-replace'))
+    await screen.findByTestId('find-replace-find')
+    expect(sortRuns.count).toBe(before)
   })
 })

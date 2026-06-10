@@ -858,13 +858,18 @@ export default function App(): React.JSX.Element {
 
   // Each track's spectrum, read from the shared React Query cache the hover prefetch,
   // the analyze sweep and the editor all fill. enabled:false so the list only observes —
-  // it never triggers an analysis itself.
-  const spectrumQueries = useQueries({
+  // it never triggers an analysis itself. combine matters: its output is cached by the
+  // observer until an underlying result changes, so this hook keeps a stable identity
+  // across unrelated renders — without it, useQueries returns a fresh array per render,
+  // which broke the tracksView memo below and re-ran the whole triage pipeline on every
+  // keystroke and progress tick.
+  const spectra = useQueries({
     queries: tracks.map((t) => ({
       queryKey: ['spectrogram', t.inputPath],
       queryFn: () => window.api.spectrogram(t.inputPath),
       enabled: false,
     })),
+    combine: (results) => results.map((r) => r.data),
   })
   // Merge each cached spectrum onto its track for the quality triage and the list,
   // preserving object identity (via viewCache) so memoized rows don't all re-render.
@@ -873,7 +878,7 @@ export default function App(): React.JSX.Element {
   const tracksView = useMemo(
     () =>
       tracks.map((t, i) => {
-        const spectrum = spectrumQueries[i]?.data
+        const spectrum = spectra[i]
         if (!spectrum) return t
         const cached = viewCache.current.get(t.id)
         if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
@@ -881,7 +886,7 @@ export default function App(): React.JSX.Element {
         viewCache.current.set(t.id, { track: t, spectrum, view })
         return view
       }),
-    [tracks, spectrumQueries],
+    [tracks, spectra],
   )
   tracksViewRef.current = tracksView
 
