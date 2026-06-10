@@ -1,5 +1,6 @@
 import {
   ChartColumn,
+  Heart,
   Image,
   Keyboard,
   List,
@@ -810,14 +811,16 @@ export function SettingsModal({
                     {tr('settings.stats.empty')}
                   </p>
                 )}
+                <p className="mt-8 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
                 <a
                   data-testid="stats-donate"
                   href={DONATE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-8 text-sm text-fg-dim transition-colors hover:text-fg"
+                  className="press mt-3 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
                 >
-                  {tr('settings.stats.donate')} →
+                  <Heart size={14} />
+                  {tr('settings.stats.donateCta')}
                 </a>
               </div>
             )}

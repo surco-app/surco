@@ -319,7 +319,8 @@
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
       "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
-      "donate": "Si Surco te ahorra horas, apoya su desarrollo"
+      "donate": "Si Surco te ahorra horas, apoya su desarrollo",
+      "donateCta": "Donar con PayPal"
     },
     "theme": "Apariencia",
     "themes": {
