@@ -193,6 +193,19 @@ export interface ReleaseMetaPatch {
   meta: TrackMetadata
 }
 
+// The writing credits for a track: its own first, then the release-wide ones.
+// Release-level credits scoped to specific tracks ("tracks": "A1 to B2") are
+// skipped rather than range-parsed — attributing them to every track would be
+// wrong more often than dropping them.
+const WRITING_ROLE = /written|composed/i
+function composerOf(rel: DiscogsRelease, track: DiscogsTrack | undefined): string {
+  const own = (track?.extraartists ?? []).filter((a) => WRITING_ROLE.test(a.role))
+  if (own.length) return joinArtists(own)
+  return joinArtists(
+    (rel.extraartists ?? []).filter((a) => WRITING_ROLE.test(a.role) && !a.tracks?.trim()),
+  )
+}
+
 // Applying a release overwrites the album-level data and the chosen track's
 // title/number/artist, so the song ends up fully tagged from Discogs in one
 // action. The cover is the exception: a file that already carries a cover keeps
@@ -233,6 +246,7 @@ export function buildReleaseMeta(
       genre,
       publisher: publisher || current.publisher,
       catalogNumber: catalogNumber || current.catalogNumber,
+      composer: composerOf(rel, track) || current.composer,
       discogsReleaseId: String(rel.id),
     },
   }

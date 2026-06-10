@@ -348,6 +348,38 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.comment).toBe('note')
   })
 
+  it("fills the composer from the track's own writing credits", () => {
+    const patch = buildReleaseMeta(meta(), release(), {
+      position: 'A1',
+      title: 'One',
+      extraartists: [
+        { name: 'Thomas Bangalter', role: 'Written-By' },
+        { name: 'Guy-Manuel de Homem-Christo (2)', role: 'Composed By' },
+        { name: 'Someone Else', role: 'Producer' },
+      ],
+    })
+    expect(patch.meta.composer).toBe('Thomas Bangalter, Guy-Manuel de Homem-Christo')
+  })
+
+  it('falls back to release-wide writing credits, skipping ones scoped to specific tracks', () => {
+    const rel = release({
+      extraartists: [
+        { name: 'Alex K', role: 'Written-By' },
+        // Scoped credits use a range syntax ("A1 to B2") not worth parsing for a
+        // fallback — attributing them to every track would be wrong more often.
+        { name: 'Guest Writer', role: 'Written-By', tracks: 'B2' },
+        { name: 'Mastering Guy', role: 'Mastered By' },
+      ],
+    })
+    const patch = buildReleaseMeta(meta(), rel, { position: 'A1', title: 'One' })
+    expect(patch.meta.composer).toBe('Alex K')
+  })
+
+  it('keeps the current composer when the release carries no writing credits', () => {
+    const patch = buildReleaseMeta(meta({ composer: 'Kept' }), release(), undefined)
+    expect(patch.meta.composer).toBe('Kept')
+  })
+
   // The complaint these guard against: applying a release to fill text tags used to
   // overwrite a perfectly good embedded cover with Discogs' (often smaller) image.
   // When told to keep the current cover, the release's art is ignored and the

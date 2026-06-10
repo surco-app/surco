@@ -132,6 +132,8 @@ export interface DiscogsTrack {
   // The track length as Discogs returns it, e.g. "5:47". Optional: some releases
   // (and many tracklist positions like headings) carry no duration.
   duration?: string
+  // Per-track credits ("Written-By", "Producer", …) — the source of the composer field.
+  extraartists?: { name: string; role: string }[]
 }
 
 export interface DiscogsRelease {
@@ -144,6 +146,9 @@ export interface DiscogsRelease {
   labels?: { name: string; catno: string }[]
   images?: { uri: string; type: string; resource_url: string }[]
   tracklist: DiscogsTrack[]
+  // Release-wide credits. `tracks` ("A1 to B2"), when present, scopes a credit to
+  // part of the tracklist.
+  extraartists?: { name: string; role: string; tracks?: string }[]
 }
 
 export interface ProcessJob {
