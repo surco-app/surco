@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HEADER_SECTIONS } from '../lib/nav'
+import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
 import { rememberLanguage } from '../lib/useAutoLanguage'
 
-export default function Header() {
+// `page` marks which standalone page renders the header; section links then
+// point back to the landing instead of to anchors that don't exist here.
+export default function Header({ page }: { page?: Page }) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const otherLang = i18n.language === 'en' ? '/' : '/en'
-  const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
-  const otherCode = i18n.language === 'en' ? 'es' : 'en'
-  const guideHref = i18n.language === 'en' ? '/en/guide' : '/guia'
+  const lang = i18n.language === 'en' ? 'en' : 'es'
+  const otherCode = lang === 'en' ? 'es' : 'en'
+  const otherLabel = lang === 'en' ? 'ES' : 'EN'
+  const home = lang === 'en' ? '/en' : '/'
+  const otherHref = page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en'
+  const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
+  const guideHref = PAGES.guide[lang]
+  const changelogHref = PAGES.changelog[lang]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -27,7 +33,7 @@ export default function Header() {
     rememberLanguage(otherCode)
     if (typeof window !== 'undefined' && window.location.hash) {
       e.preventDefault()
-      window.location.href = otherLang + window.location.hash
+      window.location.href = otherHref + window.location.hash
     }
   }
 
@@ -41,7 +47,7 @@ export default function Header() {
         className="mx-auto flex max-w-5xl items-center justify-between px-6 transition-all duration-300"
         style={{ paddingTop: scrolled ? '0.7rem' : '1.25rem', paddingBottom: scrolled ? '0.7rem' : '1.25rem' }}
       >
-        <a href="#top" className="flex items-center gap-3">
+        <a href={page ? home : '#top'} className="flex items-center gap-3">
           <img
             src="/icon.png"
             alt="Surco"
@@ -65,16 +71,19 @@ export default function Header() {
         <div className="flex items-center gap-4 sm:gap-7">
           <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
             {HEADER_SECTIONS.map((id) => (
-              <a key={id} href={`#${id}`} className="transition-colors hover:text-fg">
+              <a key={id} href={sectionHref(id)} className="transition-colors hover:text-fg">
                 {t(`nav.${id}`)}
               </a>
             ))}
             <a href={guideHref} className="transition-colors hover:text-fg">
               {t('nav.guia')}
             </a>
+            <a href={changelogHref} className="transition-colors hover:text-fg">
+              {t('nav.cambios')}
+            </a>
           </nav>
           <a
-            href={otherLang}
+            href={otherHref}
             onClick={keepHash}
             className="inline-flex items-center rounded-full border border-line px-3 py-2 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
           >
@@ -110,7 +119,7 @@ export default function Header() {
             {HEADER_SECTIONS.map((id) => (
               <a
                 key={id}
-                href={`#${id}`}
+                href={sectionHref(id)}
                 onClick={() => setOpen(false)}
                 className="block py-3 text-sm text-muted transition-colors hover:text-fg"
               >
@@ -123,6 +132,13 @@ export default function Header() {
               className="block py-3 text-sm text-muted transition-colors hover:text-fg"
             >
               {t('nav.guia')}
+            </a>
+            <a
+              href={changelogHref}
+              onClick={() => setOpen(false)}
+              className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            >
+              {t('nav.cambios')}
             </a>
           </div>
         </nav>

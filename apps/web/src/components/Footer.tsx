@@ -1,10 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { SECTIONS } from '../lib/nav'
+import { PAGES, SECTIONS, type Page } from '../lib/nav'
 
-export default function Footer() {
+export default function Footer({ page }: { page?: Page }) {
   const { t, i18n } = useTranslation()
   const formats = t('footer.formats', { returnObjects: true }) as string[]
-  const changelogHref = i18n.language === 'en' ? '/en/changelog' : '/cambios'
+  const lang = i18n.language === 'en' ? 'en' : 'es'
+  const home = lang === 'en' ? '/en' : '/'
+  const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
+  const changelogHref = PAGES.changelog[lang]
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
@@ -29,7 +32,7 @@ export default function Footer() {
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             {SECTIONS.map((id) => (
               <li key={id}>
-                <a href={`#${id}`} className="transition-colors hover:text-fg">
+                <a href={sectionHref(id)} className="transition-colors hover:text-fg">
                   {t(`nav.${id}`)}
                 </a>
               </li>

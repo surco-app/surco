@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import Reveal from './Reveal'
 import DownloadButton from './DownloadButton'
-import { useAutoLanguage, rememberLanguage } from '../lib/useAutoLanguage'
+import Header from './Header'
+import Footer from './Footer'
+import { useAutoLanguage } from '../lib/useAutoLanguage'
 
 type Release = {
   version: string
@@ -11,14 +13,10 @@ type Release = {
 }
 
 export default function Changelog() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   useAutoLanguage()
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
-  const home = i18n.language === 'en' ? '/en' : '/'
-  const otherChangelog = i18n.language === 'en' ? '/cambios' : '/en/changelog'
-  const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
-  const otherCode = i18n.language === 'en' ? 'es' : 'en'
 
   return (
     <div className="min-h-screen bg-bg text-fg antialiased">
@@ -31,26 +29,7 @@ export default function Changelog() {
         }}
       />
 
-      <header className="sticky top-0 z-40 border-b border-line/70 bg-bg/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
-          <a href={home} className="flex items-center gap-2.5">
-            <img src="/icon.png" alt="Surco" className="h-9 w-9" />
-            <span className="text-lg font-semibold tracking-tight">Surco</span>
-          </a>
-          <div className="flex items-center gap-4">
-            <a href={home} className="text-sm text-muted transition-colors hover:text-fg">
-              {t('changelog.back')}
-            </a>
-            <a
-              href={otherChangelog}
-              onClick={() => rememberLanguage(otherCode)}
-              className="inline-flex items-center rounded-full border border-line px-3 py-1.5 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
-            >
-              {otherLabel}
-            </a>
-          </div>
-        </div>
-      </header>
+      <Header page="changelog" />
 
       <main className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-4 sm:pt-16">
@@ -102,14 +81,7 @@ export default function Changelog() {
         </section>
       </main>
 
-      <footer className="border-t border-line/60">
-        <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
-          <a href={home} className="transition-colors hover:text-fg">
-            {t('changelog.back')}
-          </a>
-          <span>{t('footer.copyright')}</span>
-        </div>
-      </footer>
+      <Footer page="changelog" />
     </div>
   )
 }
