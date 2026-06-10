@@ -482,6 +482,20 @@
     "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.8",
+        "date": "10 de junio de 2026",
+        "title": "BPM, tonalidad y gratis para siempre",
+        "items": [
+          "Detección de BPM y tonalidad: Surco analiza cada pista y sugiere el tempo y la clave como fichas de un clic, en la notación de clave que prefieras.",
+          "Surco es ahora gratis para siempre: desaparecen las licencias y los límites. Si te ahorra horas, puedes apoyarlo con una donación desde la pestaña de estadísticas.",
+          "Nuevo destino de conversión que sobrescribe el archivo original, con confirmación antes de un lote.",
+          "Búsqueda de texto y ordenación en la lista de pistas, con carátulas en miniatura en cada fila.",
+          "La carpeta de ajustes es configurable: apúntala a iCloud Drive o Dropbox para compartir tus preferencias entre Macs.",
+          "Atajo para cambiar el idioma de la interfaz entre español e inglés al vuelo.",
+          "Barra fina de progreso en la cabecera para los barridos largos en segundo plano."
+        ]
+      },
+      {
         "version": "0.7",
         "date": "9 de junio de 2026",
         "title": "Mejor primera experiencia y accesibilidad a fondo",

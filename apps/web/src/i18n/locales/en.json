@@ -482,6 +482,20 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.8",
+        "date": "June 10, 2026",
+        "title": "BPM, key detection and free forever",
+        "items": [
+          "BPM and key detection: Surco analyzes every track and suggests the tempo and key as one-click chips, in the key notation you prefer.",
+          "Surco is now free forever: licensing and limits are gone. If it saves you hours, you can support it with a donation from the Stats tab.",
+          "New conversion destination that overwrites the original file, with a confirmation before a batch.",
+          "Text search and sorting in the track list, with album-art thumbnails on every row.",
+          "The settings folder is configurable: point it at iCloud Drive or Dropbox to share your preferences across Macs.",
+          "A shortcut to switch the interface language between English and Spanish on the fly.",
+          "A slim progress bar in the header for long background sweeps."
+        ]
+      },
+      {
         "version": "0.7",
         "date": "June 9, 2026",
         "title": "A better first run and accessibility throughout",
