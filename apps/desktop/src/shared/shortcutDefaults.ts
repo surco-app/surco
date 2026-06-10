@@ -37,6 +37,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'auto-match', chord: ['mod', 'shift', 'd'] },
   { id: 'export', chord: ['mod', 'shift', 'e'] },
   { id: 'stats', chord: ['mod', 'shift', 's'] },
+  { id: 'toggle-language', chord: ['mod', 'shift', 'l'] },
 ]
 
 // The effective binding per command id: defaults with the user's overrides applied. An

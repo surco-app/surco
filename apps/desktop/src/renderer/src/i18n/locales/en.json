@@ -104,7 +104,8 @@
     "analyzeQuality": "Analyze quality of all tracks",
     "autoMatch": "Auto-match all tracks on Discogs",
     "export": "Export to DJ software",
-    "stats": "Stats"
+    "stats": "Stats",
+    "toggleLanguage": "Switch language (English / Spanish)"
   },
   "upgrade": {
     "title": "Surco Pro",

@@ -43,6 +43,7 @@ import { UpdateToast } from './components/UpdateToast'
 import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
+import { nextLocale } from './i18n/locale'
 import { canAddToAppleMusic } from './lib/appleMusic'
 import {
   autoMatchRelease,
@@ -175,7 +176,7 @@ type ActiveModal =
   | null
 
 export default function App(): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
   // Freemium entitlement. `isPro` defaults to true until the snapshot loads (and is
   // always true during the beta), so a brief load never blocks a conversion. The
@@ -1081,6 +1082,16 @@ export default function App(): React.JSX.Element {
       hint: hintFor('stats'),
       enabled: true,
       run: () => openSettings('stats'),
+    },
+    {
+      // Flips the UI between the two shipped locales. Not persisted on purpose: the app
+      // re-detects the language from the OS on every launch, so this is a per-session
+      // override for trying the other translation.
+      id: 'toggle-language',
+      title: tr('commands.toggleLanguage'),
+      hint: hintFor('toggle-language'),
+      enabled: true,
+      run: () => void i18n.changeLanguage(nextLocale(i18n.language)),
     },
     {
       id: 'help',

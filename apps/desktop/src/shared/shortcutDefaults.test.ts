@@ -45,6 +45,7 @@ describe('matchChord', () => {
     expect(matchChord(b, ['mod', 'shift', 'd'], false)).toBe('auto-match')
     expect(matchChord(b, ['mod', 'shift', 'e'], false)).toBe('export')
     expect(matchChord(b, ['mod', 'shift', 's'], false)).toBe('stats')
+    expect(matchChord(b, ['mod', 'shift', 'l'], false)).toBe('toggle-language')
   })
 
   // ⌘A has to keep selecting text inside a field; only outside one does it select every
