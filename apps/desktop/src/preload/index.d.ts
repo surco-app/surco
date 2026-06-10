@@ -1,6 +1,7 @@
 import type { LicenseActionResult, LicenseSnapshot } from '../shared/license'
 import type {
   AppleMusicAddJob,
+  BpmResult,
   CoverExportJob,
   DiscogsRelease,
   DiscogsSearchResult,
@@ -57,6 +58,7 @@ export interface Api {
   spectrogram: (path: string) => Promise<SpectrumResult>
   loudness: (path: string) => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
+  bpm: (path: string) => Promise<BpmResult | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<string | null>

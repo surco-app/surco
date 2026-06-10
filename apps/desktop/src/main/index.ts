@@ -42,6 +42,7 @@ import {
   convertAudio,
   extractCover,
   generateSpectrogram,
+  measureBpm,
   measureLoudness,
   probeAudio,
   probeDuration,
@@ -655,6 +656,18 @@ function registerIpc(): void {
       return await cachedAnalysis('properties', inputPath, () => probeProperties(inputPath))
     } catch (err) {
       log.error('audio:properties failed', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('audio:bpm', async (_e, inputPath: string) => {
+    try {
+      // Unlike a null loudness (a parse failure worth retrying), a null here is
+      // a real measurement — beatless material — so it is cached too; only a
+      // decode error (which throws) is left uncached for a later retry.
+      return await cachedAnalysis('bpm', inputPath, () => measureBpm(inputPath), () => true)
+    } catch (err) {
+      log.error('audio:bpm failed', err)
       return null
     }
   })

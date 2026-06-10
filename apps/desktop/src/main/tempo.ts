@@ -8,6 +8,11 @@
 
 import type { BpmResult } from '../shared/types'
 
+// The rate ffmpeg decodes to before analysis. Beat energy lives far below
+// this Nyquist, so a low rate costs no accuracy while keeping minutes of
+// mono PCM in the tens of megabytes instead of hundreds at native rates.
+export const TEMPO_SAMPLE_RATE = 11025
+
 // Hop size in samples at the analysis rate (11025 Hz → ~86 envelope frames/s).
 // Small enough that beat positions resolve to well under a beat period, large
 // enough that a 4-minute track is only ~20k frames to correlate.

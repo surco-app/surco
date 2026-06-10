@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag, ratingTagToStars } from '../shared/rating'
 import type {
+  BpmResult,
   LoudnessResult,
   NormalizeConfig,
   OutputFormat,
@@ -24,6 +25,7 @@ import {
 } from './normalize'
 import { readTagFormats } from './tagFormats'
 import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
+import { detectBpm, TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -746,6 +748,40 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
     crestDb: stats?.crestDb ?? null,
     noiseFloorDb: stats?.noiseFloorDb ?? null,
   }
+}
+
+// Decodes the opening four minutes to low-rate mono PCM and runs the tempo
+// detector on it. Four minutes pins a steady DJ tempo while bounding the
+// decoded buffer (~10 MB) regardless of file length; mono because tempo is a
+// property of the mix, not of either channel. ffmpeg emits raw f32le so there
+// is nothing to parse — but the bytes land in Node's shared Buffer pool,
+// whose offset need not be 4-byte aligned, so they are copied out before
+// being viewed as floats.
+export async function measureBpm(input: string): Promise<BpmResult | null> {
+  const { stdout } = await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      input,
+      '-t',
+      '240',
+      '-ac',
+      '1',
+      '-ar',
+      String(TEMPO_SAMPLE_RATE),
+      '-f',
+      'f32le',
+      '-',
+    ],
+    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 16 },
+  )
+  const bytes = stdout.length - (stdout.length % 4)
+  const pcm = new Uint8Array(bytes)
+  pcm.set(stdout.subarray(0, bytes))
+  return detectBpm(new Float32Array(pcm.buffer), TEMPO_SAMPLE_RATE)
 }
 
 interface SpectrumDeps {

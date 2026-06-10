@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { LicenseActionResult, LicenseSnapshot } from '../shared/license'
 import type {
+  BpmResult,
   LoudnessResult,
   ProcessProgress,
   SearchPriority,
@@ -56,6 +57,7 @@ const api = {
     ipcRenderer.invoke('audio:loudness', path),
   properties: (path: string): Promise<TrackProperties | null> =>
     ipcRenderer.invoke('audio:properties', path),
+  bpm: (path: string): Promise<BpmResult | null> => ipcRenderer.invoke('audio:bpm', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
