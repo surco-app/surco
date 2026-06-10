@@ -50,6 +50,25 @@ describe('CommandPalette', () => {
     expect(screen.getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true')
   })
 
+  // Typing re-filters the list underneath the highlight: after arrowing down, a new
+  // query must pull the highlight back to the first result, or Enter runs whichever
+  // command happens to land at the stale index — or nothing at all.
+  it('resets the highlight to the first result when the query changes', () => {
+    const runAdd = vi.fn()
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'a', title: 'Add', run: runAdd }), cmd({ id: 'b', title: 'Bee' })]}
+        onClose={vi.fn()}
+      />,
+    )
+    const input = screen.getByTestId('palette-input')
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.change(input, { target: { value: 'Add' } })
+    expect(input).toHaveAttribute('aria-activedescendant', 'palette-option-a')
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(runAdd).toHaveBeenCalled()
+  })
+
   it('does not run a disabled command', () => {
     const run = vi.fn()
     render(

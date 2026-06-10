@@ -22,9 +22,6 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
-  useEffect(() => {
-    setActive(0)
-  }, [])
 
   function runAt(i: number): void {
     const c = results[i]
@@ -67,7 +64,12 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           ref={inputRef}
           data-testid="palette-input"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            // A new query re-filters the list, so the highlight follows it back to the
+            // top — a stale index would point Enter at an arbitrary surviving command.
+            setQuery(e.target.value)
+            setActive(0)
+          }}
           onKeyDown={onKeyDown}
           role="combobox"
           aria-autocomplete="list"
