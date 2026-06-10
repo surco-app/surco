@@ -35,12 +35,14 @@ export function useKeyboardShortcuts(params: Params): void {
         p.onEscape()
         return
       }
-      if (p.overlayOpen) return
       const id = keyToCommandId(e, isTypingTarget(document.activeElement), p.bindings, p.isMac)
-      if (id) {
-        e.preventDefault()
-        runCommand(p.commands, id)
-      }
+      if (!id) return
+      // The language toggle is global UI chrome, not a list action, so it stays live even
+      // over a modal — the onboarding wizard has no other way to reach the second locale.
+      // Every other command is swallowed while an overlay owns the screen.
+      if (p.overlayOpen && id !== 'toggle-language') return
+      e.preventDefault()
+      runCommand(p.commands, id)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
