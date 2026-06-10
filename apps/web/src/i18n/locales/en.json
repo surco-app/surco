@@ -19,7 +19,8 @@
     "instalar": "Install",
     "guia": "Guide",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "cambios": "What's new"
   },
   "available": "Available · macOS · Windows",
   "beta": "beta",
@@ -468,6 +469,102 @@
         ],
         "shot": "ajustes-en.png",
         "shotCaption": "The Settings panel."
+      }
+    ]
+  },
+  "changelog": {
+    "metaTitle": "Surco changelog — What's new in each release",
+    "metaDescription": "What's new in each Surco release: Discogs auto-match, rekordbox and Traktor export, loudness analysis, multi-track editing and more.",
+    "kicker": "What's new",
+    "title": "What's new",
+    "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
+    "back": "Back to home",
+    "outroTitle": "Try it all in your next session",
+    "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
+    "releases": [
+      {
+        "version": "0.7",
+        "date": "June 9, 2026",
+        "title": "A better first run and accessibility throughout",
+        "items": [
+          "The welcome wizard now sets up your output folder, visible and required fields, and teaches you to read the spectrum with a live preview.",
+          "New “Apple Music only” destination: the track lands in your library without leaving a copy in the output folder.",
+          "Full accessibility pass: the whole app works from the keyboard, plays well with screen readers and meets WCAG AA contrast.",
+          "Regenerate a file name in one click using the pattern from Settings.",
+          "Open audio files straight from Finder’s “Open With” menu.",
+          "New blue spectrogram palette that’s easier to read."
+        ]
+      },
+      {
+        "version": "0.6",
+        "date": "June 8, 2026",
+        "title": "Discogs auto-match and rekordbox & Traktor export",
+        "items": [
+          "Auto-match: Surco looks your tracks up on Discogs and applies only high-confidence matches, on import or with a toolbar sweep.",
+          "Export your collection as a rekordbox (XML) or Traktor (NML) library.",
+          "Batch quality triage: analyze the whole list at once, badge every track with its verdict and filter the suspect rips.",
+          "Customizable keyboard shortcuts with clash detection and native menus that update themselves.",
+          "Per-track properties panel (codec, bit depth, bitrate, tag formats) and a rename dialog built from metadata chips.",
+          "Redesigned icons and tooltips across the app."
+        ]
+      },
+      {
+        "version": "0.5",
+        "date": "June 6, 2026",
+        "title": "Star ratings and cover control",
+        "items": [
+          "Rate your tracks with stars; they’re written as tags Traktor, Windows Media Player and foobar2000 understand.",
+          "Pick the cover from every image the Discogs release has.",
+          "Artwork resolution is always visible and low-quality covers get flagged with a colored dot.",
+          "New Discogs release id field in the editor."
+        ]
+      },
+      {
+        "version": "0.4",
+        "date": "June 6, 2026",
+        "title": "Loudness and normalization",
+        "items": [
+          "Loudness analysis (LUFS) and optional normalization that preserves your Traktor cues.",
+          "Right-click context menu on tracks and search inside the list.",
+          "Cancel a batch conversion mid-run.",
+          "Configurable default genres applied with one click.",
+          "Optionally send the original file to the Trash after converting."
+        ]
+      },
+      {
+        "version": "0.3",
+        "date": "June 5, 2026",
+        "title": "Multi-track editing and full albums",
+        "items": [
+          "Multi-selection with bulk editing of shared fields.",
+          "Match a whole Discogs release against your files, pairing each track by duration.",
+          "Find & replace across every track’s tags, with regular expressions.",
+          "Fill tags from the file name in one click.",
+          "M4A/AAC, Opus and Ogg Vorbis now accepted as input formats.",
+          "The naming pattern supports subfolders to organize the output."
+        ]
+      },
+      {
+        "version": "0.2",
+        "date": "June 4, 2026",
+        "title": "Stability",
+        "items": [
+          "More robust importing: hidden files and macOS leftovers are skipped when dropping folders.",
+          "Better tag reading on files with embedded pictures."
+        ]
+      },
+      {
+        "version": "0.1",
+        "date": "June 2, 2026",
+        "title": "First public release",
+        "items": [
+          "Convert to AIFF, WAV, FLAC or MP3 by dragging your files in.",
+          "Discogs tagging with the most likely match suggested.",
+          "Spectrum analysis to catch fake lossless before you play out.",
+          "Send tracks straight to Apple Music, artwork included.",
+          "Template file names, a command palette, track preview and automatic updates.",
+          "macOS installs (Intel and Apple Silicon) plus Homebrew."
+        ]
       }
     ]
   }

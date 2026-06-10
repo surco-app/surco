@@ -19,7 +19,8 @@
     "instalar": "Instalar",
     "guia": "Guía",
     "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú"
+    "closeMenu": "Cerrar menú",
+    "cambios": "Novedades"
   },
   "available": "Disponible · macOS · Windows",
   "beta": "beta",
@@ -468,6 +469,102 @@
         ],
         "shot": "ajustes-es.png",
         "shotCaption": "El panel de Ajustes."
+      }
+    ]
+  },
+  "changelog": {
+    "metaTitle": "Novedades de Surco — Historial de versiones",
+    "metaDescription": "Qué hay de nuevo en cada versión de Surco: auto-match de Discogs, export a rekordbox y Traktor, análisis de sonoridad, edición multi-pista y más.",
+    "kicker": "Novedades",
+    "title": "Novedades",
+    "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
+    "back": "Volver al inicio",
+    "outroTitle": "Pruébalo todo en tu próxima sesión",
+    "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
+    "releases": [
+      {
+        "version": "0.7",
+        "date": "9 de junio de 2026",
+        "title": "Mejor primera experiencia y accesibilidad a fondo",
+        "items": [
+          "El asistente de bienvenida ahora configura la carpeta de destino, los campos visibles y obligatorios, y enseña a leer el espectro con una vista previa.",
+          "Nuevo destino «solo Apple Music»: la pista entra en tu biblioteca sin dejar copia en la carpeta de salida.",
+          "Accesibilidad completa: toda la app se maneja con teclado, funciona con lectores de pantalla y el contraste cumple WCAG AA.",
+          "Regenera el nombre de archivo con un clic usando el patrón configurado en Ajustes.",
+          "Abre archivos de audio directamente desde «Abrir con» del Finder.",
+          "Nuevo espectrograma en paleta azul, más fácil de leer."
+        ]
+      },
+      {
+        "version": "0.6",
+        "date": "8 de junio de 2026",
+        "title": "Auto-match de Discogs y export a rekordbox y Traktor",
+        "items": [
+          "Auto-match: Surco busca tus pistas en Discogs y aplica solo coincidencias de alta confianza, al importar o con un barrido desde la barra de herramientas.",
+          "Exporta tu colección como biblioteca de rekordbox (XML) o de Traktor (NML).",
+          "Triaje de calidad por lotes: analiza toda la lista de una vez, marca cada pista con su veredicto y filtra los rips sospechosos.",
+          "Atajos de teclado personalizables, con detección de conflictos y menús nativos que se actualizan solos.",
+          "Panel de propiedades por pista (códec, profundidad de bits, bitrate, formatos de etiqueta) y diálogo de renombrado con fichas de metadatos.",
+          "Iconografía y tooltips rediseñados en toda la app."
+        ]
+      },
+      {
+        "version": "0.5",
+        "date": "6 de junio de 2026",
+        "title": "Valoraciones con estrellas y control de portadas",
+        "items": [
+          "Valora tus pistas con estrellas; se guardan como etiquetas que Traktor, Windows Media Player y foobar2000 entienden.",
+          "Elige la portada entre todas las imágenes del disco en Discogs.",
+          "La resolución de la portada queda a la vista y las de baja calidad se marcan con un punto de color.",
+          "Nuevo campo de id de disco de Discogs en el editor."
+        ]
+      },
+      {
+        "version": "0.4",
+        "date": "6 de junio de 2026",
+        "title": "Sonoridad y normalización",
+        "items": [
+          "Análisis de sonoridad (LUFS) y normalización opcional que conserva los cues de Traktor.",
+          "Menú contextual en las pistas y búsqueda dentro de la lista.",
+          "Cancela una conversión por lotes en marcha.",
+          "Géneros por defecto configurables que se aplican con un clic.",
+          "Envía el archivo original a la papelera tras convertir, si quieres."
+        ]
+      },
+      {
+        "version": "0.3",
+        "date": "5 de junio de 2026",
+        "title": "Edición multi-pista y discos completos",
+        "items": [
+          "Selección múltiple con edición en bloque de los campos compartidos.",
+          "Empareja un disco entero de Discogs con tus archivos, casando cada pista por duración.",
+          "Buscar y reemplazar sobre las etiquetas de todas las pistas, con expresiones regulares.",
+          "Rellena las etiquetas desde el nombre del archivo con un clic.",
+          "Acepta también M4A/AAC, Opus y Ogg Vorbis como formatos de entrada.",
+          "El patrón de nombres admite subcarpetas para organizar la salida."
+        ]
+      },
+      {
+        "version": "0.2",
+        "date": "4 de junio de 2026",
+        "title": "Estabilidad",
+        "items": [
+          "Importación más robusta: se ignoran los archivos ocultos y los restos de macOS al soltar carpetas.",
+          "Mejor lectura de etiquetas en archivos con imágenes incrustadas."
+        ]
+      },
+      {
+        "version": "0.1",
+        "date": "2 de junio de 2026",
+        "title": "Primer lanzamiento público",
+        "items": [
+          "Convierte a AIFF, WAV, FLAC o MP3 arrastrando tus archivos.",
+          "Etiquetado desde Discogs con la coincidencia más probable sugerida.",
+          "Análisis del espectro para detectar falsos lossless antes de pinchar.",
+          "Envío directo a Apple Music con la portada incluida.",
+          "Nombres de archivo por plantilla, paleta de comandos, vista previa de pistas y actualizaciones automáticas.",
+          "Instalación en macOS (Intel y Apple Silicon) y vía Homebrew."
+        ]
       }
     ]
   }

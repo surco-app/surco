@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { SECTIONS } from '../lib/nav'
 
 export default function Footer() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const formats = t('footer.formats', { returnObjects: true }) as string[]
+  const changelogHref = i18n.language === 'en' ? '/en/changelog' : '/cambios'
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
@@ -33,6 +34,11 @@ export default function Footer() {
                 </a>
               </li>
             ))}
+            <li>
+              <a href={changelogHref} className="transition-colors hover:text-fg">
+                {t('nav.cambios')}
+              </a>
+            </li>
           </ul>
         </div>
 
