@@ -102,6 +102,11 @@
         "body": "A colour-coded readout per track — LUFS, true peak, dynamics, balance, DC offset and noise floor — green, amber or red at a glance."
       },
       {
+        "kick": "detect",
+        "title": "BPM and key, measured",
+        "body": "Surco listens to the audio and suggests the tempo and key as one-click chips under each field — in Camelot or musical notation, your pick."
+      },
+      {
         "kick": "artwork",
         "title": "Cover art, sorted",
         "body": "Pull cover art from Discogs or drop your own onto one track or a whole selection. Surco squares, resizes and embeds it."
@@ -337,6 +342,7 @@
           "Up top you can give it a star rating and manage the cover art: drag to upload, export it, or move between the file's cover and the Discogs ones with the arrows. Track has a tidy filename but no tags? Click “Fill from filename” and Surco infers title and artist."
         ],
         "points": [
+          "Under BPM and key you'll see the value Surco detects from the audio itself — in Camelot or musical notation, per Settings — one click from applied.",
           "Only the fields you choose in Settings → Fields are shown.",
           "Required fields turn red if you leave them empty.",
           "The cover shows its real pixel dimensions so you can judge sharpness."

@@ -102,6 +102,11 @@
         "body": "Una lectura con colores por pista — LUFS, pico real, dinámica, balance, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo."
       },
       {
+        "kick": "detecta",
+        "title": "BPM y tonalidad, medidos",
+        "body": "Surco escucha el audio y te sugiere el tempo y la tonalidad como pastillas de un clic bajo cada campo — en notación Camelot o musical, tú eliges."
+      },
+      {
         "kick": "carátula",
         "title": "La carátula, lista",
         "body": "Trae la carátula de Discogs o suelta la tuya en una pista o en toda una selección. Surco la cuadra, redimensiona e incrusta."
@@ -337,6 +342,7 @@
           "Arriba puedes ponerle una valoración de estrellas y gestionar la carátula: súbela arrastrando, expórtala o pasa entre la del archivo y las de Discogs con las flechas. ¿La pista viene con el nombre bien puesto pero sin tags? Pulsa «Rellenar del nombre» y Surco deduce título y artista."
         ],
         "points": [
+          "Bajo BPM y tonalidad aparece el valor que Surco detecta del propio audio — en notación Camelot o musical, según Ajustes — listo para aplicar de un clic.",
           "Solo se muestran los campos que tú decidas en Ajustes → Campos.",
           "Los campos obligatorios se marcan en rojo si los dejas vacíos.",
           "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida."
