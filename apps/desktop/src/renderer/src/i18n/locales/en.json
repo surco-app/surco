@@ -328,6 +328,10 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "configDir": "Settings folder",
+    "configDirDefault": "App default folder",
+    "configDirReset": "Reset",
+    "configDirHint": "Pick a folder in iCloud Drive or Dropbox to share these preferences across your Macs. Applies immediately; the Discogs token and this Mac's stats never leave this machine.",
     "discogsToken": "Discogs token",
     "tokenPlaceholder": "Paste your personal token here",
     "tokenHelp": "Generate one for free at",

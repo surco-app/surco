@@ -24,6 +24,9 @@ const api = {
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
+  getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
+  setConfigDir: (dir: string | null) => ipcRenderer.invoke('settings:setConfigDir', dir),
+  pickConfigDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickConfigDir'),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
   exportRekordbox: (xml: string): Promise<string | null> =>

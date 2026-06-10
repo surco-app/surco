@@ -95,6 +95,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
+    getConfigDir: vi.fn().mockResolvedValue(null),
     onMenuCommand: () => () => {},
     onProcessProgress: () => () => {},
     onUpdateDownloaded: () => () => {},

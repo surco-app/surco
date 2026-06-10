@@ -61,7 +61,7 @@ import {
 import { keymapMenuClick } from './menuCommand'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
-import { getSettings, recordConversion, saveSettings } from './settings'
+import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -315,6 +315,19 @@ function registerIpc(): void {
       if (win) buildAppMenu(win)
     }
     return next
+  })
+
+  ipcMain.handle('settings:getConfigDir', () => getConfigDir())
+  // Switching the settings folder takes effect immediately (no Save step): it moves
+  // where settings.json lives, returning the settings now in effect from that folder.
+  ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) => setConfigDir(dir))
+
+  ipcMain.handle('dialog:pickConfigDir', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Carpeta de configuración',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    return canceled ? null : filePaths[0]
   })
 
   ipcMain.handle('dialog:pickFiles', async () => {

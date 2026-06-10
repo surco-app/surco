@@ -1455,6 +1455,7 @@ export default function App(): React.JSX.Element {
           onClose={closeSettings}
           onSave={saveSettings}
           onPreviewTheme={setThemePreview}
+          onSettingsReplaced={setSettings}
           initialTab={activeModal.tab}
         />
       )}

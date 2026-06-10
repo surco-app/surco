@@ -11,7 +11,7 @@ import {
   Tag,
 } from 'lucide-react'
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
@@ -63,6 +63,9 @@ interface Props {
   onClose: () => void
   onSave: (patch: Partial<Settings>) => void
   onPreviewTheme: (theme: ThemePref) => void
+  // Moving the settings folder applies immediately and may adopt another machine's
+  // prefs, so the app's settings state is replaced outside the Save flow.
+  onSettingsReplaced: (next: Settings) => void
   initialTab?: Tab
 }
 
@@ -107,6 +110,7 @@ export function SettingsModal({
   onClose,
   onSave,
   onPreviewTheme,
+  onSettingsReplaced,
   initialTab,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -172,6 +176,48 @@ export function SettingsModal({
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
     if (dir) setOutputDir(dir)
+  }
+
+  // Where settings.json lives — null is the app default. Loaded on open because it
+  // isn't part of Settings (it's the pointer that says where Settings are read from).
+  const [configDir, setConfigDir] = useState<string | null>(null)
+  useEffect(() => {
+    window.api.getConfigDir().then(setConfigDir)
+  }, [])
+
+  async function moveConfigDir(dir: string | null): Promise<void> {
+    const next = await window.api.setConfigDir(dir)
+    setConfigDir(dir)
+    onSettingsReplaced(next)
+    // A folder switch can adopt another machine's prefs, so every staged synced field
+    // re-reads what is now in effect — otherwise a later Save would clobber the adopted
+    // values with this modal's stale copies. Machine-local fields (token, auto-match,
+    // output folder) aren't moved by a switch, so their staged edits survive.
+    setTheme(next.theme)
+    onPreviewTheme(next.theme)
+    setOutputFormat(next.outputFormat)
+    setAddToAppleMusic(next.addToAppleMusic)
+    setKeepOutputCopy(next.keepOutputCopy)
+    setOverwriteOriginal(next.overwriteOriginal)
+    setFilenameFormat(next.filenameFormat)
+    setGrouping(next.groupingPresets.join(', '))
+    setGenre(next.genrePresets.join(', '))
+    setTrimWhitespace(next.trimWhitespace)
+    setZeroPadTrack(next.zeroPadTrack)
+    setVisibleFields(next.visibleFields)
+    setRequiredFields(next.requiredFields)
+    setCoverMaxSize(String(next.coverMaxSize))
+    setCoverSquare(next.coverSquare)
+    setShowSpectrum(next.showSpectrum)
+    setShowLoudness(next.showLoudness)
+    setKeyNotation(next.keyNotation)
+    setNormalize(next.normalize)
+    setShortcutOverrides(next.shortcutOverrides)
+  }
+
+  async function changeConfigDir(): Promise<void> {
+    const dir = await window.api.pickConfigDir()
+    if (dir) await moveConfigDir(dir)
   }
 
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
@@ -346,6 +392,37 @@ export function SettingsModal({
                     </button>
                   ))}
                 </div>
+
+                <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                  {tr('settings.configDir')}
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    data-testid="settings-config-dir"
+                    value={configDir ?? tr('settings.configDirDefault')}
+                    readOnly
+                    className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+                  />
+                  <button
+                    type="button"
+                    data-testid="settings-config-dir-change"
+                    onClick={changeConfigDir}
+                    className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                  >
+                    {tr('common.change')}
+                  </button>
+                  {configDir && (
+                    <button
+                      type="button"
+                      data-testid="settings-config-dir-reset"
+                      onClick={() => moveConfigDir(null)}
+                      className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                    >
+                      {tr('settings.configDirReset')}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.configDirHint')}</p>
 
                 <label
                   htmlFor="settings-token"

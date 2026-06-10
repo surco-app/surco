@@ -26,6 +26,9 @@ export interface Api {
   onOpenFiles: (cb: (paths: string[]) => void) => () => void
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
+  getConfigDir: () => Promise<string | null>
+  setConfigDir: (dir: string | null) => Promise<Settings>
+  pickConfigDir: () => Promise<string | null>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
   searchDiscogs: (

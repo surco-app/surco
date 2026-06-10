@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // SettingsModal reads window.api.platform at module load, so stub it before the
 // component is imported.
 vi.hoisted(() => {
-  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
+  ;(globalThis.window as unknown as { api: unknown }).api = {
+    platform: 'darwin',
+    getConfigDir: async () => null,
+  }
 })
 
 import '../i18n'
@@ -49,6 +52,7 @@ function openNaming() {
       onClose={() => {}}
       onSave={() => {}}
       onPreviewTheme={() => {}}
+      onSettingsReplaced={() => {}}
     />,
   )
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
@@ -62,6 +66,7 @@ describe('SettingsModal tablist', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
   }
@@ -97,6 +102,7 @@ describe('SettingsModal save', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
@@ -112,6 +118,7 @@ describe('SettingsModal auto-match', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
   }
@@ -145,6 +152,7 @@ describe('SettingsModal destination', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-conversion'))
@@ -237,6 +245,7 @@ describe('SettingsModal filename tokens', () => {
         onClose={onClose}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-backdrop'))
@@ -256,6 +265,7 @@ describe('SettingsModal theme preview', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={onPreviewTheme}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-theme-dark'))
@@ -274,6 +284,7 @@ describe('SettingsModal organization', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
@@ -292,6 +303,7 @@ describe('SettingsModal stats', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
@@ -308,6 +320,7 @@ describe('SettingsModal stats', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
@@ -326,6 +339,7 @@ describe('SettingsModal stats', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
@@ -340,6 +354,7 @@ describe('SettingsModal stats', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-stats'))
@@ -355,6 +370,7 @@ describe('SettingsModal stats', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
         initialTab="stats"
       />,
     )
@@ -370,6 +386,7 @@ describe('SettingsModal shortcuts', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
         initialTab="shortcuts"
       />,
     )
@@ -438,6 +455,7 @@ describe('SettingsModal key notation', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-editor'))
@@ -456,5 +474,57 @@ describe('SettingsModal key notation', () => {
     fireEvent.click(screen.getByTestId('settings-key-notation-musical'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ keyNotation: 'musical' }))
+  })
+})
+
+describe('SettingsModal settings folder', () => {
+  // Moving the settings folder is how preferences sync across Macs (point it at
+  // iCloud Drive/Dropbox). It applies immediately — no Save step — and the staged
+  // synced fields refresh from the adopted folder so a later Save can't clobber
+  // another machine's prefs with this modal's stale copies.
+  it('applies the picked folder immediately and refreshes synced prefs', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.getConfigDir = vi.fn(async () => null)
+    api.pickConfigDir = vi.fn(async () => '/iCloud/Surco')
+    api.setConfigDir = vi.fn(async () => ({ ...settings, keyNotation: 'musical' }))
+    const onSettingsReplaced = vi.fn()
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-config-dir-change'))
+    expect(await screen.findByDisplayValue('/iCloud/Surco')).toBeInTheDocument()
+    expect(api.setConfigDir).toHaveBeenCalledWith('/iCloud/Surco')
+    expect(onSettingsReplaced).toHaveBeenCalledWith(
+      expect.objectContaining({ keyNotation: 'musical' }),
+    )
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ keyNotation: 'musical' }))
+  })
+
+  it('offers a reset back to the default folder only when a custom one is set', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.getConfigDir = vi.fn(async () => '/iCloud/Surco')
+    api.setConfigDir = vi.fn(async () => settings)
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(await screen.findByDisplayValue('/iCloud/Surco')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-config-dir-reset'))
+    expect(api.setConfigDir).toHaveBeenCalledWith(null)
+    expect(await screen.findByTestId('settings-config-dir')).not.toHaveValue('/iCloud/Surco')
+    expect(screen.queryByTestId('settings-config-dir-reset')).not.toBeInTheDocument()
   })
 })

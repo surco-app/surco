@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 // settings.ts persists to app.getPath('userData')/settings.json, so point Electron
 // at a throwaway temp dir and exercise the real read/merge/write round-trip.
@@ -22,10 +22,11 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...real, writeFileSync }
 })
 
-import { app } from 'electron'
-import { rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { getSettings, recordConversion, saveSettings } from './settings'
+import { app } from 'electron'
+import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -51,6 +52,69 @@ describe('saveSettings atomicity', () => {
     expect(writeTargets.length).toBeGreaterThan(0)
     expect(writeTargets).not.toContain(join(app.getPath('userData'), 'settings.json'))
     expect(getSettings().theme).toBe('dark')
+  })
+})
+
+describe('configurable settings folder', () => {
+  // Users point the settings folder at iCloud Drive/Dropbox to share preferences
+  // across Macs; these tests pin down the contract that makes that safe.
+  const syncedFile = (dir: string): string => join(dir, 'settings.json')
+  const localFile = (): string => join(app.getPath('userData'), 'settings.json')
+  const read = (path: string): Record<string, unknown> => JSON.parse(readFileSync(path, 'utf-8'))
+
+  afterEach(() => setConfigDir(null))
+
+  it('seeds the chosen folder with current prefs and reads/writes through it', () => {
+    saveSettings({ keyNotation: 'musical' })
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    expect(getConfigDir()).toBe(dir)
+    expect(read(syncedFile(dir)).keyNotation).toBe('musical')
+    saveSettings({ keyNotation: 'camelot' })
+    expect(read(syncedFile(dir)).keyNotation).toBe('camelot')
+    expect(getSettings().keyNotation).toBe('camelot')
+  })
+
+  // The Discogs token must never land in a cloud-synced folder, and machine-bound
+  // values (output path, onboarding, stats, the token-gated autoMatch) make no sense
+  // shared between Macs — they all stay in the local userData file.
+  it('keeps the token and per-machine values out of the synced file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ discogsToken: 'secret', autoMatch: true, outputDir: '/Volumes/USB' })
+    const synced = read(syncedFile(dir))
+    for (const key of [
+      'discogsToken',
+      'autoMatch',
+      'outputDir',
+      'hasSeenOnboarding',
+      'conversionCount',
+    ]) {
+      expect(synced).not.toHaveProperty(key)
+    }
+    expect(read(localFile()).discogsToken).toBe('secret')
+    expect(getSettings().discogsToken).toBe('secret')
+    expect(getSettings().outputDir).toBe('/Volumes/USB')
+  })
+
+  // Pointing a second Mac at an already-populated folder must adopt those prefs,
+  // not clobber them with this machine's — adopting is the whole point of syncing.
+  it('adopts an existing settings file instead of overwriting it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    writeFileSync(syncedFile(dir), JSON.stringify({ filenameFormat: '{title}' }))
+    setConfigDir(dir)
+    expect(getSettings().filenameFormat).toBe('{title}')
+  })
+
+  // Going back to the default location must not lose the prefs accumulated in the
+  // cloud folder: they are folded back into the local file first.
+  it('keeps synced prefs when resetting to the default folder', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ keyNotation: 'musical' })
+    setConfigDir(null)
+    expect(getConfigDir()).toBeNull()
+    expect(getSettings().keyNotation).toBe('musical')
   })
 })
 
