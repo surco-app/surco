@@ -12,15 +12,15 @@ export default function Speed() {
     <section id="velocidad" className="scroll-mt-24 pb-24">
       <Reveal>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('speed.kicker')}</p>
-        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
           {t('speed.title')}
         </h2>
-        <p className="mt-3 max-w-2xl leading-relaxed text-muted">{t('speed.lede')}</p>
+        <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('speed.lede')}</p>
       </Reveal>
 
       <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2">
         <Reveal>
-          <div className="h-full rounded-2xl border border-line bg-surface2/40 p-6">
+          <div className="inset-shadow-edge h-full rounded-2xl border border-line bg-surface2/40 p-6">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-semibold text-fg">{t('speed.manual')}</span>
               <span className="font-mono text-sm text-red">{t('speed.manualTime')}</span>
@@ -42,7 +42,7 @@ export default function Speed() {
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="relative h-full overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6 transition duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue/5">
+          <div className="inset-shadow-edge relative h-full overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6 transition duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue/5">
             <div
               className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue/15 blur-2xl"
               style={{ animation: 'glow 4s ease-in-out infinite' }}

@@ -9,17 +9,17 @@ export default function Pricing() {
     <section id="precio" className="scroll-mt-24 pb-24">
       <Reveal>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('pricing.kicker')}</p>
-        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
           {t('pricing.title')}
         </h2>
-        <p className="mt-3 max-w-2xl leading-relaxed text-muted">{t('pricing.lede')}</p>
+        <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('pricing.lede')}</p>
       </Reveal>
 
       <Reveal>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <a
             href="#instalar"
-            className="inline-flex w-fit items-center gap-1 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-blue/50 hover:text-blue"
+            className="inline-flex w-fit items-center gap-1 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg transition-[color,border-color,scale] duration-200 hover:border-blue/50 hover:text-blue active:scale-[0.96]"
           >
             {t('pricing.cta')} →
           </a>

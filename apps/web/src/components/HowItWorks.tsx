@@ -10,7 +10,7 @@ export default function HowItWorks() {
     <section id="como" className="scroll-mt-24 pb-24">
       <Reveal>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('how.kicker')}</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{t('how.title')}</h2>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('how.title')}</h2>
       </Reveal>
 
       <div className="relative mt-12 grid gap-8 md:grid-cols-3">

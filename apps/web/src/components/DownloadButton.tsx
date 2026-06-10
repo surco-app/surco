@@ -19,7 +19,7 @@ function detectOS(): OS {
 const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', other: '' }
 
 const primary =
-  'rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg transition-colors hover:bg-cyan'
+  'inline-flex items-center rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg shadow-lg shadow-blue/20 transition-[background-color,box-shadow,translate,scale] duration-200 hover:bg-cyan hover:shadow-xl hover:shadow-cyan/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96]'
 
 // Resolves the installer for the visitor's OS from the newest published GitHub
 // release. /releases/latest skips drafts, so until the first release is

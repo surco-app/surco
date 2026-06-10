@@ -17,11 +17,26 @@
      while staying the dimmest tier below --color-muted. */
   --color-faint: #828bb8;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  /* light-from-above edge highlight: composes with shadow-* utilities, so
+     hover shadows keep the inset edge instead of replacing it */
+  --inset-shadow-edge: inset 0 1px 0 rgba(192, 202, 245, 0.07);
 }
 
 html {
   scroll-behavior: smooth;
   background-color: #1a1b26;
+}
+
+::selection {
+  background: rgba(122, 162, 247, 0.3);
+  color: #e6ecff;
+}
+
+/* Visible keyboard focus on every interactive element; the default UA ring is
+   nearly invisible on this dark palette. */
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
 }
 
 @keyframes float {
@@ -67,13 +82,20 @@ html {
   30%, 100% { opacity: 1; transform: scale(1); }
 }
 
-/* scroll-triggered reveal */
+/* scroll-triggered reveal. Directional variants are declared before .reveal-in
+   so the shown state wins the transform at equal specificity. */
 .reveal-init {
   opacity: 0;
   transform: translateY(22px);
   transition:
     opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-from-left {
+  transform: translateX(-28px);
+}
+.reveal-from-right {
+  transform: translateX(28px);
 }
 .reveal-in {
   opacity: 1;
