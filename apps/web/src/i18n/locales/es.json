@@ -349,7 +349,8 @@
         "title": "Comprueba la calidad real",
         "body": [
           "Abre la sección de calidad y Surco dibuja el espectro de la pista: las frecuencias de arriba abajo a lo largo del tema. Un archivo lossless de verdad llega hasta ~22 kHz; un MP3 disfrazado de WAV se corta de golpe sobre los 16 kHz y deja un hueco en la parte alta. Una línea de puntos marca dónde se corta.",
-          "Debajo, una lectura con colores resume el nivel: LUFS integrado, pico real, dinámica, balance entre canales, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo. Para analizar toda la cola de golpe, usa el botón de la barra o ⌘⇧A."
+          "Debajo, una lectura con colores resume el nivel: LUFS integrado, pico real, dinámica, balance entre canales, DC offset y ruido de fondo — verde, ámbar o rojo de un vistazo. Para analizar toda la cola de golpe, usa el botón de la barra o ⌘⇧A.",
+          "Cada pista luce su veredicto como insignia en la propia lista, y puedes filtrar por «Sospechosas», «Buenas» o «Sin analizar» para triar una carpeta entera recién soltada. Merece la pena el repaso antes de pinchar: un corte que pasa desapercibido en unos cascos se nota en cuanto el tema suena por un equipo grande."
         ],
         "points": [
           "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada.",
@@ -373,6 +374,21 @@
         ],
         "shot": "discogs-es.png",
         "shotCaption": "Buscar un disco y elegir la pista en Discogs."
+      },
+      {
+        "id": "automatch",
+        "title": "Auto-match: etiquetado sin tocar nada",
+        "body": [
+          "Con tu token de Discogs y «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en Discogs en segundo plano. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti — artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano.",
+          "Si ningún candidato llega a ese listón, no toca nada: la pista queda para ti, y al abrir su búsqueda de Discogs el mejor aparece marcado como «Sugerida», a un clic de confirmarse. Con el interruptor apagado (así viene de serie) pasa lo mismo: Surco sugiere, pero nunca actualiza por su cuenta."
+        ],
+        "points": [
+          "Nunca pisa tu trabajo: salta las pistas ya emparejadas, conserva tu carátula y relanzarlo solo rellena los huecos.",
+          "Prueba las filas según entran en pantalla y tu búsqueda manual siempre va por delante, para no agotar el límite de peticiones.",
+          "Filtra la lista por «Auto-emparejadas» para revisar lo que ha hecho, o lánzalo a demanda con «Auto-emparejar todas las pistas»."
+        ],
+        "shot": "",
+        "shotCaption": ""
       },
       {
         "id": "album",

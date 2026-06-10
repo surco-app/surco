@@ -349,7 +349,8 @@
         "title": "Check the real quality",
         "body": [
           "Open the quality section and Surco draws the track's spectrum: frequencies from bottom to top across the song. A true lossless file reaches ~22 kHz; an MP3 disguised as WAV cuts off sharply around 16 kHz and leaves a gap up high. A dashed line marks where it cuts.",
-          "Below it, a color-coded readout sums up the levels: integrated LUFS, true peak, dynamics, channel balance, DC offset and noise floor — green, amber or red at a glance. To analyze the whole queue at once, use the toolbar button or ⌘⇧A."
+          "Below it, a color-coded readout sums up the levels: integrated LUFS, true peak, dynamics, channel balance, DC offset and noise floor — green, amber or red at a glance. To analyze the whole queue at once, use the toolbar button or ⌘⇧A.",
+          "Each track wears its verdict as a badge right in the list, and you can filter by “Suspect”, “Good” or “Unanalyzed” to triage a freshly dropped folder. The check pays off before a gig: a cutoff you’d never hear on headphones shows up the moment the track plays on a big rig."
         ],
         "points": [
           "Green “good quality”: the sound reaches all the way up, nothing missing.",
@@ -373,6 +374,21 @@
         ],
         "shot": "discogs-en.png",
         "shotCaption": "Searching a release and picking the track on Discogs."
+      },
+      {
+        "id": "automatch",
+        "title": "Auto-match: tagging without lifting a finger",
+        "body": [
+          "With your Discogs token and “Auto-match on import” enabled in Settings, every file you drop searches itself on Discogs in the background. Surco scores each candidate against the file’s title, duration, track number and artist, and only if a match is confident does it apply the metadata for you — artist, album, year, genre, label and cover, exactly as if you had picked it by hand.",
+          "If no candidate clears that bar, nothing is touched: the track is left for you, and opening its Discogs search shows the best one flagged “Suggested”, one click from confirmed. With the toggle off (the default) the same holds: Surco suggests, but never updates on its own."
+        ],
+        "points": [
+          "It never steps on your work: already-matched tracks are skipped, your cover art is kept, and re-running it only fills the gaps.",
+          "It probes rows as they scroll into view, and your manual searches always go first, so it never drains the request limit.",
+          "Filter the list by “Auto-matched” to review what it did, or run it on demand with “Auto-match all tracks”."
+        ],
+        "shot": "",
+        "shotCaption": ""
       },
       {
         "id": "album",
