@@ -180,8 +180,9 @@ export function Editor({
 
   // EBU R128 loudness for the shown track. Keyed by input path, so it measures once
   // per file and reads the right figures on a track switch; gated on the Settings
-  // toggle. A failed measure resolves null and the readout hides.
-  const { data: loudness } = useTrackLoudness(item.inputPath, showLoudness)
+  // toggle and off in multi-select, where the Quality section that shows it is hidden.
+  // A failed measure resolves null and the readout hides.
+  const { data: loudness } = useTrackLoudness(item.inputPath, !isMulti && showLoudness)
 
   // Read-only technical facts for the shown track. Keyed by input path, so it probes
   // once per file and reads the right facts on a track switch; disabled in multi-select,

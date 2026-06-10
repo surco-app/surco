@@ -464,7 +464,9 @@ describe('Editor multi-select sequential edits', () => {
 })
 
 describe('Editor multi-select', () => {
-  function renderMulti(opts: { done?: boolean; platform?: string; music?: boolean } = {}) {
+  function renderMulti(
+    opts: { done?: boolean; platform?: string; music?: boolean; loudness?: boolean } = {},
+  ) {
     if (opts.platform)
       (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
@@ -500,7 +502,7 @@ describe('Editor multi-select', () => {
         visibleFields={['title', 'album']}
         requiredFields={[]}
         showSpectrum
-        showLoudness={false}
+        showLoudness={opts.loudness ?? false}
         normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
         searchInputRef={createRef<HTMLInputElement>()}
         selectedTracks={[a, b]}
@@ -542,6 +544,15 @@ describe('Editor multi-select', () => {
     const { onProcessAll } = renderMulti()
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
+  })
+
+  // Multi-select hides the whole Quality section, so its loudness probe must not run:
+  // it's a full-file ffmpeg EBU R128 pass whose result nothing would display.
+  it('does not measure loudness while several tracks are selected', () => {
+    const loudness = vi.fn().mockResolvedValue(null)
+    ;(window as unknown as { api: Record<string, unknown> }).api.loudness = loudness
+    renderMulti({ loudness: true })
+    expect(loudness).not.toHaveBeenCalled()
   })
 
   // With the Apple Music setting on, the convert button must say so for the selection just
