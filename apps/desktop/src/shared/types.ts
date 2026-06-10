@@ -1,4 +1,3 @@
-import type { LicenseState, UsageState } from './license'
 import type { Chord } from './shortcuts'
 
 export type ThemePref = 'system' | 'light' | 'dark'
@@ -74,13 +73,6 @@ export interface Settings {
   shortcutOverrides: Record<string, Chord>
   hasSeenOnboarding: boolean
   conversionCount: number
-  // Stable per-install id sent as the device identity when activating a license.
-  // Generated once on first launch; never reset so re-activation reuses the slot.
-  deviceId: string
-  // Freemium license + free-tier usage. Both optional/absent for a fresh install;
-  // the license module tolerates undefined and treats it as the free tier.
-  license?: LicenseState
-  usage?: UsageState
 }
 
 export interface TrackMetadata {
@@ -187,10 +179,6 @@ export interface ProcessResult {
   // True when the user chose to skip a conflicting export: nothing was written, so
   // the renderer leaves the track untouched rather than marking it done.
   skipped?: boolean
-  // True when the free-tier monthly conversion limit was reached: nothing was
-  // written and the renderer should surface the upgrade screen. Never set during
-  // the beta (BETA_MODE) nor for Pro users.
-  limitReached?: boolean
   // True when the track went to Apple Music only and its output-folder copy was
   // removed, so outputPath is empty: the renderer marks the track added to Apple
   // Music instead of offering a "Show file" that points at nothing.

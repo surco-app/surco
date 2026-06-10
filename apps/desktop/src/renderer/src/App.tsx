@@ -40,7 +40,6 @@ import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
-import { UpgradeModal, type UpgradeReason } from './components/UpgradeModal'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
@@ -80,7 +79,6 @@ import {
   type TrackSort,
   tracksToAnalyze,
 } from './lib/triage'
-import { useLicense } from './lib/useLicense'
 import type { TrackItem } from './types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -172,24 +170,16 @@ type ActiveModal =
   | { type: 'export' }
   | { type: 'palette' }
   | { type: 'confirm'; confirm: ConfirmModal }
-  | { type: 'upgrade'; reason: UpgradeReason }
   | null
 
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
-  // Freemium entitlement. `isPro` defaults to true until the snapshot loads (and is
-  // always true during the beta), so a brief load never blocks a conversion. The
-  // upgrade screen opens with a reason; null means closed.
-  const license = useLicense()
-  const isPro = license.snapshot?.entitlement.isPro ?? true
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
-  // Opens the freemium upgrade screen with the reason the wall appeared.
-  const openUpgrade = (reason: UpgradeReason): void => setActiveModal({ type: 'upgrade', reason })
   // Live theme preview while the Settings modal is open; cleared when it closes.
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
@@ -285,10 +275,8 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     if (settingsOpen) {
       window.api.getSettings().then(setSettings)
-      // Refresh the snapshot so the License tab and Stats usage meter are current.
-      license.reload()
     }
-  }, [settingsOpen, license.reload])
+  }, [settingsOpen])
 
   useEffect(() => {
     const pref = themePreview ?? settings?.theme ?? 'system'
@@ -748,9 +736,6 @@ export default function App(): React.JSX.Element {
     tracks,
     settings,
     updateTrack,
-    isPro,
-    onUpgrade: openUpgrade,
-    onLicenseChanged: license.reload,
   })
 
   function saveSettings(patch: Partial<Settings>): void {
@@ -1008,20 +993,11 @@ export default function App(): React.JSX.Element {
       },
     },
     {
-      // Pro feature: opens the DJ-software export when licensed, otherwise the upgrade
-      // prompt — the same gate the toolbar applies.
       id: 'export',
       title: tr('commands.export'),
       hint: hintFor('export'),
       enabled: tracks.length > 0,
-      run: () => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export')),
-    },
-    {
-      id: 'upgrade',
-      title: tr('commands.upgrade'),
-      hint: hintFor('upgrade'),
-      enabled: true,
-      run: () => openUpgrade('manage'),
+      run: () => setActiveModal({ type: 'export' }),
     },
     {
       id: 'reveal',
@@ -1194,7 +1170,7 @@ export default function App(): React.JSX.Element {
           }}
           onConvertSelected={() => processAll(selectedTracks)}
           onCancelConvert={cancelBatch}
-          onExport={() => (isPro ? setActiveModal({ type: 'export' }) : openUpgrade('export'))}
+          onExport={() => setActiveModal({ type: 'export' })}
           onClearAll={askClearAll}
           onPalette={() => setActiveModal({ type: 'palette' })}
           onStats={() => openSettings('stats')}
@@ -1453,8 +1429,6 @@ export default function App(): React.JSX.Element {
           onSave={saveSettings}
           onPreviewTheme={setThemePreview}
           initialTab={activeModal.tab}
-          license={license.snapshot}
-          onLicenseChanged={license.reload}
         />
       )}
 
@@ -1481,14 +1455,6 @@ export default function App(): React.JSX.Element {
       )}
       {activeModal?.type === 'export' && (
         <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
-      )}
-      {activeModal?.type === 'upgrade' && license.snapshot && (
-        <UpgradeModal
-          snapshot={license.snapshot}
-          reason={activeModal.reason}
-          onClose={() => setActiveModal(null)}
-          onChanged={license.reload}
-        />
       )}
       {activeModal?.type === 'confirm' && (
         <ConfirmDialog

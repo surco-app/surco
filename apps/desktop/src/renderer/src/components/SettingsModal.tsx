@@ -2,7 +2,6 @@ import {
   ChartColumn,
   Image,
   Keyboard,
-  KeyRound,
   List,
   type LucideIcon,
   RefreshCw,
@@ -13,12 +12,10 @@ import {
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LicenseSnapshot } from '../../../shared/license'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { FieldsEditor } from './FieldsEditor'
-import { LicensePanel } from './LicensePanel'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { FIELD_DEFS } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
@@ -62,9 +59,6 @@ interface Props {
   onSave: (patch: Partial<Settings>) => void
   onPreviewTheme: (theme: ThemePref) => void
   initialTab?: Tab
-  // Freemium state for the License tab + the Stats usage meter. Null while it loads.
-  license?: LicenseSnapshot | null
-  onLicenseChanged?: () => void
 }
 
 type Tab =
@@ -75,7 +69,6 @@ type Tab =
   | 'artwork'
   | 'fields'
   | 'shortcuts'
-  | 'license'
   | 'stats'
 
 // Ordered to mirror Meta's preferences flow: broad app settings, then what the
@@ -90,8 +83,6 @@ const TABS: Tab[] = [
   'fields',
   'artwork',
   'shortcuts',
-  // 'license' is intentionally omitted for now to hide the tab; the panel,
-  // type, and icon are kept so it can be re-listed without rebuilding it.
   'stats',
 ]
 
@@ -103,7 +94,6 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
   fields: List,
   artwork: Image,
   shortcuts: Keyboard,
-  license: KeyRound,
   stats: ChartColumn,
 }
 
@@ -113,8 +103,6 @@ export function SettingsModal({
   onSave,
   onPreviewTheme,
   initialTab,
-  license = null,
-  onLicenseChanged = () => {},
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
@@ -791,27 +779,8 @@ export function SettingsModal({
               </div>
             )}
 
-            {tab === 'license' && (
-              <div className="px-1">
-                {license ? (
-                  <LicensePanel snapshot={license} onChanged={onLicenseChanged} />
-                ) : (
-                  <p className="text-sm text-fg-muted">{tr('settings.license.loading')}</p>
-                )}
-              </div>
-            )}
-
             {tab === 'stats' && (
               <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-                {/* Free-tier usage this month — only when there's a real cap (not Pro/beta). */}
-                {license && license.remainingConversions !== null && (
-                  <p data-testid="stats-usage" className="mb-6 text-sm text-fg-muted">
-                    {tr('settings.stats.thisMonth', {
-                      used: license.freeMonthlyConversions - license.remainingConversions,
-                      total: license.freeMonthlyConversions,
-                    })}
-                  </p>
-                )}
                 {settings.conversionCount > 0 ? (
                   <>
                     <p

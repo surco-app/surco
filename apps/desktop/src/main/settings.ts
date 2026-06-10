@@ -1,9 +1,7 @@
-import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
-import { bumpUsage } from '../shared/license'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -35,7 +33,6 @@ const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
-  deviceId: '',
 }
 
 function file(): string {
@@ -49,18 +46,7 @@ export function getSettings(): Settings {
   } catch {
     // corrupt file → fall back to defaults
   }
-  const merged = { ...defaults, ...parsed }
-  // Mint a stable device id the first time it's needed and persist it, so every
-  // license activation from this install presents the same device identity.
-  if (!merged.deviceId) {
-    merged.deviceId = randomUUID()
-    try {
-      writeFileSync(file(), JSON.stringify(merged, null, 2), 'utf-8')
-    } catch {
-      // best-effort: a non-persisted id still works for this run
-    }
-  }
-  return merged
+  return { ...defaults, ...parsed }
 }
 
 export function saveSettings(patch: Partial<Settings>): Settings {
@@ -77,10 +63,5 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 // here so the tally is the one source of truth the Stats tab reads back.
 export function recordConversion(): void {
   const cur = getSettings()
-  saveSettings({
-    conversionCount: cur.conversionCount + 1,
-    // The free tier is metered per month; fold this conversion into the monthly
-    // tally too, rolling over when the month changes.
-    usage: bumpUsage(cur.usage, Date.now()),
-  })
+  saveSettings({ conversionCount: cur.conversionCount + 1 })
 }

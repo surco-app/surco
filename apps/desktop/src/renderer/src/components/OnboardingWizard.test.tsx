@@ -39,7 +39,6 @@ const settings: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
-  deviceId: 'test-device',
 }
 
 function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {

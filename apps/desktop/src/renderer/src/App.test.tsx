@@ -34,7 +34,6 @@ function settings(over: Partial<Settings> = {}): Settings {
     shortcutOverrides: {},
     hasSeenOnboarding: true,
     conversionCount: 0,
-    deviceId: 'test-device',
     ...over,
   }
 }
@@ -101,25 +100,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     searchDiscogs: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
-    // The beta default: everyone is Pro so no gate fires in the App tests.
-    licenseStatus: vi.fn().mockResolvedValue(licenseSnapshot()),
-    validateLicense: vi.fn().mockResolvedValue({ ok: false, snapshot: licenseSnapshot() }),
     ...over,
-  }
-}
-
-// A beta snapshot (Pro, unlimited) — what licenseStatus returns unless a test overrides it.
-function licenseSnapshot() {
-  return {
-    betaMode: true,
-    entitlement: { tier: 'pro', isPro: true },
-    key: '',
-    email: '',
-    status: 'none',
-    remainingConversions: null,
-    freeMonthlyConversions: 10,
-    maxActivations: 3,
-    proPriceEur: 29,
   }
 }
 

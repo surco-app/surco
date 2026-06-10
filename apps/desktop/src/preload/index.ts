@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { LicenseActionResult, LicenseSnapshot } from '../shared/license'
 import type {
   BpmResult,
   KeyResult,
@@ -25,12 +24,6 @@ const api = {
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
-  licenseStatus: (): Promise<LicenseSnapshot> => ipcRenderer.invoke('license:status'),
-  activateLicense: (key: string, email: string): Promise<LicenseActionResult> =>
-    ipcRenderer.invoke('license:activate', key, email),
-  validateLicense: (): Promise<LicenseActionResult> => ipcRenderer.invoke('license:validate'),
-  deactivateLicense: (): Promise<LicenseActionResult> => ipcRenderer.invoke('license:deactivate'),
-  buyLicense: (): Promise<void> => ipcRenderer.invoke('license:buy'),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
   exportRekordbox: (xml: string): Promise<string | null> =>

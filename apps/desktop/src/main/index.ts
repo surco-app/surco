@@ -58,13 +58,6 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
-import { canConvert, resolveEntitlement } from '../shared/license'
-import {
-  activateLicense,
-  deactivateLicense,
-  licenseSnapshot,
-  validateLicense,
-} from './license'
 import { keymapMenuClick } from './menuCommand'
 import { resolvePlayable } from './playback'
 import { getProvider } from './providers'
@@ -324,24 +317,6 @@ function registerIpc(): void {
     return next
   })
 
-  // Freemium licensing. Status is a pure read of persisted state; activate/validate/
-  // deactivate talk to the web API and return a refreshed snapshot.
-  ipcMain.handle('license:status', () => licenseSnapshot())
-  ipcMain.handle('license:activate', (_e, key: string, email: string) =>
-    activateLicense(key, email),
-  )
-  ipcMain.handle('license:validate', () => validateLicense())
-  ipcMain.handle('license:deactivate', () => deactivateLicense())
-  // Opens the web checkout in the user's browser; Stripe Checkout can't run inside
-  // the app's window, so the purchase happens on getsurco.app and the user comes
-  // back to paste the emailed key into the activation screen.
-  ipcMain.handle('license:buy', () => {
-    const base = process.env.SURCO_LICENSE_API || 'https://getsurco.app'
-    // Carry the app's language so the Stripe page and the license email match it.
-    const lang = app.getLocale().toLowerCase().startsWith('es') ? 'es' : 'en'
-    return shell.openExternal(`${base}/buy?src=app&lang=${lang}`)
-  })
-
   ipcMain.handle('dialog:pickFiles', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Selecciona pistas',
@@ -445,14 +420,6 @@ function registerIpc(): void {
 
   ipcMain.handle('process:track', async (e, job: ProcessJob) => {
     const settings = getSettings()
-    // Free-tier gate: refuse the conversion once the monthly allowance is spent so
-    // the renderer can show the upgrade screen. No-op during the beta and for Pro,
-    // where the entitlement is unlimited. Enforced here (not just in the renderer)
-    // so the limit holds regardless of how the job was triggered.
-    const entitlement = resolveEntitlement(settings.license, Date.now())
-    if (!canConvert(entitlement, settings.usage, Date.now())) {
-      return { outputPath: '', inPlace: false, limitReached: true }
-    }
     const stage = (s: ProcessStage): void =>
       e.sender.send('process:progress', { id: job.id, stage: s })
 

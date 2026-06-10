@@ -1,4 +1,3 @@
-import type { LicenseActionResult, LicenseSnapshot } from '../shared/license'
 import type {
   AppleMusicAddJob,
   BpmResult,
@@ -27,11 +26,6 @@ export interface Api {
   onOpenFiles: (cb: (paths: string[]) => void) => () => void
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
-  licenseStatus: () => Promise<LicenseSnapshot>
-  activateLicense: (key: string, email: string) => Promise<LicenseActionResult>
-  validateLicense: () => Promise<LicenseActionResult>
-  deactivateLicense: () => Promise<LicenseActionResult>
-  buyLicense: () => Promise<void>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
   searchDiscogs: (
