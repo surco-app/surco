@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Reveal from './Reveal'
 import DownloadButton from './DownloadButton'
@@ -21,10 +21,12 @@ function GuideShot({
   src,
   caption,
   placeholder,
+  onZoom,
 }: {
   src: string
   caption: string
   placeholder: string
+  onZoom: (shot: { src: string; caption: string }) => void
 }) {
   const [failed, setFailed] = useState(false)
   return (
@@ -37,18 +39,75 @@ function GuideShot({
           <span className="max-w-xs px-6 text-xs text-muted">{caption}</span>
         </div>
       ) : (
-        <img
-          src={src}
-          alt={caption}
-          loading="lazy"
-          onError={() => setFailed(true)}
-          className="block w-full"
-        />
+        <button
+          type="button"
+          onClick={() => onZoom({ src, caption })}
+          className="block w-full cursor-zoom-in"
+        >
+          <img
+            src={src}
+            alt={caption}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="block w-full"
+          />
+        </button>
       )}
       <figcaption className="border-t border-line/60 px-4 py-2.5 font-mono text-xs text-muted">
         {caption}
       </figcaption>
     </figure>
+  )
+}
+
+// One overlay shared by every shot. It stays mounted so opening and closing are
+// plain CSS transitions (interruptible, animate both ways); the last shot is
+// kept while closing so the image doesn't vanish mid-fade.
+function GuideLightbox({
+  shot,
+  open,
+  onClose,
+}: {
+  shot: { src: string; caption: string } | null
+  open: boolean
+  onClose: () => void
+}) {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [open, onClose])
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={shot?.caption}
+      onClick={onClose}
+      className={`fixed inset-0 z-[60] flex cursor-zoom-out flex-col items-center justify-center gap-3 bg-bg/90 p-6 backdrop-blur-md transition-[opacity,visibility] duration-200 ${
+        open ? 'visible opacity-100' : 'invisible opacity-0'
+      }`}
+    >
+      {shot && (
+        <>
+          <img
+            src={shot.src}
+            alt={shot.caption}
+            className={`max-h-[85vh] max-w-full rounded-xl border border-line transition-[scale] duration-200 ${
+              open ? 'scale-100' : 'scale-[0.97]'
+            }`}
+          />
+          <p className="max-w-xl text-center font-mono text-xs text-muted">{shot.caption}</p>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -62,6 +121,8 @@ export default function Guide() {
   const otherLabel = i18n.language === 'en' ? 'ES' : 'EN'
   const otherCode = i18n.language === 'en' ? 'es' : 'en'
   const placeholder = t('guide.shotPlaceholder')
+  const [lightboxShot, setLightboxShot] = useState<{ src: string; caption: string } | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
@@ -149,7 +210,15 @@ export default function Guide() {
                 </ul>
               )}
               {s.shot && (
-                <GuideShot src={`/guide/${s.shot}`} caption={s.shotCaption} placeholder={placeholder} />
+                <GuideShot
+                  src={`/guide/${s.shot}`}
+                  caption={s.shotCaption}
+                  placeholder={placeholder}
+                  onZoom={(shot) => {
+                    setLightboxShot(shot)
+                    setLightboxOpen(true)
+                  }}
+                />
               )}
             </Reveal>
           </section>
@@ -165,6 +234,8 @@ export default function Guide() {
           </Reveal>
         </section>
       </main>
+
+      <GuideLightbox shot={lightboxShot} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
 
       <footer className="border-t border-line/60">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
