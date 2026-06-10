@@ -482,6 +482,19 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.9",
+        "date": "June 10, 2026",
+        "title": "Richer metadata and quality in three colors",
+        "items": [
+          "New metadata fields: composer, ISRC, mix, original year and a compilation flag. The composer fills itself from the Discogs writing credits.",
+          "The quality dot now grades three levels — green, amber and red — so a low-bitrate MP3 dressed up as lossless stands out, with an indicator while the spectrum is analyzed.",
+          "A button to clear all of a track's metadata, next to fill-from-filename.",
+          "Each list row shows its source format (WAV, FLAC, MP3…) so what still needs converting is obvious at a glance.",
+          "Start over in the context menu rebuilds a track from its original file.",
+          "The Apple Music check also looks up the Discogs-suggested title, catching library copies saved under the canonical name."
+        ]
+      },
+      {
         "version": "0.8",
         "date": "June 10, 2026",
         "title": "BPM, key detection and free forever",
