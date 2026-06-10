@@ -67,6 +67,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
             type="checkbox"
             checked={dismiss}
             onChange={(e) => setDismiss(e.target.checked)}
+            className="h-4 w-4 accent-[var(--color-accent)]"
           />
           {tr('donateNudge.dontShowAgain')}
         </label>
@@ -74,7 +75,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
           type="button"
           data-testid="donate-nudge-close"
           onClick={() => onClose(dismiss)}
-          className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 py-1.5 text-sm hover:bg-[var(--color-line-strong)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
         >
           {tr('donateNudge.later')}
         </button>
