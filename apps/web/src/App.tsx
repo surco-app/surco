@@ -13,6 +13,7 @@ import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
+import WaveBackdrop from './components/WaveBackdrop'
 import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
@@ -272,9 +273,11 @@ export default function App() {
           </Reveal>
         </section>
 
-        <Pricing />
-
-        <InstallSection />
+        <div className="relative">
+          <WaveBackdrop />
+          <Pricing />
+          <InstallSection />
+        </div>
 
         <section className="pb-24">
           <Reveal>

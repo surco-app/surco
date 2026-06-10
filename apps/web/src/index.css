@@ -102,6 +102,20 @@ html {
   transform: none;
 }
 
+/* horizontal drift for the decorative audio waves; the duplicated periodic
+   path makes the -50% translate wrap around invisibly */
+@keyframes waveDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.wave-drift {
+  animation: waveDrift linear infinite;
+}
+
 /* blue→cyan gradient text accent */
 .text-grad {
   background: linear-gradient(100deg, var(--color-blue), var(--color-cyan));
