@@ -325,32 +325,33 @@ export function Editor({
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
   // One-click "empty every tag", next to the fill button so set-and-clear read as a
-  // pair. Single clears the shown track; multi clears the whole selection.
+  // pair. Icon-only (like the output-name pencil) because the Apple Music badge
+  // already crowds the header; the tooltip and aria-label carry the name.
   const clearButton = (
     <button
       type="button"
       data-testid="clear-meta-btn"
+      aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
-      <Eraser className="h-3 w-3" aria-hidden="true" />
-      {tr('editor.clearMeta')}
-      <Tooltip label={tr('editor.clearMetaHint')} align="start" />
+      <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('editor.clearMetaHint')} align="end" />
     </button>
   )
 
-  // One-click "fill tags from the file name", shown in the File Name section (single) and
-  // the form header (multi, where File Name is hidden).
+  // One-click "fill tags from the file name", shown in the form header. Icon-only
+  // for the same reason as the clear button beside it.
   const deriveButton = onDeriveTags ? (
     <button
       type="button"
       data-testid="derive-btn"
+      aria-label={tr('editor.deriveFromName')}
       onClick={deriveFromNames}
-      className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
-      <Tag className="h-3 w-3" aria-hidden="true" />
-      {tr('editor.deriveFromName')}
-      <Tooltip label={tr('editor.deriveFromNameHint')} align="start" />
+      <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
     </button>
   ) : null
 
