@@ -221,6 +221,16 @@ export interface LoudnessResult {
   noiseFloorDb: number | null
 }
 
+// Tempo detected from the audio itself (onset-envelope autocorrelation in
+// main). Surfaced as an editable suggestion next to the bpm field — never
+// written to tags unattended, because detection can land on the wrong
+// half/double-time octave and a silently wrong BPM is worse for a DJ than
+// none. confidence (0–1) is the normalized autocorrelation peak.
+export interface BpmResult {
+  bpm: number
+  confidence: number
+}
+
 // Read-only technical facts about the source file, shown in the Properties panel.
 // Probed once per file via ffprobe (stream + container) plus an fs.stat for the
 // on-disk size and timestamps that the container doesn't carry.
