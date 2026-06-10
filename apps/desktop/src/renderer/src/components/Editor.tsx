@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Eraser,
   Pencil,
   RefreshCw,
   SlidersVertical,
@@ -239,6 +240,34 @@ export function Editor({
     if (patches.length) onDeriveTags(patches)
   }
 
+  // Empties every metadata field — the inverse of the fill controls (filename /
+  // Discogs) — so a badly-labelled file can be retagged from scratch instead of
+  // deleting fifteen values by hand. Artwork is untouched: the cover picker owns
+  // its own remove, and a wrong title rarely means a wrong cover.
+  function clearAllMeta(): void {
+    const blank: TrackMetadata = {
+      title: '',
+      artist: '',
+      album: '',
+      albumArtist: '',
+      year: '',
+      genre: '',
+      grouping: '',
+      comment: '',
+      trackNumber: '',
+      discNumber: '',
+      bpm: '',
+      key: '',
+      publisher: '',
+      catalogNumber: '',
+      remixArtist: '',
+      discogsReleaseId: '',
+      rating: '',
+    }
+    if (isMulti) onChangeAllMeta?.(blank)
+    else onChange({ meta: blank })
+  }
+
   const stale = isStale(item)
   // A stale track is done but edited since, so it shows the convert button again
   // (as "Update") rather than the done/reveal state.
@@ -294,6 +323,21 @@ export function Editor({
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
+
+  // One-click "empty every tag", next to the fill button so set-and-clear read as a
+  // pair. Single clears the shown track; multi clears the whole selection.
+  const clearButton = (
+    <button
+      type="button"
+      data-testid="clear-meta-btn"
+      onClick={clearAllMeta}
+      className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+    >
+      <Eraser className="h-3 w-3" aria-hidden="true" />
+      {tr('editor.clearMeta')}
+      <Tooltip label={tr('editor.clearMetaHint')} align="start" />
+    </button>
+  )
 
   // One-click "fill tags from the file name", shown in the File Name section (single) and
   // the form header (multi, where File Name is hidden).
@@ -362,6 +406,7 @@ export function Editor({
                     {tr('editor.notInLibrary')}
                   </span>
                 )}
+                {clearButton}
                 {deriveButton}
               </div>
             }

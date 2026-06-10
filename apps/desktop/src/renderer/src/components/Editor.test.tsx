@@ -216,6 +216,40 @@ describe('Editor derive from filename', () => {
   })
 })
 
+describe('Editor clear metadata', () => {
+  // The inverse of the fill controls (filename / Discogs): one click empties every
+  // field so the user can retag a badly-labelled file from scratch instead of
+  // deleting fifteen values by hand. Artwork is untouched — the cover picker owns it.
+  it('empties every metadata field of the track in one click', () => {
+    const { onChange } = renderEditor({
+      id: 'a',
+      meta: { title: 'Runaway', artist: 'Alex K', genre: 'Electronic', rating: '4' },
+    })
+    fireEvent.click(screen.getByTestId('clear-meta-btn'))
+    expect(onChange).toHaveBeenCalledWith({
+      meta: {
+        title: '',
+        artist: '',
+        album: '',
+        albumArtist: '',
+        year: '',
+        genre: '',
+        grouping: '',
+        comment: '',
+        trackNumber: '',
+        discNumber: '',
+        bpm: '',
+        key: '',
+        publisher: '',
+        catalogNumber: '',
+        remixArtist: '',
+        discogsReleaseId: '',
+        rating: '',
+      },
+    })
+  })
+})
+
 describe('Editor convert button normalization note', () => {
   // Normalization must be visible at the moment of converting, not just buried in a
   // folded section — otherwise the user can't tell the export will alter loudness.
@@ -575,6 +609,16 @@ describe('Editor multi-select', () => {
       { id: 'a', meta: { artist: 'kumara', title: 'one' } },
       { id: 'b', meta: { artist: 'cortina', title: 'two' } },
     ])
+  })
+
+  // Clearing over a selection goes through the same shared-form channel as any
+  // multi edit, so every selected track is emptied, not just the primary one.
+  it('empties the metadata of every selected track in one click', () => {
+    const { onChangeAllMeta } = renderMulti()
+    fireEvent.click(screen.getByTestId('clear-meta-btn'))
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '', artist: '', album: '', genre: '', rating: '' }),
+    )
   })
 
   // The same post-convert "Add to Apple Music" button is reused for the selection rather
