@@ -267,6 +267,7 @@ export function Editor({
       isrc: '',
       mixName: '',
       originalYear: '',
+      compilation: '',
     }
     if (isMulti) onChangeAllMeta?.(blank)
     else onChange({ meta: blank })
@@ -467,6 +468,25 @@ export function Editor({
                     : visibleFields.map((key) => {
                         const def = FIELD_DEFS.find((d) => d.key === key)
                         if (!def) return null
+                        // Compilation is a yes/no fact, not free text: a checkbox
+                        // writes the exact '1' the TCMP/COMPILATION tag needs.
+                        if (def.key === 'compilation')
+                          return (
+                            <label key={def.key} className="flex items-center gap-2 self-end pb-2">
+                              <input
+                                type="checkbox"
+                                data-testid="field-compilation"
+                                checked={item.meta.compilation === '1'}
+                                onChange={(e) =>
+                                  setField('compilation', e.target.checked ? '1' : '')
+                                }
+                                className="h-4 w-4 accent-[var(--color-accent)]"
+                              />
+                              <span className="text-xs font-medium text-fg-dim">
+                                {tr(`fields.${def.key}`)}
+                              </span>
+                            </label>
+                          )
                         return (
                           <Field
                             key={def.key}

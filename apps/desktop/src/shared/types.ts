@@ -109,6 +109,10 @@ export interface TrackMetadata {
   isrc?: string
   mixName?: string
   originalYear?: string
+  // Boolean-ish: '1' when the album is a various-artists compilation, '' when
+  // not. Kept a string like every other field; written as TCMP/COMPILATION,
+  // which is what makes Apple Music group VA albums instead of splitting them.
+  compilation?: string
 }
 
 export interface DiscogsSearchResult {

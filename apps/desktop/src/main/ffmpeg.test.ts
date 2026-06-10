@@ -116,6 +116,13 @@ describe('convertArgs', () => {
     expect(args).toContain('TORY=1998')
   })
 
+  it('writes the compilation flag ffmpeg maps to the TCMP frame iTunes reads', () => {
+    const id3 = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', { ...meta, compilation: '1' })
+    expect(id3).toContain('compilation=1')
+    const flac = convertArgs('/in.wav', '/o.flac', 'flac', { ...meta, compilation: '1' })
+    expect(flac).toContain('COMPILATION=1')
+  })
+
   it('writes the Vorbis comment names into a FLAC target, where the ID3 frame ids would be opaque', () => {
     // verified against ffmpeg: the FLAC muxer has no ID3 mapping and writes the
     // keys verbatim, so TKEY/TBPM/TPE4 would land as comments Traktor and Mixed
@@ -565,6 +572,7 @@ describe('tagsFromProbe', () => {
       isrc: 'DEA449900124',
       mixName: 'Club Mix',
       originalYear: '1998',
+      compilation: '',
     })
   })
 
@@ -584,6 +592,13 @@ describe('tagsFromProbe', () => {
     expect(m.isrc).toBe('DEA449900124')
     expect(m.mixName).toBe('Club Mix')
     expect(m.originalYear).toBe('1998')
+  })
+
+  it('reads the compilation flag as set only when the tag is a literal 1', () => {
+    // iTunes writes TCMP=1 when set; a 0 (or junk) must read as unset so the
+    // checkbox never shows ticked for a file that isn't a compilation
+    expect(tagsFromProbe({ format: { tags: { TCMP: '1' } } }).compilation).toBe('1')
+    expect(tagsFromProbe({ format: { tags: { compilation: '0' } } }).compilation).toBe('')
   })
 
   it('matches tag keys case-insensitively across muxers', () => {
@@ -642,6 +657,7 @@ describe('tagsFromProbe', () => {
       isrc: '',
       mixName: '',
       originalYear: '',
+      compilation: '',
     })
   })
 })

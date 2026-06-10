@@ -278,6 +278,7 @@
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Original year",
+    "compilation": "Compilation",
     "rating": "Rating"
   },
   "normalize": {

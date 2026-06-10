@@ -225,6 +225,21 @@ describe('writeTags', () => {
     expect(readFileSync(file).includes(Buffer.from('TORY'))).toBe(true)
   })
 
+  it('round-trips the compilation flag and clears it when unset', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, compilation: '1' })
+    let f = TagFile.createFromPath(file)
+    expect(f.tag.isCompilation).toBe(true)
+    f.dispose()
+
+    writeTags(file, { ...meta, compilation: '' })
+    f = TagFile.createFromPath(file)
+    expect(f.tag.isCompilation).toBe(false)
+    f.dispose()
+  })
+
   it('clears the original year frame when the field is emptied', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)

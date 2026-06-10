@@ -88,6 +88,9 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     // TORY is what our own ID3v2.3 writes; TDOR is its v2.4 successor and
     // ORIGINALYEAR the Picard-convention Vorbis comment.
     originalYear: pick('tory', 'tdor', 'originalyear', 'original_year'),
+    // Boolean-ish flag: only a literal '1' counts as set, so a TCMP=0 (or junk)
+    // never shows the checkbox ticked for a non-compilation.
+    compilation: pick('compilation', 'tcmp', 'cpil') === '1' ? '1' : '',
   }
 }
 
@@ -295,6 +298,8 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
     [vorbis ? 'SUBTITLE' : 'TIT3', meta.mixName ?? ''],
     // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist.
     [vorbis ? 'ORIGINALYEAR' : 'TORY', meta.originalYear ?? ''],
+    // 'compilation' is ffmpeg's mapped name for the TCMP frame iTunes reads.
+    [vorbis ? 'COMPILATION' : 'compilation', meta.compilation ?? ''],
     ['CATALOGNUMBER', meta.catalogNumber],
     ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
   ]

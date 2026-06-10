@@ -249,8 +249,33 @@ describe('Editor clear metadata', () => {
         isrc: '',
         mixName: '',
         originalYear: '',
+        compilation: '',
       },
     })
+  })
+})
+
+describe('Editor compilation field', () => {
+  // A compilation is a yes/no fact, not free text: a checkbox writes the exact
+  // '1' the TCMP/COMPILATION tag needs, where a text field would invite junk.
+  it('renders a checkbox that writes 1 when ticked', () => {
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['compilation'] })
+    const box = screen.getByTestId('field-compilation')
+    expect(box).toHaveProperty('checked', false)
+    fireEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ compilation: '1' }) })
+  })
+
+  it('unticks back to an empty value, clearing the tag on the next write', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { compilation: '1' } },
+      'wav',
+      { visibleFields: ['compilation'] },
+    )
+    const box = screen.getByTestId('field-compilation')
+    expect(box).toHaveProperty('checked', true)
+    fireEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ compilation: '' }) })
   })
 })
 

@@ -154,6 +154,7 @@ export function writeTags(
     tag.composers = toArray(meta.composer ?? '')
     tag.isrc = meta.isrc ?? ''
     tag.subtitle = meta.mixName ?? ''
+    tag.isCompilation = meta.compilation === '1'
 
     const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     // Pin MP3/AIFF to ID3v2.3 so an in-place edit matches the ffmpeg conversion path

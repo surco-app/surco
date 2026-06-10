@@ -23,6 +23,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'composer' },
   { key: 'originalYear' },
   { key: 'isrc' },
+  { key: 'compilation' },
   { key: 'publisher' },
   { key: 'catalogNumber' },
   { key: 'discogsReleaseId' },
