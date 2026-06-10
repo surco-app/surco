@@ -10,8 +10,13 @@ const DEBOUNCE_MS = 600
 // avoid duplicate imports. Keyed by title+artist so the same song is only looked up
 // once and revisiting it hits the cache. keepPreviousData holds the last verdict on
 // screen while a fresh one settles rather than flashing the badge off. Off macOS there
-// is no library to query, so it reports 'idle' and the badge hides.
-export function useAppleMusicLookup(artist: string, title: string): 'idle' | 'yes' | 'no' {
+// is no library to query, so it reports 'idle' and the badge hides. 'pending' covers
+// the gap between mount and the first verdict (debounce + osascript), so the badge
+// slot can hold a skeleton instead of unmounting and reflowing the header.
+export function useAppleMusicLookup(
+  artist: string,
+  title: string,
+): 'idle' | 'pending' | 'yes' | 'no' {
   const eligible = window.api.platform === 'darwin' && artist.trim() !== '' && title.trim() !== ''
   const [settled, setSettled] = useState(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: artist and title are the deliberate triggers, not values read in the body — the debounce must re-arm on every edit (even while `eligible` stays true) so typing doesn't fire a lookup per keystroke.
@@ -30,6 +35,7 @@ export function useAppleMusicLookup(artist: string, title: string): 'idle' | 'ye
     staleTime: 0,
     placeholderData: keepPreviousData,
   })
-  if (!eligible || isError || data === undefined) return 'idle'
+  if (!eligible || isError) return 'idle'
+  if (data === undefined) return 'pending'
   return data ? 'yes' : 'no'
 }

@@ -1219,6 +1219,28 @@ describe('Editor Apple Music library badge', () => {
     )
   })
 
+  // While the lookup is in flight the slot holds a skeleton instead of unmounting,
+  // so the header doesn't reflow when the verdict lands.
+  it('holds a skeleton in the badge slot while the lookup is in flight', () => {
+    setApi('darwin', true)
+    ;(window as unknown as { api: { lookupAppleMusic: unknown } }).api.lookupAppleMusic = vi
+      .fn()
+      .mockReturnValue(new Promise(() => {}))
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
+    expect(screen.getByTestId('apple-music-skeleton')).toBeInTheDocument()
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+  })
+
+  // The badge comes and goes with the lookup; rendering it before the
+  // "Fill from filename" button keeps that button anchored at the header's edge.
+  it('renders the badge before the fill-from-filename button', async () => {
+    setApi('darwin', true)
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
+    const badge = await screen.findByTestId('apple-music-status')
+    const derive = screen.getByTestId('derive-btn')
+    expect(badge.compareDocumentPosition(derive) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   // Off macOS there is no Apple Music library to query, so the lookup never runs and
   // the badge stays hidden rather than making a promise the platform can't keep.
   it('never queries or shows the badge off macOS', async () => {

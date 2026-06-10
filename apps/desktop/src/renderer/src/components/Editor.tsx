@@ -336,7 +336,16 @@ export function Editor({
             onToggle={() => setFormOpen((v) => !v)}
             right={
               <div className="flex items-center gap-3">
-                {deriveButton}
+                {/* Badge first, button last: the badge comes and goes with the lookup, so
+                    keeping the button at the row's end stops it shifting when the badge
+                    (un)mounts. While the lookup runs a skeleton holds the badge's slot. */}
+                {!isMulti && inLibrary === 'pending' && (
+                  <span
+                    data-testid="apple-music-skeleton"
+                    aria-hidden="true"
+                    className="h-6 w-44 animate-pulse rounded-full bg-[var(--color-panel-2)]"
+                  />
+                )}
                 {!isMulti && inLibrary === 'yes' && (
                   <span
                     data-testid="apple-music-status"
@@ -353,6 +362,7 @@ export function Editor({
                     {tr('editor.notInLibrary')}
                   </span>
                 )}
+                {deriveButton}
               </div>
             }
           />

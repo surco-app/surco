@@ -42,6 +42,17 @@ describe('useAppleMusicLookup', () => {
     expect(lookup).not.toHaveBeenCalled()
   })
 
+  // Between mount and the verdict (debounce + osascript) there is no answer yet; a
+  // distinct pending state lets the badge hold its space with a skeleton instead of
+  // unmounting and shifting the header controls.
+  it('reports pending while the verdict is still in flight', () => {
+    setApi('darwin', vi.fn().mockReturnValue(new Promise(() => {})))
+    const { result } = renderHook(() => useAppleMusicLookup('deadmau5', 'Strobe'), {
+      wrapper: wrapper(),
+    })
+    expect(result.current).toBe('pending')
+  })
+
   // The match drives the "already in library" badge that stops a duplicate import.
   it('reports yes once a present song is found in the library', async () => {
     setApi('darwin', vi.fn().mockResolvedValue(true))
