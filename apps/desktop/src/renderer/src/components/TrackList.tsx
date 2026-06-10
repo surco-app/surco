@@ -158,7 +158,7 @@ const TrackRow = memo(function TrackRow({
           {t.loadingMeta ? (
             <span
               data-testid="track-loading"
-              className="mt-1.5 block h-3 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
+              className="mt-2 block h-2.5 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
             />
           ) : t.status === 'processing' && t.stage ? (
             <span data-testid="track-stage" className="mt-1 block">
