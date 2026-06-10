@@ -519,12 +519,12 @@ export function Editor({
                 open={outputOpen}
                 onToggle={() => setOutputOpen((v) => !v)}
                 right={
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <button
                       type="button"
                       data-testid="regenerate-output-name"
                       onClick={onRegenerateName}
-                      className="press group relative flex items-center gap-1.5 rounded-md text-xs text-fg-dim hover:text-fg"
+                      className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
                     >
                       <RefreshCw className="h-3 w-3" aria-hidden="true" />
                       {tr('editor.regenerate')}
@@ -535,7 +535,7 @@ export function Editor({
                       data-testid="customize-output-name"
                       aria-label={tr('editor.regenerateCustom')}
                       onClick={onOpenRename}
-                      className="press group relative flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:text-fg"
+                      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                       <Tooltip label={tr('editor.regenerateCustom')} align="end" />
