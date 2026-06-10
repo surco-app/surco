@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
   DiscogsTrack,
@@ -583,24 +583,9 @@ export function Editor({
                   </span>
                 </label>
               )}
-              {outputOpen && (
+              {outputOpen && willEditInPlace && (
                 <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
-                  {willEditInPlace ? (
-                    tr('editor.outputNameHintInPlace')
-                  ) : (
-                    <Trans
-                      i18nKey="editor.outputNameHint"
-                      components={[
-                        <button
-                          key="settings"
-                          type="button"
-                          data-testid="output-name-hint-settings"
-                          onClick={() => onOpenSettings('naming')}
-                          className="underline underline-offset-2 hover:no-underline"
-                        />,
-                      ]}
-                    />
-                  )}
+                  {tr('editor.outputNameHintInPlace')}
                 </p>
               )}
             </div>

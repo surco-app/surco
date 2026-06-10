@@ -212,7 +212,6 @@
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "output": "Output:",
     "outputName": "File name",
-    "outputNameHint": "Defaults to the original file name. Edit the pattern in <0>Settings → Naming</0>.",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
     "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Conversion.",

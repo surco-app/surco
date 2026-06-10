@@ -212,7 +212,6 @@
     "spectrumCutoff": "corte ~{{cutoff}}",
     "output": "Salida:",
     "outputName": "Nombre del archivo",
-    "outputNameHint": "Por defecto usa el nombre original. Edita el patrón en <0>Ajustes → Nombres</0>.",
     "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra — no se crea ninguna copia en la carpeta de salida.",
     "overwriteTitle": "Sobrescribe el original",
     "overwriteHint": "Reescribe el archivo de origen en su sitio, conservando el nombre. No deja copia en la carpeta de salida. Desactívalo en Ajustes → Conversión.",

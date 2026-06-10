@@ -1087,20 +1087,11 @@ describe('Editor in-place hint', () => {
     )
   })
 
-  it('shows the generic hint when the export converts to a different format', () => {
+  // The default case needs no caption — users already know the pattern lives in
+  // Settings — so the slot stays empty and the rare in-place warning stands out more.
+  it('shows no hint when the export converts to a different format', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
-    expect(screen.getByTestId('output-name-hint')).toHaveTextContent('Settings → Naming')
-    expect(screen.getByTestId('output-name-hint')).not.toHaveTextContent(
-      i18n.t('editor.outputNameHintInPlace'),
-    )
-  })
-
-  // The hint's whole point is to drop the user straight into the pattern editor, so the
-  // link must deep-link to the naming tab rather than the default Settings landing.
-  it('deep-links the generic hint to the file name settings', () => {
-    const { onOpenSettings } = renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
-    fireEvent.click(screen.getByTestId('output-name-hint-settings'))
-    expect(onOpenSettings).toHaveBeenCalledWith('naming')
+    expect(screen.queryByTestId('output-name-hint')).toBeNull()
   })
 })
 
