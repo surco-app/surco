@@ -255,7 +255,7 @@
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",
     "clearMeta": "Borrar metadatos",
-    "clearMetaHint": "Vacía todos los campos de metadatos (la carátula se conserva)"
+    "clearMetaHint": "Vacía todos los campos de metadatos"
   },
   "fields": {
     "title": "Título",

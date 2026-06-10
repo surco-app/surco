@@ -255,7 +255,7 @@
     "deriveFromName": "Fill from filename",
     "deriveFromNameHint": "Fill the metadata fields from the file name",
     "clearMeta": "Clear metadata",
-    "clearMetaHint": "Empty every metadata field (artwork is kept)"
+    "clearMetaHint": "Empty every metadata field"
   },
   "fields": {
     "title": "Title",
