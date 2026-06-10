@@ -5,6 +5,8 @@ import { I18nextProvider } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import type { i18n } from 'i18next'
 import App from './App'
+import DonateCancel from './components/DonateCancel'
+import DonateCompleted from './components/DonateCompleted'
 import Guide from './components/Guide'
 import { createI18n, type Language } from './i18n'
 
@@ -110,6 +112,11 @@ export const routes: RouteRecord[] = [
       { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
       { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
+      // Transactional pages PayPal redirects to after the donate flow: their copy is
+      // self-contained and language-detected on the client, so they don't need the
+      // localized App shell.
+      { path: 'donate/cancel', element: <DonateCancel />, entry: 'src/routes.tsx' },
+      { path: 'donate/completed', element: <DonateCompleted />, entry: 'src/routes.tsx' },
     ],
   },
 ]
