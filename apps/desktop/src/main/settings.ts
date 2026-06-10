@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
@@ -54,7 +54,13 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   // Auto-match requires the user's own Discogs token (its own rate-limit bucket), so it can
   // never be on without one — whatever the UI sent, and clearing the token also turns it off.
   if (!next.discogsToken.trim()) next.autoMatch = false
-  writeFileSync(file(), JSON.stringify(next, null, 2), 'utf-8')
+  // Write-then-rename: a crash or full disk mid-write must never truncate the live
+  // file, because getSettings' corrupt-file fallback would silently reset every
+  // preference. The rename replaces it whole or not at all — same pattern as the
+  // conversion pipeline's temp-write.
+  const tmp = `${file()}.tmp`
+  writeFileSync(tmp, JSON.stringify(next, null, 2), 'utf-8')
+  renameSync(tmp, file())
   return next
 }
 

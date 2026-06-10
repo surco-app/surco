@@ -10,8 +10,21 @@ vi.mock('electron', () => {
   return { app: { getPath: () => dir } }
 })
 
+// Pass-through fs that records where writeFileSync lands, so the atomicity test can
+// assert the live settings.json is never written in place.
+const { writeTargets } = vi.hoisted(() => ({ writeTargets: [] as string[] }))
+vi.mock('node:fs', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs')>()
+  const writeFileSync: typeof real.writeFileSync = (path, data, opts) => {
+    writeTargets.push(String(path))
+    return real.writeFileSync(path, data, opts)
+  }
+  return { ...real, writeFileSync }
+})
+
 import { app } from 'electron'
 import { rmSync } from 'node:fs'
+import { join } from 'node:path'
 import { getSettings, recordConversion, saveSettings } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
@@ -24,6 +37,20 @@ describe('recordConversion', () => {
     recordConversion()
     recordConversion()
     expect(getSettings().conversionCount).toBe(2)
+  })
+})
+
+describe('saveSettings atomicity', () => {
+  // A crash or full disk mid-write must never truncate the live settings file:
+  // getSettings' corrupt-file fallback would then silently reset every preference,
+  // including the output folder and the Discogs token. The live settings.json may
+  // only ever be replaced whole, never written in place.
+  it('never writes the live settings.json in place', () => {
+    writeTargets.length = 0
+    saveSettings({ theme: 'dark' })
+    expect(writeTargets.length).toBeGreaterThan(0)
+    expect(writeTargets).not.toContain(join(app.getPath('userData'), 'settings.json'))
+    expect(getSettings().theme).toBe('dark')
   })
 })
 
