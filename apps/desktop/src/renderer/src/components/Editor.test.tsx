@@ -94,6 +94,7 @@ function renderEditor(
   onFormatChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
+  onShowLoudnessHelp: ReturnType<typeof vi.fn>
   onOpenRename: ReturnType<typeof vi.fn>
   onRegenerateName: ReturnType<typeof vi.fn>
 } {
@@ -103,6 +104,7 @@ function renderEditor(
   const onFormatChange = vi.fn()
   const onTrashOriginal = vi.fn()
   const onOpenSettings = vi.fn()
+  const onShowLoudnessHelp = vi.fn()
   const onOpenRename = vi.fn()
   const onRegenerateName = vi.fn()
   renderWithQuery(
@@ -128,6 +130,7 @@ function renderEditor(
       onAddToAppleMusic={vi.fn()}
       onTrashOriginal={onTrashOriginal}
       onOpenSettings={onOpenSettings}
+      onShowLoudnessHelp={onShowLoudnessHelp}
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
     />,
@@ -139,6 +142,7 @@ function renderEditor(
     onFormatChange,
     onTrashOriginal,
     onOpenSettings,
+    onShowLoudnessHelp,
     onOpenRename,
     onRegenerateName,
   }
@@ -267,11 +271,9 @@ describe('Editor compilation field', () => {
   })
 
   it('unticks back to an empty value, clearing the tag on the next write', () => {
-    const { onChange } = renderEditor(
-      { id: 'a', meta: { compilation: '1' } },
-      'wav',
-      { visibleFields: ['compilation'] },
-    )
+    const { onChange } = renderEditor({ id: 'a', meta: { compilation: '1' } }, 'wav', {
+      visibleFields: ['compilation'],
+    })
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', true)
     fireEvent.click(box)
@@ -358,24 +360,13 @@ describe('Editor loudness pills', () => {
     expect(screen.getByTestId('loudness-pill-dc')).toBeInTheDocument()
   })
 
-  // The figures need explaining once, but must not clutter the panel on every edit,
-  // so the explanation stays hidden until the user asks for it.
-  it('reveals the explanation only when the help button is pressed', async () => {
+  // The explainer modal is owned by App (so it gates the global shortcuts like every
+  // other dialog); the editor's ⓘ button only signals the intent upward.
+  it('asks App to show the explanation when the help button is pressed', async () => {
     seedLoudness(healthy)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
-    expect(screen.queryByTestId('loudness-help')).toBeNull()
+    const { onShowLoudnessHelp } = renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
     fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
-    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
-    expect(screen.getByTestId('loudness-help')).toHaveAccessibleName()
-  })
-
-  it('closes the help modal on Escape, the expected way to dismiss a dialog', async () => {
-    seedLoudness(healthy)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
-    fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
-    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
-    fireEvent.keyDown(document.body, { key: 'Escape' })
-    expect(screen.queryByTestId('loudness-help')).toBeNull()
+    expect(onShowLoudnessHelp).toHaveBeenCalledTimes(1)
   })
 
   // The toggle is icon-only, so without an accessible name a screen reader just
@@ -431,6 +422,7 @@ function MultiHarness() {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
       />
@@ -579,6 +571,7 @@ describe('Editor multi-select', () => {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onOpenSettings={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
       />,

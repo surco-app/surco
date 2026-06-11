@@ -1,6 +1,5 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModalShell } from './ModalShell'
 
@@ -15,16 +14,6 @@ const METRICS = ['Lufs', 'Peak', 'Range', 'Crest', 'Balance', 'Dc', 'Noise'] as 
 // explaining once, not on every edit.
 export function LoudnessHelpModal({ onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-
-  // App's global Escape handler only closes app-level overlays; this modal is
-  // Editor-local, so it dismisses itself on Escape like any other dialog.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent): void {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   return (
     <ModalShell

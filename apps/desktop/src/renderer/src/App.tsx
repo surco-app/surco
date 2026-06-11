@@ -30,6 +30,7 @@ import { Editor } from './components/Editor'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
+import { LoudnessHelpModal } from './components/LoudnessHelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
 import { RenameModal } from './components/RenameModal'
@@ -170,6 +171,7 @@ type ActiveModal =
   | { type: 'onboarding' }
   | { type: 'donateNudge' }
   | { type: 'help' }
+  | { type: 'loudnessHelp' }
   | { type: 'findReplace' }
   | { type: 'rename' }
   | { type: 'export' }
@@ -1466,6 +1468,7 @@ export default function App(): React.JSX.Element {
               onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
               onTrashOriginal={() => askDeleteOriginal(selected)}
               onOpenSettings={openSettings}
+              onShowLoudnessHelp={() => setActiveModal({ type: 'loudnessHelp' })}
               onOpenRename={() => setActiveModal({ type: 'rename' })}
               onRegenerateName={() => {
                 const name = renderOutputName(
@@ -1531,6 +1534,9 @@ export default function App(): React.JSX.Element {
       )}
 
       {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
+      {activeModal?.type === 'loudnessHelp' && (
+        <LoudnessHelpModal onClose={() => setActiveModal(null)} />
+      )}
       {activeModal?.type === 'findReplace' && (
         <FindReplaceModal
           tracks={tracks}

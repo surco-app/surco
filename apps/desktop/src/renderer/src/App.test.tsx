@@ -377,6 +377,38 @@ describe('App import skeleton', () => {
   })
 })
 
+describe('App loudness help overlay', () => {
+  // The help dialog must gate the global shortcuts like every other modal. It used to
+  // live inside the keyed Editor without setting overlayOpen: pressing the next-track
+  // key with it open moved the selection, remounted the Editor, and silently destroyed
+  // the dialog under the user.
+  it('keeps track shortcuts gated while the loudness help dialog is open', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ showLoudness: true })),
+      loudness: vi.fn().mockResolvedValue({
+        integratedLufs: -12,
+        truePeakDb: -1.5,
+        lra: 8,
+        channelBalanceDb: 0.5,
+        dcOffset: 0.0001,
+        crestDb: 16,
+        noiseFloorDb: -55,
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
+    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
+    expect(screen.getByTestId('loudness-help')).toHaveAccessibleName()
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('loudness-help')).toBeNull()
+  })
+})
+
 describe('App track removal', () => {
   // Removed tracks must not pin their probe results in the session-long query cache:
   // spectrogram images are the heaviest objects in the app, and a long session of

@@ -46,7 +46,6 @@ import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
-import { LoudnessHelpModal } from './LoudnessHelpModal'
 import { LoudnessReadout } from './LoudnessReadout'
 import { NormalizeControls } from './NormalizeControls'
 import { PropertiesReadout } from './PropertiesReadout'
@@ -121,6 +120,10 @@ interface Props {
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
   onOpenSettings: (tab?: 'general' | 'naming') => void
+  // Opens the loudness-pills explainer. App owns the modal so it gates the global
+  // shortcuts like every other dialog — a track-switch key pressed while it was
+  // Editor-local used to remount the editor and silently destroy the open dialog.
+  onShowLoudnessHelp: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
   onOpenRename: () => void
@@ -158,6 +161,7 @@ export function Editor({
   onAddToAppleMusic,
   onTrashOriginal,
   onOpenSettings,
+  onShowLoudnessHelp,
   onOpenRename,
   onRegenerateName,
 }: Props): React.JSX.Element {
@@ -170,9 +174,6 @@ export function Editor({
   // the user opens them when they want to inspect the source.
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [spectrumOpen, setSpectrumOpen] = useState(true)
-  // The loudness help is hidden by default and toggled by the ⓘ button: the
-  // figures need explaining once, but shouldn't clutter the panel on every edit.
-  const [loudnessHelpOpen, setLoudnessHelpOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(true)
   // Normalization is off by default and most users won't touch it, so its section
   // starts folded — unlike the always-on Metadata/Quality/File name sections.
@@ -687,17 +688,12 @@ export function Editor({
                       </>
                     ) : null)}
                   {showLoudness && loudness && (
-                    <LoudnessReadout
-                      loudness={loudness}
-                      onShowHelp={() => setLoudnessHelpOpen(true)}
-                    />
+                    <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
                   )}
                 </div>
               )}
             </div>
           )}
-
-          {loudnessHelpOpen && <LoudnessHelpModal onClose={() => setLoudnessHelpOpen(false)} />}
 
           {!isMulti && !overwriteOriginal && (
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -862,21 +858,23 @@ export function Editor({
                   </button>
                 )}
                 <div className="flex gap-2">
-                  {window.api.platform === 'darwin' && musicExt !== 'flac' && !inMusicLibraryOnly && (
-                    <button
-                      type="button"
-                      data-testid="add-apple-music"
-                      onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
-                      disabled={musicAdding || musicAdded}
-                      className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
-                    >
-                      {musicAdding
-                        ? tr('editor.appleMusicAdding')
-                        : musicAdded
-                          ? tr('editor.appleMusicAdded')
-                          : tr('editor.appleMusicAdd')}
-                    </button>
-                  )}
+                  {window.api.platform === 'darwin' &&
+                    musicExt !== 'flac' &&
+                    !inMusicLibraryOnly && (
+                      <button
+                        type="button"
+                        data-testid="add-apple-music"
+                        onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
+                        disabled={musicAdding || musicAdded}
+                        className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                      >
+                        {musicAdding
+                          ? tr('editor.appleMusicAdding')
+                          : musicAdded
+                            ? tr('editor.appleMusicAdded')
+                            : tr('editor.appleMusicAdd')}
+                      </button>
+                    )}
                   <ExportButton
                     quiet
                     status={isMulti ? 'idle' : item.status}
