@@ -1,4 +1,4 @@
-import { Eraser, Pencil, RefreshCw, Tag } from 'lucide-react'
+import { Eraser, Tag } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,15 +14,12 @@ import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useKey } from '../hooks/useKey'
-import { useSpectrogram } from '../hooks/useSpectrogram'
-import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
-import { formatKHz, isLowResCover, qualityVerdict, type Verdict } from '../lib/quality'
+import { isLowResCover } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -36,14 +33,13 @@ import { ConvertFooter } from './ConvertFooter'
 import { DiscogsPanel } from './DiscogsPanel'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
-import { LoudnessReadout } from './LoudnessReadout'
 import { type FieldSpec, MetadataForm } from './MetadataForm'
-import { NormalizeControls } from './NormalizeControls'
-import { PropertiesReadout } from './PropertiesReadout'
+import { NormalizeSection } from './NormalizeSection'
+import { OutputNameSection } from './OutputNameSection'
+import { PropertiesSection } from './PropertiesSection'
+import { QualitySection } from './QualitySection'
 import { SectionHeader } from './SectionHeader'
-import { Spectrogram } from './Spectrogram'
 import { Tooltip } from './Tooltip'
-import { WaveSpinner } from './WaveSpinner'
 
 // Only free-text fields make sense as insert TARGETS — composing into structured
 // values (year, BPM, key, track numbers…) would produce garbage — but every
@@ -55,12 +51,6 @@ const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
   'album',
   'comment',
 ])
-
-const qualityBadge: Record<Verdict, { className: string; label: string }> = {
-  good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
-  warn: { className: 'bg-warn/15 text-warn', label: 'editor.qualitySuspect' },
-  bad: { className: 'bg-danger/15 text-danger', label: 'editor.qualityBad' },
-}
 
 interface Props {
   item: TrackItem
@@ -180,34 +170,6 @@ export function Editor({
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
   const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
-
-  // Spectrogram (and the lossless-cutoff verdict it implies) for the shown track. The
-  // hover prefetch and the "analyze all" sweep warm the same cache keys, so an
-  // already-warmed track shows instantly. Gated on the Quality toggle; a failed
-  // analysis surfaces as analyzeError.
-  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum)
-  const spectrum = spectrumQuery.data
-  const analyzing = spectrumQuery.isFetching
-  const analyzeError = spectrumQuery.isError
-    ? spectrumQuery.error instanceof Error
-      ? spectrumQuery.error.message
-      : tr('editor.analyzeError')
-    : ''
-
-  // EBU R128 loudness for the shown track. Keyed by input path, so it measures once
-  // per file and reads the right figures on a track switch; gated on the Settings
-  // toggle and off in multi-select, where the Quality section that shows it is hidden.
-  // A failed measure resolves null and the readout hides.
-  const { data: loudness } = useTrackLoudness(item.inputPath, !isMulti && showLoudness)
-
-  // Read-only technical facts for the shown track. Keyed by input path, so it probes
-  // once per file and reads the right facts on a track switch; disabled in multi-select,
-  // where the panel is hidden and there is no single source to inspect. A failed probe
-  // surfaces as propertiesError, which the panel renders as "unavailable".
-  const { data: properties, isError: propertiesError } = useTrackProperties(
-    item.inputPath,
-    !isMulti,
-  )
 
   // Tempo detected from the audio, offered as a chip under the bpm field. Detection
   // can octave-fold (70 vs 140), so it stays a suggestion the user clicks to accept,
@@ -519,133 +481,36 @@ export function Editor({
           )}
 
           {!isMulti && (
-            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-              <SectionHeader
-                title={tr('editor.propertiesTitle')}
-                open={propertiesOpen}
-                onToggle={() => setPropertiesOpen((v) => !v)}
-              />
-              {propertiesOpen &&
-                (properties ? (
-                  <PropertiesReadout
-                    properties={properties}
-                    fileName={item.fileName}
-                    inputPath={item.inputPath}
-                    duration={item.duration}
-                  />
-                ) : (
-                  (properties === null || propertiesError) && (
-                    <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
-                  )
-                ))}
-            </div>
+            <PropertiesSection
+              item={item}
+              open={propertiesOpen}
+              onToggle={() => setPropertiesOpen((v) => !v)}
+            />
           )}
 
           {!isMulti && (showSpectrum || showLoudness) && (
-            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-              <SectionHeader
-                title={tr('editor.qualityTitle')}
-                open={spectrumOpen}
-                onToggle={() => setSpectrumOpen((v) => !v)}
-                right={
-                  spectrum &&
-                  spectrum.cutoffHz !== null && (
-                    <span
-                      data-testid="quality-badge"
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)]
-                          .className
-                      }`}
-                    >
-                      {tr(
-                        qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)]
-                          .label,
-                      )}
-                    </span>
-                  )
-                }
-              />
-              {spectrumOpen && (
-                <div className="mt-3">
-                  {showSpectrum &&
-                    (analyzing ? (
-                      <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
-                        <WaveSpinner />
-                        {tr('editor.analyzing')}
-                      </div>
-                    ) : analyzeError ? (
-                      <p className="text-xs text-danger">{analyzeError}</p>
-                    ) : spectrum ? (
-                      <>
-                        <Spectrogram spectrum={spectrum} />
-                        {spectrum.cutoffHz !== null && (
-                          <p className="mt-2 text-xs text-fg-dim">
-                            {tr('editor.qualityCaption', {
-                              cutoff: formatKHz(spectrum.cutoffHz),
-                              nyquist: formatKHz(spectrum.sampleRateHz / 2),
-                            })}
-                          </p>
-                        )}
-                      </>
-                    ) : null)}
-                  {showLoudness && loudness && (
-                    <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
-                  )}
-                </div>
-              )}
-            </div>
+            <QualitySection
+              item={item}
+              showSpectrum={showSpectrum}
+              showLoudness={showLoudness}
+              open={spectrumOpen}
+              onToggle={() => setSpectrumOpen((v) => !v)}
+              onShowLoudnessHelp={onShowLoudnessHelp}
+            />
           )}
 
           {!isMulti && !overwriteOriginal && (
-            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-              <SectionHeader
-                title={tr('editor.outputName')}
-                open={outputOpen}
-                onToggle={() => setOutputOpen((v) => !v)}
-                right={
-                  <span className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      data-testid="regenerate-output-name"
-                      onClick={onRegenerateName}
-                      className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
-                    >
-                      <RefreshCw className="h-3 w-3" aria-hidden="true" />
-                      {tr('editor.regenerate')}
-                      <Tooltip label={tr('editor.regenerateHint')} align="end" />
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="customize-output-name"
-                      aria-label={tr('editor.regenerateCustom')}
-                      onClick={onOpenRename}
-                      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-                    >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                      <Tooltip label={tr('editor.regenerateCustom')} align="end" />
-                    </button>
-                  </span>
-                }
-              />
-              {outputOpen && (
-                <label className="relative mt-3 block">
-                  <input
-                    data-testid="output-name"
-                    value={item.outputName ?? defaultOutputName}
-                    onChange={(e) => onChange({ outputName: e.target.value })}
-                    className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
-                  />
-                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-                    .{format}
-                  </span>
-                </label>
-              )}
-              {outputOpen && willEditInPlace && (
-                <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
-                  {tr('editor.outputNameHintInPlace')}
-                </p>
-              )}
-            </div>
+            <OutputNameSection
+              item={item}
+              format={format}
+              defaultOutputName={defaultOutputName}
+              willEditInPlace={willEditInPlace}
+              open={outputOpen}
+              onToggle={() => setOutputOpen((v) => !v)}
+              onChangeName={(outputName) => onChange({ outputName })}
+              onRegenerateName={onRegenerateName}
+              onOpenRename={onOpenRename}
+            />
           )}
 
           {/* Overwrite mode pins the name to the original, so the File Name section is
@@ -665,38 +530,15 @@ export function Editor({
             </div>
           )}
 
-          <div
-            data-testid="editor-normalize"
-            className="mt-6 border-t border-[var(--color-line)] pt-5"
-          >
-            <SectionHeader
-              title={tr('normalize.title')}
-              open={normalizeOpen}
-              onToggle={() => setNormalizeOpen((v) => !v)}
-              right={
-                normalizeCfg.mode !== 'none' ? (
-                  <span
-                    data-testid="normalize-active-badge"
-                    className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-                  >
-                    {tr(`normalize.mode.${normalizeCfg.mode}`)}
-                  </span>
-                ) : undefined
-              }
-            />
-            {normalizeOpen && (
-              <div className="mt-3">
-                <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
-                <NormalizeControls
-                  value={normalizeCfg}
-                  onChange={(n) => {
-                    setNormalizeCfg(n)
-                    onNormalizeChange?.(n)
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          <NormalizeSection
+            value={normalizeCfg}
+            open={normalizeOpen}
+            onToggle={() => setNormalizeOpen((v) => !v)}
+            onChange={(n) => {
+              setNormalizeCfg(n)
+              onNormalizeChange?.(n)
+            }}
+          />
         </div>
 
         <ConvertFooter
