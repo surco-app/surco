@@ -27,6 +27,12 @@ html {
   background-color: #1a1b26;
 }
 
+/* Tailwind v4 preflight resets buttons to cursor: default; restore the pointer
+   so enabled buttons read as clickable, matching links. */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 ::selection {
   background: rgba(122, 162, 247, 0.3);
   color: #e6ecff;
