@@ -780,6 +780,12 @@ export function SettingsModal({
                     min={0}
                     value={synced.coverMaxSize}
                     onChange={(e) => patch('coverMaxSize', e.target.value)}
+                    // An invalid cap (blank, negative, garbage) used to save silently
+                    // as the default; clamping on blur shows the figure in effect.
+                    onBlur={() => {
+                      const max = parseInt(synced.coverMaxSize, 10)
+                      if (!Number.isFinite(max) || max < 0) patch('coverMaxSize', '1200')
+                    }}
                     className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                   />
                   <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>

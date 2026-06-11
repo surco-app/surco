@@ -60,6 +60,19 @@ function openNaming() {
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
+describe('SettingsModal cover size clamp', () => {
+  // An invalid cap used to save silently as 1200 — the typed value just vanished on
+  // the next open. Clamping visibly on blur shows the figure that will be in effect.
+  it('snaps an invalid cover size back to the default where the user can see it', async () => {
+    openNaming()
+    fireEvent.click(screen.getByTestId('settings-tab-artwork'))
+    const input = screen.getByTestId('settings-cover-max') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '-5' } })
+    fireEvent.blur(input)
+    expect(input.value).toBe('1200')
+  })
+})
+
 describe('SettingsModal tablist', () => {
   function open() {
     render(
@@ -147,7 +160,10 @@ describe('SettingsModal auto-match', () => {
 })
 
 describe('SettingsModal destination', () => {
-  function openConversion(over: Partial<Settings> = {}, onSave: (p: Partial<Settings>) => void = () => {}) {
+  function openConversion(
+    over: Partial<Settings> = {},
+    onSave: (p: Partial<Settings>) => void = () => {},
+  ) {
     render(
       <SettingsModal
         settings={{ ...settings, ...over }}
