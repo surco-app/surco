@@ -262,6 +262,31 @@ describe('useTrackProcessing', () => {
     expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 1, failed: 0 })
   })
 
+  // The renderer's copy of a file's embedded art is a display thumbnail; the convert
+  // job must name the source file so main embeds the original at full resolution
+  // instead of permanently downscaling the user's artwork.
+  it('takes the file’s own art from the source, never the renderer thumbnail', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const thumb = 'data:image/jpeg;base64,thumb'
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', coverUrl: thumb, embeddedCover: thumb })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const job = processTrack.mock.calls[0][0]
+    expect(job.coverFromFile).toBe('/m/a.wav')
+    expect(job.coverUrl).toBeUndefined()
+    expect(job.coverPath).toBeUndefined()
+  })
+
   // An in-place export rewrites the source file — re-encoded, normalized, re-tagged —
   // so the session-long probe caches for that path now describe a file that no longer
   // exists. Without eviction the loudness/properties/spectrum readouts keep showing the

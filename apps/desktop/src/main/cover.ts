@@ -2,12 +2,16 @@ import { unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { downloadCover } from './discogs'
-import { processCover } from './ffmpeg'
+import { extractCoverFile, processCover } from './ffmpeg'
 import { tmpName } from './tmp'
 
 export interface CoverSource {
   coverPath?: string
   coverUrl?: string
+  // Path of an audio file whose own embedded art should be used. The renderer only
+  // keeps a display thumbnail of embedded art, so write paths name the source file
+  // and main pulls the full-resolution picture fresh.
+  coverFromFile?: string
 }
 
 export interface PreparedCover {
@@ -36,6 +40,10 @@ export async function prepareProcessedCover(
       tempCover,
       Buffer.from(src.coverUrl.slice(src.coverUrl.indexOf(',') + 1), 'base64'),
     )
+    coverPath = tempCover
+  }
+  if (!coverPath && src.coverFromFile) {
+    tempCover = (await extractCoverFile(src.coverFromFile)) ?? undefined
     coverPath = tempCover
   }
   if (!coverPath) return undefined

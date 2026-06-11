@@ -149,6 +149,21 @@ export function coverArgs(input: string, output: string): string[] {
   ]
 }
 
+// Full-resolution extract to a temp file, for the WRITE paths (embedding at convert
+// time, exporting, dragging out). The renderer's session-long copy is a thumbnail,
+// so anything that writes art pulls it fresh from the source. The caller owns the
+// returned file's cleanup.
+export async function extractCoverFile(input: string): Promise<string | null> {
+  const out = join(tmpdir(), tmpName('cover-full', 'jpg'))
+  try {
+    await run(ffmpegPath, coverArgs(input, out))
+    return out
+  } catch {
+    await unlink(out).catch(() => {})
+    return null
+  }
+}
+
 export async function extractCover(input: string): Promise<string | null> {
   const out = join(tmpdir(), tmpName('cover', 'jpg'))
   try {

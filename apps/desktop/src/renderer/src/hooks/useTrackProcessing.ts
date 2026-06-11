@@ -9,6 +9,7 @@ import {
   eligibleForBatch,
   summarizeBatch,
 } from '../lib/batch'
+import { coverSourceOf } from '../lib/coverSource'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
@@ -112,8 +113,7 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
         inputPath: track.inputPath,
         outputName,
         meta,
-        coverUrl: track.coverUrl,
-        coverPath: track.coverPath,
+        ...coverSourceOf(track),
         removeCover: track.coverRemoved,
         format: formatOverride,
         normalize: normalizeOverride,
@@ -160,8 +160,7 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
       await window.api.addToAppleMusic({
         outputPath: track.outputPath,
         meta,
-        coverUrl: track.coverUrl,
-        coverPath: track.coverPath,
+        ...coverSourceOf(track),
       })
       updateTrack(id, { musicStatus: 'added' })
     } catch (e) {

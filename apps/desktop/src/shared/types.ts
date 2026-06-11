@@ -158,6 +158,9 @@ export interface ProcessJob {
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
+  // Take the art from this audio file's own embedded picture (full resolution,
+  // extracted in main) — the renderer only holds a display thumbnail of it.
+  coverFromFile?: string
   // Strips any embedded artwork with no replacement, for when the user cleared
   // the cover. Only meaningful when no coverUrl/coverPath is supplied — a cover
   // source always wins over removal.
@@ -175,6 +178,9 @@ export interface CoverExportJob {
   name: string
   coverUrl?: string
   coverPath?: string
+  // Take the art from this audio file's own embedded picture (full resolution,
+  // extracted in main) — the renderer only holds a display thumbnail of it.
+  coverFromFile?: string
 }
 
 export interface AppleMusicAddJob {
@@ -182,6 +188,9 @@ export interface AppleMusicAddJob {
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
+  // Take the art from this audio file's own embedded picture (full resolution,
+  // extracted in main) — the renderer only holds a display thumbnail of it.
+  coverFromFile?: string
 }
 
 // One artist/title pair to probe for in the Apple Music library. The lookup takes

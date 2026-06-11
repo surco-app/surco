@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DiscogsRelease } from '../../../shared/types'
+import { coverSourceOf } from '../lib/coverSource'
 import { isLowResCover } from '../lib/quality'
 import { stepImageIndex } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -58,19 +59,20 @@ export function CoverPicker({
 
   // startDrag needs a file on disk the instant the drag begins, so prepare the
   // processed cover whenever it changes and stash its path for onDragStart.
+  const { coverUrl, coverPath, embeddedCover, inputPath } = item
   useEffect(() => {
     coverDragPath.current = null
-    if (!item.coverUrl && !item.coverPath) return
+    if (!coverUrl && !coverPath) return
     let cancelled = false
     window.api
-      .prepareCoverDrag({ coverUrl: item.coverUrl, coverPath: item.coverPath })
+      .prepareCoverDrag(coverSourceOf({ coverUrl, coverPath, embeddedCover, inputPath }))
       .then((path) => {
         if (!cancelled) coverDragPath.current = path
       })
     return () => {
       cancelled = true
     }
-  }, [item.coverUrl, item.coverPath])
+  }, [coverUrl, coverPath, embeddedCover, inputPath])
 
   // Clear the stale size when the artwork changes; onLoad fills it in again.
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
@@ -122,8 +124,7 @@ export function CoverPicker({
     if (!item.coverUrl) return
     void window.api.exportCover({
       name: item.outputName ?? item.fileName,
-      coverUrl: item.coverUrl,
-      coverPath: item.coverPath,
+      ...coverSourceOf(item),
     })
   }
 
