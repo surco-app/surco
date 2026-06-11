@@ -173,9 +173,25 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
 
   // Adds every selected track to Apple Music in turn — the multi-select counterpart of
   // the per-track button, reusing the same single-track add (which skips ones not yet
-  // converted) so the two paths can never drift.
+  // converted) so the two paths can never drift. Runs through the shared batch state:
+  // the top bar shows its progress and the same cancel that stops a convert-all stops
+  // it between adds (an in-flight AppleScript add still finishes, like a conversion).
   async function addAllToAppleMusic(ids: string[]): Promise<void> {
-    for (const id of ids) await addTrackToAppleMusic(id)
+    if (batching) return
+    cancelBatchRef.current = false
+    setBatching(true)
+    setBatchProgress({ done: 0, total: ids.length })
+    try {
+      let done = 0
+      for (const id of ids) {
+        if (cancelBatchRef.current) break
+        await addTrackToAppleMusic(id)
+        done += 1
+        setBatchProgress({ done, total: ids.length })
+      }
+    } finally {
+      setBatching(false)
+    }
   }
 
   async function processAll(

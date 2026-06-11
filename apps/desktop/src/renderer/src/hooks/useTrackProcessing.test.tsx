@@ -262,6 +262,43 @@ describe('useTrackProcessing', () => {
     expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 1, failed: 0 })
   })
 
+  // The multi-select Apple Music sweep used to be an uninterruptible serial loop with
+  // no progress: a large selection of slow AppleScript adds had no escape hatch. It
+  // now runs through the batch state, so the same cancel that stops a convert stops it.
+  it('cancels the Apple Music sweep between tracks', async () => {
+    let releaseFirst: () => void = () => {}
+    const addToAppleMusic = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((res) => {
+            releaseFirst = res
+          }),
+      )
+      .mockResolvedValue(undefined)
+    setApi({ addToAppleMusic })
+    const tracks = [
+      track({ id: 'a', outputPath: '/out/a.aiff' }),
+      track({ id: 'b', outputPath: '/out/b.aiff' }),
+    ]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.addAllToAppleMusic(['a', 'b'])
+    })
+    await waitFor(() => expect(addToAppleMusic).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.cancelBatch())
+    releaseFirst()
+    await act(async () => {
+      await run
+    })
+    expect(addToAppleMusic).toHaveBeenCalledTimes(1)
+  })
+
   // The renderer's copy of a file's embedded art is a display thumbnail; the convert
   // job must name the source file so main embeds the original at full resolution
   // instead of permanently downscaling the user's artwork.
