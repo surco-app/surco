@@ -33,17 +33,15 @@ import {
 import { selectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
-import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
 import { FORMATS } from './ExportButton'
-import { Field } from './Field'
 import type { InsertSource } from './FieldInsertMenu'
 import { LoudnessReadout } from './LoudnessReadout'
+import { type FieldSpec, MetadataForm } from './MetadataForm'
 import { NormalizeControls } from './NormalizeControls'
 import { PropertiesReadout } from './PropertiesReadout'
 import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
-import { StarRating } from './StarRating'
 import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
 
@@ -369,6 +367,53 @@ export function Editor({
   const lossyOverwrite =
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
+  // The bulk and single forms render the same tree; only where a field's value comes
+  // from and where an edit goes differ, so each mode reduces to a list of specs the
+  // form maps over.
+  const fieldSpecs: FieldSpec[] =
+    isMulti && selectedTracks
+      ? BULK_FIELDS.map((key) => {
+          const shared = commonValue(selectedTracks, key)
+          return {
+            key,
+            label: tr(`fields.${key}`),
+            value: shared ?? '',
+            placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+            onChange: (v: string) => onChangeAllMeta?.({ [key]: v }),
+            suggestions:
+              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
+            multiSuggestions: key === 'grouping',
+          }
+        })
+      : visibleFields.flatMap((key) => {
+          const def = FIELD_DEFS.find((d) => d.key === key)
+          if (!def) return []
+          return [
+            {
+              key: def.key,
+              label: tr(`fields.${def.key}`),
+              value: item.meta[def.key] ?? '',
+              onChange: (v: string) => setField(def.key, v),
+              insertSources: INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
+              wide: def.wide,
+              invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
+              suggestions:
+                def.key === 'genre'
+                  ? genreChips
+                  : def.key === 'grouping'
+                    ? groupingPresets
+                    : def.key === 'bpm' && detectedBpm
+                      ? // The tag layer stores whole beats per minute, so the chip
+                        // offers the rounded figure.
+                        [String(Math.round(detectedBpm.bpm))]
+                      : def.key === 'key' && detectedKey
+                        ? [keyNotation === 'camelot' ? detectedKey.camelot : detectedKey.name]
+                        : undefined,
+              multiSuggestions: def.key === 'grouping',
+            },
+          ]
+        })
+
   // One-click "empty every tag", next to the fill button so set-and-clear read as a
   // pair. Icon-only (like the output-name pencil) because the Apple Music badge
   // already crowds the header; the tooltip and aria-label carry the name.
@@ -459,133 +504,18 @@ export function Editor({
             }
           />
           {formOpen && (
-            <div className="mt-4 @container">
-              {!isMulti && (
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="text-xs font-medium text-fg-dim">{tr('fields.rating')}</span>
-                  <StarRating
-                    value={item.meta.rating ?? ''}
-                    onChange={(v) => setField('rating', v)}
-                  />
-                </div>
-              )}
-              <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
-                <CoverPicker
-                  item={item}
-                  isMulti={isMulti}
-                  selectedTracks={selectedTracks}
-                  release={release}
-                  coverDims={coverDims}
-                  setCoverDims={setCoverDims}
-                  onChange={onChange}
-                  onApplyCoverAll={onApplyCoverAll}
-                />
-
-                <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
-                  {isMulti && selectedTracks
-                    ? BULK_FIELDS.map((key) => {
-                        const shared = commonValue(selectedTracks, key)
-                        // Same checkbox as the single view; a mixed selection
-                        // (shared undefined) shows unticked, and ticking it
-                        // stamps '1' onto every selected track.
-                        if (key === 'compilation')
-                          return (
-                            <label key={key} className="flex items-center gap-2 self-end pb-2">
-                              <input
-                                type="checkbox"
-                                data-testid="field-compilation"
-                                checked={shared === '1'}
-                                onChange={(e) =>
-                                  onChangeAllMeta?.({ compilation: e.target.checked ? '1' : '' })
-                                }
-                                className="h-4 w-4 accent-[var(--color-accent)]"
-                              />
-                              <span className="text-xs font-medium text-fg-dim">
-                                {tr(`fields.${key}`)}
-                              </span>
-                            </label>
-                          )
-                        return (
-                          <Field
-                            key={key}
-                            name={key}
-                            label={tr(`fields.${key}`)}
-                            value={shared ?? ''}
-                            placeholder={
-                              shared === undefined ? tr('editor.multipleValues') : undefined
-                            }
-                            onChange={(v) => onChangeAllMeta?.({ [key]: v })}
-                            suggestions={
-                              key === 'genre'
-                                ? genreChips
-                                : key === 'grouping'
-                                  ? groupingPresets
-                                  : undefined
-                            }
-                            multiSuggestions={key === 'grouping'}
-                          />
-                        )
-                      })
-                    : visibleFields.map((key) => {
-                        const def = FIELD_DEFS.find((d) => d.key === key)
-                        if (!def) return null
-                        // Compilation is a yes/no fact, not free text: a checkbox
-                        // writes the exact '1' the TCMP/COMPILATION tag needs.
-                        if (def.key === 'compilation')
-                          return (
-                            <label key={def.key} className="flex items-center gap-2 self-end pb-2">
-                              <input
-                                type="checkbox"
-                                data-testid="field-compilation"
-                                checked={item.meta.compilation === '1'}
-                                onChange={(e) =>
-                                  setField('compilation', e.target.checked ? '1' : '')
-                                }
-                                className="h-4 w-4 accent-[var(--color-accent)]"
-                              />
-                              <span className="text-xs font-medium text-fg-dim">
-                                {tr(`fields.${def.key}`)}
-                              </span>
-                            </label>
-                          )
-                        return (
-                          <Field
-                            key={def.key}
-                            name={def.key}
-                            label={tr(`fields.${def.key}`)}
-                            value={item.meta[def.key] ?? ''}
-                            onChange={(v) => setField(def.key, v)}
-                            insertSources={
-                              INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined
-                            }
-                            wide={def.wide}
-                            invalid={
-                              requiredFields.includes(def.key) && !item.meta[def.key]?.trim()
-                            }
-                            suggestions={
-                              def.key === 'genre'
-                                ? genreChips
-                                : def.key === 'grouping'
-                                  ? groupingPresets
-                                  : def.key === 'bpm' && detectedBpm
-                                    ? // The tag layer stores whole beats per minute, so
-                                      // the chip offers the rounded figure.
-                                      [String(Math.round(detectedBpm.bpm))]
-                                    : def.key === 'key' && detectedKey
-                                      ? [
-                                          keyNotation === 'camelot'
-                                            ? detectedKey.camelot
-                                            : detectedKey.name,
-                                        ]
-                                      : undefined
-                            }
-                            multiSuggestions={def.key === 'grouping'}
-                          />
-                        )
-                      })}
-                </div>
-              </div>
-            </div>
+            <MetadataForm
+              item={item}
+              isMulti={isMulti}
+              selectedTracks={selectedTracks}
+              release={release}
+              coverDims={coverDims}
+              setCoverDims={setCoverDims}
+              onChange={onChange}
+              onApplyCoverAll={onApplyCoverAll}
+              onRate={(v) => setField('rating', v)}
+              fields={fieldSpecs}
+            />
           )}
 
           {!isMulti && (
