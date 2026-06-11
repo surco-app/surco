@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
@@ -47,7 +47,12 @@ function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.E
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
-afterEach(() => vi.restoreAllMocks())
+// Unmount the hooks too: a mounted browser keeps a 500ms debounce timer armed, and
+// one left over from the file's last test fires after the environment is torn down.
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 describe('useDiscogsBrowser', () => {
   // The search box's whole job: commit the query and surface the matching releases.
