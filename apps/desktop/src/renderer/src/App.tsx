@@ -14,13 +14,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { resolveBindings } from '../../shared/shortcutDefaults'
-import type {
-  NormalizeConfig,
-  OutputFormat,
-  Settings,
-  SpectrumResult,
-  TrackMetadata,
-} from '../../shared/types'
+import type { NormalizeConfig, OutputFormat, Settings, SpectrumResult } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { DonateNudgeModal } from './components/DonateNudgeModal'
@@ -46,6 +40,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSettings } from './hooks/useSettings'
+import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
@@ -53,22 +48,18 @@ import { canAddToAppleMusic } from './lib/appleMusic'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
-import { mapWithConcurrency } from './lib/concurrency'
 import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
-import { parseFileName } from './lib/filename'
 import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
-import { mergeReadMeta } from './lib/readMerge'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
-import { searchFromTags } from './lib/search'
-import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
+import { type ClickMods, clickSelect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import {
   filterByQuality,
@@ -79,12 +70,6 @@ import {
   type TrackSort,
 } from './lib/triage'
 import type { TrackItem } from './types'
-
-const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
-
-// Cap on tracks read in parallel when files are dropped: each spawns taglib +
-// ffprobe, so an unbounded drop of a full crate would flood the main process.
-const READ_CONCURRENCY = 6
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
@@ -101,35 +86,6 @@ async function warmDiscogs(query: string): Promise<void> {
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
-
-function newTrack(path: string): TrackItem {
-  const { fileName, artist, title, query } = parseFileName(path)
-  return {
-    id: crypto.randomUUID(),
-    inputPath: path,
-    fileName,
-    query,
-    status: 'idle',
-    listLabel: title || fileName,
-    meta: {
-      title,
-      artist,
-      album: '',
-      albumArtist: artist,
-      year: '',
-      genre: '',
-      grouping: '',
-      comment: '',
-      trackNumber: '',
-      discNumber: '',
-      bpm: '',
-      key: '',
-      publisher: '',
-      catalogNumber: '',
-      remixArtist: '',
-    },
-  }
-}
 
 // One Lucide glyph per list-filter chip, kept visually consistent with the toolbar.
 const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
@@ -170,7 +126,6 @@ type ActiveModal =
 
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
-  const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
@@ -215,9 +170,7 @@ export default function App(): React.JSX.Element {
   // "on screen" means within this pane, not the whole window.
   const listScrollRef = useRef<HTMLDivElement>(null)
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
-  // while still reading the latest tracks and spectrum setting on each hover.
-  const tracksRef = useRef<TrackItem[]>([])
-  tracksRef.current = tracks
+  // while still reading the latest spectrum/token settings on each hover.
   const showSpectrumRef = useRef(true)
   showSpectrumRef.current = settings?.showSpectrum ?? true
   const hasTokenRef = useRef(false)
@@ -272,110 +225,62 @@ export default function App(): React.JSX.Element {
     [],
   )
 
+  // The track collection (import pipeline, write paths, removal) lives in the hook;
+  // App supplies the per-track registry cleanup and the auto-match opt-in, which is
+  // gated on a token and only fires once a file's own metadata is read so the search
+  // has a query. Queued visible-only, so a big folder probes the rows in view as they
+  // scroll past rather than firing every file at the rate limit.
+  const {
+    tracks,
+    setTracks,
+    tracksRef,
+    addPaths,
+    pickFiles,
+    updateTrack,
+    updateTracksMeta,
+    patchTracks,
+    deriveTracks,
+    startOverTrack,
+    removeTrack,
+    clearTracks,
+  } = useTrackLibrary({
+    setSelection,
+    onForget: (id) => {
+      discogsPrefetched.current.delete(id)
+      viewCache.current.delete(id)
+      forgetAutoMatch(id)
+    },
+    // A row leaving the list also evicts its probe results from the session-long
+    // query cache, where the spectrogram image would otherwise be retained until quit.
+    onRemove: (track) => {
+      discogsPrefetched.current.delete(track.id)
+      viewCache.current.delete(track.id)
+      forgetAutoMatch(track.id)
+      removeAnalysisQueries(queryClient, track.inputPath)
+    },
+    onClear: (cleared) => {
+      discogsPrefetched.current.clear()
+      viewCache.current.clear()
+      resetAutoMatch()
+      for (const t of cleared) removeAnalysisQueries(queryClient, t.inputPath)
+    },
+    onMetaLoaded: (t) => {
+      if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], true)
+    },
+  })
+
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
-    [],
+    [setTracks],
   )
 
-  async function addPaths(paths: string[]): Promise<void> {
-    // Read the live list, not the render snapshot: the native picker can sit open for
-    // a long time, and a file that arrived through the OS meanwhile must still dedupe.
-    const existing = new Set(tracksRef.current.map((t) => t.inputPath))
-    const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
-    if (fresh.length === 0) return
-    // Show the rows the instant they're dropped, parsed from the file name, then fill in
-    // tags, duration and cover as each file's read resolves. Reading metadata up front used
-    // to block the whole drop behind the slowest file — on a cloud/network folder that's
-    // seconds of an empty list that looks broken even though the import is running.
-    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
-    setTracks((prev) => [...prev, ...bases])
-    setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
-    void mapWithConcurrency(bases, READ_CONCURRENCY, loadTrackMeta)
-  }
-
-  async function loadTrackMeta(base: TrackItem): Promise<void> {
-    const path = base.inputPath
-    try {
-      const [tags, duration, cover] = await Promise.all([
-        window.api.readTags(path),
-        window.api.readDuration(path),
-        window.api.readCover(path),
-      ])
-      const s = searchFromTags(parseFileName(path), tags)
-      const readMeta: TrackMetadata = {
-        ...base.meta,
-        ...tags,
-        title: s.title,
-        artist: s.artist,
-        albumArtist: tags.albumArtist || s.artist,
-      }
-      const patch: Partial<TrackItem> = {
-        query: s.query,
-        duration: duration ?? undefined,
-        coverUrl: cover ?? undefined,
-        embeddedCover: cover ?? undefined,
-        listLabel: s.title || base.fileName,
-        loadingMeta: false,
-      }
-      // The row is editable while the read runs, so merge instead of overwriting:
-      // a field the user typed into meanwhile keeps the user's value, and the read
-      // fills only what was left untouched.
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === base.id
-            ? { ...t, ...patch, meta: mergeReadMeta(base.meta, t.meta, readMeta) }
-            : t,
-        ),
-      )
-      // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the
-      // crate tags itself as it lands. Queued visible-only, so a big folder probes the rows
-      // in view as they scroll past rather than firing every file at the rate limit. Gated
-      // on a token, and only once a file's own metadata is read so the search has a query.
-      if (settings?.autoMatch && settings.discogsToken)
-        enqueueAutoMatch([{ ...base, ...patch, meta: readMeta }], true)
-    } catch {
-      updateTrack(base.id, { loadingMeta: false })
-    }
-  }
-
-  // Right-click "Start over": rebuild the row from the file alone, exactly as if it had
-  // just been dropped — re-parse the name, re-read tags/duration/cover, and drop every
-  // edit, match and conversion state. The rebuilt track gets a fresh id so the editor
-  // remounts and re-seeds its own state (the Discogs search box included) from the new
-  // read; the selection swaps to the new id so the row stays open.
-  function startOverTrack(track: TrackItem): void {
-    const base = { ...newTrack(track.inputPath), loadingMeta: true }
-    discogsPrefetched.current.delete(track.id)
-    viewCache.current.delete(track.id)
-    forgetAutoMatch(track.id)
-    setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
-    setSelection((s) => ({
-      ids: s.ids.map((id) => (id === track.id ? base.id : id)),
-      anchor: s.anchor === track.id ? base.id : s.anchor,
-    }))
-    void loadTrackMeta(base)
-  }
-
-  // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
-  // reach us through the OS, not the renderer: the main process buffers any handed over
-  // before this window existed and pushes later ones live. Drain the buffer on mount and
-  // subscribe for the rest, routing both through the same expand+add path as a drop. The
-  // ref keeps the live handler pointed at the latest addPaths so its dedupe sees the
-  // current crate rather than the empty one captured at mount.
-  const addPathsRef = useRef(addPaths)
-  addPathsRef.current = addPaths
-  useEffect(() => {
-    const open = async (paths: string[]): Promise<void> => {
-      if (paths.length) addPathsRef.current(await window.api.expandPaths(paths))
-    }
-    window.api.takePendingFiles().then(open)
-    return window.api.onOpenFiles(open)
-  }, [])
-
-  const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
-    const order = tracksRef.current.map((t) => t.id)
-    setSelection((s) => clickSelect(s, order, id, mods))
-  }, [])
+  const onSelectTrack = useCallback(
+    (id: string, mods: ClickMods): void => {
+      const order = tracksRef.current.map((t) => t.id)
+      setSelection((s) => clickSelect(s, order, id, mods))
+    },
+    [tracksRef],
+  )
 
   // Switching tracks drops a stale format pick so the next ⌘⏎ uses the Settings
   // default, mirroring the editor's per-track reseed.
@@ -385,46 +290,12 @@ export default function App(): React.JSX.Element {
     editorNormalizeRef.current = null
   }, [selectedId])
 
-  async function pickFiles(): Promise<void> {
-    addPaths(await window.api.pickFiles())
-  }
-
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
     setDragging(false)
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     addPaths(await window.api.expandPaths(dropped))
   }
-
-  const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
-    setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
-  }, [])
-
-  // Writes a shared-field edit (or a dropped cover) onto every selected track at once —
-  // the multi-select write path behind the editor's common-field form.
-  const updateTracksMeta = useCallback((ids: string[], metaPatch: Partial<TrackMetadata>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) =>
-      prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
-    )
-  }, [])
-
-  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
-  }, [])
-
-  // Merges each track's own filename-derived tags into its metadata (one patch per id),
-  // leaving fields the pattern didn't match untouched.
-  const deriveTracks = useCallback(
-    (patches: { id: string; meta: Partial<TrackMetadata> }[]): void => {
-      const byId = new Map(patches.map((p) => [p.id, p.meta]))
-      setTracks((prev) =>
-        prev.map((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t)),
-      )
-    },
-    [],
-  )
 
   // Warms a hovered track's spectrum so opening it is instant. Debounced (the row only
   // counts as intent once the cursor rests). prefetchQuery skips a track already in the
@@ -450,7 +321,7 @@ export default function App(): React.JSX.Element {
         }
       }, PREFETCH_HOVER_MS)
     },
-    [queryClient],
+    [queryClient, tracksRef],
   )
 
   // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
@@ -467,36 +338,6 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
   } = useAutoMatch({ tracksRef, updateTrack })
-
-  // Stable identity so the memoized TrackRow only re-renders the row that
-  // changed. The functional update deselects iff the removed track was selected,
-  // which is what the explicit selectedId check did before.
-  const removeTrack = useCallback(
-    (id: string): void => {
-      const removed = tracksRef.current.find((t) => t.id === id)
-      setTracks((prev) => prev.filter((t) => t.id !== id))
-      setSelection((s) => deselect(s, id))
-      // Drop the track's prefetch/view bookkeeping so they don't accumulate ids of
-      // tracks that no longer exist across a long session of add/remove — and evict its
-      // probe results from the session-long query cache, where the spectrogram image
-      // would otherwise be retained until quit.
-      discogsPrefetched.current.delete(id)
-      viewCache.current.delete(id)
-      forgetAutoMatch(id)
-      if (removed) removeAnalysisQueries(queryClient, removed.inputPath)
-    },
-    [queryClient, forgetAutoMatch],
-  )
-
-  function clearTracks(): void {
-    const cleared = tracksRef.current
-    setTracks([])
-    setSelection({ ids: [], anchor: null })
-    discogsPrefetched.current.clear()
-    viewCache.current.clear()
-    resetAutoMatch()
-    for (const t of cleared) removeAnalysisQueries(queryClient, t.inputPath)
-  }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
   // next tick once the editor for the new selection has mounted and bound the ref.
