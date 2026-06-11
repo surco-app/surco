@@ -19,6 +19,29 @@ describe('CommandPalette', () => {
     expect(screen.getByTestId('palette-input')).toHaveAccessibleName()
   })
 
+  // Virtual focus (aria-activedescendant) never scrolls on its own: with ~25
+  // commands the list overflows, and arrowing below the fold would move the
+  // highlight off-screen — Enter would then run an invisible command.
+  it('keeps the active option visible while arrowing through the list', () => {
+    const scrolled = vi.fn()
+    const proto = Element.prototype as Element & { scrollIntoView?: (o?: unknown) => void }
+    const original = proto.scrollIntoView
+    proto.scrollIntoView = scrolled
+    try {
+      render(
+        <CommandPalette
+          commands={[cmd({ id: 'a' }), cmd({ id: 'b' }), cmd({ id: 'c' })]}
+          onClose={vi.fn()}
+        />,
+      )
+      scrolled.mockClear()
+      fireEvent.keyDown(screen.getByTestId('palette-input'), { key: 'ArrowDown' })
+      expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' })
+    } finally {
+      proto.scrollIntoView = original
+    }
+  })
+
   it('runs an enabled command and closes when its item is clicked', () => {
     const run = vi.fn()
     const onClose = vi.fn()
