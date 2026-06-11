@@ -31,6 +31,7 @@ import {
   joinArtists,
   type ReleaseMetaPatch,
 } from '../lib/release'
+import { selectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -340,31 +341,18 @@ export function Editor({
   const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
   const exportedFormat = FORMATS.find((f) => f === exportedExt) ?? null
   // The post-convert actions (reveal + Apple Music) are reused in multi-select, just fed
-  // aggregate values: the block shows once every selected track is converted, reveal
-  // opens the first output, and the Apple Music button reflects the whole selection.
+  // aggregate values from selectionStatus.
   const multiTracks = selectedTracks ?? []
-  const showDone = isMulti
-    ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done')
-    : done
-  const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
-  // "Apple Music only": the conversion left no file in the output folder, so a finished
-  // track carries no path to reveal — confirm the library add instead of a dead button.
-  const inMusicLibraryOnly = showDone && !revealPath
-  // A real conversion writes a separate file and leaves the source at its own path;
-  // an in-place export rewrites the source, so inputPath === outputPath and there is
-  // nothing distinct to trash. Single-track only, and gone once the original is trashed.
-  const canDeleteOriginal =
-    !isMulti && !!item.outputPath && item.outputPath !== item.inputPath && !item.originalTrashed
+  const {
+    showDone,
+    revealPath,
+    inMusicLibraryOnly,
+    canDeleteOriginal,
+    musicAdding,
+    musicAdded,
+    musicError,
+  } = selectionStatus(item, selectedTracks, done)
   const musicExt = isMulti ? format : exportedFormat
-  const musicAdding = isMulti
-    ? multiTracks.some((t) => t.musicStatus === 'adding')
-    : item.musicStatus === 'adding'
-  const musicAdded = isMulti
-    ? multiTracks.length > 0 && multiTracks.every((t) => t.musicStatus === 'added')
-    : item.musicStatus === 'added'
-  const musicError = isMulti
-    ? multiTracks.find((t) => t.musicStatus === 'error')?.musicError
-    : item.musicError
   // Required fields are flagged the moment they are empty, not only after a failed
   // convert: with the button disabled below, the click that produced the error is
   // no longer reachable, so the red field is what tells the user why.
