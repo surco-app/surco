@@ -377,6 +377,51 @@ describe('App import skeleton', () => {
   })
 })
 
+describe('App error surfacing', () => {
+  // The user confirmed a destructive dialog; if the OS trash call then fails, the row
+  // must stay AND the failure must be said out loud — a silent catch reads as success
+  // and the user walks away believing the file is gone.
+  it('surfaces a failed trash instead of pretending the file was deleted', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      trashFile: vi.fn().mockRejectedValue(new Error('locked')),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+
+    expect(await screen.findByTestId('app-error')).toBeInTheDocument()
+    expect(screen.getByTestId('track-row')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('app-error-dismiss'))
+    expect(screen.queryByTestId('app-error')).toBeNull()
+  })
+
+  // A failed settings read leaves the whole session on defaults with onboarding
+  // suppressed; it must say so rather than looking like a fresh, working install.
+  it('surfaces a settings load failure', async () => {
+    setApi({ getSettings: vi.fn().mockRejectedValue(new Error('corrupt')) })
+    await renderApp()
+    expect(await screen.findByTestId('app-error')).toBeInTheDocument()
+  })
+
+  // Anything IPC-shaped that rejects outside a catch (shell calls, fire-and-forget
+  // writes) must surface instead of vanishing into the devtools console.
+  it('surfaces unhandled promise rejections', async () => {
+    await renderApp()
+    const event = new Event('unhandledrejection') as unknown as PromiseRejectionEvent
+    Object.defineProperty(event, 'reason', { value: new Error('boom') })
+    act(() => {
+      window.dispatchEvent(event)
+    })
+    expect(await screen.findByTestId('app-error')).toHaveTextContent('boom')
+  })
+})
+
 describe('App loudness help overlay', () => {
   // The help dialog must gate the global shortcuts like every other modal. It used to
   // live inside the keyed Editor without setting overlayOpen: pressing the next-track

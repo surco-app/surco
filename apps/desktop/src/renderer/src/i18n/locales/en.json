@@ -68,6 +68,12 @@
     "subtitle": "Converts your tracks to lossless AIFF, tags them from Discogs and sends them to Apple Music.",
     "subtitleNoMusic": "Converts your tracks to lossless AIFF and tags them from Discogs."
   },
+  "errors": {
+    "unexpected": "Something went wrong: {{detail}}",
+    "settingsLoad": "Your settings couldn't be loaded — defaults are in use for this session.",
+    "settingsSave": "Your settings couldn't be saved.",
+    "trash": "Couldn't move {{detail}} to the trash."
+  },
   "update": {
     "ready": "Version {{version}} is ready",
     "restart": "Restart to update",

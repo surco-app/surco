@@ -27,6 +27,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
+import { ErrorToast } from './components/ErrorToast'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
@@ -187,6 +188,13 @@ export default function App(): React.JSX.Element {
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  // A surfaced background failure (a rejected IPC call, an unhandled rejection),
+  // stored as a key plus interpolation detail and localized at render so a language
+  // switch retranslates it.
+  const [appError, setAppError] = useState<{
+    kind: 'unexpected' | 'settingsLoad' | 'settingsSave' | 'trash'
+    detail?: string
+  } | null>(null)
   // Live theme preview while the Settings modal is open; cleared when it closes.
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
@@ -270,18 +278,37 @@ export default function App(): React.JSX.Element {
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
 
   useEffect(() => {
-    window.api.getSettings().then((s) => {
-      setSettings(s)
-      if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
-      else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
-        setActiveModal({ type: 'donateNudge' })
-        // Stamp the showing immediately, not on close, so a quick quit still
-        // counts toward the cooldown and the nudge can never appear twice in a
-        // row. Straight to the bridge: only the next launch reads this value,
-        // so the renderer settings state doesn't need the refresh.
-        void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
-      }
-    })
+    window.api
+      .getSettings()
+      .then((s) => {
+        setSettings(s)
+        if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
+        else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
+          setActiveModal({ type: 'donateNudge' })
+          // Stamp the showing immediately, not on close, so a quick quit still
+          // counts toward the cooldown and the nudge can never appear twice in a
+          // row. Straight to the bridge: only the next launch reads this value,
+          // so the renderer settings state doesn't need the refresh.
+          void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
+        }
+      })
+      // A failed read leaves the whole session on defaults (and suppresses
+      // onboarding); it must say so rather than look like a fresh install.
+      .catch(() => setAppError({ kind: 'settingsLoad' }))
+  }, [])
+
+  // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
+  // would otherwise vanish into the devtools console — a failure indistinguishable
+  // from success. Surface them.
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent): void => {
+      setAppError({
+        kind: 'unexpected',
+        detail: e.reason instanceof Error ? e.reason.message : String(e.reason),
+      })
+    }
+    window.addEventListener('unhandledrejection', onRejection)
+    return () => window.removeEventListener('unhandledrejection', onRejection)
   }, [])
 
   // Conversions bump the persisted count from the main process, so re-read settings
@@ -679,7 +706,9 @@ export default function App(): React.JSX.Element {
         window.api
           .trashFile(track.inputPath)
           .then(() => removeTrack(track.id))
-          .catch(() => {})
+          // The user confirmed a destructive dialog; a silent failure here reads
+          // as "the file is in the trash" when it isn't.
+          .catch(() => setAppError({ kind: 'trash', detail: track.fileName }))
       },
     })
   }
@@ -701,7 +730,9 @@ export default function App(): React.JSX.Element {
         window.api
           .trashFile(track.inputPath)
           .then(() => updateTrack(track.id, { originalTrashed: true }))
-          .catch(() => {})
+          // Same as askTrash: the user confirmed a destructive dialog, so a
+          // failure must be said out loud, not swallowed.
+          .catch(() => setAppError({ kind: 'trash', detail: track.fileName }))
       },
     })
   }
@@ -826,7 +857,12 @@ export default function App(): React.JSX.Element {
     if (patch.theme !== undefined) {
       setSettings((s) => (s ? { ...s, theme: patch.theme as ThemePref } : s))
     }
-    window.api.saveSettings(patch).then(setSettings)
+    window.api
+      .saveSettings(patch)
+      .then(setSettings)
+      // A silent failure here leaves the UI showing a choice that was never
+      // persisted — the next launch quietly reverts it.
+      .catch(() => setAppError({ kind: 'settingsSave' }))
   }
 
   function openSettings(tab: SettingsTab = 'general'): void {
@@ -1578,6 +1614,12 @@ export default function App(): React.JSX.Element {
         />
       )}
 
+      {appError && (
+        <ErrorToast
+          message={tr(`errors.${appError.kind}`, { detail: appError.detail })}
+          onDismiss={() => setAppError(null)}
+        />
+      )}
       <UpdateToast />
     </div>
   )
