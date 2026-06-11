@@ -56,6 +56,17 @@ import { WaveSpinner } from './WaveSpinner'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
+// Only free-text fields make sense as insert TARGETS — composing into structured
+// values (year, BPM, key, track numbers…) would produce garbage — but every
+// visible field still feeds the menu as a source.
+const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
+  'title',
+  'artist',
+  'albumArtist',
+  'album',
+  'comment',
+])
+
 const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
   warn: { className: 'bg-warn/15 text-warn', label: 'editor.qualitySuspect' },
@@ -572,7 +583,9 @@ export function Editor({
                             label={tr(`fields.${def.key}`)}
                             value={item.meta[def.key] ?? ''}
                             onChange={(v) => setField(def.key, v)}
-                            insertSources={insertSources}
+                            insertSources={
+                              INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined
+                            }
                             wide={def.wide}
                             invalid={
                               requiredFields.includes(def.key) && !item.meta[def.key]?.trim()

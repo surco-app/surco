@@ -1402,4 +1402,15 @@ describe('Editor insert from field', () => {
     })
     expect(screen.queryByTestId('field-insert-title')).toBeNull()
   })
+
+  // Structured fields (year, BPM, key, track numbers…) hold single validated
+  // values — composing into them would produce garbage like "20252025" — so only
+  // free-text fields offer the menu, while every field still acts as a source.
+  it('offers the menu only on free-text fields, never on structured ones', () => {
+    renderEditor({ id: 't1', meta: { title: 'Pepito de los palotes', year: '2025' } }, 'wav', {
+      visibleFields: ['title', 'year'],
+    })
+    expect(screen.getByTestId('field-insert-title')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-insert-year')).toBeNull()
+  })
 })
