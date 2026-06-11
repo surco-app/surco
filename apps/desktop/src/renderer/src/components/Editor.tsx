@@ -1,4 +1,4 @@
-import { Eraser, Pencil, RefreshCw, SlidersVertical, Tag } from 'lucide-react'
+import { Eraser, Pencil, RefreshCw, Tag } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,7 +20,6 @@ import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
-import { openFeedback } from '../lib/feedback'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genrePresets as discogsGenres } from '../lib/genre'
 import { formatKHz, isLowResCover, qualityVerdict, type Verdict } from '../lib/quality'
@@ -33,9 +32,10 @@ import {
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
+import { ConvertFooter } from './ConvertFooter'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
-import { ExportButton, FORMATS } from './ExportButton'
+import { FORMATS } from './ExportButton'
 import { Field } from './Field'
 import type { InsertSource } from './FieldInsertMenu'
 import { LoudnessReadout } from './LoudnessReadout'
@@ -343,15 +343,7 @@ export function Editor({
   // The post-convert actions (reveal + Apple Music) are reused in multi-select, just fed
   // aggregate values from selectionStatus.
   const multiTracks = selectedTracks ?? []
-  const {
-    showDone,
-    revealPath,
-    inMusicLibraryOnly,
-    canDeleteOriginal,
-    musicAdding,
-    musicAdded,
-    musicError,
-  } = selectionStatus(item, selectedTracks, done)
+  const footerStatus = selectionStatus(item, selectedTracks, done)
   const musicExt = isMulti ? format : exportedFormat
   // Required fields are flagged the moment they are empty, not only after a failed
   // convert: with the button disabled below, the click that produced the error is
@@ -777,135 +769,29 @@ export function Editor({
           </div>
         </div>
 
-        <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
-          {item.status === 'error' && (
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="truncate text-xs text-danger">{item.error}</p>
-              <button
-                type="button"
-                data-testid="report-error"
-                onClick={() => openFeedback(item.error)}
-                className="shrink-0 text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline"
-              >
-                {tr('editor.reportError')}
-              </button>
-            </div>
-          )}
-          <div className="space-y-2">
-            {normalizeCfg.mode !== 'none' && (
-              <button
-                type="button"
-                data-testid="convert-normalize-note"
-                onClick={() => setNormalizeOpen(true)}
-                className="press group relative flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
-              >
-                <SlidersVertical className="h-3.5 w-3.5" aria-hidden="true" />
-                {tr(`normalize.mode.${normalizeCfg.mode}`)} ·{' '}
-                {normalizeCfg.mode === 'loudness'
-                  ? `${normalizeCfg.targetLufs} LUFS`
-                  : `${normalizeCfg.peakDb} dBFS`}
-                <Tooltip label={tr('normalize.title')} />
-              </button>
-            )}
-            {showDone ? (
-              // A finished export led with four equal buttons, the loudest of which
-              // (re-export) is the rarest next step. Now the outcome line confirms
-              // the write and a single primary "Show file" carries the likely next
-              // action; re-export and Apple Music drop to a quiet row, and trashing
-              // the original — destructive and rare — is a plain link at the bottom.
-              <>
-                <p
-                  data-testid="export-success"
-                  className="text-center text-xs font-medium text-good"
-                >
-                  {inMusicLibraryOnly
-                    ? isMulti
-                      ? tr('editor.addedToAppleMusicCount', { count: multiTracks.length })
-                      : tr('editor.addedToAppleMusic')
-                    : isMulti
-                      ? tr('editor.exportedCount', { count: multiTracks.length })
-                      : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
-                </p>
-                {revealPath && (
-                  <button
-                    type="button"
-                    data-testid="show-file"
-                    onClick={() => window.api.reveal(revealPath)}
-                    className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-                  >
-                    {tr('editor.showFile')}
-                  </button>
-                )}
-                <div className="flex gap-2">
-                  {window.api.platform === 'darwin' &&
-                    musicExt !== 'flac' &&
-                    !inMusicLibraryOnly && (
-                      <button
-                        type="button"
-                        data-testid="add-apple-music"
-                        onClick={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
-                        disabled={musicAdding || musicAdded}
-                        className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
-                      >
-                        {musicAdding
-                          ? tr('editor.appleMusicAdding')
-                          : musicAdded
-                            ? tr('editor.appleMusicAdded')
-                            : tr('editor.appleMusicAdd')}
-                      </button>
-                    )}
-                  <ExportButton
-                    quiet
-                    status={isMulti ? 'idle' : item.status}
-                    stale={false}
-                    done={false}
-                    outputFormat={format}
-                    exportedFormat={isMulti ? null : exportedFormat}
-                    withAppleMusic={false}
-                    incomplete={false}
-                    inPlace={false}
-                    count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
-                    onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
-                    onSelectFormat={(f) => {
-                      setFormat(f)
-                      onFormatChange?.(f)
-                    }}
-                  />
-                </div>
-                {canDeleteOriginal && (
-                  <button
-                    type="button"
-                    data-testid="delete-original"
-                    onClick={onTrashOriginal}
-                    className="press mx-auto block text-xs text-fg-dim hover:text-danger"
-                  >
-                    {tr('editor.deleteOriginal')}
-                  </button>
-                )}
-                {musicError && <p className="text-xs text-danger">{musicError}</p>}
-              </>
-            ) : (
-              <ExportButton
-                status={isMulti ? 'idle' : item.status}
-                stale={!isMulti && stale}
-                done={!isMulti && done}
-                outputFormat={format}
-                exportedFormat={isMulti ? null : exportedFormat}
-                withAppleMusic={
-                  window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
-                }
-                incomplete={!isMulti && incomplete}
-                inPlace={!isMulti && willEditInPlace}
-                count={isMulti ? (selectedTracks?.length ?? 0) : undefined}
-                onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
-                onSelectFormat={(f) => {
-                  setFormat(f)
-                  onFormatChange?.(f)
-                }}
-              />
-            )}
-          </div>
-        </div>
+        <ConvertFooter
+          item={item}
+          isMulti={isMulti}
+          selectedCount={multiTracks.length}
+          status={footerStatus}
+          stale={stale}
+          done={done}
+          incomplete={incomplete}
+          willEditInPlace={willEditInPlace}
+          addToAppleMusic={addToAppleMusic}
+          format={format}
+          exportedFormat={exportedFormat}
+          musicExt={musicExt}
+          normalizeCfg={normalizeCfg}
+          onOpenNormalize={() => setNormalizeOpen(true)}
+          onSelectFormat={(f) => {
+            setFormat(f)
+            onFormatChange?.(f)
+          }}
+          onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+          onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
+          onTrashOriginal={onTrashOriginal}
+        />
       </div>
     </div>
   )
