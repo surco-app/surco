@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Settings } from '../../shared/types'
 import './i18n'
@@ -9,6 +10,21 @@ import './i18n'
 // Pass-through triage that counts sort runs, so the derived-list stability test can
 // assert renders without track changes skip the whole filter+sort pipeline.
 const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
+
+// Pass-through Editor wrapped in its own memo, so the counter only ticks when App
+// hands it a changed prop identity — the contract the editor-stability test pins.
+const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0 } }))
+vi.mock('./components/Editor', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./components/Editor')>()
+  const { memo } = await import('react')
+  const CountingEditor = memo(function CountingEditor(
+    props: React.ComponentProps<typeof real.Editor>,
+  ): React.JSX.Element {
+    editorRenders.count++
+    return <real.Editor {...props} />
+  })
+  return { ...real, Editor: CountingEditor }
+})
 vi.mock('./lib/triage', async (importOriginal) => {
   const real = await importOriginal<typeof import('./lib/triage')>()
   const sortTracks: typeof real.sortTracks = (tracks, sortBy) => {
@@ -816,6 +832,23 @@ describe('App command palette list-wide actions', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+})
+
+describe('App editor prop stability', () => {
+  // Typing in the sidebar search filters the list; none of the editor's inputs change,
+  // so the memoized editor subtree must not re-render per keystroke — that's the whole
+  // point of keeping its props identity-stable.
+  it('keeps the editor props stable while typing in the search box', async () => {
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+
+    const before = editorRenders.count
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
+    expect(editorRenders.count).toBe(before)
   })
 })
 

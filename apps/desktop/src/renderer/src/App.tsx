@@ -14,7 +14,13 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { resolveBindings } from '../../shared/shortcutDefaults'
-import type { NormalizeConfig, OutputFormat, Settings, SpectrumResult } from '../../shared/types'
+import type {
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+  SpectrumResult,
+  TrackMetadata,
+} from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { DonateNudgeModal } from './components/DonateNudgeModal'
@@ -40,6 +46,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSettings } from './hooks/useSettings'
+import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
@@ -55,6 +62,7 @@ import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
+import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
 import { type ClickMods, clickSelect, type Selection } from './lib/selection'
@@ -80,6 +88,15 @@ async function warmDiscogs(query: string): Promise<void> {
   // Background warming yields to the editor's own search, so it acquires at low priority.
   const results = await window.api.searchDiscogs(query, undefined, 'low')
   if (results[0]) await window.api.getRelease(results[0].id, undefined, 'low')
+}
+
+// Settings arrive null for the first frames; the fallback object must keep one
+// identity or it defeats the editor's memo (a fresh object per render is a changed prop).
+const DEFAULT_NORMALIZE: NormalizeConfig = {
+  mode: 'none',
+  targetLufs: -14,
+  truePeakDb: -1,
+  peakDb: -1,
 }
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
@@ -539,10 +556,17 @@ export default function App(): React.JSX.Element {
   }, [sidebar.autoFit])
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
-  const selectedTracks = useMemo(
-    () => tracks.filter((t) => selectedIds.includes(t.id)),
-    [tracks, selectedIds],
-  )
+  // Filtering mints a new array per tracks change even when none of the SELECTED
+  // tracks changed (a progress tick on another row). Keeping the previous identity in
+  // that case is what lets the memoized Editor skip those renders entirely.
+  const prevSelectedTracks = useRef<TrackItem[]>([])
+  const selectedTracks = useMemo(() => {
+    const next = tracks.filter((t) => selectedIds.includes(t.id))
+    const prev = prevSelectedTracks.current
+    const unchanged = prev.length === next.length && next.every((t, i) => t === prev[i])
+    if (!unchanged) prevSelectedTracks.current = next
+    return prevSelectedTracks.current
+  }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
   const { audioRef, playerVisible, playerTrack, togglePlay, closePlayer } = usePlayer({
@@ -618,6 +642,63 @@ export default function App(): React.JSX.Element {
     [settings?.shortcutOverrides],
   )
   const hintFor = (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac)
+
+  // Every handler handed to the memoized Toolbar/Editor goes through
+  // useStableCallback: one identity for the child's memo, the latest closure for the
+  // call — so an inline-style body can still read current state.
+  const onAdd = useStableCallback(() => void pickFiles())
+  const onSelectAllTracks = useStableCallback(selectAll)
+  const onFillAll = useStableCallback(askFillAll)
+  const onFindReplace = useStableCallback(() => setActiveModal({ type: 'findReplace' }))
+  const onAnalyzeAll = useStableCallback(analyzeAllQuality)
+  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
+  const onConvertSelected = useStableCallback(() => askConvertAll(selectedTracks))
+  const onCancelConvert = useStableCallback(cancelBatch)
+  const onOpenExport = useStableCallback(() => setActiveModal({ type: 'export' }))
+  const onClearAll = useStableCallback(askClearAll)
+  const onOpenPalette = useStableCallback(() => setActiveModal({ type: 'palette' }))
+  const onOpenStats = useStableCallback(() => openSettings('stats'))
+  const onOpenSettings = useStableCallback(openSettings)
+  const onApplyMatches = useStableCallback((patches: { id: string; patch: ReleaseMetaPatch }[]) => {
+    for (const p of patches) updateTrack(p.id, p.patch)
+  })
+  const onProcessAllSelected = useStableCallback((format: OutputFormat) =>
+    askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined),
+  )
+  const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))
+  const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
+    updateTracksMeta(selectedIds, patch),
+  )
+  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath: string) =>
+    patchTracks(selectedIds, { coverUrl, coverPath }),
+  )
+  const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
+    if (selected) updateTrack(selected.id, patch)
+  })
+  const onProcessSelected = useStableCallback((format: OutputFormat) => {
+    if (selected) void processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
+  })
+  const onFormatChange = useStableCallback((format: OutputFormat) => {
+    editorFormatRef.current = format
+  })
+  const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
+    editorNormalizeRef.current = n
+  })
+  const onAddSelectedToAppleMusic = useStableCallback(() => {
+    if (selected) void addTrackToAppleMusic(selected.id)
+  })
+  const onTrashOriginal = useStableCallback(() => {
+    if (selected) askDeleteOriginal(selected)
+  })
+  const onShowLoudnessHelp = useStableCallback(() => setActiveModal({ type: 'loudnessHelp' }))
+  const onOpenRename = useStableCallback(() => setActiveModal({ type: 'rename' }))
+  const onRegenerateName = useStableCallback(() => {
+    if (!selected) return
+    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
+    if (name) updateTrack(selected.id, { outputName: name })
+  })
+  // O(N) per evaluation, so computed once per tracksView instead of inline in JSX.
+  const allAnalyzed = useMemo(() => tracksView.every((t) => Boolean(t.spectrum)), [tracksView])
 
   const commands: Command[] = buildCommands({
     tr,
@@ -720,26 +801,26 @@ export default function App(): React.JSX.Element {
           batching={batching}
           batchProgress={batchProgress}
           analysis={analysis}
-          allAnalyzed={tracksView.every((t) => Boolean(t.spectrum))}
+          allAnalyzed={allAnalyzed}
           matching={matching}
           hasToken={!!settings?.discogsToken}
           autoMatchable={autoMatchable}
           selectedEligibleCount={selectedEligibleCount}
-          onAdd={pickFiles}
-          onSelectAll={selectAll}
-          onFillAll={askFillAll}
-          onFindReplace={() => setActiveModal({ type: 'findReplace' })}
-          onAnalyzeAll={analyzeAllQuality}
+          onAdd={onAdd}
+          onSelectAll={onSelectAllTracks}
+          onFillAll={onFillAll}
+          onFindReplace={onFindReplace}
+          onAnalyzeAll={onAnalyzeAll}
           onCancelAnalyze={cancelAnalysis}
-          onAutoMatch={() => enqueueAutoMatch(tracksView, false)}
+          onAutoMatch={onAutoMatchAll}
           onCancelAutoMatch={cancelAutoMatch}
-          onConvertSelected={() => askConvertAll(selectedTracks)}
-          onCancelConvert={cancelBatch}
-          onExport={() => setActiveModal({ type: 'export' })}
-          onClearAll={askClearAll}
-          onPalette={() => setActiveModal({ type: 'palette' })}
-          onStats={() => openSettings('stats')}
-          onSettings={() => openSettings()}
+          onConvertSelected={onConvertSelected}
+          onCancelConvert={onCancelConvert}
+          onExport={onOpenExport}
+          onClearAll={onClearAll}
+          onPalette={onOpenPalette}
+          onStats={onOpenStats}
+          onSettings={onOpenSettings}
         />
       </div>
 
@@ -913,45 +994,25 @@ export default function App(): React.JSX.Element {
               showSpectrum={settings?.showSpectrum ?? true}
               showLoudness={settings?.showLoudness ?? true}
               keyNotation={settings?.keyNotation ?? 'camelot'}
-              normalize={
-                settings?.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
-              }
+              normalize={settings?.normalize ?? DEFAULT_NORMALIZE}
               searchInputRef={searchInputRef}
               selectedTracks={selectedTracks}
-              onApplyMatches={(patches) => {
-                for (const p of patches) updateTrack(p.id, p.patch)
-              }}
-              onProcessAll={(format) =>
-                askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined)
-              }
-              onAddAllToAppleMusic={() => addAllToAppleMusic(selectedIds)}
-              onChangeAllMeta={(patch) => updateTracksMeta(selectedIds, patch)}
-              onApplyCoverAll={(coverUrl, coverPath) =>
-                patchTracks(selectedIds, { coverUrl, coverPath })
-              }
+              onApplyMatches={onApplyMatches}
+              onProcessAll={onProcessAllSelected}
+              onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+              onChangeAllMeta={onChangeAllMeta}
+              onApplyCoverAll={onApplyCoverAll}
               onDeriveTags={deriveTracks}
-              onChange={(patch) => updateTrack(selected.id, patch)}
-              onProcess={(format) =>
-                processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
-              }
-              onFormatChange={(format) => {
-                editorFormatRef.current = format
-              }}
-              onNormalizeChange={(n) => {
-                editorNormalizeRef.current = n
-              }}
-              onAddToAppleMusic={() => addTrackToAppleMusic(selected.id)}
-              onTrashOriginal={() => askDeleteOriginal(selected)}
-              onOpenSettings={openSettings}
-              onShowLoudnessHelp={() => setActiveModal({ type: 'loudnessHelp' })}
-              onOpenRename={() => setActiveModal({ type: 'rename' })}
-              onRegenerateName={() => {
-                const name = renderOutputName(
-                  settings?.filenameFormat ?? '{artist} - {title}',
-                  selected.meta,
-                )
-                if (name) updateTrack(selected.id, { outputName: name })
-              }}
+              onChange={onEditorChange}
+              onProcess={onProcessSelected}
+              onFormatChange={onFormatChange}
+              onNormalizeChange={onNormalizeChange}
+              onAddToAppleMusic={onAddSelectedToAppleMusic}
+              onTrashOriginal={onTrashOriginal}
+              onOpenSettings={onOpenSettings}
+              onShowLoudnessHelp={onShowLoudnessHelp}
+              onOpenRename={onOpenRename}
+              onRegenerateName={onRegenerateName}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">

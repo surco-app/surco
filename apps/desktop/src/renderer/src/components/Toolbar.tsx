@@ -10,6 +10,7 @@ import {
   Upload,
 } from 'lucide-react'
 import type React from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BatchSummary } from '../lib/batch'
 import { Tooltip } from './Tooltip'
@@ -50,7 +51,9 @@ interface Props {
 // The window's title-bar toolbar: add files, the per-list actions (select/fill/find,
 // the analyze-quality and auto-match sweeps, convert-selected, export, clear), and the
 // always-present palette/stats/settings. App owns the state and hands every action down.
-export function Toolbar({
+// Memoized for the same contract as the Editor: App hands it stable handlers, so a
+// keystroke in a metadata field no longer re-renders the whole toolbar.
+export const Toolbar = memo(function Toolbar({
   isMac,
   trackCount,
   batchSummary,
@@ -285,4 +288,4 @@ export function Toolbar({
       </div>
     </header>
   )
-}
+})

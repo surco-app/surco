@@ -1,6 +1,6 @@
 import { Eraser, Tag } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
@@ -113,7 +113,10 @@ interface Props {
   onRegenerateName: () => void
 }
 
-export function Editor({
+// Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
+// selectedTracks identity), so search keystrokes and progress ticks on other tracks
+// skip this whole subtree.
+export const Editor = memo(function Editor({
   item,
   hasToken,
   outputFormat,
@@ -577,4 +580,4 @@ export function Editor({
       </div>
     </div>
   )
-}
+})
