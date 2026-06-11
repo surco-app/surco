@@ -13,7 +13,6 @@ import {
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { mediaUrl } from '../../shared/media'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
@@ -45,6 +44,7 @@ import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
@@ -199,13 +199,6 @@ export default function App(): React.JSX.Element {
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
   const listScrollRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
-  // The floating player follows the selection: while it's open, picking another
-  // track plays it. Space toggles its visibility; the X (or Space again) closes.
-  const [playerVisible, setPlayerVisible] = useState(false)
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const playingIdRef = useRef<string | null>(null)
-  playingIdRef.current = playingId
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
   // while still reading the latest tracks and spectrum setting on each hover.
   const tracksRef = useRef<TrackItem[]>([])
@@ -647,49 +640,6 @@ export default function App(): React.JSX.Element {
     })
   }
 
-  const startPlayback = useCallback((track: TrackItem): void => {
-    const audio = audioRef.current
-    if (!audio) return
-    // The custom surco:// scheme streams the file from the main process, so the
-    // <audio> element seeks through it without buffering the whole track in memory.
-    audio.src = mediaUrl(track.inputPath)
-    audio.currentTime = 0
-    setPlayingId(track.id)
-    audio.play().catch(() => {})
-  }, [])
-
-  const closePlayer = useCallback((): void => {
-    const audio = audioRef.current
-    audio?.pause()
-    audio?.removeAttribute('src')
-    // Removing src alone doesn't release the media resource — the spec'd teardown
-    // needs load(), or the closed track's stream stays attached until the next play.
-    audio?.load()
-    setPlayerVisible(false)
-    setPlayingId(null)
-  }, [])
-
-  // Removing (or clearing) the track that is playing must stop the audio: the
-  // file it streamed is gone from the list, so the player would otherwise keep
-  // sounding it while the card shows a different, still-selected track.
-  useEffect(() => {
-    if (playingId && !tracks.some((t) => t.id === playingId)) closePlayer()
-  }, [tracks, playingId, closePlayer])
-
-  // Space toggles the player's visibility; the selection effect below starts
-  // playback when it opens.
-  function togglePlay(): void {
-    if (playerVisible) closePlayer()
-    else if (selected) setPlayerVisible(true)
-  }
-
-  // While the player is open, opening it or selecting another track plays that
-  // track. Guarded against re-playing the one already loaded.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger; `selected` is read fresh, and depending on it would re-fire every render.
-  useEffect(() => {
-    if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
-  }, [selectedId, playerVisible, startPlayback])
-
   const {
     processOne,
     processAll,
@@ -794,9 +744,13 @@ export default function App(): React.JSX.Element {
     () => tracks.filter((t) => selectedIds.includes(t.id)),
     [tracks, selectedIds],
   )
-  // Falls back to the selection so the card still renders for the brief moment
-  // between opening and the first track loading.
-  const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
+  // The floating player (audio element, visibility, follow-selection playback)
+  // lives in the hook; App renders the <audio> element and the card.
+  const { audioRef, playerVisible, playerTrack, togglePlay, closePlayer } = usePlayer({
+    tracks,
+    selected,
+    selectedId,
+  })
 
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
