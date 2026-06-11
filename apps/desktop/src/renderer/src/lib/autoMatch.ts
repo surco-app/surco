@@ -27,9 +27,49 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
 }
 
 // How many search results to probe before giving up. Each probe loads a full
-// release (one Discogs call), so this caps the calls one file can make — matching
-// the editor browser's own auto-probe so manual and automatic matching agree.
+// release (one Discogs call), so this caps the calls one file can make — the editor
+// browser's auto-probe and the sweep share it so manual and automatic matching agree.
 export const MAX_AUTO_PROBE = 8
+
+export interface ProbeMatch {
+  release: DiscogsRelease
+  track: DiscogsTrack
+  confidence: number
+}
+
+// Walks search results in order, loading each release and scoring its tracklist
+// against the target until one reaches the acceptance bar. The single probe loop
+// behind both the sweep (accepts only 'high', safe to apply unattended) and the
+// editor's auto-open (accepts 'review' too — it only highlights, never writes). A
+// release that fails to load — or arrives structurally broken — is skipped, never
+// thrown; `cancelled` lets a superseding search stop the walk between loads.
+export async function probeReleases(
+  results: DiscogsSearchResult[],
+  target: TrackMatchTarget,
+  opts: {
+    loadRelease: (id: number) => Promise<DiscogsRelease>
+    accepts: (tier: 'high' | 'review' | 'low') => boolean
+    maxProbe?: number
+    cancelled?: () => boolean
+  },
+): Promise<ProbeMatch | undefined> {
+  for (const result of results.slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
+    if (opts.cancelled?.()) return undefined
+    let rel: DiscogsRelease
+    let m: ReturnType<typeof bestMatch>
+    try {
+      rel = await opts.loadRelease(result.id)
+      m = bestMatch(rel.tracklist, target)
+    } catch {
+      continue
+    }
+    if (opts.cancelled?.()) return undefined
+    if (m && opts.accepts(confidenceTier(m.confidence))) {
+      return { release: rel, track: m.track, confidence: m.confidence }
+    }
+  }
+  return undefined
+}
 
 // The slice of the IPC surface auto-matching needs, narrowed so the sweep is
 // testable with a stub instead of the whole window.api.
@@ -38,18 +78,13 @@ export interface DiscogsApi {
   getRelease: (id: number) => Promise<DiscogsRelease>
 }
 
-export interface AutoMatch {
-  release: DiscogsRelease
-  track: DiscogsTrack
-  confidence: number
-}
+export type AutoMatch = ProbeMatch
 
 // Headless counterpart to the editor's auto-probe: searches Discogs for the file
 // and returns the first release whose best tracklist entry is 'high' confidence —
 // the bar at which a match is safe to apply unattended. Only 'high' qualifies, so
-// a merely plausible ('review') hit is left for the user's manual click. Stops at
-// the first high hit to bound the API spend, and a failing search or release call
-// skips rather than aborts the sweep so one bad row never sinks the whole crate.
+// a merely plausible ('review') hit is left for the user's manual click. A failing
+// search skips rather than aborts the sweep so one bad row never sinks the crate.
 export async function autoMatchRelease(
   query: string,
   target: TrackMatchTarget,
@@ -63,20 +98,9 @@ export async function autoMatchRelease(
   } catch {
     return undefined
   }
-  for (const result of results.slice(0, maxProbe)) {
-    // Scoring is inside the try too: a structurally broken release (no tracklist)
-    // skips like one that failed to load, instead of throwing out of the probe.
-    let rel: DiscogsRelease
-    let m: ReturnType<typeof bestMatch>
-    try {
-      rel = await api.getRelease(result.id)
-      m = bestMatch(rel.tracklist, target)
-    } catch {
-      continue
-    }
-    if (m && confidenceTier(m.confidence) === 'high') {
-      return { release: rel, track: m.track, confidence: m.confidence }
-    }
-  }
-  return undefined
+  return probeReleases(results, target, {
+    loadRelease: api.getRelease,
+    accepts: (tier) => tier === 'high',
+    maxProbe,
+  })
 }

@@ -1,13 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import type { DiscogsRelease, DiscogsSearchResult } from '../../../shared/types'
-import { bestMatch, confidenceTier, resultFromRelease } from '../lib/release'
+import { probeReleases } from '../lib/autoMatch'
+import { resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
-
-// How many search results to probe for the file's track before giving up. Each probe
-// loads a full release, so this caps the Discogs calls one search can make.
-const MAX_AUTO_PROBE = 8
 
 // Search fires this long after typing stops; Enter and the button fire at once.
 const DEBOUNCE_MS = 500
@@ -123,28 +120,19 @@ export function useDiscogsBrowser(
     let cancelled = false
     setAutoProbing(true)
     ;(async () => {
-      for (const result of data.results.slice(0, MAX_AUTO_PROBE)) {
-        // Scoring is inside the try too: a structurally broken release (no tracklist)
-        // skips like one that failed to load, instead of throwing out of the probe.
-        let rel: DiscogsRelease
-        let m: ReturnType<typeof bestMatch>
-        try {
-          rel = await loadRelease(result.id)
-          if (cancelled) return
-          m = bestMatch(rel.tracklist, {
-            title: item.meta.title,
-            durationSec: item.duration,
-            trackNumber: item.meta.trackNumber,
-            artist: item.meta.artist,
-          })
-        } catch {
-          continue
-        }
-        if (m && confidenceTier(m.confidence) !== 'low') {
-          setOpenId(rel.id)
-          break
-        }
-      }
+      const m = await probeReleases(
+        data.results,
+        {
+          title: item.meta.title,
+          durationSec: item.duration,
+          trackNumber: item.meta.trackNumber,
+          artist: item.meta.artist,
+        },
+        // 'review' is enough here: the probe only opens (highlights) the release for
+        // the user's own click, it never writes anything.
+        { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },
+      )
+      if (!cancelled && m) setOpenId(m.release.id)
     })().finally(() => {
       if (!cancelled) setAutoProbing(false)
     })
