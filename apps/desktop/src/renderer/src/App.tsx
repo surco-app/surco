@@ -43,17 +43,13 @@ import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { useAutoMatch } from './hooks/useAutoMatch'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import { canAddToAppleMusic } from './lib/appleMusic'
-import {
-  autoMatchRelease,
-  type DiscogsApi,
-  matchTargetOf,
-  tracksToAutoMatch,
-} from './lib/autoMatch'
+import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
@@ -69,7 +65,6 @@ import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import { mergeReadMeta } from './lib/readMerge'
-import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
 import { searchFromTags } from './lib/search'
@@ -96,11 +91,6 @@ const READ_CONCURRENCY = 6
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
-
-// Auto-match fires a Discogs search plus release loads per track, so the sweep stays
-// at two in flight: Discogs' ~60 req/min is shared across the whole crate, and a
-// wider fan-out would burn the quota (and risk 429s) faster than it helps.
-const AUTO_MATCH_CONCURRENCY = 2
 
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
@@ -248,27 +238,6 @@ export default function App(): React.JSX.Element {
   // Pauses the analyze-quality sweep while the window is in the background (fed by the
   // main process's blur/focus events) so it stops spawning ffmpeg until the app returns.
   const focusGate = useRef(createFocusGate())
-  // Auto-match sweep: progress (null when idle), a cancel flag the workers poll, and a
-  // ref guard so an import landing mid-sweep doesn't start a second concurrent run.
-  const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
-  const matchCancel = useRef(false)
-  const matchingRef = useRef(false)
-  // Track ids waiting for an auto-match, mapped to whether the row must be on screen before
-  // it runs. An import enqueues its files visible-only so a 100-track drop probes Discogs for
-  // the handful in view rather than the whole crate at once; the toolbar sweep enqueues
-  // everything. The drain reads this together with which rows are currently visible.
-  const matchQueue = useRef<Map<string, boolean>>(new Map())
-  const visibleIds = useRef<Set<string>>(new Set())
-  // Auto-match is background work: it probes Discogs at low priority so the editor's own search
-  // (high priority) always jumps ahead, and the main process paces every Discogs call through one
-  // shared per-minute bucket so a big crate can't earn 429s.
-  const discogs = useMemo<DiscogsApi>(
-    () => ({
-      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, 'low'),
-      getRelease: (id) => window.api.getRelease(id, undefined, 'low'),
-    }),
-    [],
-  )
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. Null means "untouched" — fall back to the Settings
   // default. Reset on track switch, matching the editor reseeding per track.
@@ -422,8 +391,7 @@ export default function App(): React.JSX.Element {
     const base = { ...newTrack(track.inputPath), loadingMeta: true }
     discogsPrefetched.current.delete(track.id)
     viewCache.current.delete(track.id)
-    matchQueue.current.delete(track.id)
-    visibleIds.current.delete(track.id)
+    forgetAutoMatch(track.id)
     setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
     setSelection((s) => ({
       ids: s.ids.map((id) => (id === track.id ? base.id : id)),
@@ -559,104 +527,16 @@ export default function App(): React.JSX.Element {
     }).finally(() => setAnalysis(null))
   }, [analysis, queryClient])
 
-  // Probes Discogs for one track and applies a high-confidence release outright (the bar
-  // autoMatchRelease enforces). Keeps the file's own cover — the release's is often smaller —
-  // and only fills from the release when the file carries none, mirroring the editor's apply.
-  const applyAutoMatch = useCallback(
-    async (t: TrackItem): Promise<void> => {
-      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogs)
-      if (!m || matchCancel.current) return
-      // The probe ran against a snapshot taken when the pump drained the queue; an edit,
-      // a manual match or a removal landing during the Discogs round-trip wins. Re-read
-      // the live track and only apply to one still exactly as probed — every edit path
-      // mints a new meta object, so an identity check covers all fields at once.
-      const live = tracksRef.current.find((x) => x.id === t.id)
-      if (!live || live.meta !== t.meta) return
-      const patch = buildReleaseMeta(live.meta, m.release, m.track, {
-        url: live.coverUrl,
-        path: live.coverPath,
-        keep: !!live.coverUrl,
-      })
-      updateTrack(t.id, {
-        meta: patch.meta,
-        coverUrl: patch.coverUrl,
-        coverPath: patch.coverPath,
-        autoMatched: true,
-      })
-    },
-    [discogs, updateTrack],
-  )
-
-  // The queued tracks ready to probe right now: a toolbar-enqueued track always, an
-  // import-enqueued one only once its row is on screen. tracksToAutoMatch then drops any
-  // already matched so a re-run only fills gaps.
-  const readyMatchTargets = useCallback((): TrackItem[] => {
-    const visible = visibleIds.current
-    const ready = tracksRef.current.filter((t) => {
-      const visibleOnly = matchQueue.current.get(t.id)
-      return visibleOnly !== undefined && (!visibleOnly || visible.has(t.id))
-    })
-    return tracksToAutoMatch(ready)
-  }, [])
-
-  // Drains the auto-match queue against Discogs, capped and cancellable. Each pass takes the
-  // tracks ready right now and probes them, so scrolling a big crate feeds the sweep the rows
-  // the user is actually looking at instead of firing all hundred at import. Loops until
-  // nothing's ready, then idles; a fresh drop or a row scrolling into view pumps it again. The
-  // ref guard keeps a single drain running so rival pumps share one budget rather than racing.
-  const pumpAutoMatch = useCallback(async (): Promise<void> => {
-    if (matchingRef.current) return
-    matchingRef.current = true
-    matchCancel.current = false
-    try {
-      while (!matchCancel.current) {
-        const targets = readyMatchTargets()
-        if (targets.length === 0) break
-        for (const t of targets) matchQueue.current.delete(t.id)
-        setMatching((s) => ({ done: s?.done ?? 0, total: (s?.total ?? 0) + targets.length }))
-        await mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
-          try {
-            if (!matchCancel.current) await applyAutoMatch(t)
-          } catch {
-            // One row's malformed Discogs payload must skip that track, not sink the
-            // whole sweep as an unhandled rejection (mirroring the analyze sweep).
-          } finally {
-            setMatching((s) => (s ? { ...s, done: s.done + 1 } : s))
-          }
-        })
-      }
-    } finally {
-      matchingRef.current = false
-      setMatching(null)
-      // A track enqueued in the instant the loop was exiting would otherwise strand until the
-      // next pump; restart if anything's already ready (e.g. the toolbar "match all" click).
-      if (!matchCancel.current && readyMatchTargets().length > 0) void pumpAutoMatch()
-    }
-  }, [applyAutoMatch, readyMatchTargets])
-
-  // Queues tracks for auto-match and kicks the drain. visibleOnly holds an import's files back
-  // until their rows are seen; the toolbar sweep passes false to match the whole view now.
-  const enqueueAutoMatch = useCallback(
-    (candidates: TrackItem[], visibleOnly: boolean): void => {
-      for (const t of tracksToAutoMatch(candidates)) matchQueue.current.set(t.id, visibleOnly)
-      void pumpAutoMatch()
-    },
-    [pumpAutoMatch],
-  )
-
-  // Records which rows are on screen (the list reports it via an IntersectionObserver) and
-  // pumps the drain when one appears, so an import's auto-match follows the user's scroll.
-  const onTrackVisible = useCallback(
-    (id: string, visible: boolean): void => {
-      if (visible) {
-        visibleIds.current.add(id)
-        void pumpAutoMatch()
-      } else {
-        visibleIds.current.delete(id)
-      }
-    },
-    [pumpAutoMatch],
-  )
+  // The Discogs auto-match sweep: queue, visibility gating, pump and progress live in
+  // the hook; App only wires enqueue/cancel into the import flow, toolbar and commands.
+  const {
+    matching,
+    enqueueAutoMatch,
+    onTrackVisible,
+    cancelAutoMatch,
+    forgetTrack: forgetAutoMatch,
+    reset: resetAutoMatch,
+  } = useAutoMatch({ tracksRef, updateTrack })
 
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
@@ -672,11 +552,10 @@ export default function App(): React.JSX.Element {
       // would otherwise be retained until quit.
       discogsPrefetched.current.delete(id)
       viewCache.current.delete(id)
-      matchQueue.current.delete(id)
-      visibleIds.current.delete(id)
+      forgetAutoMatch(id)
       if (removed) removeAnalysisQueries(queryClient, removed.inputPath)
     },
-    [queryClient],
+    [queryClient, forgetAutoMatch],
   )
 
   function clearTracks(): void {
@@ -685,8 +564,7 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: [], anchor: null })
     discogsPrefetched.current.clear()
     viewCache.current.clear()
-    matchQueue.current.clear()
-    visibleIds.current.clear()
+    resetAutoMatch()
     for (const t of cleared) removeAnalysisQueries(queryClient, t.inputPath)
   }
 
@@ -1127,7 +1005,7 @@ export default function App(): React.JSX.Element {
       hint: hintFor('auto-match'),
       enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
       run: () => {
-        if (matching) matchCancel.current = true
+        if (matching) cancelAutoMatch()
         else enqueueAutoMatch(tracksView, false)
       },
     },
@@ -1304,9 +1182,7 @@ export default function App(): React.JSX.Element {
             analyzeCancel.current = true
           }}
           onAutoMatch={() => enqueueAutoMatch(tracksView, false)}
-          onCancelAutoMatch={() => {
-            matchCancel.current = true
-          }}
+          onCancelAutoMatch={cancelAutoMatch}
           onConvertSelected={() => askConvertAll(selectedTracks)}
           onCancelConvert={cancelBatch}
           onExport={() => setActiveModal({ type: 'export' })}
