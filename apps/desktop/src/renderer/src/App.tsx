@@ -672,6 +672,8 @@ export default function App(): React.JSX.Element {
       // would otherwise be retained until quit.
       discogsPrefetched.current.delete(id)
       viewCache.current.delete(id)
+      matchQueue.current.delete(id)
+      visibleIds.current.delete(id)
       if (removed) removeAnalysisQueries(queryClient, removed.inputPath)
     },
     [queryClient],
