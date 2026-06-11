@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
+import { exportButtonLabel } from '../lib/exportLabel'
 import type { TrackItem } from '../types'
 
 export const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
@@ -68,24 +69,17 @@ export function ExportButton({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
-  const label = processing
-    ? tr('editor.processing')
-    : quiet
-      ? tr('editor.reexport')
-      : count !== undefined
-        ? tr(withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll', {
-            count,
-            format: outputFormat.toUpperCase(),
-          })
-        : inPlace
-          ? tr(withAppleMusic ? 'editor.updateMusic' : 'editor.update')
-          : stale
-            ? tr('editor.update')
-            : done
-              ? tr('editor.exportAgain')
-              : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
-                  format: outputFormat.toUpperCase(),
-                })
+  const labelSpec = exportButtonLabel({
+    processing,
+    quiet,
+    count,
+    inPlace,
+    stale,
+    done,
+    withAppleMusic,
+    format: outputFormat.toUpperCase(),
+  })
+  const label = tr(labelSpec.key, labelSpec.options)
 
   function pick(format: OutputFormat): void {
     setOpen(false)
