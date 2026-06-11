@@ -45,9 +45,18 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
     close()
   }
 
+  // The open dropdown owns its keys: each handled press stops propagating so the
+  // window-level shortcut handler can't also move the track selection (or close an
+  // outer modal) behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
     if (e.key === 'Escape') {
+      e.stopPropagation()
       close()
+      return
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Let the focused option's own activation run; just keep the press contained.
+      e.stopPropagation()
       return
     }
     const items = Array.from(
@@ -62,6 +71,7 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
     else if (e.key === 'End') next = items.length - 1
     if (next === -1) return
     e.preventDefault()
+    e.stopPropagation()
     items[next].focus()
   }
 

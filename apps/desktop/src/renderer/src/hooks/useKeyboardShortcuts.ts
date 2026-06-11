@@ -25,6 +25,10 @@ export function useKeyboardShortcuts(params: Params): void {
   const latest = useLatest(params)
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
+      // A component that already handled this press (an open dropdown or context menu
+      // moving its own focus) owns it — running a track command too would move the
+      // selection behind the popover.
+      if (e.defaultPrevented) return
       const p = latest.current
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()

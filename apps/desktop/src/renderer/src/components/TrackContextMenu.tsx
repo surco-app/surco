@@ -70,14 +70,6 @@ export function TrackContextMenu({
     })
   }, [x, y])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   // The menu can be opened from the keyboard (Shift+F10 / the context-menu key), so move
   // focus to the first item on open and hand it back to the opener once it closes.
   useEffect(() => {
@@ -86,7 +78,22 @@ export function TrackContextMenu({
     return () => opener?.focus?.()
   }, [])
 
+  // The open menu owns its keys: each handled press stops propagating so the
+  // window-level shortcut handler can't also move the track selection behind the
+  // menu, or toggle the player when Space was meant to activate the focused item.
+  // Focus always sits inside the menu (moved there on open), so Escape is caught
+  // here too rather than by a window listener.
   function onMenuKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      onClose()
+      return
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Let the focused item's own activation run; just keep the press contained.
+      e.stopPropagation()
+      return
+    }
     const items = Array.from(
       menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
     )
@@ -99,6 +106,7 @@ export function TrackContextMenu({
     else if (e.key === 'End') next = items.length - 1
     if (next === -1) return
     e.preventDefault()
+    e.stopPropagation()
     items[next].focus()
   }
 

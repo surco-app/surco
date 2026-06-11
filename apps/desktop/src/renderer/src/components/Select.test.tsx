@@ -44,6 +44,23 @@ describe('Select', () => {
     expect(screen.queryByTestId('sort-listbox')).toBeNull()
   })
 
+  // The open dropdown owns its keys. Any that leak to the window-level shortcut
+  // handler move the track selection (or toggle the player) behind the popover —
+  // and a selection change remounts the editor under the user.
+  it('keeps its keys from reaching window-level shortcut handlers', () => {
+    renderSelect('name')
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    fireEvent.click(screen.getByTestId('sort'))
+    const listbox = screen.getByTestId('sort-listbox')
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' })
+    fireEvent.keyDown(listbox, { key: 'Enter' })
+    fireEvent.keyDown(listbox, { key: ' ' })
+    fireEvent.keyDown(listbox, { key: 'Escape' })
+    expect(seen).not.toHaveBeenCalled()
+    window.removeEventListener('keydown', seen)
+  })
+
   // Opening on the current option keeps the keyboard flow of a native select:
   // arrows continue from what is chosen, not from the top of the list.
   it('moves focus to the selected option on open and walks the list with arrows', () => {

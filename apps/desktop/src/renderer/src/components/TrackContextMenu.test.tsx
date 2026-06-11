@@ -48,6 +48,22 @@ describe('TrackContextMenu keyboard', () => {
     expect(screen.getByTestId('track-menu-reveal')).toHaveFocus()
   })
 
+  // The open menu owns its keys. Any that leak to the window-level shortcut handler
+  // move the track selection behind the menu (remounting the editor) or toggle the
+  // player when Space was meant to activate the focused item.
+  it('keeps its keys from reaching window-level shortcut handlers', () => {
+    renderMenu()
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    const menu = screen.getByTestId('track-menu')
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    fireEvent.keyDown(menu, { key: 'Enter' })
+    fireEvent.keyDown(menu, { key: ' ' })
+    fireEvent.keyDown(menu, { key: 'Escape' })
+    expect(seen).not.toHaveBeenCalled()
+    window.removeEventListener('keydown', seen)
+  })
+
   it('moves focus between items with the arrow keys, wrapping at the ends', () => {
     renderMenu()
     const menu = screen.getByTestId('track-menu')

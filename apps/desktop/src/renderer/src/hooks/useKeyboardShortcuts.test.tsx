@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
-import { renderHook } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, renderHook } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Command } from '../lib/commands'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
+
+// Hooks from a previous test must not stay subscribed to window: a leftover handler
+// preventDefaults the shared event and the one under test then ignores it.
+afterEach(cleanup)
 
 function press(init: KeyboardEventInit): void {
   window.dispatchEvent(new KeyboardEvent('keydown', init))
@@ -44,5 +48,24 @@ describe('useKeyboardShortcuts language toggle over an overlay', () => {
     const { play } = setup(true)
     press({ key: ' ' })
     expect(play).not.toHaveBeenCalled()
+  })
+})
+
+// A popover (the sort dropdown, the track context menu) that preventDefaults a key owns
+// that press; the global handler must not also run a track command for it, or arrowing
+// inside the popover moves the list selection behind it.
+describe('useKeyboardShortcuts keys already handled below', () => {
+  it('ignores a keydown a component already defaultPrevented', () => {
+    const { play } = setup(false)
+    const e = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
+    e.preventDefault()
+    window.dispatchEvent(e)
+    expect(play).not.toHaveBeenCalled()
+  })
+
+  it('still runs the command for an unhandled press', () => {
+    const { play } = setup(false)
+    press({ key: ' ', cancelable: true })
+    expect(play).toHaveBeenCalledTimes(1)
   })
 })
