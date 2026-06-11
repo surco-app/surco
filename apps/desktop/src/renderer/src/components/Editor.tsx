@@ -14,6 +14,7 @@ import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useKey } from '../hooks/useKey'
+import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
@@ -175,12 +176,21 @@ export function Editor({
   // can octave-fold (70 vs 140), so it stays a suggestion the user clicks to accept,
   // never a silent write. Disabled when the field is hidden and in multi-select,
   // where there is nowhere to suggest it.
-  const { data: detectedBpm } = useBpm(item.inputPath, !isMulti && visibleFields.includes('bpm'))
+  // The DSP probes wait for the selection to rest on this track (the editor remounts
+  // per track), so j/k browsing doesn't enqueue a serial worker job per row passed.
+  const probesSettled = useSettled(SELECTION_SETTLE_MS)
+  const { data: detectedBpm } = useBpm(
+    item.inputPath,
+    probesSettled && !isMulti && visibleFields.includes('bpm'),
+  )
 
   // Key detected from the audio, offered like the BPM above. It is the least
   // reliable analysis Surco runs (chroma profiles can pick a relative or
   // neighbouring key), which is exactly why it is a chip and never a write.
-  const { data: detectedKey } = useKey(item.inputPath, !isMulti && visibleFields.includes('key'))
+  const { data: detectedKey } = useKey(
+    item.inputPath,
+    probesSettled && !isMulti && visibleFields.includes('key'),
+  )
 
   // Which tracklist entry of the open release best matches the file. Shared by the
   // Discogs panel (which highlights it as the suggestion) and the Apple Music lookup

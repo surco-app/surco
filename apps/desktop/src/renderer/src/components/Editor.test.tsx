@@ -309,6 +309,18 @@ describe('Editor loudness pills', () => {
     noiseFloorDb: -55,
   }
 
+  // Like the tempo probe, the ffmpeg loudness pass waits for the selection to rest
+  // instead of measuring every row a j/k sweep passes through.
+  it('does not measure loudness until the selection rests on the track', async () => {
+    const loudness = vi.fn().mockResolvedValue(healthy)
+    ;(window as unknown as { api: { loudness: unknown } }).api.loudness = loudness
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(loudness).not.toHaveBeenCalled()
+    await screen.findByTestId('loudness-pill-lufs')
+    expect(loudness).toHaveBeenCalledTimes(1)
+  })
+
   // The figures come from the main-process measure (window.api.loudness) the readout
   // runs on mount, so each test seeds what that measure returns for this file.
   function seedLoudness(value: LoudnessResult): void {
@@ -450,6 +462,18 @@ describe('Editor genre presets', () => {
 })
 
 describe('Editor bpm suggestion', () => {
+  // Browsing a crate with j/k must not enqueue a serial DSP job for every row the
+  // user merely passed through: the probe waits until the selection rests.
+  it('does not probe the tempo until the selection rests on the track', async () => {
+    const bpm = vi.fn().mockResolvedValue({ bpm: 124, confidence: 0.8 })
+    ;(window as unknown as { api: { bpm: unknown } }).api.bpm = bpm
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['bpm'] })
+    await screen.findByTestId('field-bpm')
+    expect(bpm).not.toHaveBeenCalled()
+    await screen.findByTestId('chip-124')
+    expect(bpm).toHaveBeenCalledTimes(1)
+  })
+
   // Tempo detection can land on the wrong half/double-time octave, so the
   // detected value must stay a suggestion the user confirms — the chip click is
   // that confirmation; nothing writes the field unattended.

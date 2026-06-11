@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { formatKHz, qualityVerdict, type Verdict } from '../lib/quality'
@@ -47,8 +48,11 @@ export function QualitySection({
       : tr('editor.analyzeError')
     : ''
   // Keyed by input path, so it measures once per file and reads the right figures on
-  // a track switch. A failed measure resolves null and the readout hides.
-  const { data: loudness } = useTrackLoudness(item.inputPath, showLoudness)
+  // a track switch. The ffmpeg pass waits for the selection to rest (this section
+  // remounts with the per-track editor). A failed measure resolves null and the
+  // readout hides.
+  const settled = useSettled(SELECTION_SETTLE_MS)
+  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness)
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
