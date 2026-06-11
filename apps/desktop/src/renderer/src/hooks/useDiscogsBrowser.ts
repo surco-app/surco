@@ -113,19 +113,22 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     setAutoProbing(true)
     ;(async () => {
       for (const result of data.results.slice(0, MAX_AUTO_PROBE)) {
+        // Scoring is inside the try too: a structurally broken release (no tracklist)
+        // skips like one that failed to load, instead of throwing out of the probe.
         let rel: DiscogsRelease
+        let m: ReturnType<typeof bestMatch>
         try {
           rel = await loadRelease(result.id)
+          if (cancelled) return
+          m = bestMatch(rel.tracklist, {
+            title: item.meta.title,
+            durationSec: item.duration,
+            trackNumber: item.meta.trackNumber,
+            artist: item.meta.artist,
+          })
         } catch {
           continue
         }
-        if (cancelled) return
-        const m = bestMatch(rel.tracklist, {
-          title: item.meta.title,
-          durationSec: item.duration,
-          trackNumber: item.meta.trackNumber,
-          artist: item.meta.artist,
-        })
         if (m && confidenceTier(m.confidence) !== 'low') {
           setOpenId(rel.id)
           break

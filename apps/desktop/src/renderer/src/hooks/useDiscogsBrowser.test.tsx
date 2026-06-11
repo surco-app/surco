@@ -88,6 +88,27 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.release?.id).toBe(1))
   })
 
+  // The probe walks the results in order; one structurally broken release (no
+  // tracklist) must be skipped like a failed load, not thrown out of the probe —
+  // which would leave busy latched and surface an unhandled rejection.
+  it('skips a malformed release in the probe and opens the next match', async () => {
+    const getRelease = vi.fn((id: number) => {
+      if (id === 1) return Promise.resolve({ id: 1, title: 'Broken' })
+      return Promise.resolve({ ...release, id })
+    })
+    setApi({
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult, { ...searchResult, id: 2 }]),
+      getRelease,
+    })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'some album', title: 'Track One' }), tr),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.release?.id).toBe(2))
+    expect(result.current.busy).toBe(false)
+  })
+
   // The auto-open probe is a guess that must not run with nothing to match against:
   // with no title it never loads a release, so it can never open or mutate anything.
   it('does not probe or auto-open when the file has no title', async () => {

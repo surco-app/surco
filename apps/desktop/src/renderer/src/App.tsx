@@ -613,8 +613,14 @@ export default function App(): React.JSX.Element {
         for (const t of targets) matchQueue.current.delete(t.id)
         setMatching((s) => ({ done: s?.done ?? 0, total: (s?.total ?? 0) + targets.length }))
         await mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
-          if (!matchCancel.current) await applyAutoMatch(t)
-          setMatching((s) => (s ? { ...s, done: s.done + 1 } : s))
+          try {
+            if (!matchCancel.current) await applyAutoMatch(t)
+          } catch {
+            // One row's malformed Discogs payload must skip that track, not sink the
+            // whole sweep as an unhandled rejection (mirroring the analyze sweep).
+          } finally {
+            setMatching((s) => (s ? { ...s, done: s.done + 1 } : s))
+          }
         })
       }
     } finally {

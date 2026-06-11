@@ -263,6 +263,28 @@ describe('App auto-match', () => {
     expect(searchDiscogs).toHaveBeenCalledTimes(1)
   })
 
+  // One row's malformed Discogs payload (a release without a tracklist) must skip
+  // that track, not sink the sweep: the other rows still match, the progress pill
+  // still completes, and nothing escapes as an unhandled rejection.
+  it('survives a malformed release and still matches the remaining tracks', async () => {
+    const getRelease = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 1, title: 'Album' })
+      .mockResolvedValue(release)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      searchDiscogs: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+    expect(screen.queryByTestId('app-error')).toBeNull()
+  })
+
   // The sweep probes a snapshot of each track while the list stays fully editable. An
   // edit typed during a track's probe window must win over the match landing after it —
   // otherwise the user's words silently revert to Discogs's a few seconds later.

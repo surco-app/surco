@@ -50,6 +50,21 @@ describe('autoMatchRelease', () => {
     expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
   })
 
+  // The API can return a structurally broken release (no tracklist). It must be
+  // skipped exactly like one that failed to load — not thrown out of the probe, where
+  // it would sink a whole sweep as an unhandled rejection.
+  it('skips a malformed release and probes the next', async () => {
+    const api = {
+      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      getRelease: vi
+        .fn()
+        .mockResolvedValueOnce({ id: 1, title: 'Album' } as DiscogsRelease)
+        .mockResolvedValueOnce(release(2, { tracklist: [HIGH] })),
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.release.id).toBe(2)
+  })
+
   it('skips a release that fails to load and probes the next', async () => {
     const api = {
       searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),

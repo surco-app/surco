@@ -64,13 +64,16 @@ export async function autoMatchRelease(
     return undefined
   }
   for (const result of results.slice(0, maxProbe)) {
+    // Scoring is inside the try too: a structurally broken release (no tracklist)
+    // skips like one that failed to load, instead of throwing out of the probe.
     let rel: DiscogsRelease
+    let m: ReturnType<typeof bestMatch>
     try {
       rel = await api.getRelease(result.id)
+      m = bestMatch(rel.tracklist, target)
     } catch {
       continue
     }
-    const m = bestMatch(rel.tracklist, target)
     if (m && confidenceTier(m.confidence) === 'high') {
       return { release: rel, track: m.track, confidence: m.confidence }
     }
