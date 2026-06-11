@@ -9,8 +9,9 @@ import type {
   SearchProviderId,
   TrackProperties,
 } from '../shared/types'
+import type { Api } from './api'
 
-const api = {
+const api: Api = {
   platform: process.platform,
   // Resolved once at startup so the renderer (and the ErrorBoundary above it) can
   // stamp feedback with the version synchronously, like platform.
@@ -24,7 +25,7 @@ const api = {
     return () => ipcRenderer.removeListener('open-files', listener)
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
-  saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:set', patch),
+  saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
   setConfigDir: (dir: string | null) => ipcRenderer.invoke('settings:setConfigDir', dir),
   pickConfigDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickConfigDir'),
@@ -40,11 +41,10 @@ const api = {
     ipcRenderer.invoke('search:release', id, provider, priority),
   lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]): Promise<boolean> =>
     ipcRenderer.invoke('applemusic:lookup', candidates),
-  addToAppleMusic: (job: unknown): Promise<void> => ipcRenderer.invoke('applemusic:add', job),
-  processTrack: (job: unknown) => ipcRenderer.invoke('process:track', job),
-  exportCover: (job: unknown): Promise<string | null> => ipcRenderer.invoke('cover:export', job),
-  prepareCoverDrag: (src: unknown): Promise<string | null> =>
-    ipcRenderer.invoke('cover:prepareDrag', src),
+  addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),
+  processTrack: (job) => ipcRenderer.invoke('process:track', job),
+  exportCover: (job) => ipcRenderer.invoke('cover:export', job),
+  prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
@@ -89,5 +89,3 @@ const api = {
 }
 
 contextBridge.exposeInMainWorld('api', api)
-
-export type Api = typeof api
