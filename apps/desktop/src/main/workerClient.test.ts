@@ -14,20 +14,26 @@ function fakeWorker() {
 const job = { type: 'bpm', pcm: new Float32Array(0), sampleRate: 11025 } as const
 
 describe('createWorkerClient', () => {
-  // Two analyses can be in flight at once (the background sweep runs bpm and key per
-  // track); each caller must get its own result back even when the worker answers
-  // out of order — correlation is the whole point of the id.
-  it('correlates out-of-order responses to their callers', async () => {
+  // The worker runs one synchronous DSP pass at a time, so the queue order decides
+  // what the user waits for. Newest-first: browsing j/k through a crate stacks up
+  // probes for rows already left behind — the track on screen never waits for those.
+  it('serves the most recently submitted job first once the worker frees up', async () => {
     const w = fakeWorker()
     const client = createWorkerClient(() => w as unknown as Worker)
-    const first = client.run(job)
-    const second = client.run(job)
-    const [{ id: firstId }] = w.postMessage.mock.calls[0]
-    const [{ id: secondId }] = w.postMessage.mock.calls[1]
-    w.emit('message', { id: secondId, ok: true, result: 'second' })
-    w.emit('message', { id: firstId, ok: true, result: 'first' })
-    await expect(second).resolves.toBe('second')
-    await expect(first).resolves.toBe('first')
+    const a = client.run({ ...job, sampleRate: 1 })
+    const b = client.run({ ...job, sampleRate: 2 })
+    const c = client.run({ ...job, sampleRate: 3 })
+    // Only one job is ever posted at a time; the rest wait in the client.
+    expect(w.postMessage).toHaveBeenCalledTimes(1)
+    expect(w.postMessage.mock.calls[0][0].job.sampleRate).toBe(1)
+    w.emit('message', { id: w.postMessage.mock.calls[0][0].id, ok: true, result: 1 })
+    await a
+    expect(w.postMessage.mock.calls[1][0].job.sampleRate).toBe(3)
+    w.emit('message', { id: w.postMessage.mock.calls[1][0].id, ok: true, result: 3 })
+    await c
+    expect(w.postMessage.mock.calls[2][0].job.sampleRate).toBe(2)
+    w.emit('message', { id: w.postMessage.mock.calls[2][0].id, ok: true, result: 2 })
+    await b
   })
 
   // A job that throws inside the worker (unreadable file, bad tag) must fail only
@@ -37,11 +43,9 @@ describe('createWorkerClient', () => {
     const client = createWorkerClient(() => w as unknown as Worker)
     const failing = client.run(job)
     const surviving = client.run(job)
-    const [{ id: failId }] = w.postMessage.mock.calls[0]
-    const [{ id: okId }] = w.postMessage.mock.calls[1]
-    w.emit('message', { id: failId, ok: false, error: 'corrupt file' })
-    w.emit('message', { id: okId, ok: true, result: 42 })
+    w.emit('message', { id: w.postMessage.mock.calls[0][0].id, ok: false, error: 'corrupt file' })
     await expect(failing).rejects.toThrow('corrupt file')
+    w.emit('message', { id: w.postMessage.mock.calls[1][0].id, ok: true, result: 42 })
     await expect(surviving).resolves.toBe(42)
   })
 
@@ -76,5 +80,18 @@ describe('createWorkerClient', () => {
     second.emit('message', { id: second.postMessage.mock.calls[0][0].id, ok: true, result: 'ok' })
     await expect(revived).resolves.toBe('ok')
     expect(spawn).toHaveBeenCalledTimes(2)
+  })
+
+  // Jobs still waiting in the client when the thread dies must reject like the
+  // in-flight one — a queued promise that never settles would hang its caller.
+  it('rejects queued jobs too when the worker dies', async () => {
+    const w = fakeWorker()
+    const client = createWorkerClient(() => w as unknown as Worker)
+    const inFlight = client.run(job)
+    const queued = client.run(job)
+    expect(w.postMessage).toHaveBeenCalledTimes(1)
+    w.emit('error', new Error('worker crashed'))
+    await expect(inFlight).rejects.toThrow('worker crashed')
+    await expect(queued).rejects.toThrow('worker crashed')
   })
 })

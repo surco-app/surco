@@ -6,6 +6,11 @@ interface Pending {
   reject: (error: Error) => void
 }
 
+interface Queued extends Pending {
+  job: WorkerJob
+  transfer?: readonly TransferListItem[]
+}
+
 interface WorkerResponse {
   id: number
   ok: boolean
@@ -18,13 +23,26 @@ export interface WorkerClient {
 }
 
 // Correlates jobs to responses over a single reused worker: spawning a thread costs
-// tens of ms, while the analyze sweep submits hundreds of jobs per session. If the
-// thread itself dies, every in-flight job rejects (never hangs) and the next job
-// spawns a fresh worker.
+// tens of ms, while a session submits hundreds of jobs. Jobs are held client-side and
+// posted one at a time, newest first — the worker runs one synchronous DSP pass at a
+// time anyway, and browsing j/k through a crate stacks up probes for rows already
+// left behind, which the track on screen must never wait for. If the thread itself
+// dies, every in-flight and queued job rejects (never hangs) and the next job spawns
+// a fresh worker.
 export function createWorkerClient(spawn: () => Worker): WorkerClient {
   let worker: Worker | null = null
   let nextId = 0
+  let inFlightId: number | null = null
   const pending = new Map<number, Pending>()
+  const queue: Queued[] = []
+
+  function failEverything(error: Error): void {
+    for (const job of pending.values()) job.reject(error)
+    pending.clear()
+    for (const queued of queue.splice(0)) queued.reject(error)
+    inFlightId = null
+    worker = null
+  }
 
   function ensureWorker(): Worker {
     if (worker) return worker
@@ -33,25 +51,33 @@ export function createWorkerClient(spawn: () => Worker): WorkerClient {
       const job = pending.get(response.id)
       if (!job) return
       pending.delete(response.id)
+      if (response.id === inFlightId) inFlightId = null
       if (response.ok) job.resolve(response.result ?? null)
       else job.reject(new Error(response.error ?? 'worker job failed'))
+      pump()
     })
-    spawned.on('error', (error: Error) => {
-      for (const job of pending.values()) job.reject(error)
-      pending.clear()
-      worker = null
-    })
+    spawned.on('error', failEverything)
     worker = spawned
     return spawned
   }
 
+  function pump(): void {
+    if (inFlightId !== null) return
+    // LIFO: the most recent submission is what the user is looking at right now.
+    const next = queue.pop()
+    if (!next) return
+    const w = ensureWorker()
+    const id = nextId++
+    inFlightId = id
+    pending.set(id, next)
+    w.postMessage({ id, job: next.job }, next.transfer)
+  }
+
   return {
     run(job, transfer) {
-      const w = ensureWorker()
-      const id = nextId++
       return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject })
-        w.postMessage({ id, job }, transfer)
+        queue.push({ job, transfer, resolve, reject })
+        pump()
       })
     },
   }
