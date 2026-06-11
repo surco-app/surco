@@ -71,7 +71,9 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
     normalizeOverride?: NormalizeConfig,
   ): Promise<BatchOutcome> {
     const track = tracksRef.current.find((t) => t.id === id)
-    if (!track) return 'failed'
+    // A track removed after being queued was a user decision, not a failure — count
+    // it as skipped so the summary never reports an error with no visible row.
+    if (!track) return 'skipped'
     const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
     if (missing.length) {
       const names = missing.map((k) => tr(`fields.${k}`)).join(', ')

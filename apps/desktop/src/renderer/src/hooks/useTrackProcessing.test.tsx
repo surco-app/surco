@@ -231,6 +231,37 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // A track removed while the batch runs was a user decision, not a conversion
+  // failure: reporting "1 failed" sends the user hunting for an error row that
+  // doesn't exist.
+  it('counts a track removed mid-batch as skipped, not failed', async () => {
+    let releaseFirst: (v: { outputPath: string }) => void = () => {}
+    const processTrack = vi.fn().mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseFirst = resolve
+        }),
+    )
+    setApi({ processTrack })
+    const initial = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result, rerender } = renderHook(
+      (props: { tracks: TrackItem[] }) =>
+        useTrackProcessing({ tracks: props.tracks, settings: null, updateTrack: vi.fn() }),
+      { initialProps: { tracks: initial }, wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.processAll(initial)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    rerender({ tracks: [initial[0]] })
+    releaseFirst({ outputPath: '/out/a.aiff' })
+    await act(async () => {
+      await run
+    })
+    expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 1, failed: 0 })
+  })
+
   // An in-place export rewrites the source file — re-encoded, normalized, re-tagged —
   // so the session-long probe caches for that path now describe a file that no longer
   // exists. Without eviction the loudness/properties/spectrum readouts keep showing the
