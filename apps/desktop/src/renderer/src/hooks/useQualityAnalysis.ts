@@ -4,6 +4,7 @@ import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
 import { tracksToAnalyze } from '../lib/triage'
 import type { TrackItem } from '../types'
+import { spectrogramOptions } from './useSpectrogram'
 
 interface Params {
   // Live spectrum-merged view of the tracks, so the sweep targets what the list
@@ -48,10 +49,7 @@ export function useQualityAnalysis({ tracksViewRef }: Params): QualityAnalysis {
       await focusGate.current.wait()
       if (analyzeCancel.current) return
       try {
-        await queryClient.fetchQuery({
-          queryKey: ['spectrogram', t.inputPath],
-          queryFn: () => window.api.spectrogram(t.inputPath),
-        })
+        await queryClient.fetchQuery(spectrogramOptions(t.inputPath))
       } catch {
         // A single file ffmpeg can't read must not abort the whole sweep.
       } finally {

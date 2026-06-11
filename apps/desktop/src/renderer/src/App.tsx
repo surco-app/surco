@@ -47,6 +47,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSettings } from './hooks/useSettings'
+import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
@@ -329,10 +330,7 @@ export default function App(): React.JSX.Element {
         const track = tracksRef.current.find((t) => t.id === id)
         if (!track) return
         if (showSpectrumRef.current) {
-          void queryClient.prefetchQuery({
-            queryKey: ['spectrogram', track.inputPath],
-            queryFn: () => window.api.spectrogram(track.inputPath),
-          })
+          void queryClient.prefetchQuery(spectrogramOptions(track.inputPath))
         }
         if (
           needsDiscogsPrefetch(track, hasTokenRef.current) &&
@@ -599,8 +597,7 @@ export default function App(): React.JSX.Element {
   // keystroke and progress tick.
   const spectra = useQueries({
     queries: tracks.map((t) => ({
-      queryKey: ['spectrogram', t.inputPath],
-      queryFn: () => window.api.spectrogram(t.inputPath),
+      ...spectrogramOptions(t.inputPath),
       enabled: false,
     })),
     combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
