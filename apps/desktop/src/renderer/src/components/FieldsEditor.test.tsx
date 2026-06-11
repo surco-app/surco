@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { FIELD_DEFS } from '../lib/fields'
 import { FieldsEditor } from './FieldsEditor'
 
 afterEach(cleanup)
@@ -57,5 +58,26 @@ describe('FieldsEditor', () => {
     const row = screen.getByTestId('field-row-title')
     fireEvent.click(within(row).getByLabelText('Move down'))
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'album'])
+  })
+
+  // Unlike the visible list — whose order the user curates because it IS the
+  // editor's order — the hidden list has no meaningful order of its own, so it
+  // sorts alphabetically by the translated label to be scannable.
+  it('lists hidden fields alphabetically by label', () => {
+    const hiddenKeys = ['trackNumber', 'comment', 'discNumber', 'bpm', 'key', 'remixArtist']
+    setup({
+      visibleFields: FIELD_DEFS.map((d) => d.key).filter((k) => !hiddenKeys.includes(k)),
+      requiredFields: [],
+    })
+    const rows = screen.getAllByTestId(/^hidden-field-/)
+    // English labels: BPM, Comment, Disc No., Key, Remix artist, Track No.
+    expect(rows.map((el) => el.getAttribute('data-testid'))).toEqual([
+      'hidden-field-bpm',
+      'hidden-field-comment',
+      'hidden-field-discNumber',
+      'hidden-field-key',
+      'hidden-field-remixArtist',
+      'hidden-field-trackNumber',
+    ])
   })
 })

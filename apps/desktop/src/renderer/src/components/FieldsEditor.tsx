@@ -93,21 +93,26 @@ export function FieldsEditor({
           {tr('settings.hidden')}
         </p>
         <div className="space-y-1.5">
-          {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key)).map((d) => (
-            <div
-              key={d.key}
-              className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
-            >
-              <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
-              <button
-                type="button"
-                onClick={() => onChangeVisible([...visibleFields, d.key])}
-                className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+          {/* The visible list keeps the user's order (it IS the editor's order); the
+              hidden list has none of its own, so it sorts by label for scanning. */}
+          {FIELD_DEFS.filter((d) => !visibleFields.includes(d.key))
+            .sort((a, b) => tr(`fields.${a.key}`).localeCompare(tr(`fields.${b.key}`)))
+            .map((d) => (
+              <div
+                key={d.key}
+                data-testid={`hidden-field-${d.key}`}
+                className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
               >
-                {tr('settings.show')}
-              </button>
-            </div>
-          ))}
+                <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
+                <button
+                  type="button"
+                  onClick={() => onChangeVisible([...visibleFields, d.key])}
+                  className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+                >
+                  {tr('settings.show')}
+                </button>
+              </div>
+            ))}
           {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
             <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
           )}
