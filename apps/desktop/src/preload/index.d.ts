@@ -3,6 +3,7 @@ import type {
   AppleMusicLookupCandidate,
   BpmResult,
   CoverExportJob,
+  CoverRead,
   DiscogsRelease,
   DiscogsSearchResult,
   KeyResult,
@@ -65,7 +66,7 @@ export interface Api {
   key: (path: string) => Promise<KeyResult | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
-  readCover: (path: string) => Promise<string | null>
+  readCover: (path: string) => Promise<CoverRead | null>
   onMenuCommand: (cb: (id: string) => void) => () => void
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => () => void
   installUpdate: () => Promise<void>

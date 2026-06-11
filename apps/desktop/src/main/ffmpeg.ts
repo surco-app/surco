@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { formatRatingTag, ratingTagToStars } from '../shared/rating'
 import type {
   BpmResult,
+  CoverRead,
   KeyResult,
   LoudnessResult,
   NormalizeConfig,
@@ -131,8 +132,9 @@ export async function readTags(input: string): Promise<TrackMetadata> {
 
 // Pulls the first embedded picture out as a still image (no audio), letting the
 // .jpg target drive the encoder so PNG art is transcoded too. ffmpeg exits
-// non-zero when the file carries no attached picture.
-export function coverArgs(input: string, output: string): string[] {
+// non-zero when the file carries no attached picture. maxPx caps the longer side
+// (keeping aspect ratio, never upscaling) for the renderer's display thumbnail.
+export function coverArgs(input: string, output: string, maxPx?: number): string[] {
   return [
     '-hide_banner',
     '-loglevel',
@@ -145,8 +147,40 @@ export function coverArgs(input: string, output: string): string[] {
     '0:v:0',
     '-frames:v',
     '1',
+    ...(maxPx
+      ? ['-vf', `scale='min(${maxPx},iw)':'min(${maxPx},ih)':force_original_aspect_ratio=decrease`]
+      : []),
     output,
   ]
+}
+
+// Display-thumbnail cap. 512 keeps the editor's artwork well sharp on retina while
+// staying ~30-60KB per track instead of the megabyte-scale original.
+const COVER_THUMB_PX = 512
+
+// Original size of the attached picture, probed without decoding it.
+async function probeCoverDims(input: string): Promise<{ width: number; height: number }> {
+  try {
+    const { stdout } = await run(ffprobePath, [
+      '-v',
+      'error',
+      '-select_streams',
+      'v:0',
+      '-show_entries',
+      'stream=width,height',
+      '-of',
+      'json',
+      input,
+    ])
+    const s = JSON.parse(stdout).streams?.[0]
+    const width = Number(s?.width)
+    const height = Number(s?.height)
+    return Number.isFinite(width) && Number.isFinite(height)
+      ? { width, height }
+      : { width: 0, height: 0 }
+  } catch {
+    return { width: 0, height: 0 }
+  }
 }
 
 // Full-resolution extract to a temp file, for the WRITE paths (embedding at convert
@@ -164,12 +198,13 @@ export async function extractCoverFile(input: string): Promise<string | null> {
   }
 }
 
-export async function extractCover(input: string): Promise<string | null> {
+export async function extractCover(input: string): Promise<CoverRead | null> {
   const out = join(tmpdir(), tmpName('cover', 'jpg'))
   try {
-    await run(ffmpegPath, coverArgs(input, out))
+    await run(ffmpegPath, coverArgs(input, out, COVER_THUMB_PX))
     const buf = await readFile(out)
-    return `data:image/jpeg;base64,${buf.toString('base64')}`
+    const dims = await probeCoverDims(input)
+    return { thumbUrl: `data:image/jpeg;base64,${buf.toString('base64')}`, ...dims }
   } catch {
     return null
   } finally {

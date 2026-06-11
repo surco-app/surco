@@ -127,8 +127,10 @@ export function useTrackLibrary({
       const patch: Partial<TrackItem> = {
         query: s.query,
         duration: duration ?? undefined,
-        coverUrl: cover ?? undefined,
-        embeddedCover: cover ?? undefined,
+        coverUrl: cover?.thumbUrl,
+        embeddedCover: cover?.thumbUrl,
+        embeddedCoverDims:
+          cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
         listLabel: s.title || base.fileName,
         loadingMeta: false,
       }

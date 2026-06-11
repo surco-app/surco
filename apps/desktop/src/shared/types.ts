@@ -151,6 +151,15 @@ export interface DiscogsRelease {
   extraartists?: { name: string; role: string; tracks?: string }[]
 }
 
+// What the import-time cover read hands the renderer: a bounded display thumbnail
+// (kept for the whole session, so never the full-size picture) plus the art's
+// original pixel size, which the low-res checks need — the thumbnail would lie.
+export interface CoverRead {
+  thumbUrl: string
+  width: number
+  height: number
+}
+
 export interface ProcessJob {
   id: string
   inputPath: string

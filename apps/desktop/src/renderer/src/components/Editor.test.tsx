@@ -461,6 +461,24 @@ describe('Editor genre presets', () => {
   })
 })
 
+describe('Editor embedded cover size', () => {
+  // The shown embedded cover is a display thumbnail, so the size pill (and the
+  // low-res verdict behind it) must read the original dimensions probed at import —
+  // measuring the thumbnail would flag every good cover as too small.
+  it('shows the original art size for the file’s own cover, not the thumbnail’s', async () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve(null)
+    const thumb = 'data:image/jpeg;base64,thumb'
+    renderEditor({
+      id: 'a',
+      coverUrl: thumb,
+      embeddedCover: thumb,
+      embeddedCoverDims: { w: 1400, h: 1400 },
+    })
+    expect(await screen.findByText('1400 × 1400 px')).toBeInTheDocument()
+  })
+})
+
 describe('Editor bpm suggestion', () => {
   // Browsing a crate with j/k must not enqueue a serial DSP job for every row the
   // user merely passed through: the probe waits until the selection rests.

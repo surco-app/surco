@@ -516,6 +516,19 @@ describe('coverArgs', () => {
     expect(args[args.length - 1]).toBe('/out.jpg')
     const i = args.indexOf('-map')
     expect(args[i + 1]).toBe('0:v:0')
+    expect(args).not.toContain('-vf')
+  })
+
+  // The renderer keeps the import-time extract for the whole session, so it must be a
+  // bounded thumbnail — a 3000px JPEG per row adds up to hundreds of MB on a big
+  // crate. The cap keeps the aspect ratio and never upscales smaller art.
+  it('caps the extracted picture to a thumbnail when a max size is given', () => {
+    const args = coverArgs('/in.flac', '/out.jpg', 512)
+    const i = args.indexOf('-vf')
+    expect(args[i + 1]).toBe(
+      "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease",
+    )
+    expect(args[args.length - 1]).toBe('/out.jpg')
   })
 })
 

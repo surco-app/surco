@@ -26,6 +26,10 @@ export interface TrackItem {
   // choice distinct from the release's images; a file with no embedded art has
   // none, so it contributes no slot. Undefined when the file carries no cover.
   embeddedCover?: string
+  // Original pixel size of the file's embedded art, probed at import. The stored
+  // embeddedCover/coverUrl is a display thumbnail, so the real size travels
+  // separately for the low-res checks and the editor's size pill.
+  embeddedCoverDims?: { w: number; h: number }
   // Set when the user clears the artwork, so the conversion strips the embedded
   // cover instead of preserving it. Cleared again the moment a new cover is set.
   coverRemoved?: boolean

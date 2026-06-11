@@ -174,6 +174,14 @@ export const Editor = memo(function Editor({
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.
   const [coverDims, setCoverDims] = useState<{ w: number; h: number } | null>(null)
+  // The shown embedded cover is a display thumbnail, so its measured size lies about
+  // the art actually in the file — prefer the original dimensions probed at import.
+  // Anything the user applied (Discogs URL, picked file) displays at native size, so
+  // the measured dimensions are the truth there.
+  const effectiveCoverDims =
+    item.coverUrl === item.embeddedCover && item.embeddedCoverDims
+      ? item.embeddedCoverDims
+      : coverDims
 
   // Tempo detected from the audio, offered as a chip under the bpm field. Detection
   // can octave-fold (70 vs 140), so it stays a suggestion the user clicks to accept,
@@ -245,7 +253,9 @@ export const Editor = memo(function Editor({
       buildReleaseMeta(item.meta, release, track, {
         url: item.coverUrl,
         path: item.coverPath,
-        keep: !!item.coverUrl && !(coverDims && isLowResCover(coverDims.w, coverDims.h)),
+        keep:
+          !!item.coverUrl &&
+          !(effectiveCoverDims && isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)),
       }),
     )
   }
@@ -484,7 +494,7 @@ export const Editor = memo(function Editor({
               isMulti={isMulti}
               selectedTracks={selectedTracks}
               release={release}
-              coverDims={coverDims}
+              coverDims={effectiveCoverDims}
               setCoverDims={setCoverDims}
               onChange={onChange}
               onApplyCoverAll={onApplyCoverAll}
