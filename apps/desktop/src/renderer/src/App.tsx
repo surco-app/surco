@@ -215,11 +215,11 @@ export default function App(): React.JSX.Element {
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
   // The format picked in the editor's split-button menu, so the keyboard convert
-  // shortcuts export in it too. Null means "untouched" — fall back to the Settings
-  // default. Reset on track switch, matching the editor reseeding per track.
+  // shortcuts export in it too. The editor reports its pick on every change AND its
+  // seed on mount (it remounts per track), so this mirror is right by construction;
+  // null only before any editor has mounted, falling back to the Settings default.
   const editorFormatRef = useRef<OutputFormat | null>(null)
-  // Per-track normalization override picked in the editor; null falls back to the
-  // Settings default at conversion time, mirroring editorFormatRef.
+  // Per-track normalization override picked in the editor, mirroring editorFormatRef.
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
@@ -311,14 +311,6 @@ export default function App(): React.JSX.Element {
     },
     [tracksRef],
   )
-
-  // Switching tracks drops a stale format pick so the next ⌘⏎ uses the Settings
-  // default, mirroring the editor's per-track reseed.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the deliberate trigger, not a value read in the body — the reset must fire on every track switch.
-  useEffect(() => {
-    editorFormatRef.current = null
-    editorNormalizeRef.current = null
-  }, [selectedId])
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
@@ -568,6 +560,12 @@ export default function App(): React.JSX.Element {
   }, [sidebar.autoFit])
 
   const selected = tracks.find((t) => t.id === selectedId) ?? null
+  // With nothing selected there is no editor reporting picks; the convert-all
+  // shortcut then falls back to the Settings defaults.
+  if (!selected) {
+    editorFormatRef.current = null
+    editorNormalizeRef.current = null
+  }
   // Filtering mints a new array per tracks change even when none of the SELECTED
   // tracks changed (a progress tick on another row). Keeping the previous identity in
   // that case is what lets the memoized Editor skip those renders entirely.

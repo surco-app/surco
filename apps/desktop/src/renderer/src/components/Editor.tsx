@@ -1,6 +1,6 @@
 import { Eraser, Tag } from 'lucide-react'
 import type React from 'react'
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
@@ -172,6 +172,15 @@ export const Editor = memo(function Editor({
   // Per-track normalization, seeded from the Settings default. Editing it both
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
+  // Report the seeded picks up once on mount: App mirrors them in refs for the
+  // keyboard convert shortcuts, and since this editor remounts per track, the mount
+  // report IS the per-track reseed — one mechanism (the editor reporting) keeps the
+  // mirror right by construction, with no selection-watching reset in App.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
+  useEffect(() => {
+    onFormatChange?.(format)
+    onNormalizeChange?.(normalizeCfg)
+  }, [])
   // Natural pixel size of the shown artwork, read on load, so the user can tell
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
   // and reset whenever the cover changes.

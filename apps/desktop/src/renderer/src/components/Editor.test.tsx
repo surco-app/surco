@@ -814,6 +814,14 @@ describe('Editor export control', () => {
 
   // The keyboard convert shortcuts (⌘⏎) live in App and only know the chosen
   // format through this callback, so picking one must report it up.
+  // App mirrors the editor's picks in refs for the keyboard convert shortcuts. The
+  // mount report is what keeps that mirror right by construction: the editor remounts
+  // per track, so the seed lands without App watching the selection separately.
+  it('reports the seeded format up on mount', () => {
+    const { onFormatChange } = renderEditor({ id: 'a' }, 'wav')
+    expect(onFormatChange).toHaveBeenCalledWith('wav')
+  })
+
   it('reports the picked format so the keyboard shortcut can match it', () => {
     const { onFormatChange } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
