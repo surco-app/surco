@@ -461,6 +461,27 @@ describe('Editor genre presets', () => {
   })
 })
 
+describe('Editor Discogs loading skeleton', () => {
+  // While the search round-trips, the results column held only the static "choose an
+  // album" hint — indistinguishable from "nothing happening". Skeleton rows hold the
+  // column's shape so the results don't pop into an area that looked idle.
+  it('holds the results column with a skeleton while the search is in flight', async () => {
+    let settle: (r: unknown[]) => void = () => {}
+    ;(window as unknown as { api: Record<string, unknown> }).api.searchDiscogs = vi.fn(
+      () =>
+        new Promise((res) => {
+          settle = res
+        }),
+    )
+    renderEditor({ id: 'a', query: 'artist song' })
+
+    expect(await screen.findByTestId('discogs-skeleton')).toBeInTheDocument()
+
+    settle([])
+    await waitFor(() => expect(screen.queryByTestId('discogs-skeleton')).toBeNull())
+  })
+})
+
 describe('Editor embedded cover size', () => {
   // The shown embedded cover is a display thumbnail, so the size pill (and the
   // low-res verdict behind it) must read the original dimensions probed at import —

@@ -110,7 +110,24 @@ export function DiscogsPanel({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {results.length === 0 ? (
+          {busy && results.length === 0 ? (
+            // Searching with nothing to show yet: skeleton rows mirror the result-row
+            // shape so the list doesn't pop into an area that looked idle.
+            <div data-testid="discogs-skeleton" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex animate-pulse items-center gap-3 border-b border-[var(--color-line)]/60 p-2.5"
+                >
+                  <span className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <span className="h-3 w-3/4 rounded bg-[var(--color-panel-2)]" />
+                    <span className="h-2.5 w-1/2 rounded bg-[var(--color-panel-2)]" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : results.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
             results.map((r) => {
