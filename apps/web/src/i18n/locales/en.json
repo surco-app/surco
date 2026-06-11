@@ -482,6 +482,21 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.10",
+        "date": "June 11, 2026",
+        "title": "Built for big crates",
+        "items": [
+          "Your edits never get lost: typing while Surco is still reading a slow file, or while auto-match is querying Discogs, always keeps what you typed.",
+          "Much lighter with big crates: covers are kept as thumbnails (converted files still get the full-resolution art) and memory stops growing over long sessions.",
+          "Browsing the list feels smoother: BPM, key and loudness analyses wait until you rest on a track, and the one you're looking at always jumps ahead of the ones you left behind.",
+          "Every editor field can insert another field's value (artist into composer, title into comment…) from its own menu.",
+          "An amber dot marks tracks edited after converting, so you can see at a glance what still needs an update.",
+          "The Discogs search remembers what you typed on each track, shows a loading skeleton, and can be retried when it fails.",
+          "Names with a leading track number (\"104. Artist - Title\") now import with the right artist and title.",
+          "Adding several tracks to Apple Music shows its progress and can be cancelled; and when saving settings or trashing a file fails, Surco says so instead of failing silently."
+        ]
+      },
+      {
         "version": "0.9",
         "date": "June 10, 2026",
         "title": "Richer metadata and quality in three colors",

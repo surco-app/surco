@@ -482,6 +482,21 @@
     "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.10",
+        "date": "11 de junio de 2026",
+        "title": "A prueba de crates grandes",
+        "items": [
+          "Tus ediciones ya no se pierden: escribir mientras Surco lee un archivo lento o mientras el auto-match consulta Discogs respeta siempre lo que tecleas.",
+          "Mucho más ligero con crates grandes: las carátulas se guardan como miniaturas (el archivo convertido conserva el arte a resolución completa) y la memoria deja de crecer en sesiones largas.",
+          "Moverse por la lista es más fluido: los análisis de BPM, tonalidad y volumen esperan a que te detengas en una pista, y la que estás viendo pasa siempre por delante de las que dejaste atrás.",
+          "Cada campo del editor puede insertar el valor de otro (el artista en el compositor, el título en el comentario…) desde su propio menú.",
+          "Un punto ámbar marca las pistas editadas después de convertirlas, para ver de un vistazo qué falta por actualizar.",
+          "La búsqueda de Discogs recuerda lo que escribiste en cada pista, muestra un esqueleto mientras carga y se puede reintentar si falla.",
+          "Los nombres con número de pista («104. Artista - Título») se importan con el artista y el título correctos.",
+          "Añadir varias pistas a Apple Música muestra su progreso y se puede cancelar; y si algo falla al guardar ajustes o enviar a la papelera, Surco lo avisa en vez de fallar en silencio."
+        ]
+      },
+      {
         "version": "0.9",
         "date": "10 de junio de 2026",
         "title": "Más metadatos y calidad en tres colores",
