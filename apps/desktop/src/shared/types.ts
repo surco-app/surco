@@ -181,6 +181,10 @@ export interface ProcessJob {
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.
   previousOutputPath?: string
+  // The Apple Music persistent ID a previous add returned. When set, the automatic
+  // Apple Music step updates that library copy in place instead of importing the
+  // file again — re-converting an edited track must not duplicate it in Music.
+  musicPersistentId?: string
 }
 
 export interface CoverExportJob {
@@ -194,6 +198,21 @@ export interface CoverExportJob {
 
 export interface AppleMusicAddJob {
   outputPath: string
+  meta: TrackMetadata
+  coverUrl?: string
+  coverPath?: string
+  // Take the art from this audio file's own embedded picture (full resolution,
+  // extracted in main) — the renderer only holds a display thumbnail of it.
+  coverFromFile?: string
+}
+
+// Syncs the editor's current metadata (and cover) onto the Apple Music library copy
+// identified by persistentId. outputPath is the fallback when the user deleted that
+// copy from Music — the file is imported afresh instead; it's absent in "Apple Music
+// only" mode, where no converted file exists anymore, so a deleted copy fails loud.
+export interface AppleMusicUpdateJob {
+  persistentId: string
+  outputPath?: string
   meta: TrackMetadata
   coverUrl?: string
   coverPath?: string
@@ -230,6 +249,10 @@ export interface ProcessResult {
   // removed, so outputPath is empty: the renderer marks the track added to Apple
   // Music instead of offering a "Show file" that points at nothing.
   addedToMusicOnly?: boolean
+  // The persistent ID of the track's Apple Music library copy, set whenever the
+  // conversion added or updated one. The renderer stores it so later syncs,
+  // manual updates and reveals address this exact copy.
+  musicPersistentId?: string
 }
 
 export interface SpectrumResult {

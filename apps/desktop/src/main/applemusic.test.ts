@@ -3,6 +3,8 @@ import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
   buildLookupScript,
+  buildRevealScript,
+  buildUpdateScript,
   isAppleMusicOnly,
   lookupCandidates,
   shouldAddToAppleMusic,
@@ -94,6 +96,11 @@ describe('buildAddScript', () => {
     expect(script).not.toContain('set bpm of theTrack to 0')
   })
 
+  it('returns the persistent ID of the imported track, the handle that later lets the app update or reveal this exact library copy instead of re-adding a duplicate', () => {
+    const script = buildAddScript('/x.aiff', base)
+    expect(script).toContain('return persistent ID of theTrack')
+  })
+
   it('prepends the musical key to the Music comment — Music has no key field and ignores the file tag, so this is the only way a DJ browsing the library (or djay reading it) sees the key', () => {
     const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: 'clean intro' })
     expect(script).toContain('set comment of theTrack to "8A – clean intro"')
@@ -107,6 +114,54 @@ describe('buildAddScript', () => {
   it('does not double the key when the user already starts their comment with it', () => {
     const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: '8A energy bomb' })
     expect(script).toContain('set comment of theTrack to "8A energy bomb"')
+  })
+})
+
+describe('buildUpdateScript', () => {
+  it('targets the library copy by persistent ID and reports "missing" instead of erroring when the user deleted it from Music, so the caller can fall back to a fresh add', () => {
+    const script = buildUpdateScript('ABCD1234', base)
+    expect(script).toContain(
+      'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234")',
+    )
+    expect(script).toContain('if (count of theMatches) is 0 then return "missing"')
+    expect(script).toContain('return persistent ID of theTrack')
+  })
+
+  it('writes empty text fields too, unlike the add: a sync must clear values the user removed in the editor, or stale tags linger in the library forever', () => {
+    const script = buildUpdateScript('ABCD1234', base)
+    expect(script).toContain('set comment of theTrack to ""')
+    expect(script).toContain('set name of theTrack to "ATB (Till I Come)"')
+  })
+
+  it('clears numeric fields with 0 — Music shows 0 as empty — so a year the user removed does not survive the sync', () => {
+    const script = buildUpdateScript('ABCD1234', { ...base, bpm: '128' })
+    expect(script).toContain('set year of theTrack to 0')
+    expect(script).toContain('set bpm of theTrack to 128')
+  })
+
+  it('prepends the musical key to the comment exactly like the add, so a sync never strips the key the add made visible', () => {
+    const script = buildUpdateScript('ABCD1234', { ...base, key: '8A', comment: 'clean intro' })
+    expect(script).toContain('set comment of theTrack to "8A – clean intro"')
+  })
+
+  it('rewrites the artwork when a cover is supplied and leaves it alone otherwise', () => {
+    const withCover = buildUpdateScript('ABCD1234', base, '/tmp/cover.jpg')
+    expect(withCover).toContain(
+      'set data of artwork 1 of theTrack to (read (POSIX file "/tmp/cover.jpg") as picture)',
+    )
+    expect(buildUpdateScript('ABCD1234', base)).not.toContain('artwork')
+  })
+})
+
+describe('buildRevealScript', () => {
+  it('reveals the library copy by persistent ID and brings Music to the front, failing loud when the track is no longer in the library', () => {
+    const script = buildRevealScript('ABCD1234')
+    expect(script).toContain(
+      'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234")',
+    )
+    expect(script).toContain('if (count of theMatches) is 0 then error')
+    expect(script).toContain('reveal item 1 of theMatches')
+    expect(script).toContain('activate')
   })
 })
 

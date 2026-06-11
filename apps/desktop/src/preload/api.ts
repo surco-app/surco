@@ -5,6 +5,7 @@
 import type {
   AppleMusicAddJob,
   AppleMusicLookupCandidate,
+  AppleMusicUpdateJob,
   BpmResult,
   CoverExportJob,
   CoverRead,
@@ -48,7 +49,12 @@ export interface Api {
     priority?: SearchPriority,
   ) => Promise<DiscogsRelease>
   lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]) => Promise<boolean>
-  addToAppleMusic: (job: AppleMusicAddJob) => Promise<void>
+  // Both resolve with the persistent ID of the library copy they added or synced
+  // (undefined off macOS), the handle the renderer stores to update or reveal that
+  // exact copy later.
+  addToAppleMusic: (job: AppleMusicAddJob) => Promise<string | undefined>
+  updateAppleMusic: (job: AppleMusicUpdateJob) => Promise<string | undefined>
+  revealAppleMusic: (persistentId: string) => Promise<void>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   exportCover: (job: CoverExportJob) => Promise<string | null>
   exportRekordbox: (xml: string) => Promise<string | null>

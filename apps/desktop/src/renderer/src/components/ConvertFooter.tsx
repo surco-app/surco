@@ -68,6 +68,14 @@ export function ConvertFooter({
     musicAdded,
     musicError,
   } = status
+  // The Apple Music slot plays three roles for a single track that has a library
+  // copy (the persistent ID a previous add stored): out of sync it offers "Update"
+  // — an "Add" would import a duplicate —, in sync it becomes the reveal that jumps
+  // to the copy in Music, and it no longer needs an output file or a Music-friendly
+  // format, since a sync touches only the existing library entry. Multi-select
+  // keeps the plain add semantics: the sweep resolves add-vs-update per track.
+  const hasMusicCopy = !isMulti && !!item.musicPersistentId
+  const showInMusic = hasMusicCopy && musicAdded
   return (
     <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
       {item.status === 'error' && (
@@ -126,21 +134,33 @@ export function ConvertFooter({
               </button>
             )}
             <div className="flex gap-2">
-              {window.api.platform === 'darwin' && musicExt !== 'flac' && !inMusicLibraryOnly && (
-                <button
-                  type="button"
-                  data-testid="add-apple-music"
-                  onClick={onAddToAppleMusic}
-                  disabled={musicAdding || musicAdded}
-                  className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
-                >
-                  {musicAdding
-                    ? tr('editor.appleMusicAdding')
-                    : musicAdded
-                      ? tr('editor.appleMusicAdded')
-                      : tr('editor.appleMusicAdd')}
-                </button>
-              )}
+              {window.api.platform === 'darwin' &&
+                (musicExt !== 'flac' || hasMusicCopy) &&
+                (!inMusicLibraryOnly || hasMusicCopy) && (
+                  <button
+                    type="button"
+                    data-testid="add-apple-music"
+                    onClick={() => {
+                      if (showInMusic && item.musicPersistentId)
+                        void window.api.revealAppleMusic(item.musicPersistentId)
+                      else onAddToAppleMusic?.()
+                    }}
+                    disabled={musicAdding || (musicAdded && !showInMusic)}
+                    className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                  >
+                    {musicAdding
+                      ? hasMusicCopy
+                        ? tr('editor.appleMusicUpdating')
+                        : tr('editor.appleMusicAdding')
+                      : musicAdded
+                        ? showInMusic
+                          ? tr('editor.appleMusicShow')
+                          : tr('editor.appleMusicAdded')
+                        : hasMusicCopy
+                          ? tr('editor.appleMusicUpdate')
+                          : tr('editor.appleMusicAdd')}
+                  </button>
+                )}
               <ExportButton
                 quiet
                 status={isMulti ? 'idle' : item.status}

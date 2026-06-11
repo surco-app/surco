@@ -36,6 +36,7 @@ interface MenuStrings {
   conflictOverwrite: string
   conflictKeepBoth: string
   conflictSkip: string
+  appleMusicGone: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -69,6 +70,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Sobrescribir',
     conflictKeepBoth: 'Conservar ambos',
     conflictSkip: 'Saltar',
+    appleMusicGone: 'La pista ya no está en tu biblioteca de Apple Music.',
   },
   en: {
     settings: 'Settings…',
@@ -100,6 +102,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Overwrite',
     conflictKeepBoth: 'Keep both',
     conflictSkip: 'Skip',
+    appleMusicGone: 'The track is no longer in your Apple Music library.',
   },
 }
 

@@ -76,4 +76,36 @@ describe('exportedPatch', () => {
     expect(patch.musicStatus).toBe('added')
     expect(patch.processedSignature).toBe(trackSignature(t))
   })
+
+  it('stores the Apple Music persistent ID and marks the track added when the conversion put it in the library, so the footer offers update/reveal instead of an add that would duplicate it', () => {
+    const t = track()
+    const patch = exportedPatch(t, {
+      outputPath: '/out/ATB - Till I Come.mp3',
+      inPlace: false,
+      musicPersistentId: 'ABCD1234',
+    })
+    expect(patch.musicPersistentId).toBe('ABCD1234')
+    expect(patch.musicStatus).toBe('added')
+  })
+
+  it('keeps the persistent ID it already had when the conversion did not touch Apple Music (the setting is off), so a manual update later still finds the library copy', () => {
+    const t = track({ musicPersistentId: 'ABCD1234' })
+    const patch = exportedPatch(t, {
+      outputPath: '/out/ATB - Till I Come.mp3',
+      inPlace: false,
+    })
+    expect(patch.musicPersistentId).toBeUndefined()
+    expect(patch.musicStatus).toBeUndefined()
+  })
+
+  it('stores the persistent ID in Apple Music only mode too', () => {
+    const t = track()
+    const patch = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      musicPersistentId: 'ABCD1234',
+    })
+    expect(patch.musicPersistentId).toBe('ABCD1234')
+  })
 })

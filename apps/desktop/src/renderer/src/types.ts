@@ -61,6 +61,10 @@ export interface TrackItem {
   // stays 'done' while it adds. 'error' carries the reason in musicError.
   musicStatus?: 'adding' | 'added' | 'error'
   musicError?: string
+  // The persistent ID of this track's Apple Music library copy, returned by the
+  // add. Later syncs update (and reveals select) that exact copy — without it a
+  // re-add after editing would duplicate the song in the library.
+  musicPersistentId?: string
   // Set once the user trashes the source file after a real conversion, so the
   // "delete original" action disappears — the converted output and this row stay.
   originalTrashed?: boolean

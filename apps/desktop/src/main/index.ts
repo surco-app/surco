@@ -22,6 +22,7 @@ import { chordToAccelerator } from '../shared/shortcuts'
 import type {
   AppleMusicAddJob,
   AppleMusicLookupCandidate,
+  AppleMusicUpdateJob,
   CoverExportJob,
   ProcessJob,
   ProcessStage,
@@ -32,7 +33,9 @@ import {
   addToAppleMusic,
   isAppleMusicOnly,
   lookupInAppleMusic,
+  revealInAppleMusic,
   shouldAddToAppleMusic,
+  updateInAppleMusic,
 } from './applemusic'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
@@ -426,11 +429,43 @@ function registerIpc(): void {
           square: settings.coverSquare,
         })
       }
-      await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+      return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
     } finally {
       if (prepared) await prepared.cleanup()
     }
   })
+
+  // Syncs the editor's metadata onto the library copy a previous add created — the
+  // manual "update in Apple Music" action. When the user deleted that copy from
+  // Music, the converted file (if one was kept) is imported afresh so the action
+  // still ends with the song in the library; in "Apple Music only" mode there is no
+  // file left to import, so the missing copy is surfaced as an error instead.
+  ipcMain.handle('applemusic:update', async (_e, job: AppleMusicUpdateJob) => {
+    if (process.platform !== 'darwin') return
+    const settings = getSettings()
+    let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+    try {
+      if (hasCoverSource(job)) {
+        prepared = await prepareProcessedCover(job, {
+          maxSize: settings.coverMaxSize,
+          square: settings.coverSquare,
+        })
+      }
+      const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
+      if (updated) return updated
+      if (!job.outputPath) {
+        const t = createMenuT(app.getLocale())
+        throw new Error(t('appleMusicGone'))
+      }
+      return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+    } finally {
+      if (prepared) await prepared.cleanup()
+    }
+  })
+
+  ipcMain.handle('applemusic:reveal', (_e, persistentId: string) =>
+    process.platform === 'darwin' ? revealInAppleMusic(persistentId) : undefined,
+  )
 
   ipcMain.handle('process:track', async (e, job: ProcessJob) => {
     const settings = getSettings()
@@ -510,17 +545,26 @@ function registerIpc(): void {
       if (inPlace) await removeRenamedOriginal(job.inputPath, target)
       recordConversion()
 
+      // A track that already has a library copy (musicPersistentId from a previous
+      // add) gets its metadata and artwork synced onto that copy instead of being
+      // imported again — re-converting an edited track must never duplicate it in
+      // Music. Only when the user deleted the copy from the library does the fresh
+      // file get imported, which also re-establishes the persistent ID.
+      let musicPersistentId: string | undefined
       if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, format)) {
         stage('appleMusic')
-        await addToAppleMusic(target, job.meta, coverPath)
+        musicPersistentId = job.musicPersistentId
+          ? ((await updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
+            (await addToAppleMusic(target, job.meta, coverPath)))
+          : await addToAppleMusic(target, job.meta, coverPath)
       }
 
       // The add succeeded (a failure would have thrown above), and the temp dir is
       // cleaned up in finally — tell the renderer there is no file to reveal, only an
       // Apple Music entry.
-      if (musicOnly) return { outputPath: '', inPlace, addedToMusicOnly: true }
+      if (musicOnly) return { outputPath: '', inPlace, addedToMusicOnly: true, musicPersistentId }
 
-      return { outputPath: target, inPlace }
+      return { outputPath: target, inPlace, musicPersistentId }
     } finally {
       if (prepared) await prepared.cleanup()
       if (tmpDir) await rm(tmpDir, { recursive: true, force: true })

@@ -87,6 +87,8 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
     }
     // Re-processing an edited (stale) track resets the Apple Music state too, since
     // the file it referred to is being rewritten — the user may want to add it again.
+    // musicPersistentId deliberately survives the reset: it is what turns that next
+    // add (manual or automatic) into a sync of the existing library copy.
     updateTrack(id, {
       status: 'processing',
       error: undefined,
@@ -118,6 +120,7 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
         format: formatOverride,
         normalize: normalizeOverride,
         previousOutputPath: track.outputPath,
+        musicPersistentId: track.musicPersistentId,
       })
       // The user declined to overwrite a conflicting file: nothing was written, so
       // leave the track convertible (idle) rather than marking it done or failed.
@@ -145,24 +148,43 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
   }
 
   // Pushes an already-converted track into Apple Music by hand, the escape hatch
-  // for when the automatic add is off. The meta is sanitized exactly as the
-  // conversion does so the library entry matches the file; musicStatus drives the
-  // button's adding/added/error states without disturbing the track's own status.
+  // for when the automatic add is off. A track whose previous add stored a
+  // persistent ID is synced onto that library copy instead of imported again —
+  // which also means it needs no output file, so the action works in "Apple Music
+  // only" mode where the conversion kept none. The meta is sanitized exactly as
+  // the conversion does so the library entry matches the file; musicStatus drives
+  // the button's adding/added/error states without disturbing the track's own
+  // status.
   async function addTrackToAppleMusic(id: string): Promise<void> {
     const track = tracksRef.current.find((t) => t.id === id)
-    if (!track?.outputPath || track.musicStatus === 'adding') return
+    if (!track || track.musicStatus === 'adding') return
+    const { musicPersistentId, outputPath } = track
+    if (!musicPersistentId && !outputPath) return
     updateTrack(id, { musicStatus: 'adding', musicError: undefined })
     const meta = sanitizeMeta(track.meta, {
       trim: settings?.trimWhitespace ?? true,
       zeroPad: settings?.zeroPadTrack ?? true,
     })
     try {
-      await window.api.addToAppleMusic({
-        outputPath: track.outputPath,
-        meta,
-        ...coverSourceOf(track),
+      let persistentId: string | undefined
+      if (musicPersistentId) {
+        persistentId = await window.api.updateAppleMusic({
+          persistentId: musicPersistentId,
+          outputPath,
+          meta,
+          ...coverSourceOf(track),
+        })
+      } else if (outputPath) {
+        persistentId = await window.api.addToAppleMusic({
+          outputPath,
+          meta,
+          ...coverSourceOf(track),
+        })
+      }
+      updateTrack(id, {
+        musicStatus: 'added',
+        musicPersistentId: persistentId ?? musicPersistentId,
       })
-      updateTrack(id, { musicStatus: 'added' })
     } catch (e) {
       updateTrack(id, {
         musicStatus: 'error',

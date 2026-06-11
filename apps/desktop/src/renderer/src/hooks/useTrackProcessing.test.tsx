@@ -299,6 +299,81 @@ describe('useTrackProcessing', () => {
     expect(addToAppleMusic).toHaveBeenCalledTimes(1)
   })
 
+  it('hands the stored persistent ID to the conversion, so the automatic Apple Music step syncs the existing library copy instead of importing a duplicate', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', musicPersistentId: 'ABCD1234' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.processOne('a'))
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: 'ABCD1234' }),
+    )
+  })
+
+  it('stores the persistent ID a manual add returns, the handle every later sync and reveal needs to find this exact library copy', async () => {
+    setApi({ addToAppleMusic: vi.fn().mockResolvedValue('ABCD1234') })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputPath: '/out/a.aiff' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    expect(updateTrack).toHaveBeenLastCalledWith('a', {
+      musicStatus: 'added',
+      musicPersistentId: 'ABCD1234',
+    })
+  })
+
+  it('syncs through updateAppleMusic when the track already has a library copy, passing the output file as the re-add fallback for a copy the user deleted', async () => {
+    const updateAppleMusic = vi.fn().mockResolvedValue('ABCD1234')
+    const addToAppleMusic = vi.fn()
+    setApi({ updateAppleMusic, addToAppleMusic })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputPath: '/out/a.aiff', musicPersistentId: 'ABCD1234' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    expect(updateAppleMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ persistentId: 'ABCD1234', outputPath: '/out/a.aiff' }),
+    )
+    expect(addToAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('syncs a track that kept no output file ("Apple Music only" mode) — the update needs no file, only the persistent ID', async () => {
+    const updateAppleMusic = vi.fn().mockResolvedValue('ABCD1234')
+    setApi({ updateAppleMusic })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', musicPersistentId: 'ABCD1234' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    expect(updateAppleMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ persistentId: 'ABCD1234' }),
+    )
+  })
+
   // The renderer's copy of a file's embedded art is a display thumbnail; the convert
   // job must name the source file so main embeds the original at full resolution
   // instead of permanently downscaling the user's artwork.

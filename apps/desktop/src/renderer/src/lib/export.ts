@@ -17,6 +17,7 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
       status: 'done',
       outputPath: undefined,
       musicStatus: 'added',
+      ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       stage: undefined,
       processedSignature: trackSignature(track),
     }
@@ -27,6 +28,14 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
     ...(result.inPlace && {
       inputPath: result.outputPath,
       fileName: parseFileName(result.outputPath).fileName,
+    }),
+    // The conversion's automatic Apple Music step already put the current metadata
+    // in the library (add or sync), so the footer must show the added state rather
+    // than offer an add that would duplicate the song. Conditional so a conversion
+    // that skipped Apple Music never clobbers the ID a previous add stored.
+    ...(result.musicPersistentId && {
+      musicPersistentId: result.musicPersistentId,
+      musicStatus: 'added' as const,
     }),
     stage: undefined,
     processedSignature: trackSignature(track),

@@ -772,6 +772,49 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('add-apple-music')).not.toBeInTheDocument()
   })
 
+  // A track whose add stored a persistent ID has a live copy in the library; offering
+  // "Add" again would import a duplicate, so the same button must read as a sync.
+  it('offers to update the library copy instead of re-adding when the track has one', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.wav',
+      musicPersistentId: 'ABCD1234',
+    })
+    expect(screen.getByTestId('add-apple-music')).toHaveTextContent('Update in Apple Music')
+  })
+
+  // Once the library copy is in sync, a disabled "Added ✓" is a dead end — the slot
+  // becomes the reveal, jumping to this exact track in the Music window.
+  it('turns the synced state into a "Show in Apple Music" action that reveals the library copy', () => {
+    const revealAppleMusic = vi.fn().mockResolvedValue(undefined)
+    const api = (window as unknown as { api: { platform: string; revealAppleMusic: unknown } }).api
+    api.platform = 'darwin'
+    api.revealAppleMusic = revealAppleMusic
+    renderEditor({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.wav',
+      musicStatus: 'added',
+      musicPersistentId: 'ABCD1234',
+    })
+    const btn = screen.getByTestId('add-apple-music')
+    expect(btn).toHaveTextContent('Show in Apple Music')
+    expect(btn).not.toBeDisabled()
+    fireEvent.click(btn)
+    expect(revealAppleMusic).toHaveBeenCalledWith('ABCD1234')
+  })
+
+  // In "Apple Music only" mode the footer used to hide the Apple Music button with the
+  // converted file gone; with a persistent ID the sync needs no file, so the button
+  // stays and the library copy remains reachable and updatable.
+  it('keeps the Apple Music button without an output file once a persistent ID exists', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    renderEditor({ id: 'a', status: 'done', musicStatus: 'added', musicPersistentId: 'ABCD1234' })
+    expect(screen.getByTestId('add-apple-music')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))

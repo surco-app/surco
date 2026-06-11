@@ -8,12 +8,35 @@ const run = promisify(execFile)
 // comment written to the library carries it ("8A – clean intro"). Only the Music copy
 // gets the prefix; the file's own comment tag stays exactly what the user typed. A
 // comment that already starts with the key (case-insensitively) is left alone so a
-// re-add never stacks "8A – 8A – …".
+// re-add or sync never stacks "8A – 8A – …".
 function musicComment(meta: TrackMetadata): string {
   const key = meta.key.trim()
   const comment = meta.comment.trim()
   if (!key || comment.toLowerCase().startsWith(key.toLowerCase())) return comment
   return comment ? `${key} – ${comment}` : key
+}
+
+function textFields(meta: TrackMetadata): [string, string][] {
+  return [
+    ['name', meta.title],
+    ['artist', meta.artist],
+    ['album artist', meta.albumArtist],
+    ['album', meta.album],
+    ['genre', meta.genre],
+    ['grouping', meta.grouping],
+    ['comment', musicComment(meta)],
+  ]
+}
+
+// bpm and disc number are the only advanced tags Music exposes to scripting;
+// key/publisher/catalog/remixer live solely in the file tag.
+function numericFields(meta: TrackMetadata): [string, string][] {
+  return [
+    ['year', meta.year],
+    ['track number', meta.trackNumber],
+    ['disc number', meta.discNumber],
+    ['bpm', meta.bpm],
+  ]
 }
 
 // Adds a file to Apple Music and writes every field directly onto the resulting
@@ -32,28 +55,11 @@ function musicComment(meta: TrackMetadata): string {
 export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?: string): string {
   const sets: string[] = []
 
-  const text: [string, string][] = [
-    ['name', meta.title],
-    ['artist', meta.artist],
-    ['album artist', meta.albumArtist],
-    ['album', meta.album],
-    ['genre', meta.genre],
-    ['grouping', meta.grouping],
-    ['comment', musicComment(meta)],
-  ]
-  for (const [prop, value] of text) {
+  for (const [prop, value] of textFields(meta)) {
     if (value.trim()) sets.push(`      set ${prop} of theTrack to ${JSON.stringify(value)}`)
   }
 
-  const numeric: [string, string][] = [
-    ['year', meta.year],
-    ['track number', meta.trackNumber],
-    // bpm and disc number are the only advanced tags Music exposes to scripting;
-    // key/publisher/catalog/remixer live solely in the file tag.
-    ['disc number', meta.discNumber],
-    ['bpm', meta.bpm],
-  ]
-  for (const [prop, value] of numeric) {
+  for (const [prop, value] of numericFields(meta)) {
     const n = parseInt(value, 10)
     if (Number.isFinite(n) && n > 0) sets.push(`      set ${prop} of theTrack to ${n}`)
   }
@@ -83,6 +89,65 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     '    end try',
     '  end repeat',
     '  if not metaSet then error "Apple Music no terminó de importar la pista a tiempo."',
+    // The persistent ID is the only handle Music guarantees stable across sessions;
+    // it travels back to the renderer so later edits update (or reveal) this exact
+    // library copy instead of importing a duplicate.
+    '  return persistent ID of theTrack',
+    'end tell',
+  ].join('\n')
+}
+
+// Rewrites every field of an existing library track, located by the persistent ID the
+// add returned. Unlike the add — a fresh import with nothing to clear — a sync must
+// write empty values too: text cleared with "", numbers with 0 (Music displays both as
+// empty), or a tag the user removed in the editor would linger in the library forever.
+// When the user deleted the copy from Music the script returns "missing" instead of
+// erroring, so the caller can fall back to a fresh add. No retry loop: the track is
+// long settled, only a mid-import track raises the -50 the add has to ride out.
+export function buildUpdateScript(
+  persistentId: string,
+  meta: TrackMetadata,
+  coverPath?: string,
+): string {
+  const sets: string[] = []
+
+  for (const [prop, value] of textFields(meta)) {
+    sets.push(`  set ${prop} of theTrack to ${JSON.stringify(value.trim())}`)
+  }
+
+  for (const [prop, value] of numericFields(meta)) {
+    const n = parseInt(value, 10)
+    sets.push(`  set ${prop} of theTrack to ${Number.isFinite(n) && n > 0 ? n : 0}`)
+  }
+
+  if (coverPath?.trim()) {
+    sets.push(
+      `  set data of artwork 1 of theTrack to (read (POSIX file ${JSON.stringify(coverPath)}) as picture)`,
+    )
+  }
+
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    ...sets,
+    '  return persistent ID of theTrack',
+    'end tell',
+  ].join('\n')
+}
+
+// Selects the library copy in the Music window and brings the app forward — the
+// "show in Apple Music" counterpart of revealing a file in Finder. Erroring when the
+// track is gone (rather than silently activating Music) lets the footer surface why
+// nothing got selected.
+export function buildRevealScript(persistentId: string): string {
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '  if (count of theMatches) is 0 then error "La pista ya no está en tu biblioteca de Apple Music."',
+    '  reveal item 1 of theMatches',
+    '  activate',
     'end tell',
   ].join('\n')
 }
@@ -182,6 +247,26 @@ export async function addToAppleMusic(
   filePath: string,
   meta: TrackMetadata,
   coverPath?: string,
-): Promise<void> {
-  await run('osascript', ['-e', buildAddScript(filePath, meta, coverPath)])
+): Promise<string> {
+  const { stdout } = await run('osascript', ['-e', buildAddScript(filePath, meta, coverPath)])
+  return stdout.trim()
+}
+
+// null means the library copy is gone (the script's "missing"): the caller decides
+// whether that warrants a fresh add or an error to the user.
+export async function updateInAppleMusic(
+  persistentId: string,
+  meta: TrackMetadata,
+  coverPath?: string,
+): Promise<string | null> {
+  const { stdout } = await run('osascript', [
+    '-e',
+    buildUpdateScript(persistentId, meta, coverPath),
+  ])
+  const result = stdout.trim()
+  return result === 'missing' ? null : result
+}
+
+export async function revealInAppleMusic(persistentId: string): Promise<void> {
+  await run('osascript', ['-e', buildRevealScript(persistentId)])
 }
