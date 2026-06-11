@@ -30,7 +30,7 @@ function DocumentHead({ lng }: { lng: Language }) {
     url,
     image: `${SITE}/og.png`,
     inLanguage: t('meta.inLanguage'),
-    softwareVersion: '0.1.0',
+    softwareVersion: '0.10.0',
     description: t('meta.jsonLdDescription'),
   }
   return (
