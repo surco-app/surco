@@ -16,14 +16,14 @@ import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
-import { FieldsEditor } from './FieldsEditor'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
+import { DONATE_URL } from '../lib/donate'
 import { FIELD_DEFS } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { formatShortcut } from '../lib/shortcuts'
 import { formatTimeSaved, MANUAL_SECONDS_PER_CONVERSION, timeSavedSeconds } from '../lib/stats'
-import { DONATE_URL } from '../lib/donate'
+import { FieldsEditor } from './FieldsEditor'
 import { NormalizeControls } from './NormalizeControls'
 import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
@@ -104,6 +104,55 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
   stats: ChartColumn,
 }
 
+// The synced staged fields in their editable forms (presets as comma text, the cover
+// cap as a string), derived from Settings in one place so seeding and the config-dir
+// re-seed can never disagree on the field list.
+interface SyncedDraft {
+  theme: Settings['theme']
+  outputFormat: Settings['outputFormat']
+  addToAppleMusic: boolean
+  keepOutputCopy: boolean
+  overwriteOriginal: boolean
+  filenameFormat: string
+  grouping: string
+  genre: string
+  trimWhitespace: boolean
+  zeroPadTrack: boolean
+  visibleFields: string[]
+  requiredFields: string[]
+  coverMaxSize: string
+  coverSquare: boolean
+  showSpectrum: boolean
+  showLoudness: boolean
+  keyNotation: Settings['keyNotation']
+  normalize: Settings['normalize']
+  shortcutOverrides: Settings['shortcutOverrides']
+}
+
+function pickSynced(s: Settings): SyncedDraft {
+  return {
+    theme: s.theme,
+    outputFormat: s.outputFormat,
+    addToAppleMusic: s.addToAppleMusic,
+    keepOutputCopy: s.keepOutputCopy,
+    overwriteOriginal: s.overwriteOriginal,
+    filenameFormat: s.filenameFormat,
+    grouping: s.groupingPresets.join(', '),
+    genre: s.genrePresets.join(', '),
+    trimWhitespace: s.trimWhitespace,
+    zeroPadTrack: s.zeroPadTrack,
+    visibleFields: s.visibleFields,
+    requiredFields: s.requiredFields,
+    coverMaxSize: String(s.coverMaxSize),
+    coverSquare: s.coverSquare,
+    showSpectrum: s.showSpectrum,
+    showLoudness: s.showLoudness,
+    keyNotation: s.keyNotation,
+    normalize: s.normalize,
+    shortcutOverrides: s.shortcutOverrides,
+  }
+}
+
 export function SettingsModal({
   settings,
   onClose,
@@ -130,42 +179,37 @@ export function SettingsModal({
     setTab(id)
     tabRefs.current[id]?.focus()
   }
-  const [theme, setTheme] = useState(settings.theme)
-  const [token, setToken] = useState(settings.discogsToken)
-  const [outputDir, setOutputDir] = useState(settings.outputDir)
-  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
-  const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
-  const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
-  const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
-  const [filenameFormat, setFilenameFormat] = useState(settings.filenameFormat)
-  const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
-  const [genre, setGenre] = useState(settings.genrePresets.join(', '))
-  const [trimWhitespace, setTrimWhitespace] = useState(settings.trimWhitespace)
-  const [zeroPadTrack, setZeroPadTrack] = useState(settings.zeroPadTrack)
-  const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
-  const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
-  const [coverMaxSize, setCoverMaxSize] = useState(String(settings.coverMaxSize))
-  const [coverSquare, setCoverSquare] = useState(settings.coverSquare)
-  const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
-  const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
-  const [showLoudness, setShowLoudness] = useState(settings.showLoudness)
-  const [keyNotation, setKeyNotation] = useState(settings.keyNotation)
-  const [normalize, setNormalize] = useState(settings.normalize)
-  const [shortcutOverrides, setShortcutOverrides] = useState(settings.shortcutOverrides)
+  // Every staged field lives in one of two objects instead of a useState per field, so
+  // the three places that must agree on the field list (seeding, the config-dir
+  // re-seed, and save) all read the same shape and can never drift apart.
+  const [synced, setSynced] = useState<SyncedDraft>(() => pickSynced(settings))
+  // Machine-local fields (local.token, output folder, auto-match) aren't moved by a
+  // config-dir switch, so their staged edits survive one.
+  const [local, setLocal] = useState(() => ({
+    token: settings.discogsToken,
+    outputDir: settings.outputDir,
+    autoMatch: settings.autoMatch,
+  }))
+  function patch<K extends keyof SyncedDraft>(key: K, value: SyncedDraft[K]): void {
+    setSynced((p) => ({ ...p, [key]: value }))
+  }
+  function patchLocal<K extends keyof typeof local>(key: K, value: (typeof local)[K]): void {
+    setLocal((p) => ({ ...p, [key]: value }))
+  }
   // The command whose next keystroke is being recorded, or null when idle.
   const [recording, setRecording] = useState<string | null>(null)
   const formatRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
-  // Drops the token where the caret last sat (or over the selection), then
+  // Drops the local.token where the caret last sat (or over the selection), then
   // restores focus and caret past it so the user can keep typing separators.
   function addToken(key: string): void {
     const el = formatRef.current
-    const start = el?.selectionStart ?? filenameFormat.length
-    const end = el?.selectionEnd ?? filenameFormat.length
-    const { value, caret } = insertToken(filenameFormat, start, end, key)
-    setFilenameFormat(value)
+    const start = el?.selectionStart ?? synced.filenameFormat.length
+    const end = el?.selectionEnd ?? synced.filenameFormat.length
+    const { value, caret } = insertToken(synced.filenameFormat, start, end, key)
+    patch('filenameFormat', value)
     requestAnimationFrame(() => {
       el?.focus()
       el?.setSelectionRange(caret, caret)
@@ -174,7 +218,7 @@ export function SettingsModal({
 
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
-    if (dir) setOutputDir(dir)
+    if (dir) patchLocal('outputDir', dir)
   }
 
   // Where settings.json lives — null is the app default. Loaded on open because it
@@ -190,28 +234,9 @@ export function SettingsModal({
     onSettingsReplaced(next)
     // A folder switch can adopt another machine's prefs, so every staged synced field
     // re-reads what is now in effect — otherwise a later Save would clobber the adopted
-    // values with this modal's stale copies. Machine-local fields (token, auto-match,
-    // output folder) aren't moved by a switch, so their staged edits survive.
-    setTheme(next.theme)
+    // values with this modal's stale copies. One call covers them all by construction.
+    setSynced(pickSynced(next))
     onPreviewTheme(next.theme)
-    setOutputFormat(next.outputFormat)
-    setAddToAppleMusic(next.addToAppleMusic)
-    setKeepOutputCopy(next.keepOutputCopy)
-    setOverwriteOriginal(next.overwriteOriginal)
-    setFilenameFormat(next.filenameFormat)
-    setGrouping(next.groupingPresets.join(', '))
-    setGenre(next.genrePresets.join(', '))
-    setTrimWhitespace(next.trimWhitespace)
-    setZeroPadTrack(next.zeroPadTrack)
-    setVisibleFields(next.visibleFields)
-    setRequiredFields(next.requiredFields)
-    setCoverMaxSize(String(next.coverMaxSize))
-    setCoverSquare(next.coverSquare)
-    setShowSpectrum(next.showSpectrum)
-    setShowLoudness(next.showLoudness)
-    setKeyNotation(next.keyNotation)
-    setNormalize(next.normalize)
-    setShortcutOverrides(next.shortcutOverrides)
   }
 
   async function changeConfigDir(): Promise<void> {
@@ -221,55 +246,45 @@ export function SettingsModal({
 
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the two booleans map onto the single radio choice.
-  const flacOnly = outputFormat === 'flac'
-  const destination = toDestination(addToAppleMusic, keepOutputCopy, flacOnly, overwriteOriginal)
+  const flacOnly = synced.outputFormat === 'flac'
+  const destination = toDestination(
+    synced.addToAppleMusic,
+    synced.keepOutputCopy,
+    flacOnly,
+    synced.overwriteOriginal,
+  )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
-    setAddToAppleMusic(next.addToAppleMusic)
-    setKeepOutputCopy(next.keepOutputCopy)
-    setOverwriteOriginal(next.overwriteOriginal)
+    patch('addToAppleMusic', next.addToAppleMusic)
+    patch('keepOutputCopy', next.keepOutputCopy)
+    patch('overwriteOriginal', next.overwriteOriginal)
   }
 
   function save(): void {
-    const groupingPresets = grouping
-      .split(',')
-      .map((g) => g.trim())
-      .filter(Boolean)
-    const genrePresets = genre
-      .split(',')
-      .map((g) => g.trim())
-      .filter(Boolean)
+    const { grouping, genre, coverMaxSize, filenameFormat, ...rest } = synced
     const max = parseInt(coverMaxSize, 10)
     onSave({
-      theme,
-      discogsToken: token.trim(),
-      outputDir,
-      outputFormat,
-      addToAppleMusic,
-      keepOutputCopy,
-      overwriteOriginal,
-      filenameFormat: filenameFormat.trim() || '{artist} - {title}',
-      groupingPresets,
-      genrePresets,
-      trimWhitespace,
-      zeroPadTrack,
-      visibleFields,
-      requiredFields,
+      ...rest,
+      discogsToken: local.token.trim(),
+      outputDir: local.outputDir,
+      filenameFormat: synced.filenameFormat.trim() || '{artist} - {title}',
+      groupingPresets: synced.grouping
+        .split(',')
+        .map((g) => g.trim())
+        .filter(Boolean),
+      genrePresets: synced.genre
+        .split(',')
+        .map((g) => g.trim())
+        .filter(Boolean),
       coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
-      coverSquare,
-      showSpectrum,
-      // Auto-match needs a token to run, so a token-less save can't leave it enabled.
-      autoMatch: token.trim() !== '' && autoMatch,
-      showLoudness,
-      keyNotation,
-      normalize,
-      shortcutOverrides,
+      // Auto-match needs a local.token to run, so a local.token-less save can't leave it enabled.
+      autoMatch: local.token.trim() !== '' && local.autoMatch,
     })
     onClose()
   }
 
   // Effective bindings shown in the Shortcuts tab, plus the clashes that block saving.
-  const bindings = resolveBindings(shortcutOverrides)
+  const bindings = resolveBindings(synced.shortcutOverrides)
   const conflictIds = new Set(findConflicts(bindings).flat())
 
   // A command id is kebab-case ('find-replace'); its i18n title lives under the
@@ -289,14 +304,14 @@ export function SettingsModal({
     }
     const chord = eventToChord(e, isMac)
     if (!chord || chordEquals(chord, ['mod', 'k'])) return
-    setShortcutOverrides({ ...shortcutOverrides, [id]: chord })
+    patch('shortcutOverrides', { ...synced.shortcutOverrides, [id]: chord })
     setRecording(null)
   }
 
   function resetRow(id: string): void {
-    const rest = { ...shortcutOverrides }
+    const rest = { ...synced.shortcutOverrides }
     delete rest[id]
-    setShortcutOverrides(rest)
+    patch('shortcutOverrides', rest)
   }
 
   return (
@@ -376,13 +391,13 @@ export function SettingsModal({
                       key={id}
                       type="button"
                       data-testid={`settings-theme-${id}`}
-                      aria-pressed={theme === id}
+                      aria-pressed={synced.theme === id}
                       onClick={() => {
-                        setTheme(id)
+                        patch('theme', id)
                         onPreviewTheme(id)
                       }}
                       className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                        theme === id
+                        synced.theme === id
                           ? 'bg-[var(--color-panel-2)] text-fg'
                           : 'text-fg-muted hover:text-fg'
                       }`}
@@ -432,8 +447,8 @@ export function SettingsModal({
                 <input
                   id="settings-token"
                   data-testid="settings-token"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  value={local.token}
+                  onChange={(e) => patchLocal('token', e.target.value)}
                   placeholder={tr('settings.tokenPlaceholder')}
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
@@ -452,21 +467,21 @@ export function SettingsModal({
                 <div className="border-t border-[var(--color-line)] pt-5">
                   <label
                     className={`flex items-center gap-3 ${
-                      token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                      local.token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                     }`}
                   >
                     <input
                       data-testid="settings-auto-match"
                       type="checkbox"
-                      checked={autoMatch && token.trim() !== ''}
-                      disabled={token.trim() === ''}
-                      onChange={(e) => setAutoMatch(e.target.checked)}
+                      checked={local.autoMatch && local.token.trim() !== ''}
+                      disabled={local.token.trim() === ''}
+                      onChange={(e) => patchLocal('autoMatch', e.target.checked)}
                       className="h-4 w-4 accent-[var(--color-accent)]"
                     />
                     <span className="text-sm">{tr('settings.autoMatch')}</span>
                   </label>
                   <p className="mt-1.5 text-xs text-fg-dim">
-                    {token.trim()
+                    {local.token.trim()
                       ? tr('settings.autoMatchHint')
                       : tr('settings.autoMatchNeedsToken')}
                   </p>
@@ -490,7 +505,7 @@ export function SettingsModal({
                   <input
                     id="settings-output"
                     data-testid="settings-output"
-                    value={outputDir}
+                    value={local.outputDir}
                     readOnly
                     className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
                   />
@@ -512,10 +527,10 @@ export function SettingsModal({
                       key={id}
                       type="button"
                       data-testid={`settings-format-${id}`}
-                      aria-pressed={outputFormat === id}
-                      onClick={() => setOutputFormat(id)}
+                      aria-pressed={synced.outputFormat === id}
+                      onClick={() => patch('outputFormat', id)}
                       className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                        outputFormat === id
+                        synced.outputFormat === id
                           ? 'bg-[var(--color-panel-2)] text-fg'
                           : 'text-fg-muted hover:text-fg'
                       }`}
@@ -582,7 +597,10 @@ export function SettingsModal({
                   {tr('normalize.title')}
                 </p>
                 <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
-                <NormalizeControls value={normalize} onChange={setNormalize} />
+                <NormalizeControls
+                  value={synced.normalize}
+                  onChange={(n) => patch('normalize', n)}
+                />
               </>
             )}
 
@@ -598,8 +616,8 @@ export function SettingsModal({
                   ref={formatRef}
                   id="settings-filename-format"
                   data-testid="settings-filename-format"
-                  value={filenameFormat}
-                  onChange={(e) => setFilenameFormat(e.target.value)}
+                  value={synced.filenameFormat}
+                  onChange={(e) => patch('filenameFormat', e.target.value)}
                   placeholder="{artist} - {title}"
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
@@ -627,7 +645,8 @@ export function SettingsModal({
                 <p className="mt-3 mb-5 text-xs text-fg-dim">
                   {tr('settings.preview')}{' '}
                   <span data-testid="settings-format-preview" className="font-mono text-fg-muted">
-                    {renderOutputName(filenameFormat, SAMPLE_META) || '—'}.{outputFormat}
+                    {renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.
+                    {synced.outputFormat}
                   </span>
                 </p>
 
@@ -636,8 +655,8 @@ export function SettingsModal({
                     <input
                       data-testid="settings-trim"
                       type="checkbox"
-                      checked={trimWhitespace}
-                      onChange={(e) => setTrimWhitespace(e.target.checked)}
+                      checked={synced.trimWhitespace}
+                      onChange={(e) => patch('trimWhitespace', e.target.checked)}
                       className="h-4 w-4 accent-[var(--color-accent)]"
                     />
                     <span className="text-sm">{tr('settings.trimWhitespace')}</span>
@@ -646,8 +665,8 @@ export function SettingsModal({
                     <input
                       data-testid="settings-zeropad"
                       type="checkbox"
-                      checked={zeroPadTrack}
-                      onChange={(e) => setZeroPadTrack(e.target.checked)}
+                      checked={synced.zeroPadTrack}
+                      onChange={(e) => patch('zeroPadTrack', e.target.checked)}
                       className="h-4 w-4 accent-[var(--color-accent)]"
                     />
                     <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
@@ -667,8 +686,8 @@ export function SettingsModal({
                 <input
                   id="settings-grouping"
                   data-testid="settings-grouping"
-                  value={grouping}
-                  onChange={(e) => setGrouping(e.target.value)}
+                  value={synced.grouping}
+                  onChange={(e) => patch('grouping', e.target.value)}
                   placeholder="Bases, Cantaditas"
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
@@ -683,8 +702,8 @@ export function SettingsModal({
                 <input
                   id="settings-genre"
                   data-testid="settings-genre"
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
+                  value={synced.genre}
+                  onChange={(e) => patch('genre', e.target.value)}
                   placeholder="Hard Dance, Techno"
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
@@ -696,8 +715,8 @@ export function SettingsModal({
                       <input
                         data-testid="settings-show-spectrum"
                         type="checkbox"
-                        checked={showSpectrum}
-                        onChange={(e) => setShowSpectrum(e.target.checked)}
+                        checked={synced.showSpectrum}
+                        onChange={(e) => patch('showSpectrum', e.target.checked)}
                         className="h-4 w-4 accent-[var(--color-accent)]"
                       />
                       <span className="text-sm">{tr('settings.showSpectrum')}</span>
@@ -709,8 +728,8 @@ export function SettingsModal({
                       <input
                         data-testid="settings-show-loudness"
                         type="checkbox"
-                        checked={showLoudness}
-                        onChange={(e) => setShowLoudness(e.target.checked)}
+                        checked={synced.showLoudness}
+                        onChange={(e) => patch('showLoudness', e.target.checked)}
                         className="h-4 w-4 accent-[var(--color-accent)]"
                       />
                       <span className="text-sm">{tr('settings.showLoudness')}</span>
@@ -727,10 +746,10 @@ export function SettingsModal({
                           key={id}
                           type="button"
                           data-testid={`settings-key-notation-${id}`}
-                          aria-pressed={keyNotation === id}
-                          onClick={() => setKeyNotation(id)}
+                          aria-pressed={synced.keyNotation === id}
+                          onClick={() => patch('keyNotation', id)}
                           className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                            keyNotation === id
+                            synced.keyNotation === id
                               ? 'bg-[var(--color-panel-2)] text-fg'
                               : 'text-fg-muted hover:text-fg'
                           }`}
@@ -759,8 +778,8 @@ export function SettingsModal({
                     data-testid="settings-cover-max"
                     type="number"
                     min={0}
-                    value={coverMaxSize}
-                    onChange={(e) => setCoverMaxSize(e.target.value)}
+                    value={synced.coverMaxSize}
+                    onChange={(e) => patch('coverMaxSize', e.target.value)}
                     className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                   />
                   <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
@@ -770,8 +789,8 @@ export function SettingsModal({
                   <input
                     data-testid="settings-cover-square"
                     type="checkbox"
-                    checked={coverSquare}
-                    onChange={(e) => setCoverSquare(e.target.checked)}
+                    checked={synced.coverSquare}
+                    onChange={(e) => patch('coverSquare', e.target.checked)}
                     className="h-4 w-4 accent-[var(--color-accent)]"
                   />
                   <span className="text-sm">{tr('settings.coverSquare')}</span>
@@ -782,10 +801,10 @@ export function SettingsModal({
 
             {tab === 'fields' && (
               <FieldsEditor
-                visibleFields={visibleFields}
-                requiredFields={requiredFields}
-                onChangeVisible={setVisibleFields}
-                onChangeRequired={setRequiredFields}
+                visibleFields={synced.visibleFields}
+                requiredFields={synced.requiredFields}
+                onChangeVisible={(fields) => patch('visibleFields', fields)}
+                onChangeRequired={(fields) => patch('requiredFields', fields)}
               />
             )}
 
@@ -796,7 +815,7 @@ export function SettingsModal({
                   <button
                     type="button"
                     data-testid="shortcuts-reset-all"
-                    onClick={() => setShortcutOverrides({})}
+                    onClick={() => patch('shortcutOverrides', {})}
                     className="press shrink-0 text-xs text-fg-muted hover:text-fg"
                   >
                     {tr('settings.shortcuts.resetAll')}
@@ -805,7 +824,7 @@ export function SettingsModal({
                 <div>
                   {SHORTCUT_DEFAULTS.map((def) => {
                     const chord = bindings.get(def.id) ?? []
-                    const overridden = def.id in shortcutOverrides
+                    const overridden = def.id in synced.shortcutOverrides
                     const isRecording = recording === def.id
                     return (
                       <div
