@@ -46,6 +46,7 @@ function props(over = {}) {
   return {
     track: track(),
     paused: false,
+    loading: false,
     progress: 0,
     currentTime: 0,
     duration: 0,
@@ -80,6 +81,19 @@ describe('Player', () => {
     expect(screen.getByTestId('player-toggle')).toHaveAccessibleName('Pause')
     rerender(<Player {...props({ paused: true })} />)
     expect(screen.getByTestId('player-toggle')).toHaveAccessibleName('Play')
+  })
+
+  // On a network drive the element can sit for seconds fetching data before any
+  // sound comes out; without a spinner the player looks like it ignored the click.
+  it('shows a spinner instead of the pause icon while the stream is buffering', () => {
+    render(<Player {...props({ paused: false, loading: true })} />)
+    expect(screen.getByTestId('player-loading')).toBeInTheDocument()
+    expect(screen.getByTestId('player-toggle')).toHaveAttribute('aria-busy', 'true')
+  })
+
+  it('keeps the play icon while paused even if data is still loading', () => {
+    render(<Player {...props({ paused: true, loading: true })} />)
+    expect(screen.queryByTestId('player-loading')).not.toBeInTheDocument()
   })
 
   it('closes when the close control is clicked', () => {
@@ -120,11 +134,14 @@ describe('Player', () => {
 describe('LivePlayer', () => {
   // The clock follows the <audio> element through its own events: this is what
   // lets the rest of the app stop re-rendering on every ~4Hz timeupdate.
-  function audioEl(over: { currentTime?: number; duration?: number; paused?: boolean } = {}) {
+  function audioEl(
+    over: { currentTime?: number; duration?: number; paused?: boolean; readyState?: number } = {},
+  ) {
     const audio = document.createElement('audio')
     Object.defineProperty(audio, 'currentTime', { value: over.currentTime ?? 0, writable: true })
     Object.defineProperty(audio, 'duration', { value: over.duration ?? 0, writable: true })
     Object.defineProperty(audio, 'paused', { value: over.paused ?? true, writable: true })
+    Object.defineProperty(audio, 'readyState', { value: over.readyState ?? 0, writable: true })
     return audio
   }
 
@@ -146,5 +163,35 @@ describe('LivePlayer', () => {
       audio.dispatchEvent(new Event('timeupdate'))
     })
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
+  })
+
+  // The card can mount after play() was already called on a still-empty element
+  // (typical on slow network drives), so the spinner must come from the element's
+  // readyState, not from an event the card wasn't mounted to hear.
+  it('shows the spinner on mount when play started but no data has arrived', () => {
+    const audio = audioEl({ paused: false, readyState: 0 })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    render(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    expect(screen.getByTestId('player-loading')).toBeInTheDocument()
+  })
+
+  it('swaps the spinner for the pause icon once playback actually starts', () => {
+    const audio = audioEl({ paused: false, readyState: 0 })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    render(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    act(() => audio.dispatchEvent(new Event('playing')))
+    expect(screen.queryByTestId('player-loading')).not.toBeInTheDocument()
+  })
+
+  it('brings the spinner back when playback stalls waiting for data', () => {
+    const audio = audioEl({ paused: false, readyState: 4 })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    render(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    expect(screen.queryByTestId('player-loading')).not.toBeInTheDocument()
+    act(() => audio.dispatchEvent(new Event('waiting')))
+    expect(screen.getByTestId('player-loading')).toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { Pause, Play, X } from 'lucide-react'
+import { LoaderCircle, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,6 +20,7 @@ export function LivePlayer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const audio = audioRef.current
@@ -30,19 +31,32 @@ export function LivePlayer({
     setCurrentTime(audio.currentTime)
     setDuration(readDuration())
     setPaused(audio.paused)
+    // On network drives the element can spend seconds fetching before sound starts;
+    // readyState seeds the state because play() usually fired before this mount.
+    setLoading(!audio.paused && audio.readyState < audio.HAVE_FUTURE_DATA)
     const onTime = (): void => setCurrentTime(audio.currentTime)
     const onMeta = (): void => setDuration(readDuration())
     const onPlay = (): void => setPaused(false)
     const onPause = (): void => setPaused(true)
+    const onWaiting = (): void => setLoading(true)
+    const onReady = (): void => setLoading(false)
     audio.addEventListener('timeupdate', onTime)
     audio.addEventListener('loadedmetadata', onMeta)
     audio.addEventListener('play', onPlay)
     audio.addEventListener('pause', onPause)
+    audio.addEventListener('loadstart', onWaiting)
+    audio.addEventListener('waiting', onWaiting)
+    audio.addEventListener('canplay', onReady)
+    audio.addEventListener('playing', onReady)
     return () => {
       audio.removeEventListener('timeupdate', onTime)
       audio.removeEventListener('loadedmetadata', onMeta)
       audio.removeEventListener('play', onPlay)
       audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('loadstart', onWaiting)
+      audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('canplay', onReady)
+      audio.removeEventListener('playing', onReady)
     }
   }, [audioRef])
 
@@ -63,6 +77,7 @@ export function LivePlayer({
     <Player
       track={track}
       paused={paused}
+      loading={loading}
       progress={duration > 0 ? currentTime / duration : 0}
       currentTime={currentTime}
       duration={duration}
@@ -76,6 +91,7 @@ export function LivePlayer({
 interface PlayerProps {
   track: TrackItem
   paused: boolean
+  loading: boolean
   progress: number
   currentTime: number
   duration: number
@@ -89,6 +105,7 @@ interface PlayerProps {
 export function Player({
   track,
   paused,
+  loading,
   progress,
   currentTime,
   duration,
@@ -122,10 +139,19 @@ export function Player({
           data-testid="player-toggle"
           onClick={onToggle}
           aria-label={paused ? t('player.play') : t('player.pause')}
+          aria-busy={!paused && loading}
           className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
         >
           {paused ? (
             <Play className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+          ) : loading ? (
+            // Streaming from a network drive can take seconds to deliver the first
+            // bytes; the spinner shows the click registered and the file is coming.
+            <LoaderCircle
+              data-testid="player-loading"
+              className="h-4 w-4 animate-spin"
+              aria-hidden="true"
+            />
           ) : (
             <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
           )}
