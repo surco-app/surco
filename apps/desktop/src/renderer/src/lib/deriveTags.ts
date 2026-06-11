@@ -12,8 +12,11 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+// Only a known audio extension counts as one: callers hand over both raw file names
+// and names already stripped, and treating any trailing ".something" as an extension
+// would eat a dotted artist ("Acer vs. The Beeper - …").
 function stripExt(name: string): string {
-  return name.replace(/\.[^.]+$/, '')
+  return name.replace(/\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i, '')
 }
 
 // The inverse of renderOutputName: read a file's name through a "{artist} - {title}"-style

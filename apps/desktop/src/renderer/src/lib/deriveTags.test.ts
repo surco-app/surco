@@ -69,6 +69,15 @@ describe('smartDeriveTags', () => {
     expect(smartDeriveTags('A - B - C.flac')).toEqual({ artist: 'A', title: 'B - C' })
   })
 
+  // The editor hands over names already stripped of their extension; treating the
+  // last dot as one would eat a dotted artist ("Acer vs. The Beeper") instead.
+  it('does not eat a dotted artist when the name carries no extension', () => {
+    expect(smartDeriveTags('Acer vs. The Beeper - Keep Calm')).toEqual({
+      artist: 'Acer vs. The Beeper',
+      title: 'Keep Calm',
+    })
+  })
+
   it('returns nothing when no common naming fits', () => {
     expect(smartDeriveTags('noseparator.flac')).toEqual({})
   })
