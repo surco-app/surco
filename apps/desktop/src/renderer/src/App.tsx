@@ -44,13 +44,11 @@ import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
-import { canAddToAppleMusic } from './lib/appleMusic'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
-import { type Command, runCommand } from './lib/commands'
+import { buildCommands, type Command, runCommand } from './lib/commands'
 import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
-import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
@@ -621,208 +619,44 @@ export default function App(): React.JSX.Element {
   )
   const hintFor = (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac)
 
-  const commands: Command[] = [
-    {
-      id: 'add',
-      title: tr('commands.add'),
-      hint: hintFor('add'),
-      enabled: true,
-      run: pickFiles,
-    },
-    {
-      id: 'find-replace',
-      title: tr('commands.findReplace'),
-      hint: hintFor('find-replace'),
-      enabled: tracks.length > 0,
-      run: () => setActiveModal({ type: 'findReplace' }),
-    },
-    {
-      id: 'select-all',
-      title: tr('commands.selectAll'),
-      hint: hintFor('select-all'),
-      enabled: tracks.length > 0,
-      run: selectAll,
-    },
-    {
-      id: 'fill-all',
-      title: tr('commands.fillAll'),
-      hint: hintFor('fill-all'),
-      enabled: tracks.length > 0,
-      run: askFillAll,
-    },
-    {
-      id: 'prev',
-      title: tr('commands.prev'),
-      hint: hintFor('prev'),
-      enabled: visibleTracks.length > 1,
-      run: () => moveSelection(-1),
-    },
-    {
-      id: 'next',
-      title: tr('commands.next'),
-      hint: hintFor('next'),
-      enabled: visibleTracks.length > 1,
-      run: () => moveSelection(1),
-    },
-    {
-      id: 'play',
-      title: tr('commands.play'),
-      hint: hintFor('play'),
-      enabled: !!selected,
-      run: togglePlay,
-    },
-    {
-      id: 'search',
-      title: tr('commands.search'),
-      hint: hintFor('search'),
-      enabled: !!selected,
-      run: () => searchInputRef.current?.focus(),
-    },
-    {
-      id: 'process-current',
-      title: tr('commands.processCurrent'),
-      hint: hintFor('process-current'),
-      enabled: canProcessSelected,
-      run: () =>
-        selected &&
-        processOne(
-          selected.id,
-          editorFormatRef.current ?? undefined,
-          editorNormalizeRef.current ?? undefined,
-        ),
-    },
-    {
-      id: 'process-all',
-      title: tr('commands.processAll'),
-      hint: hintFor('process-all'),
-      enabled: canProcessAll,
-      run: () =>
-        askConvertAll(
-          tracks,
-          editorFormatRef.current ?? undefined,
-          editorNormalizeRef.current ?? undefined,
-        ),
-    },
-    {
-      // Toggles the quality sweep: starts it, or cancels a running one — the same button
-      // the toolbar shows. Disabled once every loaded track is already analyzed.
-      id: 'analyze-quality',
-      title: tr('commands.analyzeQuality'),
-      hint: hintFor('analyze-quality'),
-      enabled: analysis ? true : !tracksView.every((t) => Boolean(t.spectrum)),
-      run: () => {
-        if (analysis) cancelAnalysis()
-        else analyzeAllQuality()
-      },
-    },
-    {
-      // Toggles the Discogs auto-match sweep. Needs a user token and at least one
-      // unmatched track, mirroring the toolbar button's disabled rule.
-      id: 'auto-match',
-      title: tr('commands.autoMatch'),
-      hint: hintFor('auto-match'),
-      enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
-      run: () => {
-        if (matching) cancelAutoMatch()
-        else enqueueAutoMatch(tracksView, false)
-      },
-    },
-    {
-      id: 'export',
-      title: tr('commands.export'),
-      hint: hintFor('export'),
-      enabled: tracks.length > 0,
-      run: () => setActiveModal({ type: 'export' }),
-    },
-    {
-      id: 'reveal',
-      title: tr('commands.reveal'),
-      hint: hintFor('reveal'),
-      enabled: !!selected?.outputPath,
-      run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
-    },
-    {
-      // Builds the output name from a pattern. Only one track has a File name section
-      // (multi-select hides it), so the command follows the same single-track rule.
-      // Overwrite mode pins the name to the original, so renaming is disabled there too.
-      id: 'rename',
-      title: tr('commands.rename'),
-      hint: hintFor('rename'),
-      enabled: !!selected && selectedTracks.length <= 1 && !settings?.overwriteOriginal,
-      run: () => setActiveModal({ type: 'rename' }),
-    },
-    {
-      id: 'add-apple-music',
-      title: tr('commands.addAppleMusic'),
-      hint: hintFor('add-apple-music'),
-      enabled:
-        !!selected &&
-        canAddToAppleMusic(selected, window.api.platform, settings?.outputFormat ?? 'aiff'),
-      run: () => selected && addTrackToAppleMusic(selected.id),
-    },
-    {
-      id: 'remove',
-      title: tr('commands.remove'),
-      hint: hintFor('remove'),
-      enabled: !!selected,
-      run: () => selected && removeTrack(selected.id),
-    },
-    {
-      id: 'remove-all',
-      title: tr('commands.removeAll'),
-      enabled: tracks.length > 0,
-      run: askClearAll,
-    },
-    {
-      id: 'settings',
-      title: tr('commands.settings'),
-      hint: hintFor('settings'),
-      enabled: true,
-      run: () => openSettings(),
-    },
-    {
-      id: 'shortcuts',
-      title: tr('commands.shortcuts'),
-      hint: hintFor('shortcuts'),
-      enabled: true,
-      run: () => openSettings('shortcuts'),
-    },
-    {
-      id: 'stats',
-      title: tr('commands.stats'),
-      hint: hintFor('stats'),
-      enabled: true,
-      run: () => openSettings('stats'),
-    },
-    {
-      // Flips the UI between the two shipped locales. Not persisted on purpose: the app
-      // re-detects the language from the OS on every launch, so this is a per-session
-      // override for trying the other translation.
-      id: 'toggle-language',
-      title: tr('commands.toggleLanguage'),
-      hint: hintFor('toggle-language'),
-      enabled: true,
-      run: () => void i18n.changeLanguage(nextLocale(i18n.language)),
-    },
-    {
-      id: 'help',
-      title: tr('commands.help'),
-      enabled: true,
-      run: () => setActiveModal({ type: 'help' }),
-    },
-    {
-      id: 'feedback',
-      title: tr('commands.feedback'),
-      enabled: true,
-      run: () => openFeedback(),
-    },
-    {
-      id: 'website',
-      title: tr('commands.website'),
-      enabled: true,
-      run: () => window.open('https://getsurco.app/'),
-    },
-  ]
+  const commands: Command[] = buildCommands({
+    tr,
+    hintFor,
+    tracks,
+    tracksView,
+    visibleTracks,
+    selected,
+    selectedTracksCount: selectedTracks.length,
+    settings,
+    analysis,
+    matching,
+    autoMatchable,
+    canProcessSelected,
+    canProcessAll,
+    editorFormatRef,
+    editorNormalizeRef,
+    searchInputRef,
+    pickFiles: () => void pickFiles(),
+    selectAll,
+    askFillAll,
+    moveSelection,
+    togglePlay,
+    processOne,
+    askConvertAll,
+    cancelAnalysis,
+    analyzeAllQuality,
+    cancelAutoMatch,
+    enqueueAutoMatch,
+    addTrackToAppleMusic,
+    removeTrack,
+    askClearAll,
+    openSettings,
+    openFindReplace: () => setActiveModal({ type: 'findReplace' }),
+    openExport: () => setActiveModal({ type: 'export' }),
+    openRename: () => setActiveModal({ type: 'rename' }),
+    openHelp: () => setActiveModal({ type: 'help' }),
+    toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
+  })
 
   const commandsRef = useRef<Command[]>(commands)
   commandsRef.current = commands
