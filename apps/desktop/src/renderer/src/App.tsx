@@ -25,6 +25,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
@@ -980,40 +981,48 @@ export default function App(): React.JSX.Element {
 
         <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
           {selected ? (
-            <Editor
+            // Its own boundary so a render bug in the editor degrades to "this panel
+            // crashed" — the imported crate and the list stay alive. Keyed by track,
+            // which both remounts the editor per track (its state-seeding contract)
+            // and clears a tripped fallback on the next track switch.
+            <ErrorBoundary
               key={selected.id}
-              item={selected}
-              hasToken={!!settings?.discogsToken}
-              outputFormat={settings?.outputFormat ?? 'aiff'}
-              addToAppleMusic={settings?.addToAppleMusic ?? false}
-              overwriteOriginal={settings?.overwriteOriginal ?? false}
-              groupingPresets={settings?.groupingPresets ?? []}
-              genrePresets={settings?.genrePresets ?? []}
-              visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
-              requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
-              showSpectrum={settings?.showSpectrum ?? true}
-              showLoudness={settings?.showLoudness ?? true}
-              keyNotation={settings?.keyNotation ?? 'camelot'}
-              normalize={settings?.normalize ?? DEFAULT_NORMALIZE}
-              searchInputRef={searchInputRef}
-              selectedTracks={selectedTracks}
-              onApplyMatches={onApplyMatches}
-              onProcessAll={onProcessAllSelected}
-              onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-              onChangeAllMeta={onChangeAllMeta}
-              onApplyCoverAll={onApplyCoverAll}
-              onDeriveTags={deriveTracks}
-              onChange={onEditorChange}
-              onProcess={onProcessSelected}
-              onFormatChange={onFormatChange}
-              onNormalizeChange={onNormalizeChange}
-              onAddToAppleMusic={onAddSelectedToAppleMusic}
-              onTrashOriginal={onTrashOriginal}
-              onOpenSettings={onOpenSettings}
-              onShowLoudnessHelp={onShowLoudnessHelp}
-              onOpenRename={onOpenRename}
-              onRegenerateName={onRegenerateName}
-            />
+              className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+            >
+              <Editor
+                item={selected}
+                hasToken={!!settings?.discogsToken}
+                outputFormat={settings?.outputFormat ?? 'aiff'}
+                addToAppleMusic={settings?.addToAppleMusic ?? false}
+                overwriteOriginal={settings?.overwriteOriginal ?? false}
+                groupingPresets={settings?.groupingPresets ?? []}
+                genrePresets={settings?.genrePresets ?? []}
+                visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
+                requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
+                showSpectrum={settings?.showSpectrum ?? true}
+                showLoudness={settings?.showLoudness ?? true}
+                keyNotation={settings?.keyNotation ?? 'camelot'}
+                normalize={settings?.normalize ?? DEFAULT_NORMALIZE}
+                searchInputRef={searchInputRef}
+                selectedTracks={selectedTracks}
+                onApplyMatches={onApplyMatches}
+                onProcessAll={onProcessAllSelected}
+                onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                onChangeAllMeta={onChangeAllMeta}
+                onApplyCoverAll={onApplyCoverAll}
+                onDeriveTags={deriveTracks}
+                onChange={onEditorChange}
+                onProcess={onProcessSelected}
+                onFormatChange={onFormatChange}
+                onNormalizeChange={onNormalizeChange}
+                onAddToAppleMusic={onAddSelectedToAppleMusic}
+                onTrashOriginal={onTrashOriginal}
+                onOpenSettings={onOpenSettings}
+                onShowLoudnessHelp={onShowLoudnessHelp}
+                onOpenRename={onOpenRename}
+                onRegenerateName={onRegenerateName}
+              />
+            </ErrorBoundary>
           ) : (
             <div className="flex h-full items-center justify-center p-10 text-center">
               <div className="max-w-sm">

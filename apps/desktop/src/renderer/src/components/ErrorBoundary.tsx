@@ -4,6 +4,9 @@ import { openFeedback } from '../lib/feedback'
 
 interface Props {
   children: ReactNode
+  // Container class for the fallback. The root boundary fills the screen; the one
+  // around the editor panel stays inside the panel so the track list survives.
+  className?: string
 }
 
 interface State {
@@ -29,7 +32,10 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div
         data-testid="error-boundary"
-        className="flex h-screen flex-col gap-4 overflow-auto bg-[var(--color-ink)] p-8 text-sm"
+        className={
+          this.props.className ??
+          'flex h-screen flex-col gap-4 overflow-auto bg-[var(--color-ink)] p-8 text-sm'
+        }
       >
         <h1 className="text-lg font-semibold text-danger">{i18n.t('errorBoundary.title')}</h1>
         <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-danger">
@@ -43,6 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex gap-2 self-start">
           <button
             type="button"
+            data-testid="error-retry"
             onClick={() => this.setState({ error: null, info: '' })}
             className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
           >
