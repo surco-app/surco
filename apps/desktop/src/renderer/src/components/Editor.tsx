@@ -45,6 +45,7 @@ import {
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
+import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { LoudnessHelpModal } from './LoudnessHelpModal'
 import { LoudnessReadout } from './LoudnessReadout'
 import { NormalizeControls } from './NormalizeControls'
@@ -275,6 +276,15 @@ export function Editor({
   function setField(key: keyof TrackItem['meta'], value: string): void {
     onChange({ meta: { ...item.meta, [key]: value } })
   }
+
+  // What the per-field insert menu can offer: every visible text field of THIS
+  // track. Bulk edits hold no single per-field value to insert, and compilation
+  // is a '1' flag rather than text, so both stay out.
+  const insertSources: InsertSource[] = isMulti
+    ? []
+    : FIELD_DEFS.filter((d) => visibleFields.includes(d.key) && d.key !== 'compilation').map(
+        (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
+      )
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
@@ -562,6 +572,7 @@ export function Editor({
                             label={tr(`fields.${def.key}`)}
                             value={item.meta[def.key] ?? ''}
                             onChange={(v) => setField(def.key, v)}
+                            insertSources={insertSources}
                             wide={def.wide}
                             invalid={
                               requiredFields.includes(def.key) && !item.meta[def.key]?.trim()
@@ -1128,6 +1139,7 @@ interface FieldProps {
   placeholder?: string
   suggestions?: string[]
   multiSuggestions?: boolean
+  insertSources?: InsertSource[]
 }
 
 function Field({
@@ -1140,23 +1152,40 @@ function Field({
   placeholder,
   suggestions,
   multiSuggestions,
+  insertSources,
 }: FieldProps): React.JSX.Element {
+  const inputRef = useRef<HTMLInputElement>(null)
+  // A field never offers itself, and an empty field has nothing to insert.
+  const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
   return (
-    <label className={`block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
+    <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 block text-xs font-medium text-fg-dim">{label}</span>
-      <input
-        data-testid={`field-${name}`}
-        aria-invalid={invalid}
-        title={value}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
-          invalid
-            ? 'border-danger focus:border-danger'
-            : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
-        }`}
-      />
+      <span className="relative block">
+        <input
+          ref={inputRef}
+          data-testid={`field-${name}`}
+          aria-invalid={invalid}
+          title={value}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
+            insertable.length > 0 ? 'pr-8' : ''
+          } ${
+            invalid
+              ? 'border-danger focus:border-danger'
+              : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
+          }`}
+        />
+        {insertable.length > 0 && (
+          <FieldInsertMenu
+            fieldName={name}
+            sources={insertable}
+            inputRef={inputRef}
+            onChange={onChange}
+          />
+        )}
+      </span>
       {suggestions && suggestions.length > 0 && (
         <span className="mt-1.5 flex flex-wrap gap-1.5">
           {suggestions.map((s) => {

@@ -253,6 +253,7 @@
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
     "convertAllMusic": "Convertir ({{count}}) · {{format}} + Apple Music",
+    "insertFromField": "Insertar desde otro campo",
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",
     "clearMeta": "Borrar metadatos",

@@ -609,6 +609,14 @@ describe('Editor multi-select', () => {
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
   })
 
+  // Bulk edits write ONE value to every track, but each track's fields differ, so
+  // "insert from another field" has no single honest value to offer — per-track
+  // resolution is a future template feature, not this menu.
+  it('offers no insert-from-field menu over a multi-selection', () => {
+    renderMulti()
+    expect(screen.queryByTestId('field-insert-album')).toBeNull()
+  })
+
   // Multi-select hides the whole Quality section, so its loudness probe must not run:
   // it's a full-file ffmpeg EBU R128 pass whose result nothing would display.
   it('does not measure loudness while several tracks are selected', () => {
@@ -1366,5 +1374,32 @@ describe('Editor Apple Music library badge', () => {
         ]),
       { timeout: 3000 },
     )
+  })
+})
+
+describe('Editor insert from field', () => {
+  // The menu exists to compose one field out of the others ("title + year")
+  // without retyping; offering the field's own value or empty fields would
+  // only be noise, so both are filtered out.
+  it('inserts another visible field value into the edited field', () => {
+    const { onChange } = renderEditor(
+      { id: 't1', meta: { title: 'Pepito de los palotes', year: '2025' } },
+      'wav',
+      { visibleFields: ['title', 'artist', 'year'] },
+    )
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    expect(screen.queryByTestId('field-insert-option-title')).toBeNull()
+    expect(screen.queryByTestId('field-insert-option-artist')).toBeNull()
+    fireEvent.click(screen.getByTestId('field-insert-option-year'))
+    expect(onChange).toHaveBeenCalledWith({
+      meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }),
+    })
+  })
+
+  it('hides the trigger when no other visible field has a value', () => {
+    renderEditor({ id: 't1', meta: { title: 'Pepito de los palotes' } }, 'wav', {
+      visibleFields: ['title', 'year'],
+    })
+    expect(screen.queryByTestId('field-insert-title')).toBeNull()
   })
 })
