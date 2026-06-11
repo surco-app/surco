@@ -821,6 +821,9 @@ export default function App(): React.JSX.Element {
     const audio = audioRef.current
     audio?.pause()
     audio?.removeAttribute('src')
+    // Removing src alone doesn't release the media resource — the spec'd teardown
+    // needs load(), or the closed track's stream stays attached until the next play.
+    audio?.load()
     setPlayerVisible(false)
     setPlayingId(null)
   }, [])
