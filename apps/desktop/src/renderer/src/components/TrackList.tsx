@@ -6,8 +6,8 @@ import type { OutputFormat } from '../../../shared/types'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
-import type { ClickMods } from '../lib/selection'
 import type { Verdict } from '../lib/quality'
+import type { ClickMods } from '../lib/selection'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
 import { Tooltip } from './Tooltip'
@@ -60,7 +60,9 @@ interface RowProps {
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
-  scrollRootRef?: RefObject<HTMLElement | null>
+  // Registers the row with the list's shared IntersectionObserver; returns the
+  // unobserve cleanup. Undefined when the list doesn't track visibility.
+  observeRow?: (el: Element, onVisible: (visible: boolean) => void) => () => void
   onVisible?: (id: string, visible: boolean) => void
 }
 
@@ -76,7 +78,7 @@ const TrackRow = memo(function TrackRow({
   onRemove,
   onPrefetch,
   onOpenMenu,
-  scrollRootRef,
+  observeRow,
   onVisible,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -86,20 +88,13 @@ const TrackRow = memo(function TrackRow({
   // needs a conversion without opening each track.
   const sourceFormat = /\.([^./]+)$/.exec(t.inputPath)?.[1]?.toUpperCase()
   const rowRef = useRef<HTMLLIElement>(null)
-  // Report this row entering/leaving the scroll pane so App can run auto-match for what's on
-  // screen. rootMargin warms rows a little before they're scrolled fully into view.
+  // Report this row entering/leaving the scroll pane so App can run auto-match for
+  // what's on screen, through the list's single shared observer.
   useEffect(() => {
     const el = rowRef.current
-    if (!onVisible || !el || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) onVisible(t.id, entry.isIntersecting)
-      },
-      { root: scrollRootRef?.current ?? null, rootMargin: '300px 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [t.id, onVisible, scrollRootRef])
+    if (!onVisible || !observeRow || !el) return
+    return observeRow(el, (visible) => onVisible(t.id, visible))
+  }, [t.id, onVisible, observeRow])
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
@@ -118,7 +113,7 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] backdrop-blur-sm transition-colors ${
+        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
           selected
             ? 'bg-[var(--color-accent-soft)]/85'
             : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
@@ -271,6 +266,35 @@ export function TrackList({
     (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
     [],
   )
+  // One IntersectionObserver for the whole list instead of one per row — 500 rows
+  // used to mean 500 observer instances doing identical work against the same root.
+  // Created lazily on the first row registration so the scroll pane's ref is bound;
+  // rootMargin warms rows a little before they're scrolled fully into view.
+  const rowVisibility = useRef(new Map<Element, (visible: boolean) => void>())
+  const rowObserver = useRef<IntersectionObserver | null>(null)
+  const observeRow = useCallback(
+    (el: Element, report: (visible: boolean) => void): (() => void) => {
+      if (typeof IntersectionObserver === 'undefined') return () => {}
+      if (!rowObserver.current) {
+        rowObserver.current = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              rowVisibility.current.get(entry.target)?.(entry.isIntersecting)
+            }
+          },
+          { root: scrollRootRef?.current ?? null, rootMargin: '300px 0px' },
+        )
+      }
+      rowVisibility.current.set(el, report)
+      rowObserver.current.observe(el)
+      return () => {
+        rowVisibility.current.delete(el)
+        rowObserver.current?.unobserve(el)
+      }
+    },
+    [scrollRootRef],
+  )
+  useEffect(() => () => rowObserver.current?.disconnect(), [])
   return (
     <ul className="flex flex-col gap-1 p-2">
       {tracks.map((t) => (
@@ -284,7 +308,7 @@ export function TrackList({
           onRemove={onRemove}
           onPrefetch={onPrefetch}
           onOpenMenu={openMenu}
-          scrollRootRef={scrollRootRef}
+          observeRow={observeRow}
           onVisible={onVisible}
         />
       ))}
