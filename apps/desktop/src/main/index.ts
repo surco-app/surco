@@ -35,7 +35,7 @@ import {
   shouldAddToAppleMusic,
 } from './applemusic'
 import type { CoverSource } from './cover'
-import { prepareProcessedCover } from './cover'
+import { hasCoverSource, prepareProcessedCover } from './cover'
 import { expandPaths } from './expand'
 import {
   analyzeCutoff,
@@ -420,7 +420,7 @@ function registerIpc(): void {
     const settings = getSettings()
     let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
     try {
-      if (job.coverPath || job.coverUrl) {
+      if (hasCoverSource(job)) {
         prepared = await prepareProcessedCover(job, {
           maxSize: settings.coverMaxSize,
           square: settings.coverSquare,
@@ -442,7 +442,7 @@ function registerIpc(): void {
     // Apple Music add never leaves the temp conversion behind.
     let tmpDir: string | undefined
     try {
-      if (job.coverPath || job.coverUrl) {
+      if (hasCoverSource(job)) {
         stage('cover')
         prepared = await prepareProcessedCover(job, {
           maxSize: settings.coverMaxSize,

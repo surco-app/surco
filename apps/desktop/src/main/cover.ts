@@ -19,6 +19,14 @@ export interface PreparedCover {
   cleanup: () => Promise<void>
 }
 
+// For the IPC handlers that gate preparation (and its progress stage) on whether a
+// job names any art at all. Lives here so the check can never drift from the
+// origins prepareProcessedCover actually resolves — when a handler hand-rolled it,
+// coverFromFile jobs converted with no artwork.
+export function hasCoverSource(src: CoverSource): boolean {
+  return Boolean(src.coverPath || src.coverUrl || src.coverFromFile)
+}
+
 // Resolves a cover from any of its three origins — a file the user dropped, a
 // Discogs http URL, or a data: URL carrying the input file's embedded art — to a
 // local file, then runs it through processCover. Returns the processed path plus

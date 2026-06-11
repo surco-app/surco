@@ -19,7 +19,7 @@ vi.mock('node:fs/promises', () => ({
 }))
 vi.mock('./tmp', () => ({ tmpName: (prefix: string, ext: string) => `${prefix}.${ext}` }))
 
-import { prepareProcessedCover } from './cover'
+import { hasCoverSource, prepareProcessedCover } from './cover'
 
 const opts = { maxSize: 1000, square: true }
 
@@ -29,6 +29,25 @@ beforeEach(() => {
   processCover.mockResolvedValue('/tmp/processed.jpg')
   writeFile.mockResolvedValue(undefined)
   unlink.mockResolvedValue(undefined)
+})
+
+// The IPC handlers gate cover preparation (and its progress stage) on this check.
+// It must accept every origin prepareProcessedCover understands: when the two
+// drifted apart, jobs whose art was the file's own embedded picture — named only
+// by coverFromFile — converted and landed in Apple Music with no artwork at all.
+describe('hasCoverSource', () => {
+  it('counts a file whose own embedded art should be used', () => {
+    expect(hasCoverSource({ coverFromFile: '/m/a.flac' })).toBe(true)
+  })
+
+  it('counts a user-picked file and a Discogs URL', () => {
+    expect(hasCoverSource({ coverPath: '/cover.png' })).toBe(true)
+    expect(hasCoverSource({ coverUrl: 'https://img/cover.jpg' })).toBe(true)
+  })
+
+  it('rejects a job naming no art at all', () => {
+    expect(hasCoverSource({})).toBe(false)
+  })
 })
 
 describe('prepareProcessedCover', () => {
