@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildRekordboxXml } from '../lib/rekordbox'
 import { buildTraktorNml } from '../lib/traktor'
@@ -16,6 +17,7 @@ interface Props {
 // in here later as new rows.
 export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [error, setError] = useState('')
 
   const targets = [
     {
@@ -52,8 +54,12 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
             type="button"
             data-testid={`export-${t.id}`}
             onClick={() => {
-              void t.run()
-              onClose()
+              // Close only once the write lands: a disk-full or permission failure
+              // keeps the modal open and says so, instead of closing as if the file
+              // had been written. A cancelled save dialog resolves and closes quietly.
+              t.run()
+                .then(onClose)
+                .catch((e) => setError(e instanceof Error ? e.message : String(e)))
             }}
             className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-panel-2)]"
           >
@@ -65,6 +71,11 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
           </button>
         ))}
       </div>
+      {error && (
+        <p role="alert" data-testid="export-error" className="mt-3 text-sm text-danger">
+          {tr('export.failed', { error })}
+        </p>
+      )}
       <div className="mt-5 flex justify-end">
         <button
           type="button"

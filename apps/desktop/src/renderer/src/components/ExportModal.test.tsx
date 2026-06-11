@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
@@ -50,6 +50,19 @@ describe('ExportModal', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
   })
 
+  // A failed write (disk full, permissions) must keep the modal open and say so —
+  // closing silently reads as "the file was written" when it wasn't. The save-dialog
+  // cancel resolves quietly, so only real failures surface.
+  it('keeps the modal open and shows the error when the export fails', async () => {
+    api.exportTraktor.mockRejectedValueOnce(new Error('disk full'))
+    const onClose = vi.fn()
+    render(<ExportModal tracks={[track()]} onClose={onClose} />)
+    fireEvent.click(screen.getByTestId('export-traktor'))
+
+    expect(await screen.findByTestId('export-error')).toHaveTextContent('disk full')
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   // One Export entry point routes to the right collection writer by what the user picks.
   it('writes a Traktor NML when Traktor is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
@@ -73,10 +86,10 @@ describe('ExportModal', () => {
     expect(screen.getByTestId('export-rekordbox')).toHaveTextContent('rekordbox xml')
   })
 
-  it('closes after a target is picked', () => {
+  it('closes after a target is picked and the write lands', async () => {
     const onClose = vi.fn()
     render(<ExportModal tracks={[track()]} onClose={onClose} />)
     fireEvent.click(screen.getByTestId('export-rekordbox'))
-    expect(onClose).toHaveBeenCalled()
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 })
