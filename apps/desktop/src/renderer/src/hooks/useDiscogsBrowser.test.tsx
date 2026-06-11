@@ -114,4 +114,47 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.release?.id).toBe(1))
     expect(searchDiscogs).not.toHaveBeenCalled()
   })
+
+  // A failed search (Discogs 429, a network blip) must be retryable from the button:
+  // the term doesn't change, so the query key doesn't either, and without an explicit
+  // refetch the error would stay on screen until the user edits the text.
+  it('retries a failed search when run again with the same term', async () => {
+    setApi({
+      searchDiscogs: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('rate limited'))
+        .mockResolvedValue([searchResult]),
+    })
+    const { result } = renderHook(() => useDiscogsBrowser(item({ query: 'some album' }), tr), {
+      wrapper: wrapper(),
+    })
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.error).not.toBe(''))
+
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(result.current.error).toBe('')
+  })
+
+  // Pasting a release URL while a free-text auto-probe is still in flight takes the
+  // direct-id path, which never touches the probing flag; the superseded run must not
+  // leave `busy` latched true, or the Search button stays disabled until a remount.
+  it('clears busy when a direct release load supersedes an in-flight probe', async () => {
+    const getRelease = vi.fn((id: number) => {
+      if (id === 123) return Promise.resolve({ ...release, id: 123 })
+      return new Promise(() => {})
+    })
+    setApi({ getRelease })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'some album', title: 'Track One' }), tr),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.busy).toBe(true))
+
+    act(() => result.current.setQuery('https://www.discogs.com/release/123'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.release?.id).toBe(123))
+    expect(result.current.busy).toBe(false)
+  })
 })

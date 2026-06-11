@@ -65,10 +65,6 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     return () => clearTimeout(id)
   }, [query])
 
-  const doSearch = useCallback(() => {
-    if (query.trim()) setSearchTerm(query)
-  }, [query])
-
   const searchQuery = useQuery({
     queryKey: ['discogs-search', searchTerm],
     queryFn: async () => {
@@ -84,6 +80,16 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     enabled: searchTerm.trim() !== '',
   })
   const results = searchQuery.data?.results ?? []
+
+  const { refetch: refetchSearch } = searchQuery
+  const doSearch = useCallback(() => {
+    if (!query.trim()) return
+    // Re-running the search with the same term must refetch explicitly: the term (and
+    // so the query key) doesn't change, and a failed search — a 429 from the limiter,
+    // a network blip — would otherwise be stuck in error until the text is edited.
+    if (query === searchTerm) void refetchSearch()
+    else setSearchTerm(query)
+  }, [query, searchTerm, refetchSearch])
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
@@ -130,6 +136,11 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     })
     return () => {
       cancelled = true
+      // The superseding run may take an early-return path that never touches the flag
+      // (a pasted release id, an empty title) while this run's finally is skipped as
+      // cancelled — without this reset `busy` latches true and disables the Search
+      // button until the editor remounts.
+      setAutoProbing(false)
     }
   }, [searchQuery.data, loadRelease])
 
