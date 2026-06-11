@@ -4,10 +4,11 @@ import { countDownloads } from '../lib/downloads'
 
 const REPO = 'vigosan/surco-releases'
 
-// Live social proof appended to the "Descarga gratuita" line, from the same
-// public releases repo the button reads. Stays hidden until at least one real
+// Live social proof appended to the version line, from the same public
+// releases repo the button reads. Stays hidden until at least one real
 // download lands, so the page never shows "0 descargas" before launch.
-export default function DownloadCount() {
+// withSeparator prepends " · " when something (the version) precedes it.
+export default function DownloadCount({ withSeparator = false }: { withSeparator?: boolean }) {
   const { t, i18n } = useTranslation()
   const [count, setCount] = useState<number | null>(null)
 
@@ -29,7 +30,7 @@ export default function DownloadCount() {
 
   return (
     <span data-testid="download-count" className="text-muted">
-      {' · '}
+      {withSeparator && ' · '}
       <span className="tabular-nums text-fg">{count.toLocaleString(i18n.language)}</span>{' '}
       {t('download.countSuffix')}
     </span>

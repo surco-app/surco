@@ -109,14 +109,13 @@ export default function DownloadButton({
       {showMeta && (
         <div className="mt-4 space-y-1 font-mono text-xs text-faint">
           <p>
-            {ready ? t('download.free') : t('download.unavailable')}
+            {!ready && t('download.unavailable')}
             {version && (
-              <span data-testid="app-version" className="text-muted">
-                {' · '}
-                <span className="text-fg">{version}</span>
+              <span data-testid="app-version" className="text-fg">
+                {version}
               </span>
             )}
-            {ready && <DownloadCount />}
+            {ready && <DownloadCount withSeparator={version !== null} />}
           </p>
         </div>
       )}
