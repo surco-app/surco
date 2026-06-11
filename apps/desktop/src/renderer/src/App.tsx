@@ -45,6 +45,7 @@ import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
@@ -58,7 +59,6 @@ import { shouldShowDonateNudge } from './lib/donateNudge'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { parseFileName } from './lib/filename'
-import { createFocusGate } from './lib/focusGate'
 import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
@@ -78,7 +78,6 @@ import {
   qualityCounts,
   sortTracks,
   type TrackSort,
-  tracksToAnalyze,
 } from './lib/triage'
 import type { TrackItem } from './types'
 
@@ -230,14 +229,6 @@ export default function App(): React.JSX.Element {
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
-  // Batch quality triage: progress of the "analyze quality" run (null when idle), and
-  // a cancel flag the in-flight workers poll so cancelling stops new analyses without
-  // killing the ones already handed to ffmpeg.
-  const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
-  const analyzeCancel = useRef(false)
-  // Pauses the analyze-quality sweep while the window is in the background (fed by the
-  // main process's blur/focus events) so it stops spawning ffmpeg until the app returns.
-  const focusGate = useRef(createFocusGate())
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. Null means "untouched" — fall back to the Settings
   // default. Reset on track switch, matching the editor reseeding per track.
@@ -318,8 +309,6 @@ export default function App(): React.JSX.Element {
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
     [],
   )
-
-  useEffect(() => window.api.onWindowFocus((focused) => focusGate.current.set(focused)), [])
 
   async function addPaths(paths: string[]): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
@@ -497,35 +486,9 @@ export default function App(): React.JSX.Element {
     [queryClient],
   )
 
-  // Analyzes every not-yet-measured track's spectrum at once so a whole dropped folder
-  // is triaged for fake-lossless rips without opening each. Capped at 3 in flight (each
-  // is an ffmpeg pass) and cancellable; fetchQuery fills the shared cache the list reads
-  // its verdicts from, and dedups with a concurrent hover for the same file.
-  const analyzeAllQuality = useCallback((): void => {
-    const targets = tracksToAnalyze(tracksViewRef.current, new Set())
-    if (analysis || targets.length === 0) return
-    analyzeCancel.current = false
-    let done = 0
-    setAnalysis({ done: 0, total: targets.length })
-    void mapWithConcurrency(targets, 3, async (t) => {
-      if (analyzeCancel.current) return
-      // Hold here while the window is in the background so the sweep doesn't spawn
-      // ffmpeg off-screen; it resumes the moment the app is focused again.
-      await focusGate.current.wait()
-      if (analyzeCancel.current) return
-      try {
-        await queryClient.fetchQuery({
-          queryKey: ['spectrogram', t.inputPath],
-          queryFn: () => window.api.spectrogram(t.inputPath),
-        })
-      } catch {
-        // A single file ffmpeg can't read must not abort the whole sweep.
-      } finally {
-        done += 1
-        setAnalysis((a) => (a ? { ...a, done } : a))
-      }
-    }).finally(() => setAnalysis(null))
-  }, [analysis, queryClient])
+  // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
+  // wires the start/cancel actions into the toolbar and commands.
+  const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({ tracksViewRef })
 
   // The Discogs auto-match sweep: queue, visibility gating, pump and progress live in
   // the hook; App only wires enqueue/cancel into the import flow, toolbar and commands.
@@ -993,7 +956,7 @@ export default function App(): React.JSX.Element {
       hint: hintFor('analyze-quality'),
       enabled: analysis ? true : !tracksView.every((t) => Boolean(t.spectrum)),
       run: () => {
-        if (analysis) analyzeCancel.current = true
+        if (analysis) cancelAnalysis()
         else analyzeAllQuality()
       },
     },
@@ -1178,9 +1141,7 @@ export default function App(): React.JSX.Element {
           onFillAll={askFillAll}
           onFindReplace={() => setActiveModal({ type: 'findReplace' })}
           onAnalyzeAll={analyzeAllQuality}
-          onCancelAnalyze={() => {
-            analyzeCancel.current = true
-          }}
+          onCancelAnalyze={cancelAnalysis}
           onAutoMatch={() => enqueueAutoMatch(tracksView, false)}
           onCancelAutoMatch={cancelAutoMatch}
           onConvertSelected={() => askConvertAll(selectedTracks)}
