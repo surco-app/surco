@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
@@ -30,23 +30,32 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   }, [])
 
   const badRegex = regex && find.length > 0 && !isValidRegex(find)
-  const patches =
-    find && !badRegex
-      ? tracks
-          .map((t) => ({ id: t.id, meta: findReplaceTrack(t.meta, find, replace, { regex }) }))
-          .filter((p) => Object.keys(p.meta).length > 0)
-      : []
+  // The preview runs the replacement over every field of every track — O(tracks × 15)
+  // regex passes — so it recomputes only when an input actually changes, not on every
+  // keystroke-induced render of the modal.
+  const patches = useMemo(
+    () =>
+      find && !badRegex
+        ? tracks
+            .map((t) => ({ id: t.id, meta: findReplaceTrack(t.meta, find, replace, { regex }) }))
+            .filter((p) => Object.keys(p.meta).length > 0)
+        : [],
+    [tracks, find, replace, regex, badRegex],
+  )
   const changedFields = patches.reduce((n, p) => n + Object.keys(p.meta).length, 0)
-  const examples = patches
-    .flatMap((p) =>
-      Object.entries(p.meta).map(([field, after]) => ({
-        id: p.id,
-        field,
-        before: tracks.find((t) => t.id === p.id)?.meta[field as keyof TrackMetadata] ?? '',
-        after: after as string,
-      })),
-    )
-    .slice(0, PREVIEW_LIMIT)
+  const examples = useMemo(() => {
+    const byId = new Map(tracks.map((t) => [t.id, t]))
+    return patches
+      .flatMap((p) =>
+        Object.entries(p.meta).map(([field, after]) => ({
+          id: p.id,
+          field,
+          before: byId.get(p.id)?.meta[field as keyof TrackMetadata] ?? '',
+          after: after as string,
+        })),
+      )
+      .slice(0, PREVIEW_LIMIT)
+  }, [patches, tracks])
 
   function apply(): void {
     if (!patches.length) return
