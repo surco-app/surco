@@ -19,7 +19,6 @@ import type {
   OutputFormat,
   Settings,
   SpectrumResult,
-  ThemePref,
   TrackMetadata,
 } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
@@ -46,6 +45,7 @@ import { useAutoMatch } from './hooks/useAutoMatch'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
+import { useSettings } from './hooks/useSettings'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
@@ -70,7 +70,6 @@ import { pageScrollTop } from './lib/scroll'
 import { searchFromTags } from './lib/search'
 import { type ClickMods, clickSelect, deselect, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
-import { resolveTheme } from './lib/theme'
 import {
   filterByQuality,
   matchesSearch,
@@ -171,7 +170,6 @@ type ActiveModal =
 
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
-  const [settings, setSettings] = useState<Settings | null>(null)
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
@@ -184,8 +182,25 @@ export default function App(): React.JSX.Element {
     kind: 'unexpected' | 'settingsLoad' | 'settingsSave' | 'trash'
     detail?: string
   } | null>(null)
-  // Live theme preview while the Settings modal is open; cleared when it closes.
-  const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
+  // Persisted settings (initial load, modal-open refresh, theme application,
+  // optimistic save) live in the hook; App only decides the launch modal.
+  const settingsOpen = activeModal?.type === 'settings'
+  const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
+    settingsOpen,
+    onFirstLoad: (s) => {
+      if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
+      else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
+        setActiveModal({ type: 'donateNudge' })
+        // Stamp the showing immediately, not on close, so a quick quit still
+        // counts toward the cooldown and the nudge can never appear twice in a
+        // row. Straight to the bridge: only the next launch reads this value,
+        // so the renderer settings state doesn't need the refresh.
+        void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
+      }
+    },
+    onLoadError: () => setAppError({ kind: 'settingsLoad' }),
+    onSaveError: () => setAppError({ kind: 'settingsSave' }),
+  })
   // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
   // big crate can be swept for fakes without scrolling past the clean ones.
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
@@ -230,26 +245,6 @@ export default function App(): React.JSX.Element {
   // Settings default at conversion time, mirroring editorFormatRef.
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
 
-  useEffect(() => {
-    window.api
-      .getSettings()
-      .then((s) => {
-        setSettings(s)
-        if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
-        else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
-          setActiveModal({ type: 'donateNudge' })
-          // Stamp the showing immediately, not on close, so a quick quit still
-          // counts toward the cooldown and the nudge can never appear twice in a
-          // row. Straight to the bridge: only the next launch reads this value,
-          // so the renderer settings state doesn't need the refresh.
-          void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
-        }
-      })
-      // A failed read leaves the whole session on defaults (and suppresses
-      // onboarding); it must say so rather than look like a fresh install.
-      .catch(() => setAppError({ kind: 'settingsLoad' }))
-  }, [])
-
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
   // would otherwise vanish into the devtools console — a failure indistinguishable
   // from success. Surface them.
@@ -263,27 +258,6 @@ export default function App(): React.JSX.Element {
     window.addEventListener('unhandledrejection', onRejection)
     return () => window.removeEventListener('unhandledrejection', onRejection)
   }, [])
-
-  // Conversions bump the persisted count from the main process, so re-read settings
-  // each time the Settings modal opens to keep the Stats tab current within a session.
-  const settingsOpen = activeModal?.type === 'settings'
-  useEffect(() => {
-    if (settingsOpen) {
-      window.api.getSettings().then(setSettings)
-    }
-  }, [settingsOpen])
-
-  useEffect(() => {
-    const pref = themePreview ?? settings?.theme ?? 'system'
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const apply = (): void => {
-      document.documentElement.dataset.theme = resolveTheme(pref, mq.matches)
-    }
-    apply()
-    if (pref !== 'system') return
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
-  }, [themePreview, settings?.theme])
 
   // The native menu triggers actions by command id, the same registry the
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
@@ -654,20 +628,6 @@ export default function App(): React.JSX.Element {
     settings,
     updateTrack,
   })
-
-  function saveSettings(patch: Partial<Settings>): void {
-    // Apply the theme optimistically so clearing the live preview on close
-    // doesn't flash the old theme while the persisted value round-trips.
-    if (patch.theme !== undefined) {
-      setSettings((s) => (s ? { ...s, theme: patch.theme as ThemePref } : s))
-    }
-    window.api
-      .saveSettings(patch)
-      .then(setSettings)
-      // A silent failure here leaves the UI showing a choice that was never
-      // persisted — the next launch quietly reverts it.
-      .catch(() => setAppError({ kind: 'settingsSave' }))
-  }
 
   function openSettings(tab: SettingsTab = 'general'): void {
     setActiveModal({ type: 'settings', tab })
