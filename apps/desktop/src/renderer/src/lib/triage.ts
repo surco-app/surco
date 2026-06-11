@@ -61,6 +61,11 @@ export function matchesSearch(track: TrackItem, query: string): boolean {
 // The list sort modes: the drop order ('import'), or by name, artist or length.
 export type TrackSort = 'import' | 'name' | 'artist' | 'duration'
 
+// One shared collator instead of per-comparison localeCompare: the sort re-runs on
+// every list-affecting render (each editor keystroke while a sort is active), and
+// localeCompare re-creates the collation tables on every call.
+const collator = new Intl.Collator()
+
 // Orders the (already filtered) list for display. 'import' returns the list untouched so the
 // drop order survives verbatim; the rest sort a copy. Array.sort is stable, so equal rows
 // keep their import order and toggling sorts never scrambles ties. Untagged artists and
@@ -68,12 +73,12 @@ export type TrackSort = 'import' | 'name' | 'artist' | 'duration'
 export function sortTracks(tracks: TrackItem[], sort: TrackSort): TrackItem[] {
   if (sort === 'import') return tracks
   return [...tracks].sort((a, b) => {
-    if (sort === 'name') return a.listLabel.localeCompare(b.listLabel)
+    if (sort === 'name') return collator.compare(a.listLabel, b.listLabel)
     if (sort === 'artist') {
       const aa = a.meta.artist || ''
       const bb = b.meta.artist || ''
       if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
-      return aa.localeCompare(bb)
+      return collator.compare(aa, bb)
     }
     return (a.duration ?? Number.POSITIVE_INFINITY) - (b.duration ?? Number.POSITIVE_INFINITY)
   })
