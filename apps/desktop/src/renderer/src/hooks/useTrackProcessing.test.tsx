@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Settings, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -45,6 +47,14 @@ function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = over
 }
 
+// The hook evicts probe caches on in-place exports, so every render needs a
+// QueryClient in scope.
+function withClient(
+  client = new QueryClient(),
+): (props: { children: React.ReactNode }) => React.JSX.Element {
+  return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
+}
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('useTrackProcessing', () => {
@@ -53,12 +63,14 @@ describe('useTrackProcessing', () => {
   it('converts a valid track and reports it converted', async () => {
     setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
     const updateTrack = vi.fn()
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks: [track({ id: 'a' })],
-        settings: null,
-        updateTrack,
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
     )
     let outcome: string | undefined
     await act(async () => {
@@ -74,12 +86,14 @@ describe('useTrackProcessing', () => {
     const processTrack = vi.fn()
     setApi({ processTrack })
     const updateTrack = vi.fn()
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks: [track({ id: 'a', meta: meta({ artist: '' }) })],
-        settings: null,
-        updateTrack,
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', meta: meta({ artist: '' }) })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
     )
     let outcome: string | undefined
     await act(async () => {
@@ -95,12 +109,14 @@ describe('useTrackProcessing', () => {
   it('surfaces a conversion error on the track', async () => {
     setApi({ processTrack: vi.fn().mockRejectedValue(new Error('disk full')) })
     const updateTrack = vi.fn()
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks: [track({ id: 'a' })],
-        settings: null,
-        updateTrack,
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
     )
     let outcome: string | undefined
     await act(async () => {
@@ -119,12 +135,14 @@ describe('useTrackProcessing', () => {
     setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' }) })
     const updateTrack = vi.fn()
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks,
-        settings: null,
-        updateTrack,
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks,
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
     )
     await act(async () => {
       await result.current.processAll(tracks)
@@ -139,17 +157,21 @@ describe('useTrackProcessing', () => {
   it('honors a custom output name when not overwriting', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/custom name.aiff' })
     setApi({ processTrack })
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks: [track({ id: 'a', outputName: 'custom name' })],
-        settings: { overwriteOriginal: false } as unknown as Settings,
-        updateTrack: vi.fn(),
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputName: 'custom name' })],
+          settings: { overwriteOriginal: false } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
     )
     await act(async () => {
       await result.current.processOne('a')
     })
-    expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'custom name' }))
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'custom name' }),
+    )
   })
 
   // Overwrite rewrites the source itself, so the export must target the original file
@@ -158,12 +180,14 @@ describe('useTrackProcessing', () => {
   it('pins the export name to the original file name in overwrite mode', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
     setApi({ processTrack })
-    const { result } = renderHook(() =>
-      useTrackProcessing({
-        tracks: [track({ id: 'a', outputName: 'custom name' })],
-        settings: { overwriteOriginal: true } as unknown as Settings,
-        updateTrack: vi.fn(),
-      }),
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputName: 'custom name' })],
+          settings: { overwriteOriginal: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
     )
     await act(async () => {
       await result.current.processOne('a')
@@ -190,7 +214,7 @@ describe('useTrackProcessing', () => {
     const { result, rerender } = renderHook(
       (props: { tracks: TrackItem[] }) =>
         useTrackProcessing({ tracks: props.tracks, settings: null, updateTrack: vi.fn() }),
-      { initialProps: { tracks: initial } },
+      { initialProps: { tracks: initial }, wrapper: withClient() },
     )
     let run: Promise<void> = Promise.resolve()
     act(() => {
@@ -205,5 +229,28 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenLastCalledWith(
       expect.objectContaining({ id: 'b', meta: expect.objectContaining({ title: 'Edited' }) }),
     )
+  })
+
+  // An in-place export rewrites the source file — re-encoded, normalized, re-tagged —
+  // so the session-long probe caches for that path now describe a file that no longer
+  // exists. Without eviction the loudness/properties/spectrum readouts keep showing the
+  // pre-rewrite facts, in exactly the mode where the user just changed the file.
+  it('evicts the rewritten path’s cached probes after an in-place export', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }) })
+    const client = new QueryClient()
+    client.setQueryData(['loudness', '/m/a.wav'], { integrated: -9 })
+    client.setQueryData(['spectrogram', '/m/a.wav'], { image: 'x' })
+    client.setQueryData(['loudness', '/m/b.wav'], { integrated: -12 })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(client.getQueryData(['loudness', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['loudness', '/m/b.wav'])).toBeDefined()
   })
 })

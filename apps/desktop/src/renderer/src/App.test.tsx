@@ -135,7 +135,7 @@ beforeEach(() => {
 
 // App and parts of its tree read window.api.platform at module scope, so it must be
 // imported only after the bridge mock is in place — a dynamic import after beforeEach.
-async function renderApp(): Promise<void> {
+async function renderApp(): Promise<QueryClient> {
   const { default: App } = await import('./App')
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -143,6 +143,7 @@ async function renderApp(): Promise<void> {
       <App />
     </QueryClientProvider>,
   )
+  return client
 }
 
 async function addTwoTracks(): Promise<HTMLElement[]> {
@@ -373,6 +374,27 @@ describe('App import skeleton', () => {
       expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Tagged Artist'),
     )
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
+  })
+})
+
+describe('App track removal', () => {
+  // Removed tracks must not pin their probe results in the session-long query cache:
+  // spectrogram images are the heaviest objects in the app, and a long session of
+  // add/remove would otherwise retain every one of them until quit.
+  it('evicts a removed track’s cached probes', async () => {
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    const client = await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    client.setQueryData(['spectrogram', '/music/a.wav'], spectrum)
+    client.setQueryData(['bpm', '/music/a.wav'], 128)
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    expect(client.getQueryData(['spectrogram', '/music/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['bpm', '/music/a.wav'])).toBeUndefined()
   })
 })
 

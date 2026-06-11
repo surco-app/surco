@@ -41,6 +41,10 @@ export function useAppleMusicLookup(
     // The library can change within a session (the user may add the track), so re-check
     // on each selection rather than trusting the session-long cache the probes use.
     staleTime: 0,
+    // Every keystroke in artist/title mints a new candidate key; the app-default
+    // gcTime of Infinity would retain each intermediate entry until quit. A few
+    // minutes keeps revisits cheap without hoarding a session's worth of typing.
+    gcTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   })
   if (!eligible || isError) return 'idle'

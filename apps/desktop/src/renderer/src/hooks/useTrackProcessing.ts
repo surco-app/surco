@@ -1,6 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
   type BatchSummary,
@@ -43,6 +45,7 @@ export interface TrackProcessing {
 // updateTrack, exactly as the inline App functions did.
 export function useTrackProcessing({ tracks, settings, updateTrack }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
+  const queryClient = useQueryClient()
   const [batching, setBatching] = useState(false)
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
@@ -121,6 +124,13 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
         return 'skipped'
       }
       updateTrack(id, exportedPatch(track, result))
+      // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
+      // so any cached probe of it now describes the old bytes. Evict both paths (they
+      // differ when the rewrite also renamed) so the readouts measure the new file.
+      if (result.inPlace) {
+        removeAnalysisQueries(queryClient, track.inputPath)
+        removeAnalysisQueries(queryClient, result.outputPath)
+      }
       return 'converted'
     } catch (e) {
       updateTrack(id, {

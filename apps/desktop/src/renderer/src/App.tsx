@@ -44,6 +44,7 @@ import { UpdateToast } from './components/UpdateToast'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { nextLocale } from './i18n/locale'
+import { removeAnalysisQueries } from './lib/analysisQueries'
 import { canAddToAppleMusic } from './lib/appleMusic'
 import {
   autoMatchRelease,
@@ -623,22 +624,31 @@ export default function App(): React.JSX.Element {
   // Stable identity so the memoized TrackRow only re-renders the row that
   // changed. The functional update deselects iff the removed track was selected,
   // which is what the explicit selectedId check did before.
-  const removeTrack = useCallback((id: string): void => {
-    setTracks((prev) => prev.filter((t) => t.id !== id))
-    setSelection((s) => deselect(s, id))
-    // Drop the track's prefetch/view bookkeeping so they don't accumulate ids of
-    // tracks that no longer exist across a long session of add/remove.
-    discogsPrefetched.current.delete(id)
-    viewCache.current.delete(id)
-  }, [])
+  const removeTrack = useCallback(
+    (id: string): void => {
+      const removed = tracksRef.current.find((t) => t.id === id)
+      setTracks((prev) => prev.filter((t) => t.id !== id))
+      setSelection((s) => deselect(s, id))
+      // Drop the track's prefetch/view bookkeeping so they don't accumulate ids of
+      // tracks that no longer exist across a long session of add/remove — and evict its
+      // probe results from the session-long query cache, where the spectrogram image
+      // would otherwise be retained until quit.
+      discogsPrefetched.current.delete(id)
+      viewCache.current.delete(id)
+      if (removed) removeAnalysisQueries(queryClient, removed.inputPath)
+    },
+    [queryClient],
+  )
 
   function clearTracks(): void {
+    const cleared = tracksRef.current
     setTracks([])
     setSelection({ ids: [], anchor: null })
     discogsPrefetched.current.clear()
     viewCache.current.clear()
     matchQueue.current.clear()
     visibleIds.current.clear()
+    for (const t of cleared) removeAnalysisQueries(queryClient, t.inputPath)
   }
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
