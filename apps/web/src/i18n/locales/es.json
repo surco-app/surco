@@ -493,7 +493,9 @@
           "Un punto ámbar marca las pistas editadas después de convertirlas, para ver de un vistazo qué falta por actualizar.",
           "La búsqueda de Discogs recuerda lo que escribiste en cada pista, muestra un esqueleto mientras carga y se puede reintentar si falla.",
           "Los nombres con número de pista («104. Artista - Título») se importan con el artista y el título correctos.",
-          "Añadir varias pistas a Apple Music muestra su progreso y se puede cancelar; y si algo falla al guardar ajustes o enviar a la papelera, Surco lo avisa en vez de fallar en silencio."
+          "Añadir varias pistas a Apple Music muestra su progreso y se puede cancelar; y si algo falla al guardar ajustes o enviar a la papelera, Surco lo avisa en vez de fallar en silencio.",
+          "Corregido: las pistas cuya carátula era la del propio archivo se convertían y llegaban a Apple Music sin imagen.",
+          "El reproductor muestra un indicador de carga cuando el audio tarda en llegar (por ejemplo, desde un disco en red)."
         ]
       },
       {

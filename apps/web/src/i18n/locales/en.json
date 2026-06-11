@@ -493,7 +493,9 @@
           "An amber dot marks tracks edited after converting, so you can see at a glance what still needs an update.",
           "The Discogs search remembers what you typed on each track, shows a loading skeleton, and can be retried when it fails.",
           "Names with a leading track number (\"104. Artist - Title\") now import with the right artist and title.",
-          "Adding several tracks to Apple Music shows its progress and can be cancelled; and when saving settings or trashing a file fails, Surco says so instead of failing silently."
+          "Adding several tracks to Apple Music shows its progress and can be cancelled; and when saving settings or trashing a file fails, Surco says so instead of failing silently.",
+          "Fixed: tracks whose cover was the file's own embedded art converted and landed in Apple Music with no artwork.",
+          "The player shows a loading indicator when audio takes a moment to arrive (for example, from a network drive)."
         ]
       },
       {
