@@ -11,6 +11,7 @@ vi.hoisted(() => {
 
 import '../i18n'
 import type { TrackMetadata } from '../../../shared/types'
+import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { TrackList } from './TrackList'
 
@@ -149,6 +150,31 @@ describe('TrackList', () => {
   it('omits the duration until it has been probed', () => {
     renderList([track({ id: 'a' })])
     expect(screen.queryByTestId('track-duration')).toBeNull()
+  })
+
+  // A converted track edited afterwards would look identical to an untouched done
+  // one (green dot), making it unsafe to defer Updates: the user could never tell
+  // which tracks still carry unapplied changes. The amber dot makes batching
+  // Updates for later a workflow the list actually supports.
+  it('flags a done track edited after conversion as having unapplied changes', () => {
+    const untouched = track({ id: 'a', status: 'done', meta: { title: 'Same' } })
+    const edited = track({ id: 'b', status: 'done', meta: { title: 'New title' } })
+    renderList([
+      { ...untouched, processedSignature: trackSignature(untouched) },
+      {
+        ...edited,
+        processedSignature: trackSignature({
+          ...edited,
+          meta: { ...edited.meta, title: 'Old title' },
+        }),
+      },
+    ])
+    const dots = screen.getAllByTestId('track-status')
+    fireEvent.focusIn(dots[0])
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Done')
+    fireEvent.focusOut(dots[0])
+    fireEvent.focusIn(dots[1])
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Unapplied changes')
   })
 
   it('selects a track when its row is clicked', () => {

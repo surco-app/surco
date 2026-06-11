@@ -114,6 +114,7 @@
       "idle": "Not converted",
       "processing": "Processing…",
       "done": "Done",
+      "stale": "Unapplied changes",
       "error": "Error"
     },
     "stage": {

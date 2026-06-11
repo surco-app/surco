@@ -3,6 +3,7 @@ import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
+import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
@@ -130,7 +131,7 @@ const TrackRow = memo(function TrackRow({
         {/* The cover doubles as the scan target — DJs recognise a track by its art faster
             than by its name — so the leading slot shows the artwork with the processing
             status demoted to a small ringed dot on its corner. */}
-        <span className="group/dot relative shrink-0">
+        <span data-testid="track-status" className="group/dot relative shrink-0">
           {t.coverUrl ? (
             <img
               data-testid="track-cover"
@@ -146,10 +147,18 @@ const TrackRow = memo(function TrackRow({
               <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
             </span>
           )}
+          {/* A done track edited afterwards shows amber (steady, unlike the processing
+              pulse) so pending Updates stay visible and can safely be batched for later. */}
           <span
-            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)] ${statusColor[t.status]}`}
+            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)] ${
+              isStale(t) ? 'bg-warn' : statusColor[t.status]
+            }`}
           />
-          <Tooltip label={tr(`trackList.status.${t.status}`)} align="start" scope="dot" />
+          <Tooltip
+            label={tr(isStale(t) ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
+            align="start"
+            scope="dot"
+          />
         </span>
         <span className="min-w-0 flex-1">
           <span data-fit title={t.listLabel} className="block truncate text-sm font-medium text-fg">
