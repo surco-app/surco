@@ -39,6 +39,7 @@ export default function InstallSection() {
               type="button"
               onClick={copy}
               data-testid="copy-brew"
+              aria-live="polite"
               className={`inline-flex shrink-0 justify-center rounded-lg border px-3 py-1.5 font-mono text-xs transition-[color,border-color,scale] duration-200 active:scale-[0.96] ${
                 copied
                   ? 'border-green/50 text-green'

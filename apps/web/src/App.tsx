@@ -91,7 +91,7 @@ export default function App() {
 
       <Header />
 
-      <main className="relative mx-auto max-w-5xl px-6">
+      <main id="main" className="relative mx-auto max-w-5xl px-6">
         <div
           className="pointer-events-none absolute inset-x-0 top-[32%] h-[700px]"
           style={{

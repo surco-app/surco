@@ -26,6 +26,15 @@ export default function Header({ page }: { page?: Page }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   // Keep the in-page anchor when switching language: both pages share the same
   // section ids, so we send the visitor to the same spot on the other locale.
   const keepHash = (e: React.MouseEvent) => {
@@ -44,6 +53,12 @@ export default function Header({ page }: { page?: Page }) {
         scrolled ? 'border-b border-line/70 bg-bg/80 backdrop-blur-md' : 'border-b border-transparent'
       }`}
     >
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-full focus:bg-blue focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-bg"
+      >
+        {t('nav.skipToContent')}
+      </a>
       <div
         className="mx-auto flex max-w-5xl items-center justify-between px-6 transition-all duration-300"
         style={{ paddingTop: scrolled ? '0.7rem' : '1.25rem', paddingBottom: scrolled ? '0.7rem' : '1.25rem' }}

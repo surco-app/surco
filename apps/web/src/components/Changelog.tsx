@@ -31,7 +31,7 @@ export default function Changelog() {
 
       <Header page="changelog" />
 
-      <main className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">
