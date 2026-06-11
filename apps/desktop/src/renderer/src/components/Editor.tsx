@@ -1,16 +1,6 @@
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Eraser,
-  Pencil,
-  RefreshCw,
-  SlidersVertical,
-  Star,
-  Tag,
-} from 'lucide-react'
+import { Eraser, Pencil, RefreshCw, SlidersVertical, Tag } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type {
@@ -28,7 +18,6 @@ import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
-import { csvHas, toggleCsv } from '../lib/csv'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { openFeedback } from '../lib/feedback'
@@ -45,15 +34,17 @@ import {
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { DiscogsPanel } from './DiscogsPanel'
-import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
+import { ExportButton, FORMATS } from './ExportButton'
+import { Field } from './Field'
+import type { InsertSource } from './FieldInsertMenu'
 import { LoudnessReadout } from './LoudnessReadout'
 import { NormalizeControls } from './NormalizeControls'
 import { PropertiesReadout } from './PropertiesReadout'
+import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
+import { StarRating } from './StarRating'
 import { Tooltip } from './Tooltip'
 import { WaveSpinner } from './WaveSpinner'
-
-const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
 // Only free-text fields make sense as insert TARGETS — composing into structured
 // values (year, BPM, key, track numbers…) would produce garbage — but every
@@ -929,296 +920,5 @@ export function Editor({
         </div>
       </div>
     </div>
-  )
-}
-
-interface ExportButtonProps {
-  status: TrackItem['status']
-  stale: boolean
-  done: boolean
-  outputFormat: OutputFormat
-  exportedFormat: OutputFormat | null
-  withAppleMusic: boolean
-  incomplete: boolean
-  // True when the chosen format is the source's own: the export edits the original in
-  // place and renames it rather than writing a converted copy, so the button offers to
-  // "Update" instead of promising a conversion.
-  inPlace: boolean
-  // When set, the button converts the whole selection in the chosen format and labels
-  // itself "Convert all (N)" instead of the single-track convert; the format menu works
-  // the same, it just applies to every selected track.
-  count?: number
-  // The demoted variant shown after a successful export: a bordered, muted control
-  // that sits in the secondary row labelled "Re-export", rather than the prominent
-  // accent button used to convert.
-  quiet?: boolean
-  onProcess: (format: OutputFormat) => void
-  onSelectFormat: (format: OutputFormat) => void
-}
-
-// A split button: the body exports in the currently chosen format (seeded from
-// Settings), the chevron opens a menu to switch which format that is. Picking a
-// format only relabels the button — it never converts on the spot, so a misclick
-// can't write a file; the deliberate click on the body is what exports. The control
-// stays visible after a track is done so re-exporting to another format never
-// means reloading the file or touching Settings.
-function ExportButton({
-  status,
-  stale,
-  done,
-  outputFormat,
-  exportedFormat,
-  withAppleMusic,
-  incomplete,
-  inPlace,
-  count,
-  quiet,
-  onProcess,
-  onSelectFormat,
-}: ExportButtonProps): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const processing = status === 'processing'
-  // A track missing required tags cannot be converted, so the gate covers the
-  // main action and the format menu alike.
-  const blocked = processing || incomplete
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent): void => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
-
-  const label = processing
-    ? tr('editor.processing')
-    : quiet
-      ? tr('editor.reexport')
-      : count !== undefined
-        ? tr(withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll', {
-            count,
-            format: outputFormat.toUpperCase(),
-          })
-        : inPlace
-          ? tr(withAppleMusic ? 'editor.updateMusic' : 'editor.update')
-          : stale
-            ? tr('editor.update')
-            : done
-              ? tr('editor.exportAgain')
-              : tr(withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic', {
-                  format: outputFormat.toUpperCase(),
-                })
-
-  function pick(format: OutputFormat): void {
-    setOpen(false)
-    onSelectFormat(format)
-  }
-
-  return (
-    <div ref={ref} className={`relative flex ${quiet ? 'flex-1' : ''}`}>
-      <button
-        type="button"
-        data-testid="process-btn"
-        onClick={() => onProcess(outputFormat)}
-        disabled={blocked}
-        className={
-          quiet
-            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-50'
-            : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
-        }
-      >
-        {label}
-      </button>
-      <button
-        type="button"
-        data-testid="process-format-toggle"
-        aria-label={tr('editor.chooseFormat')}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        disabled={blocked}
-        className={
-          quiet
-            ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:opacity-50'
-            : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
-        }
-      >
-        <ChevronDown
-          aria-hidden="true"
-          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {open && (
-        <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
-          {FORMATS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={`process-format-${id}`}
-              aria-current={id === outputFormat ? 'true' : undefined}
-              onClick={() => pick(id)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
-                id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
-              }`}
-            >
-              {tr(`settings.formats.${id}`)}
-              {id === exportedFormat && (
-                <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface SectionHeaderProps {
-  title: string
-  open: boolean
-  onToggle: () => void
-  right?: React.ReactNode
-}
-
-function SectionHeader({ title, open, onToggle, right }: SectionHeaderProps): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-between">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
-      >
-        <ChevronRight
-          aria-hidden="true"
-          className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
-        />
-        {title}
-      </button>
-      {right}
-    </div>
-  )
-}
-
-// A 0–5 star picker. Clicking a star sets that many; clicking the highest filled
-// star again clears the rating (back to none). Value is the "1"–"5"/"" string the
-// rest of the app stores; the write path turns it into the Traktor POPM byte.
-function StarRating({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (v: string) => void
-}): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const stars = Number(value) || 0
-  return (
-    <span data-testid="star-rating" className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => {
-        const filled = n <= stars
-        return (
-          <button
-            key={n}
-            type="button"
-            data-testid={`star-${n}`}
-            aria-pressed={filled}
-            aria-label={tr('editor.ratingStars', { count: n })}
-            onClick={() => onChange(n === stars ? '' : String(n))}
-            className={`press ${filled ? 'text-warn' : 'text-fg-faint hover:text-fg-dim'}`}
-          >
-            <Star
-              className="h-4 w-4"
-              fill={filled ? 'currentColor' : 'none'}
-              strokeWidth={1.6}
-              aria-hidden="true"
-            />
-          </button>
-        )
-      })}
-    </span>
-  )
-}
-
-interface FieldProps {
-  name: string
-  label: string
-  value: string
-  onChange: (v: string) => void
-  wide?: boolean
-  invalid?: boolean
-  placeholder?: string
-  suggestions?: string[]
-  multiSuggestions?: boolean
-  insertSources?: InsertSource[]
-}
-
-function Field({
-  name,
-  label,
-  value,
-  onChange,
-  wide,
-  invalid,
-  placeholder,
-  suggestions,
-  multiSuggestions,
-  insertSources,
-}: FieldProps): React.JSX.Element {
-  const inputRef = useRef<HTMLInputElement>(null)
-  // A field never offers itself, and an empty field has nothing to insert.
-  const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
-  return (
-    <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
-      <span className="mb-1 block text-xs font-medium text-fg-dim">{label}</span>
-      <span className="relative block">
-        <input
-          ref={inputRef}
-          data-testid={`field-${name}`}
-          aria-invalid={invalid}
-          title={value}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
-            insertable.length > 0 ? 'pr-8' : ''
-          } ${
-            invalid
-              ? 'border-danger focus:border-danger'
-              : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
-          }`}
-        />
-        {insertable.length > 0 && (
-          <FieldInsertMenu
-            fieldName={name}
-            sources={insertable}
-            inputRef={inputRef}
-            onChange={onChange}
-          />
-        )}
-      </span>
-      {suggestions && suggestions.length > 0 && (
-        <span className="mt-1.5 flex flex-wrap gap-1.5">
-          {suggestions.map((s) => {
-            const on = multiSuggestions ? csvHas(value, s) : value === s
-            return (
-              <button
-                key={s}
-                type="button"
-                data-testid={`chip-${s}`}
-                onClick={() => onChange(multiSuggestions ? toggleCsv(value, s) : on ? '' : s)}
-                className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
-                  on
-                    ? 'border-transparent bg-[var(--color-accent)] text-white'
-                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
-                }`}
-              >
-                {s}
-              </button>
-            )
-          })}
-        </span>
-      )}
-    </label>
   )
 }
