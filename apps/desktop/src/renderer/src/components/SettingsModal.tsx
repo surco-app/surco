@@ -23,9 +23,11 @@ import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { formatShortcut } from '../lib/shortcuts'
 import { formatTimeSaved, MANUAL_SECONDS_PER_CONVERSION, timeSavedSeconds } from '../lib/stats'
+import { DestinationPicker } from './DestinationPicker'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { NormalizeControls } from './NormalizeControls'
+import { SegmentedControl } from './SegmentedControl'
 import { Tooltip } from './Tooltip'
 
 export { DONATE_URL }
@@ -369,27 +371,17 @@ export function SettingsModal({
             <span className="mb-1.5 block text-sm font-medium text-fg-muted">
               {tr('settings.theme')}
             </span>
-            <div className="mb-5 inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-              {THEMES.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  data-testid={`settings-theme-${id}`}
-                  aria-pressed={synced.theme === id}
-                  onClick={() => {
-                    patch('theme', id)
-                    onPreviewTheme(id)
-                  }}
-                  className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                    synced.theme === id
-                      ? 'bg-[var(--color-panel-2)] text-fg'
-                      : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  {tr(`settings.themes.${id}`)}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              options={THEMES}
+              value={synced.theme}
+              onChange={(id) => {
+                patch('theme', id)
+                onPreviewTheme(id)
+              }}
+              testidPrefix="settings-theme"
+              labelFor={(id) => tr(`settings.themes.${id}`)}
+              className="mb-5"
+            />
 
             <span className="mb-1.5 block text-sm font-medium text-fg-muted">
               {tr('settings.configDir')}
@@ -505,74 +497,28 @@ export function SettingsModal({
             <span className="mb-1.5 block text-sm font-medium text-fg-muted">
               {tr('settings.outputFormat')}
             </span>
-            <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-              {FORMATS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  data-testid={`settings-format-${id}`}
-                  aria-pressed={synced.outputFormat === id}
-                  onClick={() => patch('outputFormat', id)}
-                  className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                    synced.outputFormat === id
-                      ? 'bg-[var(--color-panel-2)] text-fg'
-                      : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  {tr(`settings.formats.${id}`)}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              options={FORMATS}
+              value={synced.outputFormat}
+              onChange={(id) => patch('outputFormat', id)}
+              testidPrefix="settings-format"
+              labelFor={(id) => tr(`settings.formats.${id}`)}
+            />
             <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
             <span className="mb-1.5 block text-sm font-medium text-fg-muted">
               {tr('settings.destination')}
             </span>
-            <div
-              role="radiogroup"
-              aria-label={tr('settings.destination')}
-              className="flex flex-col gap-2"
-            >
-              {DESTINATIONS.map((d) => {
-                // Apple Music destinations only exist on macOS; folder and overwrite
-                // are platform-independent and always offered.
-                if (!isMac && (d === 'appleMusic' || d === 'both')) return null
-                // FLAC pins only the Apple Music options to the folder; overwrite
-                // rewrites the source in place and is valid for any format.
-                const disabled = flacOnly && (d === 'appleMusic' || d === 'both')
-                return (
-                  <label
-                    key={d}
-                    className={`flex items-start gap-3 ${
-                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                    }`}
-                  >
-                    <input
-                      data-testid={`settings-destination-${d}`}
-                      type="radio"
-                      name="destination"
-                      checked={destination === d}
-                      disabled={disabled}
-                      onChange={() => chooseDestination(d)}
-                      className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-                    />
-                    <span className="text-sm">
-                      {tr(`settings.destinations.${d}`)}
-                      {d === 'appleMusic' && (
-                        <span className="block text-xs text-fg-dim">
-                          {tr('settings.destinationAppleMusicHint')}
-                        </span>
-                      )}
-                      {d === 'overwrite' && (
-                        <span className="block text-xs text-fg-dim">
-                          {tr('settings.destinationOverwriteHint')}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
+            <DestinationPicker
+              destinations={DESTINATIONS.filter(
+                (d) => isMac || (d !== 'appleMusic' && d !== 'both'),
+              )}
+              value={destination}
+              onChange={chooseDestination}
+              flacOnly={flacOnly}
+              testidPrefix="settings-destination"
+              radioName="destination"
+            />
             {isMac && flacOnly && (
               <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
             )}
@@ -720,24 +666,13 @@ export function SettingsModal({
                 <span className="mb-1.5 block text-sm font-medium text-fg-muted">
                   {tr('settings.keyNotation')}
                 </span>
-                <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-                  {(['camelot', 'musical'] as const).map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      data-testid={`settings-key-notation-${id}`}
-                      aria-pressed={synced.keyNotation === id}
-                      onClick={() => patch('keyNotation', id)}
-                      className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                        synced.keyNotation === id
-                          ? 'bg-[var(--color-panel-2)] text-fg'
-                          : 'text-fg-muted hover:text-fg'
-                      }`}
-                    >
-                      {tr(`settings.keyNotations.${id}`)}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  options={['camelot', 'musical'] as const}
+                  value={synced.keyNotation}
+                  onChange={(id) => patch('keyNotation', id)}
+                  testidPrefix="settings-key-notation"
+                  labelFor={(id) => tr(`settings.keyNotations.${id}`)}
+                />
                 <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.keyNotationHint')}</p>
               </div>
             </div>

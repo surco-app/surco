@@ -6,7 +6,9 @@ import type { OutputFormat, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
 import { formatKHz } from '../lib/quality'
+import { DestinationPicker } from './DestinationPicker'
 import { FieldsEditor } from './FieldsEditor'
+import { SegmentedControl } from './SegmentedControl'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
@@ -62,7 +64,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setAddToAppleMusic(next.addToAppleMusic)
     setKeepOutputCopy(next.keepOutputCopy)
   }
-
 
   return (
     <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -153,24 +154,13 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   {tr('settings.outputFormat')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
-                <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
-                  {FORMATS.map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      data-testid={`onboarding-format-${id}`}
-                      aria-pressed={outputFormat === id}
-                      onClick={() => setOutputFormat(id)}
-                      className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-                        outputFormat === id
-                          ? 'bg-[var(--color-panel-2)] text-fg'
-                          : 'text-fg-muted hover:text-fg'
-                      }`}
-                    >
-                      {tr(`settings.formats.${id}`)}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  options={FORMATS}
+                  value={outputFormat}
+                  onChange={setOutputFormat}
+                  testidPrefix="onboarding-format"
+                  labelFor={(id) => tr(`settings.formats.${id}`)}
+                />
                 <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
                 {isMac && (
@@ -178,43 +168,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     <span className="mb-1.5 block text-sm font-medium text-fg-muted">
                       {tr('settings.destination')}
                     </span>
-                    <div
-                      role="radiogroup"
-                      aria-label={tr('settings.destination')}
-                      className="flex flex-col gap-2"
-                    >
-                      {/* Overwriting originals is a destructive, advanced choice kept out
-                          of first-run setup — it lives only in Settings. */}
-                      {DESTINATIONS.filter((d) => d !== 'overwrite').map((d) => {
-                        const disabled = outputFormat === 'flac' && d !== 'folder'
-                        return (
-                          <label
-                            key={d}
-                            className={`flex items-start gap-3 ${
-                              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                            }`}
-                          >
-                            <input
-                              data-testid={`onboarding-destination-${d}`}
-                              type="radio"
-                              name="onboarding-destination"
-                              checked={destination === d}
-                              disabled={disabled}
-                              onChange={() => chooseDestination(d)}
-                              className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-                            />
-                            <span className="text-sm">
-                              {tr(`settings.destinations.${d}`)}
-                              {d === 'appleMusic' && (
-                                <span className="block text-xs text-fg-dim">
-                                  {tr('settings.destinationAppleMusicHint')}
-                                </span>
-                              )}
-                            </span>
-                          </label>
-                        )
-                      })}
-                    </div>
+                    <DestinationPicker
+                      destinations={DESTINATIONS.filter((d) => d !== 'overwrite')}
+                      value={destination}
+                      onChange={chooseDestination}
+                      flacOnly={outputFormat === 'flac'}
+                      testidPrefix="onboarding-destination"
+                      radioName="onboarding-destination"
+                    />
                     {outputFormat === 'flac' && (
                       <p className="mt-1.5 text-xs text-fg-dim">
                         {tr('settings.appleMusicFlacNote')}
