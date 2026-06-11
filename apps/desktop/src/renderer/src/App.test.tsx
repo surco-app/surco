@@ -835,6 +835,21 @@ describe('App command palette list-wide actions', () => {
   })
 })
 
+describe('App keyboard navigation', () => {
+  // Arrow keys step the selection through the visible rows, moving DOM focus with it
+  // so the native focus ring follows the keyboard instead of the last click.
+  it('moves the selection and focus to the next row on ArrowDown', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+
+    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
+    expect(rows[1]).toHaveFocus()
+  })
+})
+
 describe('App editor prop stability', () => {
   // Typing in the sidebar search filters the list; none of the editor's inputs change,
   // so the memoized editor subtree must not re-render per keystroke — that's the whole

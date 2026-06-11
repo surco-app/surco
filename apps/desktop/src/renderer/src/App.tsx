@@ -185,6 +185,12 @@ export default function App(): React.JSX.Element {
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
   const listScrollRef = useRef<HTMLDivElement>(null)
+  // Row buttons by track id, registered by the list. Keyboard navigation and the
+  // sidebar auto-fit look rows up here instead of querying test ids out of the DOM —
+  // a runtime dependency on DOM order that would break silently under virtualization.
+  const rowEls = useRef(new Map<string, HTMLButtonElement>())
+  // The list's sticky filter header, measured when paging the scroll position.
+  const qualityFilterRef = useRef<HTMLDivElement>(null)
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
   // while still reading the latest spectrum/token settings on each hover.
   const showSpectrumRef = useRef(true)
@@ -519,14 +525,14 @@ export default function App(): React.JSX.Element {
     // keyboard instead of staying on the last clicked row, which left two rows
     // looking highlighted at once. preventScroll: we page the list ourselves below
     // rather than let the browser nudge the row flush to the margin.
-    const row = document.querySelectorAll<HTMLButtonElement>('[data-testid="track-row"]')[next]
+    const row = rowEls.current.get(visibleTracks[next].id)
     if (!row) return
     row.focus({ preventScroll: true })
     const container = listScrollRef.current
     if (!container) return
     const cRect = container.getBoundingClientRect()
     const rRect = row.getBoundingClientRect()
-    const header = container.querySelector<HTMLElement>('[data-testid="quality-filter"]')
+    const header = qualityFilterRef.current
     const top = pageScrollTop({
       delta,
       rowTop: rRect.top - cRect.top,
@@ -548,11 +554,11 @@ export default function App(): React.JSX.Element {
   // artist is clipped (or has to spare) and resize by the widest, so long names stop
   // truncating without the user dragging — and an over-wide column tightens back up.
   const autoFitSidebar = useCallback((): void => {
-    const spans = document.querySelectorAll<HTMLElement>('[data-testid="track-row"] [data-fit]')
-    const rows = Array.from(spans, (s) => ({
-      scrollWidth: s.scrollWidth,
-      clientWidth: s.clientWidth,
-    }))
+    const rows = []
+    for (const el of rowEls.current.values()) {
+      const span = el.querySelector<HTMLElement>('[data-fit]')
+      if (span) rows.push({ scrollWidth: span.scrollWidth, clientWidth: span.clientWidth })
+    }
     sidebar.autoFit(contentDeficit(rows))
   }, [sidebar.autoFit])
 
@@ -878,7 +884,11 @@ export default function App(): React.JSX.Element {
                       ]}
                     />
                   </div>
-                  <div data-testid="quality-filter" className="flex gap-0.5 px-1.5 py-2">
+                  <div
+                    ref={qualityFilterRef}
+                    data-testid="quality-filter"
+                    className="flex gap-0.5 px-1.5 py-2"
+                  >
                     {(
                       [
                         'all',
@@ -963,6 +973,7 @@ export default function App(): React.JSX.Element {
                     onTrash={askTrash}
                     scrollRootRef={listScrollRef}
                     onVisible={onTrackVisible}
+                    rowRegistry={rowEls}
                   />
                 )}
               </>

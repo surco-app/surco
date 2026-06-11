@@ -28,6 +28,9 @@ interface Props {
   // reporting when a row enters or leaves it, so App can gate auto-match to the rows on screen.
   scrollRootRef?: RefObject<HTMLElement | null>
   onVisible?: (id: string, visible: boolean) => void
+  // Row buttons by track id, kept current as rows mount/unmount, so App can focus
+  // and measure rows without querying the DOM by test id.
+  rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
 }
 
 type MenuState = { track: TrackItem; x: number; y: number }
@@ -64,6 +67,7 @@ interface RowProps {
   // unobserve cleanup. Undefined when the list doesn't track visibility.
   observeRow?: (el: Element, onVisible: (visible: boolean) => void) => () => void
   onVisible?: (id: string, visible: boolean) => void
+  rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -80,6 +84,7 @@ const TrackRow = memo(function TrackRow({
   onOpenMenu,
   observeRow,
   onVisible,
+  rowRegistry,
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const quality = trackQuality(t)
@@ -101,6 +106,11 @@ const TrackRow = memo(function TrackRow({
     <li ref={rowRef} className="group relative">
       <button
         type="button"
+        ref={(el) => {
+          if (!rowRegistry) return
+          if (el) rowRegistry.current.set(t.id, el)
+          else rowRegistry.current.delete(t.id)
+        }}
         data-testid="track-row"
         aria-pressed={selected}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
@@ -259,6 +269,7 @@ export function TrackList({
   onTrash,
   scrollRootRef,
   onVisible,
+  rowRegistry,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
@@ -310,6 +321,7 @@ export function TrackList({
           onOpenMenu={openMenu}
           observeRow={observeRow}
           onVisible={onVisible}
+          rowRegistry={rowRegistry}
         />
       ))}
       {menu && (
