@@ -1,3 +1,5 @@
+import { smartDeriveTags } from './deriveTags'
+
 export interface ParsedName {
   fileName: string
   artist: string
@@ -5,19 +7,27 @@ export interface ParsedName {
   query: string
 }
 
-// Tracks are named "Artist - Title.ext". We split on the first " - " so that
-// titles containing " - " (e.g. remixes) stay intact, and use the cleaned
-// artist + title as the Discogs search query.
+// Tracks are named "Artist - Title.ext", often behind a leading track number. The
+// split runs through the same auto-detection as the fill-from-filename button
+// (smartDeriveTags), so import and the button can never read one name two ways:
+// titles containing " - " (e.g. remixes) stay intact, a numbered prefix is read as
+// a number rather than part of the artist, and the cleaned artist + title feed the
+// Discogs search query.
 export function parseFileName(path: string): ParsedName {
   const base = path.split('/').pop() ?? path
   const fileName = base.replace(/\.[^.]+$/, '')
 
-  const sep = fileName.indexOf(' - ')
-  if (sep === -1) {
-    return { fileName, artist: '', title: fileName, query: fileName }
+  // Detection runs on the name WITH its extension: deriveTags strips the extension
+  // itself, and handing it an already-stripped name would let that strip eat a
+  // dotted artist ("Acer vs. The Beeper - …") instead.
+  const tags = smartDeriveTags(base)
+  if (tags.artist && tags.title) {
+    return {
+      fileName,
+      artist: tags.artist,
+      title: tags.title,
+      query: `${tags.artist} ${tags.title}`,
+    }
   }
-
-  const artist = fileName.slice(0, sep).trim()
-  const title = fileName.slice(sep + 3).trim()
-  return { fileName, artist, title, query: `${artist} ${title}`.trim() }
+  return { fileName, artist: '', title: fileName, query: fileName }
 }

@@ -25,6 +25,22 @@ describe('parseFileName', () => {
     expect(r.query).toBe('Untitled Loop')
   })
 
+  // The common DJ-rip namings carry a leading track number; importing it as part of
+  // the artist ("104. Artist") poisons the field and the Discogs query. Import uses
+  // the same auto-detection as the fill-from-filename button, so the two can't drift.
+  it('strips a leading track number from the artist, like fill-from-filename does', () => {
+    const r = parseFileName('/m/104. Artist - Title.aiff')
+    expect(r.artist).toBe('Artist')
+    expect(r.title).toBe('Title')
+    expect(r.query).toBe('Artist Title')
+  })
+
+  it('reads the numbered "NN - Artist - Title" shape the same way', () => {
+    const r = parseFileName('/m/07 - Artist - Title.flac')
+    expect(r.artist).toBe('Artist')
+    expect(r.title).toBe('Title')
+  })
+
   it('strips the extension and directory from the file name', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
