@@ -16,6 +16,14 @@ const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   bad: { className: 'bg-danger/15 text-danger', label: 'editor.qualityBad' },
 }
 
+// The caption under the spectrogram is where the verdict gets justified: each band
+// explains what its cutoff means, so a red "Bad quality" badge never stands alone.
+const qualityCaption: Record<Verdict, string> = {
+  good: 'editor.qualityCaptionGood',
+  warn: 'editor.qualityCaptionWarn',
+  bad: 'editor.qualityCaptionBad',
+}
+
 interface Props {
   item: TrackItem
   showSpectrum: boolean
@@ -88,7 +96,7 @@ export function QualitySection({
                 <Spectrogram spectrum={spectrum} />
                 {spectrum.cutoffHz !== null && (
                   <p className="mt-2 text-xs text-fg-dim">
-                    {tr('editor.qualityCaption', {
+                    {tr(qualityCaption[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)], {
                       cutoff: formatKHz(spectrum.cutoffHz),
                       nyquist: formatKHz(spectrum.sampleRateHz / 2),
                     })}
