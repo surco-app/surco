@@ -34,8 +34,14 @@ function errorMessage(e: unknown, fallback: string): string {
 // is expanded. Search and release loads go through React Query, so a superseded
 // search is dropped by its key, releases are cached by id (an auto-open probe, a
 // manual preview and a reopen all share one fetch), and a pasted id/URL loads that
-// release directly. The Editor remounts per track, so state seeds from item.query.
-export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string): DiscogsBrowser {
+// release directly. The Editor remounts per track, so state seeds from item.query;
+// a committed term that differs from it is reported through onQueryCommitted so the
+// editor can persist the refinement on the track and a switch-back restores it.
+export function useDiscogsBrowser(
+  item: TrackItem,
+  tr: (key: string) => string,
+  onQueryCommitted?: (query: string) => void,
+): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
   // The committed search term — set by the debounce while typing, or at once on
@@ -59,9 +65,13 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
 
   // Typing commits the query 500ms after it stops; Enter and the button commit at
   // once through doSearch.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: query is the trigger; the item/persist callback are read fresh at commit time, and depending on them would re-arm the debounce on every track edit.
   useEffect(() => {
     if (!query.trim()) return
-    const id = setTimeout(() => setSearchTerm(query), DEBOUNCE_MS)
+    const id = setTimeout(() => {
+      setSearchTerm(query)
+      if (query !== item.query) onQueryCommitted?.(query)
+    }, DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [query])
 
@@ -89,7 +99,8 @@ export function useDiscogsBrowser(item: TrackItem, tr: (key: string) => string):
     // a network blip — would otherwise be stuck in error until the text is edited.
     if (query === searchTerm) void refetchSearch()
     else setSearchTerm(query)
-  }, [query, searchTerm, refetchSearch])
+    if (query !== item.query) onQueryCommitted?.(query)
+  }, [query, searchTerm, refetchSearch, item.query, onQueryCommitted])
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.

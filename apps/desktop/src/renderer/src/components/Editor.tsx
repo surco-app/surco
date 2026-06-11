@@ -151,7 +151,9 @@ export const Editor = memo(function Editor({
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
-  const browser = useDiscogsBrowser(item, tr)
+  // A refined search is persisted on the track, so flipping away and back re-seeds
+  // the box (and its cached results) instead of reverting to the filename guess.
+  const browser = useDiscogsBrowser(item, tr, (query) => onChange({ query }))
   const { release } = browser
   const [formOpen, setFormOpen] = useState(true)
   // Read-only facts, folded by default so they don't push the editing fields down;

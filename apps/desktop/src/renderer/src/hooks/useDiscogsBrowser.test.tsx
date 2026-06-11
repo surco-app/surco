@@ -141,6 +141,33 @@ describe('useDiscogsBrowser', () => {
     expect(searchDiscogs).not.toHaveBeenCalled()
   })
 
+  // A refined search is navigation state the user expects to survive a track flip;
+  // the hook reports the committed term upward so the editor can store it on the
+  // track, and the per-track remount then re-seeds the box (and the cached results).
+  it('reports a committed term that differs from the track’s stored query', async () => {
+    setApi()
+    const onQueryCommitted = vi.fn()
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'parsed guess' }), tr, onQueryCommitted),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.setQuery('refined term'))
+    act(() => result.current.doSearch())
+    expect(onQueryCommitted).toHaveBeenCalledWith('refined term')
+  })
+
+  it('does not report the track’s own query committing on mount', async () => {
+    setApi()
+    const onQueryCommitted = vi.fn()
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'parsed guess' }), tr, onQueryCommitted),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(onQueryCommitted).not.toHaveBeenCalled()
+  })
+
   // A failed search (Discogs 429, a network blip) must be retryable from the button:
   // the term doesn't change, so the query key doesn't either, and without an explicit
   // refetch the error would stay on screen until the user edits the text.
