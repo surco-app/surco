@@ -31,6 +31,10 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   const playingIdRef = useRef<string | null>(null)
   playingIdRef.current = playingId
 
+  // The path the element is currently streaming, so the rewrite watcher below can
+  // tell a real file move from an ordinary re-render.
+  const playingPathRef = useRef<string | null>(null)
+
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
     if (!audio) return
@@ -38,6 +42,7 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     // <audio> element seeks through it without buffering the whole track in memory.
     audio.src = mediaUrl(track.inputPath)
     audio.currentTime = 0
+    playingPathRef.current = track.inputPath
     setPlayingId(track.id)
     audio.play().catch(() => {})
   }, [])
@@ -59,6 +64,15 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   useEffect(() => {
     if (playingId && !tracks.some((t) => t.id === playingId)) closePlayer()
   }, [tracks, playingId, closePlayer])
+
+  // An in-place export rewrites (and can rename) the playing track's file under the
+  // stream; restart from the new path instead of holding a file that no longer exists.
+  useEffect(() => {
+    const playing = playingId ? tracks.find((t) => t.id === playingId) : undefined
+    if (playing && playingPathRef.current && playing.inputPath !== playingPathRef.current) {
+      startPlayback(playing)
+    }
+  }, [tracks, playingId, startPlayback])
 
   // Space toggles the player's visibility; the selection effect below starts
   // playback when it opens.
