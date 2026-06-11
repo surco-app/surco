@@ -4,6 +4,18 @@ import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../
 
 const run = promisify(execFile)
 
+// Music has no key property — neither scriptable nor read from the file tag — so the
+// comment written to the library carries it ("8A – clean intro"). Only the Music copy
+// gets the prefix; the file's own comment tag stays exactly what the user typed. A
+// comment that already starts with the key (case-insensitively) is left alone so a
+// re-add never stacks "8A – 8A – …".
+function musicComment(meta: TrackMetadata): string {
+  const key = meta.key.trim()
+  const comment = meta.comment.trim()
+  if (!key || comment.toLowerCase().startsWith(key.toLowerCase())) return comment
+  return comment ? `${key} – ${comment}` : key
+}
+
 // Adds a file to Apple Music and writes every field directly onto the resulting
 // track via AppleScript. We don't rely on Apple Music reading the AIFF tags,
 // because it ignores several of them (year, grouping) — setting the track
@@ -27,7 +39,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     ['album', meta.album],
     ['genre', meta.genre],
     ['grouping', meta.grouping],
-    ['comment', meta.comment],
+    ['comment', musicComment(meta)],
   ]
   for (const [prop, value] of text) {
     if (value.trim()) sets.push(`      set ${prop} of theTrack to ${JSON.stringify(value)}`)

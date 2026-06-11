@@ -93,6 +93,21 @@ describe('buildAddScript', () => {
     expect(script).toContain('set disc number of theTrack to 2')
     expect(script).not.toContain('set bpm of theTrack to 0')
   })
+
+  it('prepends the musical key to the Music comment — Music has no key field and ignores the file tag, so this is the only way a DJ browsing the library (or djay reading it) sees the key', () => {
+    const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: 'clean intro' })
+    expect(script).toContain('set comment of theTrack to "8A – clean intro"')
+  })
+
+  it('writes the key alone as the comment when the track has no comment of its own', () => {
+    const script = buildAddScript('/x.aiff', { ...base, key: 'Am' })
+    expect(script).toContain('set comment of theTrack to "Am"')
+  })
+
+  it('does not double the key when the user already starts their comment with it', () => {
+    const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: '8A energy bomb' })
+    expect(script).toContain('set comment of theTrack to "8A energy bomb"')
+  })
 })
 
 describe('buildLookupScript', () => {
