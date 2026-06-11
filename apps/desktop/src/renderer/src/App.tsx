@@ -25,10 +25,10 @@ import type {
 } from '../../shared/types'
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
-import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { HelpModal } from './components/HelpModal'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
@@ -55,16 +55,17 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { type Command, runCommand } from './lib/commands'
 import { mapWithConcurrency } from './lib/concurrency'
 import { smartDeriveTags } from './lib/deriveTags'
+import { shouldShowDonateNudge } from './lib/donateNudge'
 import { openFeedback } from './lib/feedback'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { parseFileName } from './lib/filename'
 import { createFocusGate } from './lib/focusGate'
 import { moveIndex } from './lib/keymap'
-import { shouldShowDonateNudge } from './lib/donateNudge'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
+import { mergeReadMeta } from './lib/readMerge'
 import { buildReleaseMeta } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
@@ -344,28 +345,37 @@ export default function App(): React.JSX.Element {
         window.api.readCover(path),
       ])
       const s = searchFromTags(parseFileName(path), tags)
+      const readMeta: TrackMetadata = {
+        ...base.meta,
+        ...tags,
+        title: s.title,
+        artist: s.artist,
+        albumArtist: tags.albumArtist || s.artist,
+      }
       const patch: Partial<TrackItem> = {
         query: s.query,
         duration: duration ?? undefined,
         coverUrl: cover ?? undefined,
         embeddedCover: cover ?? undefined,
         listLabel: s.title || base.fileName,
-        meta: {
-          ...base.meta,
-          ...tags,
-          title: s.title,
-          artist: s.artist,
-          albumArtist: tags.albumArtist || s.artist,
-        },
         loadingMeta: false,
       }
-      updateTrack(base.id, patch)
+      // The row is editable while the read runs, so merge instead of overwriting:
+      // a field the user typed into meanwhile keeps the user's value, and the read
+      // fills only what was left untouched.
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id === base.id
+            ? { ...t, ...patch, meta: mergeReadMeta(base.meta, t.meta, readMeta) }
+            : t,
+        ),
+      )
       // Opt-in: a fresh drop queues the Discogs auto-match for just these files, so the
       // crate tags itself as it lands. Queued visible-only, so a big folder probes the rows
       // in view as they scroll past rather than firing every file at the rate limit. Gated
       // on a token, and only once a file's own metadata is read so the search has a query.
       if (settings?.autoMatch && settings.discogsToken)
-        enqueueAutoMatch([{ ...base, ...patch }], true)
+        enqueueAutoMatch([{ ...base, ...patch, meta: readMeta }], true)
     } catch {
       updateTrack(base.id, { loadingMeta: false })
     }
@@ -524,10 +534,16 @@ export default function App(): React.JSX.Element {
     async (t: TrackItem): Promise<void> => {
       const m = await autoMatchRelease(t.query, matchTargetOf(t), discogs)
       if (!m || matchCancel.current) return
-      const patch = buildReleaseMeta(t.meta, m.release, m.track, {
-        url: t.coverUrl,
-        path: t.coverPath,
-        keep: !!t.coverUrl,
+      // The probe ran against a snapshot taken when the pump drained the queue; an edit,
+      // a manual match or a removal landing during the Discogs round-trip wins. Re-read
+      // the live track and only apply to one still exactly as probed — every edit path
+      // mints a new meta object, so an identity check covers all fields at once.
+      const live = tracksRef.current.find((x) => x.id === t.id)
+      if (!live || live.meta !== t.meta) return
+      const patch = buildReleaseMeta(live.meta, m.release, m.track, {
+        url: live.coverUrl,
+        path: live.coverPath,
+        keep: !!live.coverUrl,
       })
       updateTrack(t.id, {
         meta: patch.meta,

@@ -261,6 +261,38 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
     expect(searchDiscogs).toHaveBeenCalledTimes(1)
   })
+
+  // The sweep probes a snapshot of each track while the list stays fully editable. An
+  // edit typed during a track's probe window must win over the match landing after it —
+  // otherwise the user's words silently revert to Discogs's a few seconds later.
+  it('never overwrites an edit typed while that track was being probed', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    const getRelease = vi.fn(async () => {
+      await gate
+      return release
+    })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      searchDiscogs: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(getRelease).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Hand Typed' } })
+    releaseGate()
+
+    // The untouched second track still matches; the edited one is left alone.
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
+  })
 })
 
 describe('App track list label', () => {
@@ -313,6 +345,34 @@ describe('App import skeleton', () => {
     // Once the reads land, the placeholders clear.
     releaseTags()
     await waitFor(() => expect(screen.queryAllByTestId('track-loading')).toHaveLength(0))
+  })
+
+  // The rows are editable from the instant they land, so a slow read (cloud folder) can
+  // resolve after the user already typed into the form. The read fills what it learned,
+  // but a field the user touched meanwhile must keep the user's value.
+  it('keeps an edit typed while the file was still being read', async () => {
+    let releaseTags: () => void = () => {}
+    const tagsGate = new Promise<void>((res) => {
+      releaseTags = res
+    })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn(async () => {
+        await tagsGate
+        return { title: '', artist: 'Tagged Artist' }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Hand Typed' } })
+    releaseTags()
+
+    await waitFor(() =>
+      expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Tagged Artist'),
+    )
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
   })
 })
 
@@ -373,9 +433,7 @@ describe('App regenerate filename', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
-    await waitFor(() =>
-      expect(screen.getByTestId('output-name')).toHaveValue('Di Carlo - Bumping'),
-    )
+    await waitFor(() => expect(screen.getByTestId('output-name')).toHaveValue('Di Carlo - Bumping'))
   })
 })
 
