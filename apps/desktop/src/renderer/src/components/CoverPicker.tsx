@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DiscogsRelease } from '../../../shared/types'
 import { coverSourceOf } from '../lib/coverSource'
+import { revokeCoverUrl } from '../lib/coverUrl'
 import { isLowResCover } from '../lib/quality'
 import { stepImageIndex } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -80,6 +81,8 @@ export function CoverPicker({
 
   function applyImageFile(file: File | undefined): void {
     if (!file?.type.startsWith('image/')) return
+    // Replacing a previously picked file frees its blob URL — nothing else shows it.
+    revokeCoverUrl(item.coverUrl)
     const coverUrl = URL.createObjectURL(file)
     const coverPath = window.api.getPathForFile(file)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
@@ -87,6 +90,7 @@ export function CoverPicker({
   }
 
   function onCoverRemove(): void {
+    revokeCoverUrl(item.coverUrl)
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 

@@ -56,6 +56,7 @@ import { removeAnalysisQueries } from './lib/analysisQueries'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
+import { revokeCoverUrl } from './lib/coverUrl'
 import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
@@ -272,6 +273,7 @@ export default function App(): React.JSX.Element {
       discogsPrefetched.current.delete(id)
       viewCache.current.delete(id)
       forgetAutoMatch(id)
+      revokeCoverUrl(tracksRef.current.find((t) => t.id === id)?.coverUrl)
     },
     // A row leaving the list also evicts its probe results from the session-long
     // query cache, where the spectrogram image would otherwise be retained until quit.
@@ -280,12 +282,17 @@ export default function App(): React.JSX.Element {
       viewCache.current.delete(track.id)
       forgetAutoMatch(track.id)
       removeAnalysisQueries(queryClient, track.inputPath)
+      // A picked cover's blob URL would otherwise pin the image file until quit.
+      revokeCoverUrl(track.coverUrl)
     },
     onClear: (cleared) => {
       discogsPrefetched.current.clear()
       viewCache.current.clear()
       resetAutoMatch()
-      for (const t of cleared) removeAnalysisQueries(queryClient, t.inputPath)
+      for (const t of cleared) {
+        removeAnalysisQueries(queryClient, t.inputPath)
+        revokeCoverUrl(t.coverUrl)
+      }
     },
     onMetaLoaded: (t) => {
       if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], true)
