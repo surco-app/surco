@@ -370,6 +370,39 @@ describe('App import skeleton', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-loading')).toHaveLength(0))
   })
 
+  // The native file dialog can stay open for a long time; a file that arrives through
+  // the OS meanwhile ("Open with Surco") must still dedupe against the picker's result —
+  // the dedupe has to read the live list, not the snapshot from when the dialog opened.
+  it('dedupes a file that arrived while the picker dialog was open', async () => {
+    let openFiles: (paths: string[]) => Promise<void> = () => Promise.resolve()
+    let resolvePick: (paths: string[]) => void = () => {}
+    setApi({
+      pickFiles: vi.fn(
+        () =>
+          new Promise<string[]>((res) => {
+            resolvePick = res
+          }),
+      ),
+      onOpenFiles: (cb: (paths: string[]) => Promise<void>) => {
+        openFiles = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+
+    await act(async () => {
+      await openFiles(['/music/a.wav'])
+    })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    await act(async () => {
+      resolvePick(['/music/a.wav'])
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.

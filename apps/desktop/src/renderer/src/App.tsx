@@ -353,7 +353,9 @@ export default function App(): React.JSX.Element {
   useEffect(() => window.api.onWindowFocus((focused) => focusGate.current.set(focused)), [])
 
   async function addPaths(paths: string[]): Promise<void> {
-    const existing = new Set(tracks.map((t) => t.inputPath))
+    // Read the live list, not the render snapshot: the native picker can sit open for
+    // a long time, and a file that arrived through the OS meanwhile must still dedupe.
+    const existing = new Set(tracksRef.current.map((t) => t.inputPath))
     const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
     if (fresh.length === 0) return
     // Show the rows the instant they're dropped, parsed from the file name, then fill in
