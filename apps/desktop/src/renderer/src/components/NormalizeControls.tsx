@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
 
@@ -36,6 +36,17 @@ function NumberField({
   onChange: (n: number) => void
   inputRef?: React.RefObject<HTMLInputElement | null>
 }): React.JSX.Element {
+  // The field edits a text draft, not the number: every meaningful value here is
+  // negative (-14 LUFS, -1 dBTP), so intermediate states ('', '-', '-0.') must
+  // survive typing instead of snapping back to the last committed figure. A finite
+  // parse commits immediately; an abandoned draft falls back on blur.
+  const [draft, setDraft] = useState(String(value))
+  // External writes (preset buttons, the per-track reseed) refresh the draft — but
+  // not while the draft already parses to the committed value, or committing '-9.'
+  // mid-typing would erase the trailing separator under the cursor.
+  useEffect(() => {
+    setDraft((d) => (Number.parseFloat(d) === value ? d : String(value)))
+  }, [value])
   return (
     <label className="flex flex-col gap-1 text-xs text-fg-muted">
       {label}
@@ -43,12 +54,14 @@ function NumberField({
         ref={inputRef}
         type="number"
         data-testid={testid}
-        value={value}
+        value={draft}
         step={0.1}
         onChange={(e) => {
+          setDraft(e.target.value)
           const n = Number.parseFloat(e.target.value)
           if (Number.isFinite(n)) onChange(n)
         }}
+        onBlur={() => setDraft(String(value))}
         className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
       />
     </label>
