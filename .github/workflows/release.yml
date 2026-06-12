@@ -9,7 +9,35 @@ permissions:
   contents: write
 
 jobs:
+  # The matrix jobs used to race electron-builder's find-or-create of the GitHub
+  # release: when two finished the lookup at the same instant, each created its own
+  # release on the tag and the assets split across duplicates (happened on v0.11.0)
+  # — /releases/latest then served a release missing one platform, so the website's
+  # download button disabled itself and mac auto-update lost latest-mac.yml.
+  # Creating the tag AND the release once, before any builder starts, removes the
+  # race: every job finds the release already there and only uploads.
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      # GitHub rejects creating a *published* release whose tag doesn't already
+      # exist in surco-releases (422 "must have a valid tag") — the git tag lives
+      # in this source repo, not there. Create the tag first, pointing at the
+      # releases repo's default branch HEAD.
+      - name: Create the tag and the release in the releases repo
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          branch=$(gh api repos/vigosan/surco-releases --jq .default_branch)
+          sha=$(gh api "repos/vigosan/surco-releases/git/refs/heads/$branch" --jq .object.sha)
+          gh api repos/vigosan/surco-releases/git/refs \
+            -f ref="refs/tags/$GITHUB_REF_NAME" -f sha="$sha" \
+            || echo "tag already exists in the releases repo"
+          gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+                 --title "${GITHUB_REF_NAME#v}" --notes ""
+
   release:
+    needs: prepare
     strategy:
       # A transient install hiccup on one runner (e.g. ffmpeg-static's binary
       # download getting a 504 from GitHub) shouldn't cancel the other arches'
@@ -55,24 +83,9 @@ jobs:
         shell: bash
         run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/apple-api-key.p8"
 
-      # GitHub rejects creating a *published* release whose tag doesn't already exist
-      # in surco-releases (422 "must have a valid tag") — the git tag lives in this
-      # source repo, not there. Create it in the releases repo first, pointing at its
-      # default branch HEAD. Idempotent: the parallel matrix jobs race, so the losers'
-      # "already exists" is expected and ignored.
-      - name: Ensure the tag exists in the releases repo
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        run: |
-          branch=$(gh api repos/vigosan/surco-releases --jq .default_branch)
-          sha=$(gh api "repos/vigosan/surco-releases/git/refs/heads/$branch" --jq .object.sha)
-          gh api repos/vigosan/surco-releases/git/refs \
-            -f ref="refs/tags/$GITHUB_REF_NAME" -f sha="$sha" \
-            || echo "tag already exists in the releases repo"
-
       # electron-builder publishes a LIVE release bound to its tag (releaseType:
-      # release), so the three parallel matrix jobs all upload to the same one.
+      # release); the prepare job already created it, so every matrix job finds
+      # the same one and only uploads its assets.
       - name: Build & publish (macOS)
         if: runner.os == 'macOS'
         working-directory: apps/desktop
@@ -150,12 +163,43 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: gh release upload "$GITHUB_REF_NAME" latest-mac.yml --clobber --repo vigosan/surco-releases
 
+  # The per-release test for the publish pipeline: a release is only good when its
+  # tag carries exactly ONE release with the full asset set. A duplicate release
+  # (the race above) or a missing installer turns this run red immediately,
+  # instead of surfacing days later as a dead download button on the website.
+  verify:
+    needs: [release, merge-mac-feed]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert one release with the full asset set
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          count=$(gh api repos/vigosan/surco-releases/releases --paginate \
+            --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length")
+          [ "$count" = "1" ] || { echo "expected 1 release for $GITHUB_REF_NAME, found $count"; exit 1; }
+          names=$(gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+            --json assets --jq '.assets[].name')
+          status=0
+          for asset in \
+            "Surco-$version-arm64.dmg" "Surco-$version-arm64.dmg.blockmap" \
+            "Surco-$version-arm64.zip" "Surco-$version-arm64.zip.blockmap" \
+            "Surco-$version-x64.dmg" "Surco-$version-x64.dmg.blockmap" \
+            "Surco-$version-x64.zip" "Surco-$version-x64.zip.blockmap" \
+            "Surco-$version-Setup.exe" "Surco-$version-Setup.exe.blockmap" \
+            latest-mac.yml latest.yml; do
+            echo "$names" | grep -qxF "$asset" || { echo "missing asset: $asset"; status=1; }
+          done
+          exit $status
+
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they
   # self-update via electron-updater (the cask is auto_updates true), so this only
-  # matters for first-time installs, hence it's a best-effort tail job.
+  # matters for first-time installs, hence it's a best-effort tail job. It waits
+  # for verify so a broken release never reaches the cask.
   update-tap:
-    needs: [release, merge-mac-feed]
+    needs: [release, merge-mac-feed, verify]
     runs-on: ubuntu-latest
     steps:
       # GitHub computes a sha256 for every release asset, so read those instead of
