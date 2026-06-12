@@ -10,6 +10,7 @@ const sample: SpectrumResult = {
   image: 'data:image/png;base64,',
   cutoffHz: 16000,
   sampleRateHz: 44100,
+  processed: false,
 }
 
 function setApi(spectrogram: ReturnType<typeof vi.fn>): void {

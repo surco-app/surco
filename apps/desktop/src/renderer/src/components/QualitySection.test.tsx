@@ -66,29 +66,33 @@ beforeEach(() => {
 // under a green badge and a red one, leaving "Bad quality" unjustified.
 describe('QualitySection verdict caption', () => {
   it('explains a bad verdict as a lossy transcode signature', async () => {
-    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100 })
+    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false })
     expect(
-      await screen.findByText(
-        i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz', nyquist: '22.1 kHz' }),
-      ),
+      await screen.findByText(i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
   })
 
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
-    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100 })
+    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false })
     expect(
-      await screen.findByText(
-        i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz', nyquist: '22.1 kHz' }),
-      ),
+      await screen.findByText(i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
   })
 
   it('explains a good verdict as a full lossless spectrum', async () => {
-    renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100 })
+    renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
     expect(
-      await screen.findByText(
-        i18n.t('editor.qualityCaptionGood', { cutoff: '21.0 kHz', nyquist: '22.1 kHz' }),
-      ),
+      await screen.findByText(i18n.t('editor.qualityCaptionGood', { cutoff: '21.0 kHz' })),
     ).toBeInTheDocument()
+  })
+
+  it('explains regenerated highs with a bad badge, not the cutoff boilerplate', async () => {
+    // The enhancer hump reaches past the good line; without its own caption the
+    // section would show a red badge over a "reaches ~20 kHz" explanation.
+    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: true })
+    expect(
+      await screen.findByText(i18n.t('editor.qualityCaptionProcessed', { cutoff: '16.0 kHz' })),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityBad'))
   })
 })

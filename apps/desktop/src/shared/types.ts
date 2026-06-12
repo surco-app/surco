@@ -261,6 +261,9 @@ export interface SpectrumResult {
   // still rendered — the UI then hides the quality verdict instead of inventing one.
   cutoffHz: number | null
   sampleRateHz: number
+  // True when the spectrum shows regenerated highs (an "enhancer"/upscaler
+  // hump); cutoffHz then carries the source's real ceiling under the gloss.
+  processed: boolean
 }
 
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass

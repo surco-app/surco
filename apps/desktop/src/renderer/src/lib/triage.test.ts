@@ -13,7 +13,13 @@ import {
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
 const withSpectrum = (spectrum?: Partial<SpectrumResult>): TrackItem =>
   ({
-    spectrum: spectrum && { image: '', cutoffHz: null, sampleRateHz: 44100, ...spectrum },
+    spectrum: spectrum && {
+      image: '',
+      cutoffHz: null,
+      sampleRateHz: 44100,
+      processed: false,
+      ...spectrum,
+    },
   }) as TrackItem
 
 describe('trackQuality', () => {
@@ -38,6 +44,14 @@ describe('trackQuality', () => {
   it('is bad when the cutoff brick-walls deep below Nyquist (a re-encoded MP3)', () => {
     expect(trackQuality(withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100 }))).toBe('bad')
   })
+
+  it('is bad when the highs were regenerated, even though they reach far up', () => {
+    // An enhancer hump pushes synthetic energy past the good line; the badge must
+    // grade the low-bitrate source underneath, not the gloss.
+    expect(
+      trackQuality(withSpectrum({ cutoffHz: 20000, sampleRateHz: 44100, processed: true })),
+    ).toBe('bad')
+  })
 })
 
 describe('tracksToAnalyze', () => {
@@ -45,7 +59,9 @@ describe('tracksToAnalyze', () => {
 
   it('picks only tracks without a spectrum that are not already in flight', () => {
     const tracks = [
-      t('done', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100 } }),
+      t('done', {
+        spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: false },
+      }),
       t('flying'),
       t('fresh'),
     ]
@@ -54,7 +70,9 @@ describe('tracksToAnalyze', () => {
   })
 
   it('returns nothing once every track is analyzed', () => {
-    const tracks = [t('a', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100 } })]
+    const tracks = [
+      t('a', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: false } }),
+    ]
     expect(tracksToAnalyze(tracks, new Set())).toEqual([])
   })
 })
@@ -115,8 +133,9 @@ describe('filterByQuality / qualityCounts', () => {
 })
 
 describe('matchesSearch', () => {
-  const t = (over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> }): TrackItem =>
-    ({ listLabel: '', fileName: '', meta: {}, ...over }) as TrackItem
+  const t = (
+    over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> },
+  ): TrackItem => ({ listLabel: '', fileName: '', meta: {}, ...over }) as TrackItem
 
   it('matches every track when the query is blank or whitespace', () => {
     const track = t({ listLabel: 'Back Now Yall' })
@@ -144,8 +163,9 @@ describe('matchesSearch', () => {
 })
 
 describe('sortTracks', () => {
-  const mk = (over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> }): TrackItem =>
-    ({ listLabel: '', meta: {}, status: 'idle', ...over }) as TrackItem
+  const mk = (
+    over: Partial<Omit<TrackItem, 'meta'>> & { meta?: Partial<TrackMetadata> },
+  ): TrackItem => ({ listLabel: '', meta: {}, status: 'idle', ...over }) as TrackItem
 
   it('leaves the import order untouched for the default sort', () => {
     const list = [mk({ id: 'b' }), mk({ id: 'a' })]

@@ -698,10 +698,11 @@ function registerIpc(): void {
     try {
       // Cache only a clean run: a cutoff failure yields a valid image but a null
       // cutoff, and we'd rather retry that next open than pin it for the file's life.
-      const { image, cutoffHz, sampleRateHz, cutoffError } = await cachedAnalysis(
-        // Namespace carries the palette so changing it invalidates images cached under
-        // the previous one — they regenerate on next open instead of showing stale colors.
-        'spectrogram-cividis',
+      const { image, cutoffHz, sampleRateHz, processed, cutoffError } = await cachedAnalysis(
+        // Namespace carries the palette and the cutoff-algorithm generation, so
+        // changing either invalidates entries cached under the previous one — they
+        // regenerate on next open instead of serving stale colors or verdicts.
+        'spectrogram-cividis-v2',
         inputPath,
         () =>
           buildSpectrum(inputPath, {
@@ -715,7 +716,7 @@ function registerIpc(): void {
       // stderr) rather than reject — this is the only trace when it breaks on a
       // machine we can't reach, e.g. Windows.
       if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
-      return { image, cutoffHz, sampleRateHz }
+      return { image, cutoffHz, sampleRateHz, processed }
     } catch (err) {
       log.error('audio:spectrogram failed', err)
       throw err

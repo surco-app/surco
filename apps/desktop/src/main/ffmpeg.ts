@@ -15,7 +15,7 @@ import type {
   TrackProperties,
 } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { BAND_WIDTH_HZ, bandFrequencies, detectCutoff } from './cutoff'
+import { BAND_WIDTH_HZ, bandFrequencies, type CutoffResult, detectCutoff } from './cutoff'
 import {
   loudnormArgs,
   loudnormFilter,
@@ -693,11 +693,11 @@ export function parseBands(stdout: string): Map<number, number> {
 
 // Measures the energy in each high-frequency band in a single decode (asplit
 // into one bandpass→astats branch per band) and hands the per-band RMS to
-// detectCutoff, which spots the codec's brick wall.
-export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<number> {
+// detectCutoff, which spots the codec's lowpass.
+export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<CutoffResult> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
-  if (freqs.length < 2) return nyquist
+  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false }
 
   const { stdout } = await run(
     ffmpegPath,
@@ -893,13 +893,14 @@ export async function measureKey(input: string): Promise<KeyResult | null> {
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
   spectrogram: (input: string) => Promise<string>
-  cutoff: (input: string, sampleRateHz: number) => Promise<number>
+  cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult>
 }
 
 interface SpectrumBuild {
   image: string
   cutoffHz: number | null
   sampleRateHz: number
+  processed: boolean
   cutoffError?: unknown
 }
 
@@ -919,8 +920,9 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   if (imageR.status === 'rejected') throw imageR.reason
   return {
     image: imageR.value,
-    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value : null,
+    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value.cutoffHz : null,
     sampleRateHz,
+    processed: cutoffR.status === 'fulfilled' ? cutoffR.value.processed : false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
   }
 }

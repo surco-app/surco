@@ -325,7 +325,12 @@ describe('TrackList format pill', () => {
 })
 
 describe('TrackList quality badge', () => {
-  const spectrum = (cutoffHz: number | null) => ({ image: '', cutoffHz, sampleRateHz: 44100 })
+  const spectrum = (cutoffHz: number | null) => ({
+    image: '',
+    cutoffHz,
+    sampleRateHz: 44100,
+    processed: false,
+  })
 
   // The badge is the whole point of batch triage: a re-encoded MP3 (cutoff far below
   // Nyquist) must be flaggable in the list without opening each track.

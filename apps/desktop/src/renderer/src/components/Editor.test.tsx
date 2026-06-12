@@ -667,7 +667,7 @@ describe('Editor multi-select', () => {
       status,
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared' },
-      spectrum: { image: '', cutoffHz: null, sampleRateHz: 44100 },
+      spectrum: { image: '', cutoffHz: null, sampleRateHz: 44100, processed: false },
     })
     const b = item({
       id: 'b',

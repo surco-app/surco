@@ -16,27 +16,39 @@ import {
 } from './quality'
 
 describe('qualityVerdict', () => {
-  it('passes a track whose energy reaches near Nyquist as good', () => {
+  it('passes energy reaching the ~20 kHz full-320 line as good', () => {
+    // DJs read quality on an absolute scale: a full-quality 320 kbps encode
+    // keeps content to ~20.5 kHz, genuine lossless to Nyquist. Both are good.
     expect(qualityVerdict(19961, 44100)).toBe('good')
+    expect(qualityVerdict(22050, 44100)).toBe('good')
   })
 
-  it('grades a moderate shortfall (high-bitrate lossy territory) as warn', () => {
-    expect(qualityVerdict(17000, 44100)).toBe('warn')
+  it('grades the ~192 kbps band (18–19.5 kHz) as warn, not bad', () => {
     expect(qualityVerdict(18000, 44100)).toBe('warn')
+    expect(qualityVerdict(19000, 44100)).toBe('warn')
   })
 
-  it('grades a deep brick-wall (low-bitrate MP3 hidden in a WAV) as bad', () => {
-    expect(qualityVerdict(15500, 44100)).toBe('bad')
+  it('grades a ceiling under 18 kHz (low-bitrate source) as bad', () => {
+    expect(qualityVerdict(17000, 44100)).toBe('bad')
     expect(qualityVerdict(16000, 44100)).toBe('bad')
   })
 
-  it('uses the file Nyquist, so the bands scale with sample rate', () => {
-    expect(qualityVerdict(21000, 48000)).toBe('good')
-    expect(qualityVerdict(19000, 48000)).toBe('warn')
+  it('grades in absolute kHz, so the sample rate cannot shift the verdict', () => {
+    // A 20 kHz mastering lowpass is the same audio in a 44.1 or a 48 kHz
+    // container; grading against Nyquist used to demote 48 kHz files for it.
+    expect(qualityVerdict(20000, 44100)).toBe('good')
+    expect(qualityVerdict(20000, 48000)).toBe('good')
+    expect(qualityVerdict(18500, 48000)).toBe('warn')
     expect(qualityVerdict(17000, 48000)).toBe('bad')
   })
 
-  it('treats an unknown sample rate as warn rather than dividing by zero', () => {
+  it('marks regenerated highs bad regardless of how far the hump reaches', () => {
+    // An "enhancer" hump can push synthetic energy past 20 kHz; the verdict
+    // must reflect the source under the gloss, not the gloss.
+    expect(qualityVerdict(20000, 44100, true)).toBe('bad')
+  })
+
+  it('treats an unknown sample rate as warn rather than inventing a verdict', () => {
     expect(qualityVerdict(20000, 0)).toBe('warn')
   })
 })

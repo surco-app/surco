@@ -758,7 +758,7 @@ describe('buildSpectrum', () => {
   const deps = (over: Record<string, unknown> = {}) => ({
     probe: vi.fn(async () => ({ sampleRate: '44100' })),
     spectrogram: vi.fn(async () => 'data:image/png;base64,AAAA'),
-    cutoff: vi.fn(async () => 18000),
+    cutoff: vi.fn(async () => ({ cutoffHz: 18000, processed: false })),
     ...over,
   })
 
@@ -767,7 +767,17 @@ describe('buildSpectrum', () => {
     expect(res.image).toBe('data:image/png;base64,AAAA')
     expect(res.cutoffHz).toBe(18000)
     expect(res.sampleRateHz).toBe(44100)
+    expect(res.processed).toBe(false)
     expect(res.cutoffError).toBeUndefined()
+  })
+
+  it('carries the processed flag through, so regenerated highs reach the verdict', async () => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({ cutoff: vi.fn(async () => ({ cutoffHz: 16000, processed: true })) }),
+    )
+    expect(res.cutoffHz).toBe(16000)
+    expect(res.processed).toBe(true)
   })
 
   it('still returns the image, with a null cutoff, when cutoff analysis fails', async () => {
@@ -787,6 +797,7 @@ describe('buildSpectrum', () => {
     )
     expect(res.image).toBe('data:image/png;base64,AAAA')
     expect(res.cutoffHz).toBeNull()
+    expect(res.processed).toBe(false)
     expect(res.cutoffError).toBe(boom)
   })
 

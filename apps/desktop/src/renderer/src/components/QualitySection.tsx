@@ -73,10 +73,16 @@ export function QualitySection({
             <span
               data-testid="quality-badge"
               className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)].className
+                qualityBadge[
+                  qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
+                ].className
               }`}
             >
-              {tr(qualityBadge[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)].label)}
+              {tr(
+                qualityBadge[
+                  qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
+                ].label,
+              )}
             </span>
           )
         }
@@ -96,10 +102,12 @@ export function QualitySection({
                 <Spectrogram spectrum={spectrum} />
                 {spectrum.cutoffHz !== null && (
                   <p className="mt-2 text-xs text-fg-dim">
-                    {tr(qualityCaption[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)], {
-                      cutoff: formatKHz(spectrum.cutoffHz),
-                      nyquist: formatKHz(spectrum.sampleRateHz / 2),
-                    })}
+                    {tr(
+                      spectrum.processed
+                        ? 'editor.qualityCaptionProcessed'
+                        : qualityCaption[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)],
+                      { cutoff: formatKHz(spectrum.cutoffHz) },
+                    )}
                   </p>
                 )}
               </>

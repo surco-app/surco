@@ -1,15 +1,20 @@
-// Three-step lossless verdict (green/amber/red), banded on how far the spectral
-// cutoff falls below Nyquist: ≥85% is genuine lossless, 75–85% is the high-bitrate
-// lossy ambiguity zone (warn), and below 75% is the classic low-bitrate MP3
-// (~16 kHz at 44.1 kHz) re-encoded as WAV. An unknown sample rate can't be banded,
-// so it lands in the inconclusive middle rather than dividing by zero.
+// Three-step lossless verdict (green/amber/red), banded on the absolute cutoff
+// because codec lowpasses are absolute: ~20.5 kHz is a full 320 kbps / lossless,
+// ~18.5–19 kHz is the ~192 kbps class, and ~16 kHz is the classic 128 kbps
+// re-encoded as WAV. Grading against Nyquist (the old rule) punished 48 kHz
+// files for the same audio. A processed spectrum (regenerated highs) is bad no
+// matter where its synthetic energy reaches; an unknown sample rate means the
+// analysis never ran on real bands, so it stays inconclusive.
 export type Verdict = 'good' | 'warn' | 'bad'
 
-export function qualityVerdict(cutoffHz: number, sampleRateHz: number): Verdict {
+const GOOD_CUTOFF_HZ = 19500
+const WARN_CUTOFF_HZ = 18000
+
+export function qualityVerdict(cutoffHz: number, sampleRateHz: number, processed = false): Verdict {
+  if (processed) return 'bad'
   if (sampleRateHz <= 0) return 'warn'
-  const ratio = cutoffHz / (sampleRateHz / 2)
-  if (ratio >= 0.85) return 'good'
-  return ratio >= 0.75 ? 'warn' : 'bad'
+  if (cutoffHz >= GOOD_CUTOFF_HZ) return 'good'
+  return cutoffHz >= WARN_CUTOFF_HZ ? 'warn' : 'bad'
 }
 
 export function formatKHz(hz: number): string {

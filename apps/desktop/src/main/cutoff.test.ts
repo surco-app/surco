@@ -4,7 +4,8 @@ import { type Band, bandFrequencies, detectCutoff } from './cutoff'
 // Per-band RMS (dB) measured from real signals at 44.1 kHz (Nyquist 22.05 kHz),
 // band centres 9–21 kHz. These encode the distinction the detector exists to
 // make: a lossless full-band spectrum tapers smoothly, a lossy re-encode drops
-// off a cliff at the codec's lowpass.
+// off a cliff at the codec's lowpass — and a smooth taper with no cliff is NOT
+// a cut, however far below Nyquist it ends.
 const NYQUIST = 22050
 const FREQS = [
   9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000,
@@ -24,17 +25,15 @@ const MP3_CUT_20K = band([
   -33.0, -33.6, -34.4, -35.1, -36.0, -37.0, -38.0, -38.9, -40.0, -41.4, -42.8, -48.2, -65.4,
 ])
 // A low-bitrate MP3 with a soft transition band, re-wrapped as FLAC (measured
-// from a real file): a continuous ~4.5 dB/band rolloff from ~12 kHz instead of a
-// single cliff. No step reaches 8 dB (the steepest is 6.9 dB at 15→16 kHz), so
-// the single-step pass misses it; the energy still collapses 13.6 dB below the
-// 9–11 kHz plateau by 15 kHz, which the sloped-lowpass fallback must catch.
+// from a real file): a continuous rolloff whose steepest single step is 6.9 dB
+// at 15→16 kHz and which keeps collapsing afterwards. A sustained knee, even a
+// soft one, is a codec lowpass.
 const SLOPED_CUT_15K = band([
   -34.28, -35.27, -36.27, -37.8, -41.15, -44.44, -48.91, -55.8, -59.27, -62.48, -65.95, -70.26,
   -76.95,
 ])
 // Another real re-wrapped MP3, cut at ~16 kHz: its steepest step is 7.46 dB
-// (16→17 kHz) — close enough to WALL_DROP_DB to prove the fallback, not a nudged
-// threshold, is what catches a soft transition band that nearly qualifies.
+// (16→17 kHz) and never recovers — the sustained-knee pass must catch it.
 const SLOPED_CUT_16K = band([
   -29.72, -30.54, -31.49, -33.08, -34.58, -36.43, -38.95, -44.54, -52.0, -55.75, -59.26, -63.28,
   -68.99,
@@ -43,47 +42,118 @@ const SLOPED_CUT_16K = band([
 // highs yet keeps energy all the way to Nyquist — only 24.9 dB down at 21 kHz.
 // Its 9–16 kHz slope is indistinguishable from the cut files above; the only
 // thing that says "good" is that the top band has NOT collapsed to the noise
-// floor. The fallback must not flag it (this is the false positive that an
-// intermediate-rolloff test would wrongly catch).
+// floor. Flagging it is the false positive this detector must avoid.
 const REAL_FULL_BAND = band([
   -33.42, -35.08, -36.69, -39.24, -42.19, -44.74, -46.17, -48.66, -49.94, -53.38, -54.81, -58.46,
   -59.93,
 ])
+// Real 320 kbps MP3 (measured): a smooth ~4 dB/band taper with no knee anywhere,
+// still carrying energy at 21 kHz. The old fallback called this "cut at 16 kHz"
+// because the slope crosses plateau−12 dB there — the false positive users
+// reported most. Without a knee the honest reading is the energy extent: the
+// last band still within 25 dB of the 9–11 kHz plateau (18 kHz here).
+const SMOOTH_TAPER_320 = band([
+  -32.9, -33.5, -34.8, -36.4, -37.4, -39.6, -43.5, -46.7, -51.0, -55.8, -59.3, -63.6, -68.7,
+])
+// Same profile from another real 320: slightly steeper but still knee-free.
+const SMOOTH_TAPER_320_B = band([
+  -34.1, -34.6, -35.9, -37.0, -39.0, -41.7, -45.4, -49.2, -53.3, -57.2, -61.0, -64.6, -69.0,
+])
+// Real ~190 kbps-class MP3s (measured): quiet ~2 dB/band taper, then a 7–8 dB
+// step that keeps falling — the encoder's soft lowpass. These sit just under the
+// old 8 dB wall threshold, so they were graded "Good"; the sustained-knee pass
+// must place the cut at the knee.
+const SOFT_KNEE_16K = band([
+  -33.9, -34.1, -34.6, -36.1, -38.4, -39.0, -41.8, -44.3, -51.4, -57.2, -60.9, -64.5, -68.8,
+])
+const SOFT_KNEE_17K = band([
+  -36.6, -36.5, -37.4, -38.6, -40.6, -42.6, -44.5, -46.9, -50.9, -58.7, -63.0, -66.9, -71.1,
+])
+// Real file run through a spectral "enhancer" (measured): the energy falls to a
+// valley at 16 kHz then RISES 11.8 dB to peak at 19 kHz — louder than the 9 kHz
+// reference. Natural spectra never climb back up there; regenerated highs over a
+// low-bitrate source must not pass as full-band.
+const SYNTHETIC_HUMP = band([
+  -38.9, -39.9, -40.9, -42.2, -44.0, -45.7, -47.2, -48.6, -45.1, -39.5, -36.8, -40.3, -55.6,
+])
+// Real ~270 kbps VBR at 48 kHz (measured, bands reach 22 kHz): smooth taper with
+// the encoder's lowpass showing as an 8 dB step at the very top. The cut is at
+// 21 kHz — not at 16 kHz where the slope happens to cross plateau−12 dB.
+const FREQS_48K = [...FREQS, 22000]
+const VBR_48K = FREQS_48K.map((freqHz, i) => ({
+  freqHz,
+  rmsDb: [
+    -34.7, -34.1, -36.0, -37.8, -40.0, -41.8, -44.4, -47.3, -48.6, -49.6, -51.0, -54.0, -59.8,
+    -67.8,
+  ][i],
+}))
 
 describe('detectCutoff', () => {
   it('reports Nyquist for full-band audio so it is not falsely flagged as cut', () => {
-    // The whole point: a smooth taper toward Nyquist is NOT a cutoff. Reporting
-    // anything below Nyquist here is the bug that marked clean 22 kHz tracks
-    // "Suspicious".
-    expect(detectCutoff(FULL_BAND, NYQUIST)).toBe(NYQUIST)
+    expect(detectCutoff(FULL_BAND, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
   })
 
   it('locates a sharp lowpass shelf at the last band before the drop', () => {
-    expect(detectCutoff(AAC_CUT_16K, NYQUIST)).toBe(16000)
-    expect(detectCutoff(MP3_CUT_20K, NYQUIST)).toBe(20000)
+    expect(detectCutoff(AAC_CUT_16K, NYQUIST).cutoffHz).toBe(16000)
+    expect(detectCutoff(MP3_CUT_20K, NYQUIST).cutoffHz).toBe(20000)
   })
 
   it('catches a sloped lowpass whose rolloff never drops 8 dB in one step', () => {
-    // The bug: a low-bitrate MP3 with a soft transition band tapers ~4.5 dB per
-    // band, so no single step trips the shelf detector and the track was passed
-    // off as full-band "Good quality". The fallback flags it where the energy
-    // has fallen >12 dB below the 9–11 kHz plateau.
-    expect(detectCutoff(SLOPED_CUT_15K, NYQUIST)).toBe(15000)
-    expect(detectCutoff(SLOPED_CUT_16K, NYQUIST)).toBe(16000)
+    expect(detectCutoff(SLOPED_CUT_15K, NYQUIST).cutoffHz).toBe(15000)
+    expect(detectCutoff(SLOPED_CUT_16K, NYQUIST).cutoffHz).toBe(16000)
+  })
+
+  it('places a soft encoder knee at the knee, not where the slope crosses a level', () => {
+    // These were graded "Good" before: their 7–8 dB knees sit under the old 8 dB
+    // wall threshold, and the fallback either missed them or invented an edge.
+    expect(detectCutoff(SOFT_KNEE_16K, NYQUIST).cutoffHz).toBe(16000)
+    expect(detectCutoff(SOFT_KNEE_17K, NYQUIST).cutoffHz).toBe(17000)
   })
 
   it('does not flag a full-band track that rolls off but reaches Nyquist', () => {
-    // The hard case: this real lossless file tapers as steeply as a cut through
-    // 9–16 kHz, so any intermediate-rolloff rule flags it. What saves it is that
-    // its energy survives to the top band instead of collapsing to the floor —
-    // exactly the "reaches Nyquist" distinction. Flagging this is the false
-    // positive the fallback exists to avoid.
-    expect(detectCutoff(REAL_FULL_BAND, NYQUIST)).toBe(NYQUIST)
+    expect(detectCutoff(REAL_FULL_BAND, NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+    })
+  })
+
+  it('reads a knee-free smooth taper as its energy extent, never an invented cut', () => {
+    // The headline false positive: the old fallback reported "cut at 16 kHz" for
+    // these healthy 320s because their natural slope crosses plateau−12 dB there.
+    // With no knee there is no cut — only how far meaningful energy extends.
+    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST)).toEqual({ cutoffHz: 18000, processed: false })
+    expect(detectCutoff(SMOOTH_TAPER_320_B, NYQUIST)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+    })
+  })
+
+  it('flags regenerated highs that rise where natural spectra only fall', () => {
+    // The cut is reported at the valley — the original source's ceiling — so the
+    // grade reflects what the audio really carries under the synthetic gloss.
+    expect(detectCutoff(SYNTHETIC_HUMP, NYQUIST)).toEqual({ cutoffHz: 16000, processed: true })
+  })
+
+  it('finds the encoder lowpass at the top of a 48 kHz taper instead of mid-slope', () => {
+    expect(detectCutoff(VBR_48K, 24000)).toEqual({ cutoffHz: 21000, processed: false })
   })
 
   it('reports Nyquist when there are too few bands to compare', () => {
-    expect(detectCutoff([], NYQUIST)).toBe(NYQUIST)
-    expect(detectCutoff([{ freqHz: 9000, rmsDb: -33 }], NYQUIST)).toBe(NYQUIST)
+    expect(detectCutoff([], NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+    expect(detectCutoff([{ freqHz: 9000, rmsDb: -33 }], NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+    })
+  })
+
+  it('ignores a notch that recovers — only a sustained drop is a codec lowpass', () => {
+    // A resonant dip can fall 8 dB in one band and bounce straight back; a codec
+    // wall never recovers. Keying on the steepest step alone would call this a
+    // 13 kHz cut on otherwise full-band audio.
+    const NOTCH = band([
+      -33.0, -33.6, -34.4, -35.1, -36.0, -44.5, -36.8, -38.0, -39.2, -40.6, -42.0, -44.8, -47.9,
+    ])
+    expect(detectCutoff(NOTCH, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
   })
 })
 
