@@ -490,7 +490,8 @@
           "El veredicto de calidad se ha reconstruido: los másters oscuros y los MP3 de 320 kbps legítimos ya no se marcan como falsos por su caída natural de agudos.",
           "La escala ahora es absoluta, como la lee un DJ: llegar a ~20 kHz es calidad completa (320 / sin pérdidas), 18–19,5 kHz es sospechoso y por debajo de 18 kHz es mala — sea cual sea la frecuencia de muestreo del archivo.",
           "Surco detecta agudos regenerados por «mejoradores» de audio: una pista inflada artificialmente sobre una fuente de bajo bitrate ya no pasa por buena.",
-          "Los cortes suaves de codificador (~160–192 kbps) que antes se colaban como buena calidad ahora se detectan y se sitúan donde están."
+          "Los cortes suaves de codificador (~160–192 kbps) que antes se colaban como buena calidad ahora se detectan y se sitúan donde están.",
+          "Detección de agudos reconstruidos: los archivos «mejorados» a partir de fuentes de bajo bitrate (SBR/enhancers) ya no pasan como buena calidad aunque su espectro llegue hasta arriba."
         ]
       },
       {
