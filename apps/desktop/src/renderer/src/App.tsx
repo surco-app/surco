@@ -43,6 +43,7 @@ import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { useAutoMatch } from './hooks/useAutoMatch'
+import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -584,6 +585,8 @@ export default function App(): React.JSX.Element {
     selected,
     selectedId,
   })
+  // While audio plays, the Dock icon's engraved wave animates (macOS only).
+  useDockPlayingIndicator(audioRef)
 
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)

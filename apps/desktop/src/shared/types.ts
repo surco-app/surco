@@ -334,3 +334,10 @@ export interface TrackProperties {
   // recognized.
   tagFormats: string[]
 }
+
+// PNG data URLs the renderer rasterizes from the icon SVG: main cycles `frames`
+// in the Dock while audio plays and restores `resting` when it stops.
+export interface DockIconFrames {
+  resting: string
+  frames: string[]
+}

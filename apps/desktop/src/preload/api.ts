@@ -11,6 +11,7 @@ import type {
   CoverRead,
   DiscogsRelease,
   DiscogsSearchResult,
+  DockIconFrames,
   KeyResult,
   LoudnessResult,
   ProcessJob,
@@ -85,4 +86,8 @@ export interface Api {
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void
   onWindowFocus: (cb: (focused: boolean) => void) => () => void
+  // The Dock playing animation (macOS only): the renderer rasterizes the icon
+  // frames — main has no DOM to render the SVG — and reports play/pause.
+  setDockFrames: (frames: DockIconFrames) => void
+  setDockPlaying: (playing: boolean) => void
 }

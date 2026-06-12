@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AppleMusicLookupCandidate,
   BpmResult,
+  DockIconFrames,
   KeyResult,
   LoudnessResult,
   ProcessProgress,
@@ -89,6 +90,8 @@ const api: Api = {
     ipcRenderer.on('window:focus', listener)
     return () => ipcRenderer.removeListener('window:focus', listener)
   },
+  setDockFrames: (frames: DockIconFrames): void => ipcRenderer.send('dock:frames', frames),
+  setDockPlaying: (playing: boolean): void => ipcRenderer.send('dock:playing', playing),
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -10,6 +10,7 @@ import {
   dialog,
   ipcMain,
   Menu,
+  type NativeImage,
   nativeImage,
   protocol,
   shell,
@@ -24,6 +25,7 @@ import type {
   AppleMusicLookupCandidate,
   AppleMusicUpdateJob,
   CoverExportJob,
+  DockIconFrames,
   ProcessJob,
   ProcessStage,
   Settings,
@@ -288,6 +290,9 @@ function createWindow(): BrowserWindow {
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))
   win.on('focus', () => win.webContents.send('window:focus', true))
+  // The renderer dies with the window without sending a final pause, so a track
+  // playing at close would otherwise leave the Dock animating forever.
+  win.on('closed', stopDockAnimation)
   buildAppMenu(win)
 
   win.webContents.setWindowOpenHandler((details) => {
@@ -304,10 +309,57 @@ function createWindow(): BrowserWindow {
   return win
 }
 
+// Dock playing animation (macOS): the renderer rasterizes the icon frames — main
+// has no DOM to render the SVG — and reports the <audio> element's play/pause.
+let dockFrames: NativeImage[] = []
+let dockResting: NativeImage | null = null
+let dockPlaying = false
+let dockTimer: NodeJS.Timeout | null = null
+
+function syncDockAnimation(): void {
+  const wasAnimating = dockTimer !== null
+  if (dockTimer) {
+    clearInterval(dockTimer)
+    dockTimer = null
+  }
+  if (dockPlaying && dockFrames.length > 0) {
+    let frame = 0
+    dockTimer = setInterval(() => {
+      app.dock?.setIcon(dockFrames[frame])
+      frame = (frame + 1) % dockFrames.length
+    }, 100)
+  } else if (wasAnimating && dockResting) {
+    // Restore only after having animated, so the shipped .icns stays untouched
+    // until the player is first used.
+    app.dock?.setIcon(dockResting)
+  }
+}
+
+function stopDockAnimation(): void {
+  dockPlaying = false
+  syncDockAnimation()
+}
+
 function registerIpc(): void {
   // Synchronous so the preload can expose api.version as a plain value.
   ipcMain.on('app:version', (e) => {
     e.returnValue = app.getVersion()
+  })
+
+  ipcMain.on('dock:frames', (_e, payload: DockIconFrames) => {
+    dockResting = nativeImage.createFromDataURL(payload.resting)
+    dockFrames = payload.frames.map((frame) => nativeImage.createFromDataURL(frame))
+    // Frames can land after the first play already started (they rasterize async),
+    // so apply the current state instead of waiting for the next play/pause.
+    syncDockAnimation()
+  })
+
+  ipcMain.on('dock:playing', (_e, playing: boolean) => {
+    // Re-sending the current state must not restart the cycle mid-loop (switching
+    // tracks while playing re-fires 'play' without an intervening pause).
+    if (playing === dockPlaying) return
+    dockPlaying = playing
+    syncDockAnimation()
   })
 
   ipcMain.handle('settings:get', () => getSettings())
