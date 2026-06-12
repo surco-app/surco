@@ -491,7 +491,8 @@
           "New \u201cUpdate in Apple Music\u201d and \u201cShow in Apple Music\u201d actions in the editor; if you deleted the library copy, Surco imports it again.",
           "Click the artwork to view it full size, at its real resolution — embedded art is pulled from the original file, not the thumbnail.",
           "The field menu now also transforms text: Title Case, lowercase or UPPERCASE in one click.",
-          "While a track plays, the Dock icon animates with a sound wave."
+          "While a track plays, the Dock icon animates with a sound wave.",
+          "Editing several tracks at once now shows only the fields you picked in Settings, just like editing one."
         ]
       },
       {

@@ -491,7 +491,8 @@
           "Nuevas acciones «Actualizar en Apple Music» y «Mostrar en Apple Music» en el editor; si borraste la copia de la biblioteca, Surco la vuelve a importar.",
           "Pulsa la carátula para verla a tamaño completo, con su resolución real — el arte incrustado se extrae del archivo original, no de la miniatura.",
           "El menú de cada campo ahora también transforma el texto: Tipo Título, minúsculas o MAYÚSCULAS en un clic.",
-          "Mientras suena una pista, el icono del Dock se anima con una onda de sonido."
+          "Mientras suena una pista, el icono del Dock se anima con una onda de sonido.",
+          "Al editar varias pistas a la vez solo se muestran los campos que elegiste en Ajustes, igual que al editar una."
         ]
       },
       {
