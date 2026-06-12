@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Band, bandFrequencies, detectCutoff } from './cutoff'
+import { type Band, bandFrequencies, detectCutoff, fineBandFrequencies } from './cutoff'
 
 // Per-band RMS (dB) measured from real signals at 44.1 kHz (Nyquist 22.05 kHz),
 // band centres 9–21 kHz. These encode the distinction the detector exists to
@@ -154,6 +154,79 @@ describe('detectCutoff', () => {
       -33.0, -33.6, -34.4, -35.1, -36.0, -44.5, -36.8, -38.0, -39.2, -40.6, -42.0, -44.8, -47.9,
     ])
     expect(detectCutoff(NOTCH, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+  })
+})
+
+// Fine 500 Hz bands (13–21 kHz) measured from the same real files. At this
+// resolution genuine spectra still fall monotonically, but reconstructed highs
+// (HE-AAC SBR, spectral-band enhancers) saw-tooth where their transposed
+// patches meet — the only measurable trace of a source that fooled every
+// coarse rule by tapering smoothly all the way to Nyquist.
+const FINE_FREQS = [
+  13000, 13500, 14000, 14500, 15000, 15500, 16000, 16500, 17000, 17500, 18000, 18500, 19000,
+  19500, 20000, 20500, 21000,
+]
+const fine = (rms: number[]): Band[] => FINE_FREQS.map((freqHz, i) => ({ freqHz, rmsDb: rms[i] }))
+
+// Real 16-bit WAV from an SBR-class source (measured): coarse bands taper
+// smoothly to Nyquist with no knee and no hump — graded "Good" — yet the fine
+// bands rise and fall by 1.7–2.3 dB above 16.5 kHz, and the real content ends
+// at the first sharp fine drop (16.5→17 kHz, 4.9 dB).
+const SBR_COARSE = band([
+  -31.1, -30.9, -31.8, -32.4, -33.7, -35.6, -37.2, -39.4, -42.4, -46.6, -50.4, -53.0, -55.7,
+])
+const SBR_FINE = fine([
+  -38.6, -38.5, -39.6, -40.1, -41.5, -42.4, -43.4, -45.2, -50.1, -50.1, -48.4, -54.6, -52.3,
+  -56.8, -55.7, -58.3, -64.8,
+])
+// The same fine measurement on a genuine 320 (the SMOOTH_TAPER_320 file):
+// perfectly monotone, zero roughness — the population the threshold must spare.
+const SMOOTH_TAPER_320_FINE = fine([
+  -41.7, -42.6, -44.1, -47.1, -48.4, -50.2, -52.4, -55.0, -58.1, -60.5, -62.3, -63.9, -66.1,
+  -68.8, -71.3, -74.6, -77.6,
+])
+
+describe('detectCutoff fine-band roughness', () => {
+  it('flags patched highs by their fine-band sawtooth and reports the real ceiling', () => {
+    expect(detectCutoff(SBR_COARSE, NYQUIST, SBR_FINE)).toEqual({
+      cutoffHz: 16500,
+      processed: true,
+    })
+  })
+
+  it('leaves a genuine smooth taper alone when its fine bands fall monotonically', () => {
+    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST, SMOOTH_TAPER_320_FINE)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+    })
+  })
+
+  it('ignores fine bands that failed to parse instead of reading -Infinity as jagged', () => {
+    // A missing astats line maps to -Infinity; a -Inf → finite pair would read as
+    // an infinite rise and flag every track the moment parsing hiccups.
+    const broken = SBR_FINE.map((b, i) => (i % 2 === 0 ? { ...b, rmsDb: -Infinity } : b))
+    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST, broken)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+    })
+  })
+
+  it('behaves exactly as before when no fine bands are supplied', () => {
+    expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+  })
+})
+
+describe('fineBandFrequencies', () => {
+  it('spans 13 kHz to 21 kHz in 500 Hz steps at 44.1 kHz', () => {
+    expect(fineBandFrequencies(22050)).toEqual(FINE_FREQS)
+  })
+
+  it('caps at 21 kHz for higher sample rates — the patch region is absolute', () => {
+    expect(Math.max(...fineBandFrequencies(24000))).toBe(21000)
+  })
+
+  it('returns nothing when Nyquist sits below the patch region', () => {
+    expect(fineBandFrequencies(8000)).toEqual([])
   })
 })
 

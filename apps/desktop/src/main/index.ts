@@ -702,7 +702,7 @@ function registerIpc(): void {
         // Namespace carries the palette and the cutoff-algorithm generation, so
         // changing either invalidates entries cached under the previous one — they
         // regenerate on next open instead of serving stale colors or verdicts.
-        'spectrogram-cividis-v2',
+        'spectrogram-cividis-v3',
         inputPath,
         () =>
           buildSpectrum(inputPath, {

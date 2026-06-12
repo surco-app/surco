@@ -53,12 +53,40 @@ const HUMP_RISE_DB = 5
 // highs push up to reference level, louder than bands an octave lower.
 const HUMP_PLATEAU_MARGIN_DB = 2
 
+// Reconstructed highs (HE-AAC SBR, spectral-band enhancers) can defeat every
+// coarse rule: they track the music, sit below the hump threshold and taper
+// smoothly to Nyquist. Their trace is spectral, not temporal — at 500 Hz
+// resolution the transposed patches meet in a saw-tooth, while genuine spectra
+// keep falling monotonically (0 dB of rises measured across every real file in
+// the corpus vs 5–11.5 dB on the synthetic ones).
+export const FINE_BAND_WIDTH_HZ = 500
+const FINE_BAND_START_HZ = 13000
+const FINE_BAND_MAX_HZ = 21000
+// Only the region above the typical patch crossover counts; below it, real
+// content is loud enough to mask any patch border.
+const ROUGHNESS_START_HZ = 16500
+// Rises below this are measurement jitter, not structure.
+const ROUGHNESS_RISE_MIN_DB = 1
+// Total rise that marks a saw-tooth. Real files measured 0; synthetic 5–11.5.
+const ROUGHNESS_TOTAL_DB = 3
+// With the saw-tooth established, the source's real ceiling is where the first
+// sharp fine-band drop appears — the edge the patches were grafted onto.
+const ROUGHNESS_EDGE_DROP_DB = 4
+
 // The band centre frequencies to probe for a given Nyquist, spaced one band
 // width apart from BAND_START_HZ up to just under Nyquist (capped at BAND_MAX_HZ).
 export function bandFrequencies(nyquistHz: number): number[] {
   const top = Math.min(nyquistHz - BAND_WIDTH_HZ / 2, BAND_MAX_HZ)
   const freqs: number[] = []
   for (let f = BAND_START_HZ; f <= top; f += BAND_WIDTH_HZ) freqs.push(f)
+  return freqs
+}
+
+// The fine-resolution probe for the patch region, same shape as bandFrequencies.
+export function fineBandFrequencies(nyquistHz: number): number[] {
+  const top = Math.min(nyquistHz - FINE_BAND_WIDTH_HZ / 2, FINE_BAND_MAX_HZ)
+  const freqs: number[] = []
+  for (let f = FINE_BAND_START_HZ; f <= top; f += FINE_BAND_WIDTH_HZ) freqs.push(f)
   return freqs
 }
 
@@ -97,12 +125,36 @@ function findKneeIndex(bands: Band[]): number {
   return kneeIndex
 }
 
+// The ceiling the synthetic patches were grafted onto, or null when the fine
+// bands fall monotonically (genuine audio). Non-finite readings are dropped
+// rather than compared: one unparsed band against a real one would read as an
+// infinite rise and flag every track the moment parsing hiccups.
+function roughnessCeiling(fineBands: Band[]): Band | null {
+  const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb))
+  let totalRise = 0
+  for (let i = 0; i < finite.length - 1; i++) {
+    if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
+    const rise = finite[i + 1].rmsDb - finite[i].rmsDb
+    if (rise > ROUGHNESS_RISE_MIN_DB) totalRise += rise
+  }
+  if (totalRise < ROUGHNESS_TOTAL_DB) return null
+  for (let i = 0; i < finite.length - 1; i++) {
+    if (finite[i].rmsDb - finite[i + 1].rmsDb >= ROUGHNESS_EDGE_DROP_DB) return finite[i]
+  }
+  return finite[0] ?? null
+}
+
 // Returns where the audio's real bandwidth ends. A sustained knee places it at
 // the band before the drop; a synthetic hump places it at the valley the hump
-// papers over; a knee-free taper reads as its energy extent — the last band
-// still within EXTENT_DROP_DB of the reference plateau — and full-band audio
-// (extent reaching the top probed band) reports Nyquist.
-export function detectCutoff(bands: Band[], nyquistHz: number): CutoffResult {
+// papers over; a fine-band saw-tooth places it at the patch edge; a knee-free
+// taper reads as its energy extent — the last band still within EXTENT_DROP_DB
+// of the reference plateau — and full-band audio (extent reaching the top
+// probed band) reports Nyquist.
+export function detectCutoff(
+  bands: Band[],
+  nyquistHz: number,
+  fineBands: Band[] = [],
+): CutoffResult {
   if (bands.length < 2) return { cutoffHz: nyquistHz, processed: false }
 
   const plateau = plateauDb(bands)
@@ -111,6 +163,9 @@ export function detectCutoff(bands: Band[], nyquistHz: number): CutoffResult {
 
   const kneeIndex = findKneeIndex(bands)
   if (kneeIndex !== -1) return { cutoffHz: bands[kneeIndex].freqHz, processed: false }
+
+  const ceiling = roughnessCeiling(fineBands)
+  if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true }
 
   const floor = plateau - EXTENT_DROP_DB
   for (let i = bands.length - 1; i >= 0; i--) {

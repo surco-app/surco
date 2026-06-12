@@ -15,7 +15,14 @@ import type {
   TrackProperties,
 } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { BAND_WIDTH_HZ, bandFrequencies, type CutoffResult, detectCutoff } from './cutoff'
+import {
+  BAND_WIDTH_HZ,
+  bandFrequencies,
+  type CutoffResult,
+  detectCutoff,
+  FINE_BAND_WIDTH_HZ,
+  fineBandFrequencies,
+} from './cutoff'
 import {
   loudnormArgs,
   loudnormFilter,
@@ -648,41 +655,48 @@ export async function processCover(
 
 // Builds the single-decode filtergraph that splits the audio into one
 // bandpass→astats branch per band, prints each band's running stats to stdout
-// (file=-) tagged with a surcoband=<freq> metadata key, then mixes the branches
-// so ffmpeg has a single output to render.
+// (file=-) tagged with a surcoband=<freq>x<width> metadata key, then mixes the
+// branches so ffmpeg has a single output to render. The width is part of the
+// tag because the coarse (1 kHz) and fine (500 Hz) probes share centre
+// frequencies — 13000x1000 and 13000x500 are different measurements.
 //
 // It writes no temp files on purpose. An ametadata file= path like
 // C:\Users\...\x.txt is unparseable by ffmpeg's filtergraph (':' separates
 // options and '\' escapes, and no escaping is reliable), which is exactly what
 // broke on Windows. Printing to stdout sidesteps filesystem paths entirely; the
 // surcoband tag lets analyzeCutoff split the merged stream back per band.
-export function cutoffFilter(freqs: number[]): string {
-  const branches = freqs
+export interface BandSpec {
+  freqHz: number
+  widthHz: number
+}
+
+export function cutoffFilter(specs: BandSpec[]): string {
+  const branches = specs
     .map(
-      (f, i) =>
-        `[b${i}]ametadata=mode=add:key=surcoband:value=${f},` +
-        `bandpass=f=${f}:width_type=h:w=${BAND_WIDTH_HZ},astats=metadata=1:reset=0,` +
+      ({ freqHz, widthHz }, i) =>
+        `[b${i}]ametadata=mode=add:key=surcoband:value=${freqHz}x${widthHz},` +
+        `bandpass=f=${freqHz}:width_type=h:w=${widthHz},astats=metadata=1:reset=0,` +
         `ametadata=mode=print:file=-[o${i}]`,
     )
     .join(';')
   return (
-    `[0:a]asetnsamples=n=1048576:p=0,asplit=${freqs.length}${freqs.map((_, i) => `[b${i}]`).join('')};` +
-    `${branches};${freqs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${freqs.length}`
+    `[0:a]asetnsamples=n=1048576:p=0,asplit=${specs.length}${specs.map((_, i) => `[b${i}]`).join('')};` +
+    `${branches};${specs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${specs.length}`
   )
 }
 
-// Pairs each band's centre frequency with its cumulative RMS from the tagged
-// stdout the filter prints. Within a band's block the surcoband tag prints just
-// before its Overall RMS, so we attribute each RMS to the band tagged most
-// recently; astats runs with reset=0, so the last block per band carries the
-// whole-file level — last write wins.
-export function parseBands(stdout: string): Map<number, number> {
-  const rms = new Map<number, number>()
-  let band: number | null = null
+// Pairs each band's "<freq>x<width>" tag with its cumulative RMS from the
+// tagged stdout the filter prints. Within a band's block the surcoband tag
+// prints just before its Overall RMS, so we attribute each RMS to the band
+// tagged most recently; astats runs with reset=0, so the last block per band
+// carries the whole-file level — last write wins.
+export function parseBands(stdout: string): Map<string, number> {
+  const rms = new Map<string, number>()
+  let band: string | null = null
   for (const line of stdout.split('\n')) {
-    const tag = line.match(/surcoband=(\d+)/)
+    const tag = line.match(/surcoband=(\d+x\d+)/)
     if (tag) {
-      band = Number(tag[1])
+      band = tag[1]
       continue
     }
     const level = line.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/)
@@ -692,13 +706,19 @@ export function parseBands(stdout: string): Map<number, number> {
 }
 
 // Measures the energy in each high-frequency band in a single decode (asplit
-// into one bandpass→astats branch per band) and hands the per-band RMS to
-// detectCutoff, which spots the codec's lowpass.
+// into one bandpass→astats branch per band, coarse and fine probes together)
+// and hands the per-band RMS to detectCutoff, which spots the codec's lowpass
+// and the saw-tooth of reconstructed highs.
 export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<CutoffResult> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2) return { cutoffHz: nyquist, processed: false }
+  const fineFreqs = fineBandFrequencies(nyquist)
 
+  const specs: BandSpec[] = [
+    ...freqs.map((freqHz) => ({ freqHz, widthHz: BAND_WIDTH_HZ })),
+    ...fineFreqs.map((freqHz) => ({ freqHz, widthHz: FINE_BAND_WIDTH_HZ })),
+  ]
   const { stdout } = await run(
     ffmpegPath,
     [
@@ -708,7 +728,7 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
       '-i',
       input,
       '-filter_complex',
-      cutoffFilter(freqs),
+      cutoffFilter(specs),
       '-f',
       'null',
       '-',
@@ -716,8 +736,15 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
     { maxBuffer: 1024 * 1024 * 16 },
   )
   const rms = parseBands(stdout)
-  const bands = freqs.map((freqHz) => ({ freqHz, rmsDb: rms.get(freqHz) ?? -Infinity }))
-  return detectCutoff(bands, nyquist)
+  const bands = freqs.map((freqHz) => ({
+    freqHz,
+    rmsDb: rms.get(`${freqHz}x${BAND_WIDTH_HZ}`) ?? -Infinity,
+  }))
+  const fine = fineFreqs.map((freqHz) => ({
+    freqHz,
+    rmsDb: rms.get(`${freqHz}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
+  }))
+  return detectCutoff(bands, nyquist, fine)
 }
 
 // Reads the three figures we surface from ebur128's end-of-run Summary block.
