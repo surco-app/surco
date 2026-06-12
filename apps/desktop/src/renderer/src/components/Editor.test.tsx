@@ -1128,6 +1128,18 @@ describe('Editor Discogs apply', () => {
     expect(screen.getByTestId('discogs-query')).toHaveAccessibleName()
   })
 
+  // Long titles ("Clear Blue Water (Ferry Cor…") truncate in the narrow Discogs
+  // column with no way to read the rest; the native title tooltip reveals the full
+  // name on hover without adding any chrome to the row.
+  it('reveals the full track title on hover via the native tooltip', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    const rows = await screen.findAllByTestId('discogs-track')
+    expect(rows[0].querySelector('[data-fit]')).toHaveAttribute('title', 'Track One')
+  })
+
   // The discoverable, explicit path: expand the album, then pick the track. That
   // single click is what applies the metadata.
   it('applies a track when it is picked from the expanded album', async () => {

@@ -195,7 +195,14 @@ export function DiscogsPanel({
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.position}
                               </span>
-                              <span data-fit className="min-w-0 flex-1 truncate text-sm">
+                              {/* Long titles truncate in this narrow column; the native
+                                  tooltip reveals the full name on hover, like the track
+                                  list's own rows. */}
+                              <span
+                                data-fit
+                                title={t.title}
+                                className="min-w-0 flex-1 truncate text-sm"
+                              >
                                 {t.title}
                               </span>
                               {t === matchedTrack && matchTier && (
