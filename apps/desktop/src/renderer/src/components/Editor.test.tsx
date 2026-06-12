@@ -480,7 +480,7 @@ function MultiHarness() {
         addToAppleMusic={false}
         groupingPresets={[]}
         genrePresets={[]}
-        visibleFields={['title', 'album']}
+        visibleFields={['title', 'album', 'year', 'genre']}
         requiredFields={[]}
         showSpectrum={false}
         showLoudness={false}
@@ -646,7 +646,13 @@ describe('Editor multi-select sequential edits', () => {
 
 describe('Editor multi-select', () => {
   function renderMulti(
-    opts: { done?: boolean; platform?: string; music?: boolean; loudness?: boolean } = {},
+    opts: {
+      done?: boolean
+      platform?: string
+      music?: boolean
+      loudness?: boolean
+      visibleFields?: string[]
+    } = {},
   ) {
     if (opts.platform)
       (window as unknown as { api: { platform: string } }).api.platform = opts.platform
@@ -680,7 +686,7 @@ describe('Editor multi-select', () => {
         keyNotation="camelot"
         groupingPresets={[]}
         genrePresets={[]}
-        visibleFields={['title', 'album']}
+        visibleFields={opts.visibleFields ?? ['title', 'album']}
         requiredFields={[]}
         showSpectrum
         showLoudness={opts.loudness ?? false}
@@ -720,6 +726,17 @@ describe('Editor multi-select', () => {
     // The convert button keeps the format split-control, but converts the whole selection.
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert (2)')
     expect(screen.getByTestId('process-format-toggle')).toBeInTheDocument()
+  })
+
+  // The bulk form must honour the same visible-fields setting as the single editor:
+  // a user who hid Composer or Catalog No. should not see them reappear just because
+  // they selected two tracks.
+  it('hides bulk fields the user has not made visible', () => {
+    renderMulti()
+    expect(screen.queryByTestId('field-composer')).toBeNull()
+    expect(screen.queryByTestId('field-catalogNumber')).toBeNull()
+    expect(screen.queryByTestId('field-publisher')).toBeNull()
+    expect(screen.queryByTestId('field-year')).toBeNull()
   })
 
   it('converts every selected track in the chosen format', () => {
@@ -771,7 +788,9 @@ describe('Editor multi-select', () => {
   // they belong in the shared form: marking a VA album as a compilation track by
   // track is exactly the chore multi-select exists to avoid.
   it('offers composer, original year and the compilation flag across the selection', () => {
-    const { onChangeAllMeta } = renderMulti()
+    const { onChangeAllMeta } = renderMulti({
+      visibleFields: ['title', 'album', 'composer', 'originalYear', 'compilation'],
+    })
     expect(screen.getByTestId('field-composer')).toBeInTheDocument()
     expect(screen.getByTestId('field-originalYear')).toBeInTheDocument()
     const box = screen.getByTestId('field-compilation')

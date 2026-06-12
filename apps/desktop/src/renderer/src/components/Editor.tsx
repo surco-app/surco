@@ -366,9 +366,12 @@ export const Editor = memo(function Editor({
   // The bulk and single forms render the same tree; only where a field's value comes
   // from and where an edit goes differ, so each mode reduces to a list of specs the
   // form maps over.
+  // Bulk mode starts from BULK_FIELDS (only release-level fields make sense across a
+  // selection) but still honours the user's visible-fields setting, so hidden fields
+  // don't reappear just because several tracks are selected.
   const fieldSpecs: FieldSpec[] =
     isMulti && selectedTracks
-      ? BULK_FIELDS.map((key) => {
+      ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
           const shared = commonValue(selectedTracks, key)
           return {
             key,
