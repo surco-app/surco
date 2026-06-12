@@ -112,7 +112,7 @@
       {
         "kick": "library",
         "title": "Hands off to your decks",
-        "body": "Send tracks straight to Apple Music, or export the whole crate as a rekordbox or Traktor collection — tags and artwork ride inside the file."
+        "body": "Send tracks straight to Apple Music —and keep their copies in sync as you edit—, or export the whole crate as a rekordbox or Traktor collection."
       },
       {
         "kick": "naming",
@@ -434,7 +434,8 @@
         "points": [
           "To Apple Music in one click, during conversion.",
           "Export rekordbox (.xml) and Traktor (.nml) collections.",
-          "Surco warns you if a track is already in your Apple Music library."
+          "Surco warns you if a track is already in your Apple Music library.",
+          "Edit a track later and Surco updates its Apple Music copy instead of duplicating it."
         ],
         "shot": "",
         "shotCaption": "Exporting to rekordbox or Traktor."
@@ -481,6 +482,16 @@
     "outroTitle": "Try it all in your next session",
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
+      {
+        "version": "0.11",
+        "date": "June 12, 2026",
+        "title": "Apple Music, always in sync",
+        "items": [
+          "Apple Music sync: re-converting an edited track updates its library copy — tags and artwork — instead of duplicating it.",
+          "New \u201cUpdate in Apple Music\u201d and \u201cShow in Apple Music\u201d actions in the editor; if you deleted the library copy, Surco imports it again.",
+          "Click the artwork to view it full size, at its real resolution — embedded art is pulled from the original file, not the thumbnail."
+        ]
+      },
       {
         "version": "0.10",
         "date": "June 11, 2026",

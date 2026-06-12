@@ -112,7 +112,7 @@
       {
         "kick": "biblioteca",
         "title": "Directo a tus platos",
-        "body": "Envía pistas directas a Apple Music, o exporta la cola entera como colección de rekordbox o Traktor — los tags y la carátula viajan dentro del archivo."
+        "body": "Envía pistas directas a Apple Music —y mantén su copia al día cuando editas—, o exporta la cola entera como colección de rekordbox o Traktor."
       },
       {
         "kick": "nombres",
@@ -434,7 +434,8 @@
         "points": [
           "A Apple Music con un clic, durante la conversión.",
           "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
-          "Surco te avisa si una pista ya está en tu biblioteca de Apple Music."
+          "Surco te avisa si una pista ya está en tu biblioteca de Apple Music.",
+          "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla."
         ],
         "shot": "",
         "shotCaption": "Exportar a rekordbox o Traktor."
@@ -481,6 +482,16 @@
     "outroTitle": "Pruébalo todo en tu próxima sesión",
     "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
     "releases": [
+      {
+        "version": "0.11",
+        "date": "12 de junio de 2026",
+        "title": "Apple Music, siempre al día",
+        "items": [
+          "Sincronización con Apple Music: reconvertir una pista editada actualiza su copia en la biblioteca — tags y carátula — en vez de duplicarla.",
+          "Nuevas acciones «Actualizar en Apple Music» y «Mostrar en Apple Music» en el editor; si borraste la copia de la biblioteca, Surco la vuelve a importar.",
+          "Pulsa la carátula para verla a tamaño completo, con su resolución real — el arte incrustado se extrae del archivo original, no de la miniatura."
+        ]
+      },
       {
         "version": "0.10",
         "date": "11 de junio de 2026",
