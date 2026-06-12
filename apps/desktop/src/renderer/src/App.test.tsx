@@ -749,6 +749,35 @@ describe('App header convert button', () => {
     expect(screen.queryByTestId('confirm-ok')).toBeNull()
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
   })
+
+  // While the batch runs, the convert button itself becomes the cancel action — one
+  // button changing state, not a second button popping in next to it and shifting
+  // the toolbar around.
+  it('turns the convert button into cancel while the batch runs', async () => {
+    let finishFirst: (r: { outputPath: string; inPlace: boolean }) => void = () => {}
+    const processTrack = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve
+        }),
+    )
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    const button = screen.getByTestId('convert-selected')
+    fireEvent.click(button)
+    await waitFor(() => expect(button).toHaveTextContent('Cancel'))
+    expect(screen.queryByTestId('cancel-convert-all')).toBeNull()
+    fireEvent.click(button)
+    finishFirst({ outputPath: '/out/x.aiff', inPlace: false })
+    await waitFor(() => expect(button).toHaveTextContent('Convert ('))
+    expect(processTrack).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('App keyboard shortcuts', () => {

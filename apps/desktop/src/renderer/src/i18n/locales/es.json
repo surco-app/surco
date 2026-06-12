@@ -20,7 +20,6 @@
   "header": {
     "add": "Añadir archivos",
     "convert": "Convertir",
-    "convertingCount": "Convirtiendo… {{done}}/{{total}}",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",

@@ -208,30 +208,24 @@ export const Toolbar = memo(function Toolbar({
               />
             </button>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+            {/* One button, two states: while the batch runs it morphs into the cancel
+                action (like the analyze and auto-match buttons above) instead of a
+                second button popping in next to it and shifting the toolbar. */}
             <button
               type="button"
               data-testid="convert-selected"
-              onClick={onConvertSelected}
-              disabled={selectedEligibleCount === 0 || batching}
-              className="press flex h-8 items-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              onClick={batching ? onCancelConvert : onConvertSelected}
+              disabled={!batching && selectedEligibleCount === 0}
+              className={`press flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
+                batching
+                  ? 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)]'
+                  : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
+              }`}
             >
               {batching
-                ? tr('header.convertingCount', {
-                    done: batchProgress.done,
-                    total: batchProgress.total,
-                  })
+                ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
                 : `${tr('header.convert')} (${selectedEligibleCount})`}
             </button>
-            {batching && (
-              <button
-                type="button"
-                data-testid="cancel-convert-all"
-                onClick={onCancelConvert}
-                className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-              >
-                {tr('common.cancel')}
-              </button>
-            )}
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             <button
               type="button"
