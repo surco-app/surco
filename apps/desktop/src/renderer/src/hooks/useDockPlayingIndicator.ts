@@ -22,10 +22,15 @@ export function useDockPlayingIndicator(audioRef: React.RefObject<HTMLAudioEleme
     const onPause = (): void => window.api.setDockPlaying(false)
     audio.addEventListener('play', onPlay)
     audio.addEventListener('pause', onPause)
+    // Closing the player tears the element down with pause() + load(), and the
+    // media load algorithm discards the queued pause event; 'emptied' is what
+    // actually fires when the element resets.
+    audio.addEventListener('emptied', onPause)
     return () => {
       cancelled = true
       audio.removeEventListener('play', onPlay)
       audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('emptied', onPause)
     }
   }, [audioRef])
 }

@@ -49,6 +49,19 @@ describe('useDockPlayingIndicator', () => {
     expect(setDockPlaying).toHaveBeenLastCalledWith(false)
   })
 
+  // Closing the player tears the element down with pause() + load(), and the media
+  // load algorithm discards the queued pause event — so without watching the reset
+  // itself, the Dock would keep animating after the player is closed.
+  it('stops the dock animation when the element is reset', () => {
+    const { setDockPlaying } = setApi('darwin')
+    render(<Harness />)
+    const audio = screen.getByTestId('audio')
+
+    fireEvent.play(audio)
+    fireEvent.emptied(audio)
+    expect(setDockPlaying).toHaveBeenLastCalledWith(false)
+  })
+
   // Main has no DOM to rasterize the SVG, so the renderer ships the frames up
   // front; without them main has nothing to cycle when play arrives.
   it('ships the rasterized icon frames to the main process', async () => {
