@@ -62,6 +62,7 @@ const api: Api = {
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
+  readCoverFull: (path: string) => ipcRenderer.invoke('audio:coverFull', path),
   onMenuCommand: (cb: (id: string) => void) => {
     const listener = (_e: unknown, id: string): void => cb(id)
     ipcRenderer.on('menu:command', listener)

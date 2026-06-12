@@ -153,6 +153,7 @@
     "coverDrop": "Drag or click to add artwork",
     "coverDropActive": "Drop the image",
     "coverAlt": "Artwork",
+    "coverView": "View the artwork full size",
     "coverTitle": "Drag an image to use it as the artwork",
     "coverExport": "Export artwork",
     "coverRemove": "Remove artwork",

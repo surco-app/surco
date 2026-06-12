@@ -198,6 +198,21 @@ export async function extractCoverFile(input: string): Promise<string | null> {
   }
 }
 
+// The full-resolution art as a data URL, for the cover lightbox: the renderer's
+// session-long copy is a 512px thumbnail, so viewing the art big pulls the original
+// from the source file. A data URL (not the temp path) because the sandboxed
+// renderer can't load arbitrary file:// images.
+export async function extractCoverDataUrl(input: string): Promise<string | null> {
+  const path = await extractCoverFile(input)
+  if (!path) return null
+  try {
+    const buf = await readFile(path)
+    return `data:image/jpeg;base64,${buf.toString('base64')}`
+  } finally {
+    await unlink(path).catch(() => {})
+  }
+}
+
 export async function extractCover(input: string): Promise<CoverRead | null> {
   const out = join(tmpdir(), tmpName('cover', 'jpg'))
   try {

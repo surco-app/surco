@@ -8,6 +8,7 @@ import { revokeCoverUrl } from '../lib/coverUrl'
 import { isLowResCover } from '../lib/quality'
 import { stepImageIndex } from '../lib/release'
 import type { TrackItem } from '../types'
+import { CoverLightbox } from './CoverLightbox'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -47,6 +48,7 @@ export function CoverPicker({
       : undefined
   const displayCover = isMulti ? sharedCover : item.coverUrl
   const [coverDragging, setCoverDragging] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   // The artwork the file arrived with: its embedded cover, not whatever coverUrl
   // happens to hold when the editor mounts (a release match may have already filled
   // it). The picker lists it first so the user can step to the release's images and
@@ -162,26 +164,36 @@ export function CoverPicker({
       />
       {displayCover ? (
         <div className="group relative w-40">
-          <img
-            data-testid="cover-preview"
-            src={displayCover}
-            alt={tr('editor.coverAlt')}
-            draggable={!isMulti}
-            onLoad={(e) =>
-              setCoverDims({
-                w: e.currentTarget.naturalWidth,
-                h: e.currentTarget.naturalHeight,
-              })
-            }
-            onDragStart={(e) => {
-              if (isMulti || !coverDragPath.current) return
-              e.preventDefault()
-              window.api.startCoverDrag(coverDragPath.current)
-            }}
-            className={`h-40 w-40 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
-              coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
-            }`}
-          />
+          {/* The button opens the artwork big; the img inside keeps its own drag-out
+              gesture (an actual drag suppresses the click, so the two don't fight). */}
+          <button
+            type="button"
+            data-testid="cover-zoom"
+            onClick={() => setLightboxOpen(true)}
+            aria-label={tr('editor.coverView')}
+            className="block cursor-zoom-in"
+          >
+            <img
+              data-testid="cover-preview"
+              src={displayCover}
+              alt={tr('editor.coverAlt')}
+              draggable={!isMulti}
+              onLoad={(e) =>
+                setCoverDims({
+                  w: e.currentTarget.naturalWidth,
+                  h: e.currentTarget.naturalHeight,
+                })
+              }
+              onDragStart={(e) => {
+                if (isMulti || !coverDragPath.current) return
+                e.preventDefault()
+                window.api.startCoverDrag(coverDragPath.current)
+              }}
+              className={`h-40 w-40 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
+                coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
+              }`}
+            />
+          </button>
           {!isMulti && (
             <>
               <button
@@ -251,6 +263,15 @@ export function CoverPicker({
             <ChevronRight className="h-3 w-3" aria-hidden="true" />
           </button>
         </div>
+      )}
+      {lightboxOpen && displayCover && (
+        <CoverLightbox
+          src={displayCover}
+          // Mirrors coverSourceOf: only when the shown cover is the file's own
+          // embedded thumbnail does the audio file hold a better original.
+          fullResFrom={!isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined}
+          onClose={() => setLightboxOpen(false)}
+        />
       )}
       {displayCover && coverDims && (
         <div

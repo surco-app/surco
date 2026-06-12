@@ -45,6 +45,7 @@ import {
   buildSpectrum,
   convertAudio,
   extractCover,
+  extractCoverDataUrl,
   generateSpectrogram,
   measureBpm,
   measureKey,
@@ -639,6 +640,7 @@ function registerIpc(): void {
   ipcMain.handle('audio:duration', (_e, inputPath: string) => probeDuration(inputPath))
 
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
+  ipcMain.handle('audio:coverFull', (_e, inputPath: string) => extractCoverDataUrl(inputPath))
 
   ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
     try {
@@ -691,7 +693,12 @@ function registerIpc(): void {
       // Unlike a null loudness (a parse failure worth retrying), a null here is
       // a real measurement — beatless material — so it is cached too; only a
       // decode error (which throws) is left uncached for a later retry.
-      return await cachedAnalysis('bpm', inputPath, () => measureBpm(inputPath), () => true)
+      return await cachedAnalysis(
+        'bpm',
+        inputPath,
+        () => measureBpm(inputPath),
+        () => true,
+      )
     } catch (err) {
       log.error('audio:bpm failed', err)
       return null
@@ -702,7 +709,12 @@ function registerIpc(): void {
     try {
       // Same caching contract as audio:bpm: a null (atonal material) is a real
       // measurement and is cached; only a decode error retries.
-      return await cachedAnalysis('key', inputPath, () => measureKey(inputPath), () => true)
+      return await cachedAnalysis(
+        'key',
+        inputPath,
+        () => measureKey(inputPath),
+        () => true,
+      )
     } catch (err) {
       log.error('audio:key failed', err)
       return null

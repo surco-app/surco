@@ -206,6 +206,69 @@ describe('Editor cover picker', () => {
     expect(screen.getByTestId('cover-resolution')).toHaveTextContent('600 × 600 px')
     expect(screen.getByTestId('cover-quality-dot')).toHaveAttribute('data-lowres', 'false')
   })
+
+  // The 160px well can't show whether art is actually sharp or what it depicts;
+  // clicking it opens the artwork big, and the backdrop click puts it away.
+  it('opens the cover large when the thumbnail is clicked and closes it from the backdrop', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve(null)
+    renderEditor({ id: 'a', coverUrl: 'blob:cover' })
+    fireEvent.click(screen.getByTestId('cover-zoom'))
+    expect(screen.getByTestId('cover-lightbox-img')).toHaveAttribute('src', 'blob:cover')
+    fireEvent.click(screen.getByTestId('cover-lightbox-backdrop'))
+    expect(screen.queryByTestId('cover-lightbox-img')).not.toBeInTheDocument()
+  })
+
+  // App's global Escape only closes App-owned modals; the lightbox is editor-local,
+  // so it must dismiss itself or Escape would dead-end while it covers the screen.
+  it('closes the lightbox with Escape', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve(null)
+    renderEditor({ id: 'a', coverUrl: 'blob:cover' })
+    fireEvent.click(screen.getByTestId('cover-zoom'))
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('cover-lightbox-img')).not.toBeInTheDocument()
+  })
+
+  // The renderer's session-long copy of embedded art is a 512px thumbnail; viewing
+  // it large must pull the original from the audio file, or the lightbox would just
+  // scale up the thumbnail and lie about the artwork's real quality.
+  it('upgrades an embedded cover to the full-resolution original in the lightbox', async () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.prepareCoverDrag = () => Promise.resolve(null)
+    const readCoverFull = vi.fn().mockResolvedValue('data:image/jpeg;base64,FULL')
+    api.readCoverFull = readCoverFull
+    renderEditor({
+      id: 'a',
+      inputPath: '/m/a.wav',
+      coverUrl: 'data:image/jpeg;base64,thumb',
+      embeddedCover: 'data:image/jpeg;base64,thumb',
+    })
+    fireEvent.click(screen.getByTestId('cover-zoom'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-lightbox-img')).toHaveAttribute(
+        'src',
+        'data:image/jpeg;base64,FULL',
+      ),
+    )
+    expect(readCoverFull).toHaveBeenCalledWith('/m/a.wav')
+  })
+
+  // A Discogs or user-picked cover is already the full image — asking main to
+  // extract anything from the audio file would be wasted work (and wrong art).
+  it('does not extract from the file when the shown cover is not the embedded one', () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.prepareCoverDrag = () => Promise.resolve(null)
+    const readCoverFull = vi.fn()
+    api.readCoverFull = readCoverFull
+    renderEditor({ id: 'a', inputPath: '/m/a.wav', coverUrl: 'https://discogs/full.jpg' })
+    fireEvent.click(screen.getByTestId('cover-zoom'))
+    expect(screen.getByTestId('cover-lightbox-img')).toHaveAttribute(
+      'src',
+      'https://discogs/full.jpg',
+    )
+    expect(readCoverFull).not.toHaveBeenCalled()
+  })
 })
 
 describe('Editor derive from filename', () => {

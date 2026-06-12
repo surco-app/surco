@@ -77,6 +77,8 @@ export interface Api {
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<CoverRead | null>
+  // The file's embedded art at its original resolution, for the cover lightbox.
+  readCoverFull: (path: string) => Promise<string | null>
   onMenuCommand: (cb: (id: string) => void) => () => void
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => () => void
   installUpdate: () => Promise<void>
