@@ -4,18 +4,6 @@ import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../
 
 const run = promisify(execFile)
 
-// Music has no key property — neither scriptable nor read from the file tag — so the
-// comment written to the library carries it ("8A – clean intro"). Only the Music copy
-// gets the prefix; the file's own comment tag stays exactly what the user typed. A
-// comment that already starts with the key (case-insensitively) is left alone so a
-// re-add or sync never stacks "8A – 8A – …".
-function musicComment(meta: TrackMetadata): string {
-  const key = meta.key.trim()
-  const comment = meta.comment.trim()
-  if (!key || comment.toLowerCase().startsWith(key.toLowerCase())) return comment
-  return comment ? `${key} – ${comment}` : key
-}
-
 function textFields(meta: TrackMetadata): [string, string][] {
   return [
     ['name', meta.title],
@@ -24,7 +12,7 @@ function textFields(meta: TrackMetadata): [string, string][] {
     ['album', meta.album],
     ['genre', meta.genre],
     ['grouping', meta.grouping],
-    ['comment', musicComment(meta)],
+    ['comment', meta.comment],
   ]
 }
 

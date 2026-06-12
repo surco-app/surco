@@ -101,19 +101,10 @@ describe('buildAddScript', () => {
     expect(script).toContain('return persistent ID of theTrack')
   })
 
-  it('prepends the musical key to the Music comment — Music has no key field and ignores the file tag, so this is the only way a DJ browsing the library (or djay reading it) sees the key', () => {
+  it('writes the comment verbatim, never auto-prepending the key: the library must show exactly what the user typed, and whoever wants the key visible in Music inserts it into the comment field (the field-insert menu), which reaches the file tag too', () => {
     const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: 'clean intro' })
-    expect(script).toContain('set comment of theTrack to "8A – clean intro"')
-  })
-
-  it('writes the key alone as the comment when the track has no comment of its own', () => {
-    const script = buildAddScript('/x.aiff', { ...base, key: 'Am' })
-    expect(script).toContain('set comment of theTrack to "Am"')
-  })
-
-  it('does not double the key when the user already starts their comment with it', () => {
-    const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: '8A energy bomb' })
-    expect(script).toContain('set comment of theTrack to "8A energy bomb"')
+    expect(script).toContain('set comment of theTrack to "clean intro"')
+    expect(script).not.toContain('8A')
   })
 })
 
@@ -137,11 +128,6 @@ describe('buildUpdateScript', () => {
     const script = buildUpdateScript('ABCD1234', { ...base, bpm: '128' })
     expect(script).toContain('set year of theTrack to 0')
     expect(script).toContain('set bpm of theTrack to 128')
-  })
-
-  it('prepends the musical key to the comment exactly like the add, so a sync never strips the key the add made visible', () => {
-    const script = buildUpdateScript('ABCD1234', { ...base, key: '8A', comment: 'clean intro' })
-    expect(script).toContain('set comment of theTrack to "8A – clean intro"')
   })
 
   it('rewrites the artwork when a cover is supplied and leaves it alone otherwise', () => {
