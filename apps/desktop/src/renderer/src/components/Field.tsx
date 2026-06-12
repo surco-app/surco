@@ -31,6 +31,10 @@ export function Field({
   const inputRef = useRef<HTMLInputElement>(null)
   // A field never offers itself, and an empty field has nothing to insert.
   const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
+  // The menu also formats the field's own text, so on fields that host it
+  // (insertSources provided) it appears whenever there is something to insert OR
+  // text to format — not only when another field has a value.
+  const hasMenu = insertSources !== undefined && (insertable.length > 0 || value.trim() !== '')
   return (
     <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 block text-xs font-medium text-fg-dim">{label}</span>
@@ -44,17 +48,18 @@ export function Field({
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
-            insertable.length > 0 ? 'pr-8' : ''
+            hasMenu ? 'pr-8' : ''
           } ${
             invalid
               ? 'border-danger focus:border-danger'
               : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
           }`}
         />
-        {insertable.length > 0 && (
+        {hasMenu && (
           <FieldInsertMenu
             fieldName={name}
             sources={insertable}
+            value={value}
             inputRef={inputRef}
             onChange={onChange}
           />

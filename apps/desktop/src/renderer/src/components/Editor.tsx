@@ -390,7 +390,8 @@ export const Editor = memo(function Editor({
               label: tr(`fields.${def.key}`),
               value: item.meta[def.key] ?? '',
               onChange: (v: string) => setField(def.key, v),
-              insertSources: INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
+              insertSources:
+                !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
               wide: def.wide,
               invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
               suggestions:

@@ -1578,11 +1578,15 @@ describe('Editor insert from field', () => {
     })
   })
 
-  it('hides the trigger when no other visible field has a value', () => {
-    renderEditor({ id: 't1', meta: { title: 'Pepito de los palotes' } }, 'wav', {
+  // Formatting needs no other filled field: with nothing to insert the trigger
+  // stays and the menu offers only the case transforms.
+  it('offers only the case transforms when no other visible field has a value', () => {
+    renderEditor({ id: 't1', meta: { title: 'PEPITO DE LOS PALOTES' } }, 'wav', {
       visibleFields: ['title', 'year'],
     })
-    expect(screen.queryByTestId('field-insert-title')).toBeNull()
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    expect(screen.queryByTestId('field-insert-option-year')).toBeNull()
+    expect(screen.getByTestId('field-insert-option-case-title')).toBeInTheDocument()
   })
 
   // Structured fields (year, BPM, key, track numbers…) hold single validated

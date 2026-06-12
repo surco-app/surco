@@ -31,7 +31,13 @@ function Harness({
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <FieldInsertMenu fieldName="title" sources={sources} inputRef={ref} onChange={setValue} />
+      <FieldInsertMenu
+        fieldName="title"
+        sources={sources}
+        value={value}
+        inputRef={ref}
+        onChange={setValue}
+      />
     </span>
   )
 }
@@ -97,12 +103,14 @@ describe('FieldInsertMenu', () => {
     expect(host()).toHaveValue('Pepito de los palotes2025')
   })
 
-  it('moves focus to the first option on open and cycles with arrow keys', () => {
+  it('moves focus to the first option on open and cycles with arrow keys across inserts and transforms alike', () => {
     render(<Harness />)
     openMenu()
     expect(screen.getByTestId('field-insert-option-year')).toHaveFocus()
     fireEvent.keyDown(screen.getByTestId('field-insert-menu'), { key: 'ArrowDown' })
     expect(screen.getByTestId('field-insert-option-artist')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('field-insert-menu'), { key: 'End' })
+    expect(screen.getByTestId('field-insert-option-case-upper')).toHaveFocus()
     fireEvent.keyDown(screen.getByTestId('field-insert-menu'), { key: 'ArrowDown' })
     expect(screen.getByTestId('field-insert-option-year')).toHaveFocus()
   })
@@ -122,9 +130,50 @@ describe('FieldInsertMenu', () => {
     fireEvent.click(screen.getByTestId('field-insert-backdrop'))
     expect(screen.queryByTestId('field-insert-menu')).toBeNull()
   })
+})
 
-  it('renders nothing when there are no sources', () => {
-    render(<Harness sources={[]} />)
+describe('FieldInsertMenu case transforms', () => {
+  // The same menu that composes a field also fixes its case: rip tags often
+  // arrive ALL CAPS, and each option previews its result so picking is one
+  // informed click, exactly like the insert rows.
+  it('offers case transforms on the current value, each with a preview of the result', () => {
+    render(<Harness initial="PEPITO DE LOS PALOTES" />)
+    openMenu()
+    const title = screen.getByTestId('field-insert-option-case-title')
+    expect(title).toHaveTextContent('Pepito De Los Palotes')
+    fireEvent.click(title)
+    expect(host().value).toBe('Pepito De Los Palotes')
+  })
+
+  it('replaces the whole value when a transform is picked, regardless of where the caret was', () => {
+    render(<Harness initial="Pepito de los palotes" />)
+    const input = host()
+    input.focus()
+    input.setSelectionRange(2, 2)
+    openMenu()
+    fireEvent.click(screen.getByTestId('field-insert-option-case-upper'))
+    expect(host().value).toBe('PEPITO DE LOS PALOTES')
+  })
+
+  // A transform that changes nothing is a dead action — offering "UPPERCASE" on
+  // an already-uppercase field would only make the menu feel broken.
+  it('hides the transforms that would not change the value', () => {
+    render(<Harness initial="PEPITO DE LOS PALOTES" />)
+    openMenu()
+    expect(screen.queryByTestId('field-insert-option-case-upper')).toBeNull()
+    expect(screen.getByTestId('field-insert-option-case-lower')).toBeInTheDocument()
+  })
+
+  // Formatting needs no other filled field, so the trigger must exist even when
+  // there is nothing to insert — the menu then offers only the transforms.
+  it('opens with only transforms when no insert source has a value', () => {
+    render(<Harness sources={[]} initial="PEPITO" />)
+    openMenu()
+    expect(screen.getByTestId('field-insert-option-case-title')).toBeInTheDocument()
+  })
+
+  it('renders nothing when there is neither a value to format nor a source to insert', () => {
+    render(<Harness sources={[]} initial="" />)
     expect(screen.queryByTestId('field-insert-title')).toBeNull()
   })
 })
