@@ -1,4 +1,12 @@
-import { ChevronLeft, ChevronRight, ClipboardPaste, Copy, Download, type LucideIcon, X } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardPaste,
+  Copy,
+  Download,
+  type LucideIcon,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +27,7 @@ function CoverActionButton({
   icon: Icon,
   onClick,
   danger = false,
+  disabled = false,
   className = '',
 }: {
   testid: string
@@ -26,6 +35,7 @@ function CoverActionButton({
   icon: LucideIcon
   onClick: () => void
   danger?: boolean
+  disabled?: boolean
   className?: string
 }): React.JSX.Element {
   return (
@@ -33,13 +43,18 @@ function CoverActionButton({
       type="button"
       data-testid={testid}
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
       className={`press pointer-events-auto rounded-lg p-1.5 text-white transition-colors ${
-        danger ? 'hover:bg-danger/80' : 'hover:bg-white/20'
+        disabled
+          ? 'cursor-not-allowed opacity-40'
+          : danger
+            ? 'hover:bg-danger/80'
+            : 'hover:bg-white/20'
       } ${className}`}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
-      <Tooltip label={label} scope="cover" />
+      {!disabled && <Tooltip label={label} scope="cover" />}
     </button>
   )
 }
@@ -166,7 +181,8 @@ export function CoverPicker({
     function onKey(e: KeyboardEvent): void {
       if (!hoverRef.current || !(e.metaKey || e.ctrlKey)) return
       const el = document.activeElement as HTMLElement | null
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
+        return
       const k = e.key.toLowerCase()
       if (k === 'c') {
         e.preventDefault()
@@ -190,48 +206,56 @@ export function CoverPicker({
   // unobscured at rest, and stays legible on any cover thanks to the gradient scrim.
   // Copy/export/remove act on a single track's own artwork; paste also works on a
   // coverless track and across a multi-selection — so the bar shows whatever applies.
+  // Paste stays in place and just disables when the clipboard has no image, so the bar
+  // never shifts as an icon pops in and out.
   const ownCover = !isMulti && Boolean(displayCover)
-  const coverActions =
-    ownCover || canPaste ? (
-      // The scrim is decorative and lets pointer events through; only the buttons take
-      // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-hover:opacity-100">
-        {ownCover && (
-          <CoverActionButton
-            testid="cover-copy"
-            label={tr('editor.coverCopy')}
-            icon={Copy}
-            onClick={() => void onCoverCopy()}
-          />
-        )}
-        {canPaste && (
-          <CoverActionButton
-            testid="cover-paste"
-            label={tr('editor.coverPaste')}
-            icon={ClipboardPaste}
-            onClick={() => void onCoverPaste()}
-          />
-        )}
-        {ownCover && (
-          <CoverActionButton
-            testid="cover-export"
-            label={tr('editor.coverExport')}
-            icon={Download}
-            onClick={onCoverExport}
-          />
-        )}
-        {ownCover && (
-          <CoverActionButton
-            testid="cover-remove"
-            label={tr('editor.coverRemove')}
-            icon={X}
-            onClick={onCoverRemove}
-            danger
-            className="ml-auto"
-          />
-        )}
-      </div>
-    ) : null
+  const coverActions = (
+    // The scrim is decorative and lets pointer events through; only the buttons take
+    // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-hover:opacity-100">
+      {ownCover && (
+        <CoverActionButton
+          testid="cover-copy"
+          label={tr('editor.coverCopy')}
+          icon={Copy}
+          onClick={() => void onCoverCopy()}
+        />
+      )}
+      <CoverActionButton
+        testid="cover-paste"
+        label={tr('editor.coverPaste')}
+        icon={ClipboardPaste}
+        onClick={() => void onCoverPaste()}
+        disabled={!canPaste}
+      />
+      {ownCover && (
+        <CoverActionButton
+          testid="cover-export"
+          label={tr('editor.coverExport')}
+          icon={Download}
+          onClick={onCoverExport}
+        />
+      )}
+      {ownCover && (
+        <CoverActionButton
+          testid="cover-export"
+          label={tr('editor.coverExport')}
+          icon={Download}
+          onClick={onCoverExport}
+        />
+      )}
+      {ownCover && (
+        <CoverActionButton
+          testid="cover-remove"
+          label={tr('editor.coverRemove')}
+          icon={X}
+          onClick={onCoverRemove}
+          danger
+          className="ml-auto"
+        />
+      )}
+    </div>
+  )
 
   function onCoverDrop(e: React.DragEvent): void {
     e.preventDefault()

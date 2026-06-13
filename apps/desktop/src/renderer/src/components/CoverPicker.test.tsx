@@ -138,13 +138,14 @@ describe('CoverPicker copy/paste', () => {
     )
   })
 
-  // With nothing on the clipboard there's nothing to paste, so the button stays hidden.
-  it('hides the paste button when the clipboard has no image', async () => {
+  // With nothing on the clipboard the paste button stays in place but disabled, so the
+  // bar never shifts as an icon pops in and out.
+  it('disables the paste button when the clipboard has no image', async () => {
     api.hasClipboardImage.mockResolvedValue(false)
     renderPicker({ coverUrl: 'http://img/cover.jpg' })
-    // Let the on-mount clipboard check settle before asserting absence.
+    // Let the on-mount clipboard check settle before asserting it stayed disabled.
     await waitFor(() => expect(api.hasClipboardImage).toHaveBeenCalled())
-    expect(screen.queryByTestId('cover-paste')).toBeNull()
+    expect(screen.getByTestId('cover-paste')).toBeDisabled()
   })
 
   // A track with no artwork can still receive a paste — the button shows over the empty
