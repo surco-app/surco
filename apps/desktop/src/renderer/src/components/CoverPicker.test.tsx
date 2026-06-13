@@ -11,6 +11,10 @@ const api = {
   prepareCoverDrag: vi.fn().mockResolvedValue(null),
   copyCoverImage: vi.fn().mockResolvedValue(true),
   pasteCoverImage: vi.fn().mockResolvedValue(null),
+  // The paste affordance checks the clipboard on mount/focus; default to empty so the
+  // button is absent unless a test opts in.
+  hasClipboardImage: vi.fn().mockResolvedValue(false),
+  onWindowFocus: vi.fn(() => () => {}),
   getPathForFile: vi.fn(),
   startCoverDrag: vi.fn(),
   exportCover: vi.fn(),
@@ -107,10 +111,47 @@ describe('CoverPicker copy/paste', () => {
   // clearing the artwork.
   it('leaves the artwork untouched when the clipboard holds no image', async () => {
     api.pasteCoverImage.mockResolvedValue(null)
+    api.hasClipboardImage.mockResolvedValue(false)
     const { onChange } = renderPicker({ coverUrl: 'http://img/cover.jpg' })
     fireEvent.mouseEnter(screen.getByTestId('cover-dropzone'))
     fireEvent.keyDown(document, { key: 'v', metaKey: true })
     await Promise.resolve()
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // The paste button only exists when there's an image to paste — the user's question:
+  // "how do I paste it?" Discoverable button, not a hidden shortcut.
+  it('shows a paste button when the clipboard holds an image and pastes onto the track', async () => {
+    api.hasClipboardImage.mockResolvedValue(true)
+    api.pasteCoverImage.mockResolvedValue({
+      coverUrl: 'data:image/png;base64,BBBB',
+      coverPath: '/tmp/paste/cover.png',
+    })
+    const { onChange } = renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    fireEvent.click(await screen.findByTestId('cover-paste'))
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        coverUrl: 'data:image/png;base64,BBBB',
+        coverPath: '/tmp/paste/cover.png',
+        coverRemoved: false,
+      }),
+    )
+  })
+
+  // With nothing on the clipboard there's nothing to paste, so the button stays hidden.
+  it('hides the paste button when the clipboard has no image', async () => {
+    api.hasClipboardImage.mockResolvedValue(false)
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    // Let the on-mount clipboard check settle before asserting absence.
+    await waitFor(() => expect(api.hasClipboardImage).toHaveBeenCalled())
+    expect(screen.queryByTestId('cover-paste')).toBeNull()
+  })
+
+  // A track with no artwork can still receive a paste — the button shows over the empty
+  // drop well too, so copying from one track onto untagged ones works.
+  it('offers the paste button on a coverless track', async () => {
+    api.hasClipboardImage.mockResolvedValue(true)
+    renderPicker({})
+    expect(await screen.findByTestId('cover-paste')).toBeInTheDocument()
   })
 })

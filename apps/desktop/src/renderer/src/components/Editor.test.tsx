@@ -41,6 +41,10 @@ beforeEach(() => {
     // multi-select editor does); resolve to null so that fetch never hits an
     // undefined bridge method.
     spectrogram: vi.fn().mockResolvedValue(null),
+    // The cover well checks the clipboard on mount (and on window focus) to decide
+    // whether to show its paste button; default to empty and a no-op unsubscribe.
+    hasClipboardImage: vi.fn().mockResolvedValue(false),
+    onWindowFocus: vi.fn(() => () => {}),
   }
 })
 
@@ -1116,6 +1120,8 @@ describe('Editor Discogs apply', () => {
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease,
     }
@@ -1212,6 +1218,8 @@ describe('Editor Discogs apply', () => {
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(withImage),
@@ -1262,6 +1270,8 @@ describe('Editor Discogs apply', () => {
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(threeImages),
@@ -1303,6 +1313,8 @@ describe('Editor track preselection', () => {
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(release),
     }
@@ -1482,6 +1494,8 @@ describe('Editor Apple Music library badge', () => {
       platform,
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       lookupAppleMusic: vi.fn().mockResolvedValue(found),
     }
   }
@@ -1549,6 +1563,8 @@ describe('Editor Apple Music library badge', () => {
       platform: 'darwin',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
       lookupAppleMusic: lookup,
       searchDiscogs: vi.fn().mockResolvedValue([{ id: 2, title: 'The Artist - Some Album' }]),
       getRelease: vi.fn().mockResolvedValue({

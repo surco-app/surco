@@ -122,6 +122,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onWindowFocus: () => () => {},
+    hasClipboardImage: vi.fn().mockResolvedValue(false),
     pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
@@ -192,12 +193,17 @@ describe('App quality triage', () => {
   // background: the sweep parks until the window is focused again, the whole point of
   // the blur pause (it must still finish once the app comes back).
   it('parks the analyze sweep while the window is in the background and resumes on focus', async () => {
-    let setFocus: (focused: boolean) => void = () => {}
+    // Both the analyze sweep and the editor's cover well subscribe to window focus, so
+    // the mock fans the event out to every listener instead of keeping only the last.
+    const focusListeners: ((focused: boolean) => void)[] = []
+    const setFocus = (focused: boolean): void => {
+      for (const cb of focusListeners) cb(focused)
+    }
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
     setApi({
       spectrogram,
       onWindowFocus: (cb: (focused: boolean) => void) => {
-        setFocus = cb
+        focusListeners.push(cb)
         return () => {}
       },
     })

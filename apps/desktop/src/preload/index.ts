@@ -50,6 +50,7 @@ const api: Api = {
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),
   copyCoverImage: (src) => ipcRenderer.invoke('cover:copyImage', src),
   pasteCoverImage: () => ipcRenderer.invoke('cover:pasteImage'),
+  hasClipboardImage: () => ipcRenderer.invoke('clipboard:hasImage'),
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   startTrackDrag: (path: string): void => ipcRenderer.send('track:drag', path),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),

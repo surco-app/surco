@@ -719,6 +719,9 @@ function registerIpc(): void {
     return { coverPath, coverUrl: img.toDataURL() }
   })
 
+  // Lets the cover well show its paste affordance only when there's an image to paste.
+  ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
+
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))
   ipcMain.handle('shell:open', (_e, path: string) => shell.openPath(path))
   // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.

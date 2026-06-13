@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight, Copy, Download, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ClipboardPaste, Copy, Download, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DiscogsRelease } from '../../../shared/types'
 import { coverSourceOf } from '../lib/coverSource'
@@ -99,9 +99,23 @@ export function CoverPicker({
   // one track and dropped onto another (and to/from other apps). Copy resolves the
   // source the same way export/drag-out do; paste applies the clipboard image, or
   // leaves the track untouched when the clipboard holds none.
-  function onCoverCopy(): void {
+  // The paste affordance only appears when the clipboard actually holds an image —
+  // checked on mount, when the window regains focus (an image may have been copied in
+  // another app), and right after our own copy.
+  const [canPaste, setCanPaste] = useState(false)
+  const refreshCanPaste = useCallback(() => {
+    void window.api.hasClipboardImage().then(setCanPaste)
+  }, [])
+  useEffect(() => {
+    refreshCanPaste()
+    return window.api.onWindowFocus((focused) => {
+      if (focused) refreshCanPaste()
+    })
+  }, [refreshCanPaste])
+
+  async function onCoverCopy(): Promise<void> {
     if (isMulti || !displayCover) return
-    void window.api.copyCoverImage(coverSourceOf(item))
+    if (await window.api.copyCoverImage(coverSourceOf(item))) setCanPaste(true)
   }
   async function onCoverPaste(): Promise<void> {
     const pasted = await window.api.pasteCoverImage()
@@ -123,7 +137,7 @@ export function CoverPicker({
       const k = e.key.toLowerCase()
       if (k === 'c') {
         e.preventDefault()
-        actionsRef.current.copy()
+        void actionsRef.current.copy()
       } else if (k === 'v') {
         e.preventDefault()
         void actionsRef.current.paste()
@@ -137,6 +151,22 @@ export function CoverPicker({
     revokeCoverUrl(item.coverUrl)
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
+
+  // The paste affordance: mirror of the copy button in the well's bottom-left, shown
+  // only when there's a clipboard image. Pastes onto the track (or every selected one).
+  // Rendered in both the filled and empty states, so a coverless track can take one too.
+  const pasteButton = canPaste ? (
+    <button
+      type="button"
+      data-testid="cover-paste"
+      onClick={() => void onCoverPaste()}
+      aria-label={tr('editor.coverPaste')}
+      className="press group/cover absolute bottom-2 left-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+    >
+      <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
+      <Tooltip label={tr('editor.coverPaste')} align="start" scope="cover" />
+    </button>
+  ) : null
 
   function onCoverDrop(e: React.DragEvent): void {
     e.preventDefault()
@@ -247,7 +277,7 @@ export function CoverPicker({
               <button
                 type="button"
                 data-testid="cover-copy"
-                onClick={onCoverCopy}
+                onClick={() => void onCoverCopy()}
                 aria-label={tr('editor.coverCopy')}
                 className="press group/cover absolute top-2 left-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
               >
@@ -276,20 +306,24 @@ export function CoverPicker({
               </button>
             </>
           )}
+          {pasteButton}
         </div>
       ) : (
-        <button
-          type="button"
-          data-testid="cover-pick"
-          onClick={() => coverInputRef.current?.click()}
-          className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed p-2 text-center text-xs ${
-            coverDragging
-              ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-              : 'border-[var(--color-line)] text-fg-faint hover:border-[var(--color-line-strong)]'
-          }`}
-        >
-          {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
-        </button>
+        <div className="group relative w-40">
+          <button
+            type="button"
+            data-testid="cover-pick"
+            onClick={() => coverInputRef.current?.click()}
+            className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed p-2 text-center text-xs ${
+              coverDragging
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                : 'border-[var(--color-line)] text-fg-faint hover:border-[var(--color-line-strong)]'
+            }`}
+          >
+            {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+          </button>
+          {pasteButton}
+        </div>
       )}
       {!isMulti && coverChoices.length > 1 && (
         <div

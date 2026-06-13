@@ -157,6 +157,7 @@
     "coverView": "View the artwork full size",
     "coverTitle": "Drag an image to use it as the artwork",
     "coverCopy": "Copy artwork",
+    "coverPaste": "Paste artwork",
     "coverExport": "Export artwork",
     "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",
