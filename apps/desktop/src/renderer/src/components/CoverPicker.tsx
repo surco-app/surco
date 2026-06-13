@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ClipboardPaste, Copy, Download, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ClipboardPaste, Copy, Download, type LucideIcon, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,39 @@ import { stepImageIndex } from '../lib/release'
 import type { TrackItem } from '../types'
 import { CoverLightbox } from './CoverLightbox'
 import { Tooltip } from './Tooltip'
+
+// One icon button in the cover's hover action bar. pointer-events-auto so it stays
+// clickable even though its parent scrim lets events through to the image beneath.
+function CoverActionButton({
+  testid,
+  label,
+  icon: Icon,
+  onClick,
+  danger = false,
+  className = '',
+}: {
+  testid: string
+  label: string
+  icon: LucideIcon
+  onClick: () => void
+  danger?: boolean
+  className?: string
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      onClick={onClick}
+      aria-label={label}
+      className={`press pointer-events-auto rounded-lg p-1.5 text-white transition-colors ${
+        danger ? 'hover:bg-danger/80' : 'hover:bg-white/20'
+      } ${className}`}
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+      <Tooltip label={label} scope="cover" />
+    </button>
+  )
+}
 
 interface Props {
   item: TrackItem
@@ -152,21 +185,53 @@ export function CoverPicker({
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 
-  // The paste affordance: mirror of the copy button in the well's bottom-left, shown
-  // only when there's a clipboard image. Pastes onto the track (or every selected one).
-  // Rendered in both the filled and empty states, so a coverless track can take one too.
-  const pasteButton = canPaste ? (
-    <button
-      type="button"
-      data-testid="cover-paste"
-      onClick={() => void onCoverPaste()}
-      aria-label={tr('editor.coverPaste')}
-      className="press group/cover absolute bottom-2 left-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-    >
-      <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
-      <Tooltip label={tr('editor.coverPaste')} align="start" scope="cover" />
-    </button>
-  ) : null
+  // A single hover-revealed action bar across the well's bottom edge, instead of an icon
+  // in each corner: it groups the clipboard and file actions, leaves the artwork
+  // unobscured at rest, and stays legible on any cover thanks to the gradient scrim.
+  // Copy/export/remove act on a single track's own artwork; paste also works on a
+  // coverless track and across a multi-selection — so the bar shows whatever applies.
+  const ownCover = !isMulti && Boolean(displayCover)
+  const coverActions =
+    ownCover || canPaste ? (
+      // The scrim is decorative and lets pointer events through; only the buttons take
+      // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-hover:opacity-100">
+        {ownCover && (
+          <CoverActionButton
+            testid="cover-copy"
+            label={tr('editor.coverCopy')}
+            icon={Copy}
+            onClick={() => void onCoverCopy()}
+          />
+        )}
+        {canPaste && (
+          <CoverActionButton
+            testid="cover-paste"
+            label={tr('editor.coverPaste')}
+            icon={ClipboardPaste}
+            onClick={() => void onCoverPaste()}
+          />
+        )}
+        {ownCover && (
+          <CoverActionButton
+            testid="cover-export"
+            label={tr('editor.coverExport')}
+            icon={Download}
+            onClick={onCoverExport}
+          />
+        )}
+        {ownCover && (
+          <CoverActionButton
+            testid="cover-remove"
+            label={tr('editor.coverRemove')}
+            icon={X}
+            onClick={onCoverRemove}
+            danger
+            className="ml-auto"
+          />
+        )}
+      </div>
+    ) : null
 
   function onCoverDrop(e: React.DragEvent): void {
     e.preventDefault()
@@ -272,41 +337,7 @@ export function CoverPicker({
               }`}
             />
           </button>
-          {!isMulti && (
-            <>
-              <button
-                type="button"
-                data-testid="cover-copy"
-                onClick={() => void onCoverCopy()}
-                aria-label={tr('editor.coverCopy')}
-                className="press group/cover absolute top-2 left-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-              >
-                <Copy className="h-4 w-4" aria-hidden="true" />
-                <Tooltip label={tr('editor.coverCopy')} align="start" scope="cover" />
-              </button>
-              <button
-                type="button"
-                data-testid="cover-remove"
-                onClick={onCoverRemove}
-                aria-label={tr('editor.coverRemove')}
-                className="press group/cover absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-                <Tooltip label={tr('editor.coverRemove')} align="end" scope="cover" />
-              </button>
-              <button
-                type="button"
-                data-testid="cover-export"
-                onClick={onCoverExport}
-                aria-label={tr('editor.coverExport')}
-                className="press group/cover absolute right-2 bottom-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
-              >
-                <Download className="h-4 w-4" aria-hidden="true" />
-                <Tooltip label={tr('editor.coverExport')} align="end" scope="cover" />
-              </button>
-            </>
-          )}
-          {pasteButton}
+          {coverActions}
         </div>
       ) : (
         <div className="group relative w-40">
@@ -322,7 +353,7 @@ export function CoverPicker({
           >
             {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
           </button>
-          {pasteButton}
+          {coverActions}
         </div>
       )}
       {!isMulti && coverChoices.length > 1 && (
