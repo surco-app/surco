@@ -340,6 +340,18 @@ function stopDockAnimation(): void {
   syncDockAnimation()
 }
 
+// Dragging a track row out needs an icon the instant the gesture starts: startDrag
+// rejects an empty icon and can't await one mid-drag, so reuse the app icon, loaded
+// once. The artwork would be nicer but isn't reliably on disk at drag time.
+let trackDragIconCache: NativeImage | null = null
+function trackDragIcon(): NativeImage {
+  if (!trackDragIconCache)
+    trackDragIconCache = nativeImage
+      .createFromPath(join(app.getAppPath(), 'build', 'icon.png'))
+      .resize({ width: 128, height: 128 })
+  return trackDragIconCache
+}
+
 function registerIpc(): void {
   // Synchronous so the preload can expose api.version as a plain value.
   ipcMain.on('app:version', (e) => {
@@ -665,6 +677,13 @@ function registerIpc(): void {
       file: path,
       icon: nativeImage.createFromPath(path).resize({ width: 128, height: 128 }),
     })
+  })
+
+  // The dragged source file already exists on disk, so unlike a cover it needs no
+  // prepare pass — hand the OS the untouched path so a row can be dropped straight
+  // onto Spek (or any app) to inspect the original track.
+  ipcMain.on('track:drag', (e, path: string) => {
+    e.sender.startDrag({ file: path, icon: trackDragIcon() })
   })
 
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))

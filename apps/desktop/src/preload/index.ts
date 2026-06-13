@@ -49,6 +49,7 @@ const api: Api = {
   exportCover: (job) => ipcRenderer.invoke('cover:export', job),
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
+  startTrackDrag: (path: string): void => ipcRenderer.send('track:drag', path),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
   trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),

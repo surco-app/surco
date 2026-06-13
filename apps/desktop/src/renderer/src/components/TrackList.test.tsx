@@ -4,7 +4,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // TrackContextMenu reads window.api at render; install a stub before importing it.
-const api = { platform: 'darwin', reveal: vi.fn(), openFile: vi.fn(), copyText: vi.fn() }
+const api = {
+  platform: 'darwin',
+  reveal: vi.fn(),
+  openFile: vi.fn(),
+  copyText: vi.fn(),
+  startTrackDrag: vi.fn(),
+}
 vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
 })
@@ -108,6 +114,14 @@ describe('TrackList', () => {
     renderList([track({ id: 'untitled' })])
     expect(screen.getByText('untitled.wav')).toBeInTheDocument()
     expect(screen.getByText('No artist')).toBeInTheDocument()
+  })
+
+  it('drags a row out to external apps using its source file', () => {
+    // DJs drop a track straight onto Spek to eyeball its spectrum without exporting
+    // first, so the row hands the OS the untouched source path on dragstart.
+    renderList([track({ id: 'a' })])
+    fireEvent.dragStart(screen.getByTestId('track-row'))
+    expect(api.startTrackDrag).toHaveBeenCalledWith('/music/a.wav')
   })
 
   it('shows the album art so a crate can be scanned by cover, not just by name', () => {

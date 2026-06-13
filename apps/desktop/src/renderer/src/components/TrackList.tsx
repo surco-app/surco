@@ -113,6 +113,14 @@ const TrackRow = memo(function TrackRow({
         }}
         data-testid="track-row"
         aria-pressed={selected}
+        draggable
+        onDragStart={(e) => {
+          // Hand the OS the untouched source file so the row can be dropped onto Spek
+          // or any app. An actual drag suppresses the click, so select and drag-out
+          // don't fight (same arrangement the cover uses).
+          e.preventDefault()
+          window.api.startTrackDrag(t.inputPath)
+        }}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onContextMenu={(e) => {
           e.preventDefault()

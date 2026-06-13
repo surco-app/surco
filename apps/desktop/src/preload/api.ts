@@ -66,6 +66,7 @@ export interface Api {
     coverFromFile?: string
   }) => Promise<string | null>
   startCoverDrag: (path: string) => void
+  startTrackDrag: (path: string) => void
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   trashFile: (path: string) => Promise<void>
