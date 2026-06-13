@@ -135,6 +135,8 @@
       "copyPath": "Copy file path",
       "search": "Search Discogs",
       "startOver": "Start over",
+      "copyMeta": "Copy all metadata",
+      "pasteMeta": "Paste metadata",
       "remove": "Remove from list",
       "trash": "Move to Trash",
       "trashWin": "Move to Recycle Bin"

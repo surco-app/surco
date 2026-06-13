@@ -66,6 +66,7 @@ function renderList(
   tracks: TrackItem[],
   selectedId: string | null = null,
   selectedIds: string[] = selectedId ? [selectedId] : [],
+  { canPasteMeta = false }: { canPasteMeta?: boolean } = {},
 ) {
   const onSelect = vi.fn()
   const onRemove = vi.fn()
@@ -73,6 +74,8 @@ function renderList(
   const onSearch = vi.fn()
   const onStartOver = vi.fn()
   const onTrash = vi.fn()
+  const onCopyMeta = vi.fn()
+  const onPasteMeta = vi.fn()
   render(
     <TrackList
       tracks={tracks}
@@ -85,9 +88,12 @@ function renderList(
       onSearch={onSearch}
       onStartOver={onStartOver}
       onTrash={onTrash}
+      onCopyMeta={onCopyMeta}
+      onPasteMeta={onPasteMeta}
+      canPasteMeta={canPasteMeta}
     />,
   )
-  return { onSelect, onRemove, onPrefetch, onSearch, onStartOver, onTrash }
+  return { onSelect, onRemove, onPrefetch, onSearch, onStartOver, onTrash, onCopyMeta, onPasteMeta }
 }
 
 describe('TrackList', () => {
@@ -291,6 +297,33 @@ describe('TrackList context menu', () => {
     fireEvent.click(screen.getByTestId('track-menu-trash'))
     expect(onSearch).toHaveBeenCalledWith('a')
     expect(onTrash).toHaveBeenCalledWith(t)
+  })
+
+  // Copying a track's tags from the menu lets the user stamp them onto another track —
+  // the fast way to share release-level metadata across a crate.
+  it('delegates copy-metadata to the list owner', () => {
+    const t = track({ id: 'a', meta: { title: 'Song A', artist: 'Artist A' } })
+    const { onCopyMeta } = renderList([t])
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-copy-meta'))
+    expect(onCopyMeta).toHaveBeenCalledWith(t)
+  })
+
+  // Paste applies whatever was copied onto the right-clicked track.
+  it('delegates paste-metadata to the list owner when something has been copied', () => {
+    const t = track({ id: 'b' })
+    const { onPasteMeta } = renderList([t], null, [], { canPasteMeta: true })
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-paste-meta'))
+    expect(onPasteMeta).toHaveBeenCalledWith(t)
+  })
+
+  // Nothing copied yet → no paste item, so the menu never offers a no-op action.
+  it('hides paste-metadata until something has been copied', () => {
+    renderList([track({ id: 'a' })], null, [], { canPasteMeta: false })
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    expect(screen.getByTestId('track-menu-copy-meta')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-paste-meta')).toBeNull()
   })
 
   it('closes after an action runs', () => {

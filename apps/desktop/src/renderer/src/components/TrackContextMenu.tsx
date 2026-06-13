@@ -10,6 +10,11 @@ interface Props {
   onClose: () => void
   onSearch: (id: string) => void
   onStartOver: (track: TrackItem) => void
+  onCopyMeta: (track: TrackItem) => void
+  onPasteMeta: (track: TrackItem) => void
+  // Whether a track's metadata has been copied and is available to paste. False hides
+  // the paste item so the menu never offers a no-op.
+  canPasteMeta: boolean
   onRemove: (id: string) => void
   onTrash: (track: TrackItem) => void
 }
@@ -51,6 +56,9 @@ export function TrackContextMenu({
   onClose,
   onSearch,
   onStartOver,
+  onCopyMeta,
+  onPasteMeta,
+  canPasteMeta,
   onRemove,
   onTrash,
 }: Props): React.JSX.Element {
@@ -161,6 +169,19 @@ export function TrackContextMenu({
           label={tr('trackList.context.startOver')}
           onClick={() => run(() => onStartOver(track))}
         />
+        <div className="my-1 h-px bg-[var(--color-line)]" />
+        <MenuItem
+          testid="track-menu-copy-meta"
+          label={tr('trackList.context.copyMeta')}
+          onClick={() => run(() => onCopyMeta(track))}
+        />
+        {canPasteMeta && (
+          <MenuItem
+            testid="track-menu-paste-meta"
+            label={tr('trackList.context.pasteMeta')}
+            onClick={() => run(() => onPasteMeta(track))}
+          />
+        )}
         <div className="my-1 h-px bg-[var(--color-line)]" />
         <MenuItem
           testid="track-menu-remove"

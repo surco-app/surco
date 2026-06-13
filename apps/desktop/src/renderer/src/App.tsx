@@ -184,6 +184,9 @@ export default function App(): React.JSX.Element {
   // Display order of the (filtered) list. Defaults to the drop order.
   const [sortBy, setSortBy] = useState<TrackSort>('import')
   const [dragging, setDragging] = useState(false)
+  // Metadata copied from one track's context menu, to stamp onto another. Null until
+  // the user copies, which is what gates the paste item in the row menu.
+  const [copiedMeta, setCopiedMeta] = useState<TrackMetadata | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
@@ -681,6 +684,12 @@ export default function App(): React.JSX.Element {
   const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
     updateTracksMeta(selectedIds, patch),
   )
+  // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
+  // onto — the fast way to share release-level metadata across a crate.
+  const onCopyMeta = useStableCallback((track: TrackItem) => setCopiedMeta(track.meta))
+  const onPasteMeta = useStableCallback((track: TrackItem) => {
+    if (copiedMeta) updateTracksMeta([track.id], copiedMeta)
+  })
   const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath: string) =>
     patchTracks(selectedIds, { coverUrl, coverPath }),
   )
@@ -975,6 +984,9 @@ export default function App(): React.JSX.Element {
                     onPrefetch={handlePrefetch}
                     onSearch={onSearchTrack}
                     onStartOver={startOverTrack}
+                    onCopyMeta={onCopyMeta}
+                    onPasteMeta={onPasteMeta}
+                    canPasteMeta={copiedMeta !== null}
                     onTrash={askTrash}
                     scrollRootRef={listScrollRef}
                     onVisible={onTrackVisible}
