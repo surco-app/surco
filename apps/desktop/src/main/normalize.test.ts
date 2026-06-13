@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../shared/types'
 import {
+  limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
   parseLoudnorm,
   parseMaxVolume,
   peakGainDb,
+  reachesTargetLinearly,
   volumeFilter,
 } from './normalize'
 
@@ -69,6 +71,62 @@ describe('loudnormFilter', () => {
     expect(loudnormFilter(loudness, m, 44100)).toMatch(/loudnorm=.*linear=true,aresample=44100$/)
     // No rate known → no resampler appended, rather than guessing.
     expect(loudnormFilter(loudness, m)).not.toContain('aresample')
+  })
+})
+
+describe('reachesTargetLinearly', () => {
+  // A constant gain hits the target only when the boost it needs keeps true peak under
+  // the ceiling. A dynamic source with headroom to spare can be lifted linearly.
+  it('is reachable when the needed boost stays under the true-peak ceiling', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    // needs +6 dB (-20 → -14); peak -8 + 6 = -2, still under -1.
+    const m = { inputI: -20, inputTp: -8, inputLra: 6, inputThresh: -30, targetOffset: 0 }
+    expect(reachesTargetLinearly(cfg, m)).toBe(true)
+  })
+
+  // The club target (-9) on normal material is the case the user hit: the boost it
+  // needs would push peaks well past the ceiling, so linear loudnorm clamps the gain
+  // and the track lands several dB short of target.
+  it('is unreachable when a loud target would push peaks past the ceiling', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 }
+    // needs +5 dB (-14 → -9); peak -1.7 + 5 = +3.3, far over -1.
+    const m = { inputI: -14, inputTp: -1.7, inputLra: 6, inputThresh: -24, targetOffset: 0 }
+    expect(reachesTargetLinearly(cfg, m)).toBe(false)
+  })
+
+  // Quieter target than the source: a cut never raises peaks, so it is always reachable.
+  it('is reachable when the target is quieter than the source', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -16, truePeakDb: -1, peakDb: -1 }
+    const m = { inputI: -8, inputTp: -0.2, inputLra: 6, inputThresh: -18, targetOffset: 0 }
+    expect(reachesTargetLinearly(cfg, m)).toBe(true)
+  })
+})
+
+describe('limitedLoudnormFilter', () => {
+  // When linear can't reach the target, push the constant gain all the way to it and
+  // catch the overs with a limiter at the ceiling, so the track lands at the chosen
+  // loudness instead of short.
+  it('applies the full gain to target then limits to the true-peak ceiling', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 }
+    const m = { inputI: -14, inputTp: -1.7, inputLra: 6, inputThresh: -24, targetOffset: 0 }
+    const f = limitedLoudnormFilter(cfg, m, 44100)
+    // gain to target: -9 − (−14) = +5 dB
+    expect(f).toContain('volume=5.00dB')
+    // -1 dBTP ceiling in linear amplitude: 10^(-1/20) ≈ 0.891251
+    expect(f).toContain('alimiter=limit=0.891251')
+    // level=disabled so the limiter doesn't re-normalize away the gain we just applied.
+    expect(f).toContain('level=disabled')
+    // Oversamples 4× around the limiter (176.4k) and back, so inter-sample peaks are
+    // caught and true peak doesn't creep above the ceiling.
+    expect(f).toMatch(/aresample=176400,alimiter=.*,aresample=44100$/)
+  })
+
+  // With no known source rate the resampler can't be built, so it falls back to a plain
+  // sample-peak limit rather than guessing an oversample rate.
+  it('limits without oversampling when the source rate is unknown', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 }
+    const m = { inputI: -14, inputTp: -1.7, inputLra: 6, inputThresh: -24, targetOffset: 0 }
+    expect(limitedLoudnormFilter(cfg, m)).not.toContain('aresample')
   })
 })
 

@@ -24,11 +24,13 @@ import {
   fineBandFrequencies,
 } from './cutoff'
 import {
+  limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
   parseLoudnorm,
   parseMaxVolume,
   peakGainDb,
+  reachesTargetLinearly,
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
@@ -481,7 +483,13 @@ export async function normalizeFilter(
     maxBuffer: 1024 * 1024 * 16,
   })
   const measured = parseLoudnorm(stderr)
-  return measured ? loudnormFilter(cfg, measured, sampleRate) : null
+  if (!measured) return null
+  // A reachable target normalizes linearly (dynamics intact); a target too loud for a
+  // constant gain (the club preset on most material) would otherwise land short, so
+  // push the gain to target and limit the overs to the ceiling instead.
+  return reachesTargetLinearly(cfg, measured)
+    ? loudnormFilter(cfg, measured, sampleRate)
+    : limitedLoudnormFilter(cfg, measured, sampleRate)
 }
 
 export async function convertAudio(

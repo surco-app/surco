@@ -76,6 +76,36 @@ export function loudnormFilter(
   return sampleRate && sampleRate > 0 ? `${filter},aresample=${sampleRate}` : filter
 }
 
+// Whether a constant (linear) gain can reach the target without the louder peaks
+// breaking the true-peak ceiling. The boost needed is target − measured loudness; add
+// it to the measured true peak and, if that still fits under the ceiling, linear
+// normalization lands exactly on target with the dynamics untouched. When it doesn't —
+// the loud club target on most material — loudnorm would clamp the gain to protect the
+// ceiling and the track would come out several dB short, so we limit instead.
+export function reachesTargetLinearly(cfg: NormalizeConfig, m: LoudnormMeasured): boolean {
+  return m.inputTp + (cfg.targetLufs - m.inputI) <= cfg.truePeakDb
+}
+
+// The unreachable case: apply the full gain that lands on the target, then hold the
+// peaks at the ceiling with a limiter. Only the overs that would have clipped get
+// touched, so the body of the track keeps its dynamics while the integrated loudness
+// reaches the chosen value — instead of stalling where a clamped linear gain leaves it.
+// alimiter caps sample peaks, so we oversample around it (4×, the ITU-R BS.1770
+// true-peak factor) to catch the inter-sample peaks a sample-peak limiter would miss,
+// then restore the source rate — otherwise true peak would creep above the ceiling.
+export function limitedLoudnormFilter(
+  cfg: NormalizeConfig,
+  m: LoudnormMeasured,
+  sampleRate?: number,
+): string {
+  const gain = `volume=${(cfg.targetLufs - m.inputI).toFixed(2)}dB`
+  const limit = 10 ** (cfg.truePeakDb / 20)
+  const limiter = `alimiter=limit=${limit.toFixed(6)}:level=disabled`
+  return sampleRate && sampleRate > 0
+    ? `${gain},aresample=${sampleRate * 4},${limiter},aresample=${sampleRate}`
+    : `${gain},${limiter}`
+}
+
 // Peak mode: a single decode to find the loudest sample.
 export function volumedetectArgs(input: string): string[] {
   return ['-hide_banner', '-nostats', '-i', input, '-af', 'volumedetect', '-f', 'null', '-']
