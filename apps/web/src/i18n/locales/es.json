@@ -101,7 +101,7 @@
         "title": "Organizar y exportar",
         "replaces": "en vez de tu gestor de biblioteca",
         "items": [
-          "Envía a Apple Music y mantén su copia al día cuando editas",
+          "Envía a Apple Music con los tags y la carátula escritos en la biblioteca —incluso en WAV, que entra pelado a mano— y mantén la copia al día al editar",
           "Exporta la cola entera como colección de rekordbox o Traktor",
           "Nombra con plantillas {artist} - {title} y crea subcarpetas",
           "Importa carpetas enteras y escucha cualquier pista antes de convertir"
@@ -139,6 +139,10 @@
     "manualTime": "~4–5 min",
     "manualSteps": [
       {
+        "app": "Spek",
+        "label": "Comprobar el espectro"
+      },
+      {
         "app": "conversor",
         "label": "Convertir a AIFF"
       },
@@ -149,10 +153,6 @@
       {
         "app": "editor de tags",
         "label": "Escribir los metadatos"
-      },
-      {
-        "app": "Spek",
-        "label": "Comprobar el espectro"
       },
       {
         "app": "Música",

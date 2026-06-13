@@ -101,7 +101,7 @@
         "title": "Organize & export",
         "replaces": "instead of your library manager",
         "items": [
-          "Send to Apple Music and keep its copy in sync as you edit",
+          "Send to Apple Music with tags and cover written into the library —even on WAV, which lands blank by hand— and keep the copy in sync as you edit",
           "Export the whole queue as a rekordbox or Traktor collection",
           "Name with {artist} - {title} templates and build subfolders",
           "Import whole folders and preview any track before converting"
@@ -139,6 +139,10 @@
     "manualTime": "~4–5 min",
     "manualSteps": [
       {
+        "app": "Spek",
+        "label": "Check the spectrum"
+      },
+      {
         "app": "converter",
         "label": "Convert to AIFF"
       },
@@ -149,10 +153,6 @@
       {
         "app": "tag editor",
         "label": "Write the metadata"
-      },
-      {
-        "app": "Spek",
-        "label": "Check the spectrum"
       },
       {
         "app": "Music",

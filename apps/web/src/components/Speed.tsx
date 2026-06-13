@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import Reveal from './Reveal'
 
-const TIMES = ['~45 s', '~60 s', '~90 s', '~45 s', '~30 s']
+const TIMES = ['~45 s', '~45 s', '~60 s', '~90 s', '~30 s']
 
 export default function Speed() {
   const { t } = useTranslation()
