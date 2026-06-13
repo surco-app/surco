@@ -189,7 +189,7 @@
     "propModified": "Modified",
     "qualityTitle": "Audio quality",
     "qualityGood": "Good quality",
-    "qualitySuspect": "Suspicious",
+    "qualitySuspect": "Review",
     "qualityBad": "Bad quality",
     "analyzing": "Analyzing spectrum…",
     "sectionForm": "Metadata",
@@ -452,8 +452,8 @@
         "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → General. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
       },
       "quality": {
-        "q": "Why is a track flagged as “Suspicious”?",
-        "a": "Surco analyzes the audio spectrum and checks how high the frequencies reach. Genuine lossless files (WAV, FLAC, AIFF) use the full range up to the Nyquist frequency. A sharp cutoff well below it is the fingerprint of a lossy MP3 that was re-encoded into a lossless container: it looks lossless by its extension, but the high frequencies are gone for good.\n\n“Suspicious” means that fingerprint was detected. The file isn't broken, but its quality is capped by the original MP3. “Good quality” means the spectrum reaches where a real lossless file should."
+        "q": "Why is a track flagged for “Review”?",
+        "a": "Surco analyzes the audio spectrum and checks how high the frequencies reach. Genuine lossless files (WAV, FLAC, AIFF) use the full range up to the Nyquist frequency. A sharp cutoff well below it is the fingerprint of a lossy MP3 that was re-encoded into a lossless container: it looks lossless by its extension, but the high frequencies are gone for good.\n\n“Review” means that fingerprint was detected and is worth a listen: the file isn't broken, but its quality may be capped by an original MP3 (or it's simply a dull master). “Good quality” means the spectrum reaches where a real lossless file should."
       },
       "format": {
         "q": "Which output format should I choose?",

@@ -189,7 +189,7 @@
     "propModified": "Modificado",
     "qualityTitle": "Calidad de audio",
     "qualityGood": "Buena calidad",
-    "qualitySuspect": "Sospechoso",
+    "qualitySuspect": "Revisar",
     "qualityBad": "Mala calidad",
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
@@ -452,8 +452,8 @@
         "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de “límite alcanzado”: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → General. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco."
       },
       "quality": {
-        "q": "¿Por qué una pista sale marcada como “Sospechoso”?",
-        "a": "Surco analiza el espectro de audio y mira hasta qué frecuencia llega. Los archivos sin pérdida reales (WAV, FLAC, AIFF) usan todo el rango hasta la frecuencia de Nyquist. Un corte brusco muy por debajo es la huella de un MP3 con pérdida que se reconvirtió a un contenedor sin pérdida: parece lossless por la extensión, pero los agudos ya se perdieron para siempre.\n\n“Sospechoso” significa que se detectó esa huella. El archivo no está roto, pero su calidad está limitada por el MP3 original. “Buena calidad” significa que el espectro llega donde debería en un archivo sin pérdida de verdad."
+        "q": "¿Por qué una pista sale marcada como “Revisar”?",
+        "a": "Surco analiza el espectro de audio y mira hasta qué frecuencia llega. Los archivos sin pérdida reales (WAV, FLAC, AIFF) usan todo el rango hasta la frecuencia de Nyquist. Un corte brusco muy por debajo es la huella de un MP3 con pérdida que se reconvirtió a un contenedor sin pérdida: parece lossless por la extensión, pero los agudos ya se perdieron para siempre.\n\n“Revisar” significa que se detectó esa huella y conviene escucharla: el archivo no está roto, pero su calidad puede estar limitada por un MP3 original (o ser simplemente un máster apagado). “Buena calidad” significa que el espectro llega donde debería en un archivo sin pérdida de verdad."
       },
       "format": {
         "q": "¿Qué formato de salida elijo?",
