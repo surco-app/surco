@@ -8,7 +8,7 @@ import Pricing from './components/Pricing'
 import Spectrogram from './components/Spectrogram'
 import AppMockup from './components/AppMockup'
 import Reveal from './components/Reveal'
-import CountUp from './components/CountUp'
+import Replaces from './components/Replaces'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
@@ -66,10 +66,11 @@ function Kbd({ k }: { k: string }) {
 export default function App() {
   const { t } = useTranslation()
   useAutoLanguage()
-  const features = t('features.items', { returnObjects: true }) as {
+  const featureGroups = t('features.groups', { returnObjects: true }) as {
     kick: string
     title: string
-    body: string
+    replaces: string
+    items: string[]
   }[]
   const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
   const shortcutKeys: string[][] = [
@@ -155,28 +156,9 @@ export default function App() {
           </Reveal>
         </section>
 
-        <Speed />
+        <Replaces />
 
-        <Reveal>
-          <section className="pb-24">
-            <div className="inset-shadow-edge grid gap-8 rounded-3xl border border-line bg-surface2/40 p-8 text-center sm:grid-cols-3 sm:p-10">
-              <div>
-                <div className="text-4xl font-bold text-grad tabular-nums sm:text-5xl">
-                  ~<CountUp to={100} />×
-                </div>
-                <p className="mt-2 text-sm text-muted">{t('stats.faster')}</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-fg tabular-nums sm:text-5xl">1–2 s</div>
-                <p className="mt-2 text-sm text-muted">{t('stats.perTrack')}</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-fg sm:text-5xl">1</div>
-                <p className="mt-2 text-sm text-muted">{t('stats.oneShot')}</p>
-              </div>
-            </div>
-          </section>
-        </Reveal>
+        <Speed />
 
         <HowItWorks />
 
@@ -241,13 +223,21 @@ export default function App() {
               {t('features.title')}
             </h2>
           </Reveal>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f, i) => (
-              <Reveal key={f.title} delay={(i % 3) * 100}>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {featureGroups.map((g, i) => (
+              <Reveal key={g.title} delay={(i % 2) * 100}>
                 <div className={`inset-shadow-edge h-full rounded-2xl border border-line bg-surface2/40 p-6 ${cardHover}`}>
-                  <div className="font-mono text-xs text-blue">{f.kick}</div>
-                  <h3 className="mt-2 text-lg font-semibold text-fg">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{f.body}</p>
+                  <div className="font-mono text-xs text-blue">{g.kick}</div>
+                  <h3 className="mt-2 text-lg font-semibold text-fg">{g.title}</h3>
+                  <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
+                  <ul className="mt-4 space-y-2">
+                    {g.items.map((it) => (
+                      <li key={it} className="flex gap-2 text-sm leading-relaxed text-muted">
+                        <span className="text-cyan">·</span>
+                        <span>{it}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </Reveal>
             ))}

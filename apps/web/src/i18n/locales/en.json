@@ -36,10 +36,14 @@
     "h1b": "Start playing.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
-  "stats": {
-    "faster": "faster than by hand*",
-    "perTrack": "per track",
-    "oneShot": "one app, not five"
+  "replaces": {
+    "kicker": "One app, not five",
+    "title": "The work of five apps, in Surco",
+    "lede": "Surco reinvents nothing: it gathers into a single window what you used to do jumping across five programs.",
+    "apps": ["Converter", "Discogs", "Tag editor", "Spek", "Apple Music"],
+    "result": "one app · one button",
+    "faster": "faster than by hand",
+    "perTrack": "per track"
   },
   "analysis": {
     "kicker": "Anti-fake analysis",
@@ -58,66 +62,50 @@
   "features": {
     "kicker": "Features",
     "title": "The whole flow, in one app",
-    "items": [
-      {
-        "kick": "import",
-        "title": "Import and listen",
-        "body": "Drop any audio — even whole folders. Surco reads the tags and cover they carry, and previews any track before converting."
-      },
-      {
-        "kick": "discogs",
-        "title": "Tag from Discogs",
-        "body": "Search the release and Surco fills artist, album, year, genre, label, catalog and cover — plus BPM, key, remixer and grouping — in one click."
-      },
-      {
-        "kick": "albums",
-        "title": "Match a whole record",
-        "body": "Select a full release and Surco maps each file to the Discogs tracklist by length — even identically-named rips — then tags them all at once."
-      },
-      {
-        "kick": "cleanup",
-        "title": "Clean a messy batch",
-        "body": "Fill tags from filenames, find-and-replace across every tag (text or regex), and bulk-edit the fields a selection shares."
-      },
+    "groups": [
       {
         "kick": "convert",
-        "title": "Convert to any format",
-        "body": "AIFF, WAV, FLAC or MP3, any to any. Already in that format? Copied untouched, instantly — one track or the whole crate."
+        "title": "Convert",
+        "replaces": "instead of a converter",
+        "items": [
+          "AIFF, WAV, FLAC or MP3, any to any",
+          "Already in that format? Copies it as-is, instantly",
+          "Match every track to the same loudness or peak (optional)",
+          "Re-export without touching Traktor's cue points or beatgrid"
+        ]
       },
       {
-        "kick": "normalize",
-        "title": "Even out the loudness",
-        "body": "Optionally match every track to one loudness or peak — streaming, club or custom. Off by default; keeps Traktor cues on MP3 and AIFF."
-      },
-      {
-        "kick": "traktor",
-        "title": "Cues and ratings, intact",
-        "body": "Re-export to the same format and your cue points and beatgrid stay untouched — plus the star ratings you set, written for Traktor and foobar to read."
-      },
-      {
-        "kick": "quality",
-        "title": "No fakes, no duplicates",
-        "body": "Sweep the whole crate to catch MP3s faking lossless, filter the suspects, and get a heads-up when a track's already in Apple Music."
+        "kick": "tag",
+        "title": "Tag",
+        "replaces": "instead of Discogs in the browser and a tag editor",
+        "items": [
+          "Fill artist, album, year, label, BPM and key from Discogs in one click",
+          "Match a whole release by length, even when files share a name",
+          "Bulk-edit and find-and-replace (text or regex) across the queue",
+          "Pull the cover from Discogs or drop your own; Surco squares and embeds it"
+        ]
       },
       {
         "kick": "analyze",
-        "title": "Read every level",
-        "body": "A colour-coded readout per track — LUFS, true peak, dynamics, balance and noise — plus the BPM and key detected from the audio itself, one click from applied."
+        "title": "Analyze quality",
+        "replaces": "instead of a spectrum analyzer",
+        "items": [
+          "Draws the spectrum and catches MP3s disguised as lossless before your set",
+          "Colour read-out: LUFS, true peak, dynamics, balance and noise",
+          "Detects BPM and key from the audio itself, one click to apply",
+          "Warns you if the track is already in your Apple Music library"
+        ]
       },
       {
-        "kick": "artwork",
-        "title": "Cover art, sorted",
-        "body": "Pull cover art from Discogs or drop your own onto one track or a whole selection. Surco squares, resizes and embeds it."
-      },
-      {
-        "kick": "library",
-        "title": "Hands off to your decks",
-        "body": "Send tracks straight to Apple Music —and keep their copies in sync as you edit—, or export the whole crate as a rekordbox or Traktor collection."
-      },
-      {
-        "kick": "naming",
-        "title": "Name and sort files",
-        "body": "Name files with {artist} - {title} templates into {albumArtist}/{album} subfolders, and show only the fields you use."
+        "kick": "organize",
+        "title": "Organize & export",
+        "replaces": "instead of your library manager",
+        "items": [
+          "Send to Apple Music and keep its copy in sync as you edit",
+          "Export the whole queue as a rekordbox or Traktor collection",
+          "Name with {artist} - {title} templates and build subfolders",
+          "Import whole folders and preview any track before converting"
+        ]
       }
     ]
   },
