@@ -154,6 +154,7 @@
     "coverAlt": "Carátula",
     "coverView": "Ver la carátula a tamaño completo",
     "coverTitle": "Arrastra una imagen para usarla como carátula",
+    "coverCopy": "Copiar carátula",
     "coverExport": "Exportar carátula",
     "coverRemove": "Quitar carátula",
     "coverPrev": "Imagen anterior",

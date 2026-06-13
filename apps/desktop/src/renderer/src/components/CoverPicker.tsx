@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Copy, Download, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -81,15 +81,57 @@ export function CoverPicker({
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayCover is the trigger to reset, not a value read in the body.
   useEffect(() => setCoverDims(null), [displayCover])
 
-  function applyImageFile(file: File | undefined): void {
-    if (!file?.type.startsWith('image/')) return
-    // Replacing a previously picked file frees its blob URL — nothing else shows it.
+  // Sets the artwork from a resolved (url, path) pair: stamps onto every selected
+  // track in multi-select, otherwise just the primary. Replacing a previously picked
+  // file frees its blob URL — nothing else shows it.
+  function applyCover(coverUrl: string, coverPath: string): void {
     revokeCoverUrl(item.coverUrl)
-    const coverUrl = URL.createObjectURL(file)
-    const coverPath = window.api.getPathForFile(file)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
     else onChange({ coverUrl, coverPath, coverRemoved: false })
   }
+
+  function applyImageFile(file: File | undefined): void {
+    if (!file?.type.startsWith('image/')) return
+    applyCover(URL.createObjectURL(file), window.api.getPathForFile(file))
+  }
+
+  // Copy/paste the artwork through the system clipboard, so a cover can be lifted off
+  // one track and dropped onto another (and to/from other apps). Copy resolves the
+  // source the same way export/drag-out do; paste applies the clipboard image, or
+  // leaves the track untouched when the clipboard holds none.
+  function onCoverCopy(): void {
+    if (isMulti || !displayCover) return
+    void window.api.copyCoverImage(coverSourceOf(item))
+  }
+  async function onCoverPaste(): Promise<void> {
+    const pasted = await window.api.pasteCoverImage()
+    if (pasted) applyCover(pasted.coverUrl, pasted.coverPath)
+  }
+
+  // Cmd/Ctrl+C and Cmd/Ctrl+V act only while the cover well is hovered, so the cover's
+  // own click (which opens the lightbox) is untouched and a normal copy/paste over an
+  // input elsewhere is never hijacked. The listener reads the latest handlers through
+  // a ref, so it subscribes once instead of on every render.
+  const hoverRef = useRef(false)
+  const actionsRef = useRef({ copy: onCoverCopy, paste: onCoverPaste })
+  actionsRef.current = { copy: onCoverCopy, paste: onCoverPaste }
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (!hoverRef.current || !(e.metaKey || e.ctrlKey)) return
+      const el = document.activeElement as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      const k = e.key.toLowerCase()
+      if (k === 'c') {
+        e.preventDefault()
+        actionsRef.current.copy()
+      } else if (k === 'v') {
+        e.preventDefault()
+        void actionsRef.current.paste()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   function onCoverRemove(): void {
     revokeCoverUrl(item.coverUrl)
@@ -139,6 +181,12 @@ export function CoverPicker({
     // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
       data-testid="cover-dropzone"
+      onMouseEnter={() => {
+        hoverRef.current = true
+      }}
+      onMouseLeave={() => {
+        hoverRef.current = false
+      }}
       onDragOver={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -196,6 +244,16 @@ export function CoverPicker({
           </button>
           {!isMulti && (
             <>
+              <button
+                type="button"
+                data-testid="cover-copy"
+                onClick={onCoverCopy}
+                aria-label={tr('editor.coverCopy')}
+                className="press group/cover absolute top-2 left-2 rounded-lg bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75"
+              >
+                <Copy className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('editor.coverCopy')} align="start" scope="cover" />
+              </button>
               <button
                 type="button"
                 data-testid="cover-remove"

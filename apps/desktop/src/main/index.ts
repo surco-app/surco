@@ -686,6 +686,39 @@ function registerIpc(): void {
     e.sender.startDrag({ file: path, icon: trackDragIcon() })
   })
 
+  // Copy the artwork to the system clipboard so it can be pasted onto another track
+  // (or into another app). The source is resolved and processed exactly like an
+  // export/drag, then handed to the clipboard as an image; the temp file is removed
+  // once the clipboard has its own copy of the bytes.
+  ipcMain.handle('cover:copyImage', async (_e, src: CoverSource) => {
+    const settings = getSettings()
+    const prepared = await prepareProcessedCover(src, {
+      maxSize: settings.coverMaxSize,
+      square: settings.coverSquare,
+    })
+    if (!prepared) return false
+    try {
+      const img = nativeImage.createFromPath(prepared.path)
+      if (img.isEmpty()) return false
+      clipboard.writeImage(img)
+      return true
+    } finally {
+      await prepared.cleanup()
+    }
+  })
+
+  // Paste a clipboard image as a cover: write it to a temp PNG and hand back the path
+  // (for the embed) plus a data URL (for the preview), mirroring a picked file. Null
+  // when the clipboard holds no image, so the renderer leaves the artwork alone.
+  ipcMain.handle('cover:pasteImage', async () => {
+    const img = clipboard.readImage()
+    if (img.isEmpty()) return null
+    const dir = await mkdtemp(join(tmpdir(), 'surco-paste-'))
+    const coverPath = join(dir, 'cover.png')
+    await writeFile(coverPath, img.toPNG())
+    return { coverPath, coverUrl: img.toDataURL() }
+  })
+
   ipcMain.handle('shell:reveal', (_e, path: string) => shell.showItemInFolder(path))
   ipcMain.handle('shell:open', (_e, path: string) => shell.openPath(path))
   // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.

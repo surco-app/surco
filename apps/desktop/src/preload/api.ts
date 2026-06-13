@@ -65,6 +65,12 @@ export interface Api {
     coverPath?: string
     coverFromFile?: string
   }) => Promise<string | null>
+  copyCoverImage: (src: {
+    coverUrl?: string
+    coverPath?: string
+    coverFromFile?: string
+  }) => Promise<boolean>
+  pasteCoverImage: () => Promise<{ coverUrl: string; coverPath: string } | null>
   startCoverDrag: (path: string) => void
   startTrackDrag: (path: string) => void
   reveal: (path: string) => Promise<void>
