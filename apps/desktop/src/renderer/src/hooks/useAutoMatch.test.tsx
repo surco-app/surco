@@ -124,4 +124,24 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(result.current.matching).toBeNull())
     expect(updateTrack).not.toHaveBeenCalled()
   })
+
+  // The track the user is looking at must resolve now, not wait behind the rest of the
+  // crate: its Discogs calls go through the limiter's high-priority queue (the same lane
+  // as a manual search) while every other queued row stays low.
+  it('probes the focused track at high priority and the rest low', async () => {
+    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({ searchDiscogs })
+    const a = track('a')
+    a.query = 'query a'
+    const b = track('b')
+    b.query = 'query b'
+    const { result } = setup([a, b])
+
+    act(() => result.current.focusTrack('b'))
+    act(() => result.current.enqueueAutoMatch([a, b], false))
+
+    await waitFor(() => expect(searchDiscogs).toHaveBeenCalledTimes(2))
+    expect(searchDiscogs).toHaveBeenCalledWith('query b', undefined, 'high')
+    expect(searchDiscogs).toHaveBeenCalledWith('query a', undefined, 'low')
+  })
 })

@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import type { SearchPriority } from '../../../shared/types'
 import {
   autoMatchRelease,
   type DiscogsApi,
@@ -31,6 +32,8 @@ export interface AutoMatchSweep {
   forgetTrack: (id: string) => void
   // Clears both registries when the whole list is cleared.
   reset: () => void
+  // Marks the selected track so the sweep probes it next and at high priority; null clears it.
+  focusTrack: (id: string | null) => void
 }
 
 // The visibility-gated Discogs auto-match sweep. An import enqueues its files
@@ -48,13 +51,18 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   // before it runs. The drain reads this together with which rows are currently visible.
   const matchQueue = useRef<Map<string, boolean>>(new Map())
   const visibleIds = useRef<Set<string>>(new Set())
+  // The track the user has selected. It probes ahead of the rest of the crate (drained
+  // first) and at high priority, so the row in front of you resolves now instead of
+  // waiting its turn behind a folder's worth of background matches.
+  const focusedId = useRef<string | null>(null)
   // Auto-match is background work: it probes Discogs at low priority so the editor's own
   // search (high priority) always jumps ahead, and the main process paces every Discogs
-  // call through one shared per-minute bucket so a big crate can't earn 429s.
-  const discogs = useMemo<DiscogsApi>(
-    () => ({
-      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, 'low'),
-      getRelease: (id) => window.api.getRelease(id, undefined, 'low'),
+  // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
+  // track is the one exception — it rides the same high-priority lane as a manual search.
+  const discogsAt = useCallback(
+    (priority: SearchPriority): DiscogsApi => ({
+      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, priority),
+      getRelease: (id) => window.api.getRelease(id, undefined, priority),
     }),
     [],
   )
@@ -64,7 +72,8 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   // and only fills from the release when the file carries none, mirroring the editor's apply.
   const applyAutoMatch = useCallback(
     async (t: TrackItem): Promise<void> => {
-      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogs)
+      const priority: SearchPriority = t.id === focusedId.current ? 'high' : 'low'
+      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogsAt(priority))
       if (!m || matchCancel.current) return
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
       // a manual match or a removal landing during the Discogs round-trip wins. Re-read
@@ -84,7 +93,7 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
         autoMatched: true,
       })
     },
-    [discogs, updateTrack, tracksRef],
+    [discogsAt, updateTrack, tracksRef],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an
@@ -96,7 +105,12 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
       const visibleOnly = matchQueue.current.get(t.id)
       return visibleOnly !== undefined && (!visibleOnly || visible.has(t.id))
     })
-    return tracksToAutoMatch(ready)
+    const targets = tracksToAutoMatch(ready)
+    // Drain the focused (selected) track first so it lands in the very first concurrent batch
+    // rather than waiting behind the other on-screen rows in list order.
+    const i = targets.findIndex((t) => t.id === focusedId.current)
+    if (i > 0) targets.unshift(targets.splice(i, 1)[0])
+    return targets
   }, [tracksRef])
 
   // Drains the auto-match queue against Discogs, capped and cancellable. Each pass takes the
@@ -170,7 +184,26 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   const reset = useCallback((): void => {
     matchQueue.current.clear()
     visibleIds.current.clear()
+    focusedId.current = null
   }, [])
 
-  return { matching, enqueueAutoMatch, onTrackVisible, cancelAutoMatch, forgetTrack, reset }
+  // The selection changed: point the sweep at the new row and pump so it re-drains with that
+  // track at the front. A drain already running picks the new focus up on its next pass.
+  const focusTrack = useCallback(
+    (id: string | null): void => {
+      focusedId.current = id
+      if (id) void pumpAutoMatch()
+    },
+    [pumpAutoMatch],
+  )
+
+  return {
+    matching,
+    enqueueAutoMatch,
+    onTrackVisible,
+    cancelAutoMatch,
+    forgetTrack,
+    reset,
+    focusTrack,
+  }
 }

@@ -360,7 +360,15 @@ export default function App(): React.JSX.Element {
     cancelAutoMatch,
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
+    focusTrack: focusAutoMatch,
   } = useAutoMatch({ tracksRef, updateTrack })
+
+  // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
+  // high-priority lane), so the track you're looking at resolves now instead of waiting its
+  // turn behind a freshly dropped crate.
+  useEffect(() => {
+    focusAutoMatch(selectedId)
+  }, [selectedId, focusAutoMatch])
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
   // next tick once the editor for the new selection has mounted and bound the ref.
