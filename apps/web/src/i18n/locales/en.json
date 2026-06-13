@@ -34,12 +34,12 @@
   "hero": {
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
-    "ledeShort": "Drop your tracks and Surco fills the metadata from Discogs, converts them to the format you need and organizes them in your Apple Music library."
+    "ledeShort": "Convert, tag, check the quality and file into Apple Music: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
   "stats": {
     "faster": "faster than by hand*",
     "perTrack": "per track",
-    "oneShot": "shot, the whole flow"
+    "oneShot": "one app, not five"
   },
   "analysis": {
     "kicker": "Anti-fake analysis",
@@ -146,21 +146,25 @@
   "speed": {
     "kicker": "Blink and it's done",
     "title": "From minutes to seconds per track",
-    "lede": "By hand it's several steps across different tools — convert, tag, fill the gaps, import — and tedious once you repeat it track after track. Surco does it all with one button.",
+    "lede": "By hand you jump between a converter, the browser with Discogs, a tag editor, a spectrum analyzer and Apple Music — four or five apps per track. Surco folds that whole flow into one button.",
     "manual": "By hand",
-    "manualTime": "~3–4 min",
+    "manualTime": "~4–5 min",
     "manualSteps": [
       {
-        "app": "another app",
+        "app": "converter",
         "label": "Convert to AIFF"
       },
       {
-        "app": "tag app",
+        "app": "browser",
+        "label": "Look up the info on Discogs"
+      },
+      {
+        "app": "tag editor",
         "label": "Write the metadata"
       },
       {
-        "app": "by hand",
-        "label": "Add grouping and tags the tagger leaves out"
+        "app": "Spek",
+        "label": "Check the spectrum"
       },
       {
         "app": "Music",

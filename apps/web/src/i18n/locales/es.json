@@ -34,12 +34,12 @@
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "ledeShort": "Suelta tus pistas y Surco rellena los metadatos desde Discogs, las convierte al formato que necesitas y las ordena en tu biblioteca de Apple Music."
+    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
   },
   "stats": {
     "faster": "más rápido que a mano*",
     "perTrack": "por pista",
-    "oneShot": "golpe, todo el flujo"
+    "oneShot": "una app, no cinco"
   },
   "analysis": {
     "kicker": "Análisis anti-fake",
@@ -146,21 +146,25 @@
   "speed": {
     "kicker": "Visto y no visto",
     "title": "De minutos a segundos por pista",
-    "lede": "A mano son varios pasos entre distintas herramientas —convertir, etiquetar, completar tags, subir— y tedioso en cuanto lo repites pista tras pista. Surco lo hace todo con un botón.",
+    "lede": "A mano saltas entre un conversor, el navegador con Discogs, un editor de tags, un analizador de espectro y Apple Music —cuatro o cinco apps por pista—. Surco reúne todo ese flujo en un botón.",
     "manual": "A mano",
-    "manualTime": "~3–4 min",
+    "manualTime": "~4–5 min",
     "manualSteps": [
       {
-        "app": "otra app",
+        "app": "conversor",
         "label": "Convertir a AIFF"
       },
       {
-        "app": "app de tags",
+        "app": "navegador",
+        "label": "Buscar la info en Discogs"
+      },
+      {
+        "app": "editor de tags",
         "label": "Escribir los metadatos"
       },
       {
-        "app": "a mano",
-        "label": "Añadir grouping y tags que el tagger no pone"
+        "app": "Spek",
+        "label": "Comprobar el espectro"
       },
       {
         "app": "Música",
