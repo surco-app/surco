@@ -238,14 +238,6 @@ export function CoverPicker({
       )}
       {ownCover && (
         <CoverActionButton
-          testid="cover-export"
-          label={tr('editor.coverExport')}
-          icon={Download}
-          onClick={onCoverExport}
-        />
-      )}
-      {ownCover && (
-        <CoverActionButton
           testid="cover-remove"
           label={tr('editor.coverRemove')}
           icon={X}

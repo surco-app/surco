@@ -57,6 +57,16 @@ function renderPicker(over: Partial<TrackItem> = {}) {
 }
 
 describe('CoverPicker copy/paste', () => {
+  // The action bar renders one button per action; a duplicate export icon shipped once,
+  // so this guards each action appears exactly once on a filled single-track cover.
+  it('renders each cover action exactly once', () => {
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    expect(screen.getAllByTestId('cover-copy')).toHaveLength(1)
+    expect(screen.getAllByTestId('cover-paste')).toHaveLength(1)
+    expect(screen.getAllByTestId('cover-export')).toHaveLength(1)
+    expect(screen.getAllByTestId('cover-remove')).toHaveLength(1)
+  })
+
   // Copying writes the artwork to the system clipboard so it can be pasted onto
   // another track — the source is resolved the same way an export or drag-out is.
   it('copies the artwork to the clipboard from its source on the copy button', () => {
