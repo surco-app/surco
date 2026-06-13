@@ -483,6 +483,17 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.13",
+        "date": "June 13, 2026",
+        "title": "Copy artwork and tags, drag tracks out",
+        "items": [
+          "Drag a track from the list straight into any external app — Spek, Finder, your player — to check it instantly, no exporting first.",
+          "Copy a track's artwork and paste it onto another: from the button on the cover itself or with ⌘C/⌘V, through the system clipboard (to and from other apps too).",
+          "Copy a track's full metadata and paste it onto another from the right-click menu — perfect for sharing a release's details across its tracks.",
+          "Loudness normalization now actually reaches loud targets: the club preset no longer lands short — it applies the exact gain to target and a true-peak limiter holds the ceiling."
+        ]
+      },
+      {
         "version": "0.12",
         "date": "June 12, 2026",
         "title": "Much more reliable spectrum analysis",

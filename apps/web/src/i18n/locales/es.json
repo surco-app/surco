@@ -483,6 +483,17 @@
     "outroLede": "Descarga Surco y prepara tu primera caja de pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.13",
+        "date": "13 de junio de 2026",
+        "title": "Copiar carátulas y etiquetas, y arrastrar pistas fuera",
+        "items": [
+          "Arrastra una pista desde la lista a cualquier app externa —Spek, Finder, tu reproductor— para comprobarla al instante, sin exportarla antes.",
+          "Copia la carátula de una pista y pégala en otra: con el botón de la propia portada o con ⌘C/⌘V, a través del portapapeles del sistema (también desde y hacia otras apps).",
+          "Copia todos los metadatos de una pista y pégalos en otra desde el menú del botón derecho — ideal para repartir los datos de un disco entre sus cortes.",
+          "La normalización de loudness ahora alcanza de verdad los objetivos altos: el preset de club ya no se queda corto, aplica la ganancia justa al objetivo y un limitador de true-peak mantiene el techo."
+        ]
+      },
+      {
         "version": "0.12",
         "date": "12 de junio de 2026",
         "title": "Análisis de espectro mucho más fiable",
