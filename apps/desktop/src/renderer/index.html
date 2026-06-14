@@ -8,12 +8,7 @@
       content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com; media-src 'self' blob: surco:; connect-src 'self' ws://localhost:* http://localhost:*"
     />
     <title>Surco</title>
-    <script>
-      document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light'
-    </script>
+    <script src="./theme.js"></script>
   </head>
   <body>
     <div id="root"></div>

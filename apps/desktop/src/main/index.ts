@@ -13,6 +13,7 @@ import {
   type NativeImage,
   nativeImage,
   protocol,
+  session,
   shell,
 } from 'electron'
 import log from 'electron-log/main'
@@ -876,6 +877,27 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  // Lock scripts to same-origin in the packaged build. The meta CSP in index.html
+  // keeps 'unsafe-inline' because the dev server's React Fast Refresh injects an
+  // inline script; production has no inline scripts (the theme bootstrap is the
+  // static theme.js), so this stricter header — which the browser intersects with
+  // the meta policy — drops the inline allowance an injection would otherwise ride.
+  // Skipped in dev so HMR keeps working.
+  if (app.isPackaged) {
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com",
+      "media-src 'self' blob: surco:",
+      "connect-src 'self'",
+    ].join('; ')
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp] },
+      })
+    })
+  }
   // Bound the on-disk analysis cache once at launch, before any new entries land.
   void pruneAnalysisCache()
   // Serve the local audio file ourselves with real HTTP range support: the
