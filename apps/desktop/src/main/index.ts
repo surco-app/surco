@@ -289,8 +289,11 @@ function createWindow(): BrowserWindow {
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#09090d',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false,
+      preload: join(__dirname, '../preload/index.cjs'),
+      // The renderer runs untrusted-ish content (Discogs data, file tags); the OS
+      // sandbox is defense-in-depth on top of contextIsolation. Requires the CJS
+      // preload emitted by electron.vite.config.ts.
+      sandbox: true,
     },
   })
 
