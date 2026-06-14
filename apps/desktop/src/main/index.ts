@@ -261,6 +261,7 @@ function buildAppMenu(win: BrowserWindow): void {
       label: t('help'),
       submenu: [
         { label: t('faq'), click: () => run('help') },
+        { label: t('guide'), click: () => run('guide') },
         { type: 'separator' },
         { label: t('website'), click: () => run('website') },
         { label: t('feedback'), click: () => run('feedback') },

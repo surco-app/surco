@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type Command, filterCommands, runCommand } from './commands'
+import { type Command, filterCommands, guideUrl, runCommand } from './commands'
 
 function cmd(id: string, title: string): Command {
   return { id, title, enabled: true, run: () => {} }
@@ -10,6 +10,19 @@ const commands = [
   cmd('settings', 'Ajustes'),
   cmd('all', 'Procesar todo'),
 ]
+
+describe('guideUrl', () => {
+  // The web guide ships per-language at distinct paths, so a Spanish user must
+  // not be dropped on the English page (and vice versa) when they open it.
+  it('sends Spanish users to the Spanish guide', () => {
+    expect(guideUrl('es')).toBe('https://getsurco.app/guia')
+  })
+
+  it('sends every other locale to the English guide', () => {
+    expect(guideUrl('en')).toBe('https://getsurco.app/en/guide')
+    expect(guideUrl('fr')).toBe('https://getsurco.app/en/guide')
+  })
+})
 
 describe('filterCommands', () => {
   it('returns every command when the query is empty, so the menu is browsable', () => {

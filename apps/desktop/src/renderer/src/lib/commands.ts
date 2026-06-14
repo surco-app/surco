@@ -1,4 +1,5 @@
 import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
 import { openFeedback } from './feedback'
@@ -15,6 +16,12 @@ export function filterCommands(commands: Command[], query: string): Command[] {
   const q = query.trim().toLowerCase()
   if (!q) return commands
   return commands.filter((c) => c.title.toLowerCase().includes(q))
+}
+
+// The user guide is published per-language at separate paths, so pick the one
+// that matches the running locale rather than dropping everyone on Spanish.
+export function guideUrl(language: string): string {
+  return language === 'es' ? 'https://getsurco.app/guia' : 'https://getsurco.app/en/guide'
 }
 
 export function runCommand(commands: Command[], id: string): void {
@@ -301,6 +308,12 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.feedback'),
       enabled: true,
       run: () => openFeedback(),
+    },
+    {
+      id: 'guide',
+      title: tr('commands.guide'),
+      enabled: true,
+      run: () => window.open(guideUrl(i18n.language)),
     },
     {
       id: 'website',

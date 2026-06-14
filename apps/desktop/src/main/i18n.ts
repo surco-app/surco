@@ -27,6 +27,7 @@ interface MenuStrings {
   next: string
   help: string
   faq: string
+  guide: string
   website: string
   checkUpdates: string
   upToDate: string
@@ -61,6 +62,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     next: 'Pista siguiente',
     help: 'Ayuda',
     faq: 'Preguntas frecuentes',
+    guide: 'Guía de uso',
     website: 'Sitio web de Surco',
     checkUpdates: 'Buscar actualizaciones…',
     upToDate: 'Ya tienes la última versión de Surco.',
@@ -93,6 +95,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     next: 'Next track',
     help: 'Help',
     faq: 'Frequently Asked Questions',
+    guide: 'User guide',
     website: 'Surco website',
     checkUpdates: 'Check for Updates…',
     upToDate: "You're on the latest version of Surco.",

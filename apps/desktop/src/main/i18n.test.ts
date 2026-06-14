@@ -35,5 +35,7 @@ describe('createMenuT', () => {
     expect(createMenuT('en')('help')).toBe('Help')
     expect(createMenuT('es')('faq')).toBe('Preguntas frecuentes')
     expect(createMenuT('en')('faq')).toBe('Frequently Asked Questions')
+    expect(createMenuT('es')('guide')).toBe('Guía de uso')
+    expect(createMenuT('en')('guide')).toBe('User guide')
   })
 })
