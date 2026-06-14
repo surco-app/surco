@@ -65,6 +65,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
@@ -88,8 +89,13 @@ protocol.registerSchemesAsPrivileged([
 // live opens straight to it. Registered at module load so the early cold-launch events
 // aren't missed.
 const pendingFiles: string[] = []
+// Tracks every path the renderer may legitimately stream through surco://; the
+// protocol handler refuses anything not in here. Module-scoped because the
+// open-file event below can fire before the window (and registerIpc) exist.
+const mediaAccess = createMediaAccess()
 app.on('open-file', (event, path) => {
   event.preventDefault()
+  mediaAccess.allow(path)
   const win = BrowserWindow.getAllWindows()[0]
   if (win) win.webContents.send('open-files', [path])
   else pendingFiles.push(path)
@@ -439,10 +445,16 @@ function registerIpc(): void {
         },
       ],
     })
-    return canceled ? [] : filePaths
+    if (canceled) return []
+    mediaAccess.allowAll(filePaths)
+    return filePaths
   })
 
-  ipcMain.handle('files:expand', (_e, paths: string[]) => expandPaths(paths))
+  ipcMain.handle('files:expand', async (_e, paths: string[]) => {
+    const expanded = await expandPaths(paths)
+    mediaAccess.allowAll(expanded)
+    return expanded
+  })
 
   // Drains the cold-launch open-file buffer; the renderer calls this once on mount so
   // files chosen via "Open With Surco" before it existed land in the list.
@@ -646,6 +658,9 @@ function registerIpc(): void {
       // Apple Music entry.
       if (musicOnly) return { outputPath: '', inPlace, addedToMusicOnly: true, musicPersistentId }
 
+      // The conversion wrote a real file the renderer may play next — directly, or
+      // as the track's new source after an in-place rename — so let surco:// serve it.
+      mediaAccess.allow(target)
       return { outputPath: target, inPlace, musicPersistentId }
     } finally {
       if (prepared) await prepared.cleanup()
@@ -869,10 +884,15 @@ app.whenReady().then(() => {
   // slice (rather than net.fetch'ing the whole file:// URL, which ignores Range)
   // is what makes scrubbing work.
   protocol.handle(MEDIA_SCHEME, async (req) => {
+    // Refuse any path the app never handed to the renderer, before resolvePlayable
+    // can even probe or transcode it — this is what keeps surco:// from being an
+    // arbitrary-file-read primitive.
+    const requested = mediaPathFromUrl(req.url)
+    if (!mediaAccess.isAllowed(requested)) return new Response('Forbidden', { status: 403 })
     // AIFF can't be decoded by the <audio> element, so resolvePlayable swaps it
     // for a transcoded WAV (every other format streams untouched). The size,
     // MIME and ranges below all come from the file we actually serve.
-    const filePath = await resolvePlayable(mediaPathFromUrl(req.url))
+    const filePath = await resolvePlayable(requested)
     const { size } = await stat(filePath)
     const type = mediaMimeType(filePath)
     const range = parseRange(req.headers.get('range'), size)
