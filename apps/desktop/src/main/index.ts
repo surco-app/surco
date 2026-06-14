@@ -832,6 +832,13 @@ function registerIpc(): void {
 }
 
 app.setName('Surco')
+// The default macOS About panel only shows the bundle name and version; spelling
+// out the brand and author here gives it a finished look instead of a bare window.
+app.setAboutPanelOptions({
+  applicationName: 'Surco',
+  copyright: 'Vicent Gozalbes',
+  website: 'https://getsurco.app',
+})
 
 app.whenReady().then(() => {
   if (!app.isPackaged && process.platform === 'darwin') {
