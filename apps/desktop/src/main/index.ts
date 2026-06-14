@@ -66,6 +66,7 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { keymapMenuClick } from './menuCommand'
+import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 import { getProvider } from './providers'
 import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
@@ -296,9 +297,24 @@ function createWindow(): BrowserWindow {
   win.on('closed', stopDockAnimation)
   buildAppMenu(win)
 
+  // Popups are always denied; a web link is handed to the browser, anything else
+  // (file://, a custom scheme, javascript:) is dropped so it can't be launched
+  // outside the sandbox.
   win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    if (isWebUrl(details.url)) shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  const appUrl = process.env.ELECTRON_RENDERER_URL
+    ? process.env.ELECTRON_RENDERER_URL
+    : `file://${join(__dirname, '../renderer/index.html')}`
+  // The SPA never navigates its own top frame, so a navigation off the app origin
+  // means a compromised renderer trying to load a remote page (escaping the local
+  // CSP). Block it; a web link goes to the browser instead.
+  win.webContents.on('will-navigate', (event, url) => {
+    if (isInternalNavigation(url, appUrl)) return
+    event.preventDefault()
+    if (isWebUrl(url)) shell.openExternal(url)
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
