@@ -122,17 +122,18 @@ describe('TrackList', () => {
     expect(screen.getByText('No artist')).toBeInTheDocument()
   })
 
-  it('drags a row out to external apps using its source file', () => {
+  it('drags a row out to external apps using its source file and cover', () => {
     // DJs drop a track straight onto Spek to eyeball its spectrum without exporting
     // first, so the row hands the OS the untouched source path on dragstart. The
     // draggable element is the <li>, not the button: Chromium won't start a native
-    // drag from a <button>, so dragging it must lift the whole row.
-    renderList([track({ id: 'a' })])
+    // drag from a <button>, so dragging it must lift the whole row. The cover rides
+    // along so the OS drag thumbnail is the track's art, not a generic icon.
+    renderList([track({ id: 'a', coverUrl: 'data:image/jpeg;base64,AAA' })])
     const li = screen.getByTestId('track-row').closest('li')
     expect(li).toHaveAttribute('draggable', 'true')
     expect(screen.getByTestId('track-row')).not.toHaveAttribute('draggable')
     fireEvent.dragStart(li as Element)
-    expect(api.startTrackDrag).toHaveBeenCalledWith('/music/a.wav')
+    expect(api.startTrackDrag).toHaveBeenCalledWith('/music/a.wav', 'data:image/jpeg;base64,AAA')
   })
 
   it('shows the album art so a crate can be scanned by cover, not just by name', () => {

@@ -10,6 +10,11 @@ directories:
 files:
   - out/**
   - package.json
+  # The drag-out icon and the dock icon are loaded at runtime from build/icon.png via
+  # app.getAppPath(); buildResources isn't bundled into the app, so without this the
+  # path is empty and startDrag (which rejects an empty icon) throws — dragging a track
+  # row out silently does nothing in packaged builds.
+  - build/icon.png
 asarUnpack:
   - node_modules/ffmpeg-static/**
   - node_modules/@ffprobe-installer/**

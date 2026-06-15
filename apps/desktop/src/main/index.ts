@@ -369,15 +369,24 @@ function stopDockAnimation(): void {
 }
 
 // Dragging a track row out needs an icon the instant the gesture starts: startDrag
-// rejects an empty icon and can't await one mid-drag, so reuse the app icon, loaded
-// once. The artwork would be nicer but isn't reliably on disk at drag time.
+// rejects an empty icon and can't await one mid-drag. The track's own art makes the
+// drag legible, but only when it's at hand as a data: URL — createFromDataURL is
+// synchronous, unlike fetching a Discogs http cover, which would have to await. A
+// track with no usable cover falls back to the app icon, loaded once.
 let trackDragIconCache: NativeImage | null = null
-function trackDragIcon(): NativeImage {
+function genericDragIcon(): NativeImage {
   if (!trackDragIconCache)
     trackDragIconCache = nativeImage
       .createFromPath(join(app.getAppPath(), 'build', 'icon.png'))
       .resize({ width: 128, height: 128 })
   return trackDragIconCache
+}
+function trackDragIcon(coverUrl?: string): NativeImage {
+  if (coverUrl?.startsWith('data:')) {
+    const cover = nativeImage.createFromDataURL(coverUrl)
+    if (!cover.isEmpty()) return cover.resize({ width: 128, height: 128 })
+  }
+  return genericDragIcon()
 }
 
 function registerIpc(): void {
@@ -719,8 +728,8 @@ function registerIpc(): void {
   // The dragged source file already exists on disk, so unlike a cover it needs no
   // prepare pass — hand the OS the untouched path so a row can be dropped straight
   // onto Spek (or any app) to inspect the original track.
-  ipcMain.on('track:drag', (e, path: string) => {
-    e.sender.startDrag({ file: path, icon: trackDragIcon() })
+  ipcMain.on('track:drag', (e, { path, coverUrl }: { path: string; coverUrl?: string }) => {
+    e.sender.startDrag({ file: path, icon: trackDragIcon(coverUrl) })
   })
 
   // Copy the artwork to the system clipboard so it can be pasted onto another track

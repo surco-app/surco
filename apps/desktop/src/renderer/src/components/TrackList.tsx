@@ -116,9 +116,10 @@ const TrackRow = memo(function TrackRow({
       onDragStart={(e) => {
         // Hand the OS the untouched source file so the row can be dropped onto Spek
         // or any app. An actual drag suppresses the click, so select and drag-out
-        // don't fight (same arrangement the cover uses).
+        // don't fight (same arrangement the cover uses). The cover rides along so the
+        // OS drag thumbnail is the track's own art, not a generic app icon.
         e.preventDefault()
-        window.api.startTrackDrag(t.inputPath)
+        window.api.startTrackDrag(t.inputPath, t.coverUrl)
       }}
     >
       <button
