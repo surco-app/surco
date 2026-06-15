@@ -124,9 +124,14 @@ describe('TrackList', () => {
 
   it('drags a row out to external apps using its source file', () => {
     // DJs drop a track straight onto Spek to eyeball its spectrum without exporting
-    // first, so the row hands the OS the untouched source path on dragstart.
+    // first, so the row hands the OS the untouched source path on dragstart. The
+    // draggable element is the <li>, not the button: Chromium won't start a native
+    // drag from a <button>, so dragging it must lift the whole row.
     renderList([track({ id: 'a' })])
-    fireEvent.dragStart(screen.getByTestId('track-row'))
+    const li = screen.getByTestId('track-row').closest('li')
+    expect(li).toHaveAttribute('draggable', 'true')
+    expect(screen.getByTestId('track-row')).not.toHaveAttribute('draggable')
+    fireEvent.dragStart(li as Element)
     expect(api.startTrackDrag).toHaveBeenCalledWith('/music/a.wav')
   })
 

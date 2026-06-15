@@ -106,7 +106,21 @@ const TrackRow = memo(function TrackRow({
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
-    <li ref={rowRef} className="group relative">
+    // Drag lives on the <li>, not the button: Chromium won't reliably start a native
+    // drag from a <button> (its press state swallows the dragstart), so the row could
+    // not be picked up at all. The img-based cover never hit this, hence the divergence.
+    <li
+      ref={rowRef}
+      className="group relative"
+      draggable
+      onDragStart={(e) => {
+        // Hand the OS the untouched source file so the row can be dropped onto Spek
+        // or any app. An actual drag suppresses the click, so select and drag-out
+        // don't fight (same arrangement the cover uses).
+        e.preventDefault()
+        window.api.startTrackDrag(t.inputPath)
+      }}
+    >
       <button
         type="button"
         ref={(el) => {
@@ -116,14 +130,6 @@ const TrackRow = memo(function TrackRow({
         }}
         data-testid="track-row"
         aria-pressed={selected}
-        draggable
-        onDragStart={(e) => {
-          // Hand the OS the untouched source file so the row can be dropped onto Spek
-          // or any app. An actual drag suppresses the click, so select and drag-out
-          // don't fight (same arrangement the cover uses).
-          e.preventDefault()
-          window.api.startTrackDrag(t.inputPath)
-        }}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onContextMenu={(e) => {
           e.preventDefault()
