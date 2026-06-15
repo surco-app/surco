@@ -72,6 +72,7 @@ function settings(over: Partial<Settings> = {}): Settings {
 // A clear cutoff well below Nyquist so the verdict is a real value (not 'unanalyzed'),
 // which is what makes a quality dot appear on the row.
 const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateHz: 44100 }
+const wave = { peaks: [0.2, 0.8, 0.5, 1], durationSec: 180 }
 
 // jsdom ships no IntersectionObserver. This stub records what each row observes and reports
 // nothing visible by default, so a test can scroll a specific row into view on demand and
@@ -133,6 +134,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     searchDiscogs: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
+    waveform: vi.fn().mockResolvedValue(wave),
     ...over,
   }
 }
@@ -188,6 +190,19 @@ describe('App quality triage', () => {
     const rows = await addTwoTracks()
     fireEvent.mouseEnter(rows[1])
     await waitFor(() => expect(within(rows[1]).getByTestId('track-quality')).toBeInTheDocument())
+  })
+
+  // The player's waveform is the slowest decode (it reads the whole file) and only
+  // mounts when playback starts, so without warming it the player opens to an empty
+  // strip for seconds. Hovering the row a DJ is about to play primes that decode.
+  it('warms a hovered track so its waveform is decoded before playback opens it', async () => {
+    const waveform = vi.fn().mockResolvedValue(wave)
+    setApi({ waveform })
+    const client = await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.mouseEnter(rows[1])
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav'))
+    expect(client.getQueryData(['waveform', '/music/b.wav'])).toEqual(wave)
   })
 
   // Starting the sweep then switching away must not keep ffmpeg churning in the
@@ -302,9 +317,12 @@ describe('App auto-match', () => {
     await addTwoTracks()
 
     // No row is scrolled into view; only the rested selection drives the match.
-    await waitFor(() => expect(screen.getAllByTestId('track-automatched').length).toBeGreaterThan(0), {
-      timeout: 2000,
-    })
+    await waitFor(
+      () => expect(screen.getAllByTestId('track-automatched').length).toBeGreaterThan(0),
+      {
+        timeout: 2000,
+      },
+    )
     expect(searchDiscogs).toHaveBeenCalled()
   })
 

@@ -27,11 +27,11 @@ import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
-import { NoticeToast } from './components/NoticeToast'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
 import { LoudnessHelpModal } from './components/LoudnessHelpModal'
+import { NoticeToast } from './components/NoticeToast'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
 import { RenameModal } from './components/RenameModal'
@@ -53,6 +53,7 @@ import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
+import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import { tracksToAutoMatch } from './lib/autoMatch'
@@ -333,15 +334,18 @@ export default function App(): React.JSX.Element {
     addPaths(await window.api.expandPaths(dropped))
   }
 
-  // Warms a hovered track's spectrum so opening it is instant. Debounced (the row only
-  // counts as intent once the cursor rests). prefetchQuery skips a track already in the
-  // cache and dedups concurrent hovers, so it needs no in-flight guard of its own.
+  // Warms a hovered track's spectrum and waveform so opening it is instant. Debounced
+  // (the row only counts as intent once the cursor rests). prefetchQuery skips a track
+  // already in the cache and dedups concurrent hovers, so it needs no in-flight guard.
   const handlePrefetch = useCallback(
     (id: string): void => {
       if (hoverTimer.current) clearTimeout(hoverTimer.current)
       hoverTimer.current = setTimeout(() => {
         const track = tracksRef.current.find((t) => t.id === id)
         if (!track) return
+        // The waveform is always shown the moment playback opens the player, and it is
+        // the heaviest decode (whole file), so warm it for every rested hover.
+        void queryClient.prefetchQuery(waveformOptions(track.inputPath))
         if (showSpectrumRef.current) {
           void queryClient.prefetchQuery(spectrogramOptions(track.inputPath))
         }
