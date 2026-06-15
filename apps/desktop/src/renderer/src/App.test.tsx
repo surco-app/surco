@@ -924,15 +924,16 @@ describe('App command palette list-wide actions', () => {
     expect(screen.getByTestId('palette-item')).toHaveAttribute('aria-disabled', 'false')
   })
 
-  // "Remove all" discards every unsaved edit in the session (matches, covers, tags live
-  // only in memory), so the palette — and the native menu, which fires the same command —
-  // must ask first, exactly like the toolbar button it mirrors.
-  it('asks for confirmation before removing all tracks from the palette', async () => {
+  // "Clear the list" discards every unsaved edit in the session (matches, covers, tags
+  // live only in memory), so the palette — and the native menu, which fires the same
+  // command — must ask first, exactly like the toolbar button it mirrors. Its label
+  // matches that button so searching "clear" surfaces it.
+  it('asks for confirmation before clearing the list from the palette', async () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     fireEvent.change(await screen.findByTestId('palette-input'), {
-      target: { value: 'Remove all' },
+      target: { value: 'Clear the list' },
     })
     fireEvent.click(screen.getByTestId('palette-item'))
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)

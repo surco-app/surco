@@ -262,7 +262,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'remove-all',
-      title: tr('commands.removeAll'),
+      title: tr('commands.clearAll'),
       enabled: tracks.length > 0,
       run: askClearAll,
     },
