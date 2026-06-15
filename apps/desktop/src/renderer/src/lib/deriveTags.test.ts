@@ -81,4 +81,25 @@ describe('smartDeriveTags', () => {
   it('returns nothing when no common naming fits', () => {
     expect(smartDeriveTags('noseparator.flac')).toEqual({})
   })
+
+  it('reads scene-style underscore names ("artist_-_title")', () => {
+    // Many rips use underscores for spaces and "_-_" for the artist/title dash.
+    expect(smartDeriveTags('rank_1_-_airwave.flac')).toEqual({
+      artist: 'rank 1',
+      title: 'airwave',
+    })
+  })
+
+  it('reads an en/em dash used as the separator', () => {
+    expect(smartDeriveTags('Rank 1 – Airwave.flac')).toEqual({ artist: 'Rank 1', title: 'Airwave' })
+    expect(smartDeriveTags('Rank 1 — Airwave.flac')).toEqual({ artist: 'Rank 1', title: 'Airwave' })
+  })
+
+  it('still keeps a normal "Artist - Title" name untouched', () => {
+    // The underscore handling must not fire on names that already use spaces.
+    expect(smartDeriveTags('Above & Beyond - Sun In Your Eyes.flac')).toEqual({
+      artist: 'Above & Beyond',
+      title: 'Sun In Your Eyes',
+    })
+  })
 })

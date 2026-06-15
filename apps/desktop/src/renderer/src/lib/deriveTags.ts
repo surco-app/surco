@@ -58,11 +58,24 @@ const SMART_PATTERNS = [
   '{artist} - {title}',
 ]
 
+// Maps the separator styles real downloads use onto the " - " the patterns expect,
+// without touching the ambiguous ones. "_-_" (and en/em dashes) are unmistakably the
+// artist/title dash; bare underscores become spaces only when the name has none of its
+// own, so a normal "Artist - Title" — or a title with an internal underscore — is left
+// alone. A lone "-" or single "_" is deliberately not split: it can't be told apart
+// from a hyphenated word.
+function normalizeSeparators(name: string): string {
+  let s = name.replace(/\s*_\s*-\s*_\s*/g, ' - ').replace(/\s*[–—]\s*/g, ' - ')
+  if (s.includes('_') && !name.includes(' ')) s = s.replace(/_/g, ' ')
+  return s
+}
+
 // One-click derivation that picks the matching common DJ-rip naming itself, so the user
 // doesn't have to type a pattern for the usual cases.
 export function smartDeriveTags(fileName: string): Partial<TrackMetadata> {
+  const normalized = normalizeSeparators(fileName)
   for (const pattern of SMART_PATTERNS) {
-    const tags = deriveTags(fileName, pattern)
+    const tags = deriveTags(normalized, pattern)
     if (Object.keys(tags).length > 0) return tags
   }
   return {}
