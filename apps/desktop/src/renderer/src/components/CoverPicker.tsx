@@ -19,6 +19,23 @@ import type { TrackItem } from '../types'
 import { CoverLightbox } from './CoverLightbox'
 import { Tooltip } from './Tooltip'
 
+// Pulls an image URL out of a drag that carried no file — i.e. an <img> dragged from a
+// web page. Browsers expose it as text/uri-list (the clean form), an <img> tag in
+// text/html, or plain text; we take the first http(s) or data: image URL we find.
+function imageUrlFromDrag(dt: DataTransfer): string | undefined {
+  const isImageUrl = (s: string): boolean => /^https?:\/\//i.test(s) || /^data:image\//i.test(s)
+  const fromList = dt
+    .getData('text/uri-list')
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l && !l.startsWith('#') && isImageUrl(l))
+  if (fromList) return fromList
+  const fromHtml = dt.getData('text/html').match(/<img[^>]+src=["']([^"']+)["']/i)?.[1]
+  if (fromHtml && isImageUrl(fromHtml)) return fromHtml
+  const plain = dt.getData('text/plain').trim()
+  return isImageUrl(plain) ? plain : undefined
+}
+
 // One icon button in the cover's hover action bar. pointer-events-auto so it stays
 // clickable even though its parent scrim lets events through to the image beneath.
 function CoverActionButton({
@@ -70,7 +87,7 @@ interface Props {
   coverDims: { w: number; h: number } | null
   setCoverDims: (dims: { w: number; h: number } | null) => void
   onChange: (patch: Partial<TrackItem>) => void
-  onApplyCoverAll?: (coverUrl: string, coverPath: string) => void
+  onApplyCoverAll?: (coverUrl: string, coverPath?: string) => void
 }
 
 // The album artwork well: shows the current cover (with hover remove/export), a
@@ -132,7 +149,7 @@ export function CoverPicker({
   // Sets the artwork from a resolved (url, path) pair: stamps onto every selected
   // track in multi-select, otherwise just the primary. Replacing a previously picked
   // file frees its blob URL — nothing else shows it.
-  function applyCover(coverUrl: string, coverPath: string): void {
+  function applyCover(coverUrl: string, coverPath?: string): void {
     revokeCoverUrl(item.coverUrl)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
     else onChange({ coverUrl, coverPath, coverRemoved: false })
@@ -253,7 +270,16 @@ export function CoverPicker({
     e.preventDefault()
     e.stopPropagation()
     setCoverDragging(false)
-    applyImageFile(Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/')))
+    const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/'))
+    if (file) {
+      applyImageFile(file)
+      return
+    }
+    // An image dragged from a browser carries no file — only its URL (text/uri-list, or a
+    // <img> inside text/html). Apply it like a Discogs cover (a URL with no local path);
+    // main downloads it when the track is processed, copied or dragged out.
+    const url = imageUrlFromDrag(e.dataTransfer)
+    if (url) applyCover(url)
   }
 
   // The covers the picker steps through: the file's own artwork first, then the
@@ -389,7 +415,9 @@ export function CoverPicker({
           <span data-testid="cover-image-count" className="text-[11px] tabular-nums text-fg-dim">
             {(() => {
               const pos = coverChoices.findIndex((c) => c.uri === item.coverUrl) + 1
-              return `${pos > 0 ? pos : '–'}/${coverChoices.length}`
+              // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
+              // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
+              return `${pos}/${coverChoices.length}`
             })()}
           </span>
           <button

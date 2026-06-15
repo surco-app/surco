@@ -746,7 +746,7 @@ export default function App(): React.JSX.Element {
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (copiedMeta) updateTracksMeta([track.id], copiedMeta)
   })
-  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath: string) =>
+  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) =>
     patchTracks(selectedIds, { coverUrl, coverPath }),
   )
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {

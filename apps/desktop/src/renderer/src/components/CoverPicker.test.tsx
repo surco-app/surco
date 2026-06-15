@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { TrackItem } from '../types'
@@ -164,5 +165,64 @@ describe('CoverPicker copy/paste', () => {
     api.hasClipboardImage.mockResolvedValue(true)
     renderPicker({})
     expect(await screen.findByTestId('cover-paste')).toBeInTheDocument()
+  })
+})
+
+describe('CoverPicker drag and counter', () => {
+  const release = {
+    id: 1,
+    title: 'Album',
+    images: [{ uri: 'http://a/1.jpg' }, { uri: 'http://a/2.jpg' }],
+  } as unknown as React.ComponentProps<typeof CoverPicker>['release']
+
+  function renderWithRelease(over: Partial<TrackItem> = {}) {
+    const onChange = vi.fn()
+    render(
+      <CoverPicker
+        item={item(over)}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={release}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    return { onChange }
+  }
+
+  // An image dragged from a browser arrives as a URL with no File. We apply it like a
+  // Discogs cover (URL, no local path) so it works the same as filesystem drops.
+  it('accepts an image dragged from a browser as the cover', () => {
+    const onChange = vi.fn()
+    render(
+      <CoverPicker
+        item={item()}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    fireEvent.drop(screen.getByTestId('cover-dropzone'), {
+      dataTransfer: {
+        files: [],
+        getData: (t: string) => (t === 'text/uri-list' ? 'https://img.example/cover.jpg' : ''),
+      },
+    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ coverUrl: 'https://img.example/cover.jpg', coverRemoved: false }),
+    )
+  })
+
+  // After deleting the cover the choices remain (so the arrows can step back into them),
+  // but nothing is selected: the counter must read "0/2", never a stray "–/2".
+  it('shows 0/N in the counter when no cover is selected', () => {
+    renderWithRelease({ coverUrl: undefined })
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
   })
 })

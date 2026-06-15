@@ -32,7 +32,7 @@ interface MetadataFormProps {
   coverDims: { w: number; h: number } | null
   setCoverDims: (dims: { w: number; h: number } | null) => void
   onChange: (patch: Partial<TrackItem>) => void
-  onApplyCoverAll?: (coverUrl: string, coverPath: string) => void
+  onApplyCoverAll?: (coverUrl: string, coverPath?: string) => void
   onRate: (value: string) => void
   fields: FieldSpec[]
 }

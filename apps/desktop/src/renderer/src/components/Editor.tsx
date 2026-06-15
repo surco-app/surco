@@ -84,7 +84,7 @@ interface Props {
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
-  onApplyCoverAll?: (coverUrl: string, coverPath: string) => void
+  onApplyCoverAll?: (coverUrl: string, coverPath?: string) => void
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
