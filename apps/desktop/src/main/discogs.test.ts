@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+// The client now paces every call through the shared limiter; mock it to a no-op so
+// these unit tests don't wait on real timers between requests.
+vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
+
 import {
   downloadCover,
   getRelease,
@@ -95,6 +100,21 @@ describe('search', () => {
     expect(url).toContain('key=')
     expect(url).toContain('secret=')
     expect(url).not.toContain('token=')
+  })
+
+  // The first candidate keeps the mix name; when it finds nothing the client retries
+  // the parenthetical-stripped query, which is what surfaces the release.
+  it('falls back to the parenthetical-stripped query when the fuller one finds nothing', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [] }),
+      res(200, { results: [{ id: 9 }] }),
+    ])
+    const out = await search('Cascade Probe (Original Mix)', 'tok')
+    expect(out).toEqual([{ id: 9 }])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const second = fetchMock.mock.calls[1][0] as string
+    expect(second).toContain(encodeURIComponent('Cascade Probe'))
+    expect(second).not.toContain(encodeURIComponent('(Original Mix)'))
   })
 })
 

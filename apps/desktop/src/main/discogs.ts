@@ -1,7 +1,9 @@
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { DiscogsRelease, DiscogsSearchResult } from '../shared/types'
+import type { DiscogsRelease, DiscogsSearchResult, SearchPriority } from '../shared/types'
+import { discogsLimiter } from './discogsLimiter'
+import { buildSearchCandidates } from './searchQuery'
 import { tmpName } from './tmp'
 
 const BASE = 'https://api.discogs.com'
@@ -67,7 +69,7 @@ export function hasCachedSearch(query: string): boolean {
   return searchCache.has(query.trim().toLowerCase())
 }
 
-export async function search(query: string, token: string): Promise<DiscogsSearchResult[]> {
+async function searchOnce(query: string, token: string): Promise<DiscogsSearchResult[]> {
   const key = query.trim().toLowerCase()
   const cached = searchCache.get(key)
   if (cached) return cached
@@ -80,15 +82,39 @@ export async function search(query: string, token: string): Promise<DiscogsSearc
   return results
 }
 
+// The full Discogs search strategy: download-filename noise throws the free-text q=
+// search off, so try cleaned candidates in turn (cleaned → no parenthetical) and keep
+// the first that returns anything. Each candidate is paced through the shared limiter
+// (skipped on a cache hit, which makes no network call) and cached on its own key, so
+// a clean, already-seen query still makes exactly one — or zero — calls.
+export async function search(
+  query: string,
+  token: string,
+  priority?: SearchPriority,
+): Promise<DiscogsSearchResult[]> {
+  let results: DiscogsSearchResult[] = []
+  for (const candidate of buildSearchCandidates(query)) {
+    if (!hasCachedSearch(candidate)) await discogsLimiter.acquire(priority)
+    results = await searchOnce(candidate, token)
+    if (results.length) break
+  }
+  return results
+}
+
 const releaseCache = new Map<number, DiscogsRelease>()
 
 export function hasCachedRelease(id: number): boolean {
   return releaseCache.has(id)
 }
 
-export async function getRelease(id: number, token: string): Promise<DiscogsRelease> {
+export async function getRelease(
+  id: number,
+  token: string,
+  priority?: SearchPriority,
+): Promise<DiscogsRelease> {
   const cached = releaseCache.get(id)
   if (cached) return cached
+  await discogsLimiter.acquire(priority)
   const release = await api<DiscogsRelease>(`/releases/${id}`, token)
   releaseCache.set(id, release)
   return release
