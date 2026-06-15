@@ -24,8 +24,28 @@ describe('qualityVerdict', () => {
   })
 
   it('grades the ~192 kbps band (18–19.5 kHz) as warn, not bad', () => {
+    // A frequency in this band only earns "review" when it is a real codec
+    // lowpass — a detected knee. Without the hasKnee argument the verdict assumes
+    // one, so a measured 18 kHz cut still grades warn.
     expect(qualityVerdict(18000, 44100)).toBe('warn')
     expect(qualityVerdict(19000, 44100)).toBe('warn')
+  })
+
+  it('passes a knee-free taper as good even when its energy extent lands in the warn band', () => {
+    // The user-reported false positive: a genuine dark master tapers smoothly to
+    // ~18 kHz with no codec knee. Every lossy source trips the knee, so a knee-free
+    // reading is genuine — grading its extent on the codec scale wrongly demoted it
+    // to "review". With hasKnee=false it is good, whatever the extent.
+    expect(qualityVerdict(18000, 44100, false, false)).toBe('good')
+    expect(qualityVerdict(16000, 44100, false, false)).toBe('good')
+  })
+
+  it('still grades a real detected knee by where it sits', () => {
+    // A knee IS a codec lowpass, so its frequency is the honest quality signal:
+    // an 18 kHz wall is a ~192 kbps source (warn), a 16 kHz wall is low-bitrate (bad).
+    expect(qualityVerdict(18000, 44100, false, true)).toBe('warn')
+    expect(qualityVerdict(16000, 44100, false, true)).toBe('bad')
+    expect(qualityVerdict(20000, 44100, false, true)).toBe('good')
   })
 
   it('grades a ceiling under 18 kHz (low-bitrate source) as bad', () => {

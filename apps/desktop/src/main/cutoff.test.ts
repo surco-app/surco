@@ -59,6 +59,15 @@ const SMOOTH_TAPER_320 = band([
 const SMOOTH_TAPER_320_B = band([
   -34.1, -34.6, -35.9, -37.0, -39.0, -41.7, -45.4, -49.2, -53.3, -57.2, -61.0, -64.6, -69.0,
 ])
+// Two real FLACs a user reported as wrongly graded "Review" (measured). Both are
+// genuine dark masters: a smooth taper, steepest step ~4.6 dB (no knee), energy
+// extent at 18 kHz, still falling monotonically to 21 kHz — not a codec cut.
+const DARK_MASTER_FUCK = band([
+  -32.8, -32.8, -34.3, -36.3, -39.3, -42.3, -45.6, -49.7, -54.3, -57.6, -60.4, -63.6, -67.4,
+])
+const DARK_MASTER_MAREAO = band([
+  -35.9, -36.0, -36.7, -38.9, -41.3, -44.3, -47.3, -51.0, -54.5, -58.4, -62.2, -66.3, -70.7,
+])
 // Real ~190 kbps-class MP3s (measured): quiet ~2 dB/band taper, then a 7–8 dB
 // step that keeps falling — the encoder's soft lowpass. These sit just under the
 // old 8 dB wall threshold, so they were graded "Good"; the sustained-knee pass
@@ -90,7 +99,11 @@ const VBR_48K = FREQS_48K.map((freqHz, i) => ({
 
 describe('detectCutoff', () => {
   it('reports Nyquist for full-band audio so it is not falsely flagged as cut', () => {
-    expect(detectCutoff(FULL_BAND, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+    expect(detectCutoff(FULL_BAND, NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+      hasKnee: false,
+    })
   })
 
   it('locates a sharp lowpass shelf at the last band before the drop', () => {
@@ -110,10 +123,24 @@ describe('detectCutoff', () => {
     expect(detectCutoff(SOFT_KNEE_17K, NYQUIST).cutoffHz).toBe(17000)
   })
 
+  it('reports hasKnee only for a real codec lowpass, never for a knee-free taper', () => {
+    // The verdict reads this to tell a lossy cut (a sustained knee) from a genuine
+    // dark master (a smooth taper): every cut file trips the knee, every clean one
+    // does not. Grading the extent of a knee-free taper on the codec scale is what
+    // demoted healthy masters to "review".
+    expect(detectCutoff(AAC_CUT_16K, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(SLOPED_CUT_15K, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(SOFT_KNEE_16K, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST).hasKnee).toBe(false)
+    expect(detectCutoff(FULL_BAND, NYQUIST).hasKnee).toBe(false)
+    expect(detectCutoff(SYNTHETIC_HUMP, NYQUIST).hasKnee).toBe(false)
+  })
+
   it('does not flag a full-band track that rolls off but reaches Nyquist', () => {
     expect(detectCutoff(REAL_FULL_BAND, NYQUIST)).toEqual({
       cutoffHz: NYQUIST,
       processed: false,
+      hasKnee: false,
     })
   })
 
@@ -121,28 +148,63 @@ describe('detectCutoff', () => {
     // The headline false positive: the old fallback reported "cut at 16 kHz" for
     // these healthy 320s because their natural slope crosses plateau−12 dB there.
     // With no knee there is no cut — only how far meaningful energy extends.
-    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST)).toEqual({ cutoffHz: 18000, processed: false })
+    expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+      hasKnee: false,
+    })
     expect(detectCutoff(SMOOTH_TAPER_320_B, NYQUIST)).toEqual({
       cutoffHz: 18000,
       processed: false,
+      hasKnee: false,
+    })
+  })
+
+  it('reads real user-reported dark masters as knee-free, not a lossy cut', () => {
+    // Two real FLACs a user flagged as wrongly graded "Review" (Dj Lara & Neus —
+    // Fuck; Alex Cervera — Mareao). Both taper smoothly with no knee anywhere
+    // (steepest step ~4.6 dB), reach 18 kHz of meaningful energy and keep falling
+    // monotonically to Nyquist: genuine dark masters, not 192 kbps sources.
+    expect(detectCutoff(DARK_MASTER_FUCK, NYQUIST)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+      hasKnee: false,
+    })
+    expect(detectCutoff(DARK_MASTER_MAREAO, NYQUIST)).toEqual({
+      cutoffHz: 18000,
+      processed: false,
+      hasKnee: false,
     })
   })
 
   it('flags regenerated highs that rise where natural spectra only fall', () => {
     // The cut is reported at the valley — the original source's ceiling — so the
     // grade reflects what the audio really carries under the synthetic gloss.
-    expect(detectCutoff(SYNTHETIC_HUMP, NYQUIST)).toEqual({ cutoffHz: 16000, processed: true })
+    expect(detectCutoff(SYNTHETIC_HUMP, NYQUIST)).toEqual({
+      cutoffHz: 16000,
+      processed: true,
+      hasKnee: false,
+    })
   })
 
   it('finds the encoder lowpass at the top of a 48 kHz taper instead of mid-slope', () => {
-    expect(detectCutoff(VBR_48K, 24000)).toEqual({ cutoffHz: 21000, processed: false })
+    expect(detectCutoff(VBR_48K, 24000)).toEqual({
+      cutoffHz: 21000,
+      processed: false,
+      hasKnee: true,
+    })
   })
 
   it('reports Nyquist when there are too few bands to compare', () => {
-    expect(detectCutoff([], NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+    expect(detectCutoff([], NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+      hasKnee: false,
+    })
     expect(detectCutoff([{ freqHz: 9000, rmsDb: -33 }], NYQUIST)).toEqual({
       cutoffHz: NYQUIST,
       processed: false,
+      hasKnee: false,
     })
   })
 
@@ -153,7 +215,11 @@ describe('detectCutoff', () => {
     const NOTCH = band([
       -33.0, -33.6, -34.4, -35.1, -36.0, -44.5, -36.8, -38.0, -39.2, -40.6, -42.0, -44.8, -47.9,
     ])
-    expect(detectCutoff(NOTCH, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+    expect(detectCutoff(NOTCH, NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+      hasKnee: false,
+    })
   })
 })
 
@@ -191,6 +257,7 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(SBR_COARSE, NYQUIST, SBR_FINE)).toEqual({
       cutoffHz: 16500,
       processed: true,
+      hasKnee: false,
     })
   })
 
@@ -198,6 +265,7 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST, SMOOTH_TAPER_320_FINE)).toEqual({
       cutoffHz: 18000,
       processed: false,
+      hasKnee: false,
     })
   })
 
@@ -208,11 +276,16 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST, broken)).toEqual({
       cutoffHz: 18000,
       processed: false,
+      hasKnee: false,
     })
   })
 
   it('behaves exactly as before when no fine bands are supplied', () => {
-    expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({ cutoffHz: NYQUIST, processed: false })
+    expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+      hasKnee: false,
+    })
   })
 })
 

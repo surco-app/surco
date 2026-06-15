@@ -11,7 +11,7 @@ export type TrackQuality = Verdict | 'unanalyzed'
 export function trackQuality(track: TrackItem): TrackQuality {
   const s = track.spectrum
   if (!s || s.cutoffHz === null) return 'unanalyzed'
-  return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed)
+  return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed, s.hasKnee)
 }
 
 // The tracks a "analyze quality" sweep should measure: those with no spectrum yet that

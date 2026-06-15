@@ -800,29 +800,31 @@ function registerIpc(): void {
     try {
       // Cache only a clean run: a cutoff failure yields a valid image but a null
       // cutoff, and we'd rather retry that next open than pin it for the file's life.
-      const { image, cutoffHz, sampleRateHz, processed, cutoffError } = await cachedAnalysis(
-        // Namespace carries the palette and the cutoff-algorithm generation, so
-        // changing either invalidates entries cached under the previous one — they
-        // regenerate on next open instead of serving stale colors or verdicts.
-        'spectrogram-cividis-v3',
-        inputPath,
-        () =>
-          analysisLimiter.run(
-            () =>
-              buildSpectrum(inputPath, {
-                probe: probeAudio,
-                spectrogram: generateSpectrogram,
-                cutoff: analyzeCutoff,
-              }),
-            'low',
-          ),
-        (b) => b.cutoffError === undefined,
-      )
+      const { image, cutoffHz, sampleRateHz, processed, hasKnee, cutoffError } =
+        await cachedAnalysis(
+          // Namespace carries the palette and the cutoff-algorithm generation, so
+          // changing either invalidates entries cached under the previous one — they
+          // regenerate on next open instead of serving stale colors or verdicts. v4
+          // adds the hasKnee signal, so v3 entries must regenerate to carry it.
+          'spectrogram-cividis-v4',
+          inputPath,
+          () =>
+            analysisLimiter.run(
+              () =>
+                buildSpectrum(inputPath, {
+                  probe: probeAudio,
+                  spectrogram: generateSpectrogram,
+                  cutoff: analyzeCutoff,
+                }),
+              'low',
+            ),
+          (b) => b.cutoffError === undefined,
+        )
       // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
       // stderr) rather than reject — this is the only trace when it breaks on a
       // machine we can't reach, e.g. Windows.
       if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
-      return { image, cutoffHz, sampleRateHz, processed }
+      return { image, cutoffHz, sampleRateHz, processed, hasKnee }
     } catch (err) {
       log.error('audio:spectrogram failed', err)
       throw err

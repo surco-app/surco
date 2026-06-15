@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { formatKHz, qualityVerdict, type Verdict } from '../lib/quality'
+import { formatKHz, GOOD_CUTOFF_HZ, qualityVerdict, type Verdict } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
 import { SectionHeader } from './SectionHeader'
@@ -65,6 +65,24 @@ export function QualitySection({
   // readout hides.
   const settled = useSettled(SELECTION_SETTLE_MS)
   const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness)
+  // Resolve the verdict once and reuse it for the badge and the caption.
+  const verdict =
+    spectrum && spectrum.cutoffHz !== null
+      ? qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed, spectrum.hasKnee)
+      : null
+  // A knee-free taper graded good but stopping short of the full-quality line is a
+  // genuine, gently rolled-off (dark) master, not a lossy cut — its own caption, so
+  // "Good quality" doesn't sit over the "reaches the ~20 kHz line" text that a sub-20k
+  // extent contradicts.
+  const captionKey =
+    verdict && spectrum
+      ? spectrum.hasKnee === false &&
+        !spectrum.processed &&
+        spectrum.cutoffHz !== null &&
+        spectrum.cutoffHz < GOOD_CUTOFF_HZ
+        ? 'editor.qualityCaptionGenuine'
+        : qualityCaption[verdict]
+      : null
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -72,21 +90,12 @@ export function QualitySection({
         open={open}
         onToggle={onToggle}
         right={
-          spectrum &&
-          spectrum.cutoffHz !== null && (
+          verdict && (
             <span
               data-testid="quality-badge"
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                qualityBadge[
-                  qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
-                ].className
-              }`}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${qualityBadge[verdict].className}`}
             >
-              {tr(
-                qualityBadge[
-                  qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
-                ].label,
-              )}
+              {tr(qualityBadge[verdict].label)}
             </span>
           )
         }
@@ -104,14 +113,9 @@ export function QualitySection({
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} />
-                {spectrum.cutoffHz !== null && (
+                {spectrum.cutoffHz !== null && captionKey && (
                   <p className="mt-2 text-xs text-fg-dim">
-                    {tr(
-                      qualityCaption[
-                        qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
-                      ],
-                      { cutoff: formatKHz(spectrum.cutoffHz) },
-                    )}
+                    {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
                   </p>
                 )}
               </>

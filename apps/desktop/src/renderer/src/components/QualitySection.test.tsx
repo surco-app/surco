@@ -96,4 +96,15 @@ describe('QualitySection verdict caption', () => {
     ).toBeInTheDocument()
     expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityProcessed'))
   })
+
+  it('passes a knee-free dark master as good, with the genuine-master caption not the warn one', async () => {
+    // A real false positive: a genuine master tapers smoothly to ~18 kHz with no
+    // codec knee. It must read as Good quality, and the caption must explain it is a
+    // gently rolled-off but genuine master — not the "~192 kbps source" warn text.
+    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false, hasKnee: false })
+    expect(
+      await screen.findByText(i18n.t('editor.qualityCaptionGenuine', { cutoff: '18.0 kHz' })),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
+  })
 })

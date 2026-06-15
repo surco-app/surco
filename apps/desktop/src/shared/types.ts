@@ -285,6 +285,11 @@ export interface SpectrumResult {
   // True when the spectrum shows regenerated highs (an "enhancer"/upscaler
   // hump); cutoffHz then carries the source's real ceiling under the gloss.
   processed: boolean
+  // True only when a sustained knee (a real codec lowpass) was found. When false,
+  // cutoffHz is just how far a genuine smooth taper extends, so the verdict treats
+  // it as good rather than grading the extent on the codec scale. Optional for
+  // older cached/analyses without the field; the verdict then assumes a knee.
+  hasKnee?: boolean
 }
 
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass

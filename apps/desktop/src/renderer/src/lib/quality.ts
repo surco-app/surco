@@ -8,12 +8,23 @@
 // sample rate means the analysis never ran on real bands, so it stays inconclusive.
 export type Verdict = 'good' | 'warn' | 'bad' | 'processed'
 
-const GOOD_CUTOFF_HZ = 19500
+export const GOOD_CUTOFF_HZ = 19500
 const WARN_CUTOFF_HZ = 18000
 
-export function qualityVerdict(cutoffHz: number, sampleRateHz: number, processed = false): Verdict {
+// hasKnee defaults true so a caller with only a frequency keeps grading on the
+// codec scale; the real analysis passes it explicitly. A knee-free reading means
+// no codec lowpass was found — every lossy source trips the knee — so the cutoff
+// is just how far a genuine (often dark) master extends, and grading that extent
+// as if it were a codec cut is what demoted healthy masters to "review".
+export function qualityVerdict(
+  cutoffHz: number,
+  sampleRateHz: number,
+  processed = false,
+  hasKnee = true,
+): Verdict {
   if (processed) return 'processed'
   if (sampleRateHz <= 0) return 'warn'
+  if (!hasKnee) return 'good'
   if (cutoffHz >= GOOD_CUTOFF_HZ) return 'good'
   return cutoffHz >= WARN_CUTOFF_HZ ? 'warn' : 'bad'
 }

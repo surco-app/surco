@@ -722,7 +722,7 @@ export function parseBands(stdout: string): Map<string, number> {
 export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<CutoffResult> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
-  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false }
+  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false, hasKnee: false }
   const fineFreqs = fineBandFrequencies(nyquist)
 
   const specs: BandSpec[] = [
@@ -938,6 +938,7 @@ interface SpectrumBuild {
   cutoffHz: number | null
   sampleRateHz: number
   processed: boolean
+  hasKnee: boolean
   cutoffError?: unknown
 }
 
@@ -960,6 +961,7 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value.cutoffHz : null,
     sampleRateHz,
     processed: cutoffR.status === 'fulfilled' ? cutoffR.value.processed : false,
+    hasKnee: cutoffR.status === 'fulfilled' ? cutoffR.value.hasKnee : false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
   }
 }

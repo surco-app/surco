@@ -18,6 +18,12 @@ export interface CutoffResult {
   // an "enhancer"/upscaler regenerating synthetic content over a low-bitrate
   // source. cutoffHz then points at the valley: the source's real ceiling.
   processed: boolean
+  // True only when a sustained knee was found — a genuine codec lowpass. When
+  // false, cutoffHz is just how far a smoothly tapering spectrum extends, NOT a
+  // lossy cut: every real codec lowpass trips the knee, so a knee-free reading is
+  // a genuine master (often a dark one). The verdict leans on this so it never
+  // demotes a knee-free taper the way grading its extent on the codec scale did.
+  hasKnee: boolean
 }
 
 export const BAND_WIDTH_HZ = 1000
@@ -155,22 +161,26 @@ export function detectCutoff(
   nyquistHz: number,
   fineBands: Band[] = [],
 ): CutoffResult {
-  if (bands.length < 2) return { cutoffHz: nyquistHz, processed: false }
+  if (bands.length < 2) return { cutoffHz: nyquistHz, processed: false, hasKnee: false }
 
   const plateau = plateauDb(bands)
   const valley = findHumpValley(bands, plateau)
-  if (valley) return { cutoffHz: valley.freqHz, processed: true }
+  if (valley) return { cutoffHz: valley.freqHz, processed: true, hasKnee: false }
 
   const kneeIndex = findKneeIndex(bands)
-  if (kneeIndex !== -1) return { cutoffHz: bands[kneeIndex].freqHz, processed: false }
+  if (kneeIndex !== -1) return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
   const ceiling = roughnessCeiling(fineBands)
-  if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true }
+  if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true, hasKnee: false }
 
   const floor = plateau - EXTENT_DROP_DB
   for (let i = bands.length - 1; i >= 0; i--) {
     if (bands[i].rmsDb < floor) continue
-    return { cutoffHz: i === bands.length - 1 ? nyquistHz : bands[i].freqHz, processed: false }
+    return {
+      cutoffHz: i === bands.length - 1 ? nyquistHz : bands[i].freqHz,
+      processed: false,
+      hasKnee: false,
+    }
   }
-  return { cutoffHz: nyquistHz, processed: false }
+  return { cutoffHz: nyquistHz, processed: false, hasKnee: false }
 }
