@@ -11,6 +11,16 @@ export type SearchProviderId = 'discogs'
 // (auto-match, hover prefetch) that must yield to it. Defaults to 'low' when omitted.
 export type SearchPriority = 'high' | 'low'
 
+// Structured fields a caller knows about the track, used to build relaxed fallback
+// queries when the main one finds nothing: search by catalog number (near-unique on
+// Discogs), by title alone (when the artist string is junk), or with artist/title
+// swapped (when the file name had them backwards).
+export interface SearchHints {
+  artist?: string
+  title?: string
+  catalogNumber?: string
+}
+
 // Optional loudness normalization applied during conversion. 'none' is the default
 // so nothing is ever normalized unless the user opts in (globally in Settings or
 // per-track in the editor). 'loudness' targets an integrated LUFS with a true-peak

@@ -6,6 +6,7 @@ import type {
   KeyResult,
   LoudnessResult,
   ProcessProgress,
+  SearchHints,
   SearchPriority,
   SearchProviderId,
   TrackProperties,
@@ -37,8 +38,12 @@ const api: Api = {
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportTraktor', nml),
-  searchDiscogs: (query: string, provider?: SearchProviderId, priority?: SearchPriority) =>
-    ipcRenderer.invoke('search:query', query, provider, priority),
+  searchDiscogs: (
+    query: string,
+    provider?: SearchProviderId,
+    priority?: SearchPriority,
+    hints?: SearchHints,
+  ) => ipcRenderer.invoke('search:query', query, provider, priority, hints),
   getRelease: (id: number, provider?: SearchProviderId, priority?: SearchPriority) =>
     ipcRenderer.invoke('search:release', id, provider, priority),
   lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]): Promise<boolean> =>

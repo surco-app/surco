@@ -1,6 +1,7 @@
 import type {
   DiscogsRelease,
   DiscogsSearchResult,
+  SearchHints,
   SearchPriority,
   SearchProviderId,
 } from '../../shared/types'
@@ -14,13 +15,18 @@ import { getSettings } from '../settings'
 // Discogs is the only provider today, so results keep the Discogs shape end-to-end;
 // when a second provider lands these become a normalized type each provider maps onto.
 export interface SearchProvider {
-  search(query: string, priority?: SearchPriority): Promise<DiscogsSearchResult[]>
+  search(
+    query: string,
+    priority?: SearchPriority,
+    hints?: SearchHints,
+  ): Promise<DiscogsSearchResult[]>
   getRelease(id: number, priority?: SearchPriority): Promise<DiscogsRelease>
 }
 
 const providers: Record<SearchProviderId, SearchProvider> = {
   discogs: {
-    search: (query, priority) => discogs.search(query, getSettings().discogsToken, priority),
+    search: (query, priority, hints) =>
+      discogs.search(query, getSettings().discogsToken, priority, hints),
     getRelease: (id, priority) => discogs.getRelease(id, getSettings().discogsToken, priority),
   },
 }

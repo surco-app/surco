@@ -1,7 +1,12 @@
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { DiscogsRelease, DiscogsSearchResult, SearchPriority } from '../shared/types'
+import type {
+  DiscogsRelease,
+  DiscogsSearchResult,
+  SearchHints,
+  SearchPriority,
+} from '../shared/types'
 import { discogsLimiter } from './discogsLimiter'
 import { buildSearchCandidates } from './searchQuery'
 import { tmpName } from './tmp'
@@ -91,9 +96,10 @@ export async function search(
   query: string,
   token: string,
   priority?: SearchPriority,
+  hints?: SearchHints,
 ): Promise<DiscogsSearchResult[]> {
   let results: DiscogsSearchResult[] = []
-  for (const candidate of buildSearchCandidates(query)) {
+  for (const candidate of buildSearchCandidates(query, hints)) {
     if (!hasCachedSearch(candidate)) await discogsLimiter.acquire(priority)
     results = await searchOnce(candidate, token)
     if (results.length) break

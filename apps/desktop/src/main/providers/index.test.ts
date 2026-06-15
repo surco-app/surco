@@ -23,10 +23,11 @@ describe('getProvider', () => {
   // The provider owns its own credentials so the IPC layer stays provider-agnostic
   // and never has to know Discogs needs a token while a future provider may not. The
   // search strategy and pacing now live in the Discogs client; the seam only forwards.
-  it('forwards search to the Discogs client with the saved token and priority', async () => {
+  it('forwards search to the Discogs client with the saved token, priority and hints', async () => {
     search.mockResolvedValue([{ id: 1 }])
-    const out = await getProvider('discogs').search('aphex twin', 'high')
-    expect(search).toHaveBeenCalledWith('aphex twin', 'tok', 'high')
+    const hints = { title: 'Airwave', catalogNumber: 'ANJ001' }
+    const out = await getProvider('discogs').search('rank 1 airwave', 'high', hints)
+    expect(search).toHaveBeenCalledWith('rank 1 airwave', 'tok', 'high', hints)
     expect(out).toEqual([{ id: 1 }])
   })
 

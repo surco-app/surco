@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { SearchPriority } from '../../../shared/types'
+import type { SearchHints, SearchPriority } from '../../../shared/types'
 import {
   autoMatchRelease,
   type DiscogsApi,
@@ -60,8 +60,8 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
   // track is the one exception — it rides the same high-priority lane as a manual search.
   const discogsAt = useCallback(
-    (priority: SearchPriority): DiscogsApi => ({
-      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, priority),
+    (priority: SearchPriority, hints?: SearchHints): DiscogsApi => ({
+      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, priority, hints),
       getRelease: (id) => window.api.getRelease(id, undefined, priority),
     }),
     [],
@@ -73,7 +73,12 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   const applyAutoMatch = useCallback(
     async (t: TrackItem): Promise<void> => {
       const priority: SearchPriority = t.id === focusedId.current ? 'high' : 'low'
-      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogsAt(priority))
+      const hints: SearchHints = {
+        artist: t.meta.artist,
+        title: t.meta.title,
+        catalogNumber: t.meta.catalogNumber,
+      }
+      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogsAt(priority, hints))
       if (!m || matchCancel.current) return
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
       // a manual match or a removal landing during the Discogs round-trip wins. Re-read

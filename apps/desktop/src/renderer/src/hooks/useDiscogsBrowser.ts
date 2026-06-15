@@ -81,7 +81,11 @@ export function useDiscogsBrowser(
         const rel = await loadRelease(id)
         return { results: [resultFromRelease(rel)], directId: rel.id as number | null }
       }
-      const results = await window.api.searchDiscogs(searchTerm, undefined, 'high')
+      const results = await window.api.searchDiscogs(searchTerm, undefined, 'high', {
+        artist: item.meta.artist,
+        title: item.meta.title,
+        catalogNumber: item.meta.catalogNumber,
+      })
       return { results, directId: null as number | null }
     },
     enabled: searchTerm.trim() !== '',

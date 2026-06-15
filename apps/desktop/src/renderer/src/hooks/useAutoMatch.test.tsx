@@ -141,7 +141,8 @@ describe('useAutoMatch', () => {
     act(() => result.current.enqueueAutoMatch([a, b], false))
 
     await waitFor(() => expect(searchDiscogs).toHaveBeenCalledTimes(2))
-    expect(searchDiscogs).toHaveBeenCalledWith('query b', undefined, 'high')
-    expect(searchDiscogs).toHaveBeenCalledWith('query a', undefined, 'low')
+    const hints = { artist: 'Artist', title: 'My Song', catalogNumber: undefined }
+    expect(searchDiscogs).toHaveBeenCalledWith('query b', undefined, 'high', hints)
+    expect(searchDiscogs).toHaveBeenCalledWith('query a', undefined, 'low', hints)
   })
 })

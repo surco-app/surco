@@ -499,8 +499,8 @@ function registerIpc(): void {
     return filePath
   })
 
-  ipcMain.handle('search:query', (_e, query: string, provider, priority) =>
-    getProvider(provider).search(query, priority),
+  ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
+    getProvider(provider).search(query, priority, hints),
   )
   ipcMain.handle('search:release', (_e, id: number, provider, priority) =>
     getProvider(provider).getRelease(id, priority),

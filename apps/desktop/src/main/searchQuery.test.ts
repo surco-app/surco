@@ -55,4 +55,21 @@ describe('buildSearchCandidates', () => {
     // the original rather than firing a blank query.
     expect(buildSearchCandidates('[unknown]')).toEqual(['[unknown]'])
   })
+
+  it('adds catalog-number, title-only and swapped fallbacks from hints', () => {
+    // After the title search comes the near-unique catalog number, then the bare
+    // title (artist may be wrong), then title+artist swapped (name was backwards).
+    expect(
+      buildSearchCandidates('Some Artist Some Title', {
+        artist: 'Some Artist',
+        title: 'Some Title',
+        catalogNumber: 'ANJ001',
+      }),
+    ).toEqual(['Some Artist Some Title', 'ANJ001', 'Some Title', 'Some Title Some Artist'])
+  })
+
+  it('ignores absent hints and de-dupes ones that repeat the cleaned query', () => {
+    // Title-only equal to the cleaned query must not produce a duplicate candidate.
+    expect(buildSearchCandidates('Some Title', { title: 'Some Title' })).toEqual(['Some Title'])
+  })
 })

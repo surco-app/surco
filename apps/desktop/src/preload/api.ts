@@ -17,6 +17,7 @@ import type {
   ProcessJob,
   ProcessProgress,
   ProcessResult,
+  SearchHints,
   SearchPriority,
   SearchProviderId,
   Settings,
@@ -44,6 +45,7 @@ export interface Api {
     query: string,
     provider?: SearchProviderId,
     priority?: SearchPriority,
+    hints?: SearchHints,
   ) => Promise<DiscogsSearchResult[]>
   getRelease: (
     id: number,
