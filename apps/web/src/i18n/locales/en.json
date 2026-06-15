@@ -475,6 +475,19 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.14",
+        "date": "June 15, 2026",
+        "title": "Waveform player and sharper Discogs matching",
+        "items": [
+          "The player now shows the track's waveform: click or drag on it to scrub, with the time floating on top.",
+          "Continuous playback: when a track ends, the next one in the list plays. Toggle it with the ∞ button in the player.",
+          "Much sharper Discogs matching: it ignores file-name noise (320, labels, “feat.”…), is accent-insensitive, understands more name formats, and retries by catalog number or title alone when needed.",
+          "With auto-match on, the track you select is matched on its own — no need to press the button on each one.",
+          "Dropping files that are already in the list now skips them and tells you, instead of doing nothing.",
+          "Tagging and “Add to Apple Music” are now available for WAV files too."
+        ]
+      },
+      {
         "version": "0.13",
         "date": "June 13, 2026",
         "title": "Copy artwork and tags, drag tracks out",
