@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
+import { Tooltip } from './Tooltip'
 import { Waveform } from './Waveform'
 
 // Owns the playback clock by subscribing straight to the shared <audio> element,
@@ -184,21 +185,6 @@ export function Player({
 
         <button
           type="button"
-          data-testid="player-continuous"
-          onClick={onToggleContinuous}
-          aria-label={t('player.continuous')}
-          aria-pressed={continuous}
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
-            continuous
-              ? 'text-[var(--color-accent)] hover:bg-[var(--color-line-strong)]'
-              : 'text-fg-dim hover:bg-[var(--color-line-strong)] hover:text-fg'
-          }`}
-        >
-          <InfinityIcon className="h-4 w-4" aria-hidden="true" />
-        </button>
-
-        <button
-          type="button"
           data-testid="player-close"
           onClick={onClose}
           aria-label={t('player.close')}
@@ -209,8 +195,9 @@ export function Player({
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
-          corners) so the whole width is scrubbable. The clock floats over it as a
-          pill; pointer-events-none lets a click underneath still seek. */}
+          corners) so the whole width is scrubbable. The continuous toggle and the
+          clock float over its corners as pills, freeing the title row for the name;
+          the clock is pointer-events-none so a click underneath it still seeks. */}
       <div className="relative mt-2">
         <Waveform
           key={track.inputPath}
@@ -219,6 +206,19 @@ export function Player({
           active
           onScrub={onScrub}
         />
+        <button
+          type="button"
+          data-testid="player-continuous"
+          onClick={onToggleContinuous}
+          aria-label={t('player.continuous')}
+          aria-pressed={continuous}
+          className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-panel-2)]/85 shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-colors ${
+            continuous ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
+          }`}
+        >
+          <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          <Tooltip label={t('player.continuousHelp')} />
+        </button>
         <span
           data-testid="player-time"
           className="pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"

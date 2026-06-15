@@ -83,6 +83,7 @@
     "play": "Reproducir",
     "pause": "Pausar",
     "continuous": "Reproducción continua",
+    "continuousHelp": "Reproducción continua: al terminar una pista, suena automáticamente la siguiente de la lista.",
     "close": "Cerrar reproductor"
   },
   "commands": {

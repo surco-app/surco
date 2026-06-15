@@ -83,6 +83,7 @@
     "play": "Play",
     "pause": "Pause",
     "continuous": "Continuous playback",
+    "continuousHelp": "Continuous playback: when a track ends, the next one in the list plays automatically.",
     "close": "Close player"
   },
   "commands": {
