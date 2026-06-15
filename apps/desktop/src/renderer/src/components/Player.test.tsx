@@ -75,8 +75,11 @@ function props(over = {}) {
     duration: 0,
     audioRef: createRef<HTMLAudioElement>(),
     continuous: false,
+    volume: 1,
+    showVolume: false,
     onToggle: vi.fn(),
     onScrub: vi.fn(),
+    onAdjustVolume: vi.fn(),
     onToggleContinuous: vi.fn(),
     onClose: vi.fn(),
     ...over,
@@ -153,6 +156,21 @@ describe('Player', () => {
     rerender(<Player {...props({ continuous: true, onToggleContinuous })} />)
     expect(screen.getByTestId('player-continuous')).toHaveAttribute('aria-pressed', 'true')
   })
+
+  // Volume has no on-screen control by design; scrolling over the card drives it.
+  it('routes a wheel over the card to the volume handler', () => {
+    const onAdjustVolume = vi.fn()
+    renderUI(<Player {...props({ onAdjustVolume })} />)
+    fireEvent.wheel(screen.getByTestId('player'), { deltaY: -120 })
+    expect(onAdjustVolume).toHaveBeenCalled()
+  })
+
+  // While adjusting, the time pill flashes the level instead of the clock, so the
+  // user sees what they're setting without any permanent control.
+  it('flashes the volume level in the pill while adjusting', () => {
+    renderUI(<Player {...props({ showVolume: true, volume: 0.8 })} />)
+    expect(screen.getByTestId('player-time')).toHaveTextContent('80%')
+  })
 })
 
 describe('LivePlayer', () => {
@@ -183,6 +201,25 @@ describe('LivePlayer', () => {
       />,
     )
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
+  })
+
+  it('lowers the element volume when the card is scrolled down', () => {
+    const audio = audioEl()
+    Object.defineProperty(audio, 'volume', { value: 0.5, writable: true })
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audio
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // Scroll down = quieter, by one 5% notch.
+    fireEvent.wheel(screen.getByTestId('player'), { deltaY: 100 })
+    expect(audio.volume).toBeCloseTo(0.45, 5)
   })
 
   it('advances the time as the audio element fires timeupdate', () => {
