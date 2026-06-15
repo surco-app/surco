@@ -27,6 +27,7 @@ import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
+import { NoticeToast } from './components/NoticeToast'
 import { ExportModal } from './components/ExportModal'
 import { FindReplaceModal } from './components/FindReplaceModal'
 import { HelpModal } from './components/HelpModal'
@@ -156,6 +157,14 @@ export default function App(): React.JSX.Element {
     kind: 'unexpected' | 'settingsLoad' | 'settingsSave' | 'trash'
     detail?: string
   } | null>(null)
+  // A transient, non-blocking status line (e.g. "skipped N already-added files"). Unlike
+  // appError it clears itself, so it never lingers after the user has moved on.
+  const [notice, setNotice] = useState<string | null>(null)
+  useEffect(() => {
+    if (!notice) return
+    const id = setTimeout(() => setNotice(null), 4000)
+    return () => clearTimeout(id)
+  }, [notice])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
@@ -301,6 +310,7 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], true)
     },
+    onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
 
   useEffect(
@@ -1185,6 +1195,7 @@ export default function App(): React.JSX.Element {
           onDismiss={() => setAppError(null)}
         />
       )}
+      {notice && !appError && <NoticeToast message={notice} onDismiss={() => setNotice(null)} />}
       <UpdateToast />
     </div>
   )

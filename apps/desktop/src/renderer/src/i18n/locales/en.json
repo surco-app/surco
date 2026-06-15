@@ -74,6 +74,9 @@
     "settingsSave": "Your settings couldn't be saved.",
     "trash": "Couldn't move {{detail}} to the trash."
   },
+  "notices": {
+    "duplicatesSkipped": "Already in the list, skipped: {{count}}"
+  },
   "update": {
     "ready": "Version {{version}} is ready",
     "restart": "Restart to update",

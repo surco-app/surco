@@ -426,6 +426,19 @@ describe('App import skeleton', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(1)
   })
 
+  // Re-dragging a folder used to be a silent no-op; now the skipped duplicates are
+  // reported so the import doesn't look broken when nothing new appears.
+  it('tells the user when re-imported files were already in the list', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    expect(rows).toHaveLength(2)
+
+    // Importing the same files again adds no rows and surfaces a notice.
+    fireEvent.click(screen.getByTestId('add-files'))
+    expect(await screen.findByTestId('app-notice')).toBeInTheDocument()
+    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.

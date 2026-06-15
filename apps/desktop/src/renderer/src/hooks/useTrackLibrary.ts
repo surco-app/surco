@@ -56,6 +56,9 @@ interface Params {
   // Fired once a fresh import's metadata read lands, with the read-merged track —
   // App gates the auto-match opt-in on it.
   onMetaLoaded: (track: TrackItem) => void
+  // How many dropped/picked audio files were already in the list and skipped, so App
+  // can tell the user instead of the silent no-op a re-dragged folder used to be.
+  onDuplicatesSkipped: (count: number) => void
 }
 
 export interface TrackLibrary {
@@ -83,6 +86,7 @@ export function useTrackLibrary({
   onRemove,
   onClear,
   onMetaLoaded,
+  onDuplicatesSkipped,
 }: Params): TrackLibrary {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
@@ -96,7 +100,12 @@ export function useTrackLibrary({
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
     const existing = new Set(tracksRef.current.map((t) => t.inputPath))
-    const fresh = paths.filter((p) => AUDIO_EXT.test(p) && !existing.has(p))
+    const audio = paths.filter((p) => AUDIO_EXT.test(p))
+    const fresh = audio.filter((p) => !existing.has(p))
+    // Already-in-the-list audio files are skipped (re-dragging a folder is common);
+    // report the count so App can surface it rather than the old silent no-op.
+    const skipped = audio.length - fresh.length
+    if (skipped > 0) onDuplicatesSkipped(skipped)
     if (fresh.length === 0) return
     // Show the rows the instant they're dropped, parsed from the file name, then fill in
     // tags, duration and cover as each file's read resolves. Reading metadata up front used

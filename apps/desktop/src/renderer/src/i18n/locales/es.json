@@ -74,6 +74,9 @@
     "settingsSave": "No se ha podido guardar tu configuración.",
     "trash": "No se ha podido enviar {{detail}} a la papelera."
   },
+  "notices": {
+    "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}"
+  },
   "update": {
     "ready": "La versión {{version}} está lista",
     "restart": "Reiniciar para actualizar",
