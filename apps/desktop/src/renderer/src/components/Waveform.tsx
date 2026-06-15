@@ -28,18 +28,25 @@ export function Waveform({
   inputPath,
   audioRef,
   active,
+  audioDurationSec = 0,
   onScrub,
 }: {
   inputPath: string
   audioRef: React.RefObject<HTMLAudioElement | null>
   active: boolean
+  audioDurationSec?: number
   onScrub: (seconds: number) => void
 }): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [playheadSec, setPlayheadSec] = useState<number | null>(null)
 
   const { data: wave, isFetching } = useWaveform(inputPath, true)
-  const durationSec = wave?.durationSec ?? 0
+  // The strip's geometry follows the playback clock so a DJ can scrub the instant
+  // the element reports a duration — seconds before the full-file decode delivers
+  // the peaks. We only fall back to the decoded duration when there's no element
+  // duration yet (e.g. before metadata loads, or in tests with no <audio>).
+  const durationSec = audioDurationSec || wave?.durationSec || 0
+  const loading = isFetching && !wave
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -60,19 +67,15 @@ export function Waveform({
     return () => audio.removeEventListener('timeupdate', onTime)
   }, [audioRef, active])
 
-  if (isFetching) {
-    return (
-      <div
-        data-testid="waveform-loading"
-        className="h-12 w-full animate-pulse bg-[var(--color-line-strong)]/25"
-      />
-    )
-  }
-  if (!wave || durationSec === 0) return null
+  // A null envelope (ffmpeg decoded nothing) with no playback duration to lean on
+  // means there's nothing to scrub: render nothing rather than a strip that implies
+  // a zero-length track. While decoding we still render — the skeleton needs a home.
+  if (!loading && durationSec === 0) return null
 
-  const pct = (sec: number): number => (sec / durationSec) * 100
+  const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
 
   function scrubFrom(clientX: number, el: HTMLElement): void {
+    if (durationSec === 0) return
     const rect = el.getBoundingClientRect()
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
     onScrub(ratio * durationSec)
@@ -96,7 +99,17 @@ export function Waveform({
         height={CANVAS_H}
         className="block h-12 w-full bg-black/15"
       />
-      {playheadSec !== null && (
+      {loading && (
+        // Evenly spaced bars pulsing over the strip read clearly as "the waveform is
+        // decoding" — the faint full-bleed wash it replaced was easy to mistake for a
+        // broken, empty player. Centred on the strip so it mirrors the peaks to come.
+        <div
+          data-testid="waveform-loading"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 animate-pulse opacity-60 [background:repeating-linear-gradient(90deg,var(--color-line-strong)_0,var(--color-line-strong)_3px,transparent_3px,transparent_8px)]"
+        />
+      )}
+      {playheadSec !== null && durationSec > 0 && (
         <div
           data-testid="waveform-playhead"
           className="pointer-events-none absolute top-0 h-full w-px bg-accent"

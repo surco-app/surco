@@ -262,6 +262,7 @@ export function Player({
           inputPath={track.inputPath}
           audioRef={audioRef}
           active
+          audioDurationSec={duration}
           onScrub={onScrub}
         />
         <span
