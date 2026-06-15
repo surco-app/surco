@@ -23,9 +23,8 @@ function drawWaveform(canvas: HTMLCanvasElement, peaks: number[]): void {
   }
 }
 
-// A scrubbable waveform of the edited track. Clicking or dragging plays the track
-// from that point (App's onScrub drives the shared player); the playhead follows
-// playback only while that player streams this very track.
+// The player's scrubbable waveform. Clicking or dragging seeks (onScrub gets the
+// position in seconds); the playhead follows playback while `active`.
 export function Waveform({
   inputPath,
   audioRef,
@@ -64,7 +63,7 @@ export function Waveform({
 
   if (isFetching) {
     return (
-      <div className="flex h-24 items-center justify-center" data-testid="waveform-loading">
+      <div className="flex h-8 items-center justify-center" data-testid="waveform-loading">
         <WaveSpinner />
       </div>
     )
@@ -95,7 +94,7 @@ export function Waveform({
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="block h-24 w-full rounded-md bg-black/20"
+        className="block h-8 w-full rounded bg-black/15"
       />
       {playheadSec !== null && (
         <div

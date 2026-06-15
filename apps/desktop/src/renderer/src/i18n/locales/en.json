@@ -82,7 +82,6 @@
   "player": {
     "play": "Play",
     "pause": "Pause",
-    "seek": "Seek",
     "close": "Close player"
   },
   "commands": {

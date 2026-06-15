@@ -20,9 +20,6 @@ export interface Player {
   playerTrack: TrackItem | null
   togglePlay: () => void
   closePlayer: () => void
-  // Opens the player on the selected track (if needed) and jumps to a position,
-  // in seconds. Drives the editor's scrubbable waveform.
-  seekTo: (seconds: number) => void
 }
 
 // The floating player follows the selection: while it's open, picking another
@@ -77,35 +74,6 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     }
   }, [tracks, playingId, startPlayback])
 
-  // Plays the selected track from `seconds`. If it's already the loaded track we
-  // just move the clock; otherwise we point the element at it and defer the jump
-  // to loadedmetadata, because currentTime set before the duration is known is
-  // discarded. playingId is set synchronously so the follow-selection effect
-  // below sees this track as already playing and doesn't restart it from zero.
-  const seekTo = useCallback(
-    (seconds: number): void => {
-      const audio = audioRef.current
-      if (!audio || !selected) return
-      setPlayerVisible(true)
-      if (playingIdRef.current === selected.id) {
-        if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(seconds, audio.duration)
-        if (audio.paused) audio.play().catch(() => {})
-        return
-      }
-      audio.src = mediaUrl(selected.inputPath)
-      playingPathRef.current = selected.inputPath
-      playingIdRef.current = selected.id
-      setPlayingId(selected.id)
-      const onMeta = (): void => {
-        if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(seconds, audio.duration)
-        audio.removeEventListener('loadedmetadata', onMeta)
-      }
-      audio.addEventListener('loadedmetadata', onMeta)
-      audio.play().catch(() => {})
-    },
-    [selected],
-  )
-
   // Space toggles the player's visibility; the selection effect below starts
   // playback when it opens.
   function togglePlay(): void {
@@ -124,5 +92,5 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
-  return { audioRef, playerVisible, playerTrack, togglePlay, closePlayer, seekTo }
+  return { audioRef, playerVisible, playerTrack, togglePlay, closePlayer }
 }

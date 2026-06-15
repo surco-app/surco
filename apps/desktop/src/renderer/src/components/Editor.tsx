@@ -39,7 +39,6 @@ import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
-import { Waveform } from './Waveform'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
 
@@ -69,13 +68,6 @@ interface Props {
   requiredFields: string[]
   showSpectrum: boolean
   showLoudness: boolean
-  // The shared <audio> element, so the waveform's playhead follows playback without
-  // re-rendering the editor on every timeupdate.
-  audioRef: React.RefObject<HTMLAudioElement | null>
-  // True only while that element streams the edited track (App computes it).
-  waveformActive: boolean
-  // Plays the edited track from a position in seconds (waveform click/drag).
-  onScrub: (seconds: number) => void
   // Which notation the key suggestion chip offers (Settings choice).
   keyNotation: KeyNotation
   // The Settings normalization default, seeding the per-track override control.
@@ -136,9 +128,6 @@ export const Editor = memo(function Editor({
   requiredFields,
   showSpectrum,
   showLoudness,
-  audioRef,
-  waveformActive,
-  onScrub,
   keyNotation,
   normalize,
   searchInputRef,
@@ -527,18 +516,6 @@ export const Editor = memo(function Editor({
               onRate={(v) => setField('rating', v)}
               fields={fieldSpecs}
             />
-          )}
-
-          {!isMulti && item.duration != null && (
-            <div className="mt-4">
-              <Waveform
-                key={item.id}
-                inputPath={item.inputPath}
-                audioRef={audioRef}
-                active={waveformActive}
-                onScrub={onScrub}
-              />
-            </div>
           )}
 
           {!isMulti && (

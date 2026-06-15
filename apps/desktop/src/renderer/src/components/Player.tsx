@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
+import { Waveform } from './Waveform'
 
 // Owns the playback clock by subscribing straight to the shared <audio> element,
 // so the ~4Hz timeupdate stream re-renders only this card — not App, the editor
@@ -68,9 +69,11 @@ export function LivePlayer({
   }
 
   // Reads the live duration off the element rather than closing over state.
-  function onSeek(ratio: number): void {
+  function onScrub(seconds: number): void {
     const audio = audioRef.current
-    if (audio && Number.isFinite(audio.duration)) audio.currentTime = ratio * audio.duration
+    if (audio && Number.isFinite(audio.duration)) {
+      audio.currentTime = Math.min(Math.max(seconds, 0), audio.duration)
+    }
   }
 
   return (
@@ -78,11 +81,11 @@ export function LivePlayer({
       track={track}
       paused={paused}
       loading={loading}
-      progress={duration > 0 ? currentTime / duration : 0}
       currentTime={currentTime}
       duration={duration}
+      audioRef={audioRef}
       onToggle={onToggle}
-      onSeek={onSeek}
+      onScrub={onScrub}
       onClose={onClose}
     />
   )
@@ -92,25 +95,25 @@ interface PlayerProps {
   track: TrackItem
   paused: boolean
   loading: boolean
-  progress: number
   currentTime: number
   duration: number
+  audioRef: React.RefObject<HTMLAudioElement | null>
   onToggle: () => void
-  onSeek: (ratio: number) => void
+  onScrub: (seconds: number) => void
   onClose: () => void
 }
 
-// Floats over the bottom of the track column and slides up on open. The progress
-// bar spans the full width and seeks to wherever it's clicked.
+// Floats over the bottom of the track column and slides up on open. A small
+// waveform spans the strip and seeks to wherever it's clicked or dragged.
 export function Player({
   track,
   paused,
   loading,
-  progress,
   currentTime,
   duration,
+  audioRef,
   onToggle,
-  onSeek,
+  onScrub,
   onClose,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -180,37 +183,18 @@ export function Player({
         </button>
       </div>
 
-      {/* Scrubber and clock share the thin bottom strip. Pointer-only: a thin bar
-          is a poor keyboard target, and Space already toggles the player. The thumb
-          surfaces on hover so the bar stays clean while signalling it's draggable. */}
+      {/* Waveform and clock share the bottom strip. Pointer-only: the strip is a
+          poor keyboard target and Space already toggles the player. */}
       <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only scrubber by design;
-            exposed as a non-interactive progressbar so it doesn't advertise keyboard
-            seeking it never had */}
-        <span
-          data-testid="player-seek"
-          role="progressbar"
-          aria-label={t('player.seek')}
-          aria-valuenow={Math.round(progress * 100)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          onClick={(e) => {
-            const r = e.currentTarget.getBoundingClientRect()
-            onSeek(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)))
-          }}
-          className="group relative flex h-4 flex-1 cursor-pointer items-center"
-        >
-          <span className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-line-strong)]">
-            <span
-              className="block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-200"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </span>
-          <span
-            className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full bg-white opacity-0 shadow transition-opacity group-hover:opacity-100"
-            style={{ left: `${progress * 100}%` }}
+        <div className="min-w-0 flex-1">
+          <Waveform
+            key={track.inputPath}
+            inputPath={track.inputPath}
+            audioRef={audioRef}
+            active
+            onScrub={onScrub}
           />
-        </span>
+        </div>
 
         <span data-testid="player-time" className="shrink-0 text-fg-dim text-xs tabular-nums">
           {formatTime(currentTime)} / {formatTime(duration)}
