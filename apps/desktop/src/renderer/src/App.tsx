@@ -380,6 +380,19 @@ export default function App(): React.JSX.Element {
     focusAutoMatch(selectedId)
   }, [selectedId, focusAutoMatch])
 
+  // With auto-match on, the track you're viewing shouldn't need the toolbar button: once
+  // the selection rests on a row, enqueue it just like an import would. Already-matched
+  // tracks are filtered out downstream, so revisiting one never re-probes. Debounced so
+  // arrowing through a crate doesn't fire a Discogs probe per row.
+  useEffect(() => {
+    if (!settings?.autoMatch || !settings.discogsToken || !selectedId) return
+    const id = setTimeout(() => {
+      const track = tracksRef.current.find((t) => t.id === selectedId)
+      if (track) enqueueAutoMatch([track], false)
+    }, 500)
+    return () => clearTimeout(id)
+  }, [selectedId, settings?.autoMatch, settings?.discogsToken, enqueueAutoMatch, tracksRef])
+
   // Right-click "Search Discogs": make the track active, then focus the search box on the
   // next tick once the editor for the new selection has mounted and bound the ref.
   const onSearchTrack = useCallback(

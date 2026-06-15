@@ -286,6 +286,28 @@ describe('App auto-match', () => {
     expect(searchDiscogs).toHaveBeenCalledTimes(1)
   })
 
+  // The track you're looking at shouldn't need the toolbar button: with auto-match on,
+  // once the selection rests on a row it gets matched even if it was never scrolled into
+  // view (the import gating only holds back the rows you aren't looking at).
+  it('auto-matches the selected track without the toolbar button', async () => {
+    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      searchDiscogs,
+      getRelease: vi.fn().mockResolvedValue(release),
+    })
+    await renderApp()
+    await addTwoTracks()
+
+    // No row is scrolled into view; only the rested selection drives the match.
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched').length).toBeGreaterThan(0), {
+      timeout: 2000,
+    })
+    expect(searchDiscogs).toHaveBeenCalled()
+  })
+
   // One row's malformed Discogs payload (a release without a tracklist) must skip
   // that track, not sink the sweep: the other rows still match, the progress pill
   // still completes, and nothing escapes as an unhandled rejection.
