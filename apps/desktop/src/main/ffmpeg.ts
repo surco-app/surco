@@ -13,6 +13,7 @@ import type {
   OutputFormat,
   TrackMetadata,
   TrackProperties,
+  WaveformResult,
 } from '../shared/types'
 import { ffmpegPath, ffprobePath } from './binaries'
 import {
@@ -38,6 +39,7 @@ import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
+import { computePeaks, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { runInWorker } from './worker'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
@@ -959,5 +961,44 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     sampleRateHz,
     processed: cutoffR.status === 'fulfilled' ? cutoffR.value.processed : false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
+  }
+}
+
+// low-rate mono PCM for the editor waveform — the strip spans the full length,
+// so a truncated envelope would draw a track that ends early. The 4 kHz rate
+// keeps even a 2-hour mix around 115 MB, inside maxBuffer.
+async function decodeWaveformPcm(input: string): Promise<Float32Array> {
+  const { stdout } = await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      input,
+      '-ac',
+      '1',
+      '-ar',
+      String(WAVEFORM_SAMPLE_RATE),
+      '-f',
+      'f32le',
+      '-',
+    ],
+    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 128 },
+  )
+  const bytes = stdout.length - (stdout.length % 4)
+  const pcm = new Uint8Array(bytes)
+  pcm.set(stdout.subarray(0, bytes))
+  return new Float32Array(pcm.buffer)
+}
+
+export async function measureWaveform(input: string): Promise<WaveformResult | null> {
+  const samples = await decodeWaveformPcm(input)
+  // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
+  // stream): null tells the UI "no waveform", distinct from a decode error.
+  if (samples.length === 0) return null
+  return {
+    peaks: computePeaks(samples),
+    durationSec: samples.length / WAVEFORM_SAMPLE_RATE,
   }
 }

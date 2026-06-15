@@ -255,6 +255,14 @@ export interface ProcessResult {
   musicPersistentId?: string
 }
 
+// A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's
+// waveform strip. durationSec comes from the decoded sample count, so peak
+// index ↔ seconds mapping is exact even when the container's duration lies.
+export interface WaveformResult {
+  peaks: number[]
+  durationSec: number
+}
+
 export interface SpectrumResult {
   image: string
   // null when the cutoff analysis failed (e.g. ffmpeg errored) but the image

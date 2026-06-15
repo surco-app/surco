@@ -23,6 +23,7 @@ import type {
   SpectrumResult,
   TrackMetadata,
   TrackProperties,
+  WaveformResult,
 } from '../shared/types'
 
 export interface Api {
@@ -83,6 +84,7 @@ export interface Api {
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string) => Promise<BpmResult | null>
   key: (path: string) => Promise<KeyResult | null>
+  waveform: (path: string) => Promise<WaveformResult | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   readCover: (path: string) => Promise<CoverRead | null>

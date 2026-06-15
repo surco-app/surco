@@ -53,6 +53,7 @@ import {
   measureBpm,
   measureKey,
   measureLoudness,
+  measureWaveform,
   probeAudio,
   probeDuration,
   probeProperties,
@@ -861,6 +862,18 @@ function registerIpc(): void {
       )
     } catch (err) {
       log.error('audio:key failed', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('audio:waveform', async (_e, inputPath: string) => {
+    try {
+      // Default shouldCache applies: a null waveform means ffmpeg decoded
+      // nothing, which is worth retrying later (e.g. a file mid-download), so
+      // only real envelopes are pinned.
+      return await cachedAnalysis('waveform', inputPath, () => measureWaveform(inputPath))
+    } catch (err) {
+      log.error('audio:waveform failed', err)
       return null
     }
   })

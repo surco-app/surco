@@ -9,6 +9,7 @@ import type {
   SearchPriority,
   SearchProviderId,
   TrackProperties,
+  WaveformResult,
 } from '../shared/types'
 import type { Api } from './api'
 
@@ -64,6 +65,8 @@ const api: Api = {
     ipcRenderer.invoke('audio:properties', path),
   bpm: (path: string): Promise<BpmResult | null> => ipcRenderer.invoke('audio:bpm', path),
   key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
+  waveform: (path: string): Promise<WaveformResult | null> =>
+    ipcRenderer.invoke('audio:waveform', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),

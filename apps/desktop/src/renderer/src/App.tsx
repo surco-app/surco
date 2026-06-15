@@ -591,11 +591,15 @@ export default function App(): React.JSX.Element {
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
-  const { audioRef, playerVisible, playerTrack, togglePlay, closePlayer } = usePlayer({
+  const { audioRef, playerVisible, playerTrack, togglePlay, closePlayer, seekTo } = usePlayer({
     tracks,
     selected,
     selectedId,
   })
+  // The editor waveform draws a live playhead only while the shared player is
+  // streaming the very track being edited — otherwise it would map another
+  // track's clock onto this track's envelope.
+  const waveformActive = playerVisible && !!selected && playerTrack?.id === selected.id
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 
@@ -1037,6 +1041,9 @@ export default function App(): React.JSX.Element {
                 requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
                 showSpectrum={settings?.showSpectrum ?? true}
                 showLoudness={settings?.showLoudness ?? true}
+                audioRef={audioRef}
+                waveformActive={waveformActive}
+                onScrub={seekTo}
                 keyNotation={settings?.keyNotation ?? 'camelot'}
                 normalize={settings?.normalize ?? DEFAULT_NORMALIZE}
                 searchInputRef={searchInputRef}
