@@ -101,6 +101,7 @@ function renderEditor(
   onShowLoudnessHelp: ReturnType<typeof vi.fn>
   onOpenRename: ReturnType<typeof vi.fn>
   onRegenerateName: ReturnType<typeof vi.fn>
+  onCopyFilename: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
@@ -111,6 +112,7 @@ function renderEditor(
   const onShowLoudnessHelp = vi.fn()
   const onOpenRename = vi.fn()
   const onRegenerateName = vi.fn()
+  const onCopyFilename = vi.fn()
   renderWithQuery(
     <Editor
       item={item(over)}
@@ -137,6 +139,7 @@ function renderEditor(
       onShowLoudnessHelp={onShowLoudnessHelp}
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
+      onCopyFilename={onCopyFilename}
     />,
   )
   return {
@@ -149,6 +152,7 @@ function renderEditor(
     onShowLoudnessHelp,
     onOpenRename,
     onRegenerateName,
+    onCopyFilename,
   }
 }
 
@@ -284,6 +288,18 @@ describe('Editor derive from filename', () => {
     expect(onDeriveTags).toHaveBeenCalledWith([
       { id: 'a', meta: { trackNumber: '104', artist: 'kumara', title: 'snap' } },
     ])
+  })
+})
+
+describe('Editor copy filename', () => {
+  // A read-only companion to Regenerate: instead of writing the naming pattern into the
+  // output name, it hands the name to the clipboard so the user can paste the track into
+  // Google or Soulseek to hunt for a better rip. App owns the pattern and clipboard, so the
+  // button just signals intent.
+  it('copies the file name in one click', () => {
+    const { onCopyFilename } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('copy-filename-btn'))
+    expect(onCopyFilename).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -504,6 +520,7 @@ function MultiHarness() {
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
+        onCopyFilename={vi.fn()}
       />
       <div data-testid="dump">
         {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
@@ -710,6 +727,7 @@ describe('Editor multi-select', () => {
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
+        onCopyFilename={vi.fn()}
       />,
     )
     return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }

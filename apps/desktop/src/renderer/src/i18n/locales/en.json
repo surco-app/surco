@@ -283,7 +283,9 @@
     "deriveFromName": "Fill from filename",
     "deriveFromNameHint": "Fill the metadata fields from the file name",
     "clearMeta": "Clear metadata",
-    "clearMetaHint": "Empty every metadata field"
+    "clearMetaHint": "Empty every metadata field",
+    "copyFilename": "Copy file name",
+    "copyFilenameHint": "Copy the file name to the clipboard"
   },
   "fields": {
     "title": "Title",

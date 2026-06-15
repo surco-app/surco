@@ -1,4 +1,4 @@
-import { Eraser, Tag } from 'lucide-react'
+import { Copy, Eraser, Tag } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -111,6 +111,9 @@ interface Props {
   // Rebuilds this track's output name from the Settings naming pattern in one click.
   // App owns the format and writes the result, so the editor just signals intent.
   onRegenerateName: () => void
+  // Copies the Settings-pattern file name to the clipboard so the user can paste the track
+  // into a search box. App owns the pattern and clipboard, so the editor just signals intent.
+  onCopyFilename: () => void
 }
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
@@ -148,6 +151,7 @@ export const Editor = memo(function Editor({
   onShowLoudnessHelp,
   onOpenRename,
   onRegenerateName,
+  onCopyFilename,
 }: Props): React.JSX.Element {
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
@@ -445,6 +449,21 @@ export const Editor = memo(function Editor({
     </button>
   ) : null
 
+  // Hands the Settings-pattern name to the clipboard so the user can paste the track into a
+  // search box (Google, Soulseek) to chase a better rip. Icon-only like its neighbours.
+  const copyFilenameButton = (
+    <button
+      type="button"
+      data-testid="copy-filename-btn"
+      aria-label={tr('editor.copyFilename')}
+      onClick={onCopyFilename}
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+    >
+      <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('editor.copyFilenameHint')} align="end" />
+    </button>
+  )
+
   return (
     <div className="flex h-full min-h-0">
       <DiscogsPanel
@@ -498,6 +517,7 @@ export const Editor = memo(function Editor({
                     {tr('editor.notInLibrary')}
                   </span>
                 )}
+                {!isMulti && copyFilenameButton}
                 {clearButton}
                 {deriveButton}
               </div>

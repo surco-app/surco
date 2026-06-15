@@ -647,6 +647,23 @@ describe('App regenerate filename', () => {
     fireEvent.click(screen.getByTestId('regenerate-output-name'))
     await waitFor(() => expect(screen.getByTestId('output-name')).toHaveValue('Di Carlo - Bumping'))
   })
+
+  // The copy button hands the same Settings-pattern name to the OS clipboard so the user
+  // can paste the track straight into Google or Soulseek to hunt for a better rip.
+  it('copies the Settings-pattern file name to the clipboard in one click', async () => {
+    const copyText = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/raw 01.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Bumping', artist: 'Di Carlo' }),
+      getSettings: vi.fn().mockResolvedValue(settings({ filenameFormat: '{artist} - {title}' })),
+      copyText,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('copy-filename-btn'))
+    await waitFor(() => expect(copyText).toHaveBeenCalledWith('Di Carlo - Bumping'))
+  })
 })
 
 describe('App open with', () => {

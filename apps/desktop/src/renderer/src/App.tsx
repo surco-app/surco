@@ -761,6 +761,14 @@ export default function App(): React.JSX.Element {
     const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
     if (name) updateTrack(selected.id, { outputName: name })
   })
+  // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
+  // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but
+  // the last segment — the file name, not its directory, is what you search for.
+  const onCopyFilename = useStableCallback(() => {
+    if (!selected) return
+    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
+    if (name) void window.api.copyText(name.split('/').pop() ?? name)
+  })
   // O(N) per evaluation, so computed once per tracksView instead of inline in JSX.
   const allAnalyzed = useMemo(() => tracksView.every((t) => Boolean(t.spectrum)), [tracksView])
 
@@ -1100,6 +1108,7 @@ export default function App(): React.JSX.Element {
                 onShowLoudnessHelp={onShowLoudnessHelp}
                 onOpenRename={onOpenRename}
                 onRegenerateName={onRegenerateName}
+                onCopyFilename={onCopyFilename}
               />
             </ErrorBoundary>
           ) : (
