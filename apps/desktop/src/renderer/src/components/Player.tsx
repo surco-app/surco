@@ -196,7 +196,7 @@ export function Player({
         />
         <span
           data-testid="player-time"
-          className="pointer-events-none absolute top-1.5 right-1.5 rounded-full bg-[var(--color-panel-2)]/85 px-2 py-0.5 text-[11px] text-fg-dim tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
+          className="pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
         >
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
