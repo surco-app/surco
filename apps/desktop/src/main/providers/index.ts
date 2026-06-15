@@ -6,6 +6,7 @@ import type {
   SearchProviderId,
 } from '../../shared/types'
 import * as discogs from '../discogs'
+import { buildSearchCandidates } from '../searchQuery'
 import { getSettings } from '../settings'
 
 // Search dispatch seam: the IPC layer talks to a provider by id instead of
@@ -29,9 +30,19 @@ const discogsLimiter = createRateLimiter(DISCOGS_BURST, DISCOGS_WINDOW_MS)
 
 const providers: Record<SearchProviderId, SearchProvider> = {
   discogs: {
+    // The raw query carries download-filename noise that throws Discogs' free-text
+    // search off, so try cleaned candidates in turn (cleaned → no parenthetical) and
+    // keep the first that returns anything. Each candidate is paced and cached on its
+    // own key, so a clean query still makes exactly one call.
     search: async (query, priority) => {
-      if (!discogs.hasCachedSearch(query)) await discogsLimiter.acquire(priority)
-      return discogs.search(query, getSettings().discogsToken)
+      const token = getSettings().discogsToken
+      let results: DiscogsSearchResult[] = []
+      for (const candidate of buildSearchCandidates(query)) {
+        if (!discogs.hasCachedSearch(candidate)) await discogsLimiter.acquire(priority)
+        results = await discogs.search(candidate, token)
+        if (results.length) break
+      }
+      return results
     },
     getRelease: async (id, priority) => {
       if (!discogs.hasCachedRelease(id)) await discogsLimiter.acquire(priority)

@@ -32,6 +32,16 @@ describe('getProvider', () => {
     expect(out).toEqual([{ id: 1 }])
   })
 
+  // The first candidate keeps the mix name; when Discogs returns nothing for it the
+  // provider retries the parenthetical-stripped query, which is what finds the release.
+  it('falls back to a cleaned candidate when the fuller query finds nothing', async () => {
+    search.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 9 }])
+    const out = await getProvider('discogs').search('Rank 1 Airwave (Original Mix)')
+    expect(search).toHaveBeenNthCalledWith(1, 'Rank 1 Airwave (Original Mix)', 'tok')
+    expect(search).toHaveBeenNthCalledWith(2, 'Rank 1 Airwave', 'tok')
+    expect(out).toEqual([{ id: 9 }])
+  })
+
   it('routes getRelease through the Discogs client with the saved token', async () => {
     getRelease.mockResolvedValue({ id: 5 })
     await getProvider('discogs').getRelease(5)
