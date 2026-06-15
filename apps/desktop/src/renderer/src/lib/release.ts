@@ -5,6 +5,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { parseDuration } from './duration'
+import { foldText } from './normalizeText'
 import { splitPosition } from './position'
 
 export function cleanName(name: string): string {
@@ -50,10 +51,7 @@ export function resultFromRelease(rel: DiscogsRelease): DiscogsSearchResult {
 }
 
 function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
+  return foldText(s)
 }
 
 // What we know about the file, used to score each tracklist entry. Every field

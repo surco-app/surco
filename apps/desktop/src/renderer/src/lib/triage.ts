@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { foldText } from './normalizeText'
 import { qualityVerdict, type Verdict } from './quality'
 
 // The per-track quality verdict surfaced as a row badge, so a whole dropped folder
@@ -51,11 +52,13 @@ export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): Tra
 // name (both available before tags are read), plus the core artist/title/album tags, so
 // typing a name narrows a big crate. Case-insensitive substring; a blank query keeps all.
 export function matchesSearch(track: TrackItem, query: string): boolean {
-  const q = query.trim().toLowerCase()
+  // Fold both sides so an accent-free query ("cancion") finds an accented title
+  // ("canción") — the same canonical key the Discogs scorer compares on.
+  const q = foldText(query)
   if (!q) return true
   return [track.listLabel, track.fileName, track.meta?.title, track.meta?.artist, track.meta?.album]
     .filter((field): field is string => Boolean(field))
-    .some((field) => field.toLowerCase().includes(q))
+    .some((field) => foldText(field).includes(q))
 }
 
 // The list sort modes: the drop order ('import'), or by name, artist or length.
