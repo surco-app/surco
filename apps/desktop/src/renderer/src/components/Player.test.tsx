@@ -76,7 +76,6 @@ function props(over = {}) {
     audioRef: createRef<HTMLAudioElement>(),
     continuous: false,
     volume: 1,
-    showVolume: false,
     onToggle: vi.fn(),
     onScrub: vi.fn(),
     onAdjustVolume: vi.fn(),
@@ -165,11 +164,24 @@ describe('Player', () => {
     expect(onAdjustVolume).toHaveBeenCalled()
   })
 
-  // While adjusting, the time pill flashes the level instead of the clock, so the
-  // user sees what they're setting without any permanent control.
-  it('flashes the volume level in the pill while adjusting', () => {
-    renderUI(<Player {...props({ showVolume: true, volume: 0.8 })} />)
-    expect(screen.getByTestId('player-time')).toHaveTextContent('80%')
+  // Volume rides its own pill (left of the clock), so the level is visible without any
+  // permanent control taking up space.
+  it('shows the volume level on the volume pill', () => {
+    renderUI(<Player {...props({ volume: 0.8 })} />)
+    expect(screen.getByTestId('player-volume')).toHaveTextContent('80%')
+  })
+
+  // Both pills are hidden until the pointer is over the card, then fade in.
+  it('reveals the pills on hover and hides them otherwise', () => {
+    renderUI(<Player {...props()} />)
+    const card = screen.getByTestId('player')
+    expect(screen.getByTestId('player-volume')).toHaveClass('opacity-0')
+    expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
+    fireEvent.pointerEnter(card)
+    expect(screen.getByTestId('player-volume')).toHaveClass('opacity-100')
+    expect(screen.getByTestId('player-time')).toHaveClass('opacity-100')
+    fireEvent.pointerLeave(card)
+    expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
   })
 })
 

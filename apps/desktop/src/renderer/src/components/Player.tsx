@@ -28,11 +28,8 @@ export function LivePlayer({
   const [paused, setPaused] = useState(false)
   const [loading, setLoading] = useState(false)
   // Volume is adjusted by scrolling over the card (no on-screen control, to keep the
-  // player minimal); `showVolume` briefly swaps the time pill for the level while the
-  // wheel turns, then it reverts to the clock.
+  // player minimal); the value rides the volume pill that fades in on hover.
   const [volume, setVolume] = useState(1)
-  const [showVolume, setShowVolume] = useState(false)
-  const volumeFlash = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const audio = audioRef.current
@@ -91,7 +88,7 @@ export function LivePlayer({
   }
 
   // A wheel notch nudges the volume 5%. Scroll up raises it; the level is mirrored on
-  // the element (which persists it across tracks) and flashed in the pill for ~1.2s.
+  // the element, which persists it across tracks, and shown live on the volume pill.
   const onAdjustVolume = useCallback(
     (deltaY: number): void => {
       const audio = audioRef.current
@@ -99,14 +96,9 @@ export function LivePlayer({
       const next = Math.min(1, Math.max(0, audio.volume - Math.sign(deltaY) * 0.05))
       audio.volume = next
       setVolume(next)
-      setShowVolume(true)
-      if (volumeFlash.current) clearTimeout(volumeFlash.current)
-      volumeFlash.current = setTimeout(() => setShowVolume(false), 1200)
     },
     [audioRef],
   )
-
-  useEffect(() => () => clearTimeout(volumeFlash.current ?? undefined), [])
 
   return (
     <Player
@@ -118,7 +110,6 @@ export function LivePlayer({
       audioRef={audioRef}
       continuous={continuous}
       volume={volume}
-      showVolume={showVolume}
       onToggle={onToggle}
       onScrub={onScrub}
       onAdjustVolume={onAdjustVolume}
@@ -137,7 +128,6 @@ interface PlayerProps {
   audioRef: React.RefObject<HTMLAudioElement | null>
   continuous: boolean
   volume: number
-  showVolume: boolean
   onToggle: () => void
   onScrub: (seconds: number) => void
   onAdjustVolume: (deltaY: number) => void
@@ -156,7 +146,6 @@ export function Player({
   audioRef,
   continuous,
   volume,
-  showVolume,
   onToggle,
   onScrub,
   onAdjustVolume,
@@ -165,6 +154,9 @@ export function Player({
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
   const cardRef = useRef<HTMLDivElement>(null)
+  // The volume and time pills only surface while the pointer is over the card, then
+  // fade back out, so the resting player stays just cover + name + controls + wave.
+  const [hovered, setHovered] = useState(false)
 
   // Wheel-to-volume, attached natively so the handler can preventDefault and stop the
   // track list behind the floating card from scrolling at the same time (React's
@@ -184,6 +176,8 @@ export function Player({
     <div
       ref={cardRef}
       data-testid="player"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
       className="absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
     >
       {/* Identity row: cover and the full track name, with every control grouped in
@@ -259,8 +253,9 @@ export function Player({
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
-          corners) so the whole width is scrubbable. The clock floats over it as a
-          pill; pointer-events-none lets a click underneath still seek. */}
+          corners) so the whole width is scrubbable. The volume and clock float over its
+          corners as pills that fade in on hover; pointer-events-none lets a click (or a
+          wheel) underneath still reach the wave. */}
       <div className="relative mt-2">
         <Waveform
           key={track.inputPath}
@@ -270,17 +265,21 @@ export function Player({
           onScrub={onScrub}
         />
         <span
-          data-testid="player-time"
-          className="pointer-events-none absolute top-1 right-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
+          data-testid="player-volume"
+          className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+            hovered ? 'opacity-100' : 'opacity-0'
+          }`}
         >
-          {showVolume ? (
-            <>
-              <Volume2 className="h-3 w-3" aria-hidden="true" />
-              {Math.round(volume * 100)}%
-            </>
-          ) : (
-            `${formatTime(currentTime)} / ${formatTime(duration)}`
-          )}
+          <Volume2 className="h-3 w-3" aria-hidden="true" />
+          {Math.round(volume * 100)}%
+        </span>
+        <span
+          data-testid="player-time"
+          className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+            hovered ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {formatTime(currentTime)} / {formatTime(duration)}
         </span>
       </div>
     </div>
