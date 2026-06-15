@@ -484,7 +484,10 @@
           "Emparejado con Discogs mucho más certero: ignora el ruido del nombre de archivo (320, sellos, «feat.»…), es insensible a acentos, entiende más formatos de nombre y reintenta por número de catálogo o solo el título cuando hace falta.",
           "Con el auto-emparejado activo, la pista que seleccionas se empareja sola, sin pulsar el botón en cada una.",
           "Al arrastrar pistas que ya están en la lista, se omiten y te avisa, en lugar de no hacer nada.",
-          "Etiquetado y «Añadir a Apple Music» disponibles también para archivos WAV."
+          "Etiquetado y «Añadir a Apple Music» disponibles también para archivos WAV.",
+          "Ajusta el volumen del reproductor desplazando la rueda del ratón sobre él; el nivel aparece flotando junto al tiempo al pasar por encima.",
+          "Los archivos con agudos regenerados por un «enhancer» se marcan ahora como «Reprocesado» en vez de «Mala calidad», para que un espectro lleno pero falseado no lleve a engaño.",
+          "Copia al portapapeles el nombre de archivo que generará una pista según tu patrón de nombrado."
         ]
       },
       {
