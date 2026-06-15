@@ -1,7 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useWaveform } from '../hooks/useWaveform'
-import { WaveSpinner } from './WaveSpinner'
 
 // Fixed internal raster scaled by CSS to the container: the peak array is 2048
 // buckets, so ~half a bucket per device pixel at typical panel widths —
@@ -63,9 +62,10 @@ export function Waveform({
 
   if (isFetching) {
     return (
-      <div className="flex h-8 items-center justify-center" data-testid="waveform-loading">
-        <WaveSpinner />
-      </div>
+      <div
+        data-testid="waveform-loading"
+        className="h-12 w-full animate-pulse bg-[var(--color-line-strong)]/25"
+      />
     )
   }
   if (!wave || durationSec === 0) return null
@@ -94,7 +94,7 @@ export function Waveform({
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="block h-8 w-full rounded bg-black/15"
+        className="block h-12 w-full bg-black/15"
       />
       {playheadSec !== null && (
         <div

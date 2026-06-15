@@ -183,20 +183,21 @@ export function Player({
         </button>
       </div>
 
-      {/* Waveform and clock share the bottom strip. Pointer-only: the strip is a
-          poor keyboard target and Space already toggles the player. */}
-      <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5">
-        <div className="min-w-0 flex-1">
-          <Waveform
-            key={track.inputPath}
-            inputPath={track.inputPath}
-            audioRef={audioRef}
-            active
-            onScrub={onScrub}
-          />
-        </div>
-
-        <span data-testid="player-time" className="shrink-0 text-fg-dim text-xs tabular-nums">
+      {/* The waveform runs full-bleed to the card edges (the rounded card clips its
+          corners) so the whole width is scrubbable. The clock floats over it as a
+          pill; pointer-events-none lets a click underneath still seek. */}
+      <div className="relative mt-2">
+        <Waveform
+          key={track.inputPath}
+          inputPath={track.inputPath}
+          audioRef={audioRef}
+          active
+          onScrub={onScrub}
+        />
+        <span
+          data-testid="player-time"
+          className="pointer-events-none absolute top-1.5 right-1.5 rounded-full bg-[var(--color-panel-2)]/85 px-2 py-0.5 text-[11px] text-fg-dim tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
+        >
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
       </div>
