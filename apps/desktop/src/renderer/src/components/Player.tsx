@@ -167,20 +167,16 @@ export function Player({
             onClick={onToggle}
             aria-label={paused ? t('player.play') : t('player.pause')}
             aria-busy={!paused && loading}
-            className="press flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
+            className="press flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-accent)] transition-colors hover:bg-[var(--color-line-strong)]"
           >
             {paused ? (
-              <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+              <Play className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
             ) : loading ? (
               // Streaming from a network drive can take seconds to deliver the first
               // bytes; the spinner shows the click registered and the file is coming.
-              <LoaderCircle
-                data-testid="player-loading"
-                className="h-3.5 w-3.5 animate-spin"
-                aria-hidden="true"
-              />
+              <LoaderCircle data-testid="player-loading" className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Pause className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+              <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
             )}
           </button>
 
