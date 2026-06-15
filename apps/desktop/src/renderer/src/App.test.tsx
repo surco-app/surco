@@ -99,17 +99,6 @@ class MockIntersectionObserver {
   }
 }
 
-function scrollRowIntoView(row: HTMLElement): void {
-  const li = row.closest('li')
-  if (!li) return
-  for (const o of observers)
-    if (o.els.has(li))
-      o.cb(
-        [{ target: li, isIntersecting: true } as unknown as IntersectionObserverEntry],
-        o as unknown as IntersectionObserver,
-      )
-}
-
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
@@ -277,10 +266,10 @@ describe('App auto-match', () => {
     expect(screen.getByTestId('auto-match')).toBeDisabled()
   })
 
-  // Dropping a folder of 100 must not fire 100 Discogs searches at once and trip the rate
-  // limit. Import auto-match is gated to the rows on screen: nothing probes until a row is
-  // scrolled into view, and then only that row's file is searched.
-  it('probes only the tracks scrolled into view on import, not the whole drop', async () => {
+  // With auto-match on, a dropped crate gets matched in full — not just the rows the user
+  // happens to scroll into view. The on-screen rows are merely probed first (the rate
+  // limiter in main paces the calls so the whole crate can't trip a 429).
+  it('matches the whole imported crate, not only the rows scrolled into view', async () => {
     const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
@@ -292,13 +281,8 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
 
-    // No row is reported visible yet, so the import enqueued both but probed neither.
-    await Promise.resolve()
-    expect(searchDiscogs).not.toHaveBeenCalled()
-
-    scrollRowIntoView(screen.getAllByTestId('track-row')[0])
-    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
-    expect(searchDiscogs).toHaveBeenCalledTimes(1)
+    // Neither row is scrolled into view, yet both still get matched.
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
   })
 
   // The track you're looking at shouldn't need the toolbar button: with auto-match on,

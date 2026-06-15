@@ -309,7 +309,9 @@ export default function App(): React.JSX.Element {
       }
     },
     onMetaLoaded: (t) => {
-      if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], true)
+      // Enqueue the whole crate (not visible-only): with auto-match on, every imported
+      // track gets matched, the sweep just probes the on-screen rows first.
+      if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], false)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
@@ -396,6 +398,13 @@ export default function App(): React.JSX.Element {
     }, 500)
     return () => clearTimeout(id)
   }, [selectedId, settings?.autoMatch, settings?.discogsToken, enqueueAutoMatch, tracksRef])
+
+  // Turning auto-match off in Settings must stop the running sweep outright — cancel the
+  // in-flight probes and empty the queue, or a later scroll would quietly resume matching
+  // the rows that were still pending.
+  useEffect(() => {
+    if (!settings?.autoMatch) cancelAutoMatch()
+  }, [settings?.autoMatch, cancelAutoMatch])
 
   // Right-click "Search Discogs": make the track active, then focus the search box on the
   // next tick once the editor for the new selection has mounted and bound the ref.

@@ -47,6 +47,12 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
   const matchCancel = useRef(false)
   const matchingRef = useRef(false)
+  // Cumulative progress of the active sweep: how many distinct tracks were enqueued (and
+  // weren't already matched) and how many have been probed. Both reset to 0 when the sweep
+  // idles, so the toolbar pill reads e.g. 5/200 across a whole-crate run rather than the
+  // size of the current concurrent slice.
+  const sweepDone = useRef(0)
+  const sweepTotal = useRef(0)
   // Track ids waiting for an auto-match, mapped to whether the row must be on screen
   // before it runs. The drain reads this together with which rows are currently visible.
   const matchQueue = useRef<Map<string, boolean>>(new Map())
@@ -111,12 +117,23 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
       return visibleOnly !== undefined && (!visibleOnly || visible.has(t.id))
     })
     const targets = tracksToAutoMatch(ready)
-    // Drain the focused (selected) track first so it lands in the very first concurrent batch
-    // rather than waiting behind the other on-screen rows in list order.
+    // Probe the rows on screen before the rest of the crate so the slice of the list the
+    // user is looking at resolves first; V8's sort is stable, so list order holds within
+    // each group. Re-evaluated every pass, so scrolling re-prioritises live.
+    targets.sort((a, b) => Number(visible.has(b.id)) - Number(visible.has(a.id)))
+    // The focused (selected) track jumps even ahead of the other on-screen rows.
     const i = targets.findIndex((t) => t.id === focusedId.current)
     if (i > 0) targets.unshift(targets.splice(i, 1)[0])
     return targets
   }, [tracksRef])
+
+  // Zeroes the sweep's progress and hides the toolbar pill — used when it finishes, is
+  // cancelled, or the list is cleared out from under it.
+  const resetProgress = useCallback((): void => {
+    sweepDone.current = 0
+    sweepTotal.current = 0
+    setMatching(null)
+  }, [])
 
   // Drains the auto-match queue against Discogs, capped and cancellable. Each pass takes the
   // tracks ready right now and probes them, so scrolling a big crate feeds the sweep the rows
@@ -129,35 +146,58 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
     matchCancel.current = false
     try {
       while (!matchCancel.current) {
-        const targets = readyMatchTargets()
-        if (targets.length === 0) break
-        for (const t of targets) matchQueue.current.delete(t.id)
-        setMatching((s) => ({ done: s?.done ?? 0, total: (s?.total ?? 0) + targets.length }))
-        await mapWithConcurrency(targets, AUTO_MATCH_CONCURRENCY, async (t) => {
+        const ready = readyMatchTargets()
+        if (ready.length === 0) break
+        // Take only the top-priority slice each pass, then re-evaluate: a row scrolled into
+        // view (or a freshly selected one) jumps ahead of the rest of the crate on the very
+        // next pass, instead of being stranded behind a whole batch already in flight.
+        const batch = ready.slice(0, AUTO_MATCH_CONCURRENCY)
+        for (const t of batch) matchQueue.current.delete(t.id)
+        await mapWithConcurrency(batch, AUTO_MATCH_CONCURRENCY, async (t) => {
           try {
             if (!matchCancel.current) await applyAutoMatch(t)
           } catch {
             // One row's malformed Discogs payload must skip that track, not sink the
             // whole sweep as an unhandled rejection (mirroring the analyze sweep).
           } finally {
-            setMatching((s) => (s ? { ...s, done: s.done + 1 } : s))
+            // A cancel mid-probe tears the sweep down, so don't resurrect the pill by
+            // bumping progress after it was cleared.
+            if (!matchCancel.current) {
+              sweepDone.current += 1
+              setMatching({ done: sweepDone.current, total: sweepTotal.current })
+            }
           }
         })
       }
     } finally {
       matchingRef.current = false
-      setMatching(null)
-      // A track enqueued in the instant the loop was exiting would otherwise strand until the
-      // next pump; restart if anything's already ready (e.g. the toolbar "match all" click).
-      if (!matchCancel.current && readyMatchTargets().length > 0) void pumpAutoMatch()
+      if (matchCancel.current) {
+        resetProgress()
+      } else if (readyMatchTargets().length > 0) {
+        // A track became ready in the instant the loop was exiting; pick it up.
+        void pumpAutoMatch()
+      } else if (matchQueue.current.size === 0) {
+        // Queue fully drained: the sweep is done.
+        resetProgress()
+      }
+      // Otherwise rows remain queued but gated on visibility — keep the progress shown and
+      // let onTrackVisible/focusTrack pump again when one appears.
     }
-  }, [applyAutoMatch, readyMatchTargets])
+  }, [applyAutoMatch, readyMatchTargets, resetProgress])
 
   // Queues tracks for auto-match and kicks the drain. visibleOnly holds an import's files back
   // until their rows are seen; the toolbar sweep passes false to match the whole view now.
   const enqueueAutoMatch = useCallback(
     (candidates: TrackItem[], visibleOnly: boolean): void => {
-      for (const t of tracksToAutoMatch(candidates)) matchQueue.current.set(t.id, visibleOnly)
+      let added = 0
+      for (const t of tracksToAutoMatch(candidates)) {
+        if (!matchQueue.current.has(t.id)) added += 1
+        matchQueue.current.set(t.id, visibleOnly)
+      }
+      if (added > 0) {
+        sweepTotal.current += added
+        setMatching({ done: sweepDone.current, total: sweepTotal.current })
+      }
       void pumpAutoMatch()
     },
     [pumpAutoMatch],
@@ -177,9 +217,14 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
     [pumpAutoMatch],
   )
 
+  // Stops the sweep for good: flags the in-flight probes to bail, empties the queue so a
+  // later scroll (onTrackVisible pumps unconditionally) can't quietly resume it, and clears
+  // the pill. This is what disabling auto-match in Settings calls, and the toolbar cancel.
   const cancelAutoMatch = useCallback((): void => {
     matchCancel.current = true
-  }, [])
+    matchQueue.current.clear()
+    resetProgress()
+  }, [resetProgress])
 
   const forgetTrack = useCallback((id: string): void => {
     matchQueue.current.delete(id)
@@ -187,10 +232,12 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   }, [])
 
   const reset = useCallback((): void => {
+    matchCancel.current = true
     matchQueue.current.clear()
     visibleIds.current.clear()
     focusedId.current = null
-  }, [])
+    resetProgress()
+  }, [resetProgress])
 
   // The selection changed: point the sweep at the new row and pump so it re-drains with that
   // track at the front. A drain already running picks the new focus up on its next pass.

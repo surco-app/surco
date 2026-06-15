@@ -125,6 +125,47 @@ describe('useAutoMatch', () => {
     expect(updateTrack).not.toHaveBeenCalled()
   })
 
+  // Cancelling (what disabling auto-match in Settings calls) must empty the queue, not just
+  // flag the current probes: onTrackVisible pumps unconditionally, so a row scrolled in
+  // afterwards would otherwise quietly resume matching the supposedly-stopped sweep.
+  it('drops queued matches on cancel so a row scrolled in later never probes', async () => {
+    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({ searchDiscogs })
+    const tracks = [track('a')]
+    const { result } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks, true))
+    act(() => result.current.cancelAutoMatch())
+    act(() => result.current.onTrackVisible('a', true))
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(searchDiscogs).not.toHaveBeenCalled()
+    expect(result.current.matching).toBeNull()
+  })
+
+  // Whole-crate matching, visible-first: every imported track is enqueued (not gated), but
+  // the rows on screen are probed before the rest so the part of the list in view resolves
+  // first. Only 'b' is visible here, so it must be searched before 'a'.
+  it('matches the whole queue but probes visible rows first', async () => {
+    const calls: string[] = []
+    const searchDiscogs = vi.fn(async (q: string) => {
+      calls.push(q)
+      return [{ id: 1, title: 'Artist - Album' }]
+    })
+    setApi({ searchDiscogs })
+    const a = track('a')
+    a.query = 'query a'
+    const b = track('b')
+    b.query = 'query b'
+    const { result } = setup([a, b])
+
+    act(() => result.current.onTrackVisible('b', true))
+    act(() => result.current.enqueueAutoMatch([a, b], false))
+
+    await waitFor(() => expect(calls).toHaveLength(2))
+    expect(calls[0]).toBe('query b')
+  })
+
   // The track the user is looking at must resolve now, not wait behind the rest of the
   // crate: its Discogs calls go through the limiter's high-priority queue (the same lane
   // as a manual search) while every other queued row stays low.
