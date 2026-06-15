@@ -196,6 +196,7 @@
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Revisar",
     "qualityBad": "Mala calidad",
+    "qualityProcessed": "Reprocesado",
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
     "qualityCaptionGood": "La energía llega a ~{{cutoff}} — en la línea de ~20 kHz que mantiene un 320 kbps completo o un audio sin pérdidas genuino.",

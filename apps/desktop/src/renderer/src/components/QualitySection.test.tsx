@@ -86,13 +86,14 @@ describe('QualitySection verdict caption', () => {
     ).toBeInTheDocument()
   })
 
-  it('explains regenerated highs with a bad badge, not the cutoff boilerplate', async () => {
-    // The enhancer hump reaches past the good line; without its own caption the
-    // section would show a red badge over a "reaches ~20 kHz" explanation.
+  it('flags regenerated highs with a Reprocessed badge, not Bad quality over cutoff boilerplate', async () => {
+    // The enhancer hump reaches past the good line, so a "full spectrum" view under
+    // a "Bad quality" badge reads as a contradiction. The processed case gets its
+    // own badge naming the manipulation, paired with its enhancer caption.
     renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: true })
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionProcessed', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
-    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityBad'))
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityProcessed'))
   })
 })

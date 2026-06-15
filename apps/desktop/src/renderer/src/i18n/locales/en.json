@@ -196,6 +196,7 @@
     "qualityGood": "Good quality",
     "qualitySuspect": "Review",
     "qualityBad": "Bad quality",
+    "qualityProcessed": "Reprocessed",
     "analyzing": "Analyzing spectrum…",
     "sectionForm": "Metadata",
     "qualityCaptionGood": "Energy reaches ~{{cutoff}} — at the ~20 kHz line a full 320 kbps or genuine lossless source keeps.",

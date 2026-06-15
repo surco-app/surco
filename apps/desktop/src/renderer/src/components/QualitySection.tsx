@@ -14,14 +14,18 @@ const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
   warn: { className: 'bg-warn/15 text-warn', label: 'editor.qualitySuspect' },
   bad: { className: 'bg-danger/15 text-danger', label: 'editor.qualityBad' },
+  // Regenerated highs are still a reject (red), but the spectrogram looks full,
+  // so the badge names the manipulation rather than calling it dull.
+  processed: { className: 'bg-danger/15 text-danger', label: 'editor.qualityProcessed' },
 }
 
 // The caption under the spectrogram is where the verdict gets justified: each band
-// explains what its cutoff means, so a red "Bad quality" badge never stands alone.
+// explains what its cutoff means, so a red badge never stands alone.
 const qualityCaption: Record<Verdict, string> = {
   good: 'editor.qualityCaptionGood',
   warn: 'editor.qualityCaptionWarn',
   bad: 'editor.qualityCaptionBad',
+  processed: 'editor.qualityCaptionProcessed',
 }
 
 interface Props {
@@ -103,9 +107,9 @@ export function QualitySection({
                 {spectrum.cutoffHz !== null && (
                   <p className="mt-2 text-xs text-fg-dim">
                     {tr(
-                      spectrum.processed
-                        ? 'editor.qualityCaptionProcessed'
-                        : qualityCaption[qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz)],
+                      qualityCaption[
+                        qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed)
+                      ],
                       { cutoff: formatKHz(spectrum.cutoffHz) },
                     )}
                   </p>

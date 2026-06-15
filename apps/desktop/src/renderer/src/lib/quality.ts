@@ -2,16 +2,17 @@
 // because codec lowpasses are absolute: ~20.5 kHz is a full 320 kbps / lossless,
 // ~18.5–19 kHz is the ~192 kbps class, and ~16 kHz is the classic 128 kbps
 // re-encoded as WAV. Grading against Nyquist (the old rule) punished 48 kHz
-// files for the same audio. A processed spectrum (regenerated highs) is bad no
-// matter where its synthetic energy reaches; an unknown sample rate means the
-// analysis never ran on real bands, so it stays inconclusive.
-export type Verdict = 'good' | 'warn' | 'bad'
+// files for the same audio. A processed spectrum (regenerated highs) is its own
+// verdict — the spectrogram looks full, so a plain red "Bad quality" badge reads
+// as a contradiction; "Reprocessed" names the manipulation instead. An unknown
+// sample rate means the analysis never ran on real bands, so it stays inconclusive.
+export type Verdict = 'good' | 'warn' | 'bad' | 'processed'
 
 const GOOD_CUTOFF_HZ = 19500
 const WARN_CUTOFF_HZ = 18000
 
 export function qualityVerdict(cutoffHz: number, sampleRateHz: number, processed = false): Verdict {
-  if (processed) return 'bad'
+  if (processed) return 'processed'
   if (sampleRateHz <= 0) return 'warn'
   if (cutoffHz >= GOOD_CUTOFF_HZ) return 'good'
   return cutoffHz >= WARN_CUTOFF_HZ ? 'warn' : 'bad'

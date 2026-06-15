@@ -45,12 +45,12 @@ describe('trackQuality', () => {
     expect(trackQuality(withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100 }))).toBe('bad')
   })
 
-  it('is bad when the highs were regenerated, even though they reach far up', () => {
-    // An enhancer hump pushes synthetic energy past the good line; the badge must
-    // grade the low-bitrate source underneath, not the gloss.
+  it('is processed when the highs were regenerated, even though they reach far up', () => {
+    // An enhancer hump pushes synthetic energy past the good line; the row must
+    // flag the manipulation underneath the gloss, not rate it as merely dull.
     expect(
       trackQuality(withSpectrum({ cutoffHz: 20000, sampleRateHz: 44100, processed: true })),
-    ).toBe('bad')
+    ).toBe('processed')
   })
 })
 
@@ -99,6 +99,20 @@ describe('filterByQuality / qualityCounts', () => {
 
   it('keeps both warn and bad rips under the suspect filter so the fakes are isolated', () => {
     expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad', 'borderline'])
+  })
+
+  it('keeps reprocessed (enhancer-faked) rips under suspect and counted, not dropped as unanalyzed', () => {
+    // Splitting 'processed' out of 'bad' must not let the fakes — the whole point
+    // of the triage bucket — slip past the suspect filter or its badge count.
+    const faked = [
+      {
+        id: 'faked',
+        status: 'idle',
+        spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: true },
+      } as TrackItem,
+    ]
+    expect(filterByQuality(faked, 'suspect').map((x) => x.id)).toEqual(['faked'])
+    expect(qualityCounts(faked).suspect).toBe(1)
   })
 
   it('keeps only the genuine-lossless rips when filtering for good', () => {

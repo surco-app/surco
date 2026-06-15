@@ -42,10 +42,13 @@ describe('qualityVerdict', () => {
     expect(qualityVerdict(17000, 48000)).toBe('bad')
   })
 
-  it('marks regenerated highs bad regardless of how far the hump reaches', () => {
+  it('marks regenerated highs as processed regardless of how far the hump reaches', () => {
     // An "enhancer" hump can push synthetic energy past 20 kHz; the verdict
-    // must reflect the source under the gloss, not the gloss.
-    expect(qualityVerdict(20000, 44100, true)).toBe('bad')
+    // must call out the manipulation, not just rate the gloss as low. A full
+    // spectrogram under a red "Bad quality" badge reads as a contradiction, so
+    // the processed case gets its own verdict for a distinct "Reprocessed" badge.
+    expect(qualityVerdict(20000, 44100, true)).toBe('processed')
+    expect(qualityVerdict(13000, 44100, true)).toBe('processed')
   })
 
   it('treats an unknown sample rate as warn rather than inventing a verdict', () => {

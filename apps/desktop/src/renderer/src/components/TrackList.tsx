@@ -49,12 +49,14 @@ const qualityDot: Record<Verdict, string> = {
   good: 'bg-good ring-good/20',
   warn: 'bg-warn ring-warn/20',
   bad: 'bg-danger ring-danger/20',
+  processed: 'bg-danger ring-danger/20',
 }
 
 const qualityLabel: Record<Verdict, string> = {
   good: 'editor.qualityGood',
   warn: 'editor.qualitySuspect',
   bad: 'editor.qualityBad',
+  processed: 'editor.qualityProcessed',
 }
 
 interface RowProps {
