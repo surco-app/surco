@@ -74,8 +74,10 @@ function props(over = {}) {
     currentTime: 0,
     duration: 0,
     audioRef: createRef<HTMLAudioElement>(),
+    continuous: false,
     onToggle: vi.fn(),
     onScrub: vi.fn(),
+    onToggleContinuous: vi.fn(),
     onClose: vi.fn(),
     ...over,
   }
@@ -138,6 +140,19 @@ describe('Player', () => {
     renderUI(<Player {...props()} />)
     expect(await screen.findByTestId('waveform')).toBeInTheDocument()
   })
+
+  it('toggles continuous playback and reflects its state to screen readers', () => {
+    // The icon is the only affordance for the mode, so it must announce whether
+    // auto-advance is on (aria-pressed) and report the click to persist the choice.
+    const onToggleContinuous = vi.fn()
+    const { rerender } = renderUI(<Player {...props({ continuous: false, onToggleContinuous })} />)
+    const toggle = screen.getByTestId('player-continuous')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(toggle)
+    expect(onToggleContinuous).toHaveBeenCalledOnce()
+    rerender(<Player {...props({ continuous: true, onToggleContinuous })} />)
+    expect(screen.getByTestId('player-continuous')).toHaveAttribute('aria-pressed', 'true')
+  })
 })
 
 describe('LivePlayer', () => {
@@ -158,7 +173,15 @@ describe('LivePlayer', () => {
     const audio = audioEl({ currentTime: 65, duration: 754 })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
-    renderUI(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 
@@ -166,7 +189,15 @@ describe('LivePlayer', () => {
     const audio = audioEl({ duration: 754 })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
-    renderUI(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     act(() => {
       ;(audio as unknown as { currentTime: number }).currentTime = 65
       audio.dispatchEvent(new Event('timeupdate'))
@@ -181,7 +212,15 @@ describe('LivePlayer', () => {
     const audio = audioEl({ paused: false, readyState: 0 })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
-    renderUI(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('player-loading')).toBeInTheDocument()
   })
 
@@ -189,7 +228,15 @@ describe('LivePlayer', () => {
     const audio = audioEl({ paused: false, readyState: 0 })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
-    renderUI(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     act(() => audio.dispatchEvent(new Event('playing')))
     expect(screen.queryByTestId('player-loading')).not.toBeInTheDocument()
   })
@@ -198,7 +245,15 @@ describe('LivePlayer', () => {
     const audio = audioEl({ paused: false, readyState: 4 })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
-    renderUI(<LivePlayer track={track()} audioRef={ref} onClose={vi.fn()} />)
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     expect(screen.queryByTestId('player-loading')).not.toBeInTheDocument()
     act(() => audio.dispatchEvent(new Event('waiting')))
     expect(screen.getByTestId('player-loading')).toBeInTheDocument()

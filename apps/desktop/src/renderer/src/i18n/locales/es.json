@@ -82,6 +82,7 @@
   "player": {
     "play": "Reproducir",
     "pause": "Pausar",
+    "continuous": "Reproducción continua",
     "close": "Cerrar reproductor"
   },
   "commands": {

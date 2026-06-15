@@ -57,6 +57,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     showSpectrum: true,
     showLoudness: false,
     autoMatch: false,
+    continuousPlayback: false,
     keyNotation: 'camelot',
     normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
     shortcutOverrides: {},
@@ -882,6 +883,38 @@ describe('App keyboard navigation', () => {
 
     await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
     expect(rows[1]).toHaveFocus()
+  })
+})
+
+describe('App continuous playback', () => {
+  // With the mode on, a finished track hands off to the next visible row so a queued
+  // crate plays through unattended — the same advance the arrow keys make.
+  it('advances to the next track when one finishes', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ continuousPlayback: true })) })
+    await renderApp()
+    const rows = await addTwoTracks()
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+
+    const audio = document.querySelector('audio')
+    if (!audio) throw new Error('expected the player audio element')
+    fireEvent(audio, new Event('ended'))
+
+    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
+  })
+
+  // With the mode off, finishing a track leaves the selection put rather than
+  // rolling into the next one.
+  it('leaves the selection put when continuous playback is off', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ continuousPlayback: false })) })
+    await renderApp()
+    const rows = await addTwoTracks()
+
+    const audio = document.querySelector('audio')
+    if (!audio) throw new Error('expected the player audio element')
+    fireEvent(audio, new Event('ended'))
+
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'false')
   })
 })
 

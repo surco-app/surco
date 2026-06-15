@@ -34,6 +34,7 @@ const settings: Settings = {
   showSpectrum: true,
   showLoudness: true,
   autoMatch: false,
+  continuousPlayback: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},

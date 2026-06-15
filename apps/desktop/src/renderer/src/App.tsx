@@ -557,6 +557,18 @@ export default function App(): React.JSX.Element {
     if (top !== null) container.scrollTo({ top, behavior: 'smooth' })
   }
 
+  // When a track finishes: in continuous mode advance to the next visible track —
+  // the selection-follows-playback effect plays it and moveSelection scrolls it
+  // into view. Otherwise, or once the list runs out, close the player.
+  function onTrackEnded(): void {
+    const idx = visibleTracks.findIndex((t) => t.id === selectedId)
+    if (settings?.continuousPlayback && idx >= 0 && idx + 1 < visibleTracks.length) {
+      moveSelection(1)
+    } else {
+      closePlayer()
+    }
+  }
+
   const sidebar = useResizableWidth(300, 300, 600)
 
   // Double-clicking the divider fits the list to its tracks: measure how far each title and
@@ -816,7 +828,7 @@ export default function App(): React.JSX.Element {
           (currentTime/duration/paused) is read by LivePlayer, which subscribes to
           this element directly so playback re-renders only the card. */}
       {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
-      <audio ref={audioRef} hidden onEnded={closePlayer} />
+      <audio ref={audioRef} hidden onEnded={onTrackEnded} />
       {/* Names the window for screen readers; visually redundant with the title bar. */}
       <h1 className="sr-only">Surco</h1>
       {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
@@ -1005,7 +1017,15 @@ export default function App(): React.JSX.Element {
             )}
           </div>
           {playerVisible && playerTrack && (
-            <LivePlayer track={playerTrack} audioRef={audioRef} onClose={closePlayer} />
+            <LivePlayer
+              track={playerTrack}
+              audioRef={audioRef}
+              continuous={settings?.continuousPlayback ?? false}
+              onToggleContinuous={() =>
+                saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
+              }
+              onClose={closePlayer}
+            />
           )}
         </aside>
 

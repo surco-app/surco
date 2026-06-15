@@ -82,6 +82,7 @@
   "player": {
     "play": "Play",
     "pause": "Pause",
+    "continuous": "Continuous playback",
     "close": "Close player"
   },
   "commands": {

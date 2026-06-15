@@ -1,4 +1,4 @@
-import { LoaderCircle, Pause, Play, X } from 'lucide-react'
+import { Infinity as InfinityIcon, LoaderCircle, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,10 +12,14 @@ import { Waveform } from './Waveform'
 export function LivePlayer({
   track,
   audioRef,
+  continuous,
+  onToggleContinuous,
   onClose,
 }: {
   track: TrackItem
   audioRef: React.RefObject<HTMLAudioElement | null>
+  continuous: boolean
+  onToggleContinuous: () => void
   onClose: () => void
 }): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState(0)
@@ -84,8 +88,10 @@ export function LivePlayer({
       currentTime={currentTime}
       duration={duration}
       audioRef={audioRef}
+      continuous={continuous}
       onToggle={onToggle}
       onScrub={onScrub}
+      onToggleContinuous={onToggleContinuous}
       onClose={onClose}
     />
   )
@@ -98,8 +104,10 @@ interface PlayerProps {
   currentTime: number
   duration: number
   audioRef: React.RefObject<HTMLAudioElement | null>
+  continuous: boolean
   onToggle: () => void
   onScrub: (seconds: number) => void
+  onToggleContinuous: () => void
   onClose: () => void
 }
 
@@ -112,8 +120,10 @@ export function Player({
   currentTime,
   duration,
   audioRef,
+  continuous,
   onToggle,
   onScrub,
+  onToggleContinuous,
   onClose,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -171,6 +181,21 @@ export function Player({
             {track.meta.artist}
           </span>
         </span>
+
+        <button
+          type="button"
+          data-testid="player-continuous"
+          onClick={onToggleContinuous}
+          aria-label={t('player.continuous')}
+          aria-pressed={continuous}
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
+            continuous
+              ? 'text-[var(--color-accent)] hover:bg-[var(--color-line-strong)]'
+              : 'text-fg-dim hover:bg-[var(--color-line-strong)] hover:text-fg'
+          }`}
+        >
+          <InfinityIcon className="h-4 w-4" aria-hidden="true" />
+        </button>
 
         <button
           type="button"
