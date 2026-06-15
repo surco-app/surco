@@ -8,6 +8,25 @@ import { useWaveform } from '../hooks/useWaveform'
 const CANVAS_W = 1200
 const CANVAS_H = 96
 
+// A synthetic amplitude envelope for the decode placeholder. Real music swells and
+// dips, so a row of equal bars (the old repeating gradient) read as fake. We blend a
+// slow macro envelope (track dynamics) with a per-bar jitter (transient detail), both
+// seeded by index so the shape is deterministic — it never reflows while it pulses,
+// and tests can assert it. Kept in 0.08..1 so every bar stays visible on the strip.
+export function skeletonPeaks(count: number): number[] {
+  const peaks: number[] = []
+  for (let i = 0; i < count; i++) {
+    const t = i / count
+    const macro = 0.55 + 0.3 * Math.sin(t * Math.PI * 3 + 0.6) + 0.12 * Math.sin(t * Math.PI * 11)
+    const seeded = Math.sin(i * 12.9898) * 43758.5453
+    const jitter = seeded - Math.floor(seeded)
+    peaks.push(Math.min(1, Math.max(0.08, macro * (0.55 + 0.5 * jitter))))
+  }
+  return peaks
+}
+
+const SKELETON_PEAKS = skeletonPeaks(80)
+
 function drawWaveform(canvas: HTMLCanvasElement, peaks: number[]): void {
   const ctx = canvas.getContext('2d')
   // jsdom (tests) has no 2D context; the scrub/playhead geometry is asserted via the DOM.
@@ -100,14 +119,23 @@ export function Waveform({
         className="block h-12 w-full bg-black/15"
       />
       {loading && (
-        // Evenly spaced bars pulsing over the strip read clearly as "the waveform is
-        // decoding" — the faint full-bleed wash it replaced was easy to mistake for a
-        // broken, empty player. Centred on the strip so it mirrors the peaks to come.
+        // A pulsing fake waveform — bars of varied height, centred and mirrored like
+        // the real peaks to come — reads as "decoding this track", where the old
+        // equal-bar gradient looked like a placeholder graphic stamped on the player.
         <div
           data-testid="waveform-loading"
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 animate-pulse opacity-60 [background:repeating-linear-gradient(90deg,var(--color-line-strong)_0,var(--color-line-strong)_3px,transparent_3px,transparent_8px)]"
-        />
+          className="pointer-events-none absolute inset-0 flex items-center gap-px px-px animate-pulse opacity-50"
+        >
+          {SKELETON_PEAKS.map((amp, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, never-reordered bar strip
+              key={i}
+              className="flex-1 rounded-[1px] bg-[var(--color-line-strong)]"
+              style={{ height: `${amp * 100}%` }}
+            />
+          ))}
+        </div>
       )}
       {playheadSec !== null && durationSec > 0 && (
         <div
