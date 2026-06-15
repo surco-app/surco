@@ -32,6 +32,7 @@ import type {
   Settings,
 } from '../shared/types'
 import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
+import { analysisLimiter } from './analysisLimiter'
 import {
   addToAppleMusic,
   isAppleMusicOnly,
@@ -806,11 +807,15 @@ function registerIpc(): void {
         'spectrogram-cividis-v3',
         inputPath,
         () =>
-          buildSpectrum(inputPath, {
-            probe: probeAudio,
-            spectrogram: generateSpectrogram,
-            cutoff: analyzeCutoff,
-          }),
+          analysisLimiter.run(
+            () =>
+              buildSpectrum(inputPath, {
+                probe: probeAudio,
+                spectrogram: generateSpectrogram,
+                cutoff: analyzeCutoff,
+              }),
+            'low',
+          ),
         (b) => b.cutoffError === undefined,
       )
       // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
@@ -826,7 +831,9 @@ function registerIpc(): void {
 
   ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis('loudness', inputPath, () => measureLoudness(inputPath))
+      return await cachedAnalysis('loudness', inputPath, () =>
+        analysisLimiter.run(() => measureLoudness(inputPath), 'low'),
+      )
     } catch (err) {
       log.error('audio:loudness failed', err)
       return null
@@ -850,7 +857,7 @@ function registerIpc(): void {
       return await cachedAnalysis(
         'bpm',
         inputPath,
-        () => measureBpm(inputPath),
+        () => analysisLimiter.run(() => measureBpm(inputPath), 'low'),
         () => true,
       )
     } catch (err) {
@@ -866,7 +873,7 @@ function registerIpc(): void {
       return await cachedAnalysis(
         'key',
         inputPath,
-        () => measureKey(inputPath),
+        () => analysisLimiter.run(() => measureKey(inputPath), 'low'),
         () => true,
       )
     } catch (err) {
@@ -880,7 +887,11 @@ function registerIpc(): void {
       // Default shouldCache applies: a null waveform means ffmpeg decoded
       // nothing, which is worth retrying later (e.g. a file mid-download), so
       // only real envelopes are pinned.
-      return await cachedAnalysis('waveform', inputPath, () => measureWaveform(inputPath))
+      // 'high': the waveform is the one decode a user is actively waiting on (they
+      // just hit play), so it jumps ahead of the editor's background passes.
+      return await cachedAnalysis('waveform', inputPath, () =>
+        analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
+      )
     } catch (err) {
       log.error('audio:waveform failed', err)
       return null
