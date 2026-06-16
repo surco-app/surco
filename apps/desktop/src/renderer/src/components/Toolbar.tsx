@@ -147,36 +147,6 @@ export const Toolbar = memo(function Toolbar({
             </button>
             <button
               type="button"
-              data-testid="analyze-quality"
-              onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
-              disabled={!analysis && allAnalyzed}
-              aria-label={tr('header.analyzeQuality')}
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
-                analysis
-                  ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
-              }`}
-            >
-              <Activity
-                className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
-                aria-hidden="true"
-              />
-              {analysis && (
-                <span data-testid="analyze-progress" className="text-xs tabular-nums">
-                  {analysis.done}/{analysis.total}
-                </span>
-              )}
-              <Tooltip
-                label={
-                  analysis
-                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
-                    : tr('header.analyzeQuality')
-                }
-                align="end"
-              />
-            </button>
-            <button
-              type="button"
               data-testid="auto-match"
               onClick={matching ? onCancelAutoMatch : onAutoMatch}
               disabled={!matching && (!hasToken || autoMatchable === 0)}
@@ -208,6 +178,37 @@ export const Toolbar = memo(function Toolbar({
               />
             </button>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+            <button
+              type="button"
+              data-testid="analyze-quality"
+              onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
+              disabled={!analysis && allAnalyzed}
+              aria-label={tr('header.analyzeQuality')}
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                analysis
+                  ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+              }`}
+            >
+              <Activity
+                className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                aria-hidden="true"
+              />
+              {analysis && (
+                <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                  {analysis.done}/{analysis.total}
+                </span>
+              )}
+              <Tooltip
+                label={
+                  analysis
+                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+                    : tr('header.analyzeQuality')
+                }
+                align="end"
+              />
+            </button>
+            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             {/* One button, two states: while the batch runs it morphs into the cancel
                 action (like the analyze and auto-match buttons above) instead of a
                 second button popping in next to it and shifting the toolbar. */}
@@ -226,7 +227,6 @@ export const Toolbar = memo(function Toolbar({
                 ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
                 : `${tr('header.convert')} (${selectedEligibleCount})`}
             </button>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             <button
               type="button"
               data-testid="export-open"
