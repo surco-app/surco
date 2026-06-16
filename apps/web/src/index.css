@@ -108,6 +108,33 @@ button:not(:disabled) {
   transform: none;
 }
 
+/* "Replaces five apps" list: once the list scrolls into view each program crosses
+   itself off in sequence (staggered by its --i index) — the line draws across the
+   name and the row fades to a "done" state, so the section narrates 5 → 1 instead of
+   sitting static. The reduced-motion block below collapses these to their end state. */
+.replace-strike {
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.reveal-in .replace-pill {
+  animation: replaceDim 0.4s ease forwards;
+  animation-delay: calc(var(--i) * 130ms + 220ms);
+}
+.reveal-in .replace-strike {
+  animation: replaceStrike 0.4s ease forwards;
+  animation-delay: calc(var(--i) * 130ms + 220ms);
+}
+@keyframes replaceStrike {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes replaceDim {
+  to {
+    opacity: 0.5;
+  }
+}
+
 /* horizontal drift for the decorative audio waves; the duplicated periodic
    path makes the -50% translate wrap around invisibly */
 @keyframes waveDrift {
