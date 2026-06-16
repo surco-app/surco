@@ -58,7 +58,8 @@
       "name": "Name",
       "artist": "Artist",
       "duration": "Time"
-    }
+    },
+    "position": "Track {{current}} of {{total}}"
   },
   "drop": {
     "release": "Drop to add"

@@ -939,6 +939,19 @@ describe('App keyboard navigation', () => {
     await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
     expect(rows[1]).toHaveFocus()
   })
+
+  // Auditioning a crate one by one, the DJ wants to see how far along they are; the
+  // position pill tracks the selected row's place in the current view and follows the
+  // arrow keys.
+  it('shows the selected track position and follows navigation', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('track-position')).toHaveTextContent('1/2')
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+
+    await waitFor(() => expect(screen.getByTestId('track-position')).toHaveTextContent('2/2'))
+  })
 })
 
 describe('App continuous playback', () => {

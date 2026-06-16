@@ -58,7 +58,8 @@
       "name": "Nombre",
       "artist": "Artista",
       "duration": "Duración"
-    }
+    },
+    "position": "Pista {{current}} de {{total}}"
   },
   "drop": {
     "release": "Suelta para añadir"

@@ -700,6 +700,14 @@ export default function App(): React.JSX.Element {
       ),
     [tracksView, qualityFilter, search, sortBy],
   )
+  // 1-based position of the selected row within the current view, for the "54/200" pill —
+  // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
+  // is selected (or the selection was filtered out of view).
+  const selectedPosition = useMemo(() => {
+    if (!selectedId) return null
+    const i = visibleTracks.findIndex((t) => t.id === selectedId)
+    return i < 0 ? null : i + 1
+  }, [visibleTracks, selectedId])
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
   const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])
@@ -1031,6 +1039,18 @@ export default function App(): React.JSX.Element {
                         </button>
                       )
                     })}
+                    {selectedPosition !== null && (
+                      <span
+                        data-testid="track-position"
+                        title={tr('sidebar.position', {
+                          current: selectedPosition,
+                          total: visibleTracks.length,
+                        })}
+                        className="ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
+                      >
+                        {selectedPosition}/{visibleTracks.length}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {visibleTracks.length === 0 ? (
