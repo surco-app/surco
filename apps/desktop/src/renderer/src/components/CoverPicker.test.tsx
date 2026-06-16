@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -217,6 +217,20 @@ describe('CoverPicker drag and counter', () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ coverUrl: 'https://img.example/cover.jpg', coverRemoved: false }),
     )
+  })
+
+  // A browser-dragged URL ffmpeg can't decode makes the drag-out prepare reject. That
+  // failure is best-effort — drag-out just stays unavailable — so it must be swallowed,
+  // never escape as an unhandled rejection that the app surfaces as a red error toast.
+  it('swallows a failed drag-out prepare instead of letting it surface', async () => {
+    api.prepareCoverDrag.mockRejectedValueOnce(new Error('ffmpeg: No JPEG data found in image'))
+    renderWithRelease({ coverUrl: 'https://img.example/broken.jpg' })
+    await waitFor(() => expect(api.prepareCoverDrag).toHaveBeenCalled())
+    // Let the rejected prepare promise settle; without a .catch this is an unhandled
+    // rejection, which Vitest fails the run on.
+    await act(async () => {})
+    fireEvent.dragStart(screen.getByTestId('cover-preview'))
+    expect(api.startCoverDrag).not.toHaveBeenCalled()
   })
 
   // After deleting the cover the choices remain (so the arrows can step back into them),

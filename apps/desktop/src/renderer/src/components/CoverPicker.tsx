@@ -137,6 +137,11 @@ export function CoverPicker({
       .then((path) => {
         if (!cancelled) coverDragPath.current = path
       })
+      // Preparing the drag-out file is best-effort: a cover that can't be decoded — a
+      // hotlink-blocked or non-image URL dragged from a browser — just leaves drag-out
+      // unavailable (onDragStart no-ops on a null path). Swallow it so the failure never
+      // surfaces as an unhandled rejection and the raw ffmpeg error in a red toast.
+      .catch(() => {})
     return () => {
       cancelled = true
     }
