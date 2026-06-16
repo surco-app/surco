@@ -79,6 +79,20 @@ const ROUGHNESS_TOTAL_DB = 3
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
 
+// A 44.1→48/96 kHz upsample ("fake hi-res") walls off at 22.05 kHz — the source's
+// original Nyquist — even though the container claims headroom to 24/48 kHz. We
+// probe one 500 Hz band fully below the wall (21.5 kHz) and one fully above it
+// (23.5 kHz): a genuine high-rate master tapers ~8 dB across that span, an upsample
+// collapses ~15–20 dB into the resampler's stopband. 12 dB splits the two with ~3 dB
+// of margin on the calibration set (native vs upsampled pink noise; one real 48 kHz
+// master; one real upsample). Only meaningful when Nyquist clears the upper band, so
+// it never fires on a native 44.1 kHz file (whose taper near its own Nyquist is not a
+// wall). Scoped to the 22.05 kHz wall — the common fake — not 48→96 (24 kHz) walls.
+export const UPSAMPLE_PROBE_BELOW_HZ = 21500
+export const UPSAMPLE_PROBE_ABOVE_HZ = 23500
+export const UPSAMPLE_MIN_NYQUIST_HZ = 23750
+const UPSAMPLE_WALL_DROP_DB = 12
+
 // The band centre frequencies to probe for a given Nyquist, spaced one band
 // width apart from BAND_START_HZ up to just under Nyquist (capped at BAND_MAX_HZ).
 export function bandFrequencies(nyquistHz: number): number[] {
@@ -183,4 +197,14 @@ export function detectCutoff(
     }
   }
   return { cutoffHz: nyquistHz, processed: false, hasKnee: false }
+}
+
+// True when the spectrum walls off at the 22.05 kHz 44.1 Nyquist on a higher-rate
+// file — a 44.1→48/96 upsample. belowDb/aboveDb are the RMS of the 21.5 kHz and
+// 23.5 kHz probe bands. A non-finite reading (an unparsed band, or true silence we
+// can't tell from a parse hiccup) is left unflagged rather than risk a false
+// positive, matching how the roughness pass treats -Infinity.
+export function detectUpsample(belowDb: number, aboveDb: number): boolean {
+  if (!Number.isFinite(belowDb) || !Number.isFinite(aboveDb)) return false
+  return belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB
 }

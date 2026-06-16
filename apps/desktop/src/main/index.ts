@@ -803,13 +803,13 @@ function registerIpc(): void {
     try {
       // Cache only a clean run: a cutoff failure yields a valid image but a null
       // cutoff, and we'd rather retry that next open than pin it for the file's life.
-      const { image, cutoffHz, sampleRateHz, processed, hasKnee, cutoffError } =
+      const { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled, cutoffError } =
         await cachedAnalysis(
           // Namespace carries the palette and the cutoff-algorithm generation, so
           // changing either invalidates entries cached under the previous one — they
-          // regenerate on next open instead of serving stale colors or verdicts. v4
-          // adds the hasKnee signal, so v3 entries must regenerate to carry it.
-          'spectrogram-cividis-v4',
+          // regenerate on next open instead of serving stale colors or verdicts. v5
+          // adds the upsampled (22.05 kHz wall) signal, so older entries regenerate.
+          'spectrogram-cividis-v5',
           inputPath,
           () =>
             analysisLimiter.run(
@@ -827,7 +827,7 @@ function registerIpc(): void {
       // stderr) rather than reject — this is the only trace when it breaks on a
       // machine we can't reach, e.g. Windows.
       if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
-      return { image, cutoffHz, sampleRateHz, processed, hasKnee }
+      return { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled }
     } catch (err) {
       log.error('audio:spectrogram failed', err)
       throw err

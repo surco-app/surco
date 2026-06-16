@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { type Band, bandFrequencies, detectCutoff, fineBandFrequencies } from './cutoff'
+import {
+  type Band,
+  bandFrequencies,
+  detectCutoff,
+  detectUpsample,
+  fineBandFrequencies,
+} from './cutoff'
 
 // Per-band RMS (dB) measured from real signals at 44.1 kHz (Nyquist 22.05 kHz),
 // band centres 9–21 kHz. These encode the distinction the detector exists to
@@ -316,5 +322,28 @@ describe('bandFrequencies', () => {
 
   it('returns nothing when Nyquist is below the probing range', () => {
     expect(bandFrequencies(8000)).toEqual([])
+  })
+})
+
+describe('detectUpsample', () => {
+  // RMS (dB) of the 21.5 kHz (below the wall) and 23.5 kHz (above it) probe bands,
+  // measured on real and synthetic files. A genuine high-rate master tapers ~8 dB
+  // across the wall; a 44.1→48/96 upsample collapses 15+ dB into the resampler's
+  // stopband. The gap is wide enough that the 12 dB threshold keeps ~3 dB of margin.
+  it('passes a genuine high-rate master that tapers smoothly across 22.05 kHz', () => {
+    expect(detectUpsample(-47.6, -55.6)).toBe(false) // native 48 kHz pink noise (8.0 dB)
+    expect(detectUpsample(-72.5, -81.4)).toBe(false) // real 48 kHz master, Poky Zombie (8.9 dB)
+  })
+
+  it('flags a 44.1→48/96 upsample by the energy collapse above the 22.05 kHz wall', () => {
+    expect(detectUpsample(-51.2, -71.5)).toBe(true) // upsampled pink noise (20.3 dB)
+    expect(detectUpsample(-79.5, -94.9)).toBe(true) // a real 44.1 master upsampled (15.4 dB)
+  })
+
+  it('does not flag a non-finite reading, where a parse hiccup is indistinguishable from silence', () => {
+    // -Infinity means an unparsed band or true silence; either way, flagging it
+    // would risk a false positive the moment ffmpeg drops a line — stay quiet.
+    expect(detectUpsample(-50, Number.NEGATIVE_INFINITY)).toBe(false)
+    expect(detectUpsample(Number.NEGATIVE_INFINITY, -90)).toBe(false)
   })
 })

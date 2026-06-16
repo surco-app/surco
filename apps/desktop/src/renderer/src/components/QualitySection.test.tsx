@@ -139,4 +139,34 @@ describe('QualitySection verdict caption', () => {
     ).toBeInTheDocument()
     expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
   })
+
+  it('shows the upsample note when a high-rate file walls off at 22.05 kHz', async () => {
+    // Orthogonal to the codec verdict: a 48 kHz file whose real bandwidth ends at
+    // 22.05 kHz is upsampled from 44.1 kHz. The note must appear so a green badge
+    // does not read as a clean bill of hi-res.
+    renderSection({
+      image: '',
+      cutoffHz: 20000,
+      sampleRateHz: 48000,
+      processed: false,
+      hasKnee: false,
+      upsampled: true,
+    })
+    expect(await screen.findByTestId('quality-upsampled')).toHaveTextContent(
+      i18n.t('editor.qualityUpsampled'),
+    )
+  })
+
+  it('shows no upsample note for a genuine high-rate file', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 20000,
+      sampleRateHz: 48000,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+    })
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
+  })
 })

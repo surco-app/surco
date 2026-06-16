@@ -290,6 +290,10 @@ export interface SpectrumResult {
   // it as good rather than grading the extent on the codec scale. Optional for
   // older cached/analyses without the field; the verdict then assumes a knee.
   hasKnee?: boolean
+  // True when a >44.1 kHz file walls off at 22.05 kHz — a 44.1→48/96 upsample
+  // (fake hi-res). Independent of the codec verdict; surfaced as a separate note.
+  // Optional: undefined on older cached analyses and on native 44.1 kHz files.
+  upsampled?: boolean
 }
 
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass

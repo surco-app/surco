@@ -21,8 +21,12 @@ import {
   bandFrequencies,
   type CutoffResult,
   detectCutoff,
+  detectUpsample,
   FINE_BAND_WIDTH_HZ,
   fineBandFrequencies,
+  UPSAMPLE_MIN_NYQUIST_HZ,
+  UPSAMPLE_PROBE_ABOVE_HZ,
+  UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
 import {
   limitedLoudnormFilter,
@@ -719,15 +723,27 @@ export function parseBands(stdout: string): Map<string, number> {
 // into one bandpass→astats branch per band, coarse and fine probes together)
 // and hands the per-band RMS to detectCutoff, which spots the codec's lowpass
 // and the saw-tooth of reconstructed highs.
-export async function analyzeCutoff(input: string, sampleRateHz: number): Promise<CutoffResult> {
+export async function analyzeCutoff(
+  input: string,
+  sampleRateHz: number,
+): Promise<CutoffResult & { upsampled: boolean }> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
-  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false, hasKnee: false }
+  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false, hasKnee: false, upsampled: false }
   const fineFreqs = fineBandFrequencies(nyquist)
+  // Only worth probing the 22.05 kHz wall when Nyquist clears the upper band; on a
+  // native 44.1 kHz file there is no headroom above it to read.
+  const probesUpsample = nyquist >= UPSAMPLE_MIN_NYQUIST_HZ
 
   const specs: BandSpec[] = [
     ...freqs.map((freqHz) => ({ freqHz, widthHz: BAND_WIDTH_HZ })),
     ...fineFreqs.map((freqHz) => ({ freqHz, widthHz: FINE_BAND_WIDTH_HZ })),
+    ...(probesUpsample
+      ? [UPSAMPLE_PROBE_BELOW_HZ, UPSAMPLE_PROBE_ABOVE_HZ].map((freqHz) => ({
+          freqHz,
+          widthHz: FINE_BAND_WIDTH_HZ,
+        }))
+      : []),
   ]
   const { stdout } = await run(
     ffmpegPath,
@@ -754,7 +770,13 @@ export async function analyzeCutoff(input: string, sampleRateHz: number): Promis
     freqHz,
     rmsDb: rms.get(`${freqHz}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
   }))
-  return detectCutoff(bands, nyquist, fine)
+  const upsampled =
+    probesUpsample &&
+    detectUpsample(
+      rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
+      rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
+    )
+  return { ...detectCutoff(bands, nyquist, fine), upsampled }
 }
 
 // Reads the three figures we surface from ebur128's end-of-run Summary block.
@@ -930,7 +952,7 @@ export async function measureKey(input: string): Promise<KeyResult | null> {
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
   spectrogram: (input: string) => Promise<string>
-  cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult>
+  cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult & { upsampled: boolean }>
 }
 
 interface SpectrumBuild {
@@ -939,6 +961,7 @@ interface SpectrumBuild {
   sampleRateHz: number
   processed: boolean
   hasKnee: boolean
+  upsampled: boolean
   cutoffError?: unknown
 }
 
@@ -962,6 +985,7 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     sampleRateHz,
     processed: cutoffR.status === 'fulfilled' ? cutoffR.value.processed : false,
     hasKnee: cutoffR.status === 'fulfilled' ? cutoffR.value.hasKnee : false,
+    upsampled: cutoffR.status === 'fulfilled' ? cutoffR.value.upsampled : false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
   }
 }

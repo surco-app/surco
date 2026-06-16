@@ -204,6 +204,7 @@
     "qualityCaptionWarn": "La energía llega a ~{{cutoff}}, por debajo de la línea de ~20 kHz de calidad completa. Compatible con una fuente de ~192 kbps o un máster apagado.",
     "qualityCaptionBad": "Techo en ~{{cutoff}}. Un techo tan bajo corresponde a una fuente de bajo bitrate, diga lo que diga el formato del fichero.",
     "qualityCaptionProcessed": "Los agudos suben donde un espectro natural solo baja: parecen regenerados por un enhancer sobre una fuente con techo real en ~{{cutoff}}.",
+    "qualityUpsampled": "Declara más de 44.1 kHz, pero el contenido real se corta en 22.05 kHz — reescalado desde 44.1 kHz, no es hi-res real.",
     "qualityCaptionGenuine": "Sin corte de códec: el espectro cae con suavidad hasta ~{{cutoff}} y sigue bajando de forma natural. Un máster con agudos discretos pero genuino, no una fuente con pérdidas.",
     "loudnessLufsLabel": "Volumen",
     "loudnessPeakLabel": "Pico",

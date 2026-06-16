@@ -124,6 +124,14 @@ export function QualitySection({
                     {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
                   </p>
                 )}
+                {/* Orthogonal to the codec verdict: the bandwidth claim, not the
+                    fidelity. Shown amber so a green "good" badge over an upsampled
+                    file doesn't read as a clean bill of hi-res. */}
+                {spectrum.upsampled && (
+                  <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
+                    {tr('editor.qualityUpsampled')}
+                  </p>
+                )}
               </>
             ) : null)}
           {showLoudness && loudness && (
