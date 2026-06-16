@@ -29,6 +29,11 @@ import {
   UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
 import {
+  BAND_START_HZ as SHELF_BAND_START_HZ,
+  BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
+  detectFlatShelf,
+} from './hfShelf'
+import {
   limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
@@ -949,10 +954,58 @@ export async function measureKey(input: string): Promise<KeyResult | null> {
   ])
 }
 
+// Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's
+// downsample, the shelf lives at 17-22 kHz, which a low analysis rate discards.
+// Four minutes captures the shelf the whole-file average shows (a short window can
+// miss it) while bounding the buffer: 44.1 kHz × 240 s mono ≈ 42 MB, hence 64 MB.
+const SHELF_SAMPLE_RATE = 44100
+async function decodeShelfPcm(input: string): Promise<Float32Array> {
+  const { stdout } = await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      input,
+      '-t',
+      '240',
+      '-ac',
+      '1',
+      '-ar',
+      String(SHELF_SAMPLE_RATE),
+      '-f',
+      'f32le',
+      '-',
+    ],
+    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 64 },
+  )
+  const bytes = stdout.length - (stdout.length % 4)
+  const pcm = new Uint8Array(bytes)
+  pcm.set(stdout.subarray(0, bytes))
+  return new Float32Array(pcm.buffer)
+}
+
+// Detects software-regenerated highs the codec-lowpass pass is blind to: a flat HF
+// shelf held to Nyquist (see hfShelf.ts), returning the source's real ceiling in Hz
+// or null. Scoped to native 44.1 kHz — where the thresholds were calibrated and the
+// band layout reaches Nyquist. Higher rates are the upsample probe's job, and
+// resampling a lower rate up to 44.1 would forge its own 22 kHz wall. The heavy FFT
+// runs in the worker so it never freezes IPC; the buffer is transferred, not copied.
+export async function analyzeShelf(input: string, sampleRateHz: number): Promise<number | null> {
+  if (sampleRateHz !== SHELF_SAMPLE_RATE) return null
+  const pcm = await decodeShelfPcm(input)
+  const bands = await runInWorker<number[]>({ type: 'shelf', pcm, sampleRate: SHELF_SAMPLE_RATE }, [
+    pcm.buffer as ArrayBuffer,
+  ])
+  return detectFlatShelf(bands, SHELF_BAND_START_HZ, SHELF_BAND_WIDTH_HZ, sampleRateHz / 2)
+}
+
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
   spectrogram: (input: string) => Promise<string>
   cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult & { upsampled: boolean }>
+  shelf: (input: string, sampleRateHz: number) => Promise<number | null>
 }
 
 interface SpectrumBuild {
@@ -963,6 +1016,7 @@ interface SpectrumBuild {
   hasKnee: boolean
   upsampled: boolean
   cutoffError?: unknown
+  shelfError?: unknown
 }
 
 // Builds the spectrogram image and measures the lossy cutoff in one go. The image
@@ -974,19 +1028,34 @@ interface SpectrumBuild {
 // ffmpeg error is handed back for the caller to log instead of swallowing it.
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
-  const [imageR, cutoffR] = await Promise.allSettled([
+  const [imageR, cutoffR, shelfR] = await Promise.allSettled([
     deps.spectrogram(input),
     deps.cutoff(input, sampleRateHz),
+    deps.shelf(input, sampleRateHz),
   ])
   if (imageR.status === 'rejected') throw imageR.reason
+  const cutoff = cutoffR.status === 'fulfilled' ? cutoffR.value : null
+  // The flat-shelf probe is best-effort and independent of the image, so a failure
+  // is logged (below) but neither discards the image nor blocks caching the rest.
+  const shelfCutoffHz = shelfR.status === 'fulfilled' ? shelfR.value : null
   return {
     image: imageR.value,
-    cutoffHz: cutoffR.status === 'fulfilled' ? cutoffR.value.cutoffHz : null,
+    // Prefer the codec pass's own cutoff when it found manipulation; otherwise fall
+    // back to the shelf elbow, since the codec pass reads a flat shelf as reaching
+    // Nyquist and would draw the line there. Null only when the codec pass failed
+    // and no shelf was found.
+    cutoffHz:
+      cutoff?.processed === true
+        ? cutoff.cutoffHz
+        : shelfCutoffHz !== null
+          ? shelfCutoffHz
+          : (cutoff?.cutoffHz ?? null),
     sampleRateHz,
-    processed: cutoffR.status === 'fulfilled' ? cutoffR.value.processed : false,
-    hasKnee: cutoffR.status === 'fulfilled' ? cutoffR.value.hasKnee : false,
-    upsampled: cutoffR.status === 'fulfilled' ? cutoffR.value.upsampled : false,
+    processed: (cutoff?.processed ?? false) || shelfCutoffHz !== null,
+    hasKnee: cutoff?.hasKnee ?? false,
+    upsampled: cutoff?.upsampled ?? false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
+    shelfError: shelfR.status === 'rejected' ? shelfR.reason : undefined,
   }
 }
 

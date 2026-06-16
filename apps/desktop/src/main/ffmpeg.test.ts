@@ -793,6 +793,7 @@ describe('buildSpectrum', () => {
       hasKnee: true,
       upsampled: false,
     })),
+    shelf: vi.fn(async () => null),
     ...over,
   })
 
@@ -823,6 +824,59 @@ describe('buildSpectrum', () => {
     expect(res.processed).toBe(true)
     expect(res.hasKnee).toBe(false)
     expect(res.upsampled).toBe(true)
+  })
+
+  it('flags a flat HF shelf the codec pass missed, and draws the cutoff at the shelf elbow', async () => {
+    // The codec pass sees a flat synthetic shelf as reaching Nyquist (good); the
+    // shelf probe catches it and reports the real ceiling, which must win the verdict.
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 22050,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+        })),
+        shelf: vi.fn(async () => 16000),
+      }),
+    )
+    expect(res.processed).toBe(true)
+    expect(res.cutoffHz).toBe(16000)
+  })
+
+  it('keeps the codec pass cutoff when it already found manipulation, even if a shelf is also seen', async () => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 15000,
+          processed: true,
+          hasKnee: false,
+          upsampled: false,
+        })),
+        shelf: vi.fn(async () => 16000),
+      }),
+    )
+    expect(res.processed).toBe(true)
+    expect(res.cutoffHz).toBe(15000)
+  })
+
+  it('still returns the image and codec verdict when the shelf probe fails', async () => {
+    const boom = new Error('shelf decode failed')
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        shelf: vi.fn(async () => {
+          throw boom
+        }),
+      }),
+    )
+    expect(res.image).toBe('data:image/png;base64,AAAA')
+    expect(res.cutoffHz).toBe(18000)
+    expect(res.processed).toBe(false)
+    expect(res.shelfError).toBe(boom)
+    expect(res.cutoffError).toBeUndefined()
   })
 
   it('still returns the image, with a null cutoff, when cutoff analysis fails', async () => {

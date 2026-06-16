@@ -47,6 +47,7 @@ import { downloadCover, imageExt } from './discogs'
 import { expandPaths } from './expand'
 import {
   analyzeCutoff,
+  analyzeShelf,
   buildSpectrum,
   convertAudio,
   extractCover,
@@ -835,13 +836,14 @@ function registerIpc(): void {
     try {
       // Cache only a clean run: a cutoff failure yields a valid image but a null
       // cutoff, and we'd rather retry that next open than pin it for the file's life.
-      const { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled, cutoffError } =
+      const { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled, cutoffError, shelfError } =
         await cachedAnalysis(
           // Namespace carries the palette and the cutoff-algorithm generation, so
           // changing either invalidates entries cached under the previous one — they
-          // regenerate on next open instead of serving stale colors or verdicts. v5
-          // adds the upsampled (22.05 kHz wall) signal, so older entries regenerate.
-          'spectrogram-cividis-v5',
+          // regenerate on next open instead of serving stale colors or verdicts. v6
+          // adds the flat-HF-shelf signal (software-regenerated highs), so older
+          // entries regenerate.
+          'spectrogram-cividis-v6',
           inputPath,
           () =>
             analysisLimiter.run(
@@ -850,6 +852,7 @@ function registerIpc(): void {
                   probe: probeAudio,
                   spectrogram: generateSpectrogram,
                   cutoff: analyzeCutoff,
+                  shelf: analyzeShelf,
                 }),
               'low',
             ),
@@ -859,6 +862,9 @@ function registerIpc(): void {
       // stderr) rather than reject — this is the only trace when it breaks on a
       // machine we can't reach, e.g. Windows.
       if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
+      // The shelf probe is a best-effort secondary signal: a failure just means no
+      // shelf verdict, so log it but (unlike cutoff) don't refuse to cache the rest.
+      if (shelfError) log.error('audio:spectrogram shelf analysis failed', shelfError)
       return { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled }
     } catch (err) {
       log.error('audio:spectrogram failed', err)

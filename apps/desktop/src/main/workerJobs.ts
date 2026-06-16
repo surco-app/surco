@@ -1,4 +1,5 @@
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
 import { detectBpm } from './tempo'
@@ -10,6 +11,7 @@ import { detectBpm } from './tempo'
 export type WorkerJob =
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
+  | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   | {
       type: 'writeTags'
       file: string
@@ -19,7 +21,7 @@ export type WorkerJob =
     }
   | { type: 'copyCueFrames'; source: string; dest: string }
 
-export type WorkerJobResult = BpmResult | KeyResult | null
+export type WorkerJobResult = BpmResult | KeyResult | number[] | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult {
   switch (job.type) {
@@ -27,6 +29,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult {
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':
       return detectKey(job.pcm, job.sampleRate)
+    case 'shelf':
+      return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'writeTags':
       writeTags(job.file, job.meta, job.coverPath, job.removeCover)
       return null
