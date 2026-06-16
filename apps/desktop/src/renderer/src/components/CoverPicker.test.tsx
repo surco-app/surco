@@ -12,6 +12,8 @@ const api = {
   prepareCoverDrag: vi.fn().mockResolvedValue(null),
   copyCoverImage: vi.fn().mockResolvedValue(true),
   pasteCoverImage: vi.fn().mockResolvedValue(null),
+  // A browser-dragged image is resolved in main; default to "no usable image found".
+  resolveDraggedCover: vi.fn().mockResolvedValue(null),
   // The paste affordance checks the clipboard on mount/focus; default to empty so the
   // button is absent unless a test opts in.
   hasClipboardImage: vi.fn().mockResolvedValue(false),
@@ -192,9 +194,14 @@ describe('CoverPicker drag and counter', () => {
     return { onChange }
   }
 
-  // An image dragged from a browser arrives as a URL with no File. We apply it like a
-  // Discogs cover (URL, no local path) so it works the same as filesystem drops.
-  it('accepts an image dragged from a browser as the cover', () => {
+  // An image dragged from a browser arrives as URLs with no File. Main resolves them to
+  // the first real image — a CSP-safe data-URL preview plus a local path — which we apply
+  // like a picked file. A raw remote URL would render as a broken thumbnail under the CSP.
+  it('resolves an image dragged from a browser and applies it as the cover', async () => {
+    api.resolveDraggedCover.mockResolvedValueOnce({
+      coverUrl: 'data:image/jpeg;base64,AAAA',
+      coverPath: '/tmp/cover.jpg',
+    })
     const onChange = vi.fn()
     render(
       <CoverPicker
@@ -214,9 +221,45 @@ describe('CoverPicker drag and counter', () => {
         getData: (t: string) => (t === 'text/uri-list' ? 'https://img.example/cover.jpg' : ''),
       },
     })
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ coverUrl: 'https://img.example/cover.jpg', coverRemoved: false }),
+    await waitFor(() =>
+      expect(api.resolveDraggedCover).toHaveBeenCalledWith(['https://img.example/cover.jpg']),
     )
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          coverUrl: 'data:image/jpeg;base64,AAAA',
+          coverPath: '/tmp/cover.jpg',
+          coverRemoved: false,
+        }),
+      ),
+    )
+  })
+
+  // A drag whose URLs resolve to no real image (a link to a page, not a picture) must
+  // leave the artwork untouched rather than apply a broken cover or raise an error.
+  it('leaves the artwork untouched when no dragged URL resolves to an image', async () => {
+    api.resolveDraggedCover.mockResolvedValueOnce(null)
+    const onChange = vi.fn()
+    render(
+      <CoverPicker
+        item={item()}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    fireEvent.drop(screen.getByTestId('cover-dropzone'), {
+      dataTransfer: {
+        files: [],
+        getData: (t: string) => (t === 'text/uri-list' ? 'https://a-page.example/article' : ''),
+      },
+    })
+    await waitFor(() => expect(api.resolveDraggedCover).toHaveBeenCalled())
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   // A browser-dragged URL ffmpeg can't decode makes the drag-out prepare reject. That

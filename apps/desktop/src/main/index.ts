@@ -1,5 +1,5 @@
 import { createReadStream, existsSync } from 'node:fs'
-import { copyFile, mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -43,6 +43,7 @@ import {
 } from './applemusic'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
+import { downloadCover, imageExt } from './discogs'
 import { expandPaths } from './expand'
 import {
   analyzeCutoff,
@@ -717,6 +718,37 @@ function registerIpc(): void {
       square: settings.coverSquare,
     })
     return prepared?.path ?? null
+  })
+
+  // An image dragged from a browser carries no file — only candidate URLs (the <img>'s
+  // own src, plus the link it sat inside, which is often a page, not a picture). Try each
+  // in turn and keep the first that downloads as a real image, handing the renderer a
+  // local path (so convert/drag/export need no second network trip) plus a data-URL
+  // preview built from those same bytes. The preview must be a data URL because the
+  // renderer CSP only allows img-src from self/data/blob/Discogs — a raw remote URL would
+  // render as a broken thumbnail. Null when nothing resolves to an image, so the drop is
+  // a clean no-op instead of a red ffmpeg error on undecodable bytes.
+  ipcMain.handle('cover:resolveDragged', async (_e, urls: string[]) => {
+    for (const url of urls) {
+      // A real inline image dragged from the page is usable as-is; skip the ~1px data-URL
+      // placeholders lazy-loading leaves behind in an <img src>.
+      if (url.startsWith('data:image/')) {
+        const data = url.slice(url.indexOf(',') + 1)
+        if (Buffer.from(data, 'base64').length > 1024) return { coverUrl: url }
+        continue
+      }
+      if (!url.startsWith('http')) continue
+      try {
+        const path = await downloadCover(url)
+        const buf = await readFile(path)
+        const ext = imageExt(buf) ?? 'jpg'
+        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
+        return { coverPath: path, coverUrl: `data:${mime};base64,${buf.toString('base64')}` }
+      } catch {
+        // Not an image, or unreachable from the main process — try the next candidate.
+      }
+    }
+    return null
   })
 
   ipcMain.on('cover:drag', (e, path: string) => {

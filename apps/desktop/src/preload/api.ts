@@ -74,6 +74,12 @@ export interface Api {
     coverFromFile?: string
   }) => Promise<boolean>
   pasteCoverImage: () => Promise<{ coverUrl: string; coverPath: string } | null>
+  // Resolves the candidate URLs of an image dragged from a browser to the first that is
+  // a real image, as a data-URL preview (CSP-safe) plus, for downloaded ones, a local
+  // path. Null when none resolve.
+  resolveDraggedCover: (
+    urls: string[],
+  ) => Promise<{ coverUrl: string; coverPath?: string } | null>
   hasClipboardImage: () => Promise<boolean>
   startCoverDrag: (path: string) => void
   startTrackDrag: (paths: string[], coverUrl?: string) => void

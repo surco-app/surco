@@ -56,6 +56,7 @@ const api: Api = {
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),
   copyCoverImage: (src) => ipcRenderer.invoke('cover:copyImage', src),
   pasteCoverImage: () => ipcRenderer.invoke('cover:pasteImage'),
+  resolveDraggedCover: (urls) => ipcRenderer.invoke('cover:resolveDragged', urls),
   hasClipboardImage: () => ipcRenderer.invoke('clipboard:hasImage'),
   startCoverDrag: (path: string): void => ipcRenderer.send('cover:drag', path),
   startTrackDrag: (paths: string[], coverUrl?: string): void =>

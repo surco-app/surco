@@ -19,21 +19,23 @@ import type { TrackItem } from '../types'
 import { CoverLightbox } from './CoverLightbox'
 import { Tooltip } from './Tooltip'
 
-// Pulls an image URL out of a drag that carried no file — i.e. an <img> dragged from a
-// web page. Browsers expose it as text/uri-list (the clean form), an <img> tag in
-// text/html, or plain text; we take the first http(s) or data: image URL we find.
-function imageUrlFromDrag(dt: DataTransfer): string | undefined {
+// Pulls the candidate image URLs out of a drag that carried no file — i.e. an <img>
+// dragged from a web page. Browsers expose them as text/uri-list (often the clean image
+// URL, but sometimes the link the image sat inside — a page, not a picture), an <img>
+// tag in text/html, or plain text. We return every http(s)/data: image URL we find, in
+// that order, so main can try each and keep the first that is actually an image.
+function imageUrlsFromDrag(dt: DataTransfer): string[] {
   const isImageUrl = (s: string): boolean => /^https?:\/\//i.test(s) || /^data:image\//i.test(s)
-  const fromList = dt
-    .getData('text/uri-list')
-    .split('\n')
-    .map((l) => l.trim())
-    .find((l) => l && !l.startsWith('#') && isImageUrl(l))
-  if (fromList) return fromList
+  const urls: string[] = []
+  for (const line of dt.getData('text/uri-list').split('\n')) {
+    const l = line.trim()
+    if (l && !l.startsWith('#') && isImageUrl(l)) urls.push(l)
+  }
   const fromHtml = dt.getData('text/html').match(/<img[^>]+src=["']([^"']+)["']/i)?.[1]
-  if (fromHtml && isImageUrl(fromHtml)) return fromHtml
+  if (fromHtml && isImageUrl(fromHtml)) urls.push(fromHtml)
   const plain = dt.getData('text/plain').trim()
-  return isImageUrl(plain) ? plain : undefined
+  if (isImageUrl(plain)) urls.push(plain)
+  return [...new Set(urls)]
 }
 
 // One icon button in the cover's hover action bar. pointer-events-auto so it stays
@@ -280,11 +282,18 @@ export function CoverPicker({
       applyImageFile(file)
       return
     }
-    // An image dragged from a browser carries no file — only its URL (text/uri-list, or a
-    // <img> inside text/html). Apply it like a Discogs cover (a URL with no local path);
-    // main downloads it when the track is processed, copied or dragged out.
-    const url = imageUrlFromDrag(e.dataTransfer)
-    if (url) applyCover(url)
+    // An image dragged from a browser carries no file — only candidate URLs, one of which
+    // may be the page the image linked to rather than the picture itself. Let main fetch
+    // and validate them and hand back a CSP-safe data-URL preview (plus a local path) for
+    // the first real image; a drag with no usable image leaves the artwork untouched.
+    const urls = imageUrlsFromDrag(e.dataTransfer)
+    if (urls.length === 0) return
+    window.api
+      .resolveDraggedCover(urls)
+      .then((resolved) => {
+        if (resolved) applyCover(resolved.coverUrl, resolved.coverPath)
+      })
+      .catch(() => {})
   }
 
   // The covers the picker steps through: the file's own artwork first, then the
