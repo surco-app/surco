@@ -19,6 +19,8 @@ interface Props {
   selectedIds: string[]
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
+  // Double-clicking a row plays it: opens the floating player straight on that track.
+  onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onSearch: (id: string) => void
@@ -65,6 +67,7 @@ interface RowProps {
   primary: boolean
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
+  onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
@@ -87,6 +90,7 @@ const TrackRow = memo(function TrackRow({
   primary,
   outputFormat,
   onSelect,
+  onActivate,
   onRemove,
   onPrefetch,
   onOpenMenu,
@@ -144,6 +148,7 @@ const TrackRow = memo(function TrackRow({
         data-testid="track-row"
         aria-pressed={selected}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
+        onDoubleClick={() => onActivate(t)}
         onContextMenu={(e) => {
           e.preventDefault()
           // Make the right-clicked row the editor's track unless it's already part of
@@ -292,6 +297,7 @@ export function TrackList({
   selectedIds,
   outputFormat,
   onSelect,
+  onActivate,
   onRemove,
   onPrefetch,
   onSearch,
@@ -362,6 +368,7 @@ export function TrackList({
           primary={t.id === selectedId}
           outputFormat={outputFormat}
           onSelect={onSelect}
+          onActivate={onActivate}
           onRemove={onRemove}
           onPrefetch={onPrefetch}
           onOpenMenu={openMenu}

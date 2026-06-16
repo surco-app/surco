@@ -140,6 +140,9 @@ beforeEach(() => {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }) as unknown as typeof window.matchMedia
+  // jsdom doesn't implement HTMLMediaElement.play; the floating player calls it (and
+  // .catch on its returned promise) the instant it opens.
+  HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
 })
 
 // App and parts of its tree read window.api.platform at module scope, so it must be
@@ -630,6 +633,18 @@ describe('App multi-select removal', () => {
     fireEvent.click(screen.getByTestId('confirm-ok'))
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
+})
+
+describe('App row playback', () => {
+  // Double-clicking a track is the quick "play this" gesture: it opens the floating
+  // player straight on that row, without reaching for Space or the player toggle.
+  it('opens the player on the double-clicked track', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    expect(screen.queryByTestId('player')).toBeNull()
+    fireEvent.doubleClick(rows[1])
+    expect(await screen.findByTestId('player')).toBeInTheDocument()
   })
 })
 

@@ -23,6 +23,9 @@ export interface Player {
   // The track whose card the player shows: the playing one, or the selection fallback.
   playerTrack: TrackItem | null
   togglePlay: () => void
+  // Opens the player straight on a specific track (the double-click-a-row gesture),
+  // regardless of the selection or whether the player was already showing another track.
+  openWith: (track: TrackItem) => void
   closePlayer: () => void
 }
 
@@ -119,9 +122,19 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
+  // Double-clicking a row plays that exact track and shows the player — unlike togglePlay
+  // it never closes an open player, so a double-click always means "play this".
+  const openWith = useCallback(
+    (track: TrackItem): void => {
+      setPlayerVisible(true)
+      startPlayback(track)
+    },
+    [startPlayback],
+  )
+
   // Falls back to the selection so the card still renders for the brief moment
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
-  return { audioRef, playerVisible, playerTrack, togglePlay, closePlayer }
+  return { audioRef, playerVisible, playerTrack, togglePlay, openWith, closePlayer }
 }

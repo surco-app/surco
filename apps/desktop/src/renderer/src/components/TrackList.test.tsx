@@ -69,6 +69,7 @@ function renderList(
   { canPasteMeta = false }: { canPasteMeta?: boolean } = {},
 ) {
   const onSelect = vi.fn()
+  const onActivate = vi.fn()
   const onRemove = vi.fn()
   const onPrefetch = vi.fn()
   const onSearch = vi.fn()
@@ -83,6 +84,7 @@ function renderList(
       selectedIds={selectedIds}
       outputFormat="aiff"
       onSelect={onSelect}
+      onActivate={onActivate}
       onRemove={onRemove}
       onPrefetch={onPrefetch}
       onSearch={onSearch}
@@ -93,7 +95,17 @@ function renderList(
       canPasteMeta={canPasteMeta}
     />,
   )
-  return { onSelect, onRemove, onPrefetch, onSearch, onStartOver, onTrash, onCopyMeta, onPasteMeta }
+  return {
+    onSelect,
+    onActivate,
+    onRemove,
+    onPrefetch,
+    onSearch,
+    onStartOver,
+    onTrash,
+    onCopyMeta,
+    onPasteMeta,
+  }
 }
 
 describe('TrackList', () => {
@@ -225,6 +237,14 @@ describe('TrackList', () => {
     const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     expect(onSelect).toHaveBeenCalledWith('b', { meta: false, shift: false })
+  })
+
+  // Double-click is the "play this" gesture: it hands the whole track up so the player
+  // can open straight on it, independent of the click-to-select that fires alongside.
+  it('activates a track for playback on double-click', () => {
+    const { onActivate } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    fireEvent.doubleClick(screen.getAllByTestId('track-row')[1])
+    expect(onActivate).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }))
   })
 
   // Cmd/Shift reach the reducer so it can toggle or range-extend; without forwarding
