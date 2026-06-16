@@ -484,7 +484,9 @@
           "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing a big crate.",
           "Drag several selected tracks out of Surco at once.",
           "Drag an image straight from your browser as the cover.",
-          "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find."
+          "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find.",
+          "The cover viewer steps through every image on the track: the one embedded in the file and the ones from the Discogs release.",
+          "Surco starts up faster and scrolls more smoothly through big crates, and the first play sounds instantly."
         ]
       },
       {
