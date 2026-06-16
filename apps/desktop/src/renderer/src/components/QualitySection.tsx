@@ -9,7 +9,7 @@ import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
 import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
-import { WaveSpinner } from './WaveSpinner'
+import { SpectrumLoading } from './SpectrumLoading'
 
 const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
@@ -112,21 +112,7 @@ export function QualitySection({
         <div className="mt-3">
           {showSpectrum &&
             (analyzing ? (
-              // Fills the exact frame the spectrogram will occupy (same height, border
-              // and radius) so finishing the analysis swaps content in place instead of
-              // jumping a small centered widget up to a full-width image. A soft accent
-              // sweep reads as the spectrum being scanned into view.
-              <div
-                data-testid="spectrum-loading"
-                className="relative flex h-60 w-full items-center justify-center gap-3 overflow-hidden rounded-lg border border-[var(--color-line)] text-xs text-fg-dim"
-              >
-                <span
-                  aria-hidden="true"
-                  className="spectrum-scan pointer-events-none absolute inset-y-0 left-0 w-1/2"
-                />
-                <WaveSpinner />
-                <span className="relative">{tr('editor.analyzing')}</span>
-              </div>
+              <SpectrumLoading />
             ) : analyzeFailed ? (
               <div
                 data-testid="quality-error"
