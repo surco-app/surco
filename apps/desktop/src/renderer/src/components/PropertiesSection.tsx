@@ -17,7 +17,8 @@ interface Props {
 // A failed probe renders as "unavailable".
 export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { data: properties, isError: propertiesError } = useTrackProperties(item.inputPath, true)
+  // Probe only while the section is open, so a folded-away Properties stays quiet.
+  const { data: properties, isError: propertiesError } = useTrackProperties(item.inputPath, open)
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader title={tr('editor.propertiesTitle')} open={open} onToggle={onToggle} />

@@ -50,8 +50,9 @@ export function QualitySection({
   onShowLoudnessHelp,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // Gated on the Quality toggle; a failed analysis surfaces as analyzeError.
-  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum)
+  // Gated on the feature setting AND the section being open: folding Quality away stops
+  // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
+  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
   const spectrum = spectrumQuery.data
   const analyzing = spectrumQuery.isFetching
   const analyzeError = spectrumQuery.isError
@@ -64,11 +65,16 @@ export function QualitySection({
   // remounts with the per-track editor). A failed measure resolves null and the
   // readout hides.
   const settled = useSettled(SELECTION_SETTLE_MS)
-  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness)
+  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   // Resolve the verdict once and reuse it for the badge and the caption.
   const verdict =
     spectrum && spectrum.cutoffHz !== null
-      ? qualityVerdict(spectrum.cutoffHz, spectrum.sampleRateHz, spectrum.processed, spectrum.hasKnee)
+      ? qualityVerdict(
+          spectrum.cutoffHz,
+          spectrum.sampleRateHz,
+          spectrum.processed,
+          spectrum.hasKnee,
+        )
       : null
   // A knee-free taper graded good but stopping short of the full-quality line is a
   // genuine, gently rolled-off (dark) master, not a lossy cut — its own caption, so

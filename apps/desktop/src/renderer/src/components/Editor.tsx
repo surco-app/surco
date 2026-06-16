@@ -13,6 +13,7 @@ import type {
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { useEditorSections } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
@@ -159,15 +160,15 @@ export const Editor = memo(function Editor({
   // the box (and its cached results) instead of reverting to the filename guess.
   const browser = useDiscogsBrowser(item, tr, (query) => onChange({ query }))
   const { release } = browser
-  const [formOpen, setFormOpen] = useState(true)
-  // Read-only facts, folded by default so they don't push the editing fields down;
-  // the user opens them when they want to inspect the source.
-  const [propertiesOpen, setPropertiesOpen] = useState(false)
-  const [spectrumOpen, setSpectrumOpen] = useState(true)
-  const [outputOpen, setOutputOpen] = useState(true)
-  // Normalization is off by default and most users won't touch it, so its section
-  // starts folded — unlike the always-on Metadata/Quality/File name sections.
-  const [normalizeOpen, setNormalizeOpen] = useState(false)
+  // Section fold state lives in a module-level store (not per-track useState), so folding
+  // a section away persists as the user browses the crate instead of resetting on every
+  // track switch — and the gated analyses below stay quiet until the section is reopened.
+  const { open: sectionOpen, setOpen: setSectionOpen } = useEditorSections()
+  const formOpen = sectionOpen.form
+  const propertiesOpen = sectionOpen.properties
+  const spectrumOpen = sectionOpen.quality
+  const outputOpen = sectionOpen.output
+  const normalizeOpen = sectionOpen.normalize
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
@@ -207,7 +208,7 @@ export const Editor = memo(function Editor({
   const probesSettled = useSettled(SELECTION_SETTLE_MS)
   const { data: detectedBpm } = useBpm(
     item.inputPath,
-    probesSettled && !isMulti && visibleFields.includes('bpm'),
+    probesSettled && !isMulti && visibleFields.includes('bpm') && formOpen,
   )
 
   // Key detected from the audio, offered like the BPM above. It is the least
@@ -215,7 +216,7 @@ export const Editor = memo(function Editor({
   // neighbouring key), which is exactly why it is a chip and never a write.
   const { data: detectedKey } = useKey(
     item.inputPath,
-    probesSettled && !isMulti && visibleFields.includes('key'),
+    probesSettled && !isMulti && visibleFields.includes('key') && formOpen,
   )
 
   // Which tracklist entry of the open release best matches the file. Shared by the
@@ -488,7 +489,7 @@ export const Editor = memo(function Editor({
                 : tr('editor.sectionForm')
             }
             open={formOpen}
-            onToggle={() => setFormOpen((v) => !v)}
+            onToggle={() => setSectionOpen('form', !formOpen)}
             right={
               <div className="flex items-center gap-3">
                 {/* Badge first, button last: the badge comes and goes with the lookup, so
@@ -542,7 +543,7 @@ export const Editor = memo(function Editor({
             <PropertiesSection
               item={item}
               open={propertiesOpen}
-              onToggle={() => setPropertiesOpen((v) => !v)}
+              onToggle={() => setSectionOpen('properties', !propertiesOpen)}
             />
           )}
 
@@ -552,7 +553,7 @@ export const Editor = memo(function Editor({
               showSpectrum={showSpectrum}
               showLoudness={showLoudness}
               open={spectrumOpen}
-              onToggle={() => setSpectrumOpen((v) => !v)}
+              onToggle={() => setSectionOpen('quality', !spectrumOpen)}
               onShowLoudnessHelp={onShowLoudnessHelp}
             />
           )}
@@ -564,7 +565,7 @@ export const Editor = memo(function Editor({
               defaultOutputName={defaultOutputName}
               willEditInPlace={willEditInPlace}
               open={outputOpen}
-              onToggle={() => setOutputOpen((v) => !v)}
+              onToggle={() => setSectionOpen('output', !outputOpen)}
               onChangeName={(outputName) => onChange({ outputName })}
               onRegenerateName={onRegenerateName}
               onOpenRename={onOpenRename}
@@ -591,7 +592,7 @@ export const Editor = memo(function Editor({
           <NormalizeSection
             value={normalizeCfg}
             open={normalizeOpen}
-            onToggle={() => setNormalizeOpen((v) => !v)}
+            onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
             onChange={(n) => {
               setNormalizeCfg(n)
               onNormalizeChange?.(n)
@@ -613,7 +614,7 @@ export const Editor = memo(function Editor({
           exportedFormat={exportedFormat}
           musicExt={musicExt}
           normalizeCfg={normalizeCfg}
-          onOpenNormalize={() => setNormalizeOpen(true)}
+          onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
             setFormat(f)
             onFormatChange?.(f)

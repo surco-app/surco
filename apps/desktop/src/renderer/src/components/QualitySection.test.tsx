@@ -61,6 +61,32 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
+// Folding the section away must stop its (heavy) decode, not just hide the result — the
+// whole point of the collapse is "not now". So a closed section never calls ffmpeg.
+describe('QualitySection analysis gating', () => {
+  it('does not analyze while the section is collapsed', async () => {
+    const spectrogram = vi
+      .fn()
+      .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
+    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          open={false}
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    await new Promise((r) => setTimeout(r, 0))
+    expect(spectrogram).not.toHaveBeenCalled()
+  })
+})
+
 // The caption under the spectrogram is the only place that explains the verdict, so
 // it must say WHY this file earned its colour — a generic one-liner reads the same
 // under a green badge and a red one, leaving "Bad quality" unjustified.
@@ -101,7 +127,13 @@ describe('QualitySection verdict caption', () => {
     // A real false positive: a genuine master tapers smoothly to ~18 kHz with no
     // codec knee. It must read as Good quality, and the caption must explain it is a
     // gently rolled-off but genuine master — not the "~192 kbps source" warn text.
-    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false, hasKnee: false })
+    renderSection({
+      image: '',
+      cutoffHz: 18000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+    })
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionGenuine', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()

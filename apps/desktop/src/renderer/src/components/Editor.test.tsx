@@ -13,6 +13,7 @@ import type {
   TrackMetadata,
   TrackProperties,
 } from '../../../shared/types'
+import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
@@ -46,6 +47,9 @@ beforeEach(() => {
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     onWindowFocus: vi.fn(() => () => {}),
   }
+  // Section fold state persists in a module store across editor remounts; reset it so a
+  // section a previous test toggled doesn't start the next one in the opposite state.
+  resetEditorSections()
 })
 
 function item(
