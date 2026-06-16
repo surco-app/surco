@@ -9,6 +9,7 @@
 // confirms, never written unattended.
 
 import type { KeyResult } from '../shared/types'
+import { fft } from './fft'
 
 // ~0.74 s frames at the 11025 Hz analysis rate give 1.35 Hz bins — enough to
 // separate adjacent semitones down to the A1 floor below.
@@ -41,43 +42,6 @@ const MINOR_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', '
 // (C=8B, a fifth up steps +1), minors the A ring (Am=8A).
 const MAJOR_CAMELOT = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
 const MINOR_CAMELOT = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
-
-// In-place iterative radix-2 FFT (Cooley-Tukey). FRAME is a power of two by
-// construction, and ~650 frames of 8192 run in well under a second.
-function fft(re: Float64Array, im: Float64Array): void {
-  const n = re.length
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1
-    for (; j & bit; bit >>= 1) j ^= bit
-    j ^= bit
-    if (i < j) {
-      ;[re[i], re[j]] = [re[j], re[i]]
-      ;[im[i], im[j]] = [im[j], im[i]]
-    }
-  }
-  for (let len = 2; len <= n; len <<= 1) {
-    const angle = (-2 * Math.PI) / len
-    const wRe = Math.cos(angle)
-    const wIm = Math.sin(angle)
-    for (let i = 0; i < n; i += len) {
-      let curRe = 1
-      let curIm = 0
-      for (let j = 0; j < len / 2; j++) {
-        const aRe = re[i + j]
-        const aIm = im[i + j]
-        const bRe = re[i + j + len / 2] * curRe - im[i + j + len / 2] * curIm
-        const bIm = re[i + j + len / 2] * curIm + im[i + j + len / 2] * curRe
-        re[i + j] = aRe + bRe
-        im[i + j] = aIm + bIm
-        re[i + j + len / 2] = aRe - bRe
-        im[i + j + len / 2] = aIm - bIm
-        const nextRe = curRe * wRe - curIm * wIm
-        curIm = curRe * wIm + curIm * wRe
-        curRe = nextRe
-      }
-    }
-  }
-}
 
 function pearson(a: number[], b: number[]): number {
   const n = a.length
