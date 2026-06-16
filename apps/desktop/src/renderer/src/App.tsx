@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
@@ -21,23 +21,14 @@ import type {
   SpectrumResult,
   TrackMetadata,
 } from '../../shared/types'
-import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
-import { DonateNudgeModal } from './components/DonateNudgeModal'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
-import { ExportModal } from './components/ExportModal'
-import { FindReplaceModal } from './components/FindReplaceModal'
-import { HelpModal } from './components/HelpModal'
-import { LoudnessHelpModal } from './components/LoudnessHelpModal'
 import { NoticeToast } from './components/NoticeToast'
-import { OnboardingWizard } from './components/OnboardingWizard'
 import { LivePlayer } from './components/Player'
-import { RenameModal } from './components/RenameModal'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { Select } from './components/Select'
-import { SettingsModal } from './components/SettingsModal'
 import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
@@ -82,6 +73,38 @@ import {
   type TrackSort,
 } from './lib/triage'
 import type { TrackItem } from './types'
+
+// On-demand overlays: none is part of the first paint (each renders only behind its
+// activeModal branch), so each is split into its own chunk and kept out of the startup
+// parse, loading the first time the user opens it. The .then unwraps the named export
+// React.lazy needs as a default.
+const SettingsModal = lazy(() =>
+  import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })),
+)
+const OnboardingWizard = lazy(() =>
+  import('./components/OnboardingWizard').then((m) => ({ default: m.OnboardingWizard })),
+)
+const DonateNudgeModal = lazy(() =>
+  import('./components/DonateNudgeModal').then((m) => ({ default: m.DonateNudgeModal })),
+)
+const HelpModal = lazy(() =>
+  import('./components/HelpModal').then((m) => ({ default: m.HelpModal })),
+)
+const LoudnessHelpModal = lazy(() =>
+  import('./components/LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
+)
+const FindReplaceModal = lazy(() =>
+  import('./components/FindReplaceModal').then((m) => ({ default: m.FindReplaceModal })),
+)
+const RenameModal = lazy(() =>
+  import('./components/RenameModal').then((m) => ({ default: m.RenameModal })),
+)
+const ExportModal = lazy(() =>
+  import('./components/ExportModal').then((m) => ({ default: m.ExportModal })),
+)
+const CommandPalette = lazy(() =>
+  import('./components/CommandPalette').then((m) => ({ default: m.CommandPalette })),
+)
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
@@ -1174,75 +1197,79 @@ export default function App(): React.JSX.Element {
         </div>
       )}
 
-      {activeModal?.type === 'settings' && settings && (
-        <SettingsModal
-          settings={settings}
-          onClose={closeSettings}
-          onSave={saveSettings}
-          onPreviewTheme={setThemePreview}
-          onSettingsReplaced={setSettings}
-          initialTab={activeModal.tab}
-        />
-      )}
+      {/* The lazy overlays load their chunk on first open; fallback={null} because an
+          overlay arriving a frame late is invisible (it fades in anyway). */}
+      <Suspense fallback={null}>
+        {activeModal?.type === 'settings' && settings && (
+          <SettingsModal
+            settings={settings}
+            onClose={closeSettings}
+            onSave={saveSettings}
+            onPreviewTheme={setThemePreview}
+            onSettingsReplaced={setSettings}
+            initialTab={activeModal.tab}
+          />
+        )}
 
-      {activeModal?.type === 'onboarding' && settings && (
-        <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
-      )}
+        {activeModal?.type === 'onboarding' && settings && (
+          <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
+        )}
 
-      {activeModal?.type === 'donateNudge' && (
-        <DonateNudgeModal
-          conversionCount={settings?.conversionCount ?? 0}
-          onClose={(dismissForever) => {
-            if (dismissForever) saveSettings({ donateNudgeDismissed: true })
-            setActiveModal(null)
-          }}
-        />
-      )}
+        {activeModal?.type === 'donateNudge' && (
+          <DonateNudgeModal
+            conversionCount={settings?.conversionCount ?? 0}
+            onClose={(dismissForever) => {
+              if (dismissForever) saveSettings({ donateNudgeDismissed: true })
+              setActiveModal(null)
+            }}
+          />
+        )}
 
-      {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
-      {activeModal?.type === 'loudnessHelp' && (
-        <LoudnessHelpModal onClose={() => setActiveModal(null)} />
-      )}
-      {activeModal?.type === 'findReplace' && (
-        <FindReplaceModal
-          tracks={tracks}
-          onApply={deriveTracks}
-          onClose={() => setActiveModal(null)}
-        />
-      )}
-      {activeModal?.type === 'rename' && selected && (
-        <RenameModal
-          meta={selected.meta}
-          initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-          extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
-          onApply={(outputName) => updateTrack(selected.id, { outputName })}
-          onClose={() => setActiveModal(null)}
-        />
-      )}
-      {activeModal?.type === 'export' && (
-        <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
-      )}
-      {activeModal?.type === 'confirm' && (
-        <ConfirmDialog
-          title={activeModal.confirm.title}
-          message={activeModal.confirm.message}
-          confirmLabel={activeModal.confirm.confirmLabel}
-          confirmDisabled={activeModal.confirm.confirmDisabled}
-          destructive={activeModal.confirm.destructive}
-          onConfirm={activeModal.confirm.onConfirm}
-          onClose={() => setActiveModal(null)}
-        />
-      )}
+        {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
+        {activeModal?.type === 'loudnessHelp' && (
+          <LoudnessHelpModal onClose={() => setActiveModal(null)} />
+        )}
+        {activeModal?.type === 'findReplace' && (
+          <FindReplaceModal
+            tracks={tracks}
+            onApply={deriveTracks}
+            onClose={() => setActiveModal(null)}
+          />
+        )}
+        {activeModal?.type === 'rename' && selected && (
+          <RenameModal
+            meta={selected.meta}
+            initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
+            extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
+            onApply={(outputName) => updateTrack(selected.id, { outputName })}
+            onClose={() => setActiveModal(null)}
+          />
+        )}
+        {activeModal?.type === 'export' && (
+          <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
+        )}
+        {activeModal?.type === 'confirm' && (
+          <ConfirmDialog
+            title={activeModal.confirm.title}
+            message={activeModal.confirm.message}
+            confirmLabel={activeModal.confirm.confirmLabel}
+            confirmDisabled={activeModal.confirm.confirmDisabled}
+            destructive={activeModal.confirm.destructive}
+            onConfirm={activeModal.confirm.onConfirm}
+            onClose={() => setActiveModal(null)}
+          />
+        )}
 
-      {activeModal?.type === 'palette' && (
-        <CommandPalette
-          commands={commands}
-          // A command's run() may itself open another modal (settings, find & replace,
-          // export…). Closing the palette must not clobber that: only dismiss it when the
-          // palette is still the active modal, so a command that navigated elsewhere wins.
-          onClose={() => setActiveModal((m) => (m?.type === 'palette' ? null : m))}
-        />
-      )}
+        {activeModal?.type === 'palette' && (
+          <CommandPalette
+            commands={commands}
+            // A command's run() may itself open another modal (settings, find & replace,
+            // export…). Closing the palette must not clobber that: only dismiss it when the
+            // palette is still the active modal, so a command that navigated elsewhere wins.
+            onClose={() => setActiveModal((m) => (m?.type === 'palette' ? null : m))}
+          />
+        )}
+      </Suspense>
 
       {appError && (
         <ErrorToast

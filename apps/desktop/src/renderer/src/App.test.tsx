@@ -558,8 +558,8 @@ describe('App loudness help overlay', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
-    expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
-    expect(screen.getByTestId('loudness-help')).toHaveAccessibleName()
+    // The help overlay is a lazy chunk, so it mounts a microtask after the click.
+    expect(await screen.findByTestId('loudness-help')).toHaveAccessibleName()
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
     expect(screen.getByTestId('loudness-help')).toBeInTheDocument()
