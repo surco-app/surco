@@ -590,6 +590,49 @@ describe('App track removal', () => {
   })
 })
 
+describe('App multi-select removal', () => {
+  // The right-click row stays selected when it's already part of the selection, so the
+  // menu's list actions follow what's highlighted. "Remove from list" on one of several
+  // selected rows must drop the whole selection, not just the clicked row.
+  it('removes every selected track, not just the right-clicked one', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.contextMenu(rows[1])
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // Same selection rule for the destructive action: "Move to Trash" sends every selected
+  // file to the OS trash behind one confirm, not just the row under the cursor.
+  it('trashes every selected file from the right-click menu', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashFile,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.contextMenu(rows[1])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
+    expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
+})
+
 describe('App start over', () => {
   // A bad match or stray edits can leave a track worse than when it landed; the
   // right-click "Start over" rebuilds the row from the file alone — re-reading its

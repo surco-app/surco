@@ -439,25 +439,50 @@ export default function App(): React.JSX.Element {
     [onSelectTrack],
   )
 
-  // Right-click "Move to Trash": confirm first, then send the original file to the OS
-  // Trash/Recycle Bin and drop the row only once that succeeds, so a failure leaves the
-  // list untouched. Copy switches on platform because the destination differs.
-  function askTrash(track: TrackItem): void {
+  // The right-click menu keeps a multi-selection intact (TrackList only re-selects an
+  // unselected row), so its list actions — remove, trash — act on the whole selection
+  // when the clicked row is part of it, matching what's highlighted, and fall back to the
+  // single clicked row otherwise.
+  const menuTargets = useCallback(
+    (id: string): TrackItem[] =>
+      selectedIds.includes(id) && selectedIds.length > 1
+        ? tracks.filter((t) => selectedIds.includes(t.id))
+        : tracks.filter((t) => t.id === id),
+    [tracks, selectedIds],
+  )
+
+  const removeFromList = useCallback(
+    (id: string): void => {
+      for (const t of menuTargets(id)) removeTrack(t.id)
+    },
+    [menuTargets, removeTrack],
+  )
+
+  // Right-click "Move to Trash": confirm first, then send each original file to the OS
+  // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
+  // row untouched. Copy switches on platform because the destination differs, and on
+  // count so a multi-selection reads "N files" instead of naming just one.
+  function askTrash(targets: TrackItem[]): void {
+    if (targets.length === 0) return
     const isWin = window.api.platform === 'win32'
+    const count = targets.length
     askConfirm({
-      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
+      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
       message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
-        name: track.fileName,
+        count,
+        name: targets[0].fileName,
       }),
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
       destructive: true,
       onConfirm: () => {
-        window.api
-          .trashFile(track.inputPath)
-          .then(() => removeTrack(track.id))
-          // The user confirmed a destructive dialog; a silent failure here reads
-          // as "the file is in the trash" when it isn't.
-          .catch(() => setAppError({ kind: 'trash', detail: track.fileName }))
+        for (const track of targets) {
+          window.api
+            .trashFile(track.inputPath)
+            .then(() => removeTrack(track.id))
+            // The user confirmed a destructive dialog; a silent failure here reads
+            // as "the file is in the trash" when it isn't.
+            .catch(() => setAppError({ kind: 'trash', detail: track.fileName }))
+        }
       },
     })
   }
@@ -1087,14 +1112,14 @@ export default function App(): React.JSX.Element {
                     selectedIds={selectedIds}
                     outputFormat={settings?.outputFormat ?? 'aiff'}
                     onSelect={onSelectTrack}
-                    onRemove={removeTrack}
+                    onRemove={removeFromList}
                     onPrefetch={handlePrefetch}
                     onSearch={onSearchTrack}
                     onStartOver={startOverTrack}
                     onCopyMeta={onCopyMeta}
                     onPasteMeta={onPasteMeta}
                     canPasteMeta={copiedMeta !== null}
-                    onTrash={askTrash}
+                    onTrash={(track) => askTrash(menuTargets(track.id))}
                     scrollRootRef={listScrollRef}
                     onVisible={onTrackVisible}
                     rowRegistry={rowEls}
