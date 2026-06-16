@@ -1,43 +1,12 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import CountUp from './CountUp'
+import Icon, { type GlyphName } from './Icon'
 import Reveal from './Reveal'
 
-// One generic, monochrome glyph per replaced program, in the same order as the
-// `replaces.apps` i18n list (names are translated, so the mapping is by index, not text).
-// Deliberately generic — no third-party brand logos.
-const ICONS: ReactNode[] = [
-  // Converter — the repeat/convert arrows
-  <>
-    <polyline points="17 1 21 5 17 9" />
-    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-    <polyline points="7 23 3 19 7 15" />
-    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-  </>,
-  // Discogs — a record
-  <>
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="2.5" />
-  </>,
-  // Tag editor — a tag
-  <>
-    <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h6l9 9-6 6-9-9v-4.5Z" />
-    <circle cx="7.5" cy="9.5" r="1" />
-  </>,
-  // Spek — a spectrum
-  <>
-    <line x1="6" y1="14" x2="6" y2="18" />
-    <line x1="10" y1="9" x2="10" y2="18" />
-    <line x1="14" y1="5" x2="14" y2="18" />
-    <line x1="18" y1="11" x2="18" y2="18" />
-  </>,
-  // Apple Music — a music note
-  <>
-    <path d="M9 18V5l12-2v13" />
-    <circle cx="6" cy="18" r="3" />
-    <circle cx="18" cy="16" r="3" />
-  </>,
-]
+// One glyph per replaced program, in the same order as the `replaces.apps` i18n list
+// (names are translated, so the mapping is by index, not text).
+const ICONS: GlyphName[] = ['convert', 'disc', 'tag', 'spectrum', 'music']
 
 export default function Replaces() {
   const { t } = useTranslation()
@@ -64,18 +33,7 @@ export default function Replaces() {
                 className="replace-pill flex items-center gap-2.5 rounded-xl border border-line bg-surface2/30 px-4 py-2.5"
                 style={{ '--i': i } as CSSProperties}
               >
-                <svg
-                  className="size-4 shrink-0 text-faint"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  {ICONS[i]}
-                </svg>
+                <Icon name={ICONS[i]} className="size-4 shrink-0 text-faint" />
                 <span className="relative text-sm text-muted">
                   {a}
                   <span

@@ -9,6 +9,7 @@ import Spectrogram from './components/Spectrogram'
 import AppMockup from './components/AppMockup'
 import Reveal from './components/Reveal'
 import Replaces from './components/Replaces'
+import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
@@ -19,6 +20,10 @@ import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
   'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/5'
+
+// One glyph per feature card, in the order of the `features.groups` i18n list
+// (convert, tag, analyze quality, organize & export).
+const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
 
 // The hero glow drifts at a fraction of the scroll speed so the background
 // reads as a deeper layer than the content. Transform-only, rAF-throttled.
@@ -227,6 +232,9 @@ export default function App() {
             {featureGroups.map((g, i) => (
               <Reveal key={g.title} delay={(i % 2) * 100}>
                 <div className={`inset-shadow-edge h-full rounded-2xl border border-line bg-surface2/40 p-6 ${cardHover}`}>
+                  <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue">
+                    <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
+                  </div>
                   <div className="font-mono text-xs text-blue">{g.kick}</div>
                   <h3 className="mt-2 text-lg font-semibold text-fg">{g.title}</h3>
                   <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>

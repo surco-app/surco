@@ -1,5 +1,9 @@
 import { useTranslation } from 'react-i18next'
+import Icon, { type GlyphName } from './Icon'
 import Reveal from './Reveal'
+
+// One glyph per step: drop the files, pick the release, export.
+const STEP_ICONS: GlyphName[] = ['download', 'disc', 'check']
 
 export default function HowItWorks() {
   const { t, i18n } = useTranslation()
@@ -18,10 +22,13 @@ export default function HowItWorks() {
         {steps.map((s, i) => (
           <Reveal key={s.title} delay={i * 120}>
             <div className="relative">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-blue/40 bg-bg font-mono text-lg text-blue">
-                {i + 1}
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-blue/40 bg-bg text-blue">
+                <Icon name={STEP_ICONS[i]} className="size-5" />
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-fg">{s.title}</h3>
+              <div className="mt-5 flex items-center gap-2">
+                <span className="font-mono text-xs text-faint">0{i + 1}</span>
+                <h3 className="text-lg font-semibold text-fg">{s.title}</h3>
+              </div>
               <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
             </div>
           </Reveal>
