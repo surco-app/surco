@@ -483,6 +483,7 @@
           "Auto-match now sweeps the whole crate, prioritizing the tracks on screen, and stops the moment you turn it off.",
           "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing a big crate.",
           "Drag several selected tracks out of Surco at once.",
+          "Remove from the list or move to Trash every selected track at once from the right-click menu.",
           "Drag an image straight from your browser as the cover.",
           "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find.",
           "The cover viewer steps through every image on the track: the one embedded in the file and the ones from the Discogs release.",
