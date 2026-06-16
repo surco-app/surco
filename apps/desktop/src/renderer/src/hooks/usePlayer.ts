@@ -11,6 +11,10 @@ interface Params {
   selectedId: string | null
 }
 
+// The selection has to rest this long before its playable is warmed, so arrowing
+// through a crate doesn't fire a transcode per row it passes.
+const PREWARM_SETTLE_MS = 400
+
 export interface Player {
   // The shared <audio> element App renders; LivePlayer subscribes to it directly so
   // the playback clock never re-renders the app tree.
@@ -73,6 +77,33 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
       startPlayback(playing)
     }
   }, [tracks, playingId, startPlayback])
+
+  // Pressing play on an AIFF (Surco's default DJ format) stalls: Chromium can't
+  // decode AIFF, so the surco:// handler transcodes the whole file to a temp WAV
+  // before the first sound — paid in full in the gap after the click. Warming the
+  // resolved playable for the rested selection runs (and caches) that transcode
+  // ahead of time, overlapping it with the seconds the user spends reading the
+  // track, so play then hits a cache and starts instantly. A 1-byte range request
+  // drives the same main-process resolve without pulling the file across.
+  useEffect(() => {
+    const path = selected?.inputPath
+    // Nothing to warm with no selection, and no point warming the track already
+    // streaming under the element — its playable is resolved and cached.
+    if (!path || selectedId === playingIdRef.current) return
+    const controller = new AbortController()
+    const id = setTimeout(() => {
+      void fetch(mediaUrl(path), {
+        headers: { Range: 'bytes=0-0' },
+        signal: controller.signal,
+      }).catch(() => {})
+    }, PREWARM_SETTLE_MS)
+    // A moved-on selection aborts the renderer's wait; the transcode it may have
+    // already kicked off in main still finishes and caches, so the warm isn't wasted.
+    return () => {
+      clearTimeout(id)
+      controller.abort()
+    }
+  }, [selectedId, selected?.inputPath])
 
   // Space toggles the player's visibility; the selection effect below starts
   // playback when it opens.
