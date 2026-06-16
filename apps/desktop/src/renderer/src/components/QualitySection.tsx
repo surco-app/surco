@@ -1,3 +1,4 @@
+import { TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
@@ -55,11 +56,12 @@ export function QualitySection({
   const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
   const spectrum = spectrumQuery.data
   const analyzing = spectrumQuery.isFetching
-  const analyzeError = spectrumQuery.isError
-    ? spectrumQuery.error instanceof Error
-      ? spectrumQuery.error.message
-      : tr('editor.analyzeError')
-    : ''
+  const analyzeFailed = spectrumQuery.isError
+  // The raw ffmpeg failure (with its temp paths and full command) is no help to a
+  // user and is already logged in the main process; keep it only as a hover title
+  // so the inline state can be a friendly icon + message instead of a red wall.
+  const analyzeErrorDetail =
+    spectrumQuery.error instanceof Error ? spectrumQuery.error.message : ''
   // Keyed by input path, so it measures once per file and reads the right figures on
   // a track switch. The ffmpeg pass waits for the selection to rest (this section
   // remounts with the per-track editor). A failed measure resolves null and the
@@ -114,8 +116,15 @@ export function QualitySection({
                 <WaveSpinner />
                 {tr('editor.analyzing')}
               </div>
-            ) : analyzeError ? (
-              <p className="text-xs text-danger">{analyzeError}</p>
+            ) : analyzeFailed ? (
+              <div
+                data-testid="quality-error"
+                title={analyzeErrorDetail}
+                className="flex h-28 flex-col items-center justify-center gap-2 text-xs text-fg-dim"
+              >
+                <TriangleAlert className="h-5 w-5 text-fg-faint" aria-hidden="true" />
+                {tr('editor.analyzeError')}
+              </div>
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} />

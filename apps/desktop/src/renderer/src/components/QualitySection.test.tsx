@@ -170,3 +170,33 @@ describe('QualitySection verdict caption', () => {
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
 })
+
+describe('QualitySection analysis failure', () => {
+  afterEach(cleanup)
+
+  it('shows a compact error state, not the raw ffmpeg command, when the analysis fails', async () => {
+    // ffmpeg dumps its full command and temp paths on failure — useless to a user
+    // and already logged in main. The section must show a friendly icon + message,
+    // never that wall of text.
+    const raw = "Command failed: /Applications/Surco.app/.../ffmpeg ... Cannot determine format"
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    const error = await screen.findByTestId('quality-error')
+    expect(error).toHaveTextContent(i18n.t('editor.analyzeError'))
+    expect(screen.queryByText(raw)).not.toBeInTheDocument()
+  })
+})
