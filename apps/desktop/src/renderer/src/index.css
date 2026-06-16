@@ -121,6 +121,27 @@ textarea {
   }
 }
 
+/* A faint accent band that sweeps the spectrum loading frame left to right while the
+   analysis runs. Translating a half-width child keeps the motion on the GPU. */
+.spectrum-scan {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-accent) 14%, transparent),
+    transparent
+  );
+  animation: spectrum-scan 1.8s ease-in-out infinite;
+}
+
+@keyframes spectrum-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 @keyframes pop-in {
   from {
     opacity: 0;

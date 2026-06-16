@@ -112,9 +112,20 @@ export function QualitySection({
         <div className="mt-3">
           {showSpectrum &&
             (analyzing ? (
-              <div className="flex h-28 items-center justify-center gap-3 text-xs text-fg-dim">
+              // Fills the exact frame the spectrogram will occupy (same height, border
+              // and radius) so finishing the analysis swaps content in place instead of
+              // jumping a small centered widget up to a full-width image. A soft accent
+              // sweep reads as the spectrum being scanned into view.
+              <div
+                data-testid="spectrum-loading"
+                className="relative flex h-60 w-full items-center justify-center gap-3 overflow-hidden rounded-lg border border-[var(--color-line)] text-xs text-fg-dim"
+              >
+                <span
+                  aria-hidden="true"
+                  className="spectrum-scan pointer-events-none absolute inset-y-0 left-0 w-1/2"
+                />
                 <WaveSpinner />
-                {tr('editor.analyzing')}
+                <span className="relative">{tr('editor.analyzing')}</span>
               </div>
             ) : analyzeFailed ? (
               <div
