@@ -475,6 +475,19 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.15",
+        "date": "June 16, 2026",
+        "title": "Sharper quality verdict and smoother crate work",
+        "items": [
+          "The quality verdict has a keener eye: a genuine but dull master is no longer flagged “Review” (good when there's no codec cut), and fake hi-res is now caught — files that claim 48/96 kHz but were upsampled from 44.1 kHz.",
+          "Auto-match now sweeps the whole crate, prioritizing the tracks on screen, and stops the moment you turn it off.",
+          "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing a big crate.",
+          "Drag several selected tracks out of Surco at once.",
+          "Drag an image straight from your browser as the cover.",
+          "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find."
+        ]
+      },
+      {
         "version": "0.14",
         "date": "June 15, 2026",
         "title": "Waveform player and sharper Discogs matching",
