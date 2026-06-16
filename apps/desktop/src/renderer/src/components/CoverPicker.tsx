@@ -437,6 +437,17 @@ export function CoverPicker({
           // Mirrors coverSourceOf: only when the shown cover is the file's own
           // embedded thumbnail does the audio file hold a better original.
           fullResFrom={!isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined}
+          // Same gate and stepper as the well's inline arrows, so the lightbox can
+          // browse the file's art and the release's images and close on whichever.
+          nav={
+            !isMulti && coverChoices.length > 1
+              ? {
+                  position: coverChoices.findIndex((c) => c.uri === item.coverUrl) + 1,
+                  count: coverChoices.length,
+                  onStep: pickCoverImage,
+                }
+              : undefined
+          }
           onClose={() => setLightboxOpen(false)}
         />
       )}

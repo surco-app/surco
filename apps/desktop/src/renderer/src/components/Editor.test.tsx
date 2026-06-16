@@ -1305,6 +1305,27 @@ describe('Editor Discogs apply', () => {
     expect(screen.getByTestId('cover-image-count').textContent).toMatch(/\/3$/)
   })
 
+  // The lightbox covers the screen, so the well's inline arrows are out of reach
+  // while it's open: it has to step through the choices itself, and (like the well's
+  // stepper) committing live means closing on an image leaves it as the cover.
+  it('steps through the cover choices from inside the lightbox', async () => {
+    withImages()
+    const { onChange } = renderEditor({
+      id: 'a',
+      coverUrl: 'embedded.jpg',
+      embeddedCover: 'embedded.jpg',
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    await screen.findAllByTestId('discogs-track')
+    fireEvent.click(screen.getByTestId('cover-zoom'))
+    expect(screen.getByTestId('cover-lightbox-count').textContent).toBe('1/2')
+    fireEvent.click(screen.getByTestId('cover-lightbox-next'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ coverUrl: 'discogs.jpg', coverRemoved: false }),
+    )
+  })
+
   // Discogs returns each track's length; showing it next to the title is what lets
   // the user match the rip they have against the right tracklist entry by time.
   it('shows each track length from the Discogs tracklist', async () => {
