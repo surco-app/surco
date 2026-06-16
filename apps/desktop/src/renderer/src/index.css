@@ -111,13 +111,25 @@ textarea {
   background: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
-@keyframes wave {
-  0%,
-  100% {
-    transform: scaleY(0.35);
+/* A faint band that drifts across the spectrum frame while analysis runs — a quiet
+   scanning cue, not a busy meter. The band is a third of the frame wide; translating
+   it on the GPU keeps the motion cheap. */
+.spectrum-scan {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-fg) 7%, transparent),
+    transparent
+  );
+  animation: spectrum-scan 2s ease-in-out infinite;
+}
+
+@keyframes spectrum-scan {
+  0% {
+    transform: translateX(-100%);
   }
-  50% {
-    transform: scaleY(1);
+  100% {
+    transform: translateX(300%);
   }
 }
 
