@@ -117,7 +117,13 @@ const TrackRow = memo(function TrackRow({
     // not be picked up at all. The img-based cover never hit this, hence the divergence.
     <li
       ref={rowRef}
-      className="group relative"
+      // content-visibility lets the browser skip layout, paint and style for rows
+      // scrolled out of the pane, so a 500-track crate doesn't pay that cost for the
+      // ~490 rows off screen. The row stays in the DOM — unlike windowing — so keyboard
+      // focus, the shared visibility observer and the rowEls measuring all keep working
+      // untouched. contain-intrinsic-size feeds the scrollbar a height estimate for the
+      // skipped rows; `auto` then remembers each row's real size once it has rendered.
+      className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_56px]"
       draggable
       onDragStart={(e) => {
         // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
