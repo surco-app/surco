@@ -16,9 +16,14 @@ export function ErrorToast({ message, onDismiss }: Props): React.JSX.Element {
     <div
       role="alert"
       data-testid="app-error"
-      className="animate-pop fixed bottom-5 left-5 z-50 flex max-w-md items-center gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg"
+      className="animate-pop fixed bottom-5 left-5 z-50 flex max-w-md items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg"
     >
-      <span className="text-sm text-danger">{message}</span>
+      {/* A long message (e.g. a raw command's stderr) scrolls inside a capped height
+          instead of growing the toast off-screen; items-start keeps the dismiss button
+          pinned to the top corner so it stays reachable however tall the message is. */}
+      <span className="max-h-[40vh] overflow-y-auto whitespace-pre-line text-sm text-danger">
+        {message}
+      </span>
       <button
         type="button"
         data-testid="app-error-dismiss"
