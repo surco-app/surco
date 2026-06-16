@@ -76,7 +76,7 @@ export interface Api {
   pasteCoverImage: () => Promise<{ coverUrl: string; coverPath: string } | null>
   hasClipboardImage: () => Promise<boolean>
   startCoverDrag: (path: string) => void
-  startTrackDrag: (path: string, coverUrl?: string) => void
+  startTrackDrag: (paths: string[], coverUrl?: string) => void
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   trashFile: (path: string) => Promise<void>

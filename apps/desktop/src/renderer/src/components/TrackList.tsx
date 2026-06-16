@@ -68,6 +68,9 @@ interface RowProps {
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
+  // Starts the native drag-out for this row (all selected files when it's part of the
+  // selection, just this one otherwise). Stable, so the memoized rows don't re-render.
+  onDragOut: (track: TrackItem) => void
   // Registers the row with the list's shared IntersectionObserver; returns the
   // unobserve cleanup. Undefined when the list doesn't track visibility.
   observeRow?: (el: Element, onVisible: (visible: boolean) => void) => () => void
@@ -87,6 +90,7 @@ const TrackRow = memo(function TrackRow({
   onRemove,
   onPrefetch,
   onOpenMenu,
+  onDragOut,
   observeRow,
   onVisible,
   rowRegistry,
@@ -116,12 +120,12 @@ const TrackRow = memo(function TrackRow({
       className="group relative"
       draggable
       onDragStart={(e) => {
-        // Hand the OS the untouched source file so the row can be dropped onto Spek
+        // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
         // or any app. An actual drag suppresses the click, so select and drag-out
         // don't fight (same arrangement the cover uses). The cover rides along so the
         // OS drag thumbnail is the track's own art, not a generic app icon.
         e.preventDefault()
-        window.api.startTrackDrag(t.inputPath, t.coverUrl)
+        onDragOut(t)
       }}
     >
       <button
@@ -300,6 +304,19 @@ export function TrackList({
     (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
     [],
   )
+  // Reads the live selection at drag time through a ref, so the handler stays stable and
+  // the memoized rows don't all re-render whenever the selection changes.
+  const dragState = useRef({ tracks, selectedIds })
+  dragState.current = { tracks, selectedIds }
+  const startDragOut = useCallback((track: TrackItem): void => {
+    const { tracks, selectedIds } = dragState.current
+    // Dragging a row that's part of the selection drags the whole selection (Finder's
+    // convention); dragging an unselected row drags just that one. List order is kept.
+    const paths = selectedIds.includes(track.id)
+      ? tracks.filter((t) => selectedIds.includes(t.id)).map((t) => t.inputPath)
+      : [track.inputPath]
+    window.api.startTrackDrag(paths, track.coverUrl)
+  }, [])
   // One IntersectionObserver for the whole list instead of one per row — 500 rows
   // used to mean 500 observer instances doing identical work against the same root.
   // Created lazily on the first row registration so the scroll pane's ref is bound;
@@ -342,6 +359,7 @@ export function TrackList({
           onRemove={onRemove}
           onPrefetch={onPrefetch}
           onOpenMenu={openMenu}
+          onDragOut={startDragOut}
           observeRow={observeRow}
           onVisible={onVisible}
           rowRegistry={rowRegistry}

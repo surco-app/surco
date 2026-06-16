@@ -133,7 +133,25 @@ describe('TrackList', () => {
     expect(li).toHaveAttribute('draggable', 'true')
     expect(screen.getByTestId('track-row')).not.toHaveAttribute('draggable')
     fireEvent.dragStart(li as Element)
-    expect(api.startTrackDrag).toHaveBeenCalledWith('/music/a.wav', 'data:image/jpeg;base64,AAA')
+    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/a.wav'], 'data:image/jpeg;base64,AAA')
+  })
+
+  it('drags every selected file out when the dragged row is part of the selection', () => {
+    // Dragging one of several selected rows lifts the whole selection (Finder's rule),
+    // so a DJ can drop a batch onto another app at once. List order is preserved.
+    renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
+    const li = screen.getAllByTestId('track-row')[0].closest('li')
+    fireEvent.dragStart(li as Element)
+    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/a.wav', '/music/b.wav'], undefined)
+  })
+
+  it('drags only the row under the cursor when it is not part of the selection', () => {
+    // Dragging an unselected row must not sweep up the current selection — it lifts just
+    // that one file, matching how Finder treats a drag that starts off the selection.
+    renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
+    const li = screen.getAllByTestId('track-row')[2].closest('li')
+    fireEvent.dragStart(li as Element)
+    expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/c.wav'], undefined)
   })
 
   it('shows the album art so a crate can be scanned by cover, not just by name', () => {

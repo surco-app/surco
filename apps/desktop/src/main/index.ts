@@ -729,8 +729,11 @@ function registerIpc(): void {
   // The dragged source file already exists on disk, so unlike a cover it needs no
   // prepare pass — hand the OS the untouched path so a row can be dropped straight
   // onto Spek (or any app) to inspect the original track.
-  ipcMain.on('track:drag', (e, { path, coverUrl }: { path: string; coverUrl?: string }) => {
-    e.sender.startDrag({ file: path, icon: trackDragIcon(coverUrl) })
+  ipcMain.on('track:drag', (e, { paths, coverUrl }: { paths: string[]; coverUrl?: string }) => {
+    if (paths.length === 0) return
+    // `files` carries the whole selection; `file` is the (required) single-item field
+    // Electron ignores once `files` is set. One icon represents the whole drag.
+    e.sender.startDrag({ file: paths[0], files: paths, icon: trackDragIcon(coverUrl) })
   })
 
   // Copy the artwork to the system clipboard so it can be pasted onto another track
