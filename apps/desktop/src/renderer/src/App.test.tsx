@@ -648,6 +648,19 @@ describe('App row playback', () => {
   })
 })
 
+describe('App track position', () => {
+  // The "all" chip already shows the library total, so the position indicator's
+  // denominator repeats it while the whole list is in view. The position folds into the
+  // all chip and the standalone pill drops out, so the total never shows twice.
+  it('folds the selected position into the all chip instead of repeating the total', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('2/2')
+    expect(screen.queryByTestId('track-position')).toBeNull()
+  })
+})
+
 describe('App start over', () => {
   // A bad match or stray edits can leave a track worse than when it landed; the
   // right-click "Start over" rebuilds the row from the file alone — re-reading its
@@ -998,17 +1011,17 @@ describe('App keyboard navigation', () => {
     expect(rows[1]).toHaveFocus()
   })
 
-  // Auditioning a crate one by one, the DJ wants to see how far along they are; the
-  // position pill tracks the selected row's place in the current view and follows the
-  // arrow keys.
+  // Auditioning a crate one by one, the DJ wants to see how far along they are. With the
+  // whole library in view the position folds into the "all" chip (whose count is the same
+  // total), and it follows the arrow keys.
   it('shows the selected track position and follows navigation', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('track-position')).toHaveTextContent('1/2')
+    expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('1/2')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
 
-    await waitFor(() => expect(screen.getByTestId('track-position')).toHaveTextContent('2/2'))
+    await waitFor(() => expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('2/2'))
   })
 })
 

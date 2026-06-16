@@ -1058,6 +1058,18 @@ export default function App(): React.JSX.Element {
                           : mode === 'unconverted' && qualityTally.unconverted > 0
                             ? 'bg-[var(--color-accent)]'
                             : null
+                      // The selected-track position and the "all" count share a denominator
+                      // when the whole library is in view (the total would show twice), so the
+                      // position folds into the all chip and the separate pill drops out. A
+                      // filter/search narrows the view to a different size, where the two are
+                      // distinct numbers again and the pill returns.
+                      const showPositionHere =
+                        mode === 'all' &&
+                        selectedPosition !== null &&
+                        visibleTracks.length === tracks.length
+                      const countLabel = showPositionHere
+                        ? `${selectedPosition}/${count}`
+                        : count
                       return (
                         <button
                           key={mode}
@@ -1081,13 +1093,22 @@ export default function App(): React.JSX.Element {
                             )}
                           </span>
                           <span className="min-w-[2ch] text-center tabular-nums opacity-70">
-                            {count}
+                            {countLabel}
                           </span>
-                          <Tooltip label={name} />
+                          <Tooltip
+                            label={
+                              showPositionHere
+                                ? tr('sidebar.position', {
+                                    current: selectedPosition,
+                                    total: count,
+                                  })
+                                : name
+                            }
+                          />
                         </button>
                       )
                     })}
-                    {selectedPosition !== null && (
+                    {selectedPosition !== null && visibleTracks.length !== tracks.length && (
                       <span
                         data-testid="track-position"
                         title={tr('sidebar.position', {
