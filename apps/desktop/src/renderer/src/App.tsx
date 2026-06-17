@@ -687,7 +687,7 @@ export default function App(): React.JSX.Element {
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
-  const { audioRef, playerVisible, playerTrack, togglePlay, openWith, closePlayer } = usePlayer({
+  const { audioRef, playerVisible, playerTrack, togglePlay, toggleTrack, closePlayer } = usePlayer({
     tracks,
     selected,
     selectedId,
@@ -1133,7 +1133,7 @@ export default function App(): React.JSX.Element {
                     selectedIds={selectedIds}
                     outputFormat={settings?.outputFormat ?? 'aiff'}
                     onSelect={onSelectTrack}
-                    onActivate={openWith}
+                    onActivate={toggleTrack}
                     onRemove={removeFromList}
                     onPrefetch={handlePrefetch}
                     onSearch={onSearchTrack}

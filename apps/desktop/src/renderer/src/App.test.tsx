@@ -643,8 +643,23 @@ describe('App row playback', () => {
     await renderApp()
     const rows = await addTwoTracks()
     expect(screen.queryByTestId('player')).toBeNull()
+    // A real double-click selects the row first (the click) then fires dblclick.
+    fireEvent.click(rows[1])
     fireEvent.doubleClick(rows[1])
     expect(await screen.findByTestId('player')).toBeInTheDocument()
+  })
+
+  // Double-click is a play/stop toggle on the row: a second double-click on the track
+  // that's already playing stops it and closes the player.
+  it('stops playback when the playing track is double-clicked again', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    fireEvent.doubleClick(rows[1])
+    expect(await screen.findByTestId('player')).toBeInTheDocument()
+    fireEvent.click(rows[1])
+    fireEvent.doubleClick(rows[1])
+    await waitFor(() => expect(screen.queryByTestId('player')).toBeNull())
   })
 })
 
