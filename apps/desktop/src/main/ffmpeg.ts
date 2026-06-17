@@ -3,7 +3,7 @@ import { copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import { formatRatingTag, ratingTagToStars } from '../shared/rating'
+import { formatRatingTag } from '../shared/rating'
 import type {
   BpmResult,
   CoverRead,
@@ -29,9 +29,9 @@ import {
   UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
 import {
+  detectFlatShelf,
   BAND_START_HZ as SHELF_BAND_START_HZ,
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
-  detectFlatShelf,
 } from './hfShelf'
 import {
   limitedLoudnormFilter,
@@ -44,6 +44,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
+import { TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
@@ -65,7 +66,8 @@ interface ProbeTags {
 // Maps an ffprobe tag dump onto our metadata fields so a freshly loaded track
 // arrives pre-filled. Tags live under format.tags for WAV/FLAC/AIFF (and
 // stream.tags for some containers); keys vary in case across muxers, so we match
-// case-insensitively and accept the common aliases each writer uses.
+// case-insensitively and accept the common aliases each writer uses. The aliases
+// (and the per-field normalization) live in the TAG_FIELDS registry.
 export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
   // description as a comment tag on that video stream, which would otherwise be read
@@ -82,37 +84,12 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     }
     return ''
   }
-  return {
-    title: pick('title'),
-    artist: pick('artist'),
-    album: pick('album'),
-    albumArtist: pick('album_artist', 'albumartist', 'album artist'),
-    year: pick('date', 'year'),
-    genre: pick('genre'),
-    grouping: pick('grouping', 'content_group', 'tit1', 'grp1'),
-    comment: pick('comment'),
-    // A "3/12" track tag would survive zero-padding as "312", so drop the total.
-    trackNumber: pick('track', 'tracknumber').split('/')[0].trim(),
-    discNumber: pick('disc', 'tpos', 'disc_number', 'discnumber').split('/')[0].trim(),
-    bpm: pick('tbpm', 'bpm'),
-    key: pick('tkey', 'initial_key', 'initialkey'),
-    publisher: pick('publisher', 'tpub', 'label', 'organization'),
-    catalogNumber: pick('catalognumber', 'catalog_number', 'catalogue', 'catalog'),
-    remixArtist: pick('tpe4', 'remixer', 'remixed_by', 'remixedby', 'remix_artist'),
-    discogsReleaseId: pick('discogs_release_id', 'discogs_releaseid', 'discogsreleaseid'),
-    // ffprobe exposes FLAC's Vorbis RATING comment but not the ID3 POPM frame, so
-    // a rating only round-trips for FLAC; MP3/AIFF start unrated in the editor.
-    rating: ratingTagToStars(pick('rating', 'rating wmp')),
-    composer: pick('composer', 'tcom'),
-    isrc: pick('tsrc', 'isrc'),
-    mixName: pick('tit3', 'subtitle', 'mixname', 'mix_name'),
-    // TORY is what our own ID3v2.3 writes; TDOR is its v2.4 successor and
-    // ORIGINALYEAR the Picard-convention Vorbis comment.
-    originalYear: pick('tory', 'tdor', 'originalyear', 'original_year'),
-    // Boolean-ish flag: only a literal '1' counts as set, so a TCMP=0 (or junk)
-    // never shows the checkbox ticked for a non-compilation.
-    compilation: pick('compilation', 'tcmp', 'cpil') === '1' ? '1' : '',
+  const meta = {} as Record<keyof TrackMetadata, string>
+  for (const field of TAG_FIELDS) {
+    const raw = pick(...field.aliases)
+    meta[field.key] = field.parse ? field.parse(raw) : raw
   }
+  return meta
 }
 
 // The container's total duration in seconds, for the track row's time readout.
@@ -357,38 +334,17 @@ function pcmCodec(probe: ProbeResult, endian: 'be' | 'le'): string {
   return `pcm_s16${endian}`
 }
 
+// Builds the ffmpeg -metadata flags for a target, picking each field's muxer name from
+// the TAG_FIELDS registry. A FLAC target (vorbis) gets the Vorbis comment names DJ
+// software reads; everything else gets the ID3 names. Fields with no id3 name (rating)
+// are written by the TagLib pass instead, so they're skipped here, as are empty values.
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
-  const pairs: [string, string][] = [
-    ['title', meta.title],
-    ['artist', meta.artist],
-    ['album', meta.album],
-    ['album_artist', meta.albumArtist],
-    ['date', meta.year],
-    ['genre', meta.genre],
-    ['grouping', meta.grouping],
-    ['comment', meta.comment],
-    ['track', meta.trackNumber],
-    // ffmpeg maps these to the real ID3 frames DJ software and Music read:
-    // disc→TPOS, publisher→TPUB, and the raw frame ids TBPM/TKEY/TPE4; the
-    // catalog number has no standard frame so it rides the de-facto TXXX one.
-    // The FLAC muxer has no ID3 mapping and writes keys verbatim, so a Vorbis
-    // target gets the comment names Traktor and Mixed In Key read instead.
-    ['disc', meta.discNumber],
-    [vorbis ? 'BPM' : 'TBPM', meta.bpm],
-    [vorbis ? 'INITIALKEY' : 'TKEY', meta.key],
-    [vorbis ? 'REMIXER' : 'TPE4', meta.remixArtist],
-    ['publisher', meta.publisher],
-    ['composer', meta.composer ?? ''],
-    [vorbis ? 'ISRC' : 'TSRC', meta.isrc ?? ''],
-    [vorbis ? 'SUBTITLE' : 'TIT3', meta.mixName ?? ''],
-    // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist.
-    [vorbis ? 'ORIGINALYEAR' : 'TORY', meta.originalYear ?? ''],
-    // 'compilation' is ffmpeg's mapped name for the TCMP frame iTunes reads.
-    [vorbis ? 'COMPILATION' : 'compilation', meta.compilation ?? ''],
-    ['CATALOGNUMBER', meta.catalogNumber],
-    ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
-  ]
-  return pairs.filter(([, v]) => v?.trim()).flatMap(([k, v]) => ['-metadata', `${k}=${v}`])
+  return TAG_FIELDS.flatMap((field) => {
+    if (!field.id3) return []
+    const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
+    const value = meta[field.key] ?? ''
+    return value.trim() ? ['-metadata', `${name}=${value}`] : []
+  })
 }
 
 const AIFF_INPUT = /\.aiff?$/i
@@ -734,7 +690,8 @@ export async function analyzeCutoff(
 ): Promise<CutoffResult & { upsampled: boolean }> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
-  if (freqs.length < 2) return { cutoffHz: nyquist, processed: false, hasKnee: false, upsampled: false }
+  if (freqs.length < 2)
+    return { cutoffHz: nyquist, processed: false, hasKnee: false, upsampled: false }
   const fineFreqs = fineBandFrequencies(nyquist)
   // Only worth probing the 22.05 kHz wall when Nyquist clears the upper band; on a
   // native 44.1 kHz file there is no headroom above it to read.
