@@ -569,7 +569,10 @@ export default function App(): React.JSX.Element {
     }
     askConfirm({
       title: tr('confirm.convertInPlaceTitle'),
-      message: tr('confirm.convertInPlaceMessage', { count: eligibleForBatch(targets).length }),
+      message: tr('confirm.convertInPlaceMessage', {
+        count: eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+          .length,
+      }),
       confirmLabel: tr('confirm.convertInPlaceConfirm'),
       destructive: true,
       onConfirm: () => void processAll(targets, format, normalize),
@@ -704,10 +707,14 @@ export default function App(): React.JSX.Element {
 
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-  const eligibleCount = useMemo(() => eligibleForBatch(tracks).length, [tracks])
+  const eligibleCount = useMemo(
+    () => eligibleForBatch(tracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
+    [tracks, settings?.requiredFields],
+  )
   const selectedEligibleCount = useMemo(
-    () => eligibleForBatch(selectedTracks).length,
-    [selectedTracks],
+    () =>
+      eligibleForBatch(selectedTracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
+    [selectedTracks, settings?.requiredFields],
   )
 
   // Each track's spectrum, read from the shared React Query cache the hover prefetch,

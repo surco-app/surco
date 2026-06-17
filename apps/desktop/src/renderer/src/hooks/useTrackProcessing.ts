@@ -243,7 +243,9 @@ export function useTrackProcessing({
     normalizeOverride?: NormalizeConfig,
   ): Promise<void> {
     if (batching) return
-    const ids = eligibleForBatch(targets)
+    // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
+    // so aren't marked failed) — they stay flagged in the list for the user to finish.
+    const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
     cancelBatchRef.current = false
     setBatching(true)
     setBatchSummary(null)

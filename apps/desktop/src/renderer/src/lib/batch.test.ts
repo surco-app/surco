@@ -35,16 +35,16 @@ function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {
 describe('eligibleForBatch', () => {
   it('includes idle and previously failed tracks', () => {
     const tracks = [track('a', 'idle'), track('b', 'error')]
-    expect(eligibleForBatch(tracks)).toEqual(['a', 'b'])
+    expect(eligibleForBatch(tracks, [])).toEqual(['a', 'b'])
   })
 
   it('skips tracks already done or currently processing', () => {
     const tracks = [track('a', 'done'), track('b', 'processing'), track('c', 'idle')]
-    expect(eligibleForBatch(tracks)).toEqual(['c'])
+    expect(eligibleForBatch(tracks, [])).toEqual(['c'])
   })
 
   it('returns an empty list when nothing is pending', () => {
-    expect(eligibleForBatch([track('a', 'done')])).toEqual([])
+    expect(eligibleForBatch([track('a', 'done')], [])).toEqual([])
   })
 
   it('re-includes a done track edited since it was converted (stale)', () => {
@@ -52,7 +52,15 @@ describe('eligibleForBatch', () => {
     // selection; the file no longer matches the editor, so "Convert all" must pick the
     // track up again rather than skip it as already done — otherwise the edit never lands.
     const stale = { ...track('a', 'done', { year: '2000' }), processedSignature: 'old-snapshot' }
-    expect(eligibleForBatch([stale])).toEqual(['a'])
+    expect(eligibleForBatch([stale], [])).toEqual(['a'])
+  })
+
+  it('leaves out a convertible track that is missing a required field', () => {
+    // The toolbar "Convert (N)" used to count and enable on status alone, so it offered a
+    // batch that would only error the incomplete track. The batch now skips it (it stays
+    // flagged in the list) — the same gate the single-track convert button enforces.
+    const tracks = [track('a', 'idle', { artist: 'Alex' }), track('b', 'idle')]
+    expect(eligibleForBatch(tracks, ['artist'])).toEqual(['a'])
   })
 })
 
