@@ -1,4 +1,4 @@
-import { Copy, Eraser, Tag } from 'lucide-react'
+import { Copy, Disc3, Eraser, Tag } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -489,16 +489,18 @@ export const Editor = memo(function Editor({
                 {!isMulti && inLibrary === 'yes' && (
                   <span
                     data-testid="apple-music-status"
-                    className="rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
                   >
+                    <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
                     {tr('editor.inLibrary')}
                   </span>
                 )}
                 {!isMulti && inLibrary === 'no' && (
                   <span
                     data-testid="apple-music-status"
-                    className="rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
                   >
+                    <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
                     {tr('editor.notInLibrary')}
                   </span>
                 )}
