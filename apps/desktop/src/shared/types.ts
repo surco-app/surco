@@ -42,6 +42,10 @@ export type KeyNotation = 'camelot' | 'musical'
 export interface Settings {
   theme: ThemePref
   discogsToken: string
+  // Restrict Discogs search results to these release-format buckets (from DISCOGS_FORMATS,
+  // e.g. "Vinyl", "CD"). Empty (the default) shows every format. A single selection
+  // filters server-side via the API's `format` param; several filter client-side.
+  discogsFormats: string[]
   outputDir: string
   outputFormat: OutputFormat
   addToAppleMusic: boolean

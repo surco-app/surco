@@ -158,6 +158,7 @@
     "chooseTrack": "Elige la pista para aplicar",
     "matchSuggested": "Sugerida",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
+    "formatFilter": "Mostrando solo: {{formats}}",
     "resultHint": "Un clic para ver las pistas; luego elige una para aplicar",
     "fitHint": "Doble clic para ajustar el ancho a los resultados",
     "coverDrop": "Arrastra o haz clic para la carátula",
@@ -342,6 +343,7 @@
   "settings": {
     "tabs": {
       "general": "General",
+      "search": "Búsqueda",
       "conversion": "Conversión",
       "naming": "Nombres",
       "editor": "Editor",
@@ -382,6 +384,14 @@
     "autoMatch": "Auto-emparejar al importar",
     "autoMatchHint": "Al soltar archivos, busca cada uno en Discogs y aplica automáticamente los metadatos de cualquier coincidencia fiable. Necesita un token; desactivado por defecto porque consume el límite de peticiones en toda la importación.",
     "autoMatchNeedsToken": "Añade tu token de Discogs arriba para activar el auto-emparejado.",
+    "discogsFormats": "Mostrar solo estos formatos",
+    "discogsFormatsHint": "Limita los resultados de Discogs a los formatos elegidos. Déjalos todos sin marcar para mostrar cualquier formato.",
+    "format": {
+      "Vinyl": "Vinyl",
+      "CD": "CD",
+      "File": "Archivo (digital)",
+      "Cassette": "Cassette"
+    },
     "outputSection": "Salida",
     "outputDir": "Carpeta de salida",
     "outputFormat": "Formato por defecto",

@@ -94,6 +94,7 @@ function renderEditor(
     normalize?: NormalizeConfig
     overwriteOriginal?: boolean
     keyNotation?: KeyNotation
+    discogsFormats?: string[]
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -128,6 +129,7 @@ function renderEditor(
       genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
       requiredFields={props.requiredFields ?? []}
+      discogsFormats={props.discogsFormats ?? []}
       showSpectrum={false}
       showLoudness={props.showLoudness ?? false}
       keyNotation={props.keyNotation ?? 'camelot'}
@@ -506,6 +508,7 @@ function MultiHarness() {
         genrePresets={[]}
         visibleFields={['title', 'album', 'year', 'genre']}
         requiredFields={[]}
+        discogsFormats={[]}
         showSpectrum={false}
         showLoudness={false}
         normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
@@ -713,6 +716,7 @@ describe('Editor multi-select', () => {
         genrePresets={[]}
         visibleFields={opts.visibleFields ?? ['title', 'album']}
         requiredFields={[]}
+        discogsFormats={[]}
         showSpectrum
         showLoudness={opts.loudness ?? false}
         normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
@@ -1676,5 +1680,21 @@ describe('Editor insert from field', () => {
     })
     expect(screen.getByTestId('field-insert-title')).toBeInTheDocument()
     expect(screen.queryByTestId('field-insert-year')).toBeNull()
+  })
+})
+
+describe('Editor Discogs format filter hint', () => {
+  // When a format filter is active (Settings → Search), the Discogs column says so, so a
+  // thinned or empty result list reads as the filter at work rather than a broken search.
+  it('shows which formats results are limited to when a filter is set', () => {
+    renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl', 'CD'] })
+    const hint = screen.getByTestId('discogs-format-filter')
+    expect(hint).toHaveTextContent('Vinyl')
+    expect(hint).toHaveTextContent('CD')
+  })
+
+  it('shows no format hint when no filter is set', () => {
+    renderEditor({ id: 'a' }, 'wav', { discogsFormats: [] })
+    expect(screen.queryByTestId('discogs-format-filter')).toBeNull()
   })
 })

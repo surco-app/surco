@@ -125,7 +125,11 @@ const DEFAULT_NORMALIZE: NormalizeConfig = {
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
 
-type SettingsTab = 'general' | 'stats' | 'naming' | 'shortcuts'
+// Stable empty default for the Discogs format filter, so a settings-less first frame
+// doesn't hand the memoized Editor a fresh [] each render.
+const EMPTY_FORMATS: string[] = []
+
+type SettingsTab = 'general' | 'search' | 'stats' | 'naming' | 'shortcuts'
 
 interface ConfirmModal {
   title: string
@@ -1120,6 +1124,7 @@ export default function App(): React.JSX.Element {
                 genrePresets={settings?.genrePresets ?? []}
                 visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
                 requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
+                discogsFormats={settings?.discogsFormats ?? EMPTY_FORMATS}
                 showSpectrum={settings?.showSpectrum ?? true}
                 showLoudness={settings?.showLoudness ?? true}
                 keyNotation={settings?.keyNotation ?? 'camelot'}

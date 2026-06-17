@@ -7,6 +7,8 @@ import type { Settings } from '../shared/types'
 const defaults: Settings = {
   theme: 'system',
   discogsToken: '',
+  // No format filter by default: search shows every Discogs release format.
+  discogsFormats: [],
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
   addToAppleMusic: process.platform === 'darwin',

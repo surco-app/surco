@@ -26,7 +26,10 @@ interface Props {
   onApplyMatches: ((patches: { id: string; patch: ReleaseMetaPatch }[]) => void) | undefined
   selectTrack: (track: DiscogsTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  onOpenSettings: (tab?: 'general' | 'naming') => void
+  onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
+  // The release formats search is restricted to (Settings → Search). Empty = no filter.
+  // Shown as a hint so a thinned or empty result set reads as the filter at work.
+  formatFilter: string[]
 }
 
 // The Discogs column: the search box, its results, and the expanded release's
@@ -43,6 +46,7 @@ export function DiscogsPanel({
   selectTrack,
   searchInputRef,
   onOpenSettings,
+  formatFilter,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { query, setQuery, doSearch, results, release, loadingId, busy, error, previewRelease } =
@@ -99,7 +103,7 @@ export function DiscogsPanel({
                   <button
                     key="settings"
                     type="button"
-                    onClick={() => onOpenSettings()}
+                    onClick={() => onOpenSettings('search')}
                     className="underline underline-offset-2 hover:no-underline"
                   />,
                 ]}
@@ -107,6 +111,13 @@ export function DiscogsPanel({
             </p>
           )}
           {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+          {formatFilter.length > 0 && (
+            <p data-testid="discogs-format-filter" className="mt-2 text-xs text-fg-dim">
+              {tr('editor.formatFilter', {
+                formats: formatFilter.map((f) => tr(`settings.format.${f}`)).join(', '),
+              })}
+            </p>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

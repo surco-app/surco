@@ -68,6 +68,9 @@ interface Props {
   genrePresets: string[]
   visibleFields: string[]
   requiredFields: string[]
+  // The Discogs release formats search is restricted to (Settings), shown as a hint in
+  // the Discogs column so an empty or thinned result set is explained, not a mystery.
+  discogsFormats: string[]
   showSpectrum: boolean
   showLoudness: boolean
   // Which notation the key suggestion chip offers (Settings choice).
@@ -102,7 +105,7 @@ interface Props {
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
-  onOpenSettings: (tab?: 'general' | 'naming') => void
+  onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
@@ -131,6 +134,7 @@ export const Editor = memo(function Editor({
   genrePresets,
   visibleFields,
   requiredFields,
+  discogsFormats,
   showSpectrum,
   showLoudness,
   keyNotation,
@@ -457,6 +461,7 @@ export const Editor = memo(function Editor({
         selectTrack={selectTrack}
         searchInputRef={searchInputRef}
         onOpenSettings={onOpenSettings}
+        formatFilter={discogsFormats}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">

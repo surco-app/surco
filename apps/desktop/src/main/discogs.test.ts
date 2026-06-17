@@ -4,14 +4,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // these unit tests don't wait on real timers between requests.
 vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
 
+import type { DiscogsSearchResult } from '../shared/types'
 import {
   downloadCover,
   getRelease,
   hasCachedRelease,
   hasCachedSearch,
+  matchesFormats,
   retryDelayMs,
   search,
 } from './discogs'
+
+const result = (over: Partial<DiscogsSearchResult>): DiscogsSearchResult =>
+  ({ id: 1, title: 'X', ...over }) as DiscogsSearchResult
 
 // A response double covering the fields api() reads: status/ok, the JSON body, and
 // a headers.get used only on the 429 path.
@@ -237,5 +242,62 @@ describe('downloadCover image validation', () => {
   it('names the file by its magic bytes, not the URL', async () => {
     mockBytes([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     await expect(downloadCover('https://img.example/cover.jpg')).resolves.toMatch(/\.png$/)
+  })
+})
+
+describe('matchesFormats', () => {
+  // The user filters search to certain release formats (e.g. only Vinyl). An empty
+  // filter must accept everything, so the default behaviour is unchanged.
+  it('accepts every result when no format is selected', () => {
+    expect(matchesFormats(result({ format: ['CD', 'Album'] }), [])).toBe(true)
+  })
+
+  it('keeps a result carrying one of the selected formats', () => {
+    expect(matchesFormats(result({ format: ['Vinyl', 'LP', 'Album'] }), ['Vinyl'])).toBe(true)
+  })
+
+  it('drops a result in none of the selected formats', () => {
+    expect(matchesFormats(result({ format: ['CD', 'Album'] }), ['Vinyl'])).toBe(false)
+  })
+
+  it('treats a result with no format array as not matching an active filter', () => {
+    expect(matchesFormats(result({ format: undefined }), ['Vinyl'])).toBe(false)
+  })
+})
+
+describe('search format filter', () => {
+  // One selected format goes through the API's own filter, so the whole 20-result page
+  // comes back as that format instead of a mix we'd thin out afterwards.
+  it('filters server-side via the format param when exactly one format is selected', async () => {
+    const fetchMock = mockFetch([{ id: 1, format: ['Vinyl', 'LP'] }])
+    await search('format one vinyl', 'tok', undefined, undefined, ['Vinyl'])
+    const url = fetchMock.mock.calls[0][0] as string
+    expect(url).toContain('format=Vinyl')
+    expect(url).toContain('per_page=20')
+  })
+
+  // The API takes only one format value, so several selected formats fetch a larger page
+  // and filter in the client — keeping a result that carries any chosen format.
+  it('filters client-side and fetches a larger page when several formats are selected', async () => {
+    const fetchMock = mockFetch([
+      { id: 1, format: ['Vinyl', 'LP'] },
+      { id: 2, format: ['CD', 'Album'] },
+      { id: 3, format: ['Cassette'] },
+    ])
+    const res = await search('format many', 'tok', undefined, undefined, ['Vinyl', 'CD'])
+    const url = fetchMock.mock.calls[0][0] as string
+    expect(url).not.toContain('&format=')
+    expect(url).toContain('per_page=50')
+    expect(res.map((r) => r.id)).toEqual([1, 2])
+  })
+
+  // No filter is the default: the request must look exactly as before, with no format
+  // param and the original page size.
+  it('adds no format param and keeps page 20 when no format is selected', async () => {
+    const fetchMock = mockFetch([{ id: 1 }])
+    await search('format none', 'tok')
+    const url = fetchMock.mock.calls[0][0] as string
+    expect(url).not.toContain('format=')
+    expect(url).toContain('per_page=20')
   })
 })

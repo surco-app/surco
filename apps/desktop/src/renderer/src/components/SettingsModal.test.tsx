@@ -21,6 +21,7 @@ afterEach(cleanup)
 const settings: Settings = {
   theme: 'system',
   discogsToken: '',
+  discogsFormats: [],
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,
@@ -97,10 +98,10 @@ describe('SettingsModal tablist', () => {
     expect(general).toHaveAttribute('aria-selected', 'true')
     general.focus()
     fireEvent.keyDown(general, { key: 'ArrowRight' })
-    const conversion = screen.getByTestId('settings-tab-conversion')
-    expect(conversion).toHaveAttribute('aria-selected', 'true')
-    expect(conversion).toHaveFocus()
-    fireEvent.keyDown(conversion, { key: 'Home' })
+    const search = screen.getByTestId('settings-tab-search')
+    expect(search).toHaveAttribute('aria-selected', 'true')
+    expect(search).toHaveFocus()
+    fireEvent.keyDown(search, { key: 'Home' })
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowLeft' })
     expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
@@ -127,7 +128,8 @@ describe('SettingsModal save', () => {
 })
 
 describe('SettingsModal auto-match', () => {
-  function openGeneral(onSave: (patch: Partial<Settings>) => void = () => {}) {
+  // The Discogs token and auto-match live under the Search tab, so open straight to it.
+  function openSearch(onSave: (patch: Partial<Settings>) => void = () => {}) {
     render(
       <SettingsModal
         settings={settings}
@@ -135,6 +137,7 @@ describe('SettingsModal auto-match', () => {
         onSave={onSave}
         onPreviewTheme={() => {}}
         onSettingsReplaced={() => {}}
+        initialTab="search"
       />,
     )
   }
@@ -142,7 +145,7 @@ describe('SettingsModal auto-match', () => {
   // Auto-match spends Discogs requests across a whole import, so it needs the user's own token
   // (its own rate-limit bucket). The toggle stays inert until one is entered.
   it('disables the auto-match toggle until a Discogs token is entered', () => {
-    openGeneral()
+    openSearch()
     expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
     fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('settings-auto-match')).toBeEnabled()
@@ -150,13 +153,23 @@ describe('SettingsModal auto-match', () => {
 
   it('saves auto-match enabled only once a token backs it', () => {
     const onSave = vi.fn()
-    openGeneral(onSave)
+    openSearch(onSave)
     fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
     fireEvent.click(screen.getByTestId('settings-auto-match'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ discogsToken: 'tok', autoMatch: true }),
     )
+  })
+
+  // The format filter lets the user see only certain Discogs release formats (e.g. only
+  // vinyl). Checking a box and saving must persist that choice.
+  it('saves the chosen Discogs format filter', () => {
+    const onSave = vi.fn()
+    openSearch(onSave)
+    fireEvent.click(screen.getByTestId('settings-format-Vinyl'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ discogsFormats: ['Vinyl'] }))
   })
 })
 

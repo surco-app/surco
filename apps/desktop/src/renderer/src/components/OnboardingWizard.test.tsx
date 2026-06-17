@@ -17,6 +17,7 @@ afterEach(cleanup)
 const settings: Settings = {
   theme: 'system',
   discogsToken: '',
+  discogsFormats: [],
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,

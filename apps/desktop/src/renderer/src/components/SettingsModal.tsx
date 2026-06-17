@@ -6,6 +6,7 @@ import {
   List,
   type LucideIcon,
   RefreshCw,
+  Search,
   SlidersHorizontal,
   SquarePen,
   Tag,
@@ -15,6 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
+import { DISCOGS_FORMATS } from '../../../shared/defaults'
 import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { DONATE_URL } from '../lib/donate'
@@ -72,6 +74,7 @@ interface Props {
 
 type Tab =
   | 'general'
+  | 'search'
   | 'conversion'
   | 'naming'
   | 'editor'
@@ -86,6 +89,7 @@ type Tab =
 // Ordered by workflow: app setup, then output, then per-track editing prefs, then results.
 const TABS: Tab[] = [
   'general',
+  'search',
   'conversion',
   'naming',
   'editor',
@@ -97,6 +101,7 @@ const TABS: Tab[] = [
 
 const TAB_ICONS: Record<Tab, LucideIcon> = {
   general: SlidersHorizontal,
+  search: Search,
   conversion: RefreshCw,
   naming: Tag,
   editor: SquarePen,
@@ -129,12 +134,14 @@ interface SyncedDraft {
   keyNotation: Settings['keyNotation']
   normalize: Settings['normalize']
   shortcutOverrides: Settings['shortcutOverrides']
+  discogsFormats: string[]
 }
 
 function pickSynced(s: Settings): SyncedDraft {
   return {
     theme: s.theme,
     outputFormat: s.outputFormat,
+    discogsFormats: s.discogsFormats,
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
@@ -413,7 +420,11 @@ export function SettingsModal({
               )}
             </div>
             <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.configDirHint')}</p>
+          </>
+        )}
 
+        {tab === 'search' && (
+          <>
             <label
               htmlFor="settings-token"
               className="mb-1.5 block text-sm font-medium text-fg-muted"
@@ -461,6 +472,34 @@ export function SettingsModal({
                   ? tr('settings.autoMatchHint')
                   : tr('settings.autoMatchNeedsToken')}
               </p>
+            </div>
+
+            <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+              <p className="mb-1.5 text-sm font-medium text-fg-muted">
+                {tr('settings.discogsFormats')}
+              </p>
+              <p className="mb-3 text-xs text-fg-dim">{tr('settings.discogsFormatsHint')}</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
+                {DISCOGS_FORMATS.map((f) => (
+                  <label key={f} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      data-testid={`settings-format-${f}`}
+                      type="checkbox"
+                      checked={synced.discogsFormats.includes(f)}
+                      onChange={(e) =>
+                        patch(
+                          'discogsFormats',
+                          e.target.checked
+                            ? [...synced.discogsFormats, f]
+                            : synced.discogsFormats.filter((x) => x !== f),
+                        )
+                      }
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">{tr(`settings.format.${f}`)}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </>
         )}

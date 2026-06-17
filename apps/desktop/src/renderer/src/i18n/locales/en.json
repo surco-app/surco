@@ -158,6 +158,7 @@
     "chooseTrack": "Choose the track to apply",
     "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
+    "formatFilter": "Showing only: {{formats}}",
     "resultHint": "Click to see the tracks, then pick one to apply",
     "fitHint": "Double-click to fit the width to the results",
     "coverDrop": "Drag or click to add artwork",
@@ -342,6 +343,7 @@
   "settings": {
     "tabs": {
       "general": "General",
+      "search": "Search",
       "conversion": "Conversion",
       "naming": "Naming",
       "editor": "Editor",
@@ -382,6 +384,14 @@
     "autoMatch": "Auto-match on import",
     "autoMatchHint": "When you drop files, search Discogs for each and apply the metadata of any confident match automatically. Needs a token; off by default since it spends its rate limit across the whole import.",
     "autoMatchNeedsToken": "Add your Discogs token above to enable auto-match.",
+    "discogsFormats": "Show only these formats",
+    "discogsFormatsHint": "Limit Discogs search results to the chosen release formats. Leave all unchecked to show every format.",
+    "format": {
+      "Vinyl": "Vinyl",
+      "CD": "CD",
+      "File": "File (digital)",
+      "Cassette": "Cassette"
+    },
     "outputSection": "Output",
     "outputDir": "Output folder",
     "outputFormat": "Default format",

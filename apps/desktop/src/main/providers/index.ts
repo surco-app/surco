@@ -25,8 +25,13 @@ export interface SearchProvider {
 
 const providers: Record<SearchProviderId, SearchProvider> = {
   discogs: {
-    search: (query, priority, hints) =>
-      discogs.search(query, getSettings().discogsToken, priority, hints),
+    search: (query, priority, hints) => {
+      const s = getSettings()
+      // Defensive: a hand-edited or older settings.json could carry a non-array here,
+      // which would make `formats.length` throw deep in the search.
+      const formats = Array.isArray(s.discogsFormats) ? s.discogsFormats : []
+      return discogs.search(query, s.discogsToken, priority, hints, formats)
+    },
     getRelease: (id, priority) => discogs.getRelease(id, getSettings().discogsToken, priority),
   },
 }

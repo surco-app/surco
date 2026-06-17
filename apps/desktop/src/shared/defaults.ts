@@ -19,3 +19,10 @@ export const DEFAULT_FIELDS: string[] = [
 
 // The fields a track must have filled before it can be converted.
 export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
+
+// The Discogs release-format buckets the search filter can restrict to. These are the
+// exact tokens Discogs returns in a result's `format` array — and accepts as the
+// server-side `format` query param — so they double as the stored setting values and
+// need no translation table to compare against. ('File' is Discogs' name for digital.)
+export const DISCOGS_FORMATS = ['Vinyl', 'CD', 'File', 'Cassette'] as const
+export type DiscogsFormat = (typeof DISCOGS_FORMATS)[number]
