@@ -26,11 +26,11 @@ function DocumentHead({ lng }: { lng: Language }) {
     '@type': 'SoftwareApplication',
     name: 'Surco',
     applicationCategory: 'MultimediaApplication',
-    operatingSystem: 'macOS',
+    operatingSystem: 'macOS, Windows',
     url,
     image: `${SITE}/og.png`,
     inLanguage: t('meta.inLanguage'),
-    softwareVersion: '0.10.0',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     description: t('meta.jsonLdDescription'),
   }
   return (
