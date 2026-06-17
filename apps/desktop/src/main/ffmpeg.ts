@@ -902,38 +902,34 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
   }
 }
 
-// Decodes the opening four minutes to low-rate mono PCM for the tempo and key
-// detectors. Four minutes pins a steady DJ tempo (and the prevailing key)
-// while bounding the decoded buffer (~10 MB) regardless of file length; mono
-// because both are properties of the mix, not of either channel. ffmpeg emits
-// raw f32le so there is nothing to parse — but the bytes land in Node's
-// shared Buffer pool, whose offset need not be 4-byte aligned, so they are
-// copied out before being viewed as floats.
-async function decodeAnalysisPcm(input: string): Promise<Float32Array> {
-  const { stdout } = await run(
-    ffmpegPath,
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-i',
-      input,
-      '-t',
-      '240',
-      '-ac',
-      '1',
-      '-ar',
-      String(TEMPO_SAMPLE_RATE),
-      '-f',
-      'f32le',
-      '-',
-    ],
-    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 16 },
-  )
+// Decodes a file to mono f32le PCM at the given rate (optionally just the opening
+// `seconds`) and returns it as a Float32Array. ffmpeg emits raw floats so there is
+// nothing to parse, but the bytes land in Node's shared Buffer pool, whose offset need
+// not be 4-byte aligned — so they are copied out before being viewed as floats. Each
+// analysis decoder below differs only in rate, window and buffer ceiling.
+async function decodePcm(
+  input: string,
+  opts: { sampleRate: number; seconds?: number; maxBufferMb: number },
+): Promise<Float32Array> {
+  const args = ['-hide_banner', '-loglevel', 'error', '-i', input]
+  if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
+  args.push('-ac', '1', '-ar', String(opts.sampleRate), '-f', 'f32le', '-')
+  const { stdout } = await run(ffmpegPath, args, {
+    encoding: 'buffer',
+    maxBuffer: 1024 * 1024 * opts.maxBufferMb,
+  })
   const bytes = stdout.length - (stdout.length % 4)
   const pcm = new Uint8Array(bytes)
   pcm.set(stdout.subarray(0, bytes))
   return new Float32Array(pcm.buffer)
+}
+
+// The opening four minutes at a low rate for the tempo and key detectors. Four minutes
+// pins a steady DJ tempo (and the prevailing key) while bounding the buffer (~10 MB)
+// regardless of file length; mono because both are properties of the mix, not of either
+// channel.
+function decodeAnalysisPcm(input: string): Promise<Float32Array> {
+  return decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, seconds: 240, maxBufferMb: 16 })
 }
 
 // The detectors crunch hundreds of FFTs in tight JS loops — run on the main process
@@ -959,31 +955,9 @@ export async function measureKey(input: string): Promise<KeyResult | null> {
 // Four minutes captures the shelf the whole-file average shows (a short window can
 // miss it) while bounding the buffer: 44.1 kHz × 240 s mono ≈ 42 MB, hence 64 MB.
 const SHELF_SAMPLE_RATE = 44100
-async function decodeShelfPcm(input: string): Promise<Float32Array> {
-  const { stdout } = await run(
-    ffmpegPath,
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-i',
-      input,
-      '-t',
-      '240',
-      '-ac',
-      '1',
-      '-ar',
-      String(SHELF_SAMPLE_RATE),
-      '-f',
-      'f32le',
-      '-',
-    ],
-    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 64 },
-  )
-  const bytes = stdout.length - (stdout.length % 4)
-  const pcm = new Uint8Array(bytes)
-  pcm.set(stdout.subarray(0, bytes))
-  return new Float32Array(pcm.buffer)
+function decodeShelfPcm(input: string): Promise<Float32Array> {
+  // 44.1 kHz × 240 s mono ≈ 42 MB, hence the 64 MB ceiling.
+  return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64 })
 }
 
 // Detects software-regenerated highs the codec-lowpass pass is blind to: a flat HF
@@ -1059,32 +1033,11 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   }
 }
 
-// low-rate mono PCM for the editor waveform — the strip spans the full length,
-// so a truncated envelope would draw a track that ends early. The 4 kHz rate
-// keeps even a 2-hour mix around 115 MB, inside maxBuffer.
-async function decodeWaveformPcm(input: string): Promise<Float32Array> {
-  const { stdout } = await run(
-    ffmpegPath,
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-i',
-      input,
-      '-ac',
-      '1',
-      '-ar',
-      String(WAVEFORM_SAMPLE_RATE),
-      '-f',
-      'f32le',
-      '-',
-    ],
-    { encoding: 'buffer', maxBuffer: 1024 * 1024 * 128 },
-  )
-  const bytes = stdout.length - (stdout.length % 4)
-  const pcm = new Uint8Array(bytes)
-  pcm.set(stdout.subarray(0, bytes))
-  return new Float32Array(pcm.buffer)
+// low-rate mono PCM for the editor waveform — the strip spans the full length (no
+// `seconds` window), so a truncated envelope would draw a track that ends early. The
+// 4 kHz rate keeps even a 2-hour mix around 115 MB, inside the 128 MB ceiling.
+function decodeWaveformPcm(input: string): Promise<Float32Array> {
+  return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128 })
 }
 
 export async function measureWaveform(input: string): Promise<WaveformResult | null> {
