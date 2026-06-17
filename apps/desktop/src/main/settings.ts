@@ -6,6 +6,8 @@ import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
   theme: 'system',
+  // Follow the OS locale by default; the user can pin English or Spanish.
+  language: 'system',
   discogsToken: '',
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],

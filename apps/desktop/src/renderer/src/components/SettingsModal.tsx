@@ -17,7 +17,13 @@ import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
 import { DISCOGS_FORMATS } from '../../../shared/defaults'
-import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
+import type {
+  LanguagePref,
+  OutputFormat,
+  Settings,
+  ThemePref,
+  TrackMetadata,
+} from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { DONATE_URL } from '../lib/donate'
 import { FIELD_DEFS } from '../lib/fields'
@@ -35,6 +41,7 @@ import { Tooltip } from './Tooltip'
 export { DONATE_URL }
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es']
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
 // A representative track so the filename preview shows real-looking output
@@ -116,6 +123,7 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
 // re-seed can never disagree on the field list.
 interface SyncedDraft {
   theme: Settings['theme']
+  language: Settings['language']
   outputFormat: Settings['outputFormat']
   addToAppleMusic: boolean
   keepOutputCopy: boolean
@@ -140,6 +148,7 @@ interface SyncedDraft {
 function pickSynced(s: Settings): SyncedDraft {
   return {
     theme: s.theme,
+    language: s.language,
     outputFormat: s.outputFormat,
     discogsFormats: s.discogsFormats,
     addToAppleMusic: s.addToAppleMusic,
@@ -391,6 +400,18 @@ export function SettingsModal({
               }}
               testidPrefix="settings-theme"
               labelFor={(id) => tr(`settings.themes.${id}`)}
+              className="mb-5"
+            />
+
+            <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+              {tr('settings.language')}
+            </span>
+            <SegmentedControl
+              options={LANGUAGES}
+              value={synced.language}
+              onChange={(id) => patch('language', id)}
+              testidPrefix="settings-language"
+              labelFor={(id) => tr(`settings.languages.${id}`)}
               className="mb-5"
             />
 

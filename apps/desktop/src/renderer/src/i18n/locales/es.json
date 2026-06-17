@@ -375,6 +375,12 @@
       "light": "Claro",
       "dark": "Oscuro"
     },
+    "language": "Idioma",
+    "languages": {
+      "system": "Sistema",
+      "en": "English",
+      "es": "Español"
+    },
     "configDir": "Carpeta de configuración",
     "configDirDefault": "Carpeta por defecto de la app",
     "configDirReset": "Restaurar",

@@ -21,6 +21,7 @@ afterEach(cleanup)
 
 const settings: Settings = {
   theme: 'system',
+  language: 'system',
   discogsToken: '',
   discogsFormats: [],
   outputDir: '/out',
@@ -125,6 +126,24 @@ describe('SettingsModal save', () => {
     )
     fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
     expect(onSave).toHaveBeenCalled()
+  })
+
+  // The UI language is now a persisted setting (General tab), not just the session-only
+  // ⌘⇧L toggle, so picking one and saving must carry it through.
+  it('saves the chosen UI language', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-language-es'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'es' }))
   })
 })
 

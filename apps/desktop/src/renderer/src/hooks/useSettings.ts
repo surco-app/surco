@@ -1,6 +1,8 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import type { Settings, ThemePref } from '../../../shared/types'
+import i18n from '../i18n'
+import { resolveLocale } from '../i18n/locale'
 import { resolveTheme } from '../lib/theme'
 import { useLatest } from './useLatest'
 
@@ -69,6 +71,13 @@ export function useSettings({
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
   }, [themePreview, settings?.theme])
+
+  // Apply the saved UI language once settings load and whenever it changes. The ⌘⇧L
+  // toggle flips i18n directly for a quick switch without persisting; since this only
+  // re-runs when the saved preference itself changes, that flip survives.
+  useEffect(() => {
+    void i18n.changeLanguage(resolveLocale(settings?.language ?? 'system'))
+  }, [settings?.language])
 
   function saveSettings(patch: Partial<Settings>): void {
     // Apply the theme optimistically so clearing the live preview on close

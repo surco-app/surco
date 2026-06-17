@@ -16,6 +16,7 @@ afterEach(cleanup)
 
 const settings: Settings = {
   theme: 'system',
+  language: 'system',
   discogsToken: '',
   discogsFormats: [],
   outputDir: '/out',

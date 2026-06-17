@@ -2,6 +2,10 @@ import type { Chord } from './shortcuts'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 
+// UI language: 'system' follows the OS locale (Spanish if it starts with "es", else
+// English), or pin one of the shipped locales. Persisted so the choice survives restarts.
+export type LanguagePref = 'system' | 'en' | 'es'
+
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
 export type SearchProviderId = 'discogs'
@@ -41,6 +45,8 @@ export type KeyNotation = 'camelot' | 'musical'
 
 export interface Settings {
   theme: ThemePref
+  // UI language; 'system' (the default) follows the OS locale.
+  language: LanguagePref
   discogsToken: string
   // Restrict Discogs search results to these release-format buckets (from DISCOGS_FORMATS,
   // e.g. "Vinyl", "CD"). Empty (the default) shows every format. A single selection

@@ -375,6 +375,12 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "language": "Language",
+    "languages": {
+      "system": "System",
+      "en": "English",
+      "es": "Español"
+    },
     "configDir": "Settings folder",
     "configDirDefault": "App default folder",
     "configDirReset": "Reset",

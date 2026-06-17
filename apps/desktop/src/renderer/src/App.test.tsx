@@ -40,6 +40,7 @@ afterEach(cleanup)
 function settings(over: Partial<Settings> = {}): Settings {
   return {
     theme: 'system',
+    language: 'system',
     discogsToken: '',
     discogsFormats: [],
     outputDir: '',
@@ -107,6 +108,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
     getConfigDir: vi.fn().mockResolvedValue(null),
+    defaultConfigDir: vi.fn().mockResolvedValue('/Users/test/Library/Application Support/Surco'),
     onMenuCommand: () => () => {},
     onProcessProgress: () => () => {},
     onUpdateDownloaded: () => () => {},
