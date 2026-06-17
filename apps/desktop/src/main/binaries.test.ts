@@ -14,7 +14,7 @@ describe('unpacked', () => {
   })
 
   it('leaves the path untouched in development, where the binary is run straight from node_modules', () => {
-    const dev = '/Users/vicent/code/vinilo/node_modules/ffmpeg-static/ffmpeg'
+    const dev = '/Users/vicent/code/surco/node_modules/ffmpeg-static/ffmpeg'
     expect(unpacked(dev, false)).toBe(dev)
   })
 })
