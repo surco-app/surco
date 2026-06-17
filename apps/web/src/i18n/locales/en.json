@@ -84,7 +84,7 @@
           "Draws the spectrum and catches fake-lossless MP3s",
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Detects BPM and key from the audio itself",
-          "Warns if a track is already in your Apple Music — and filters the crate to the ones you're missing"
+          "Warns if a track is already in your Apple Music — and filters your tracks to the ones you're missing"
         ]
       },
       {
@@ -267,7 +267,7 @@
     "tocLabel": "In this guide",
     "shotPlaceholder": "Screenshot coming soon",
     "outroTitle": "Ready to try it",
-    "outroLede": "Download Surco and get your first crate of tracks ready in a couple of minutes.",
+    "outroLede": "Download Surco and get your first tracks ready in a couple of minutes.",
     "sections": [
       {
         "id": "instalar",
@@ -424,7 +424,7 @@
       },
       {
         "id": "lote",
-        "title": "Convert the whole crate",
+        "title": "Convert all your tracks",
         "body": [
           "Once the queue is ready, “Convert all” (⌘⇧Enter) processes every convertible track at once and skips the ones already done. You'll see progress and, at the end, a summary of how many were converted, skipped or errored.",
           "Heads up: convert all only converts and renames using the metadata they already have — it never reaches out to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
@@ -492,7 +492,7 @@
     "title": "What's new",
     "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
     "outroTitle": "Try it all in your next session",
-    "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
+    "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
         "version": "0.17",
@@ -512,7 +512,7 @@
         "date": "June 17, 2026",
         "title": "Filter by what's already in your Apple Music",
         "items": [
-          "See at a glance which tracks you already have in Apple Music: the whole crate is matched against your library, with sidebar filters to show only the ones you're missing (or the ones already there) — so you never re-import a duplicate. (macOS)",
+          "See at a glance which tracks you already have in Apple Music: all your tracks are matched against your library, with sidebar filters to show only the ones you're missing (or the ones already there) — so you never re-import a duplicate. (macOS)",
           "Double-click a track to play it, and double-click again to stop.",
           "The list filters are now a single dropdown that never runs out of room, and the position counter — which track you're on and how many are left — stays visible as you switch filters."
         ]
@@ -520,17 +520,17 @@
       {
         "version": "0.15",
         "date": "June 16, 2026",
-        "title": "Sharper quality verdict and smoother crate work",
+        "title": "Sharper quality verdict and smoother track work",
         "items": [
           "The quality verdict has a keener eye: a genuine but dull master is no longer flagged “Review” (good when there's no codec cut), and fake hi-res is now caught — files that claim 48/96 kHz but were upsampled from 44.1 kHz.",
-          "Auto-match now sweeps the whole crate, prioritizing the tracks on screen, and stops the moment you turn it off.",
-          "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing a big crate.",
+          "Auto-match now sweeps all your tracks, prioritizing the tracks on screen, and stops the moment you turn it off.",
+          "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing lots of tracks.",
           "Drag several selected tracks out of Surco at once.",
           "Remove from the list or move to Trash every selected track at once from the right-click menu.",
           "Drag an image straight from your browser as the cover.",
           "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find.",
           "The cover viewer steps through every image on the track: the one embedded in the file and the ones from the Discogs release.",
-          "Surco starts up faster and scrolls more smoothly through big crates, and the first play sounds instantly."
+          "Surco starts up faster and scrolls more smoothly through lots of tracks, and the first play sounds instantly."
         ]
       },
       {
@@ -588,10 +588,10 @@
       {
         "version": "0.10",
         "date": "June 11, 2026",
-        "title": "Built for big crates",
+        "title": "Built for lots of tracks",
         "items": [
           "Your edits never get lost: typing while Surco is still reading a slow file, or while auto-match is querying Discogs, always keeps what you typed.",
-          "Much lighter with big crates: covers are kept as thumbnails (converted files still get the full-resolution art) and memory stops growing over long sessions.",
+          "Much lighter with lots of tracks: covers are kept as thumbnails (converted files still get the full-resolution art) and memory stops growing over long sessions.",
           "Browsing the list feels smoother: BPM, key and loudness analyses wait until you rest on a track, and the one you're looking at always jumps ahead of the ones you left behind.",
           "Every editor field can insert another field's value (artist into composer, title into comment…) from its own menu.",
           "An amber dot marks tracks edited after converting, so you can see at a glance what still needs an update.",
