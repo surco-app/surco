@@ -20,6 +20,7 @@
   "header": {
     "add": "Añadir archivos",
     "convert": "Convertir",
+    "convertSelectedHint": "Convierte las pistas seleccionadas",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",

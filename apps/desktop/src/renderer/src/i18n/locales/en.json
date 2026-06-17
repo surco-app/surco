@@ -20,6 +20,7 @@
   "header": {
     "add": "Add files",
     "convert": "Convert",
+    "convertSelectedHint": "Convert the selected tracks",
     "batchConverted": "{{count}} converted",
     "batchSkipped": "{{count}} skipped",
     "batchFailed": "{{count}} failed",

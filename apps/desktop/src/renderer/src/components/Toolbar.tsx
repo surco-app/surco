@@ -219,7 +219,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="convert-selected"
               onClick={batching ? onCancelConvert : onConvertSelected}
               disabled={!batching && selectedEligibleCount === 0}
-              className={`press flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
+              className={`press group relative flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
                 batching
                   ? 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)]'
                   : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
@@ -228,6 +228,9 @@ export const Toolbar = memo(function Toolbar({
               {batching
                 ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
                 : `${tr('header.convert')} (${selectedEligibleCount})`}
+              {/* Names what this converts — the selected tracks, batch-style — so it reads
+                  apart from the editor's own convert button for the open track below. */}
+              {!batching && <Tooltip label={tr('header.convertSelectedHint')} align="end" />}
             </button>
             <button
               type="button"
