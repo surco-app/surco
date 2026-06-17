@@ -66,4 +66,33 @@ describe('buildLibraryIndex / isInLibrary', () => {
     const idx = buildLibraryIndex([{ title: 'Xtal', artist: 'Aphex Twin' }])
     expect(isInLibrary(idx, { title: 'Xtal', artist: 'Aphex Twin (2)' })).toBe(true)
   })
+
+  // The reported case: a rip tagged with just the base title still matches the library
+  // copy that keeps the release's version suffix — otherwise the badge says "in library"
+  // (it found the canonical Discogs name) while the filter says it's missing.
+  it('matches a base-title tag against a versioned library title', () => {
+    const idx = buildLibraryIndex([{ title: 'It’s Not Over (Happy House)', artist: '3 Styles' }])
+    expect(isInLibrary(idx, { title: 'It’s Not Over', artist: '3 Styles' })).toBe(true)
+  })
+
+  // And the other direction: a versioned tag matches a library copy stored under the base.
+  it('matches a versioned tag against a base-title library entry', () => {
+    const idx = buildLibraryIndex([{ title: 'It’s Not Over', artist: '3 Styles' }])
+    expect(isInLibrary(idx, { title: 'It’s Not Over (Hard House)', artist: '3 Styles' })).toBe(
+      true,
+    )
+  })
+
+  // The version-suffix tolerance must not blow the title gate open: a different song by
+  // the same artist still reads as not-in-library.
+  it('still misses a different base title by the same artist', () => {
+    const idx = buildLibraryIndex([{ title: 'It’s Not Over (Happy House)', artist: '3 Styles' }])
+    expect(isInLibrary(idx, { title: 'Da’ Bitch', artist: '3 Styles' })).toBe(false)
+  })
+
+  // The artist gate still applies across the base-title match.
+  it('does not match a base title when the artist differs', () => {
+    const idx = buildLibraryIndex([{ title: 'It’s Not Over (Happy House)', artist: '3 Styles' }])
+    expect(isInLibrary(idx, { title: 'It’s Not Over', artist: 'Someone Else' })).toBe(false)
+  })
 })

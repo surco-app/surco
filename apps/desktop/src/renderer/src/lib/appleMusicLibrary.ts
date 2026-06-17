@@ -17,40 +17,58 @@ function primaryArtist(artist: string): string {
   return foldText(cleanName(artist.split(',')[0]))
 }
 
+// A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".
+const VERSION_SUFFIX = /\s*[([][^)\]]*[)\]]\s*$/
+
+// The folded title keys a track is indexed and looked up under: the full title, plus the
+// base title with a trailing version suffix stripped. DJ rips often tag just the base
+// name ("It's Not Over") while the Apple Music copy keeps the release's version
+// ("It's Not Over (Happy House)"); indexing and matching both keys lets the library hint
+// bridge that gap — and stay consistent with the editor's badge, which catches the same
+// song under its canonical Discogs name. The base is only added when it differs.
+function titleKeys(title: string): string[] {
+  const full = foldText(title)
+  const base = foldText(title.replace(VERSION_SUFFIX, ''))
+  return base && base !== full ? [full, base] : [full]
+}
+
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
   for (const { title, artist } of tracks) {
-    const key = foldText(title)
     const folded = foldText(artist)
-    // A row missing either side can't identify a song; skipping it also keeps an
-    // empty artist from later `includes("")`-matching every candidate.
-    if (!key || !folded) continue
-    const list = index.get(key)
-    if (list) list.push(folded)
-    else index.set(key, [folded])
+    // An empty artist can't identify a song and would later `every`-match nothing
+    // meaningfully; skip the row entirely.
+    if (!folded) continue
+    for (const key of titleKeys(title)) {
+      if (!key) continue
+      const list = index.get(key)
+      if (list) list.push(folded)
+      else index.set(key, [folded])
+    }
   }
   return index
 }
 
-// Whether the candidate (a track's live tags) is already in the library: the title must
-// match exactly (after folding) and every word of the candidate's primary artist must
-// appear as a whole word in some library artist under that title. Matching on whole words
-// rather than a raw substring stops a primary artist from matching an unrelated longer
-// name it merely sits inside ("Mat" vs "Matador"), while still allowing the library's
-// extra words (a "& Friends" suffix, a featured act). It's a hint, not a guarantee — and
-// a touch stricter than the editor's osascript badge, which still uses substring `contains`.
+// Whether the candidate (a track's live tags) is already in the library: a title key must
+// match (the full folded title or its version-stripped base) and every word of the
+// candidate's primary artist must appear as a whole word in some library artist under that
+// title. Matching on whole words rather than a raw substring stops a primary artist from
+// matching an unrelated longer name it merely sits inside ("Mat" vs "Matador"), while
+// still allowing the library's extra words (a "& Friends" suffix, a featured act). It's a
+// hint, not a guarantee.
 export function isInLibrary(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string },
 ): boolean {
-  const key = foldText(candidate.title)
   const primary = primaryArtist(candidate.artist)
-  if (!key || !primary) return false
-  const artists = index.get(key)
-  if (!artists) return false
+  if (!primary) return false
   const primaryWords = primary.split(' ')
-  return artists.some((a) => {
+  const artistMatches = (a: string): boolean => {
     const have = new Set(a.split(' '))
     return primaryWords.every((w) => have.has(w))
+  }
+  return titleKeys(candidate.title).some((key) => {
+    if (!key) return false
+    return index.get(key)?.some(artistMatches) ?? false
   })
 }
