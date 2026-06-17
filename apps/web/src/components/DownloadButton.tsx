@@ -107,16 +107,19 @@ export default function DownloadButton({
         </a>
       )}
       {showMeta && (
-        <div className="mt-4 space-y-1 font-mono text-xs text-faint">
-          <p>
-            {!ready && t('download.unavailable')}
-            {version && (
-              <span data-testid="app-version" className="text-fg">
-                {version}
-              </span>
-            )}
-            {ready && <DownloadCount withSeparator={version !== null} />}
-          </p>
+        <div className="mt-5 font-mono text-xs text-faint">
+          {!ready ? (
+            <p>{t('download.unavailable')}</p>
+          ) : (
+            <p className="flex flex-wrap items-center gap-x-2">
+              <DownloadCount />
+              {version && (
+                <span data-testid="app-version" className="text-faint">
+                  {version}
+                </span>
+              )}
+            </p>
+          )}
         </div>
       )}
     </>
