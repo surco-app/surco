@@ -191,9 +191,6 @@
     "spectrum": "spectrum"
   },
   "showcase": {
-    "kicker": "The app",
-    "title": "Your whole workflow in one window",
-    "lede": "Track list, Discogs match, metadata editor and quality check. No app-hopping.",
     "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis"
   },
   "pricing": {

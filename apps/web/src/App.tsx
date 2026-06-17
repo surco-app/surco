@@ -6,12 +6,9 @@ import Speed from './components/Speed'
 import HowItWorks from './components/HowItWorks'
 import Pricing from './components/Pricing'
 import Spectrogram from './components/Spectrogram'
-import AppMockup from './components/AppMockup'
-import Showcase from './components/Showcase'
 import Reveal from './components/Reveal'
 import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
-import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
 import Faq from './components/Faq'
@@ -71,8 +68,9 @@ function Kbd({ k }: { k: string }) {
 }
 
 export default function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   useAutoLanguage()
+  const appShot = `/app-${i18n.language === 'en' ? 'en' : 'es'}.webp`
   const featureGroups = t('features.groups', { returnObjects: true }) as {
     kick: string
     title: string
@@ -117,50 +115,64 @@ export default function App() {
         <WaveBackdrop className="top-[10%]" side="left" delay="-18s" />
         <GrooveArcs className="top-[40%]" side="right" />
         <WaveBackdrop className="top-[66%]" flip side="left" delay="-29s" />
-        <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
-          <div>
-            <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
-                <span
-                  className="h-1.5 w-1.5 rounded-full bg-blue"
-                  style={{ animation: 'glow 2s ease-in-out infinite' }}
-                />
-                {t('betaPill')}
-              </div>
-            </Reveal>
-            <Reveal delay={80}>
-              <h1 className="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
-                {t('hero.h1a')}
-                <br />
-                <span className="text-grad">{t('hero.h1b')}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={160}>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-pretty text-muted">
-                {t('hero.ledeShort')}
-              </p>
-            </Reveal>
-            <Reveal delay={240}>
-              <div className="mt-5 font-mono text-sm text-muted">
-                <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
-                <span className="text-fg">WAV</span> <span className="text-cyan">⇄</span>{' '}
-                <span className="text-fg">FLAC</span> <span className="text-cyan">⇄</span>{' '}
-                <span className="text-fg">MP3</span>
-              </div>
-            </Reveal>
-            <Reveal delay={320}>
+        <section className="pt-12 pb-24 text-center sm:pt-20">
+          <Reveal>
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-blue"
+                style={{ animation: 'glow 2s ease-in-out infinite' }}
+              />
+              {t('betaPill')}
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <h1 className="mx-auto mt-7 max-w-4xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
+              {t('hero.h1a')}
+              <br />
+              <span className="text-grad">{t('hero.h1b')}</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={160}>
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">
+              {t('hero.ledeShort')}
+            </p>
+          </Reveal>
+          <Reveal delay={240}>
+            <div className="mt-6 font-mono text-sm text-muted">
+              <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">WAV</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">FLAC</span> <span className="text-cyan">⇄</span>{' '}
+              <span className="text-fg">MP3</span>
+            </div>
+          </Reveal>
+          <Reveal delay={320}>
+            <div className="flex flex-col items-center">
               <DownloadButton />
-            </Reveal>
-          </div>
+            </div>
+          </Reveal>
 
           <Reveal delay={200}>
-            <Tilt>
-              <AppMockup />
-            </Tilt>
+            <div className="relative mt-16 ml-[calc(50%-50vw)] w-screen px-6 sm:mt-20">
+              <figure className="relative mx-auto max-w-6xl">
+                <div
+                  className="pointer-events-none absolute -inset-x-6 -top-10 bottom-10 -z-10"
+                  style={{
+                    background:
+                      'radial-gradient(50% 55% at 50% 0%, rgba(122,162,247,0.22) 0%, rgba(26,27,38,0) 70%)'
+                  }}
+                />
+                <img
+                  src={appShot}
+                  alt={t('showcase.alt')}
+                  width={2000}
+                  height={1242}
+                  loading="lazy"
+                  className="block w-full rounded-2xl border border-line shadow-2xl shadow-black/60 ring-1 ring-white/5"
+                />
+              </figure>
+            </div>
           </Reveal>
         </section>
-
-        <Showcase />
 
         <Band tone="deep">
         <section id="analisis" className="scroll-mt-24 py-24">
