@@ -97,7 +97,15 @@ function titleSimilarity(target: string, candidate: string): number {
   const b = normalize(candidate)
   if (!a || !b) return 0
   if (a === b) return 1
-  if (a.includes(b) || b.includes(a)) return 0.7
+  // A candidate that merely appends words to the file's title — the common case where
+  // Discogs spells out "(Original Mix)" the file omits — is still the same track, so it
+  // stays a strong match. But the reverse, a candidate that drops words the file's title
+  // carries (a bare "Acid" against the file's "Acid (Extended Mix)"), is missing the very
+  // version asked for: score it by how little of the title it covers so it can't outrank
+  // a track that keeps a matching mix. This is what pins the right version when Discogs
+  // lists no durations to separate the cuts.
+  if (b.includes(a)) return 0.7
+  if (a.includes(b)) return 0.5 * (b.split(' ').length / a.split(' ').length)
   const targetWords = a.split(' ')
   const candidateWords = new Set(b.split(' '))
   // Same words in a different order ("Love All" vs "All Love", "X vs Y" vs "Y vs X") are
@@ -189,6 +197,33 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
   if (confidence >= HIGH_CONFIDENCE) return 'high'
   if (confidence >= REVIEW_CONFIDENCE) return 'review'
   return 'low'
+}
+
+// Discogs orders search results by its own relevance, which ignores the file's artist,
+// so the right release can fall past the probe cap behind compilations and reissues.
+// Re-ranks the results — without touching the list shown to the user — so the rows that
+// name the file's artist (and, secondarily, its title) are probed first: the auto-match's
+// recall hinges on the real release being reached inside the cap. The sort is stable, so
+// Discogs' order stands as the tie-break and equally-relevant rows keep their place.
+export function preRankResults(
+  results: DiscogsSearchResult[],
+  target: TrackMatchTarget,
+): DiscogsSearchResult[] {
+  const relevance = (result: DiscogsSearchResult): number => {
+    const hay = normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
+    const fraction = (field: string | undefined): number => {
+      const words = field ? normalize(field).split(' ').filter(Boolean) : []
+      if (!words.length) return 0
+      return words.filter((w) => hay.includes(w)).length / words.length
+    }
+    // Artist is the reliable signal — a full artist match all but names the release — so
+    // it outweighs the title, which often isn't in the "Artist - Album" row at all.
+    return 2 * fraction(target.artist) + fraction(target.title)
+  }
+  return results
+    .map((result, index) => ({ result, index, score: relevance(result) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((x) => x.result)
 }
 
 export interface ReleaseMetaPatch {

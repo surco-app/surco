@@ -92,6 +92,27 @@ describe('autoMatchRelease', () => {
     expect(api.searchDiscogs).not.toHaveBeenCalled()
   })
 
+  it('probes the release naming the file artist first, even when Discogs ranks it lower', async () => {
+    const artistTarget = { title: 'One More Time', artist: 'Daft Punk', durationSec: 320 }
+    const api = {
+      searchDiscogs: vi.fn().mockResolvedValue([
+        { id: 1, title: 'Various - Mega Compilation' },
+        { id: 2, title: 'Daft Punk - Discovery' },
+      ]),
+      getRelease: vi.fn().mockImplementation((id: number) =>
+        Promise.resolve(
+          release(id, { tracklist: [{ position: '1', title: 'One More Time', duration: '5:20' }] }),
+        ),
+      ),
+    }
+    const m = await autoMatchRelease('one more time daft punk', artistTarget, api)
+    // Re-ranking moved Discovery ahead of the compilation, so it matched on the first
+    // probe and the compilation was never loaded.
+    expect(m?.release.id).toBe(2)
+    expect(api.getRelease).toHaveBeenCalledTimes(1)
+    expect(api.getRelease).toHaveBeenCalledWith(2)
+  })
+
   it('probes at most the cap, even when no match is found', async () => {
     const results = Array.from({ length: 20 }, (_, i) => searchResult(i + 1))
     const api = {

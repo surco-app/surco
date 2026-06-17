@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { DiscogsRelease, DiscogsTrack, TrackMetadata } from '../../../shared/types'
+import type {
+  DiscogsRelease,
+  DiscogsSearchResult,
+  DiscogsTrack,
+  TrackMetadata,
+} from '../../../shared/types'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -7,6 +12,7 @@ import {
   confidenceTier,
   coverOf,
   joinArtists,
+  preRankResults,
   resultFromRelease,
   scoreTrack,
   stepImageIndex,
@@ -203,6 +209,29 @@ describe('scoreTrack', () => {
     )
     expect(mine).toBeGreaterThan(other)
   })
+
+  // A file whose title spells out a mix ("Extended Mix") must not be won by a bare
+  // tracklist entry that drops those words: the bare cut is missing the version the file
+  // asked for, so a track that carries a matching one outranks it even when the wording
+  // differs. Without this a near-identical bare title would beat the right mix on the
+  // flat substring score, the classic wrong-version pick when Discogs lists no durations.
+  it("ranks a matching-version track over a bare title that drops the file's mix", () => {
+    const versioned = scoreTrack(
+      { position: 'A2', title: 'Acid (Extended Version)' },
+      { title: 'Acid (Extended Mix)' },
+    )
+    const bare = scoreTrack({ position: 'A1', title: 'Acid' }, { title: 'Acid (Extended Mix)' })
+    expect(versioned).toBeGreaterThan(bare)
+  })
+
+  // The mirror case must keep working: when the file's title is the bare base, a
+  // tracklist entry that merely appends a version ("(Original Mix)") still reads as the
+  // same track and stays a strong match, not penalised for the extra words.
+  it('keeps a strong score when the tracklist entry only adds a version to the file title', () => {
+    expect(
+      scoreTrack({ position: 'A1', title: 'Acid (Original Mix)' }, { title: 'Acid' }),
+    ).toBeGreaterThan(0.6)
+  })
 })
 
 describe('bestMatch', () => {
@@ -242,6 +271,43 @@ describe('bestMatch', () => {
 
   it('reports the winner confidence between 0 and 1', () => {
     expect(bestMatch(tracks, { title: 'Windowlicker' })?.confidence).toBe(1)
+  })
+
+  // The whole point of version-aware scoring: with no durations to separate them, the
+  // file naming a mix must land on the cut that carries one, not the bare original.
+  it('prefers the versioned cut over a bare title when the file names a mix', () => {
+    const mixes: DiscogsTrack[] = [
+      { position: 'A1', title: 'Acid' },
+      { position: 'A2', title: 'Acid (Extended Version)' },
+    ]
+    expect(bestMatch(mixes, { title: 'Acid (Extended Mix)' })?.track.position).toBe('A2')
+  })
+})
+
+describe('preRankResults', () => {
+  const r = (id: number, title: string): DiscogsSearchResult => ({ id, title })
+
+  // Discogs ranks results by its own relevance, not the file's artist, so the real
+  // release can sit past the probe cap behind compilations and other pressings. Floating
+  // the rows that name the file's artist to the front gets it probed first and inside the
+  // cap, the single biggest lever on whether the right release is reached at all.
+  it('floats a release naming the file artist ahead of unrelated rows', () => {
+    const ranked = preRankResults(
+      [r(1, 'Various - Mega Compilation'), r(2, 'Daft Punk - Discovery')],
+      { title: 'One More Time', artist: 'Daft Punk' },
+    )
+    expect(ranked[0].id).toBe(2)
+  })
+
+  it('keeps the original order when no row matches better', () => {
+    const ranked = preRankResults([r(1, 'A - X'), r(2, 'B - Y')], { title: 'Z', artist: 'Q' })
+    expect(ranked.map((x) => x.id)).toEqual([1, 2])
+  })
+
+  it('does not mutate the input array', () => {
+    const input = [r(1, 'Various - Comp'), r(2, 'Daft Punk - Discovery')]
+    preRankResults(input, { title: 'One More Time', artist: 'Daft Punk' })
+    expect(input.map((x) => x.id)).toEqual([1, 2])
   })
 })
 

@@ -1,6 +1,6 @@
 import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { bestMatch, confidenceTier, type TrackMatchTarget } from './release'
+import { bestMatch, confidenceTier, preRankResults, type TrackMatchTarget } from './release'
 
 // The tracks an auto-match sweep should attempt: those not already carrying a Discogs
 // match and holding the title plus search query a probe needs. Skipping tracks that
@@ -53,7 +53,7 @@ export async function probeReleases(
     cancelled?: () => boolean
   },
 ): Promise<ProbeMatch | undefined> {
-  for (const result of results.slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
+  for (const result of preRankResults(results, target).slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
     if (opts.cancelled?.()) return undefined
     let rel: DiscogsRelease
     let m: ReturnType<typeof bestMatch>
