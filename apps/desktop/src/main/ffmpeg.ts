@@ -467,7 +467,7 @@ export async function convertAudio(
   coverPath?: string,
   normalize?: NormalizeConfig,
   removeCover?: boolean,
-): Promise<void> {
+): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
   // output path) overwrites it atomically instead of failing with ffmpeg's
@@ -485,6 +485,10 @@ export async function convertAudio(
   const audioFilter = normalizing
     ? ((await normalizeFilter(input, normalize, sampleRate)) ?? undefined)
     : undefined
+  // Normalization was asked for but its measurement pass failed (normalizeFilter returned
+  // null), so the conversion proceeds un-normalized rather than failing outright — the
+  // caller surfaces this so the user knows the loudness target wasn't actually applied.
+  const normalizeSkipped = normalizing && audioFilter === undefined
   const { codec, bitrate, ext } = await planConversion(input, format, probeAudio, normalizing)
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
@@ -524,6 +528,7 @@ export async function convertAudio(
     await unlink(tmp).catch(() => {})
     throw e
   }
+  return { normalizeSkipped }
 }
 
 // The renderer's <audio> element decodes WAV/FLAC/MP3 but not AIFF, so an AIFF

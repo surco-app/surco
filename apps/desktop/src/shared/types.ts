@@ -262,6 +262,10 @@ export interface ProcessResult {
   // True when the user chose to skip a conflicting export: nothing was written, so
   // the renderer leaves the track untouched rather than marking it done.
   skipped?: boolean
+  // True when loudness normalization was requested but its measurement pass failed, so
+  // the file was converted without it. The renderer surfaces a notice so the user knows
+  // the loudness target wasn't applied, rather than the skip passing silently.
+  normalizeSkipped?: boolean
   // True when the track went to Apple Music only and its output-folder copy was
   // removed, so outputPath is empty: the renderer marks the track added to Apple
   // Music instead of offering a "Show file" that points at nothing.

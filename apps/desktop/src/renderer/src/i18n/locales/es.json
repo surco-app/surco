@@ -79,7 +79,8 @@
     "trash": "No se ha podido enviar {{detail}} a la papelera."
   },
   "notices": {
-    "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}"
+    "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
+    "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar."
   },
   "update": {
     "ready": "La versión {{version}} está lista",

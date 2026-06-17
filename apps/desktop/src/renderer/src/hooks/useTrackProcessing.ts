@@ -19,6 +19,9 @@ interface Params {
   tracks: TrackItem[]
   settings: Settings | null
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  // Surfaced when a track converted without the requested loudness normalization (its
+  // measurement failed), so the skip doesn't pass silently. Receives the track's label.
+  onNormalizeSkipped?: (name: string) => void
 }
 
 export interface TrackProcessing {
@@ -44,7 +47,12 @@ export interface TrackProcessing {
 // progress), and add converted tracks to Apple Music by hand. Owns the batch state so
 // App doesn't carry it; reads the live tracks/settings and writes results back through
 // updateTrack, exactly as the inline App functions did.
-export function useTrackProcessing({ tracks, settings, updateTrack }: Params): TrackProcessing {
+export function useTrackProcessing({
+  tracks,
+  settings,
+  updateTrack,
+  onNormalizeSkipped,
+}: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
   const [batching, setBatching] = useState(false)
@@ -128,6 +136,9 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
         updateTrack(id, { status: 'idle', stage: undefined })
         return 'skipped'
       }
+      // Converted, but the requested loudness normalization couldn't be measured, so the
+      // file went out at its original level — tell the user rather than letting it pass.
+      if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
       updateTrack(id, exportedPatch(track, result))
       // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
       // so any cached probe of it now describes the old bytes. Evict both paths (they

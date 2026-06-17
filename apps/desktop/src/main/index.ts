@@ -566,7 +566,7 @@ function registerIpc(): void {
       // Create the target's folder (and any subfolders the file-name template asks for)
       // before writing; recursive so it's a no-op when the directory already exists.
       await mkdir(dirname(target), { recursive: true })
-      await convertAudio(
+      const { normalizeSkipped } = await convertAudio(
         job.inputPath,
         target,
         format,
@@ -595,12 +595,13 @@ function registerIpc(): void {
       // The add succeeded (a failure would have thrown above), and the temp dir is
       // cleaned up in finally — tell the renderer there is no file to reveal, only an
       // Apple Music entry.
-      if (musicOnly) return { outputPath: '', inPlace, addedToMusicOnly: true, musicPersistentId }
+      if (musicOnly)
+        return { outputPath: '', inPlace, addedToMusicOnly: true, musicPersistentId, normalizeSkipped }
 
       // The conversion wrote a real file the renderer may play next — directly, or
       // as the track's new source after an in-place rename — so let surco:// serve it.
       mediaAccess.allow(target)
-      return { outputPath: target, inPlace, musicPersistentId }
+      return { outputPath: target, inPlace, musicPersistentId, normalizeSkipped }
     } finally {
       if (prepared) await prepared.cleanup()
       if (tmpDir) await rm(tmpDir, { recursive: true, force: true })

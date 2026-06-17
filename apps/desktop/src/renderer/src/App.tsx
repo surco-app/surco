@@ -592,6 +592,7 @@ export default function App(): React.JSX.Element {
     tracks,
     settings,
     updateTrack,
+    onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
   })
 
   function openSettings(tab: SettingsTab = 'general'): void {

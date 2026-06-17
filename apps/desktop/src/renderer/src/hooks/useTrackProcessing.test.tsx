@@ -80,6 +80,30 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'processing' }))
   })
 
+  // Normalization was requested but its measurement failed, so the file converted at its
+  // original level. The user must be told, named by the track, rather than the skip
+  // passing silently and the file landing un-normalized without warning.
+  it('reports the track name when normalization was skipped', async () => {
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', normalizeSkipped: true }),
+    })
+    const onNormalizeSkipped = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onNormalizeSkipped,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onNormalizeSkipped).toHaveBeenCalledWith('a.wav')
+  })
+
   // The convert gate must hold here too: a track missing a required tag never reaches
   // ffmpeg — it's flagged in error instead, so the shortcut can't start a doomed run.
   it('refuses a track missing a required field without converting', async () => {
