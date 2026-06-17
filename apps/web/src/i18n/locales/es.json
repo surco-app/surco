@@ -190,6 +190,12 @@
     "good": "● buena calidad",
     "spectrum": "espectro"
   },
+  "showcase": {
+    "kicker": "La app",
+    "title": "Todo tu flujo en una sola ventana",
+    "lede": "Lista de pistas, match de Discogs, editor de metadatos y comprobación de calidad. Sin saltar entre apps.",
+    "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad"
+  },
   "pricing": {
     "kicker": "Precio",
     "title": "Gratis, para siempre",

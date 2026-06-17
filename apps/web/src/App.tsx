@@ -7,6 +7,7 @@ import HowItWorks from './components/HowItWorks'
 import Pricing from './components/Pricing'
 import Spectrogram from './components/Spectrogram'
 import AppMockup from './components/AppMockup'
+import Showcase from './components/Showcase'
 import Reveal from './components/Reveal'
 import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
@@ -158,6 +159,8 @@ export default function App() {
             </Tilt>
           </Reveal>
         </section>
+
+        <Showcase />
 
         <Band tone="deep">
         <section id="analisis" className="scroll-mt-24 py-24">
