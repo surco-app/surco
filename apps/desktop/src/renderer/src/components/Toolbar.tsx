@@ -145,6 +145,9 @@ export const Toolbar = memo(function Toolbar({
               <Search className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('commands.findReplace')} align="end" />
             </button>
+            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps, so they
+                share a group, set apart from the per-tag edit tools before them. */}
+            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             <button
               type="button"
               data-testid="auto-match"
@@ -177,7 +180,6 @@ export const Toolbar = memo(function Toolbar({
                 align="end"
               />
             </button>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             <button
               type="button"
               data-testid="analyze-quality"
