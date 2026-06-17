@@ -1,8 +1,8 @@
-export const SECTIONS = ['velocidad', 'como', 'analisis', 'funciones', 'atajos', 'precio', 'instalar', 'faq'] as const
-
-// The header stays short on purpose: only the links a first-time visitor needs.
-// The footer keeps linking every section through SECTIONS.
+// Both header and footer surface a curated subset of the landing's sections, not
+// the full index: this is a single-page site, so re-listing every anchor (Speed,
+// Analysis, Shortcuts…) is noise. Each keeps only the links worth a deliberate jump.
 export const HEADER_SECTIONS = ['como', 'funciones', 'instalar'] as const
+export const FOOTER_SECTIONS = ['instalar', 'precio', 'faq'] as const
 
 export const PAGES = {
   guide: { es: '/guia', en: '/en/guide' },

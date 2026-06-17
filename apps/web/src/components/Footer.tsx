@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { PAGES, SECTIONS, type Page } from '../lib/nav'
+import { FOOTER_SECTIONS, PAGES, type Page } from '../lib/nav'
 
 export default function Footer({ page }: { page?: Page }) {
   const { t, i18n } = useTranslation()
@@ -7,6 +7,7 @@ export default function Footer({ page }: { page?: Page }) {
   const lang = i18n.language === 'en' ? 'en' : 'es'
   const home = lang === 'en' ? '/en' : '/'
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
+  const guideHref = PAGES.guide[lang]
   const changelogHref = PAGES.changelog[lang]
 
   return (
@@ -30,13 +31,18 @@ export default function Footer({ page }: { page?: Page }) {
         <div>
           <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.product')}</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
-            {SECTIONS.map((id) => (
+            {FOOTER_SECTIONS.map((id) => (
               <li key={id}>
                 <a href={sectionHref(id)} className="transition-colors hover:text-fg">
                   {t(`nav.${id}`)}
                 </a>
               </li>
             ))}
+            <li>
+              <a href={guideHref} className="transition-colors hover:text-fg">
+                {t('nav.guia')}
+              </a>
+            </li>
             <li>
               <a href={changelogHref} className="transition-colors hover:text-fg">
                 {t('nav.cambios')}
