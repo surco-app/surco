@@ -153,6 +153,15 @@ describe('scoreTrack', () => {
     expect(scoreTrack({ position: 'A1', title: 'Windowlicker' }, { title: 'unrelated' })).toBe(0)
   })
 
+  // Same words, different order: a reordered title is the same track, so it must score
+  // far above a mere partial overlap — otherwise a duration tie picks the wrong mix.
+  it('scores a reordered title high, well above a loose partial match', () => {
+    const reordered = scoreTrack({ position: 'A1', title: 'All Love' }, { title: 'Love All' })
+    const partial = scoreTrack({ position: 'A1', title: 'Love Hurts Always' }, { title: 'Love All' })
+    expect(reordered).toBeGreaterThan(0.85)
+    expect(reordered).toBeGreaterThan(partial)
+  })
+
   it('rewards a duration within a couple of seconds and rejects a far one', () => {
     // The title is blank so duration alone decides — a release's track length vs
     // the file's probed seconds is the strongest within-release discriminator.

@@ -100,6 +100,12 @@ function titleSimilarity(target: string, candidate: string): number {
   if (a.includes(b) || b.includes(a)) return 0.7
   const targetWords = a.split(' ')
   const candidateWords = new Set(b.split(' '))
+  // Same words in a different order ("Love All" vs "All Love", "X vs Y" vs "Y vs X") are
+  // almost certainly the same title — score them high so a duration tie doesn't bury the
+  // right track under a reordering the substring check above can't see.
+  const targetSet = new Set(targetWords)
+  if (targetSet.size === candidateWords.size && [...targetSet].every((w) => candidateWords.has(w)))
+    return 0.9
   const shared = targetWords.filter((w) => candidateWords.has(w)).length
   return shared ? 0.6 * (shared / targetWords.length) : 0
 }
