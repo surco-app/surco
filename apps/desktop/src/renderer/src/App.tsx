@@ -40,6 +40,7 @@ import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import { type AppleMusicIndex, isInLibrary } from './lib/appleMusicLibrary'
+import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
@@ -157,21 +158,22 @@ export default function App(): React.JSX.Element {
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
-  // A surfaced background failure (a rejected IPC call, an unhandled rejection),
-  // stored as a key plus interpolation detail and localized at render so a language
-  // switch retranslates it.
-  const [appError, setAppError] = useState<{
-    kind: 'unexpected' | 'settingsLoad' | 'settingsSave' | 'trash'
-    detail?: string
-  } | null>(null)
-  // A transient, non-blocking status line (e.g. "skipped N already-added files"). Unlike
-  // appError it clears itself, so it never lingers after the user has moved on.
-  const [notice, setNotice] = useState<string | null>(null)
+  // UI-orchestration state (search, sort, filter, notices, drag, copied tags…) lives in a
+  // small per-mount external store so stable callbacks read the latest value via getState()
+  // instead of a ref-mirror; the field comments live in appStore. Lazily created so the
+  // factory runs once, not once per render.
+  const storeRef = useRef<AppStore | null>(null)
+  if (storeRef.current === null) storeRef.current = createAppStore()
+  const store = storeRef.current
+  const appError = useAppStore(store, (s) => s.appError)
+  const setAppError = useCallback((e: AppError | null) => store.setState({ appError: e }), [store])
+  const notice = useAppStore(store, (s) => s.notice)
+  const setNotice = useCallback((n: string | null) => store.setState({ notice: n }), [store])
   useEffect(() => {
     if (!notice) return
     const id = setTimeout(() => setNotice(null), 4000)
     return () => clearTimeout(id)
-  }, [notice])
+  }, [notice, setNotice])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
@@ -191,18 +193,24 @@ export default function App(): React.JSX.Element {
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
-  // Quality triage view filter: narrows the list to suspect or unanalyzed tracks so a
-  // big crate can be swept for fakes without scrolling past the clean ones.
-  const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all')
-  // Free-text filter over the imported tracks, combined with the quality chip above.
-  // Narrows a big dropped crate by name/artist/album without converting anything.
-  const [search, setSearch] = useState('')
-  // Display order of the (filtered) list. Defaults to the drop order.
-  const [sortBy, setSortBy] = useState<TrackSort>('import')
-  const [dragging, setDragging] = useState(false)
-  // Metadata copied from one track's context menu, to stamp onto another. Null until
-  // the user copies, which is what gates the paste item in the row menu.
-  const [copiedMeta, setCopiedMeta] = useState<TrackMetadata | null>(null)
+  // Quality triage filter, free-text search and display order — read from the store with a
+  // stable setter each (field comments live in appStore).
+  const qualityFilter = useAppStore(store, (s) => s.qualityFilter)
+  const setQualityFilter = useCallback(
+    (f: QualityFilter) => store.setState({ qualityFilter: f }),
+    [store],
+  )
+  const search = useAppStore(store, (s) => s.search)
+  const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
+  const sortBy = useAppStore(store, (s) => s.sortBy)
+  const setSortBy = useCallback((v: TrackSort) => store.setState({ sortBy: v }), [store])
+  const dragging = useAppStore(store, (s) => s.dragging)
+  const setDragging = useCallback((d: boolean) => store.setState({ dragging: d }), [store])
+  const copiedMeta = useAppStore(store, (s) => s.copiedMeta)
+  const setCopiedMeta = useCallback(
+    (m: TrackMetadata | null) => store.setState({ copiedMeta: m }),
+    [store],
+  )
   const searchInputRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
@@ -262,7 +270,7 @@ export default function App(): React.JSX.Element {
     }
     window.addEventListener('unhandledrejection', onRejection)
     return () => window.removeEventListener('unhandledrejection', onRejection)
-  }, [])
+  }, [setAppError])
 
   // The native menu triggers actions by command id, the same registry the
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
