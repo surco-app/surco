@@ -356,6 +356,33 @@ describe('useTrackProcessing', () => {
     expect(addToAppleMusic).not.toHaveBeenCalled()
   })
 
+  // The user deleted the library copy in Music: updateAppleMusic finds nothing (resolves
+  // undefined), so the track must be re-added from its output file rather than falsely
+  // reported as synced. Without the fallback it would read "added" while gone from Music.
+  it('re-adds through addToAppleMusic when the update finds the library copy gone', async () => {
+    const updateAppleMusic = vi.fn().mockResolvedValue(undefined)
+    const addToAppleMusic = vi.fn().mockResolvedValue('NEW5678')
+    setApi({ updateAppleMusic, addToAppleMusic })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputPath: '/out/a.aiff', musicPersistentId: 'ABCD1234' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    expect(addToAppleMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ outputPath: '/out/a.aiff' }),
+    )
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ musicStatus: 'added', musicPersistentId: 'NEW5678' }),
+    )
+  })
+
   it('syncs a track that kept no output file ("Apple Music only" mode) — the update needs no file, only the persistent ID', async () => {
     const updateAppleMusic = vi.fn().mockResolvedValue('ABCD1234')
     setApi({ updateAppleMusic })

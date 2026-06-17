@@ -174,6 +174,16 @@ export function useTrackProcessing({ tracks, settings, updateTrack }: Params): T
           meta,
           ...coverSourceOf(track),
         })
+        // The library copy was deleted in Music (update found nothing): re-add the file so
+        // it lands back in the library, instead of falsely reporting "added" on a track
+        // that's gone. Mirrors the automatic convert path's update-or-add fallback.
+        if (!persistentId && outputPath) {
+          persistentId = await window.api.addToAppleMusic({
+            outputPath,
+            meta,
+            ...coverSourceOf(track),
+          })
+        }
       } else if (outputPath) {
         persistentId = await window.api.addToAppleMusic({
           outputPath,
