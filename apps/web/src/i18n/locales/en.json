@@ -495,6 +495,19 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
+        "version": "0.17",
+        "date": "June 17, 2026",
+        "title": "Search the exact edition, in your language",
+        "items": [
+          "Filter Discogs searches by format — vinyl, CD, digital… — from the new Search tab in Settings, so you land on the edition you actually want.",
+          "Choose the app's language — System, English or Español — and it's remembered between sessions.",
+          "Cleaner Discogs results: duplicate editions are merged, and a remix with its tracks reordered still matches the right one.",
+          "Sharper Apple Music library detection: it matches on whole artist words, refreshes when you return to the app, and re-adds a track if its library copy is gone. (macOS)",
+          "Surco warns you when it has to skip loudness normalization because it can't measure the track, instead of doing it silently.",
+          "Clearer list and editor: Shift-click selects along the visible order, empty required fields are flagged calmly, and the Convert button explains what's missing before it lets you convert."
+        ]
+      },
+      {
         "version": "0.16",
         "date": "June 17, 2026",
         "title": "Filter by what's already in your Apple Music",

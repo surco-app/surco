@@ -495,6 +495,19 @@
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.17",
+        "date": "17 de junio de 2026",
+        "title": "Busca la edición exacta, en tu idioma",
+        "items": [
+          "Filtra las búsquedas de Discogs por formato — vinilo, CD, digital… — desde la nueva pestaña Búsqueda en Ajustes, para dar con la edición que de verdad buscas.",
+          "Elige el idioma de la app — Sistema, Inglés o Español — y se recuerda entre sesiones.",
+          "Resultados de Discogs más limpios: las ediciones duplicadas se agrupan y un remix con las pistas reordenadas sigue emparejando con la correcta.",
+          "Detección de tu biblioteca de Apple Music más fina: empareja por palabras completas del artista, se actualiza al volver a la app y vuelve a añadir una pista si su copia en la biblioteca ya no está. (macOS)",
+          "Surco te avisa si tiene que saltarse la normalización de volumen porque no puede medir la pista, en vez de hacerlo en silencio.",
+          "Más claridad en la lista y el editor: Shift-clic selecciona siguiendo el orden visible, los campos obligatorios que faltan se marcan con calma y el botón Convertir explica qué falta antes de dejarte convertir."
+        ]
+      },
+      {
         "version": "0.16",
         "date": "17 de junio de 2026",
         "title": "Filtra por lo que ya tienes en Apple Music",
