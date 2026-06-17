@@ -13,11 +13,11 @@ export default function Faq() {
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('faq.kicker')}</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('faq.title')}</h2>
       </Reveal>
-      <div className="mt-10 max-w-2xl space-y-3">
+      <div className="mt-10 max-w-2xl border-t border-line/60">
         {items.map((item, i) => (
           <Reveal key={item.q} delay={(i % 2) * 80}>
-            <details className="group inset-shadow-edge rounded-xl border border-line bg-surface2/40 px-5 py-4 transition-colors hover:border-blue/30">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg [&::-webkit-details-marker]:hidden">
+            <details className="group border-b border-line/60 py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <span
                   className="font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"

@@ -234,7 +234,7 @@ export default function App() {
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {featureGroups.map((g, i) => (
               <Reveal key={g.title} delay={(i % 2) * 100}>
-                <div className={`inset-shadow-edge h-full rounded-2xl border border-line bg-surface2/40 p-6 ${cardHover}`}>
+                <div className="h-full">
                   <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue">
                     <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
                   </div>
@@ -258,7 +258,7 @@ export default function App() {
 
         <section id="atajos" className="scroll-mt-24 pt-24 pb-12">
           <Reveal>
-            <div className="inset-shadow-edge grid gap-8 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+            <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
               <div>
                 <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('shortcuts.kicker')}</p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
