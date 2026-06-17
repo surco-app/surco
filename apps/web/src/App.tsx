@@ -15,6 +15,7 @@ import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
 import Faq from './components/Faq'
+import Band from './components/Band'
 import WaveBackdrop from './components/WaveBackdrop'
 import GrooveArcs from './components/GrooveArcs'
 import { useAutoLanguage } from './lib/useAutoLanguage'
@@ -90,7 +91,7 @@ export default function App() {
   const stack = t('stack', { returnObjects: true }) as string[]
 
   return (
-    <div id="top" className="min-h-screen bg-bg text-fg antialiased">
+    <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
       <ScrollProgress />
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
 
@@ -113,12 +114,9 @@ export default function App() {
               'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)'
           }}
         />
-        <WaveBackdrop className="top-[12%]" side="left" delay="-18s" />
-        <GrooveArcs className="top-[28%]" side="right" />
-        <WaveBackdrop className="top-[44%]" flip delay="-7s" />
-        <WaveBackdrop className="top-[62%]" side="right" delay="-29s" />
-        <GrooveArcs className="top-[76%]" side="left" />
-        <WaveBackdrop className="top-[90%]" flip side="left" delay="-41s" />
+        <WaveBackdrop className="top-[10%]" side="left" delay="-18s" />
+        <GrooveArcs className="top-[40%]" side="right" />
+        <WaveBackdrop className="top-[66%]" flip side="left" delay="-29s" />
         <section className="grid items-center gap-8 pt-8 pb-24 lg:grid-cols-2 lg:gap-12 lg:pt-16">
           <div>
             <Reveal>
@@ -163,7 +161,8 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="analisis" className="scroll-mt-24 pb-24">
+        <Band tone="deep">
+        <section id="analisis" className="scroll-mt-24 py-24">
           <Reveal>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('analysis.kicker')}</p>
             <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
@@ -216,6 +215,7 @@ export default function App() {
             </Reveal>
           </div>
         </section>
+        </Band>
 
         <Replaces />
 
@@ -223,7 +223,8 @@ export default function App() {
 
         <HowItWorks />
 
-        <section id="funciones" className="scroll-mt-24 pb-24">
+        <Band tone="raised">
+        <section id="funciones" className="scroll-mt-24 py-24">
           <Reveal>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('features.kicker')}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
@@ -253,8 +254,9 @@ export default function App() {
             ))}
           </div>
         </section>
+        </Band>
 
-        <section id="atajos" className="scroll-mt-24 pb-24">
+        <section id="atajos" className="scroll-mt-24 pt-24 pb-12">
           <Reveal>
             <div className="inset-shadow-edge grid gap-8 rounded-3xl border border-line bg-surface2/40 p-8 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
               <div>
@@ -280,13 +282,13 @@ export default function App() {
           </Reveal>
         </section>
 
-        <Pricing />
+        <Band tone="deep">
+          <Pricing />
+          <InstallSection />
+          <Faq />
+        </Band>
 
-        <InstallSection />
-
-        <Faq />
-
-        <section className="pb-24">
+        <section className="pt-20 pb-24">
           <Reveal>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {stack.map((s) => (
