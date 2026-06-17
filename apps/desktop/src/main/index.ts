@@ -35,6 +35,7 @@ import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import {
   addToAppleMusic,
+  dumpAppleMusicLibrary,
   isAppleMusicOnly,
   lookupInAppleMusic,
   revealInAppleMusic,
@@ -522,6 +523,12 @@ function registerIpc(): void {
   // query, so report "not present" rather than spawning a missing osascript.
   ipcMain.handle('applemusic:lookup', (_e, candidates: AppleMusicLookupCandidate[]) =>
     process.platform === 'darwin' ? lookupInAppleMusic(candidates) : false,
+  )
+
+  // The whole-library snapshot the renderer matches the crate against to flag which
+  // tracks are already owned; empty off macOS, where there is no library to read.
+  ipcMain.handle('applemusic:library', () =>
+    process.platform === 'darwin' ? dumpAppleMusicLibrary() : [],
   )
 
   // Adds an already-converted track to Apple Music on demand — the tail of

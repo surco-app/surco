@@ -53,6 +53,9 @@ export interface Api {
     priority?: SearchPriority,
   ) => Promise<DiscogsRelease>
   lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]) => Promise<boolean>
+  // The whole Apple Music library as title/artist pairs, matched against the crate in
+  // the renderer to flag already-owned tracks. Empty off macOS.
+  loadAppleMusicLibrary: () => Promise<AppleMusicLookupCandidate[]>
   // Both resolve with the persistent ID of the library copy they added or synced
   // (undefined off macOS), the handle the renderer stores to update or reveal that
   // exact copy later.

@@ -45,7 +45,9 @@
       "good": "Good",
       "unanalyzed": "Unanalyzed",
       "unconverted": "Unconverted",
-      "automatched": "Auto-matched"
+      "automatched": "Auto-matched",
+      "notInLibrary": "Not in Apple Music",
+      "inLibrary": "In Apple Music"
     },
     "search": {
       "placeholder": "Search tracks",

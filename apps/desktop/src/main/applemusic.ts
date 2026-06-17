@@ -231,6 +231,54 @@ export async function lookupInAppleMusic(
   return parseInt(stdout.trim(), 10) > 0
 }
 
+// Dumps the whole library's name+artist in one osascript so the renderer can match
+// the crate against it locally — checking 282 tracks one buildLookupScript at a time
+// would be 282 osascript spawns, each scanning the entire library. The names and
+// artists are read as two lists (fast) and zipped into "name<tab>artist" lines via a
+// list built with `set end of` (O(n)); concatenating a string in the loop would be
+// O(n²) and stall on a multi-thousand-track library. Coercing the list to text with a
+// linefeed delimiter gives one row per track.
+export function buildLibraryDumpScript(): string {
+  return [
+    'tell application "Music"',
+    '  set theNames to name of every track of library playlist 1',
+    '  set theArtists to artist of every track of library playlist 1',
+    'end tell',
+    'set out to {}',
+    'repeat with i from 1 to count of theNames',
+    '  set end of out to (item i of theNames) & tab & (item i of theArtists)',
+    'end repeat',
+    "set AppleScript's text item delimiters to linefeed",
+    'return out as text',
+  ].join('\n')
+}
+
+// Parses the dump back into pairs. Splits each row on the first tab only, so an artist
+// that itself holds a tab survives intact, and drops rows missing either side — a
+// trailing newline or an empty field would otherwise become a pair that matches the
+// whole crate.
+export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
+  const pairs: AppleMusicLookupCandidate[] = []
+  for (const line of stdout.split('\n')) {
+    const tab = line.indexOf('\t')
+    if (tab === -1) continue
+    const title = line.slice(0, tab).trim()
+    const artist = line.slice(tab + 1).trim()
+    if (!title || !artist) continue
+    pairs.push({ title, artist })
+  }
+  return pairs
+}
+
+export async function dumpAppleMusicLibrary(): Promise<AppleMusicLookupCandidate[]> {
+  // maxBuffer: a large library's dump can exceed execFile's 1 MB default; ~64 MB holds
+  // hundreds of thousands of "name<tab>artist" rows so the snapshot never truncates.
+  const { stdout } = await run('osascript', ['-e', buildLibraryDumpScript()], {
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  return parseLibraryDump(stdout)
+}
+
 export async function addToAppleMusic(
   filePath: string,
   meta: TrackMetadata,

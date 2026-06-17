@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
+  buildLibraryDumpScript,
   buildLookupScript,
   buildRevealScript,
   buildUpdateScript,
   isAppleMusicOnly,
   lookupCandidates,
+  parseLibraryDump,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -189,6 +191,42 @@ describe('buildLookupScript', () => {
       '(name is "How long" and artist contains "Jessy") or (name is "How Long (Extended Mix)" and artist contains "Jessy")',
     )
     expect(script.match(/every track of library playlist 1/g)).toHaveLength(1)
+  })
+})
+
+describe('buildLibraryDumpScript', () => {
+  it('reads name and artist of every library track as lists, not one track at a time, so a multi-thousand-track library dumps in one fast pass instead of N AppleScript round-trips', () => {
+    const script = buildLibraryDumpScript()
+    expect(script).toContain('name of every track of library playlist 1')
+    expect(script).toContain('artist of every track of library playlist 1')
+  })
+
+  it('joins each name and artist with a tab and the rows with linefeeds so the renderer can split the snapshot back into pairs', () => {
+    const script = buildLibraryDumpScript()
+    // Building a list with `set end of` then coercing once is O(n); string concat in
+    // the loop would be O(n²) and stall on a big library.
+    expect(script).toContain('set end of out to')
+    expect(script).toContain("set AppleScript's text item delimiters to linefeed")
+    expect(script).toContain('return out as text')
+  })
+})
+
+describe('parseLibraryDump', () => {
+  it('splits the tab-and-linefeed snapshot into title/artist pairs', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5\nSorrow Town\tAlfredo Pareja\n')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5' },
+      { title: 'Sorrow Town', artist: 'Alfredo Pareja' },
+    ])
+  })
+
+  it('keeps the rest of the line as the artist so an artist that itself contains a tab is not truncated', () => {
+    expect(parseLibraryDump('Title\tA, B\tC')).toEqual([{ title: 'Title', artist: 'A, B\tC' }])
+  })
+
+  it('skips blank and malformed rows (a trailing newline, or a line without a tab) rather than emitting empty pairs that would match everything', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5\n\nNoTabLine\n')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5' },
+    ])
   })
 })
 

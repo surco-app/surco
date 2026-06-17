@@ -142,7 +142,31 @@ describe('filterByQuality / qualityCounts', () => {
       unanalyzed: 2,
       unconverted: 4,
       automatched: 0,
+      inLibrary: 0,
+      notInLibrary: 0,
     })
+  })
+})
+
+describe('Apple Music library filter', () => {
+  const t = (id: string, inAppleMusic?: boolean): TrackItem =>
+    ({ id, inAppleMusic }) as TrackItem
+  // 'unknown' has no verdict yet (library not loaded, or non-macOS) — neither filter
+  // should claim it, or the user sees a track in both "owned" and "missing" buckets.
+  const tracks = [t('owned', true), t('missing', false), t('unknown')]
+
+  it('keeps only the tracks confirmed in the library under the in-library filter', () => {
+    expect(filterByQuality(tracks, 'inLibrary').map((x) => x.id)).toEqual(['owned'])
+  })
+
+  it('keeps only the tracks confirmed absent under the not-in-library filter', () => {
+    expect(filterByQuality(tracks, 'notInLibrary').map((x) => x.id)).toEqual(['missing'])
+  })
+
+  it('counts owned and missing separately, leaving the unverified out of both', () => {
+    const counts = qualityCounts(tracks)
+    expect(counts.inLibrary).toBe(1)
+    expect(counts.notInLibrary).toBe(1)
   })
 })
 

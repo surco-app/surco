@@ -1184,3 +1184,46 @@ describe('App donate nudge', () => {
     expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
   })
 })
+
+describe('App Apple Music library filter', () => {
+  // The whole point of the filter: after importing a crate, the user wants to see only
+  // the tracks they don't already own in Apple Music, so they don't re-import duplicates.
+  // The library snapshot is matched against the crate locally, the two buckets get their
+  // chips, and the "not in library" chip narrows the list to the ones still worth adding.
+  it('matches imported tracks against the library and filters down to the ones not yet owned', async () => {
+    setApi({
+      // The library snapshot and the per-track lookup are macOS-only.
+      platform: 'darwin',
+      readTags: vi.fn((path: string) =>
+        Promise.resolve(
+          path.includes('a.wav')
+            ? { artist: 'deadmau5', title: 'Strobe' }
+            : { artist: 'deadmau5', title: 'Ghosts' },
+        ),
+      ),
+      loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
+    })
+    await renderApp()
+    await addTwoTracks()
+    // Both tracks get a verdict from the snapshot, so both library chips appear: one is
+    // owned (Strobe), one is missing (Ghosts).
+    const notInLibrary = await screen.findByTestId('quality-filter-notInLibrary')
+    expect(screen.getByTestId('quality-filter-inLibrary')).toBeInTheDocument()
+    // Filtering to "not in library" leaves only the track the library doesn't hold.
+    fireEvent.click(notInLibrary)
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // Off macOS there is no library to read, so the buckets never resolve and the chips
+  // must not appear — a Windows build should show no Apple Music filters at all.
+  it('shows no library chips off macOS', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
+      loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
+    })
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.queryByTestId('quality-filter-notInLibrary')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-inLibrary')).toBeNull()
+  })
+})

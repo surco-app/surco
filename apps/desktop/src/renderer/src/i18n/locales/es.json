@@ -45,7 +45,9 @@
       "good": "Buenas",
       "unanalyzed": "Sin analizar",
       "unconverted": "Sin convertir",
-      "automatched": "Auto-emparejadas"
+      "automatched": "Auto-emparejadas",
+      "notInLibrary": "Fuera de Apple Music",
+      "inLibrary": "En Apple Music"
     },
     "search": {
       "placeholder": "Buscar pistas",

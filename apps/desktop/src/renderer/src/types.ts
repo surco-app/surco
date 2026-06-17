@@ -45,6 +45,11 @@ export interface TrackItem {
   // toolbar sweep) rather than by the user clicking a suggestion, so the row can flag
   // it and the list can filter for the auto-filled tracks to spot-check them.
   autoMatched?: boolean
+  // Whether this track's tags were found in the user's Apple Music library, merged in
+  // at the App boundary from the session library snapshot (like spectrum) so the list
+  // can filter "already owned" vs "missing". Undefined until the snapshot loads, off
+  // macOS, or before any candidate is filled — those rows sit in neither library bucket.
+  inAppleMusic?: boolean
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage

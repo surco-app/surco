@@ -32,11 +32,18 @@ export type QualityFilter =
   | 'unanalyzed'
   | 'unconverted'
   | 'automatched'
+  | 'inLibrary'
+  | 'notInLibrary'
 
 export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
   if (filter === 'all') return tracks
   if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
   if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
+  // The Apple Music library buckets are a third dimension, gated on a known verdict:
+  // a track whose library status hasn't been resolved yet (undefined) belongs to
+  // neither, so it never shows under both "owned" and "missing".
+  if (filter === 'inLibrary') return tracks.filter((t) => t.inAppleMusic === true)
+  if (filter === 'notInLibrary') return tracks.filter((t) => t.inAppleMusic === false)
   // 'suspect' is the triage bucket for everything flagged, so it spans the amber
   // (warn) and both red verdicts — plain low-bitrate (bad) and enhancer-faked
   // (processed) — so one chip isolates all the dubious rips.
@@ -97,12 +104,16 @@ export function qualityCounts(tracks: TrackItem[]): {
   unanalyzed: number
   unconverted: number
   automatched: number
+  inLibrary: number
+  notInLibrary: number
 } {
   let suspect = 0
   let good = 0
   let unanalyzed = 0
   let unconverted = 0
   let automatched = 0
+  let inLibrary = 0
+  let notInLibrary = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed') suspect += 1
@@ -110,6 +121,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
     if (t.autoMatched) automatched += 1
+    if (t.inAppleMusic === true) inLibrary += 1
+    else if (t.inAppleMusic === false) notInLibrary += 1
   }
-  return { suspect, good, unanalyzed, unconverted, automatched }
+  return { suspect, good, unanalyzed, unconverted, automatched, inLibrary, notInLibrary }
 }

@@ -1,9 +1,11 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   AudioLines,
+  Check,
   CircleCheckBig,
   List,
   type LucideIcon,
+  Plus,
   RefreshCw,
   Search,
   Sparkles,
@@ -34,6 +36,7 @@ import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { useAppleMusicLibrary } from './hooks/useAppleMusicLibrary'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { editorSectionOpen } from './hooks/useEditorSections'
@@ -48,6 +51,7 @@ import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
+import { type AppleMusicIndex, isInLibrary } from './lib/appleMusicLibrary'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
@@ -140,6 +144,8 @@ const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
   automatched: Sparkles,
+  inLibrary: Check,
+  notInLibrary: Plus,
 }
 
 type SettingsTab = 'general' | 'stats' | 'naming' | 'shortcuts'
@@ -247,7 +253,15 @@ export default function App(): React.JSX.Element {
   // the reference stable across renders so memoized rows only re-render when their own
   // spectrum lands.
   const viewCache = useRef(
-    new Map<string, { track: TrackItem; spectrum: SpectrumResult; view: TrackItem }>(),
+    new Map<
+      string,
+      {
+        track: TrackItem
+        spectrum: SpectrumResult | undefined
+        index: AppleMusicIndex | null
+        view: TrackItem
+      }
+    >(),
   )
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
@@ -721,25 +735,48 @@ export default function App(): React.JSX.Element {
     })),
     combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
   })
-  // Merge each cached spectrum onto its track for the quality triage and the list,
-  // preserving object identity (via viewCache) so memoized rows don't all re-render.
-  // Memoized so a progress tick during an analyze/convert/match sweep doesn't rebuild
-  // the whole list (and re-run the quality/auto-match scans below) on every re-render.
-  // A row whose analysis is still in flight gets a transient `analyzing` view so the
-  // list can show a placeholder where the verdict dot will land; it is minted per
-  // recompute (not cached) because it only exists for the duration of the fetch.
+  // The session snapshot of the Apple Music library, fetched once there are tracks to
+  // check, so each row's "already owned" verdict is a local lookup rather than an
+  // osascript per track. Null until it lands / off macOS.
+  const libraryIndex = useAppleMusicLibrary(tracks.length)
+  // Merge each cached spectrum and the Apple Music verdict onto its track for the quality
+  // triage and the list, preserving object identity (via viewCache, now keyed on the
+  // library snapshot too) so memoized rows don't all re-render. Memoized so a progress
+  // tick during an analyze/convert/match sweep doesn't rebuild the whole list (and re-run
+  // the quality/auto-match scans below) on every re-render. A row whose analysis is still
+  // in flight gets a transient `analyzing` view so the list can show a placeholder where
+  // the verdict dot will land; it is minted per recompute (not cached) because it only
+  // exists for the duration of the fetch. A track Surco itself added (musicPersistentId
+  // set) is owned by definition, so it reads in-library even before the snapshot loads.
   const tracksView = useMemo(
     () =>
       tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
-        if (!spectrum) return fetching ? { ...t, analyzing: true } : t
+        const inAppleMusic = t.musicPersistentId
+          ? true
+          : libraryIndex
+            ? isInLibrary(libraryIndex, t.meta)
+            : undefined
+        if (!spectrum && fetching)
+          return inAppleMusic === undefined
+            ? { ...t, analyzing: true }
+            : { ...t, analyzing: true, inAppleMusic }
+        if (!spectrum && inAppleMusic === undefined) return t
         const cached = viewCache.current.get(t.id)
-        if (cached && cached.track === t && cached.spectrum === spectrum) return cached.view
-        const view: TrackItem = { ...t, spectrum }
-        viewCache.current.set(t.id, { track: t, spectrum, view })
+        if (
+          cached &&
+          cached.track === t &&
+          cached.spectrum === spectrum &&
+          cached.index === libraryIndex
+        )
+          return cached.view
+        const view: TrackItem = { ...t }
+        if (spectrum) view.spectrum = spectrum
+        if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
+        viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, view })
         return view
       }),
-    [tracks, spectra],
+    [tracks, spectra, libraryIndex],
   )
   tracksViewRef.current = tracksView
 
@@ -1037,20 +1074,19 @@ export default function App(): React.JSX.Element {
                         // Provenance chip, shown only once something has been auto-filled so the
                         // bar isn't cluttered with a permanently-empty filter when auto-match is off.
                         ...(qualityTally.automatched > 0 ? (['automatched'] as const) : []),
+                        // Apple Music library chips, shown only once the snapshot has resolved a
+                        // verdict for at least one track — which also keeps them off Windows, where
+                        // there is no library to read. "Not in library" leads: it's the actionable
+                        // bucket, the tracks still worth importing.
+                        ...(qualityTally.inLibrary + qualityTally.notInLibrary > 0
+                          ? (['notInLibrary', 'inLibrary'] as const)
+                          : []),
                       ] as const
                     ).map((mode) => {
                       const count =
                         mode === 'all'
                           ? tracks.length
-                          : mode === 'unanalyzed'
-                            ? qualityTally.unanalyzed
-                            : mode === 'suspect'
-                              ? qualityTally.suspect
-                              : mode === 'good'
-                                ? qualityTally.good
-                                : mode === 'unconverted'
-                                  ? qualityTally.unconverted
-                                  : qualityTally.automatched
+                          : qualityTally[mode as keyof typeof qualityTally]
                       const active = qualityFilter === mode
                       const name = tr(`sidebar.filter.${mode}`)
                       const Icon = FILTER_ICONS[mode]
