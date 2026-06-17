@@ -381,6 +381,7 @@
     "configDirHint": "Elige una carpeta en iCloud Drive o Dropbox para compartir estas preferencias entre tus Macs. Se aplica al momento; el token de Discogs y las estadísticas de este Mac nunca salen de esta máquina.",
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
+    "tokenWhy": "Opcional. La búsqueda funciona con las credenciales compartidas de Surco, limitadas a 60 peticiones/minuto entre todos los usuarios — así que en horas punta una búsqueda puede fallar un momento. Tu propio token tiene un límite privado y mantiene las búsquedas rápidas.",
     "tokenHelp": "Genera uno gratis en",
     "autoMatch": "Auto-emparejar al importar",
     "autoMatchHint": "Al soltar archivos, busca cada uno en Discogs y aplica automáticamente los metadatos de cualquier coincidencia fiable. Necesita un token; desactivado por defecto porque consume el límite de peticiones en toda la importación.",

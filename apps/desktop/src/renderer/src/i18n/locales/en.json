@@ -381,6 +381,7 @@
     "configDirHint": "Pick a folder in iCloud Drive or Dropbox to share these preferences across your Macs. Applies immediately; the Discogs token and this Mac's stats never leave this machine.",
     "discogsToken": "Discogs token",
     "tokenPlaceholder": "Paste your personal token here",
+    "tokenWhy": "Optional. Search works out of the box on Surco's shared credentials, capped at 60 requests/minute across all users — so at busy times a search can briefly fail. Your own token gets a private rate limit, keeping searches fast.",
     "tokenHelp": "Generate one for free at",
     "autoMatch": "Auto-match on import",
     "autoMatchHint": "When you drop files, search Discogs for each and apply the metadata of any confident match automatically. Needs a token; off by default since it spends its rate limit across the whole import.",
