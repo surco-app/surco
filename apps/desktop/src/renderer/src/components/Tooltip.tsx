@@ -10,6 +10,10 @@ import { createPortal } from 'react-dom'
 // but no longer affect placement now that the tooltip is cursor-anchored.
 const WIDTH = 240
 const OFFSET = 14
+// A short pause before a hover tooltip appears, so it never flickers up while the
+// pointer is just passing over a control — the same restraint as a native macOS help
+// tag. Keyboard focus still surfaces it at once, where the wait would only get in the way.
+const HOVER_DELAY = 400
 
 export function Tooltip({
   label,
@@ -35,16 +39,49 @@ export function Tooltip({
         transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
       })
     }
-    const onMove = (e: PointerEvent): void => showAt(e.clientX, e.clientY)
-    const onLeave = (): void => setPos(null)
+    // Once the tooltip is up it tracks the cursor live; before that, the first moves
+    // only arm a timer, so a quick pass-through never flashes it. last holds the latest
+    // point for the timer to read, so the tooltip opens where the cursor actually is.
+    let shown = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const last = { x: 0, y: 0 }
+    const clearTimer = (): void => {
+      if (timer !== null) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
+    const onMove = (e: PointerEvent): void => {
+      last.x = e.clientX
+      last.y = e.clientY
+      if (shown) {
+        showAt(e.clientX, e.clientY)
+        return
+      }
+      if (timer === null) {
+        timer = setTimeout(() => {
+          timer = null
+          shown = true
+          showAt(last.x, last.y)
+        }, HOVER_DELAY)
+      }
+    }
+    const onLeave = (): void => {
+      clearTimer()
+      shown = false
+      setPos(null)
+    }
     // Keyboard users get the same hint: with no cursor to follow, anchor it to the
-    // trigger's box, and let Escape dismiss it without moving focus (WCAG 1.4.13).
+    // trigger's box, and let Escape dismiss it without moving focus (WCAG 1.4.13). Focus
+    // skips the hover delay — the wait only earns its keep against an idle pointer.
     const onFocus = (): void => {
+      clearTimer()
+      shown = true
       const r = trigger.getBoundingClientRect()
       showAt(r.left + r.width / 2, r.bottom)
     }
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setPos(null)
+      if (e.key === 'Escape') onLeave()
     }
     trigger.addEventListener('pointermove', onMove)
     trigger.addEventListener('pointerleave', onLeave)
@@ -59,6 +96,7 @@ export function Tooltip({
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
       trigger.removeEventListener('keydown', onKeyDown)
+      clearTimer()
     }
   }, [])
 

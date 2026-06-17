@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Tooltip } from './Tooltip'
 
 afterEach(cleanup)
@@ -30,6 +30,44 @@ describe('Tooltip', () => {
     fireEvent.focusIn(screen.getByTestId('trigger'))
     fireEvent.focusOut(screen.getByTestId('trigger'))
     expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  // A hover tooltip that pops up the instant the pointer crosses a control feels cheap
+  // and clutters quick passes; like a native help tag it should wait out a short pause.
+  // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the listener with a
+  // real MouseEvent (which carries them) dispatched as a pointermove.
+  const hover = (trigger: HTMLElement): void => {
+    trigger.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
+    )
+  }
+
+  it('waits out a short hover before appearing', () => {
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      const trigger = screen.getByTestId('trigger')
+      hover(trigger)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful hint')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('does not appear if the pointer leaves before the hover delay elapses', () => {
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      const trigger = screen.getByTestId('trigger')
+      hover(trigger)
+      fireEvent.pointerLeave(trigger)
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // 1.4.13 requires the hint be dismissable without moving the pointer or focus.
