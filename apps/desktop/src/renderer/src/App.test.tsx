@@ -144,9 +144,16 @@ beforeEach(() => {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }) as unknown as typeof window.matchMedia
-  // jsdom doesn't implement HTMLMediaElement.play; the floating player calls it (and
-  // .catch on its returned promise) the instant it opens.
+  // jsdom implements none of HTMLMediaElement.play/pause/load; the floating player calls
+  // play (and .catch on its returned promise) the instant it opens, pause on close or when
+  // continuous playback advances, and load when its source changes.
   HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
+  HTMLMediaElement.prototype.pause = vi.fn()
+  HTMLMediaElement.prototype.load = vi.fn()
+  // jsdom has no 2D canvas context (it logs a not-implemented error and returns null);
+  // the player's Waveform draws to one the moment playback opens. Stub it to null like
+  // the Player/Waveform tests do, so the playback tests don't spew that error.
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
 })
 
 // App and parts of its tree read window.api.platform at module scope, so it must be
