@@ -3,6 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
+import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DiscogsTrack,
   KeyNotation,
@@ -302,33 +303,11 @@ export const Editor = memo(function Editor({
 
   // Empties every metadata field — the inverse of the fill controls (filename /
   // Discogs) — so a badly-labelled file can be retagged from scratch instead of
-  // deleting fifteen values by hand. Artwork is untouched: the cover picker owns
-  // its own remove, and a wrong title rarely means a wrong cover.
+  // deleting fifteen values by hand. The blank comes from the metadata SSOT so a
+  // newly-added field is cleared too, not silently left behind. Artwork is untouched:
+  // the cover picker owns its own remove, and a wrong title rarely means a wrong cover.
   function clearAllMeta(): void {
-    const blank: TrackMetadata = {
-      title: '',
-      artist: '',
-      album: '',
-      albumArtist: '',
-      year: '',
-      genre: '',
-      grouping: '',
-      comment: '',
-      trackNumber: '',
-      discNumber: '',
-      bpm: '',
-      key: '',
-      publisher: '',
-      catalogNumber: '',
-      remixArtist: '',
-      discogsReleaseId: '',
-      rating: '',
-      composer: '',
-      isrc: '',
-      mixName: '',
-      originalYear: '',
-      compilation: '',
-    }
+    const blank = emptyMetadata()
     if (isMulti) onChangeAllMeta?.(blank)
     else onChange({ meta: blank })
   }
