@@ -84,7 +84,7 @@
           "Draws the spectrum and catches fake-lossless MP3s",
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Detects BPM and key from the audio itself",
-          "Warns if the track is already in your Apple Music"
+          "Warns if a track is already in your Apple Music — and filters the crate to the ones you're missing"
         ]
       },
       {
@@ -495,6 +495,15 @@
     "outroTitle": "Try it all in your next session",
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
+      {
+        "version": "0.16",
+        "date": "June 17, 2026",
+        "title": "Filter by what's already in your Apple Music",
+        "items": [
+          "See at a glance which tracks you already have in Apple Music: the whole crate is matched against your library, with sidebar filters to show only the ones you're missing (or the ones already there) — so you never re-import a duplicate. (macOS)",
+          "The list filters are now a single dropdown that never runs out of room, and the position counter — which track you're on and how many are left — stays visible as you switch filters."
+        ]
+      },
       {
         "version": "0.15",
         "date": "June 16, 2026",
