@@ -4,6 +4,7 @@ import {
   ClipboardPaste,
   Copy,
   Download,
+  ImageIcon,
   type LucideIcon,
   X,
 } from 'lucide-react'
@@ -401,12 +402,13 @@ export function CoverPicker({
             type="button"
             data-testid="cover-pick"
             onClick={() => coverInputRef.current?.click()}
-            className={`flex h-40 w-40 items-center justify-center rounded-xl border border-dashed p-2 text-center text-xs ${
+            className={`flex h-40 w-40 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors ${
               coverDragging
-                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                : 'border-[var(--color-line)] text-fg-faint hover:border-[var(--color-line-strong)]'
+                ? 'text-[var(--color-accent)] outline-[var(--color-accent)]'
+                : 'text-fg-faint outline-white/10 hover:text-fg-dim'
             }`}
           >
+            <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
             {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
           </button>
           {coverActions}
