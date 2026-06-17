@@ -237,6 +237,9 @@ export default function App(): React.JSX.Element {
   // callbacks (which read refs to stay stable) can see each track's cached spectrum
   // without re-subscribing.
   const tracksViewRef = useRef<TrackItem[]>([])
+  // The current visible (filtered/sorted/searched) order, so the stable select callback
+  // resolves a Shift range over what's on screen rather than the full import order.
+  const visibleTracksRef = useRef<TrackItem[]>([])
   // Merging a cached spectrum onto a track mints a new object; caching it by id keeps
   // the reference stable across renders so memoized rows only re-render when their own
   // spectrum lands.
@@ -349,10 +352,10 @@ export default function App(): React.JSX.Element {
 
   const onSelectTrack = useCallback(
     (id: string, mods: ClickMods): void => {
-      const order = tracksRef.current.map((t) => t.id)
+      const order = visibleTracksRef.current.map((t) => t.id)
       setSelection((s) => clickSelect(s, order, id, mods))
     },
-    [tracksRef],
+    [],
   )
 
   async function onDrop(e: React.DragEvent): Promise<void> {
@@ -777,6 +780,10 @@ export default function App(): React.JSX.Element {
       ),
     [tracksView, qualityFilter, search, sortBy],
   )
+  // The display order a Shift-click ranges over, read by the (ref-stable) select callback
+  // so a range spans the rows the user actually sees — not the import order, which would
+  // sweep in tracks hidden by the active filter, sort or search.
+  visibleTracksRef.current = visibleTracks
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
   // is selected (or the selection was filtered out of view).

@@ -720,6 +720,36 @@ describe('App track position', () => {
   })
 })
 
+describe('App selection range', () => {
+  // A Shift-click extends the range over the rows the user sees. When a filter (here a
+  // search) hides a track that sits between the two clicks in import order, that hidden
+  // track must NOT be swept into the selection — the range follows the visible order.
+  it('ranges a Shift-click over the visible order, skipping filtered-out tracks', async () => {
+    setApi({
+      pickFiles: vi
+        .fn()
+        .mockResolvedValue(['/music/kick.wav', '/music/snare.wav', '/music/kick2.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    // Hide the middle track (snare); only kick and kick2 stay visible.
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'kick' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const visible = screen.getAllByTestId('track-row')
+    fireEvent.click(visible[0])
+    fireEvent.click(visible[1], { shiftKey: true })
+    // Clear the filter and confirm the hidden snare was never selected: exactly the two
+    // visible rows are pressed, not the three the import-order range would have taken.
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: '' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const pressed = screen
+      .getAllByTestId('track-row')
+      .filter((r) => r.getAttribute('aria-pressed') === 'true')
+    expect(pressed).toHaveLength(2)
+  })
+})
+
 describe('App start over', () => {
   // A bad match or stray edits can leave a track worse than when it landed; the
   // right-click "Start over" rebuilds the row from the file alone — re-reading its
