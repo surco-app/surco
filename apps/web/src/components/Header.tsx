@@ -71,17 +71,12 @@ export default function Header({ page }: { page?: Page }) {
               scrolled ? 'h-10 w-10' : 'h-11 w-11 sm:h-14 sm:w-14'
             }`}
           />
-          <span className="flex items-center gap-2">
-            <span
-              className={`font-semibold leading-none tracking-tight transition-all duration-300 ${
-                scrolled ? 'text-2xl' : 'text-2xl sm:text-3xl'
-              }`}
-            >
-              Surco
-            </span>
-            <span className="rounded-full border border-blue/40 bg-blue/10 px-2 py-0.5 font-mono text-[10px] uppercase leading-none tracking-wider text-blue">
-              {t('beta')}
-            </span>
+          <span
+            className={`font-semibold leading-none tracking-tight transition-all duration-300 ${
+              scrolled ? 'text-2xl' : 'text-2xl sm:text-3xl'
+            }`}
+          >
+            Surco
           </span>
         </a>
         <div className="flex items-center gap-4 sm:gap-7">

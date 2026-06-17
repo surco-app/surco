@@ -25,8 +25,7 @@
     "donar": "Donate"
   },
   "available": "Available · macOS · Windows",
-  "beta": "beta",
-  "betaPill": "Beta · Free forever",
+  "betaPill": "Free forever",
   "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
     "space": "Space"
