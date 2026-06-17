@@ -1,4 +1,4 @@
-export const SECTIONS = ['velocidad', 'como', 'analisis', 'funciones', 'atajos', 'precio', 'instalar'] as const
+export const SECTIONS = ['velocidad', 'como', 'analisis', 'funciones', 'atajos', 'precio', 'instalar', 'faq'] as const
 
 // The header stays short on purpose: only the links a first-time visitor needs.
 // The footer keeps linking every section through SECTIONS.

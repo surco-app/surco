@@ -17,6 +17,7 @@
     "atajos": "Shortcuts",
     "precio": "Pricing",
     "instalar": "Install",
+    "faq": "FAQ",
     "guia": "Guide",
     "skipToContent": "Skip to content",
     "openMenu": "Open menu",
@@ -226,6 +227,36 @@
     "copy": "Copy",
     "copied": "Copied!",
     "note": "macOS only"
+  },
+  "faq": {
+    "kicker": "FAQ",
+    "title": "Before you download",
+    "items": [
+      {
+        "q": "Is it really free?",
+        "a": "Yes. Surco is free and complete, forever: no account, no subscription, no limits. If it saves you hours, you can support its development with a donation."
+      },
+      {
+        "q": "Does it touch my original files?",
+        "a": "By default, no. Converted tracks are saved to a separate folder (Music/Surco) and your originals stay intact. They're only replaced if you turn on \"Overwrite original\"."
+      },
+      {
+        "q": "Does it keep cue points and beatgrids?",
+        "a": "Yes. Surco re-exports without touching your Traktor cue points or beatgrid."
+      },
+      {
+        "q": "Windows says \"Windows protected your PC\". Is it safe?",
+        "a": "Yes. That's the SmartScreen notice for new apps not yet signed on Windows: click \"More info\", then \"Run anyway\". On macOS, Surco is notarized by Apple and opens with no warnings."
+      },
+      {
+        "q": "Which formats does it support?",
+        "a": "It converts between lossless AIFF, WAV and FLAC and high-quality MP3, any to any. It also reads M4A, AAC, OGG and OPUS."
+      },
+      {
+        "q": "Which systems does it run on?",
+        "a": "macOS (Apple Silicon and Intel) and Windows. It updates itself, so you'll always have the latest version."
+      }
+    ]
   },
   "download": {
     "viewDownloads": "View downloads",

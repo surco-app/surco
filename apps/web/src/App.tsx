@@ -14,6 +14,7 @@ import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
 import DownloadButton from './components/DownloadButton'
 import InstallSection from './components/InstallSection'
+import Faq from './components/Faq'
 import WaveBackdrop from './components/WaveBackdrop'
 import GrooveArcs from './components/GrooveArcs'
 import { useAutoLanguage } from './lib/useAutoLanguage'
@@ -282,6 +283,8 @@ export default function App() {
         <Pricing />
 
         <InstallSection />
+
+        <Faq />
 
         <section className="pb-24">
           <Reveal>
