@@ -4,7 +4,7 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), edit tags and metadata from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco — Get your DJ tracks ready in seconds",
     "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
     "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV or FLAC, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
@@ -227,6 +227,10 @@
       {
         "q": "Is it really free?",
         "a": "Yes. Surco is free and complete, forever: no account, no subscription, no limits. If it saves you hours, you can support its development with a donation."
+      },
+      {
+        "q": "Is it a tag and metadata editor?",
+        "a": "Yes, and more. Surco edits your music's tags and metadata (artist, title, album, year, artwork…) and fills them in from Discogs. But it also converts between lossless formats, checks audio quality and organizes your library: what you'd do with a tag editor and three other apps, in one."
       },
       {
         "q": "Does it touch my original files?",

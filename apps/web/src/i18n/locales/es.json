@@ -4,7 +4,7 @@
     "ogLocale": "es_ES",
     "inLanguage": "es",
     "title": "Surco — Prepara tus pistas de DJ en segundos",
-    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), etiqueta desde Discogs y manda a Apple Music en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
+    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs y manda a Apple Music en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
     "ogTitle": "Surco — Prepara tus pistas de DJ en segundos",
     "ogDescription": "Menos preparar, más pinchar: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), etiqueta desde Discogs y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
     "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV o FLAC lossless, etiqueta desde Discogs, manda a Apple Music y analiza el espectro para detectar MP3 recomprimidos."
@@ -227,6 +227,10 @@
       {
         "q": "¿Es gratis de verdad?",
         "a": "Sí. Surco es gratis y completo, para siempre: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo con una donación."
+      },
+      {
+        "q": "¿Es un editor de etiquetas y metadatos?",
+        "a": "Sí, y más. Surco edita las etiquetas y los metadatos de tu música (artista, título, álbum, año, carátula…) y los completa desde Discogs. Pero además convierte entre formatos lossless, comprueba la calidad del audio y ordena tu biblioteca: lo que harías con un editor de etiquetas y tres apps más, en una."
       },
       {
         "q": "¿Toca mis archivos originales?",
