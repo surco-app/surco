@@ -11,7 +11,7 @@ export default function Footer({ page }: { page?: Page }) {
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
-      <div className="mx-auto grid max-w-5xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-5xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
             <img src="/icon.png" alt="Surco" className="h-9 w-9" />
@@ -51,6 +51,27 @@ export default function Footer({ page }: { page?: Page }) {
             {formats.map((f) => (
               <li key={f}>{f}</li>
             ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.contactHeading')}</h3>
+          <ul className="mt-4 space-y-2.5 text-sm text-muted">
+            <li>
+              <a href="mailto:vigosan@gmail.com" className="transition-colors hover:text-fg">
+                vigosan@gmail.com
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://vicent.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-fg"
+              >
+                vicent.io
+              </a>
+            </li>
           </ul>
         </div>
       </div>
