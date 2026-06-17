@@ -6,6 +6,7 @@ vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
 
 import type { DiscogsSearchResult } from '../shared/types'
 import {
+  dedupeResults,
   downloadCover,
   getRelease,
   hasCachedRelease,
@@ -299,5 +300,37 @@ describe('search format filter', () => {
     const url = fetchMock.mock.calls[0][0] as string
     expect(url).not.toContain('format=')
     expect(url).toContain('per_page=20')
+  })
+})
+
+describe('dedupeResults', () => {
+  // A popular album returns the same row once per repress; collapsing rows that render
+  // identically (title, year, label, format) keeps the list readable.
+  it('collapses results that would render identically, keeping the first', () => {
+    const out = dedupeResults([
+      result({ id: 1, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['Vinyl', 'LP'] }),
+      result({ id: 2, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['Vinyl', 'LP'] }),
+    ])
+    expect(out.map((r) => r.id)).toEqual([1])
+  })
+
+  // Editions that differ in any shown field are distinct (their tracklist/catno may be
+  // the one the user needs), so they must survive.
+  it('keeps editions that differ in year, label or format', () => {
+    const out = dedupeResults([
+      result({ id: 1, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['Vinyl'] }),
+      result({ id: 2, title: 'Discovery', year: '2021', label: ['Virgin'], format: ['Vinyl'] }),
+      result({ id: 3, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['CD'] }),
+    ])
+    expect(out.map((r) => r.id)).toEqual([1, 2, 3])
+  })
+
+  it('search collapses duplicate editions from the response', async () => {
+    mockFetch([
+      { id: 1, title: 'Dup', year: '2001', label: ['L'], format: ['Vinyl'] },
+      { id: 2, title: 'Dup', year: '2001', label: ['L'], format: ['Vinyl'] },
+    ])
+    const out = await search('dedupe search query', 'tok')
+    expect(out.map((r) => r.id)).toEqual([1])
   })
 })
