@@ -328,13 +328,13 @@ export function SettingsModal({
       label={tr('header.settings')}
       align="top"
       onSubmit={save}
-      className="flex max-h-[84vh] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+      className="flex max-h-[84vh] w-[680px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
     >
       <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
         <div
           role="tablist"
           aria-label={tr('header.settings')}
-          className="flex justify-center gap-0.5"
+          className="flex justify-center gap-2"
         >
           {TABS.map((id, idx) => {
             const Icon = TAB_ICONS[id]
