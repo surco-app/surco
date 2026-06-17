@@ -1,17 +1,5 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
-import {
-  AudioLines,
-  Check,
-  CircleCheckBig,
-  List,
-  type LucideIcon,
-  Plus,
-  RefreshCw,
-  Search,
-  Sparkles,
-  TriangleAlert,
-  X,
-} from 'lucide-react'
+import { AudioLines, Search, X } from 'lucide-react'
 import type React from 'react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -29,10 +17,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
 import { NoticeToast } from './components/NoticeToast'
 import { LivePlayer } from './components/Player'
+import { QualityFilterBar } from './components/QualityFilterBar'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { Select } from './components/Select'
 import { Toolbar } from './components/Toolbar'
-import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
@@ -135,18 +123,6 @@ const DEFAULT_NORMALIZE: NormalizeConfig = {
 
 // macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
 const isMac = window.api.platform === 'darwin'
-
-// One Lucide glyph per list-filter chip, kept visually consistent with the toolbar.
-const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
-  all: List,
-  suspect: TriangleAlert,
-  good: CircleCheckBig,
-  unanalyzed: AudioLines,
-  unconverted: RefreshCw,
-  automatched: Sparkles,
-  inLibrary: Check,
-  notInLibrary: Plus,
-}
 
 type SettingsTab = 'general' | 'stats' | 'naming' | 'shortcuts'
 
@@ -1059,108 +1035,15 @@ export default function App(): React.JSX.Element {
                       ]}
                     />
                   </div>
-                  <div
-                    ref={qualityFilterRef}
-                    data-testid="quality-filter"
-                    className="flex gap-0.5 px-1.5 py-2"
-                  >
-                    {(
-                      [
-                        'all',
-                        'unanalyzed',
-                        'suspect',
-                        'good',
-                        'unconverted',
-                        // Provenance chip, shown only once something has been auto-filled so the
-                        // bar isn't cluttered with a permanently-empty filter when auto-match is off.
-                        ...(qualityTally.automatched > 0 ? (['automatched'] as const) : []),
-                        // Apple Music library chips, shown only once the snapshot has resolved a
-                        // verdict for at least one track — which also keeps them off Windows, where
-                        // there is no library to read. "Not in library" leads: it's the actionable
-                        // bucket, the tracks still worth importing.
-                        ...(qualityTally.inLibrary + qualityTally.notInLibrary > 0
-                          ? (['notInLibrary', 'inLibrary'] as const)
-                          : []),
-                      ] as const
-                    ).map((mode) => {
-                      const count =
-                        mode === 'all'
-                          ? tracks.length
-                          : qualityTally[mode as keyof typeof qualityTally]
-                      const active = qualityFilter === mode
-                      const name = tr(`sidebar.filter.${mode}`)
-                      const Icon = FILTER_ICONS[mode]
-                      // Color-coded dot draws the eye to buckets that need attention: amber for
-                      // suspect (likely fake), accent for the still-to-convert backlog.
-                      const dot =
-                        mode === 'suspect' && qualityTally.suspect > 0
-                          ? 'bg-warn'
-                          : mode === 'unconverted' && qualityTally.unconverted > 0
-                            ? 'bg-[var(--color-accent)]'
-                            : null
-                      // The selected-track position and the "all" count share a denominator
-                      // when the whole library is in view (the total would show twice), so the
-                      // position folds into the all chip and the separate pill drops out. A
-                      // filter/search narrows the view to a different size, where the two are
-                      // distinct numbers again and the pill returns.
-                      const showPositionHere =
-                        mode === 'all' &&
-                        selectedPosition !== null &&
-                        visibleTracks.length === tracks.length
-                      const countLabel = showPositionHere
-                        ? `${selectedPosition}/${count}`
-                        : count
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`quality-filter-${mode}`}
-                          aria-pressed={active}
-                          aria-label={name}
-                          onClick={() => setQualityFilter(mode)}
-                          className={`press group relative flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-xs font-medium ${
-                            active
-                              ? 'bg-[var(--color-accent-soft)] text-fg'
-                              : 'text-fg-dim hover:bg-[var(--color-panel-2)]'
-                          }`}
-                        >
-                          <span className="relative">
-                            <Icon className="h-4 w-4" aria-hidden="true" />
-                            {dot && (
-                              <span
-                                className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
-                              />
-                            )}
-                          </span>
-                          <span className="min-w-[2ch] text-center tabular-nums opacity-70">
-                            {countLabel}
-                          </span>
-                          <Tooltip
-                            label={
-                              showPositionHere
-                                ? tr('sidebar.position', {
-                                    current: selectedPosition,
-                                    total: count,
-                                  })
-                                : name
-                            }
-                          />
-                        </button>
-                      )
-                    })}
-                    {selectedPosition !== null && visibleTracks.length !== tracks.length && (
-                      <span
-                        data-testid="track-position"
-                        title={tr('sidebar.position', {
-                          current: selectedPosition,
-                          total: visibleTracks.length,
-                        })}
-                        className="ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
-                      >
-                        {selectedPosition}/{visibleTracks.length}
-                      </span>
-                    )}
-                  </div>
+                  <QualityFilterBar
+                    filterRef={qualityFilterRef}
+                    value={qualityFilter}
+                    onChange={setQualityFilter}
+                    tally={qualityTally}
+                    trackCount={tracks.length}
+                    visibleCount={visibleTracks.length}
+                    selectedPosition={selectedPosition}
+                  />
                 </div>
                 {visibleTracks.length === 0 ? (
                   <p className="p-6 text-center text-xs text-fg-faint">
