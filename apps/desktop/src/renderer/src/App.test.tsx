@@ -689,15 +689,14 @@ describe('App row playback', () => {
 })
 
 describe('App track position', () => {
-  // The "all" chip already shows the library total, so the position indicator's
-  // denominator repeats it while the whole list is in view. The position folds into the
-  // all chip and the standalone pill drops out, so the total never shows twice.
-  it('folds the selected position into the all chip instead of repeating the total', async () => {
+  // Auditioning a crate one by one, the DJ wants to see how far along they are. The
+  // x/total counter sits beside the (collapsed) filter dropdown and stays visible even
+  // with the whole library in view — that's the indicator the user relies on.
+  it('shows the selected position as an x/total counter beside the filter', async () => {
     await renderApp()
     const rows = await addTwoTracks()
     fireEvent.click(rows[1])
-    expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('2/2')
-    expect(screen.queryByTestId('track-position')).toBeNull()
+    expect(screen.getByTestId('track-position')).toHaveTextContent('2/2')
   })
 })
 
@@ -1051,17 +1050,16 @@ describe('App keyboard navigation', () => {
     expect(rows[1]).toHaveFocus()
   })
 
-  // Auditioning a crate one by one, the DJ wants to see how far along they are. With the
-  // whole library in view the position folds into the "all" chip (whose count is the same
-  // total), and it follows the arrow keys.
+  // Auditioning a crate one by one, the DJ wants to see how far along they are: the
+  // x/total counter follows the arrow keys.
   it('shows the selected track position and follows navigation', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('1/2')
+    expect(screen.getByTestId('track-position')).toHaveTextContent('1/2')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
 
-    await waitFor(() => expect(screen.getByTestId('quality-filter-all')).toHaveTextContent('2/2'))
+    await waitFor(() => expect(screen.getByTestId('track-position')).toHaveTextContent('2/2'))
   })
 })
 
@@ -1205,8 +1203,9 @@ describe('App Apple Music library filter', () => {
     })
     await renderApp()
     await addTwoTracks()
-    // Both tracks get a verdict from the snapshot, so both library chips appear: one is
-    // owned (Strobe), one is missing (Ghosts).
+    // Both tracks get a verdict from the snapshot, so both library buckets list in the
+    // filter menu: one owned (Strobe), one missing (Ghosts).
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     const notInLibrary = await screen.findByTestId('quality-filter-notInLibrary')
     expect(screen.getByTestId('quality-filter-inLibrary')).toBeInTheDocument()
     // Filtering to "not in library" leaves only the track the library doesn't hold.
@@ -1214,15 +1213,16 @@ describe('App Apple Music library filter', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
-  // Off macOS there is no library to read, so the buckets never resolve and the chips
-  // must not appear — a Windows build should show no Apple Music filters at all.
-  it('shows no library chips off macOS', async () => {
+  // Off macOS there is no library to read, so the buckets never resolve and must not be
+  // listed — a Windows build shows no Apple Music filters in the menu at all.
+  it('lists no library buckets off macOS', async () => {
     setApi({
       readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
       loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
     })
     await renderApp()
     await addTwoTracks()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.queryByTestId('quality-filter-notInLibrary')).toBeNull()
     expect(screen.queryByTestId('quality-filter-inLibrary')).toBeNull()
   })

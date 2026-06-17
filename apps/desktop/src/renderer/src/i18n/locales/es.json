@@ -40,6 +40,7 @@
     "dropHint": "Arrastra aquí tus archivos, o pulsa “Añadir archivos”.",
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
+      "label": "Filtro",
       "all": "Todas",
       "suspect": "Sospechosas",
       "good": "Buenas",

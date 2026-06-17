@@ -40,6 +40,7 @@
     "dropHint": "Drag your files here, or press “Add files”.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
+      "label": "Filter",
       "all": "All",
       "suspect": "Suspect",
       "good": "Good",
