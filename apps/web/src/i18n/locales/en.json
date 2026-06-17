@@ -496,16 +496,6 @@
     "outroLede": "Download Surco and prep your first crate in a couple of minutes.",
     "releases": [
       {
-        "version": "0.17",
-        "date": "June 17, 2026",
-        "title": "Filter Discogs by format, and pick your language",
-        "items": [
-          "Filter Discogs search to the release formats you want — Vinyl, CD, digital or cassette — from the new Search tab in Settings, so you stop scrolling past pressings you'll never use.",
-          "Choose the app's language — System, English or Español — and it sticks across restarts.",
-          "Sharper Discogs results: duplicate editions of the same release collapse into one row, a reordered title (\"All Love\" vs \"Love All\") is recognised as the same track, and the \"already in your Apple Music\" check no longer trips on artists whose names merely overlap."
-        ]
-      },
-      {
         "version": "0.16",
         "date": "June 17, 2026",
         "title": "Filter by what's already in your Apple Music",
