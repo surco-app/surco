@@ -282,4 +282,32 @@ describe('CoverPicker drag and counter', () => {
     renderWithRelease({ coverUrl: undefined })
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
   })
+
+  // The workflow the user relies on after applying a release: it keeps the file's own
+  // cover rather than forcing the release art over it, and the arrows step from that
+  // cover into the release's images — forward and back — so the release art is always one
+  // step away. This guards against a regression where the release images stop being
+  // reachable from a track that already carries a cover.
+  it('steps from the kept file cover into the release images with the arrows', () => {
+    const { onChange } = renderWithRelease({
+      coverUrl: 'http://file/original.jpg',
+      embeddedCover: 'http://file/original.jpg',
+    })
+    // The file's own cover sits at index 0, the two release images after it.
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/3')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      coverUrl: 'http://a/1.jpg',
+      coverPath: undefined,
+      coverRemoved: false,
+    })
+    // Stepping back from the original wraps to the last release image, so both directions
+    // reach the release art.
+    fireEvent.click(screen.getByTestId('cover-prev'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      coverUrl: 'http://a/2.jpg',
+      coverPath: undefined,
+      coverRemoved: false,
+    })
+  })
 })
