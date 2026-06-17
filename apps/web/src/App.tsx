@@ -161,12 +161,6 @@ export default function App() {
           </Reveal>
         </section>
 
-        <Replaces />
-
-        <Speed />
-
-        <HowItWorks />
-
         <section id="analisis" className="scroll-mt-24 pb-24">
           <Reveal>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('analysis.kicker')}</p>
@@ -220,6 +214,12 @@ export default function App() {
             </Reveal>
           </div>
         </section>
+
+        <Replaces />
+
+        <Speed />
+
+        <HowItWorks />
 
         <section id="funciones" className="scroll-mt-24 pb-24">
           <Reveal>
