@@ -18,6 +18,9 @@ interface ConvertFooterProps {
   stale: boolean
   done: boolean
   incomplete: boolean
+  // Why the convert is blocked (the empty required fields), surfaced as the button's
+  // tooltip. Single-track only; undefined when nothing is missing.
+  incompleteReason?: string
   willEditInPlace: boolean
   addToAppleMusic: boolean
   format: OutputFormat
@@ -46,6 +49,7 @@ export function ConvertFooter({
   stale,
   done,
   incomplete,
+  incompleteReason,
   willEditInPlace,
   addToAppleMusic,
   format,
@@ -199,6 +203,7 @@ export function ConvertFooter({
               window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
             }
             incomplete={!isMulti && incomplete}
+            incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}
             count={isMulti ? selectedCount : undefined}
             onProcess={onProcess}

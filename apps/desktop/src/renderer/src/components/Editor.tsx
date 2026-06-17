@@ -328,9 +328,17 @@ export const Editor = memo(function Editor({
   const footerStatus = selectionStatus(item, selectedTracks, done)
   const musicExt = isMulti ? format : exportedFormat
   // Required fields are flagged the moment they are empty, not only after a failed
-  // convert: with the button disabled below, the click that produced the error is
-  // no longer reachable, so the red field is what tells the user why.
-  const incomplete = missingRequired(item.meta, requiredFields).length > 0
+  // convert: with the convert button disabled below, that click can't surface the
+  // reason any more, so the field's amber dot and the button's own tooltip — which
+  // names exactly what's missing — are what tell the user why. The tooltip reuses the
+  // same phrasing the blocked-convert error would have shown.
+  const missing = missingRequired(item.meta, requiredFields)
+  const incomplete = missing.length > 0
+  const incompleteReason = incomplete
+    ? tr('editor.missingRequired', {
+        fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+      })
+    : undefined
   // The user's default genres come first so they're always one click away even
   // when a release isn't on Discogs; the release's own genres/styles follow,
   // deduped so a shared name shows a single pill.
@@ -594,6 +602,7 @@ export const Editor = memo(function Editor({
           stale={stale}
           done={done}
           incomplete={incomplete}
+          incompleteReason={incompleteReason}
           willEditInPlace={willEditInPlace}
           addToAppleMusic={addToAppleMusic}
           format={format}
