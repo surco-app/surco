@@ -393,7 +393,7 @@
     "autoMatchHint": "Al soltar archivos, busca cada uno en Discogs y aplica automáticamente los metadatos de cualquier coincidencia fiable. Necesita un token; desactivado por defecto porque consume el límite de peticiones en toda la importación.",
     "autoMatchNeedsToken": "Añade tu token de Discogs arriba para activar el auto-emparejado.",
     "discogsFormats": "Mostrar solo estos formatos",
-    "discogsFormatsHint": "Limita los resultados de Discogs a los formatos elegidos. Déjalos todos sin marcar para mostrar cualquier formato.",
+    "discogsFormatsHint": "Limita los resultados de Discogs a los formatos que marques. Sin ninguno marcado, se muestran todos.",
     "format": {
       "Vinyl": "Vinyl",
       "CD": "CD",

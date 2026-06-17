@@ -393,7 +393,7 @@
     "autoMatchHint": "When you drop files, search Discogs for each and apply the metadata of any confident match automatically. Needs a token; off by default since it spends its rate limit across the whole import.",
     "autoMatchNeedsToken": "Add your Discogs token above to enable auto-match.",
     "discogsFormats": "Show only these formats",
-    "discogsFormatsHint": "Limit Discogs search results to the chosen release formats. Leave all unchecked to show every format.",
+    "discogsFormatsHint": "Limit Discogs results to the formats you check. With none checked, every format shows.",
     "format": {
       "Vinyl": "Vinyl",
       "CD": "CD",
