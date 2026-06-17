@@ -241,6 +241,7 @@
     "loudnessGradeBad": "Check it",
     "spectrumAlt": "Frequency spectrogram of the track",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
+    "spectrumHighs": "highs to ~{{cutoff}}",
     "output": "Output:",
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",

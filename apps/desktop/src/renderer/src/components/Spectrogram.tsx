@@ -32,7 +32,15 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
           className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/70"
         >
           <span className="absolute right-1 top-0.5 rounded bg-black/65 px-1 text-[10px] font-medium text-white">
-            {tr('editor.spectrumCutoff', { cutoff: formatKHz(spectrum.cutoffHz) })}
+            {/* The line marks a codec wall only when a knee was actually found; a knee-free
+                taper just shows how far the genuine highs reach, so calling it a "cutoff"
+                there would contradict the "no codec cut" caption below and read as a fake. */}
+            {tr(
+              spectrum.hasKnee === false && !spectrum.processed
+                ? 'editor.spectrumHighs'
+                : 'editor.spectrumCutoff',
+              { cutoff: formatKHz(spectrum.cutoffHz) },
+            )}
           </span>
         </div>
       )}
