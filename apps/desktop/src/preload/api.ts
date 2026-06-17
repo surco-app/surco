@@ -37,6 +37,8 @@ export interface Api {
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   getConfigDir: () => Promise<string | null>
+  // The app-default settings location, shown in the field when no custom folder is set.
+  defaultConfigDir: () => Promise<string>
   setConfigDir: (dir: string | null) => Promise<Settings>
   pickConfigDir: () => Promise<string | null>
   pickFiles: () => Promise<string[]>

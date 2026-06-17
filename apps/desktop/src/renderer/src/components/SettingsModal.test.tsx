@@ -9,6 +9,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {
     platform: 'darwin',
     getConfigDir: async () => null,
+    defaultConfigDir: async () => '/Users/test/Library/Application Support/Surco',
   }
 })
 

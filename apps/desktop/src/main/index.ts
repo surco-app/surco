@@ -55,7 +55,14 @@ import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 import { getProvider } from './providers'
-import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
+import {
+  defaultConfigDir,
+  getConfigDir,
+  getSettings,
+  recordConversion,
+  saveSettings,
+  setConfigDir,
+} from './settings'
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -407,6 +414,7 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('settings:getConfigDir', () => getConfigDir())
+  ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())
   // Switching the settings folder takes effect immediately (no Save step): it moves
   // where settings.json lives, returning the settings now in effect from that folder.
   ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) => setConfigDir(dir))

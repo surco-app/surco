@@ -30,6 +30,7 @@ const api: Api = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
+  defaultConfigDir: (): Promise<string> => ipcRenderer.invoke('settings:defaultConfigDir'),
   setConfigDir: (dir: string | null) => ipcRenderer.invoke('settings:setConfigDir', dir),
   pickConfigDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickConfigDir'),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),

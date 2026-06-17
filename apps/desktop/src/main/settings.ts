@@ -67,6 +67,12 @@ export function getConfigDir(): string | null {
   return typeof parsed.dir === 'string' && parsed.dir !== '' ? parsed.dir : null
 }
 
+// Where settings live when no custom folder is chosen, shown in the Settings field so
+// "default" isn't an opaque label — the user can see the actual location.
+export function defaultConfigDir(): string {
+  return app.getPath('userData')
+}
+
 function syncedFile(): string | null {
   const dir = getConfigDir()
   return dir ? join(dir, 'settings.json') : null
