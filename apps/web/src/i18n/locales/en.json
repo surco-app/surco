@@ -37,8 +37,8 @@
   },
   "replaces": {
     "kicker": "One app, not five",
-    "title": "The work of five apps, in Surco",
-    "lede": "Surco reinvents nothing: it gathers into a single window what you used to do jumping across five programs.",
+    "title": "The work of five apps, in one click",
+    "lede": "Converter, Discogs, tag editor, spectrum analyzer and Apple Music: five programs, four or five minutes per track. Surco folds that whole flow into one button.",
     "apps": ["Converter", "Discogs", "Tag editor", "Spek", "Apple Music"],
     "result": "one app · one button",
     "faster": "faster than by hand",
@@ -131,9 +131,6 @@
     "Apple Silicon"
   ],
   "speed": {
-    "kicker": "Blink and it's done",
-    "title": "From minutes to seconds per track",
-    "lede": "By hand you jump between a converter, the browser with Discogs, a tag editor, a spectrum analyzer and Apple Music — four or five apps per track. Surco folds that whole flow into one button.",
     "manual": "By hand",
     "manualTime": "~4–5 min",
     "manualSteps": [

@@ -13,7 +13,7 @@ export default function Replaces() {
   const apps = t('replaces.apps', { returnObjects: true }) as string[]
 
   return (
-    <section id="reemplaza" className="scroll-mt-24 pb-24">
+    <section id="velocidad" className="scroll-mt-24 pb-10">
       <Reveal>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('replaces.kicker')}</p>
         <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
