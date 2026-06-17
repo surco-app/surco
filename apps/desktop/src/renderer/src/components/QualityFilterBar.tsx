@@ -215,13 +215,17 @@ export function QualityFilterBar({
           </>
         )}
       </div>
-      {selectedPosition !== null && (
+      {visibleCount > 0 && (
         <span
           data-testid="track-position"
-          title={tr('sidebar.position', { current: selectedPosition, total: visibleCount })}
+          title={
+            selectedPosition !== null
+              ? tr('sidebar.position', { current: selectedPosition, total: visibleCount })
+              : undefined
+          }
           className="ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
         >
-          {selectedPosition}/{visibleCount}
+          {selectedPosition !== null ? `${selectedPosition}/${visibleCount}` : `–/${visibleCount}`}
         </span>
       )}
     </div>

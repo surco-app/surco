@@ -86,8 +86,16 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('track-position')).toHaveTextContent('250/498')
   })
 
-  it('hides the position counter when nothing is selected', () => {
-    renderBar({ selectedPosition: null })
+  // The counter must stay visible even when the selected track is filtered out of the
+  // current bucket: the user relies on it to know how many tracks are left to go through,
+  // so it falls back to "–/total" rather than disappearing.
+  it('still shows the total (–/total) when no selected track is in the current view', () => {
+    renderBar({ selectedPosition: null, visibleCount: 4 })
+    expect(screen.getByTestId('track-position')).toHaveTextContent('–/4')
+  })
+
+  it('hides the counter only when there are no tracks in view at all', () => {
+    renderBar({ selectedPosition: null, visibleCount: 0 })
     expect(screen.queryByTestId('track-position')).toBeNull()
   })
 })
