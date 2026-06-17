@@ -1022,7 +1022,7 @@ export default function App(): React.JSX.Element {
       <div className="flex min-h-0 flex-1">
         <aside
           style={{ width: sidebar.width }}
-          className="relative shrink-0 bg-[var(--surface-sidebar)]"
+          className="relative shrink-0 bg-[var(--color-panel)]"
         >
           <div
             ref={listScrollRef}
@@ -1032,7 +1032,7 @@ export default function App(): React.JSX.Element {
               <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
             ) : (
               <>
-                <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--surface-sidebar)] backdrop-blur-md">
+                <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
                   <div className="flex items-center gap-1.5 px-1.5 pt-2">
                     <div className="relative flex-1">
                       <Search

@@ -28,21 +28,6 @@
 :root {
   color-scheme: dark;
   --ring: 0 0 0 3.5px color-mix(in srgb, var(--color-accent) 32%, transparent);
-  /* The sidebar/chrome fill. Opaque by default; under macOS vibrancy it drops to a
-     translucent panel so the window's blur material shows through (see below). */
-  --surface-sidebar: var(--color-panel);
-}
-
-/* macOS only: main.tsx sets data-vibrancy when the window carries a vibrancy material.
-   The body goes transparent so that material shows through the toolbar (which has no
-   fill of its own) and the sidebar surface turns translucent. Content panels stay
-   opaque, so forms and the spectrum keep full contrast — the same vibrant-chrome /
-   solid-content split as Finder and Music. */
-[data-vibrancy="on"] {
-  --surface-sidebar: color-mix(in srgb, var(--color-panel) 72%, transparent);
-}
-[data-vibrancy="on"] body {
-  background: transparent;
 }
 
 :root[data-theme="light"] {

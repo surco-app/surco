@@ -278,12 +278,7 @@ function createWindow(): BrowserWindow {
     minHeight: 620,
     show: false,
     titleBarStyle: 'hiddenInset',
-    // On macOS the window goes transparent over a vibrancy material — a live blur of
-    // whatever sits behind it — so the toolbar and sidebar pick up the translucent
-    // chrome of Music/Finder. Other platforms keep the solid dark fill; vibrancy is a
-    // no-op there, and an undefined value leaves the window opaque.
-    backgroundColor: process.platform === 'darwin' ? '#00000000' : '#09090d',
-    vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
+    backgroundColor: '#09090d',
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
       // The renderer runs untrusted-ish content (Discogs data, file tags); the OS
