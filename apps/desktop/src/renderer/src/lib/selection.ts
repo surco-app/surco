@@ -54,3 +54,15 @@ export function deselect(state: Selection, id: string): Selection {
   const ids = state.ids.filter((x) => x !== id)
   return { ids, anchor: state.anchor === id ? (ids[ids.length - 1] ?? null) : state.anchor }
 }
+
+// After the view narrows (a quality-filter change hides rows), the anchor may no longer
+// be on screen — its editor would linger out of view and the position pill read "–/N".
+// Returns the selection to fall back to: the first still-visible track, or an empty
+// selection when the view is empty. Returns null when the anchor is still visible (or
+// there is none), meaning keep the current selection untouched. Pure so the effect that
+// calls it stays a one-liner and the fall-back rule is testable without a DOM.
+export function reanchorToVisible(visibleIds: string[], anchor: string | null): Selection | null {
+  if (!anchor || visibleIds.includes(anchor)) return null
+  const first = visibleIds[0]
+  return first ? { ids: [first], anchor: first } : { ids: [], anchor: null }
+}

@@ -56,7 +56,7 @@ import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { pageScrollTop } from './lib/scroll'
-import { type ClickMods, clickSelect, type Selection } from './lib/selection'
+import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import {
   filterByQuality,
@@ -350,13 +350,10 @@ export default function App(): React.JSX.Element {
     [setTracks],
   )
 
-  const onSelectTrack = useCallback(
-    (id: string, mods: ClickMods): void => {
-      const order = visibleTracksRef.current.map((t) => t.id)
-      setSelection((s) => clickSelect(s, order, id, mods))
-    },
-    [],
-  )
+  const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
+    const order = visibleTracksRef.current.map((t) => t.id)
+    setSelection((s) => clickSelect(s, order, id, mods))
+  }, [])
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
@@ -793,6 +790,19 @@ export default function App(): React.JSX.Element {
     const i = visibleTracks.findIndex((t) => t.id === selectedId)
     return i < 0 ? null : i + 1
   }, [visibleTracks, selectedId])
+  // A quality-filter change can hide the selected track; left alone its editor lingers
+  // out of view and the position pill reads "–/N". Drop to the first track the new
+  // filter shows (or clear when it shows none) so the editor and count always reflect
+  // what's on screen. Scoped to the filter — not search, which changes per keystroke and
+  // would thrash the editor's per-track fetches; sort only reorders, never hides.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selectedId are read from the latest render.
+  useEffect(() => {
+    const next = reanchorToVisible(
+      visibleTracks.map((t) => t.id),
+      selectedId,
+    )
+    if (next) setSelection(next)
+  }, [qualityFilter])
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
   const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])

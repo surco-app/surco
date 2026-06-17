@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clickSelect, deselect, type Selection } from './selection'
+import { clickSelect, deselect, reanchorToVisible, type Selection } from './selection'
 
 const ORDER = ['a', 'b', 'c', 'd']
 const empty: Selection = { ids: [], anchor: null }
@@ -83,5 +83,26 @@ describe('deselect', () => {
   it('clears the anchor when the last selected track is removed', () => {
     const state: Selection = { ids: ['a'], anchor: 'a' }
     expect(deselect(state, 'a')).toEqual({ ids: [], anchor: null })
+  })
+})
+
+describe('reanchorToVisible', () => {
+  // The whole point: a filter that hides the selected track used to leave the editor on a
+  // row no longer in the list and the position pill reading "–/N". Fall to the first
+  // visible track so both point at something on screen.
+  it('falls to the first visible track when the anchor was filtered out', () => {
+    expect(reanchorToVisible(['c', 'd'], 'a')).toEqual({ ids: ['c'], anchor: 'c' })
+  })
+
+  it('keeps the current selection when the anchor is still visible', () => {
+    expect(reanchorToVisible(['a', 'b', 'c'], 'b')).toBeNull()
+  })
+
+  it('clears the selection when the filter leaves nothing visible', () => {
+    expect(reanchorToVisible([], 'a')).toEqual({ ids: [], anchor: null })
+  })
+
+  it('does nothing when there was no selection to begin with', () => {
+    expect(reanchorToVisible(['a', 'b'], null)).toBeNull()
   })
 })
