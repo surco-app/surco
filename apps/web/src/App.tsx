@@ -8,7 +8,6 @@ import Pricing from './components/Pricing'
 import Spectrogram from './components/Spectrogram'
 import AppMockup from './components/AppMockup'
 import Reveal from './components/Reveal'
-import Replaces from './components/Replaces'
 import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
 import Tilt from './components/Tilt'
@@ -150,7 +149,6 @@ export default function App() {
             </Reveal>
             <Reveal delay={320}>
               <DownloadButton />
-              <p className="mt-4 font-mono text-xs text-faint">{t('hero.trust')}</p>
             </Reveal>
           </div>
 
@@ -216,8 +214,6 @@ export default function App() {
           </div>
         </section>
         </Band>
-
-        <Replaces />
 
         <Speed />
 

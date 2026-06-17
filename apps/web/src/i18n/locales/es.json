@@ -34,17 +34,7 @@
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos.",
-    "trust": "Gratis · Sin cuenta · Se actualiza solo"
-  },
-  "replaces": {
-    "kicker": "Una app, no cinco",
-    "title": "El trabajo de cinco apps, en un clic",
-    "lede": "Conversor, Discogs, editor de tags, analizador de espectro y Apple Music: cinco programas, cuatro o cinco minutos por pista. Surco reúne todo ese flujo en un botón.",
-    "apps": ["Conversor", "Discogs", "Editor de tags", "Spek", "Apple Music"],
-    "result": "una app · un botón",
-    "faster": "más rápido que a mano",
-    "perTrack": "por pista"
+    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
   },
   "analysis": {
     "kicker": "Análisis anti-fake",
@@ -70,9 +60,9 @@
         "replaces": "en vez de un conversor",
         "items": [
           "AIFF, WAV, FLAC o MP3, de cualquiera a cualquiera",
-          "¿Ya está en ese formato? Lo copia tal cual, al instante",
-          "Iguala el volumen al mismo loudness o pico (opcional)",
-          "Reexporta sin tocar los cue points ni el beatgrid de Traktor"
+          "¿Ya en ese formato? Lo copia tal cual al instante",
+          "Iguala el volumen a un loudness o pico común",
+          "Reexporta sin tocar cue points ni beatgrid de Traktor"
         ]
       },
       {
@@ -80,10 +70,10 @@
         "title": "Etiquetar",
         "replaces": "en vez de Discogs en el navegador y un editor de tags",
         "items": [
-          "Rellena artista, álbum, año, sello, BPM y tonalidad desde Discogs de un clic",
-          "Empareja un disco entero por duración, aunque los archivos compartan nombre",
-          "Edita en bloque y busca y reemplaza (texto o regex) en toda la cola",
-          "Trae la carátula de Discogs o suelta la tuya; Surco la cuadra e incrusta"
+          "Rellena artista, álbum, sello, BPM y tono desde Discogs",
+          "Empareja el disco entero por duración de pista",
+          "Edita en bloque y busca y reemplaza con regex",
+          "Trae la carátula de Discogs o suelta la tuya"
         ]
       },
       {
@@ -91,10 +81,10 @@
         "title": "Analizar la calidad",
         "replaces": "en vez de un analizador de espectro",
         "items": [
-          "Dibuja el espectro y caza MP3 disfrazados de lossless antes de cabina",
-          "Lectura por colores: LUFS, pico real, dinámica, balance y ruido",
-          "Detecta BPM y tonalidad del propio audio, a un clic de aplicarse",
-          "Te avisa si la pista ya está en tu biblioteca de Apple Music"
+          "Dibuja el espectro y caza MP3 falsos antes de cabina",
+          "Lectura por colores: LUFS, pico, dinámica y ruido",
+          "Detecta BPM y tonalidad del propio audio",
+          "Avisa si la pista ya está en tu Apple Music"
         ]
       },
       {
@@ -102,10 +92,10 @@
         "title": "Organizar y exportar",
         "replaces": "en vez de tu gestor de biblioteca",
         "items": [
-          "Envía a Apple Music con los tags y la carátula escritos en la biblioteca —incluso en WAV, que entra pelado a mano— y mantén la copia al día al editar",
-          "Exporta la cola entera como colección de rekordbox o Traktor",
-          "Nombra con plantillas {artist} - {title} y crea subcarpetas",
-          "Importa carpetas enteras y escucha cualquier pista antes de convertir"
+          "Envía a Apple Music con tags y carátula, hasta en WAV",
+          "Exporta la cola a rekordbox o Traktor",
+          "Nombra con plantillas {artist} - {title}",
+          "Importa carpetas enteras y escucha antes de convertir"
         ]
       }
     ]
@@ -133,6 +123,9 @@
     "Apple Silicon"
   ],
   "speed": {
+    "kicker": "Una app, no cinco",
+    "title": "El trabajo de cinco apps, en un clic",
+    "lede": "Conversor, Discogs, editor de tags, analizador de espectro y Apple Music: cinco programas, cuatro o cinco minutos por pista. Surco reúne todo ese flujo en un botón.",
     "manual": "A mano",
     "manualTime": "~4–5 min",
     "manualSteps": [

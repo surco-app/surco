@@ -9,8 +9,16 @@ export default function Speed() {
   const bullets = t('speed.bullets', { returnObjects: true }) as string[]
 
   return (
-    <section className="pb-24">
-      <div className="grid items-stretch gap-5 md:grid-cols-2">
+    <section id="velocidad" className="scroll-mt-24 pt-24 pb-24">
+      <Reveal>
+        <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('speed.kicker')}</p>
+        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+          {t('speed.title')}
+        </h2>
+        <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('speed.lede')}</p>
+      </Reveal>
+
+      <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2">
         <Reveal>
           <div className="inset-shadow-edge h-full rounded-2xl border border-line bg-surface2/40 p-6">
             <div className="flex items-baseline justify-between">
