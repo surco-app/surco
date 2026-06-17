@@ -33,7 +33,8 @@
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
+    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos.",
+    "trust": "Gratis · Sin cuenta · Se actualiza solo"
   },
   "replaces": {
     "kicker": "Una app, no cinco",

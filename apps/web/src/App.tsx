@@ -151,6 +151,7 @@ export default function App() {
             </Reveal>
             <Reveal delay={320}>
               <DownloadButton />
+              <p className="mt-4 font-mono text-xs text-faint">{t('hero.trust')}</p>
             </Reveal>
           </div>
 

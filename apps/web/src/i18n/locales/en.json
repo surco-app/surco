@@ -33,7 +33,8 @@
   "hero": {
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
-    "ledeShort": "Convert, tag, check the quality and file into Apple Music: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
+    "ledeShort": "Convert, tag, check the quality and file into Apple Music: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds.",
+    "trust": "Free · No account · Auto-updating"
   },
   "replaces": {
     "kicker": "One app, not five",
