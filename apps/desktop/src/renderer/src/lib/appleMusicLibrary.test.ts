@@ -45,4 +45,25 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(index, { title: '', artist: 'deadmau5' })).toBe(false)
     expect(isInLibrary(index, { title: 'Strobe', artist: '  ' })).toBe(false)
   })
+
+  // Whole-word matching: a primary artist must not match a longer name it only sits
+  // inside as a substring, or a same-titled song by a different artist reads as owned.
+  it('does not match an artist that is only a substring of a longer library artist', () => {
+    const idx = buildLibraryIndex([{ title: 'Together', artist: 'Matador' }])
+    expect(isInLibrary(idx, { title: 'Together', artist: 'Mat' })).toBe(false)
+    expect(isInLibrary(idx, { title: 'Together', artist: 'Matador' })).toBe(true)
+  })
+
+  // The library still wins when it carries extra words around the primary artist.
+  it('matches when the library artist adds words around the primary name', () => {
+    const idx = buildLibraryIndex([{ title: 'Anthem', artist: 'Alfredo Pareja & Friends' }])
+    expect(isInLibrary(idx, { title: 'Anthem', artist: 'Alfredo Pareja' })).toBe(true)
+  })
+
+  // A Discogs disambiguator on the tag ("Aphex Twin (2)") must still match the plain
+  // library name.
+  it('strips a Discogs (n) disambiguator from the candidate artist', () => {
+    const idx = buildLibraryIndex([{ title: 'Xtal', artist: 'Aphex Twin' }])
+    expect(isInLibrary(idx, { title: 'Xtal', artist: 'Aphex Twin (2)' })).toBe(true)
+  })
 })
