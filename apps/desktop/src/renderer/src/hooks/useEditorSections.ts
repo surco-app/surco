@@ -24,6 +24,14 @@ export function resetEditorSections(): void {
   store = { ...DEFAULTS }
 }
 
+// The live folded state of a section, read outside React by the list's hover prefetch so
+// folding a section away stops its automatic analysis there too — not just inside the
+// editor. Reads the module store directly so it always sees the latest toggle, the same
+// way the prefetch reads refs for the latest settings.
+export function editorSectionOpen(section: EditorSection): boolean {
+  return store[section]
+}
+
 export function useEditorSections(): {
   open: Record<EditorSection, boolean>
   setOpen: (section: EditorSection, open: boolean) => void

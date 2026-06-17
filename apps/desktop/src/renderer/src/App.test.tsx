@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Settings } from '../../shared/types'
+import { resetEditorSections } from './hooks/useEditorSections'
 import './i18n'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -130,6 +131,9 @@ function setApi(over: Record<string, unknown> = {}): void {
 
 beforeEach(() => {
   setApi()
+  // The editor section store is module-level and survives across tests; reset it so a
+  // test that folds a section away doesn't leak that state into the next.
+  resetEditorSections()
   observers.length = 0
   globalThis.IntersectionObserver =
     MockIntersectionObserver as unknown as typeof IntersectionObserver
@@ -182,6 +186,27 @@ describe('App quality triage', () => {
     const rows = await addTwoTracks()
     fireEvent.mouseEnter(rows[1])
     await waitFor(() => expect(within(rows[1]).getByTestId('track-quality')).toBeInTheDocument())
+  })
+
+  // Folding the Audio quality section away is the user's "stop analysing this" — but the
+  // hover prefetch warmed the spectrum regardless, so collapsing the section still ran
+  // the heavy ffmpeg decode behind every rested hover. With the section folded, hovering
+  // a track must skip the spectrogram (the waveform, always shown by the player, still
+  // warms) so folding actually stops the analysis.
+  it('skips the spectrum prefetch for a hovered track while the quality section is folded', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    const waveform = vi.fn().mockResolvedValue(wave)
+    setApi({ spectrogram, waveform })
+    await renderApp()
+    const rows = await addTwoTracks()
+    // Open the editor on the first track, then collapse its Audio quality section.
+    fireEvent.click(rows[0])
+    fireEvent.click(await screen.findByRole('button', { name: 'Audio quality' }))
+    // The waveform prefetch always runs on hover, so its call marks the moment the
+    // (debounced) prefetch body executed — at which point the spectrogram must be untouched.
+    fireEvent.mouseEnter(rows[1])
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav'))
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav')
   })
 
   // The player's waveform is the slowest decode (it reads the whole file) and only

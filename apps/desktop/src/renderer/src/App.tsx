@@ -36,6 +36,7 @@ import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
+import { editorSectionOpen } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -371,7 +372,10 @@ export default function App(): React.JSX.Element {
         // The waveform is always shown the moment playback opens the player, and it is
         // the heaviest decode (whole file), so warm it for every rested hover.
         void queryClient.prefetchQuery(waveformOptions(track.inputPath))
-        if (showSpectrumRef.current) {
+        // Skip the spectrogram when the quality section is folded away: warming it would
+        // run the heavy ffmpeg decode the user folded the section to avoid, and the
+        // editor wouldn't show it anyway. Reopening the section runs the analysis then.
+        if (showSpectrumRef.current && editorSectionOpen('quality')) {
           void queryClient.prefetchQuery(spectrogramOptions(track.inputPath))
         }
         if (
