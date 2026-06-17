@@ -166,7 +166,8 @@ export default function App() {
                   alt={t('showcase.alt')}
                   width={2000}
                   height={1242}
-                  loading="lazy"
+                  fetchPriority="high"
+                  decoding="async"
                   className="block w-full rounded-2xl border border-line shadow-2xl shadow-black/60 ring-1 ring-white/5"
                 />
               </figure>
