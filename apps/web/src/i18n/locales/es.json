@@ -502,7 +502,7 @@
           "Filtra las búsquedas de Discogs por formato — vinilo, CD, digital… — desde la nueva pestaña Búsqueda en Ajustes, para dar con la edición que de verdad buscas.",
           "Elige el idioma de la app — Sistema, Inglés o Español — y se recuerda entre sesiones.",
           "Resultados de Discogs más limpios: las ediciones duplicadas se agrupan y un remix con las pistas reordenadas sigue emparejando con la correcta.",
-          "Detección de tu biblioteca de Apple Music más fina: empareja por palabras completas del artista, se actualiza al volver a la app y vuelve a añadir una pista si su copia en la biblioteca ya no está. (macOS)",
+          "Detección de tu biblioteca de Apple Music más fina: empareja por palabras completas del artista y por el título base —así reconoce una copia guardada con el título canónico—, se actualiza al volver a la app y vuelve a añadir una pista si su copia en la biblioteca ya no está. (macOS)",
           "Surco te avisa si tiene que saltarse la normalización de volumen porque no puede medir la pista, en vez de hacerlo en silencio.",
           "Más claridad en la lista y el editor: Shift-clic selecciona siguiendo el orden visible, los campos obligatorios que faltan se marcan con calma y el botón Convertir explica qué falta antes de dejarte convertir."
         ]

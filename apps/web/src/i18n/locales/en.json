@@ -502,7 +502,7 @@
           "Filter Discogs searches by format — vinyl, CD, digital… — from the new Search tab in Settings, so you land on the edition you actually want.",
           "Choose the app's language — System, English or Español — and it's remembered between sessions.",
           "Cleaner Discogs results: duplicate editions are merged, and a remix with its tracks reordered still matches the right one.",
-          "Sharper Apple Music library detection: it matches on whole artist words, refreshes when you return to the app, and re-adds a track if its library copy is gone. (macOS)",
+          "Sharper Apple Music library detection: it matches on whole artist words and on the base title —so it spots a copy saved under the canonical title—, refreshes when you return to the app, and re-adds a track if its library copy is gone. (macOS)",
           "Surco warns you when it has to skip loudness normalization because it can't measure the track, instead of doing it silently.",
           "Clearer list and editor: Shift-click selects along the visible order, empty required fields are flagged calmly, and the Convert button explains what's missing before it lets you convert."
         ]
