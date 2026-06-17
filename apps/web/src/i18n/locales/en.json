@@ -501,6 +501,7 @@
         "title": "Filter by what's already in your Apple Music",
         "items": [
           "See at a glance which tracks you already have in Apple Music: the whole crate is matched against your library, with sidebar filters to show only the ones you're missing (or the ones already there) — so you never re-import a duplicate. (macOS)",
+          "Double-click a track to play it, and double-click again to stop.",
           "The list filters are now a single dropdown that never runs out of room, and the position counter — which track you're on and how many are left — stays visible as you switch filters."
         ]
       },
