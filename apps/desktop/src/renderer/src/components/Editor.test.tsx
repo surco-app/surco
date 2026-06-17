@@ -1481,6 +1481,22 @@ describe('Editor properties panel', () => {
     expect(screen.queryByTestId('properties-readout')).not.toBeInTheDocument()
   })
 
+  // The header carries a one-line digest of the facts that matter most at a glance
+  // (container · kHz · bit · mode · size) so the folded panel is still useful — the
+  // user reads the rip's shape without opening it, and the full readout stays out of
+  // the way until they want it.
+  it('shows a one-line summary in the header while folded', async () => {
+    seedProperties(properties)
+    renderEditor({ id: 'a' })
+    const summary = await screen.findByTestId('properties-summary')
+    await waitFor(() => expect(summary).toHaveTextContent('WAV'))
+    expect(summary).toHaveTextContent('44.1 kHz')
+    expect(summary).toHaveTextContent('16 Bit')
+    expect(summary).toHaveTextContent('Stereo')
+    expect(summary).toHaveTextContent('55.7 MB')
+    expect(screen.queryByTestId('properties-readout')).not.toBeInTheDocument()
+  })
+
   // The panel exists to surface the technical facts ffprobe reads off the source —
   // formatted for a human (kHz, Bit, kbps, MB), not raw — so a DJ can vet a rip.
   it('renders the probed audio facts once expanded', async () => {
