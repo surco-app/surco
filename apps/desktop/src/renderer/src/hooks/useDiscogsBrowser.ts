@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { matchTargetOf, probeReleases } from '../lib/autoMatch'
+import { fetchRelease } from '../lib/fetchRelease'
 import { preRankResults, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -65,10 +66,8 @@ export function useDiscogsBrowser(
         // never collide in the cache.
         queryKey: ['release', result.provider, result.id],
         // The track the user is looking at: high priority so it jumps ahead of the
-        // background auto-match sweep at the main process's rate limiter. Bandcamp loads by
-        // its page URL, Discogs by its numeric id.
-        queryFn: () =>
-          window.api.getRelease(result.releaseUrl ?? result.id, result.provider, 'high'),
+        // background auto-match sweep at the main process's rate limiter.
+        queryFn: () => fetchRelease(result, 'high'),
       }),
     [queryClient],
   )
@@ -181,10 +180,7 @@ export function useDiscogsBrowser(
 
   const releaseQuery = useQuery({
     queryKey: ['release', openResult?.provider, openResult?.id],
-    queryFn: () => {
-      const r = openResult as SearchResult
-      return window.api.getRelease(r.releaseUrl ?? r.id, r.provider, 'high')
-    },
+    queryFn: () => fetchRelease(openResult as SearchResult, 'high'),
     enabled: openResult !== null,
   })
   const release = openResult !== null ? (releaseQuery.data ?? null) : null

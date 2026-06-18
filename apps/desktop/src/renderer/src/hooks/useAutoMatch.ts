@@ -7,6 +7,7 @@ import {
   tracksToAutoMatch,
 } from '../lib/autoMatch'
 import { mapWithConcurrency } from '../lib/concurrency'
+import { fetchRelease } from '../lib/fetchRelease'
 import { buildReleaseMeta } from '../lib/release'
 import type { TrackItem } from '../types'
 
@@ -76,8 +77,7 @@ export function useAutoMatch({
   const searchApiAt = useCallback(
     (priority: SearchPriority, hints?: SearchHints): SearchApi => ({
       search: (q, provider) => window.api.search(q, provider, priority, hints),
-      getRelease: (result) =>
-        window.api.getRelease(result.releaseUrl ?? result.id, result.provider, priority),
+      getRelease: (result) => fetchRelease(result, priority),
       providers: searchProvidersRef.current,
     }),
     [searchProvidersRef],
