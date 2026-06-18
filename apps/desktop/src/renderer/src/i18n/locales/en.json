@@ -436,6 +436,7 @@
     "insertToken": "Insert a field:",
     "preview": "Preview:",
     "grouping": "Grouping (comma-separated)",
+    "groupingPlaceholder": "Bases, Vocals",
     "groupingHint": "Shown as quick buttons when editing a track.",
     "genre": "Genres (comma-separated)",
     "genreHint": "Shown as quick buttons alongside the ones from Discogs.",

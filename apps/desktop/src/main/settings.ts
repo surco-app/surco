@@ -23,7 +23,9 @@ const defaults: Settings = {
   // opts into overwriting it.
   overwriteOriginal: false,
   filenameFormat: '{artist} - {title}',
-  groupingPresets: ['Bases', 'Cantaditas'],
+  // No grouping presets by default — they're personal/language-specific, so the user adds
+  // their own (the field shows a localized example as a placeholder).
+  groupingPresets: [],
   genrePresets: [],
   trimWhitespace: true,
   zeroPadTrack: true,

@@ -436,6 +436,7 @@
     "insertToken": "Insertar un campo:",
     "preview": "Vista previa:",
     "grouping": "Grouping (separados por comas)",
+    "groupingPlaceholder": "Bases, Cantaditas",
     "groupingHint": "Aparecen como botones rápidos al editar una pista.",
     "genre": "Géneros (separados por comas)",
     "genreHint": "Aparecen como botones rápidos junto a los de Discogs.",

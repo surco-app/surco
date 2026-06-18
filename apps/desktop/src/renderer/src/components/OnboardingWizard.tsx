@@ -237,7 +237,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   data-testid="onboarding-grouping"
                   value={grouping}
                   onChange={(e) => setGrouping(e.target.value)}
-                  placeholder="Bases, Cantaditas"
+                  placeholder={tr('settings.groupingPlaceholder')}
                   className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                 />
                 <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
