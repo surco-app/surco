@@ -61,11 +61,11 @@ export function FieldInsertMenu({
     { key: 'case-upper', label: tr('editor.caseUpper'), result: value.toLocaleUpperCase() },
   ].filter((t) => t.result !== value)
 
-  // "Without version" sits with the case rows because it too rewrites the field in
+  // "Base title" sits with the case rows because it too rewrites the field in
   // place; the editor only passes it when stripping actually drops a parenthetical,
   // so unlike the case rows it needs no self-filter.
   if (cleanResult)
-    transforms.push({ key: 'clean', label: tr('editor.cleanVersion'), result: cleanResult })
+    transforms.push({ key: 'clean', label: tr('editor.baseTitle'), result: cleanResult })
 
   if (sources.length === 0 && transforms.length === 0) return null
 

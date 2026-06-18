@@ -291,7 +291,7 @@
     "caseTitle": "Title Case",
     "caseLower": "lowercase",
     "caseUpper": "UPPERCASE",
-    "cleanVersion": "Without version",
+    "baseTitle": "Base title",
     "deriveFromName": "Fill from filename",
     "deriveFromNameHint": "Fill the metadata fields from the file name",
     "clearMeta": "Clear metadata",

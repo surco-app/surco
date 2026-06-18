@@ -291,7 +291,7 @@
     "caseTitle": "Title Case",
     "caseLower": "minúsculas",
     "caseUpper": "MAYÚSCULAS",
-    "cleanVersion": "Sin versión",
+    "baseTitle": "Título base",
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",
     "clearMeta": "Borrar metadatos",
