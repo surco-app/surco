@@ -68,9 +68,9 @@
       {
         "kick": "tag",
         "title": "Tag",
-        "replaces": "instead of Discogs in the browser and a tag editor",
+        "replaces": "instead of Discogs and Bandcamp in the browser and a tag editor",
         "items": [
-          "Fill artist, album, label, BPM and key from Discogs",
+          "Fill artist, album, label, BPM and key from Discogs and Bandcamp",
           "Match a whole release by track length",
           "Bulk-edit and find-and-replace with regex",
           "Pull the cover from Discogs or drop your own"
@@ -120,6 +120,7 @@
     "ffmpeg included",
     "ID3v2.3",
     "Discogs",
+    "Bandcamp",
     "Apple Silicon"
   ],
   "speed": {
@@ -355,10 +356,11 @@
       },
       {
         "id": "discogs",
-        "title": "Tag from Discogs",
+        "title": "Tag from Discogs and Bandcamp",
         "body": [
           "In the editor, search the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year and label; expand one to see its tracklist.",
-          "Click the matching track and Surco applies artist, album, year, genre, label, catalog and cover art in one go — the closest match is flagged “Suggested”. Search works with no setup; add your own Discogs token in Settings for a higher, private rate limit."
+          "Click the matching track and Surco applies artist, album, year, genre, label, catalog and cover art in one go — the closest match is flagged “Suggested”. Search works with no setup; add your own Discogs token in Settings for a higher, private rate limit.",
+          "After self-released or exclusive tracks? Turn on Bandcamp too in Settings → Search: its results appear next to Discogs in the same list, each tagged by its source, and you pick the same way. Bandcamp needs no account or token."
         ],
         "points": [
           "Search by text or paste a release id if you already know it.",

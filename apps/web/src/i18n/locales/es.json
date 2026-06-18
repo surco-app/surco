@@ -68,9 +68,9 @@
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "en vez de Discogs en el navegador y un editor de tags",
+        "replaces": "en vez de Discogs y Bandcamp en el navegador y un editor de tags",
         "items": [
-          "Rellena artista, álbum, sello, BPM y tono desde Discogs",
+          "Rellena artista, álbum, sello, BPM y tono desde Discogs y Bandcamp",
           "Empareja el disco entero por duración de pista",
           "Edita en bloque y busca y reemplaza con regex",
           "Trae la carátula de Discogs o suelta la tuya"
@@ -120,6 +120,7 @@
     "ffmpeg incluido",
     "ID3v2.3",
     "Discogs",
+    "Bandcamp",
     "Apple Silicon"
   ],
   "speed": {
@@ -355,10 +356,11 @@
       },
       {
         "id": "discogs",
-        "title": "Etiqueta desde Discogs",
+        "title": "Etiqueta desde Discogs y Bandcamp",
         "body": [
           "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año y sello; despliega uno para ver su tracklist.",
-          "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe — la más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor y privado."
+          "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe — la más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor y privado.",
+          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token."
         ],
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es.",
