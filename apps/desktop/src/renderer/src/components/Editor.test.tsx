@@ -97,6 +97,7 @@ function renderEditor(
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
+    replaceLowResCover?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -128,6 +129,7 @@ function renderEditor(
       outputFormat={outputFormat}
       addToAppleMusic={false}
       overwriteOriginal={props.overwriteOriginal ?? false}
+      replaceLowResCover={props.replaceLowResCover ?? false}
       groupingPresets={[]}
       genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
@@ -506,6 +508,7 @@ function MultiHarness() {
         item={selected}
         libraryIndex={null}
         overwriteOriginal={false}
+        replaceLowResCover={false}
         keyNotation="camelot"
         hasToken
         outputFormat="aiff"
@@ -719,6 +722,7 @@ describe('Editor multi-select', () => {
         outputFormat="aiff"
         addToAppleMusic={opts.music ?? false}
         overwriteOriginal={false}
+        replaceLowResCover={false}
         keyNotation="camelot"
         groupingPresets={[]}
         genrePresets={[]}
@@ -1273,11 +1277,32 @@ describe('Editor Discogs apply', () => {
     expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('embedded.jpg')
   })
 
-  // A low-res existing cover is the exception: it's replaced by the release image so
-  // the track ends up with sharper art.
-  it('replaces a low-res cover with the release image', async () => {
+  // By default the user's own cover wins even when it's low-res: a small but correct
+  // art (e.g. the actual single's sleeve) must not be silently swapped for the
+  // release's larger-but-generic image (e.g. a compilation cover). Low-res is only
+  // flagged, never auto-replaced, unless the user opts in (see next test).
+  it('keeps a low-res cover by default when applying a release', async () => {
     withImages()
     const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg' })
+    const img = screen.getByTestId('cover-preview')
+    Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
+    Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })
+    fireEvent.load(img)
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('tiny.jpg')
+  })
+
+  // With the Artwork setting opted in, a low-res existing cover is replaced by the
+  // release image so the track ends up with sharper art.
+  it('replaces a low-res cover with the release image when the setting is on', async () => {
+    withImages()
+    const { onChange } = renderEditor(
+      { id: 'a', coverUrl: 'tiny.jpg' },
+      'wav',
+      { replaceLowResCover: true },
+    )
     const img = screen.getByTestId('cover-preview')
     Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
     Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })

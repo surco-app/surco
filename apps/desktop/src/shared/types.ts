@@ -78,6 +78,10 @@ export interface Settings {
   requiredFields: string[]
   coverMaxSize: number
   coverSquare: boolean
+  // When on, applying a release replaces an existing embedded cover if it's low-res,
+  // upgrading to the release's larger image. Off by default so a present cover (even a
+  // small one) is never swapped for a possibly-wrong release image without the user asking.
+  replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
   // When on, dropping files runs a Discogs search per track and auto-applies the

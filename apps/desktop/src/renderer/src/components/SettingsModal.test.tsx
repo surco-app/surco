@@ -39,6 +39,7 @@ const settings: Settings = {
   requiredFields: [],
   coverMaxSize: 1200,
   coverSquare: false,
+  replaceLowResCover: false,
   showSpectrum: true,
   showLoudness: true,
   autoMatch: false,

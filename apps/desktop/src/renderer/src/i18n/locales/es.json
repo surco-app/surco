@@ -447,6 +447,8 @@
     "coverMaxHint": "px (0 = sin límite)",
     "coverSquare": "Recortar la carátula a cuadrado",
     "coverHint": "Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro para dejarlas cuadradas.",
+    "replaceLowRes": "Sustituir carátulas de baja resolución al aplicar un lanzamiento",
+    "replaceLowResHint": "Si está desactivado, siempre se conserva la carátula del archivo; una de baja resolución solo se avisa, nunca se cambia por la del lanzamiento.",
     "showSpectrum": "Mostrar el espectro de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
     "showLoudness": "Mostrar el loudness (LUFS)",

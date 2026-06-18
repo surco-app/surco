@@ -1162,6 +1162,7 @@ export default function App(): React.JSX.Element {
                 outputFormat={settings?.outputFormat ?? 'aiff'}
                 addToAppleMusic={settings?.addToAppleMusic ?? false}
                 overwriteOriginal={settings?.overwriteOriginal ?? false}
+                replaceLowResCover={settings?.replaceLowResCover ?? false}
                 groupingPresets={settings?.groupingPresets ?? []}
                 genrePresets={settings?.genrePresets ?? []}
                 visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}

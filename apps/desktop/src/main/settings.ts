@@ -33,6 +33,7 @@ const defaults: Settings = {
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   coverMaxSize: 1200,
   coverSquare: false,
+  replaceLowResCover: false,
   showSpectrum: true,
   showLoudness: true,
   autoMatch: false,

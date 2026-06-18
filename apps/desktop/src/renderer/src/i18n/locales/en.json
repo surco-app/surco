@@ -447,6 +447,8 @@
     "coverMaxHint": "px (0 = no limit)",
     "coverSquare": "Crop artwork to square",
     "coverHint": "Applied on embed: shrinks large artwork and, if enabled, center-crops it to square.",
+    "replaceLowRes": "Replace low-res covers when applying a release",
+    "replaceLowResHint": "When off, your file's own cover is always kept — a low-res one is only flagged, never swapped for the release image.",
     "showSpectrum": "Show audio spectrum",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
     "showLoudness": "Show loudness (LUFS)",

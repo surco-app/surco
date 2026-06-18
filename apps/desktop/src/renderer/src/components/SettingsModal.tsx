@@ -141,6 +141,7 @@ interface SyncedDraft {
   requiredFields: string[]
   coverMaxSize: string
   coverSquare: boolean
+  replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
   keyNotation: Settings['keyNotation']
@@ -169,6 +170,7 @@ function pickSynced(s: Settings): SyncedDraft {
     requiredFields: s.requiredFields,
     coverMaxSize: String(s.coverMaxSize),
     coverSquare: s.coverSquare,
+    replaceLowResCover: s.replaceLowResCover,
     showSpectrum: s.showSpectrum,
     showLoudness: s.showLoudness,
     keyNotation: s.keyNotation,
@@ -845,6 +847,18 @@ export function SettingsModal({
               <span className="text-sm">{tr('settings.coverSquare')}</span>
             </label>
             <p className="mt-3 text-xs text-fg-dim">{tr('settings.coverHint')}</p>
+
+            <label className="mt-5 flex cursor-pointer items-center gap-3">
+              <input
+                data-testid="settings-replace-lowres"
+                type="checkbox"
+                checked={synced.replaceLowResCover}
+                onChange={(e) => patch('replaceLowResCover', e.target.checked)}
+                className="h-4 w-4 accent-[var(--color-accent)]"
+              />
+              <span className="text-sm">{tr('settings.replaceLowRes')}</span>
+            </label>
+            <p className="mt-3 text-xs text-fg-dim">{tr('settings.replaceLowResHint')}</p>
           </>
         )}
 

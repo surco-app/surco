@@ -58,6 +58,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     requiredFields: ['title', 'artist'],
     coverMaxSize: 1000,
     coverSquare: false,
+    replaceLowResCover: false,
     showSpectrum: true,
     showLoudness: false,
     autoMatch: false,

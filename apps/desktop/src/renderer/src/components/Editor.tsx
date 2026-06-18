@@ -69,6 +69,9 @@ interface Props {
   // and the rename shortcut disabled (App enforces the latter) because the name is
   // pinned to the original.
   overwriteOriginal: boolean
+  // Settings → Artwork: when on, applying a release replaces an existing low-res cover
+  // with the release image; off keeps the file's own cover regardless of size.
+  replaceLowResCover: boolean
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
@@ -138,6 +141,7 @@ export const Editor = memo(function Editor({
   outputFormat,
   addToAppleMusic,
   overwriteOriginal,
+  replaceLowResCover,
   groupingPresets,
   genrePresets,
   visibleFields,
@@ -270,17 +274,21 @@ export const Editor = memo(function Editor({
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
-    // Keep the file's own cover unless it's missing or measured as low-res, in which
-    // case the release fills it. Keeping is the safe default — when the size hasn't
-    // been measured yet (coverDims null) a present cover is left untouched rather
-    // than overwritten with the release's often-smaller image.
+    // Keep the file's own cover. Only when the user opts into replacing low-res art
+    // (Settings → Artwork) does a present-but-small cover get filled from the release;
+    // otherwise the file's cover always wins so a correct sleeve isn't swapped for the
+    // release's larger-but-generic image. A missing cover is always filled either way.
     onChange({
       ...buildReleaseMeta(item.meta, release, track, {
         url: item.coverUrl,
         path: item.coverPath,
         keep:
           !!item.coverUrl &&
-          !(effectiveCoverDims && isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)),
+          !(
+            replaceLowResCover &&
+            effectiveCoverDims &&
+            isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)
+          ),
       }),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
