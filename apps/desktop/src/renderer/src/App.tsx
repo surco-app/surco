@@ -236,6 +236,9 @@ export default function App(): React.JSX.Element {
   showSpectrumRef.current = settings?.showSpectrum ?? true
   const hasTokenRef = useRef(false)
   hasTokenRef.current = !!settings?.discogsToken
+  // Live providers for the background sweep, read at probe time (Settings → Search).
+  const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
+  searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const queryClient = useQueryClient()
   // The latest spectrum-merged view of the tracks, so the hover-prefetch and analyze
@@ -411,7 +414,7 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
-  } = useAutoMatch({ tracksRef, updateTrack })
+  } = useAutoMatch({ tracksRef, updateTrack, searchProvidersRef })
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its

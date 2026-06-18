@@ -1,4 +1,4 @@
-import type { Release, SearchResult, ReleaseTrack } from '../../../shared/types'
+import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { bestMatch, confidenceTier, preRankResults, type TrackMatchTarget } from './release'
 
@@ -81,17 +81,35 @@ export async function probeReleases(
 // The slice of the IPC surface auto-matching needs, narrowed so the sweep is
 // testable with a stub instead of the whole window.api.
 export interface SearchApi {
-  search: (query: string) => Promise<SearchResult[]>
+  search: (query: string, provider: SearchProviderId) => Promise<SearchResult[]>
   getRelease: (result: SearchResult) => Promise<Release>
+  // Sources to try, in order; omitted means Discogs only. Discogs is always tried first
+  // (autoMatchRelease enforces it) as the curated source; the rest are a fallback.
+  providers?: SearchProviderId[]
 }
 
 export type AutoMatch = ProbeMatch
 
-// Headless counterpart to the editor's auto-probe: searches Discogs for the file
-// and returns the first release whose best tracklist entry is 'high' confidence —
-// the bar at which a match is safe to apply unattended. Only 'high' qualifies, so
-// a merely plausible ('review') hit is left for the user's manual click. A failing
-// search skips rather than aborts the sweep so one bad row never sinks the crate.
+// A non-Discogs source must clear a higher confidence floor than Discogs' 'high' before
+// auto-applying: Bandcamp's catalog is uncurated (bootlegs, re-uploads, DJ sets that carry
+// the track's name), so a borderline-'high' title hit there is far likelier to be wrong.
+const FALLBACK_MIN_CONFIDENCE = 0.92
+
+// Discogs is the curated source, so it leads regardless of the stored order; the rest
+// follow as fallbacks.
+function discogsFirst(providers: SearchProviderId[]): SearchProviderId[] {
+  return providers.includes('discogs')
+    ? ['discogs', ...providers.filter((p) => p !== 'discogs')]
+    : providers
+}
+
+// Headless counterpart to the editor's auto-probe: searches each configured source for the
+// file and returns the first release whose best tracklist entry clears the bar — the point
+// at which a match is safe to apply unattended. Discogs goes first at its 'high' bar; if it
+// finds nothing, a fallback source (Bandcamp) is tried, but only for files that carry a
+// duration (the signal that corroborates an uncurated hit) and at a stricter floor. A
+// failing search skips to the next source rather than aborting, so one bad row never sinks
+// the crate.
 export async function autoMatchRelease(
   query: string,
   target: TrackMatchTarget,
@@ -99,15 +117,22 @@ export async function autoMatchRelease(
   maxProbe = MAX_AUTO_PROBE,
 ): Promise<AutoMatch | undefined> {
   if (!query.trim() || !target.title.trim()) return undefined
-  let results: SearchResult[]
-  try {
-    results = await api.search(query)
-  } catch {
-    return undefined
+  for (const provider of discogsFirst(api.providers ?? ['discogs'])) {
+    // No duration to cross-check against → don't trust an uncurated catalog unattended.
+    if (provider !== 'discogs' && target.durationSec === undefined) continue
+    let results: SearchResult[]
+    try {
+      results = await api.search(query, provider)
+    } catch {
+      continue
+    }
+    const match = await probeReleases(results, target, {
+      loadRelease: api.getRelease,
+      accepts: (tier) => tier === 'high',
+      minConfidence: provider === 'discogs' ? undefined : FALLBACK_MIN_CONFIDENCE,
+      maxProbe,
+    })
+    if (match) return match
   }
-  return probeReleases(results, target, {
-    loadRelease: api.getRelease,
-    accepts: (tier) => tier === 'high',
-    maxProbe,
-  })
+  return undefined
 }

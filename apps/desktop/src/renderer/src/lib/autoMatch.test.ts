@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Release, SearchResult } from '../../../shared/types'
+import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
 
@@ -123,6 +123,64 @@ describe('autoMatchRelease', () => {
     }
     await autoMatchRelease('my song', target, api, 8)
     expect(api.getRelease).toHaveBeenCalledTimes(8)
+  })
+})
+
+describe('autoMatchRelease Bandcamp fallback', () => {
+  // Bandcamp-only releases (self-released, netlabels) aren't on Discogs, so when Discogs
+  // comes up empty the sweep tries the fallback source and applies a confident match.
+  it('falls back to Bandcamp when Discogs finds nothing', async () => {
+    const api = {
+      search: vi.fn(async (_q: string, provider: SearchProviderId) =>
+        provider === 'bandcamp' ? [searchResult(2)] : [],
+      ),
+      getRelease: vi.fn().mockResolvedValue(release(2, { tracklist: [HIGH] })),
+      providers: ['discogs', 'bandcamp'] as SearchProviderId[],
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.release.id).toBe(2)
+    expect(api.search).toHaveBeenCalledWith('my song', 'discogs')
+    expect(api.search).toHaveBeenCalledWith('my song', 'bandcamp')
+  })
+
+  // The uncurated catalog must clear a stricter bar: a borderline-'high' (~0.88) match that
+  // Discogs would apply unattended is rejected when it comes from Bandcamp.
+  it('holds the Bandcamp fallback to a stricter confidence floor than Discogs', async () => {
+    const borderline = { title: 'My Song', durationSec: 203.53 }
+    const mk = (provider: SearchProviderId) => ({
+      search: vi.fn(async () => [searchResult(2)]),
+      getRelease: vi.fn().mockResolvedValue(release(2, { tracklist: [HIGH] })),
+      providers: [provider] as SearchProviderId[],
+    })
+    expect((await autoMatchRelease('my song', borderline, mk('discogs')))?.release.id).toBe(2)
+    expect(await autoMatchRelease('my song', borderline, mk('bandcamp'))).toBeUndefined()
+  })
+
+  // Without a duration there's nothing to corroborate a title hit against, so an uncurated
+  // source is too risky to probe at all.
+  it('does not probe a fallback source for a file with no duration', async () => {
+    const api = {
+      search: vi.fn(async () => [searchResult(2)]),
+      getRelease: vi.fn().mockResolvedValue(release(2, { tracklist: [HIGH] })),
+      providers: ['bandcamp'] as SearchProviderId[],
+    }
+    expect(await autoMatchRelease('my song', { title: 'My Song' }, api)).toBeUndefined()
+    expect(api.search).not.toHaveBeenCalled()
+  })
+
+  // Discogs is the authoritative source, so a confident Discogs match ends the search —
+  // the fallback is never even queried, which also keeps Bandcamp page loads off the sweep.
+  it('does not query Bandcamp once Discogs has matched', async () => {
+    const api = {
+      search: vi.fn(async (_q: string, provider: SearchProviderId) =>
+        provider === 'discogs' ? [searchResult(1)] : [searchResult(2)],
+      ),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
+      providers: ['discogs', 'bandcamp'] as SearchProviderId[],
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.release.id).toBe(1)
+    expect(api.search).not.toHaveBeenCalledWith('my song', 'bandcamp')
   })
 })
 

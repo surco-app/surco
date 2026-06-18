@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { TrackMetadata } from '../../../shared/types'
+import type { SearchProviderId, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { useAutoMatch } from './useAutoMatch'
 
@@ -45,7 +45,10 @@ function setup(tracks: TrackItem[]): {
 } {
   const updateTrack = vi.fn()
   const tracksRef = { current: tracks }
-  const { result } = renderHook(() => useAutoMatch({ tracksRef, updateTrack }))
+  const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
+  const { result } = renderHook(() =>
+    useAutoMatch({ tracksRef, updateTrack, searchProvidersRef }),
+  )
   return { result, updateTrack, tracksRef }
 }
 
@@ -183,7 +186,7 @@ describe('useAutoMatch', () => {
 
     await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
     const hints = { artist: 'Artist', title: 'My Song', catalogNumber: undefined }
-    expect(search).toHaveBeenCalledWith('query b', undefined, 'high', hints)
-    expect(search).toHaveBeenCalledWith('query a', undefined, 'low', hints)
+    expect(search).toHaveBeenCalledWith('query b', 'discogs', 'high', hints)
+    expect(search).toHaveBeenCalledWith('query a', 'discogs', 'low', hints)
   })
 })

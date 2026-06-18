@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { SearchHints, SearchPriority } from '../../../shared/types'
+import type { SearchHints, SearchPriority, SearchProviderId } from '../../../shared/types'
 import {
   autoMatchRelease,
   type SearchApi,
@@ -20,6 +20,10 @@ interface Params {
   // track must be read at the moment it's probed/applied, not from a closure snapshot.
   tracksRef: { readonly current: TrackItem[] }
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  // Live view of the enabled search providers (Settings). Read at probe time so toggling
+  // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
+  // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
+  searchProvidersRef: { readonly current: SearchProviderId[] }
 }
 
 export interface AutoMatchSweep {
@@ -41,7 +45,11 @@ export interface AutoMatchSweep {
 // the whole crate at once; the toolbar sweep enqueues everything. A single drain loops
 // until nothing is ready, then idles; a fresh drop or a row scrolling into view pumps
 // it again.
-export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep {
+export function useAutoMatch({
+  tracksRef,
+  updateTrack,
+  searchProvidersRef,
+}: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
   // so an import landing mid-sweep doesn't start a second concurrent run.
   const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
@@ -65,13 +73,14 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   // search (high priority) always jumps ahead, and the main process paces every Discogs
   // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
   // track is the one exception — it rides the same high-priority lane as a manual search.
-  const discogsAt = useCallback(
+  const searchApiAt = useCallback(
     (priority: SearchPriority, hints?: SearchHints): SearchApi => ({
-      search: (q) => window.api.search(q, undefined, priority, hints),
+      search: (q, provider) => window.api.search(q, provider, priority, hints),
       getRelease: (result) =>
         window.api.getRelease(result.releaseUrl ?? result.id, result.provider, priority),
+      providers: searchProvidersRef.current,
     }),
-    [],
+    [searchProvidersRef],
   )
 
   // Probes Discogs for one track and applies a high-confidence release outright (the bar
@@ -85,7 +94,7 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
         title: t.meta.title,
         catalogNumber: t.meta.catalogNumber,
       }
-      const m = await autoMatchRelease(t.query, matchTargetOf(t), discogsAt(priority, hints))
+      const m = await autoMatchRelease(t.query, matchTargetOf(t), searchApiAt(priority, hints))
       if (!m || matchCancel.current) return
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
       // a manual match or a removal landing during the Discogs round-trip wins. Re-read
@@ -105,7 +114,7 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
         autoMatched: true,
       })
     },
-    [discogsAt, updateTrack, tracksRef],
+    [searchApiAt, updateTrack, tracksRef],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an
