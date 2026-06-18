@@ -849,7 +849,7 @@ export default function App(): React.JSX.Element {
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
   const onApplyMatches = useStableCallback((patches: { id: string; patch: ReleaseMetaPatch }[]) => {
-    for (const p of patches) updateTrack(p.id, p.patch)
+    for (const p of patches) updateTrack(p.id, { ...p.patch, matched: true })
   })
   const onProcessAllSelected = useStableCallback((format: OutputFormat) =>
     askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined),

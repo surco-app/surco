@@ -209,6 +209,12 @@ describe('tracksToAutoMatch', () => {
     ).toHaveLength(0)
   })
 
+  // A manual pick from a provider that writes no Discogs id (Bandcamp) is still a
+  // deliberate match: the neutral `matched` flag keeps the sweep from overwriting it.
+  it('skips a track already matched even when it carries no Discogs id', () => {
+    expect(tracksToAutoMatch([track({ matched: true })])).toHaveLength(0)
+  })
+
   it('skips tracks with nothing to search or score on', () => {
     expect(tracksToAutoMatch([track({ query: '   ' })])).toHaveLength(0)
     expect(tracksToAutoMatch([track({ meta: { title: '  ' } as TrackItem['meta'] })])).toHaveLength(

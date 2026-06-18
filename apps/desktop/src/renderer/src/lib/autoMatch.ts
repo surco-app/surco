@@ -10,6 +10,7 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
   return tracks.filter(
     (t) =>
       !t.autoMatched &&
+      !t.matched &&
       !t.meta.discogsReleaseId &&
       t.query.trim() !== '' &&
       t.meta.title.trim() !== '',

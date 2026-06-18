@@ -274,15 +274,18 @@ export const Editor = memo(function Editor({
     // case the release fills it. Keeping is the safe default — when the size hasn't
     // been measured yet (coverDims null) a present cover is left untouched rather
     // than overwritten with the release's often-smaller image.
-    onChange(
-      buildReleaseMeta(item.meta, release, track, {
+    onChange({
+      ...buildReleaseMeta(item.meta, release, track, {
         url: item.coverUrl,
         path: item.coverPath,
         keep:
           !!item.coverUrl &&
           !(effectiveCoverDims && isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)),
       }),
-    )
+      // Mark the track matched so the sweep leaves this deliberate pick alone, even when
+      // the source (Bandcamp) writes no Discogs id to guard it.
+      matched: true,
+    })
   }
 
   function setField(key: keyof TrackItem['meta'], value: string): void {
@@ -317,7 +320,8 @@ export const Editor = memo(function Editor({
   function clearAllMeta(): void {
     const blank = emptyMetadata()
     if (isMulti) onChangeAllMeta?.(blank)
-    else onChange({ meta: blank })
+    // Clearing the tags un-matches the track, so the sweep may fill it again.
+    else onChange({ meta: blank, matched: false })
   }
 
   const stale = isStale(item)

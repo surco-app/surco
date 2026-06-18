@@ -112,6 +112,7 @@ export function useAutoMatch({
         coverUrl: patch.coverUrl,
         coverPath: patch.coverPath,
         autoMatched: true,
+        matched: true,
       })
     },
     [searchApiAt, updateTrack, tracksRef],

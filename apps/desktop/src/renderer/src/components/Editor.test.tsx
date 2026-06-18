@@ -345,6 +345,7 @@ describe('Editor clear metadata', () => {
         originalYear: '',
         compilation: '',
       },
+      matched: false,
     })
   })
 })

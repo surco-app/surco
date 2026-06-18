@@ -45,6 +45,11 @@ export interface TrackItem {
   // toolbar sweep) rather than by the user clicking a suggestion, so the row can flag
   // it and the list can filter for the auto-filled tracks to spot-check them.
   autoMatched?: boolean
+  // A release has been applied to this track — by hand (from any provider) or by the
+  // sweep — so the auto-match sweep won't re-probe and overwrite it. Discogs picks are
+  // also guarded by meta.discogsReleaseId; this covers providers that write no such id
+  // (Bandcamp). Cleared when the track's metadata is cleared.
+  matched?: boolean
   // Whether this track's tags were found in the user's Apple Music library, merged in
   // at the App boundary from the session library snapshot (like spectrum) so the list
   // can filter "already owned" vs "missing". Undefined until the snapshot loads, off
