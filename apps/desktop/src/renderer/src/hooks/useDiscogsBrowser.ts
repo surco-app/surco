@@ -5,7 +5,7 @@ import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
-import { preRankResults, resultFromRelease } from '../lib/release'
+import { preRankResults, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 
@@ -63,9 +63,7 @@ export function useDiscogsBrowser(
   const loadRelease = useCallback(
     (result: SearchResult) =>
       queryClient.fetchQuery<Release>({
-        // Keyed by provider+id so a Discogs and a Bandcamp release sharing a numeric id
-        // never collide in the cache.
-        queryKey: ['release', result.provider, result.id],
+        queryKey: releaseKey(result),
         // The track the user is looking at: high priority so it jumps ahead of the
         // background auto-match sweep at the main process's rate limiter.
         queryFn: () => fetchRelease(result, 'high'),
@@ -176,7 +174,7 @@ export function useDiscogsBrowser(
   }, [searchQuery.data, loadRelease])
 
   const releaseQuery = useQuery({
-    queryKey: ['release', openResult?.provider, openResult?.id],
+    queryKey: releaseKey(openResult),
     queryFn: () => fetchRelease(openResult as SearchResult, 'high'),
     enabled: openResult !== null,
   })

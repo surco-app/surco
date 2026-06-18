@@ -51,6 +51,15 @@ export function resultFromRelease(rel: Release): SearchResult {
   }
 }
 
+// The query-cache key for a loaded release. Keyed by provider and id together so a Discogs
+// and a Bandcamp release that happen to share a numeric id never collide in the cache. The
+// prefetch and the open-release query both build it here, so they address the exact same
+// entry — a drift between the two keys would re-fetch instead of reading the warmed cache.
+// Accepts null (no release open) so the disabled query still has a stable key shape.
+export function releaseKey(result: Pick<SearchResult, 'provider' | 'id'> | null) {
+  return ['release', result?.provider, result?.id] as const
+}
+
 function normalize(s: string): string {
   return foldText(s)
 }

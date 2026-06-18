@@ -13,6 +13,7 @@ import {
   coverOf,
   joinArtists,
   preRankResults,
+  releaseKey,
   resultFromRelease,
   scoreTrack,
   stepImageIndex,
@@ -21,6 +22,28 @@ import {
 function release(over: Partial<Release> = {}): Release {
   return { provider: 'discogs', id: 1, title: 'Album', artists: [], tracklist: [], ...over }
 }
+
+describe('releaseKey', () => {
+  // The prefetch and the open-release query must address the identical cache entry; both
+  // build the key here, so the same input always yields byte-identical key parts.
+  it('keys a release by provider and id together', () => {
+    const result = { provider: 'bandcamp', id: 1 } as SearchResult
+    expect(releaseKey(result)).toEqual(['release', 'bandcamp', 1])
+  })
+
+  // A Discogs and a Bandcamp release can share a numeric id; folding the provider into
+  // the key is what stops them from colliding on the same cache entry.
+  it('separates two providers that share a numeric id', () => {
+    const discogs = { provider: 'discogs', id: 1 } as SearchResult
+    const bandcamp = { provider: 'bandcamp', id: 1 } as SearchResult
+    expect(releaseKey(discogs)).not.toEqual(releaseKey(bandcamp))
+  })
+
+  // With nothing open the query is disabled but still needs a stable key shape.
+  it('still returns the [release, …] shape for no open release', () => {
+    expect(releaseKey(null)).toEqual(['release', undefined, undefined])
+  })
+})
 
 describe('stepImageIndex', () => {
   const imgs = [{ uri: 'a' }, { uri: 'b' }, { uri: 'c' }]
