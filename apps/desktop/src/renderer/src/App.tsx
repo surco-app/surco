@@ -3,6 +3,7 @@ import { AudioLines, Search, X } from 'lucide-react'
 import type React from 'react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { autoMatchAvailable } from '../../shared/autoMatch'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
@@ -348,7 +349,7 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       // Enqueue the whole crate (not visible-only): with auto-match on, every imported
       // track gets matched, the sweep just probes the on-screen rows first.
-      if (settings?.autoMatch && settings.discogsToken) enqueueAutoMatch([t], false)
+      if (settings && settings.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], false)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
@@ -428,13 +429,20 @@ export default function App(): React.JSX.Element {
   // tracks are filtered out downstream, so revisiting one never re-probes. Debounced so
   // arrowing through a crate doesn't fire a Discogs probe per row.
   useEffect(() => {
-    if (!settings?.autoMatch || !settings.discogsToken || !selectedId) return
+    if (!selectedId || !settings || !settings.autoMatch || !autoMatchAvailable(settings)) return
     const id = setTimeout(() => {
       const track = tracksRef.current.find((t) => t.id === selectedId)
       if (track) enqueueAutoMatch([track], false)
     }, 500)
     return () => clearTimeout(id)
-  }, [selectedId, settings?.autoMatch, settings?.discogsToken, enqueueAutoMatch, tracksRef])
+  }, [
+    selectedId,
+    settings?.autoMatch,
+    settings?.discogsToken,
+    settings?.searchProviders,
+    enqueueAutoMatch,
+    tracksRef,
+  ])
 
   // Turning auto-match off in Settings must stop the running sweep outright — cancel the
   // in-flight probes and empty the queue, or a later scroll would quietly resume matching

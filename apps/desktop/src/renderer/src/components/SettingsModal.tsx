@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings, SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import { chordEquals, eventToChord } from '../../../shared/shortcuts'
+import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { DISCOGS_FORMATS } from '../../../shared/defaults'
 import type {
   LanguagePref,
@@ -272,9 +273,15 @@ export function SettingsModal({
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the two booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
-  // The token, auto-match and format filter only act on Discogs results, so they're
-  // grouped under a Discogs heading and disabled when Discogs isn't a chosen source.
+  // The token and format filter only act on Discogs results, so they're grouped under a
+  // Discogs heading and disabled when Discogs isn't a chosen source.
   const discogsOn = synced.searchProviders.includes('discogs')
+  // Auto-match is a global search setting (it can apply Bandcamp matches too), gated only on
+  // having a source — plus a Discogs token when Discogs is one of them.
+  const autoReady = autoMatchAvailable({
+    searchProviders: synced.searchProviders,
+    discogsToken: local.token,
+  })
   const destination = toDestination(
     synced.addToAppleMusic,
     synced.keepOutputCopy,
@@ -458,7 +465,7 @@ export function SettingsModal({
 
         {tab === 'search' && (
           <>
-            <p className="mb-1.5 text-sm font-medium text-fg-muted">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-fg-dim">
               {tr('settings.searchProviders')}
             </p>
             <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchProvidersHint')}</p>
@@ -486,8 +493,34 @@ export function SettingsModal({
                 </label>
               ))}
             </div>
+
             <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-              <p className="mb-1.5 text-sm font-medium text-fg-muted">
+              <label
+                className={`flex items-center gap-3 ${
+                  autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                }`}
+              >
+                <input
+                  data-testid="settings-auto-match"
+                  type="checkbox"
+                  checked={local.autoMatch && autoReady}
+                  disabled={!autoReady}
+                  onChange={(e) => patchLocal('autoMatch', e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">{tr('settings.autoMatch')}</span>
+              </label>
+              <p className="mt-1.5 text-xs text-fg-dim">
+                {synced.searchProviders.length === 0
+                  ? tr('settings.autoMatchNeedsSource')
+                  : autoReady
+                    ? tr('settings.autoMatchHint')
+                    : tr('settings.autoMatchNeedsToken')}
+              </p>
+            </div>
+
+            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
                 {tr('settings.discogsSection')}
               </p>
               {!discogsOn && (
@@ -521,29 +554,6 @@ export function SettingsModal({
                   >
                     discogs.com/settings/developers
                   </a>
-                </p>
-
-                <label
-                  className={`flex items-center gap-3 ${
-                    discogsOn && local.token.trim()
-                      ? 'cursor-pointer'
-                      : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <input
-                    data-testid="settings-auto-match"
-                    type="checkbox"
-                    checked={local.autoMatch && local.token.trim() !== ''}
-                    disabled={!discogsOn || local.token.trim() === ''}
-                    onChange={(e) => patchLocal('autoMatch', e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.autoMatch')}</span>
-                </label>
-                <p className="mt-1.5 mb-5 text-xs text-fg-dim">
-                  {local.token.trim()
-                    ? tr('settings.autoMatchHint')
-                    : tr('settings.autoMatchNeedsToken')}
                 </p>
 
                 <p className="mb-1.5 text-sm font-medium text-fg-muted">

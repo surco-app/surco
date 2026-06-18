@@ -195,6 +195,15 @@ describe('SettingsModal auto-match', () => {
     expect(screen.getByTestId('settings-discogs-disabled')).toBeInTheDocument()
   })
 
+  // Auto-match is a global search setting now: with only Bandcamp as a source it needs no
+  // Discogs token, so the toggle must be usable.
+  it('enables auto-match for a Bandcamp-only setup without a Discogs token', () => {
+    openSearch()
+    fireEvent.click(screen.getByTestId('settings-provider-discogs'))
+    fireEvent.click(screen.getByTestId('settings-provider-bandcamp'))
+    expect(screen.getByTestId('settings-auto-match')).toBeEnabled()
+  })
+
   it('saves auto-match enabled only once a token backs it', () => {
     const onSave = vi.fn()
     openSearch(onSave)

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
+import { autoMatchAvailable } from '../shared/autoMatch'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
 import type { Settings } from '../shared/types'
 
@@ -123,9 +124,10 @@ function writeAtomic(path: string, value: unknown): void {
 
 export function saveSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
-  // Auto-match requires the user's own Discogs token (its own rate-limit bucket), so it can
-  // never be on without one — whatever the UI sent, and clearing the token also turns it off.
-  if (!next.discogsToken.trim()) next.autoMatch = false
+  // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
+  // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
+  // last source also turns it off.
+  if (!autoMatchAvailable(next)) next.autoMatch = false
   const sf = syncedFile()
   if (!sf) {
     writeAtomic(localFile(), next)
