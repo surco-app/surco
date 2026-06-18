@@ -168,7 +168,7 @@ export default function App() {
                   height={1242}
                   fetchPriority="high"
                   decoding="async"
-                  className="block w-full rounded-2xl border border-line shadow-2xl shadow-black/60 ring-1 ring-white/5"
+                  className="block w-full rounded-2xl border border-line bg-bg2 shadow-2xl shadow-black/60 ring-1 ring-white/5"
                 />
               </figure>
             </div>
