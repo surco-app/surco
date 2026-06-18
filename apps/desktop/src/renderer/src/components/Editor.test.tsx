@@ -1370,7 +1370,10 @@ describe('Editor track preselection', () => {
   async function loadTracklist(): Promise<HTMLElement[]> {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.click(screen.getByTestId('discogs-search'))
-    fireEvent.click(await screen.findByTestId('discogs-result'))
+    // A confident match auto-opens its tracklist; a low-confidence one doesn't, so open it
+    // by hand only when it isn't already expanded — clicking an open row would collapse it.
+    const result = await screen.findByTestId('discogs-result')
+    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     return screen.findAllByTestId('discogs-track')
   }
 

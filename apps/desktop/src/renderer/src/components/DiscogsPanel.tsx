@@ -49,7 +49,7 @@ export function DiscogsPanel({
   formatFilter,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { query, setQuery, doSearch, results, release, loadingId, busy, error, previewRelease } =
+  const { query, setQuery, doSearch, results, release, openKey, loading, busy, error, previewRelease } =
     browser
   const discogs = useResizableWidth(315, 300, 720)
 
@@ -142,10 +142,11 @@ export function DiscogsPanel({
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
             results.map((r) => {
-              const expanded = loadingId !== null ? loadingId === r.id : release?.id === r.id
-              const loaded = release?.id === r.id
+              const rk = `${r.provider}:${r.id}`
+              const expanded = openKey === rk
+              const loaded = expanded && !!release && !loading
               return (
-                <div key={r.id} className="border-b border-[var(--color-line)]/60">
+                <div key={rk} className="border-b border-[var(--color-line)]/60">
                   <button
                     type="button"
                     data-testid="discogs-result"

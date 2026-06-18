@@ -68,7 +68,8 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   const discogsAt = useCallback(
     (priority: SearchPriority, hints?: SearchHints): SearchApi => ({
       search: (q) => window.api.search(q, undefined, priority, hints),
-      getRelease: (id) => window.api.getRelease(id, undefined, priority),
+      getRelease: (result) =>
+        window.api.getRelease(result.releaseUrl ?? result.id, result.provider, priority),
     }),
     [],
   )

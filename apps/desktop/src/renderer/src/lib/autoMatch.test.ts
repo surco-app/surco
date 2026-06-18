@@ -96,12 +96,14 @@ describe('autoMatchRelease', () => {
     const artistTarget = { title: 'One More Time', artist: 'Daft Punk', durationSec: 320 }
     const api = {
       search: vi.fn().mockResolvedValue([
-        { id: 1, title: 'Various - Mega Compilation' },
-        { id: 2, title: 'Daft Punk - Discovery' },
+        { provider: 'discogs', id: 1, title: 'Various - Mega Compilation' },
+        { provider: 'discogs', id: 2, title: 'Daft Punk - Discovery' },
       ]),
-      getRelease: vi.fn().mockImplementation((id: number) =>
+      getRelease: vi.fn().mockImplementation((result: { id: number }) =>
         Promise.resolve(
-          release(id, { tracklist: [{ position: '1', title: 'One More Time', duration: '5:20' }] }),
+          release(result.id, {
+            tracklist: [{ position: '1', title: 'One More Time', duration: '5:20' }],
+          }),
         ),
       ),
     }
@@ -110,7 +112,7 @@ describe('autoMatchRelease', () => {
     // probe and the compilation was never loaded.
     expect(m?.release.id).toBe(2)
     expect(api.getRelease).toHaveBeenCalledTimes(1)
-    expect(api.getRelease).toHaveBeenCalledWith(2)
+    expect(api.getRelease).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }))
   })
 
   it('probes at most the cap, even when no match is found', async () => {

@@ -14,10 +14,14 @@ export interface DiscogsBrowser {
   setQuery: (q: string) => void
   doSearch: () => void
   results: SearchResult[]
-  // The release whose tracklist is open, or null when none is expanded.
+  // The release whose tracklist is open, or null when none is expanded (or still loading).
   release: Release | null
-  // The id of the result currently loading its tracklist, so its row shows a skeleton.
-  loadingId: number | null
+  // The expanded row's key (`provider:id`), or null when none is expanded. Rows are keyed
+  // by provider+id because ids can collide across providers and a Bandcamp release is tied
+  // to its result row (its page URL), not to a numeric id.
+  openKey: string | null
+  // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
+  loading: boolean
   busy: boolean
   error: string
   previewRelease: (result: SearchResult) => void
@@ -46,16 +50,20 @@ export function useDiscogsBrowser(
   const [searchTerm, setSearchTerm] = useState('')
   // Which result is expanded. Reading the release itself from the cache (below) keeps
   // a single source of truth that auto-open, preview and reopen all set.
-  const [openId, setOpenId] = useState<number | null>(null)
+  const [openResult, setOpenResult] = useState<SearchResult | null>(null)
   const [autoProbing, setAutoProbing] = useState(false)
 
   const loadRelease = useCallback(
-    (id: number) =>
+    (result: SearchResult) =>
       queryClient.fetchQuery<Release>({
-        queryKey: ['discogs-release', id],
+        // Keyed by provider+id so a Discogs and a Bandcamp release sharing a numeric id
+        // never collide in the cache.
+        queryKey: ['release', result.provider, result.id],
         // The track the user is looking at: high priority so it jumps ahead of the
-        // background auto-match sweep at the main process's Discogs rate limiter.
-        queryFn: () => window.api.getRelease(id, undefined, 'high'),
+        // background auto-match sweep at the main process's rate limiter. Bandcamp loads by
+        // its page URL, Discogs by its numeric id.
+        queryFn: () =>
+          window.api.getRelease(result.releaseUrl ?? result.id, result.provider, 'high'),
       }),
     [queryClient],
   )
@@ -78,15 +86,16 @@ export function useDiscogsBrowser(
       // A pasted release id/URL loads that release directly instead of searching.
       const id = parseReleaseId(searchTerm)
       if (id !== null) {
-        const rel = await loadRelease(id)
-        return { results: [resultFromRelease(rel)], directId: rel.id as number | null }
+        const rel = await loadRelease({ provider: 'discogs', id, title: '' })
+        const result = resultFromRelease(rel)
+        return { results: [result], direct: result as SearchResult | null }
       }
       const results = await window.api.search(searchTerm, undefined, 'high', {
         artist: item.meta.artist,
         title: item.meta.title,
         catalogNumber: item.meta.catalogNumber,
       })
-      return { results, directId: null as number | null }
+      return { results, direct: null as SearchResult | null }
     },
     enabled: searchTerm.trim() !== '',
   })
@@ -106,7 +115,7 @@ export function useDiscogsBrowser(
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
   // biome-ignore lint/correctness/useExhaustiveDependencies: searchTerm is the deliberate trigger — resetting the open release on each new search is the point.
-  useEffect(() => setOpenId(null), [searchTerm])
+  useEffect(() => setOpenResult(null), [searchTerm])
 
   // Once results arrive, open the first that confidently holds the file's track (or
   // the directly-loaded release), so the user lands on the right album. A newer search
@@ -116,8 +125,8 @@ export function useDiscogsBrowser(
   useEffect(() => {
     const data = searchQuery.data
     if (!data) return
-    if (data.directId !== null) {
-      setOpenId(data.directId)
+    if (data.direct !== null) {
+      setOpenResult(data.direct)
       return
     }
     if (!item.meta.title.trim()) return
@@ -136,7 +145,7 @@ export function useDiscogsBrowser(
         // the user's own click, it never writes anything.
         { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },
       )
-      if (!cancelled && m) setOpenId(m.release.id)
+      if (!cancelled && m) setOpenResult(m.result)
     })().finally(() => {
       if (!cancelled) setAutoProbing(false)
     })
@@ -151,18 +160,24 @@ export function useDiscogsBrowser(
   }, [searchQuery.data, loadRelease])
 
   const releaseQuery = useQuery({
-    queryKey: ['discogs-release', openId],
-    queryFn: () => window.api.getRelease(openId as number, undefined, 'high'),
-    enabled: openId !== null,
+    queryKey: ['release', openResult?.provider, openResult?.id],
+    queryFn: () => {
+      const r = openResult as SearchResult
+      return window.api.getRelease(r.releaseUrl ?? r.id, r.provider, 'high')
+    },
+    enabled: openResult !== null,
   })
-  const release = openId !== null ? (releaseQuery.data ?? null) : null
+  const release = openResult !== null ? (releaseQuery.data ?? null) : null
 
   // A click previews (expands) a result; clicking the open one collapses it again.
   const previewRelease = useCallback((result: SearchResult) => {
-    setOpenId((current) => (current === result.id ? null : result.id))
+    setOpenResult((current) =>
+      current && current.provider === result.provider && current.id === result.id ? null : result,
+    )
   }, [])
 
-  const loadingId = releaseQuery.isFetching ? openId : null
+  const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
+  const loading = releaseQuery.isFetching
   const busy = searchQuery.isFetching || autoProbing || releaseQuery.isFetching
   const error = searchQuery.isError
     ? errorMessage(searchQuery.error, tr('editor.searchError'))
@@ -170,5 +185,5 @@ export function useDiscogsBrowser(
       ? errorMessage(releaseQuery.error, tr('editor.releaseError'))
       : ''
 
-  return { query, setQuery, doSearch, results, release, loadingId, busy, error, previewRelease }
+  return { query, setQuery, doSearch, results, release, openKey, loading, busy, error, previewRelease }
 }

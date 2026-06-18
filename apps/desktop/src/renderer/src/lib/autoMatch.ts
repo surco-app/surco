@@ -35,6 +35,10 @@ export interface ProbeMatch {
   release: Release
   track: ReleaseTrack
   confidence: number
+  // The search-result row that produced this match. Carried back because a release is
+  // identified by its provider+result row, not by Release.id alone (Bandcamp's parsed
+  // release id can differ from the autocomplete id, and the row holds the page URL).
+  result: SearchResult
 }
 
 // Walks search results in order, loading each release and scoring its tracklist
@@ -47,8 +51,11 @@ export async function probeReleases(
   results: SearchResult[],
   target: TrackMatchTarget,
   opts: {
-    loadRelease: (id: number) => Promise<Release>
+    loadRelease: (result: SearchResult) => Promise<Release>
     accepts: (tier: 'high' | 'review' | 'low') => boolean
+    // A floor on the raw confidence, on top of the tier check. Used to hold an uncurated
+    // source (Bandcamp) to a stricter bar than the curated one before applying unattended.
+    minConfidence?: number
     maxProbe?: number
     cancelled?: () => boolean
   },
@@ -58,14 +65,14 @@ export async function probeReleases(
     let rel: Release
     let m: ReturnType<typeof bestMatch>
     try {
-      rel = await opts.loadRelease(result.id)
+      rel = await opts.loadRelease(result)
       m = bestMatch(rel.tracklist, target)
     } catch {
       continue
     }
     if (opts.cancelled?.()) return undefined
-    if (m && opts.accepts(confidenceTier(m.confidence))) {
-      return { release: rel, track: m.track, confidence: m.confidence }
+    if (m && m.confidence >= (opts.minConfidence ?? 0) && opts.accepts(confidenceTier(m.confidence))) {
+      return { release: rel, track: m.track, confidence: m.confidence, result }
     }
   }
   return undefined
@@ -75,7 +82,7 @@ export async function probeReleases(
 // testable with a stub instead of the whole window.api.
 export interface SearchApi {
   search: (query: string) => Promise<SearchResult[]>
-  getRelease: (id: number) => Promise<Release>
+  getRelease: (result: SearchResult) => Promise<Release>
 }
 
 export type AutoMatch = ProbeMatch
