@@ -30,6 +30,12 @@ import { DONATE_URL } from '../lib/donate'
 import { FIELD_DEFS } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
+import {
+  buildSettingsPatch,
+  type LocalDraft,
+  pickSynced,
+  type SyncedDraft,
+} from '../lib/settingsDraft'
 import { formatShortcut } from '../lib/shortcuts'
 import { formatTimeSaved, MANUAL_SECONDS_PER_CONVERSION, timeSavedSeconds } from '../lib/stats'
 import { DestinationPicker } from './DestinationPicker'
@@ -122,63 +128,6 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
 // The catalog sources offered as search-provider checkboxes (Settings → Search).
 const SEARCH_PROVIDERS: Settings['searchProviders'] = ['discogs', 'bandcamp']
 
-// The synced staged fields in their editable forms (presets as comma text, the cover
-// cap as a string), derived from Settings in one place so seeding and the config-dir
-// re-seed can never disagree on the field list.
-interface SyncedDraft {
-  theme: Settings['theme']
-  language: Settings['language']
-  outputFormat: Settings['outputFormat']
-  addToAppleMusic: boolean
-  keepOutputCopy: boolean
-  overwriteOriginal: boolean
-  filenameFormat: string
-  grouping: string
-  genre: string
-  trimWhitespace: boolean
-  zeroPadTrack: boolean
-  visibleFields: string[]
-  requiredFields: string[]
-  coverMaxSize: string
-  coverSquare: boolean
-  replaceLowResCover: boolean
-  showSpectrum: boolean
-  showLoudness: boolean
-  keyNotation: Settings['keyNotation']
-  normalize: Settings['normalize']
-  shortcutOverrides: Settings['shortcutOverrides']
-  discogsFormats: string[]
-  searchProviders: Settings['searchProviders']
-}
-
-function pickSynced(s: Settings): SyncedDraft {
-  return {
-    theme: s.theme,
-    language: s.language,
-    outputFormat: s.outputFormat,
-    discogsFormats: s.discogsFormats,
-    searchProviders: s.searchProviders,
-    addToAppleMusic: s.addToAppleMusic,
-    keepOutputCopy: s.keepOutputCopy,
-    overwriteOriginal: s.overwriteOriginal,
-    filenameFormat: s.filenameFormat,
-    grouping: s.groupingPresets.join(', '),
-    genre: s.genrePresets.join(', '),
-    trimWhitespace: s.trimWhitespace,
-    zeroPadTrack: s.zeroPadTrack,
-    visibleFields: s.visibleFields,
-    requiredFields: s.requiredFields,
-    coverMaxSize: String(s.coverMaxSize),
-    coverSquare: s.coverSquare,
-    replaceLowResCover: s.replaceLowResCover,
-    showSpectrum: s.showSpectrum,
-    showLoudness: s.showLoudness,
-    keyNotation: s.keyNotation,
-    normalize: s.normalize,
-    shortcutOverrides: s.shortcutOverrides,
-  }
-}
-
 export function SettingsModal({
   settings,
   onClose,
@@ -211,7 +160,7 @@ export function SettingsModal({
   const [synced, setSynced] = useState<SyncedDraft>(() => pickSynced(settings))
   // Machine-local fields (local.token, output folder, auto-match) aren't moved by a
   // config-dir switch, so their staged edits survive one.
-  const [local, setLocal] = useState(() => ({
+  const [local, setLocal] = useState<LocalDraft>(() => ({
     token: settings.discogsToken,
     outputDir: settings.outputDir,
     autoMatch: settings.autoMatch,
@@ -298,25 +247,7 @@ export function SettingsModal({
   }
 
   function save(): void {
-    const { grouping, genre, coverMaxSize, filenameFormat, ...rest } = synced
-    const max = parseInt(coverMaxSize, 10)
-    onSave({
-      ...rest,
-      discogsToken: local.token.trim(),
-      outputDir: local.outputDir,
-      filenameFormat: synced.filenameFormat.trim() || '{artist} - {title}',
-      groupingPresets: synced.grouping
-        .split(',')
-        .map((g) => g.trim())
-        .filter(Boolean),
-      genrePresets: synced.genre
-        .split(',')
-        .map((g) => g.trim())
-        .filter(Boolean),
-      coverMaxSize: Number.isFinite(max) && max >= 0 ? max : 1200,
-      // Auto-match needs a local.token to run, so a local.token-less save can't leave it enabled.
-      autoMatch: local.token.trim() !== '' && local.autoMatch,
-    })
+    onSave(buildSettingsPatch(synced, local))
     onClose()
   }
 

@@ -1,0 +1,101 @@
+import type { Settings } from '../../../shared/types'
+
+// The synced staged fields in their editable forms (presets as comma text, the cover cap
+// as a string), derived from Settings in one place so the modal's seeding and the
+// config-dir re-seed can never disagree on the field list.
+export interface SyncedDraft {
+  theme: Settings['theme']
+  language: Settings['language']
+  outputFormat: Settings['outputFormat']
+  addToAppleMusic: boolean
+  keepOutputCopy: boolean
+  overwriteOriginal: boolean
+  filenameFormat: string
+  grouping: string
+  genre: string
+  trimWhitespace: boolean
+  zeroPadTrack: boolean
+  visibleFields: string[]
+  requiredFields: string[]
+  coverMaxSize: string
+  coverSquare: boolean
+  replaceLowResCover: boolean
+  showSpectrum: boolean
+  showLoudness: boolean
+  keyNotation: Settings['keyNotation']
+  normalize: Settings['normalize']
+  shortcutOverrides: Settings['shortcutOverrides']
+  discogsFormats: string[]
+  searchProviders: Settings['searchProviders']
+}
+
+// Machine-local staged fields. A config-dir switch may adopt another machine's synced
+// prefs, but these stay put, so they live apart from SyncedDraft and survive a re-seed.
+export interface LocalDraft {
+  token: string
+  outputDir: string
+  autoMatch: boolean
+}
+
+export function pickSynced(s: Settings): SyncedDraft {
+  return {
+    theme: s.theme,
+    language: s.language,
+    outputFormat: s.outputFormat,
+    discogsFormats: s.discogsFormats,
+    searchProviders: s.searchProviders,
+    addToAppleMusic: s.addToAppleMusic,
+    keepOutputCopy: s.keepOutputCopy,
+    overwriteOriginal: s.overwriteOriginal,
+    filenameFormat: s.filenameFormat,
+    grouping: s.groupingPresets.join(', '),
+    genre: s.genrePresets.join(', '),
+    trimWhitespace: s.trimWhitespace,
+    zeroPadTrack: s.zeroPadTrack,
+    visibleFields: s.visibleFields,
+    requiredFields: s.requiredFields,
+    coverMaxSize: String(s.coverMaxSize),
+    coverSquare: s.coverSquare,
+    replaceLowResCover: s.replaceLowResCover,
+    showSpectrum: s.showSpectrum,
+    showLoudness: s.showLoudness,
+    keyNotation: s.keyNotation,
+    normalize: s.normalize,
+    shortcutOverrides: s.shortcutOverrides,
+  }
+}
+
+// The default applied when the filename format is left blank — every output would collide
+// on one name without at least the artist and title.
+const DEFAULT_FILENAME_FORMAT = '{artist} - {title}'
+// The cover cap restored when the field can't be parsed as a non-negative number.
+const DEFAULT_COVER_MAX_SIZE = 1200
+
+// Serializes the staged draft into the Settings patch to persist: presets parsed from
+// comma text into trimmed arrays, the cover cap clamped to a non-negative number (the
+// default when unparseable), the filename format trimmed with the default restored when
+// blank, and auto-match forced off when there's no token to run it. Pure so these
+// parse/clamp/gate rules are tested directly rather than only through the modal's Save.
+export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Partial<Settings> {
+  const { grouping, genre, coverMaxSize, filenameFormat, ...rest } = synced
+  const max = parseInt(coverMaxSize, 10)
+  const token = local.token.trim()
+  return {
+    ...rest,
+    discogsToken: token,
+    outputDir: local.outputDir,
+    filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
+    groupingPresets: splitPresets(grouping),
+    genrePresets: splitPresets(genre),
+    coverMaxSize: Number.isFinite(max) && max >= 0 ? max : DEFAULT_COVER_MAX_SIZE,
+    // Auto-match needs a token to run, so a token-less save can't leave it enabled.
+    autoMatch: token !== '' && local.autoMatch,
+  }
+}
+
+function splitPresets(text: string): string[] {
+  return text
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
