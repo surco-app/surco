@@ -2,7 +2,8 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat, Settings } from '../../../shared/types'
+import { autoMatchAvailable } from '../../../shared/autoMatch'
+import type { OutputFormat, SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
 import { formatKHz } from '../lib/quality'
@@ -12,7 +13,8 @@ import { SegmentedControl } from './SegmentedControl'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
-const STEPS = ['welcome', 'token', 'format', 'grouping', 'genre', 'fields', 'spectrum'] as const
+const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
+const STEPS = ['welcome', 'search', 'format', 'grouping', 'genre', 'fields', 'spectrum'] as const
 // Apple Music exists only on macOS, so the destination choice is offered there alone.
 const isMac = window.api.platform === 'darwin'
 
@@ -25,6 +27,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const { t: tr } = useTranslation()
   const [step, setStep] = useState(0)
   const [token, setToken] = useState(settings.discogsToken)
+  const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
@@ -38,11 +41,15 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   useFocusTrap(dialogRef)
 
   const isLast = step === STEPS.length - 1
+  const discogsOn = searchProviders.includes('discogs')
+  // Auto-match needs a source, plus a Discogs token whenever Discogs is one of them.
+  const autoReady = autoMatchAvailable({ searchProviders, discogsToken: token })
 
   function finish(): void {
     onFinish(
       buildOnboardingPatch({
         discogsToken: token,
+        searchProviders,
         outputFormat,
         grouping,
         genre,
@@ -99,47 +106,81 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
               </div>
             )}
 
-            {STEPS[step] === 'token' && (
+            {STEPS[step] === 'search' && (
               <>
                 <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.discogsToken')}
+                  {tr('settings.searchProviders')}
                 </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.tokenBody')}</p>
-                <input
-                  data-testid="onboarding-token"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder={tr('settings.tokenPlaceholder')}
-                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-                />
-                <p className="mt-1.5 text-xs text-fg-dim">
-                  {tr('settings.tokenHelp')}{' '}
-                  <a
-                    href="https://www.discogs.com/settings/developers"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--color-accent)] hover:underline"
-                  >
-                    discogs.com/settings/developers
-                  </a>
-                </p>
+                <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
+                <div
+                  className="flex flex-wrap gap-x-5 gap-y-2"
+                  data-testid="onboarding-search-providers"
+                >
+                  {SEARCH_PROVIDERS.map((p) => (
+                    <label key={p} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        data-testid={`onboarding-provider-${p}`}
+                        type="checkbox"
+                        checked={searchProviders.includes(p)}
+                        onChange={(e) =>
+                          setSearchProviders((prev) =>
+                            e.target.checked ? [...prev, p] : prev.filter((x) => x !== p),
+                          )
+                        }
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {discogsOn && (
+                  <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+                    <label
+                      htmlFor="onboarding-token"
+                      className="mb-1.5 block text-sm font-medium text-fg-muted"
+                    >
+                      {tr('settings.discogsToken')}
+                    </label>
+                    <input
+                      id="onboarding-token"
+                      data-testid="onboarding-token"
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      placeholder={tr('settings.tokenPlaceholder')}
+                      className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                    />
+                    <p className="mt-1.5 text-xs text-fg-dim">
+                      {tr('settings.tokenHelp')}{' '}
+                      <a
+                        href="https://www.discogs.com/settings/developers"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[var(--color-accent)] hover:underline"
+                      >
+                        discogs.com/settings/developers
+                      </a>
+                    </p>
+                  </div>
+                )}
+
                 <label
                   className={`mt-5 flex items-center gap-3 border-t border-[var(--color-line)] pt-4 ${
-                    token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                    autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                   }`}
                 >
                   <input
                     data-testid="onboarding-auto-match"
                     type="checkbox"
-                    checked={autoMatch && token.trim() !== ''}
-                    disabled={token.trim() === ''}
+                    checked={autoMatch && autoReady}
+                    disabled={!autoReady}
                     onChange={(e) => setAutoMatch(e.target.checked)}
                     className="h-4 w-4 accent-[var(--color-accent)]"
                   />
                   <span className="text-sm">
                     {tr('settings.autoMatch')}
                     <span className="mt-0.5 block text-xs text-fg-dim">
-                      {token.trim()
+                      {autoReady
                         ? tr('onboarding.autoMatchBody')
                         : tr('onboarding.autoMatchNeedsToken')}
                     </span>

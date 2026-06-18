@@ -16,6 +16,7 @@ describe('buildOnboardingPatch', () => {
   it('persists the chosen settings and marks onboarding seen', () => {
     const patch = buildOnboardingPatch({
       discogsToken: 'abc123',
+      searchProviders: ['discogs'],
       outputFormat: 'wav',
       grouping: 'Bases, Cantaditas',
       genre: 'Hard Dance, Techno',
@@ -28,6 +29,7 @@ describe('buildOnboardingPatch', () => {
     })
     expect(patch).toEqual({
       discogsToken: 'abc123',
+      searchProviders: ['discogs'],
       outputFormat: 'wav',
       groupingPresets: ['Bases', 'Cantaditas'],
       genrePresets: ['Hard Dance', 'Techno'],
@@ -47,6 +49,7 @@ describe('buildOnboardingPatch', () => {
   it('trims the token and drops blank grouping segments', () => {
     const patch = buildOnboardingPatch({
       discogsToken: '  tok  ',
+      searchProviders: ['discogs'],
       outputFormat: 'aiff',
       grouping: 'Bases, , Cantaditas,',
       genre: 'Hard Dance, , Techno,',
@@ -74,6 +77,7 @@ describe('buildOnboardingPatch', () => {
   it('refuses to enable auto-match when no token was entered', () => {
     const patch = buildOnboardingPatch({
       discogsToken: '   ',
+      searchProviders: ['discogs'],
       outputFormat: 'aiff',
       grouping: '',
       genre: '',
@@ -87,11 +91,31 @@ describe('buildOnboardingPatch', () => {
     expect(patch.autoMatch).toBe(false)
   })
 
+  // Bandcamp needs no token, so a Bandcamp-only setup can persist auto-match on.
+  it('enables auto-match for a Bandcamp-only setup without a token', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '',
+      searchProviders: ['bandcamp'],
+      outputFormat: 'aiff',
+      grouping: '',
+      genre: '',
+      showSpectrum: true,
+      autoMatch: true,
+      visibleFields: [],
+      requiredFields: [],
+      addToAppleMusic: false,
+      keepOutputCopy: true,
+    })
+    expect(patch.autoMatch).toBe(true)
+    expect(patch.searchProviders).toEqual(['bandcamp'])
+  })
+
   // The destination chosen in the wizard's format step must reach settings, so a new
   // macOS user who picks "Apple Music only" doesn't silently keep the folder copy too.
   it('persists the chosen output destination', () => {
     const patch = buildOnboardingPatch({
       discogsToken: '',
+      searchProviders: ['discogs'],
       outputFormat: 'aiff',
       grouping: '',
       genre: '',
@@ -111,6 +135,7 @@ describe('buildOnboardingPatch', () => {
   it('persists the chosen visible fields in order', () => {
     const patch = buildOnboardingPatch({
       discogsToken: '',
+      searchProviders: ['discogs'],
       outputFormat: 'aiff',
       grouping: '',
       genre: '',
