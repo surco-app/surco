@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // don't wait on real timers between requests.
 vi.mock('./bandcampLimiter', () => ({ bandcampLimiter: { acquire: vi.fn() } }))
 
-import { extractTralbum, getRelease, parseRelease, search, upscaleArt } from './bandcamp'
+import { extractTralbum, getRelease, parseRelease, search } from './bandcamp'
 
 // The autocomplete endpoint answers POSTs with results under auto.results.
 function mockSearch(results: unknown[]): ReturnType<typeof vi.fn> {
@@ -47,7 +47,7 @@ describe('search', () => {
         id: 11,
         band_name: 'Boards of Canada',
         album_name: 'Music Has The Right To Children',
-        img: 'https://f4.bcbits.com/img/a123_3.jpg',
+        art_id: 123,
         item_url_path: 'https://boardsofcanada.bandcamp.com/album/music',
       },
       {
@@ -55,7 +55,7 @@ describe('search', () => {
         id: 22,
         band_name: 'Aphex Twin',
         name: 'Windowlicker',
-        img: 'https://f4.bcbits.com/img/456_3.jpg',
+        art_id: 456,
         item_url_path: 'https://aphextwin.bandcamp.com/track/windowlicker',
       },
     ])
@@ -73,8 +73,8 @@ describe('search', () => {
         provider: 'bandcamp',
         id: 22,
         title: 'Aphex Twin - Windowlicker',
-        thumb: 'https://f4.bcbits.com/img/456_3.jpg',
-        cover_image: 'https://f4.bcbits.com/img/456_0.jpg',
+        thumb: 'https://f4.bcbits.com/img/a456_3.jpg',
+        cover_image: 'https://f4.bcbits.com/img/a456_0.jpg',
         releaseUrl: 'https://aphextwin.bandcamp.com/track/windowlicker',
       },
     ])
@@ -175,15 +175,5 @@ describe('extractTralbum / parseRelease', () => {
   // not hand back a half-built release.
   it('throws when the page carries no data-tralbum', () => {
     expect(() => parseRelease('<html><body>nope</body></html>', 'https://x.bc')).toThrow()
-  })
-})
-
-describe('upscaleArt', () => {
-  // Search hands back the tiny _3 thumbnail; the cover picker wants the full-size art.
-  it('swaps the size suffix to the requested size', () => {
-    expect(upscaleArt('https://f4.bcbits.com/img/a123_3.jpg', 0)).toBe(
-      'https://f4.bcbits.com/img/a123_0.jpg',
-    )
-    expect(upscaleArt(undefined, 0)).toBeUndefined()
   })
 })

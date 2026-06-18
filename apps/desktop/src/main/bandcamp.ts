@@ -12,13 +12,12 @@ const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/surco'
 // hanging forever; 10s is generous for endpoints that answer in well under a second.
 const REQUEST_TIMEOUT_MS = 10_000
 
-// Bandcamp art ships at many sizes via a numeric suffix (_0 is the original/full size);
-// the autocomplete hands back the tiny _3 thumbnail. Swap the suffix to pull a crisp
-// cover instead of the postage-stamp version. Returns undefined unchanged so callers can
-// thread an optional image through without a guard.
-export function upscaleArt(url: string | undefined, size = 0): string | undefined {
-  if (!url) return undefined
-  return url.replace(/_\d+\.(jpg|png|gif)$/i, `_${size}.$1`)
+// Bandcamp cover art lives at a{art_id}_{size}.jpg — size 0 is the original/full image,
+// 3 the small list thumbnail. Always build from art_id: the autocomplete's own `img` URL
+// drops the leading `a` (e.g. .../2808057461_3.jpg) and 404s, while .../a2808057461_3.jpg
+// resolves. Returns undefined when there's no art so callers can thread it through.
+function artUrl(artId: number | undefined, size: number): string | undefined {
+  return artId ? `https://f4.bcbits.com/img/a${artId}_${size}.jpg` : undefined
 }
 
 interface AutoResult {
@@ -27,7 +26,7 @@ interface AutoResult {
   name?: string
   band_name?: string
   album_name?: string
-  img?: string
+  art_id?: number
   item_url_path?: string
 }
 
@@ -43,8 +42,8 @@ function mapResult(r: AutoResult): SearchResult | undefined {
     provider: 'bandcamp',
     id: r.id,
     title,
-    thumb: r.img,
-    cover_image: upscaleArt(r.img, 0),
+    thumb: artUrl(r.art_id, 3),
+    cover_image: artUrl(r.art_id, 0),
     releaseUrl: r.item_url_path,
   }
 }
@@ -136,8 +135,7 @@ export function parseRelease(html: string, url: string): Release {
   const data = extractTralbum(html)
   if (!data) throw new Error(`No se pudo leer la página de Bandcamp (${url})`)
   const artist = data.artist ?? data.current?.artist ?? ''
-  const artId = data.art_id ?? data.current?.art_id
-  const cover = artId ? `https://f4.bcbits.com/img/a${artId}_0.jpg` : undefined
+  const cover = artUrl(data.art_id ?? data.current?.art_id, 0)
   const tags = parseTags(html)
   return {
     provider: 'bandcamp',
