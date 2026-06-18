@@ -8,13 +8,19 @@ import { cleanName } from './release'
 // primary-artist word match (see isInLibrary) can run in the renderer.
 export type AppleMusicIndex = Map<string, string[]>
 
+// An inline feature clause and everything after it: tags sometimes spell the featured
+// act in the artist field with no comma to split on ("Ken Laszlo Feat. Jenny"), while
+// Apple Music keeps only the lead artist. Dropping it before the whole-word match mirrors
+// the comma split so a feat. tag still finds the lead-artist library copy.
+const FEAT_CLAUSE = /\s+(?:feat\.?|featuring|ft\.?)\s+.*$/i
+
 // The primary artist only, folded: our tags join collaborators ("Alfredo Pareja,
 // Saint Etien") while Apple Music stores just the primary name, so the comma split
 // happens before folding (which would turn the comma into a space and lose the boundary).
-// cleanName drops a Discogs disambiguator ("Aphex Twin (2)") so it matches the plain
-// library name.
+// An inline "feat." clause is dropped for the same reason. cleanName drops a Discogs
+// disambiguator ("Aphex Twin (2)") so it matches the plain library name.
 function primaryArtist(artist: string): string {
-  return foldText(cleanName(artist.split(',')[0]))
+  return foldText(cleanName(artist.split(',')[0].replace(FEAT_CLAUSE, '')))
 }
 
 // A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".

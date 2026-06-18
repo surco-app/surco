@@ -31,6 +31,17 @@ describe('buildLibraryIndex / isInLibrary', () => {
     ).toBe(true)
   })
 
+  it('drops an inline "feat." clause from the candidate artist so a lead-artist library copy still matches', () => {
+    // DJ tags often spell the featured act inline ("Ken Laszlo Feat. Jenny") while Apple
+    // Music keeps only the lead ("Ken Laszlo"). With no comma to split on, requiring every
+    // candidate word to appear would read the song as not-owned; dropping the feature
+    // clause mirrors the comma case so the badge and the filter agree it is in the library.
+    const feat = buildLibraryIndex([{ title: 'When I Fall In Love', artist: 'Ken Laszlo' }])
+    expect(
+      isInLibrary(feat, { title: 'When I Fall In Love', artist: 'Ken Laszlo Feat. Jenny' }),
+    ).toBe(true)
+  })
+
   it('folds case, accents and punctuation so spelling drift between the tag and the library still matches', () => {
     // foldText is the same canonical key the search and Discogs scorer use, so the
     // hint never disagrees with them on what counts as the same song.
