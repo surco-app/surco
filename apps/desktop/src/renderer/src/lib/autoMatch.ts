@@ -1,3 +1,4 @@
+import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { bestMatch, confidenceTier, preRankResults, type TrackMatchTarget } from './release'
@@ -20,7 +21,9 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
 // What the sweep reads off a track to score release candidates against it.
 export function matchTargetOf(track: TrackItem): TrackMatchTarget {
   return {
-    title: track.meta.title,
+    // Score against a cleaned title: a file whose title tag is really the whole (often
+    // duplicated) file name would otherwise never reach the confidence bar.
+    title: cleanMatchTitle(track.meta.title),
     durationSec: track.duration,
     trackNumber: track.meta.trackNumber,
     artist: track.meta.artist,

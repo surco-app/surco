@@ -236,4 +236,19 @@ describe('matchTargetOf', () => {
       artist: 'Artist',
     })
   })
+
+  // A file whose title tag is the whole duplicated file name must be cleaned before
+  // scoring, or it never reaches the confidence bar against the real track title.
+  it('cleans a duplicated, track-numbered file-name title before scoring', () => {
+    const t = {
+      duration: 398,
+      meta: {
+        title:
+          'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
+        trackNumber: '',
+        artist: 'HH Traxx',
+      },
+    } as TrackItem
+    expect(matchTargetOf(t).title).toBe('Francesco Donadoni - Rock that sound (Original mix)')
+  })
 })

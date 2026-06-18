@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { probeReleases } from '../lib/autoMatch'
 import { preRankResults, resultFromRelease } from '../lib/release'
@@ -116,7 +117,7 @@ export function useDiscogsBrowser(
       // Merge and re-rank by how well each row matches the file, so the likeliest release —
       // from whichever provider — leads, instead of one source always sitting on top.
       const results = preRankResults(ok.flat(), {
-        title: item.meta.title,
+        title: cleanMatchTitle(item.meta.title),
         artist: item.meta.artist,
       })
       return { results, direct: null as SearchResult | null }
@@ -160,7 +161,7 @@ export function useDiscogsBrowser(
       const m = await probeReleases(
         data.results,
         {
-          title: item.meta.title,
+          title: cleanMatchTitle(item.meta.title),
           durationSec: item.duration,
           trackNumber: item.meta.trackNumber,
           artist: item.meta.artist,

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
+import { cleanMatchTitle } from '../shared/searchClean'
 import { buildSearchCandidates, cleanQuery } from './searchQuery'
+
+describe('cleanMatchTitle', () => {
+  it('strips a duplicated, track-numbered tail so the real track title can match', () => {
+    expect(
+      cleanMatchTitle(
+        'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
+      ),
+    ).toBe('Francesco Donadoni - Rock that sound (Original mix)')
+  })
+
+  it('leaves an already-clean title untouched', () => {
+    expect(cleanMatchTitle('Rock that sound (Original mix)')).toBe('Rock that sound (Original mix)')
+  })
+})
 
 describe('cleanQuery', () => {
   it('strips bitrate and format tokens that never appear in a release title', () => {
