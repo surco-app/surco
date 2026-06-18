@@ -7,6 +7,7 @@ import {
   tracksToAutoMatch,
 } from '../lib/autoMatch'
 import { mapWithConcurrency } from '../lib/concurrency'
+import { keepCoverArg } from '../lib/coverSource'
 import { fetchRelease } from '../lib/fetchRelease'
 import { buildReleaseMeta } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -102,11 +103,7 @@ export function useAutoMatch({
       // mints a new meta object, so an identity check covers all fields at once.
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta) return
-      const patch = buildReleaseMeta(live.meta, m.release, m.track, {
-        url: live.coverUrl,
-        path: live.coverPath,
-        keep: !!live.coverUrl,
-      })
+      const patch = buildReleaseMeta(live.meta, m.release, m.track, keepCoverArg(live))
       updateTrack(t.id, {
         meta: patch.meta,
         coverUrl: patch.coverUrl,

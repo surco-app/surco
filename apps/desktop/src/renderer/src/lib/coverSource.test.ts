@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { coverSourceOf } from './coverSource'
+import { coverSourceOf, keepCoverArg } from './coverSource'
+
+describe('keepCoverArg', () => {
+  // Applying a release match must never overwrite art the file already carries — the
+  // release image is often smaller. keep is on exactly when there's a cover to protect.
+  it('keeps the file’s own cover when it has one', () => {
+    expect(keepCoverArg({ coverUrl: 'blob:abc', coverPath: '/p/cover.png' })).toEqual({
+      url: 'blob:abc',
+      path: '/p/cover.png',
+      keep: true,
+    })
+  })
+
+  // With no cover to protect, keep is off so buildReleaseMeta fills from the release.
+  it('lets the release fill in when the file has no cover', () => {
+    expect(keepCoverArg({ coverUrl: undefined, coverPath: undefined })).toEqual({
+      url: undefined,
+      path: undefined,
+      keep: false,
+    })
+  })
+})
 
 const base = { inputPath: '/m/a.flac' }
 

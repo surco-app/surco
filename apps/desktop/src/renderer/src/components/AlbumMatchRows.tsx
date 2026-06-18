@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { matchTargetOf } from '../lib/autoMatch'
+import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -64,11 +65,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
       return [
         {
           id: a.id,
-          patch: buildReleaseMeta(file.meta, release, a.track, {
-            url: file.coverUrl,
-            path: file.coverPath,
-            keep: !!file.coverUrl,
-          }),
+          patch: buildReleaseMeta(file.meta, release, a.track, keepCoverArg(file)),
         },
       ]
     })
