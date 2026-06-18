@@ -201,8 +201,8 @@
         "desc": "Tus pistas y el filtro de lo que ya está en tu biblioteca de Apple Music."
       },
       "discogs": {
-        "title": "Match de Discogs",
-        "desc": "Busca el lanzamiento exacto y elige la versión correcta del vinilo."
+        "title": "Match de Discogs y Bandcamp",
+        "desc": "Busca el lanzamiento exacto en Discogs o Bandcamp y elige la versión correcta."
       },
       "metadata": {
         "title": "Editor de metadatos",

@@ -201,8 +201,8 @@
         "desc": "Your tracks, with a filter for what's already in your Apple Music library."
       },
       "discogs": {
-        "title": "Discogs match",
-        "desc": "Find the exact release and pick the right version of the record."
+        "title": "Discogs & Bandcamp match",
+        "desc": "Find the exact release on Discogs or Bandcamp and pick the right version."
       },
       "metadata": {
         "title": "Metadata editor",
