@@ -11,6 +11,14 @@ describe('cleanMatchTitle', () => {
     ).toBe('Francesco Donadoni - Rock that sound (Original mix)')
   })
 
+  it('takes the track title that follows the track number, not the release prefix', () => {
+    // "Label - Artist - Album (Mix) - 01 Preview" → the real track is "Preview" (Bandcamp
+    // names many tracks that way); scoring it against the release's "Preview" entry must win.
+    expect(
+      cleanMatchTitle('Francesco Donadoni - Rock that sound (Original mix) - 01 Preview'),
+    ).toBe('Preview')
+  })
+
   it('leaves an already-clean title untouched', () => {
     expect(cleanMatchTitle('Rock that sound (Original mix)')).toBe('Rock that sound (Original mix)')
   })

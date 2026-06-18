@@ -46,9 +46,13 @@ export function dropTrackNumberTail(query: string): string {
   return squeeze(query.replace(/\s-\s\d{1,3}(?:\s.*)?$/, ''))
 }
 
-// The title to score a tracklist entry against: the same noise and duplicated track-number
-// tail removed that the search strips, so a confident match still lands when the file's
-// title tag is really the whole (often duplicated) file name. A clean title is unchanged.
+// The track title to score a tracklist entry against. DJ-pool / batch file names front-load
+// the release info ("Label - Artist - Album (Mix) - NN TrackTitle"); the segment AFTER the
+// track number is the actual track — "Preview" (Bandcamp uses it heavily), or the full
+// artist–title for a single. Take that when present; otherwise clean the whole title. A
+// clean title with no track-number marker is returned (cleaned) unchanged. This is the
+// mirror of the search side, which keeps the part BEFORE the number to identify the release.
 export function cleanMatchTitle(title: string): string {
-  return dropTrackNumberTail(cleanQuery(title))
+  const afterTrackNumber = title.match(/\s-\s\d{1,3}\s+(.+)$/)
+  return cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title)
 }
