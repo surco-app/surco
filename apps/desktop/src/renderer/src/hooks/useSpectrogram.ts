@@ -1,14 +1,12 @@
-import { queryOptions, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { SpectrumResult } from '../../../shared/types'
+import { analysisOptions } from '../lib/analysisQueries'
 
 // The one definition of a spectrogram cache entry. Four call sites share the cache —
 // this hook, the hover prefetch, the analyze sweep and the list's verdict reader —
 // so a single drifting copy of the key would silently fork it.
 export function spectrogramOptions(inputPath: string) {
-  return queryOptions({
-    queryKey: ['spectrogram', inputPath],
-    queryFn: (): Promise<SpectrumResult> => window.api.spectrogram(inputPath),
-  })
+  return analysisOptions('spectrogram', inputPath, () => window.api.spectrogram(inputPath))
 }
 
 // Computes the spectrogram (and the lossless-cutoff it implies) for one input. Keyed by

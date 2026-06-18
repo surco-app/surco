@@ -1,5 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { TrackProperties } from '../../../shared/types'
+import { analysisOptions } from '../lib/analysisQueries'
 
 // Probes the read-only technical facts (codec, bit depth, channels, bitrate, size,
 // timestamps) for one input. Keyed by path so switching tracks reads the right
@@ -10,8 +11,7 @@ export function useTrackProperties(
   enabled: boolean,
 ): UseQueryResult<TrackProperties | null> {
   return useQuery({
-    queryKey: ['properties', inputPath],
-    queryFn: () => window.api.properties(inputPath),
+    ...analysisOptions('properties', inputPath, () => window.api.properties(inputPath)),
     enabled,
   })
 }

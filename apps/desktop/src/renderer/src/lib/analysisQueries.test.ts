@@ -1,6 +1,21 @@
 import { QueryClient } from '@tanstack/react-query'
-import { describe, expect, it } from 'vitest'
-import { removeAnalysisQueries } from './analysisQueries'
+import { describe, expect, it, vi } from 'vitest'
+import { analysisOptions, removeAnalysisQueries } from './analysisQueries'
+
+describe('analysisOptions', () => {
+  // The probe and its eviction must agree on the exact key tuple. Pinning the shape to
+  // [name, path] here is what lets removeAnalysisQueries clear what the hooks cached: if
+  // the factory ever built a different shape, eviction would silently miss the entry.
+  it('keys every probe by [name, path] and runs the probe lazily', async () => {
+    const probe = vi.fn().mockResolvedValue({ ok: true })
+    const options = analysisOptions('bpm', '/m/a.wav', probe)
+    expect(options.queryKey).toEqual(['bpm', '/m/a.wav'])
+    // Building the options must not have run the probe — it runs only when fetched.
+    expect(probe).not.toHaveBeenCalled()
+    const run = options.queryFn as () => Promise<unknown>
+    expect(await run()).toEqual({ ok: true })
+  })
+})
 
 describe('removeAnalysisQueries', () => {
   // The renderer caches every per-path probe for the whole session on the premise that

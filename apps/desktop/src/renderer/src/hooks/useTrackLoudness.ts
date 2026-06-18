@@ -1,5 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { LoudnessResult } from '../../../shared/types'
+import { analysisOptions } from '../lib/analysisQueries'
 
 // Measures EBU R128 loudness (plus the astats-derived signal checks) for one input.
 // Keyed by path so switching tracks reads the right measurement and revisiting never
@@ -10,8 +11,7 @@ export function useTrackLoudness(
   enabled: boolean,
 ): UseQueryResult<LoudnessResult | null> {
   return useQuery({
-    queryKey: ['loudness', inputPath],
-    queryFn: () => window.api.loudness(inputPath),
+    ...analysisOptions('loudness', inputPath, () => window.api.loudness(inputPath)),
     enabled,
   })
 }
