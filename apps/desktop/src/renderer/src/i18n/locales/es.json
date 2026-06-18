@@ -387,6 +387,8 @@
     "configDirDefault": "Carpeta por defecto de la app",
     "configDirReset": "Restaurar",
     "configDirHint": "Elige una carpeta en iCloud Drive o Dropbox para compartir estas preferencias entre tus Macs. Se aplica al momento; el token de Discogs y las estadísticas de este Mac nunca salen de esta máquina.",
+    "discogsSection": "Discogs",
+    "discogsDisabledHint": "Activa Discogs en «Fuentes de búsqueda» para configurar estos ajustes.",
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
     "tokenWhy": "Opcional. La búsqueda funciona con las credenciales compartidas de Surco, limitadas a 60 peticiones/minuto entre todos los usuarios — así que en horas punta una búsqueda puede fallar un momento. Tu propio token tiene un límite privado y mantiene las búsquedas rápidas.",

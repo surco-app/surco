@@ -184,6 +184,17 @@ describe('SettingsModal auto-match', () => {
     )
   })
 
+  // The token, auto-match and format filter only act on Discogs results, so they're
+  // disabled (and flagged) when Discogs isn't a chosen source — no inert, confusing controls.
+  it('disables the Discogs-only settings when Discogs is not a search source', () => {
+    openSearch()
+    fireEvent.click(screen.getByTestId('settings-provider-discogs'))
+    expect(screen.getByTestId('settings-token')).toBeDisabled()
+    expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
+    expect(screen.getByTestId('settings-format-Vinyl')).toBeDisabled()
+    expect(screen.getByTestId('settings-discogs-disabled')).toBeInTheDocument()
+  })
+
   it('saves auto-match enabled only once a token backs it', () => {
     const onSave = vi.fn()
     openSearch(onSave)

@@ -272,6 +272,9 @@ export function SettingsModal({
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the two booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
+  // The token, auto-match and format filter only act on Discogs results, so they're
+  // grouped under a Discogs heading and disabled when Discogs isn't a chosen source.
+  const discogsOn = synced.searchProviders.includes('discogs')
   const destination = toDestination(
     synced.addToAppleMusic,
     synced.keepOutputCopy,
@@ -483,80 +486,98 @@ export function SettingsModal({
                 </label>
               ))}
             </div>
-            <label
-              htmlFor="settings-token"
-              className="mb-1.5 block text-sm font-medium text-fg-muted"
-            >
-              {tr('settings.discogsToken')}
-            </label>
-            <input
-              id="settings-token"
-              data-testid="settings-token"
-              value={local.token}
-              onChange={(e) => patchLocal('token', e.target.value)}
-              placeholder={tr('settings.tokenPlaceholder')}
-              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-            />
-            <p className="mt-1.5 mb-5 text-xs text-fg-dim">
-              {tr('settings.tokenWhy')} {tr('settings.tokenHelp')}{' '}
-              <a
-                href="https://www.discogs.com/settings/developers"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[var(--color-accent)] hover:underline"
-              >
-                discogs.com/settings/developers
-              </a>
-            </p>
-
-            <div className="border-t border-[var(--color-line)] pt-5">
-              <label
-                className={`flex items-center gap-3 ${
-                  local.token.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                }`}
-              >
-                <input
-                  data-testid="settings-auto-match"
-                  type="checkbox"
-                  checked={local.autoMatch && local.token.trim() !== ''}
-                  disabled={local.token.trim() === ''}
-                  onChange={(e) => patchLocal('autoMatch', e.target.checked)}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
-                />
-                <span className="text-sm">{tr('settings.autoMatch')}</span>
-              </label>
-              <p className="mt-1.5 text-xs text-fg-dim">
-                {local.token.trim()
-                  ? tr('settings.autoMatchHint')
-                  : tr('settings.autoMatchNeedsToken')}
-              </p>
-            </div>
-
-            <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+            <div className="mt-6 border-t border-[var(--color-line)] pt-5">
               <p className="mb-1.5 text-sm font-medium text-fg-muted">
-                {tr('settings.discogsFormats')}
+                {tr('settings.discogsSection')}
               </p>
-              <p className="mb-3 text-xs text-fg-dim">{tr('settings.discogsFormatsHint')}</p>
-              <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
-                {DISCOGS_FORMATS.map((f) => (
-                  <label key={f} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      data-testid={`settings-format-${f}`}
-                      type="checkbox"
-                      checked={synced.discogsFormats.includes(f)}
-                      onChange={(e) =>
-                        patch(
-                          'discogsFormats',
-                          e.target.checked
-                            ? [...synced.discogsFormats, f]
-                            : synced.discogsFormats.filter((x) => x !== f),
-                        )
-                      }
-                      className="h-4 w-4 accent-[var(--color-accent)]"
-                    />
-                    <span className="text-sm">{tr(`settings.format.${f}`)}</span>
-                  </label>
-                ))}
+              {!discogsOn && (
+                <p data-testid="settings-discogs-disabled" className="mb-4 text-xs text-fg-dim">
+                  {tr('settings.discogsDisabledHint')}
+                </p>
+              )}
+              <div className={discogsOn ? '' : 'opacity-50'}>
+                <label
+                  htmlFor="settings-token"
+                  className="mb-1.5 block text-sm font-medium text-fg-muted"
+                >
+                  {tr('settings.discogsToken')}
+                </label>
+                <input
+                  id="settings-token"
+                  data-testid="settings-token"
+                  value={local.token}
+                  disabled={!discogsOn}
+                  onChange={(e) => patchLocal('token', e.target.value)}
+                  placeholder={tr('settings.tokenPlaceholder')}
+                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed"
+                />
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">
+                  {tr('settings.tokenWhy')} {tr('settings.tokenHelp')}{' '}
+                  <a
+                    href="https://www.discogs.com/settings/developers"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--color-accent)] hover:underline"
+                  >
+                    discogs.com/settings/developers
+                  </a>
+                </p>
+
+                <label
+                  className={`flex items-center gap-3 ${
+                    discogsOn && local.token.trim()
+                      ? 'cursor-pointer'
+                      : 'cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  <input
+                    data-testid="settings-auto-match"
+                    type="checkbox"
+                    checked={local.autoMatch && local.token.trim() !== ''}
+                    disabled={!discogsOn || local.token.trim() === ''}
+                    onChange={(e) => patchLocal('autoMatch', e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr('settings.autoMatch')}</span>
+                </label>
+                <p className="mt-1.5 mb-5 text-xs text-fg-dim">
+                  {local.token.trim()
+                    ? tr('settings.autoMatchHint')
+                    : tr('settings.autoMatchNeedsToken')}
+                </p>
+
+                <p className="mb-1.5 text-sm font-medium text-fg-muted">
+                  {tr('settings.discogsFormats')}
+                </p>
+                <p className="mb-3 text-xs text-fg-dim">{tr('settings.discogsFormatsHint')}</p>
+                <div
+                  className="flex flex-wrap gap-x-5 gap-y-2"
+                  data-testid="settings-discogs-formats"
+                >
+                  {DISCOGS_FORMATS.map((f) => (
+                    <label
+                      key={f}
+                      className={`flex items-center gap-2 ${discogsOn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                    >
+                      <input
+                        data-testid={`settings-format-${f}`}
+                        type="checkbox"
+                        checked={synced.discogsFormats.includes(f)}
+                        disabled={!discogsOn}
+                        onChange={(e) =>
+                          patch(
+                            'discogsFormats',
+                            e.target.checked
+                              ? [...synced.discogsFormats, f]
+                              : synced.discogsFormats.filter((x) => x !== f),
+                          )
+                        }
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">{tr(`settings.format.${f}`)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </>
