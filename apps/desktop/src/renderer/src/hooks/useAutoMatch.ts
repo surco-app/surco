@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { searchHintsOf } from '../../../shared/metadata'
 import type { SearchHints, SearchPriority, SearchProviderId } from '../../../shared/types'
 import {
   autoMatchRelease,
@@ -90,12 +91,11 @@ export function useAutoMatch({
   const applyAutoMatch = useCallback(
     async (t: TrackItem): Promise<void> => {
       const priority: SearchPriority = t.id === focusedId.current ? 'high' : 'low'
-      const hints: SearchHints = {
-        artist: t.meta.artist,
-        title: t.meta.title,
-        catalogNumber: t.meta.catalogNumber,
-      }
-      const m = await autoMatchRelease(t.query, matchTargetOf(t), searchApiAt(priority, hints))
+      const m = await autoMatchRelease(
+        t.query,
+        matchTargetOf(t),
+        searchApiAt(priority, searchHintsOf(t.meta)),
+      )
       if (!m || matchCancel.current) return
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
       // a manual match or a removal landing during the Discogs round-trip wins. Re-read

@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+import { searchHintsOf } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { matchTargetOf, probeReleases } from '../lib/autoMatch'
@@ -95,11 +96,7 @@ export function useDiscogsBrowser(
         const result = resultFromRelease(rel)
         return { results: [result], direct: result as SearchResult | null }
       }
-      const hints = {
-        artist: item.meta.artist,
-        title: item.meta.title,
-        catalogNumber: item.meta.catalogNumber,
-      }
+      const hints = searchHintsOf(item.meta)
       // Query the enabled providers in parallel. One source failing (e.g. Bandcamp's
       // unofficial endpoint) must not sink the whole search, so surface an error only when
       // every provider failed — a partial failure still shows what did come back.

@@ -1,4 +1,4 @@
-import type { TrackMetadata } from './types'
+import type { SearchHints, TrackMetadata } from './types'
 
 // The single source of truth for the complete set of metadata fields. A Record over
 // `keyof TrackMetadata` must list every key, so adding a field to TrackMetadata without
@@ -41,4 +41,11 @@ export function emptyMetadata(): TrackMetadata {
   const blank = {} as Record<keyof TrackMetadata, string>
   for (const key of METADATA_KEYS) blank[key] = ''
   return blank
+}
+
+// The fields a track's metadata contributes to a provider search — artist and title bias
+// the ranking, the catalog number pins a specific pressing. Both the editor browser and
+// the background sweep derive hints from the same fields, so they read them from here.
+export function searchHintsOf(meta: TrackMetadata): SearchHints {
+  return { artist: meta.artist, title: meta.title, catalogNumber: meta.catalogNumber }
 }
