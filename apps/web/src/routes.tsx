@@ -5,6 +5,7 @@ import { I18nextProvider } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import type { i18n } from 'i18next'
 import App from './App'
+import GoogleAnalytics from './components/GoogleAnalytics'
 import DonateCancel from './components/DonateCancel'
 import DonateCompleted from './components/DonateCompleted'
 import Guide from './components/Guide'
@@ -125,13 +126,14 @@ function LocalizedChangelog({ lng }: { lng: Language }) {
   )
 }
 
-// Wraps every page so Vercel Analytics loads once across all routes (it renders
-// nothing during SSG and injects the client script after hydration).
+// Wraps every page so the analytics components load once across all routes (they
+// render nothing during SSG and inject their client scripts after hydration).
 function RootLayout() {
   return (
     <>
       <Outlet />
       <Analytics />
+      <GoogleAnalytics />
     </>
   )
 }
