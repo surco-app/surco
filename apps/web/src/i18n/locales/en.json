@@ -528,6 +528,17 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.18",
+        "date": "June 18, 2026",
+        "title": "Now you can search Bandcamp too",
+        "items": [
+          "Search Bandcamp alongside Discogs: turn it on in Settings → Search and results from both sources merge into a single list, each tagged by its origin — great for self-released tracks, netlabels and exclusives that aren't on Discogs.",
+          "Auto-match is now a global search setting and can fall back to Bandcamp when Discogs comes up empty (with only Bandcamp it needs no token).",
+          "Sharper matching for badly named downloads: Surco strips file-name and title noise, pins the right mix, and gives the file's own artist priority.",
+          "New “Base title” clean-up in the Album field menu: strip the version or mix from a title in one tap."
+        ]
+      },
+      {
         "version": "0.17",
         "date": "June 17, 2026",
         "title": "Search the exact edition, in your language",

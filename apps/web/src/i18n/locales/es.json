@@ -528,6 +528,17 @@
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.18",
+        "date": "18 de junio de 2026",
+        "title": "Ahora también buscas en Bandcamp",
+        "items": [
+          "Busca también en Bandcamp junto a Discogs: actívalo en Ajustes → Búsqueda y los resultados de ambas fuentes se combinan en una sola lista, cada uno con su etiqueta de origen — ideal para autoeditados, netlabels y exclusivos que no están en Discogs.",
+          "El auto-emparejado es ahora un ajuste global de búsqueda y puede recurrir a Bandcamp cuando Discogs no encuentra nada (con solo Bandcamp no necesita token).",
+          "Emparejado más preciso con descargas mal nombradas: Surco limpia el ruido del nombre de archivo y del título, fija la mezcla correcta y da prioridad al artista del archivo.",
+          "Nueva limpieza «Título base» en el menú del campo Álbum: quita la versión o mezcla del título de un toque."
+        ]
+      },
+      {
         "version": "0.17",
         "date": "17 de junio de 2026",
         "title": "Busca la edición exacta, en tu idioma",
