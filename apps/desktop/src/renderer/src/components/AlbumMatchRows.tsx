@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
+import { matchTargetOf } from '../lib/autoMatch'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -45,12 +46,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
       assignTracks(
         filesRef.current.map((f) => ({
           id: f.id,
-          target: {
-            title: f.meta.title,
-            durationSec: f.duration,
-            trackNumber: f.meta.trackNumber,
-            artist: f.meta.artist,
-          },
+          target: matchTargetOf(f),
         })),
         release.tracklist,
       ),

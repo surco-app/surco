@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
-import { probeReleases } from '../lib/autoMatch'
+import { matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { preRankResults, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -160,12 +160,7 @@ export function useDiscogsBrowser(
     ;(async () => {
       const m = await probeReleases(
         data.results,
-        {
-          title: cleanMatchTitle(item.meta.title),
-          durationSec: item.duration,
-          trackNumber: item.meta.trackNumber,
-          artist: item.meta.artist,
-        },
+        matchTargetOf(item),
         // 'review' is enough here: the probe only opens (highlights) the release for
         // the user's own click, it never writes anything.
         { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },

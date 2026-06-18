@@ -106,6 +106,33 @@ describe('AlbumMatchRows', () => {
     expect(onApply.mock.calls[1][0][0].patch.meta.title).toBe('Extended Mix')
   })
 
+  // The file's title must be cleaned (feat./bracket noise stripped) before scoring, the
+  // same as the single-track tick and the editor browser. Here the two cuts share a
+  // duration, so the title is the only thing that can tell them apart: an uncleaned
+  // "Sunrise (feat. Moonlight Drive)" matches the decoy "Moonlight Drive" better than the
+  // real "Sunrise" and lands on the wrong track. Cleaning collapses it back to "Sunrise".
+  it('cleans feat./bracket noise off the title before matching', async () => {
+    const sameDuration: Release = {
+      provider: 'discogs',
+      id: 9,
+      title: 'Night Cuts',
+      artists: [{ name: 'Various' }],
+      year: 2001,
+      tracklist: [
+        { position: 'A1', title: 'Sunrise', duration: '3:00' },
+        { position: 'A2', title: 'Moonlight Drive', duration: '3:00' },
+      ],
+    }
+    render(
+      <AlbumMatchRows
+        files={[track('noisy', 'Sunrise (feat. Moonlight Drive)', 181)]}
+        release={sameDuration}
+        onApply={vi.fn()}
+      />,
+    )
+    await waitFor(() => expect(screen.getByTestId('match-select-noisy')).toHaveValue('0'))
+  })
+
   it('reassigns only the chosen file, leaving the others put', async () => {
     // Duplicates are allowed, so pointing the short file at the extended mix must not
     // reshuffle the long file — a manual pick touches exactly one row.

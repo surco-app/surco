@@ -17,6 +17,7 @@ import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { matchTargetOf } from '../lib/autoMatch'
 import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
@@ -242,16 +243,9 @@ export const Editor = memo(function Editor({
   // below. Fuzzy, so the filename's case and punctuation don't have to match Discogs
   // exactly. Memoized on its inputs so typing in unrelated fields doesn't re-run the
   // fuzzy match over the whole tracklist on every keystroke.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the exact fields matchTargetOf reads, not item's identity — a new item object with the same title/duration/trackNumber/artist must not re-run the whole-tracklist match.
   const match = useMemo(
-    () =>
-      release
-        ? bestMatch(release.tracklist, {
-            title: item.meta.title,
-            durationSec: item.duration,
-            trackNumber: item.meta.trackNumber,
-            artist: item.meta.artist,
-          })
-        : undefined,
+    () => (release ? bestMatch(release.tracklist, matchTargetOf(item)) : undefined),
     [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
   )
   const matchTier = match ? confidenceTier(match.confidence) : undefined
