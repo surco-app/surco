@@ -191,7 +191,31 @@
     "spectrum": "spectrum"
   },
   "showcase": {
-    "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis"
+    "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis",
+    "zoom": "Enlarge the screenshot",
+    "tourHint": "Hover or tap to explore",
+    "tour": {
+      "tracks": {
+        "title": "Track list",
+        "desc": "Your tracks, with a filter for what's already in your Apple Music library."
+      },
+      "discogs": {
+        "title": "Discogs match",
+        "desc": "Find the exact release and pick the right version of the record."
+      },
+      "metadata": {
+        "title": "Metadata editor",
+        "desc": "Title, artist, album, genre and artwork — edit it all in one place."
+      },
+      "quality": {
+        "title": "Audio quality",
+        "desc": "The spectrum exposes fakes: missing highs in a supposed lossless file."
+      },
+      "convert": {
+        "title": "Convert & file",
+        "desc": "To AIFF, WAV, FLAC or MP3 and straight into your Apple Music library, in one click."
+      }
+    }
   },
   "pricing": {
     "kicker": "Pricing",
