@@ -15,6 +15,10 @@ interface Props {
   sources: InsertSource[]
   // The field's current value, for the case transforms and their previews.
   value: string
+  // A pre-resolved "without version" result for this field (album: its own value
+  // with the mix parenthetical stripped, or the title's when the album is empty).
+  // The editor owns the cross-field fallback, so the menu just renders it when set.
+  cleanResult?: string
   inputRef: React.RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
 }
@@ -32,6 +36,7 @@ export function FieldInsertMenu({
   fieldName,
   sources,
   value,
+  cleanResult,
   inputRef,
   onChange,
 }: Props): React.JSX.Element | null {
@@ -55,6 +60,12 @@ export function FieldInsertMenu({
     { key: 'case-lower', label: tr('editor.caseLower'), result: value.toLocaleLowerCase() },
     { key: 'case-upper', label: tr('editor.caseUpper'), result: value.toLocaleUpperCase() },
   ].filter((t) => t.result !== value)
+
+  // "Without version" sits with the case rows because it too rewrites the field in
+  // place; the editor only passes it when stripping actually drops a parenthetical,
+  // so unlike the case rows it needs no self-filter.
+  if (cleanResult)
+    transforms.push({ key: 'clean', label: tr('editor.cleanVersion'), result: cleanResult })
 
   if (sources.length === 0 && transforms.length === 0) return null
 

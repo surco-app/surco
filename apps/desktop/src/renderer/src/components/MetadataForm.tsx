@@ -22,6 +22,7 @@ export interface FieldSpec {
   suggestions?: string[]
   multiSuggestions?: boolean
   insertSources?: InsertSource[]
+  cleanResult?: string
 }
 
 interface MetadataFormProps {
@@ -98,6 +99,7 @@ export function MetadataForm({
                 placeholder={f.placeholder}
                 onChange={f.onChange}
                 insertSources={f.insertSources}
+                cleanResult={f.cleanResult}
                 wide={f.wide}
                 invalid={f.invalid}
                 suggestions={f.suggestions}

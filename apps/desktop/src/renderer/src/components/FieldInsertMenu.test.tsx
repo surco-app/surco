@@ -17,9 +17,11 @@ const SOURCES: InsertSource[] = [
 function Harness({
   sources = SOURCES,
   initial = 'Pepito de los palotes',
+  cleanResult,
 }: {
   sources?: InsertSource[]
   initial?: string
+  cleanResult?: string
 }): React.JSX.Element {
   const ref = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState(initial)
@@ -35,6 +37,7 @@ function Harness({
         fieldName="title"
         sources={sources}
         value={value}
+        cleanResult={cleanResult}
         inputRef={ref}
         onChange={setValue}
       />
@@ -175,5 +178,32 @@ describe('FieldInsertMenu case transforms', () => {
   it('renders nothing when there is neither a value to format nor a source to insert', () => {
     render(<Harness sources={[]} initial="" />)
     expect(screen.queryByTestId('field-insert-title')).toBeNull()
+  })
+
+  // The "without version" row rewrites the field with the pre-resolved clean value
+  // (the editor strips the mix parenthetical), previewing it like the case rows.
+  it('offers the clean result as a transform and applies it on pick', () => {
+    render(<Harness initial="My Weapon (Original mix)" cleanResult="My Weapon" />)
+    openMenu()
+    const clean = screen.getByTestId('field-insert-option-clean')
+    expect(clean).toHaveTextContent('My Weapon')
+    fireEvent.click(clean)
+    expect(host().value).toBe('My Weapon')
+  })
+
+  // The editor only passes cleanResult when there is something to strip, so an
+  // empty field can still surface the row — its value comes from another field
+  // (the title), not from this one.
+  it('shows the clean row even when the field itself is empty', () => {
+    render(<Harness sources={[]} initial="" cleanResult="My Weapon" />)
+    openMenu()
+    expect(screen.getByTestId('field-insert-option-clean')).toHaveTextContent('My Weapon')
+  })
+
+  // No cleanResult means nothing to strip; the row must not appear.
+  it('omits the clean row when no clean result is provided', () => {
+    render(<Harness initial="My Weapon" />)
+    openMenu()
+    expect(screen.queryByTestId('field-insert-option-clean')).toBeNull()
   })
 })
