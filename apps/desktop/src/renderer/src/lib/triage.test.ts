@@ -3,6 +3,7 @@ import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import {
   filterByQuality,
+  filterWithSticky,
   matchesSearch,
   qualityCounts,
   sortTracks,
@@ -167,6 +168,58 @@ describe('Apple Music library filter', () => {
     const counts = qualityCounts(tracks)
     expect(counts.inLibrary).toBe(1)
     expect(counts.notInLibrary).toBe(1)
+  })
+})
+
+describe('filterWithSticky', () => {
+  const t = (id: string, inAppleMusic?: boolean): TrackItem =>
+    ({ id, inAppleMusic }) as TrackItem
+  const am = (id: string, autoMatched?: boolean): TrackItem =>
+    ({ id, status: 'idle', autoMatched }) as TrackItem
+
+  it('keeps a row pinned under the library filter after a background auto-match flips its verdict', () => {
+    // This is the whole point: the user filters to "not in Apple Music", then while they
+    // hunt the right match in the second column a background auto-match rewrites a row's
+    // tags to the canonical name, which now matches the library and flips inAppleMusic
+    // true. Without pinning the row would vanish from under them mid-work.
+    const sticky = new Set<string>()
+    expect(filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
+      'a',
+      'b',
+    ])
+    expect(filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
+      'a',
+      'b',
+    ])
+  })
+
+  it('recomputes membership from scratch when the filter is re-applied (a fresh sticky set)', () => {
+    // Re-clicking the chip is the deliberate "refresh" — the caller hands a new empty set,
+    // so the now-owned row finally drops and the list reflects the current verdicts.
+    const fresh = new Set<string>()
+    expect(filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', fresh).map((x) => x.id)).toEqual([
+      'b',
+    ])
+  })
+
+  it('still surfaces a row that newly qualifies once its library verdict resolves', () => {
+    // Pinning only adds; a track whose verdict lands as "missing" later must appear, or a
+    // slow library lookup would leave real not-in-library tracks hidden.
+    const sticky = new Set<string>()
+    filterWithSticky([t('a', false)], 'notInLibrary', sticky)
+    expect(filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
+      'a',
+      'b',
+    ])
+  })
+
+  it('does not pin non-library filters, which drop a row as soon as it stops matching', () => {
+    // Stickiness is scoped to the library buckets, where a background rewrite silently
+    // flips the verdict. The auto-matched bucket only changes by the user's own action,
+    // so it must follow the live verdict like filterByQuality.
+    const sticky = new Set<string>()
+    filterWithSticky([am('x', true)], 'automatched', sticky)
+    expect(filterWithSticky([am('x', false)], 'automatched', sticky)).toEqual([])
   })
 })
 

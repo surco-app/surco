@@ -61,7 +61,7 @@ import { pageScrollTop } from './lib/scroll'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import {
-  filterByQuality,
+  filterWithSticky,
   matchesSearch,
   type QualityFilter,
   qualityCounts,
@@ -249,6 +249,13 @@ export default function App(): React.JSX.Element {
   // The current visible (filtered/sorted/searched) order, so the stable select callback
   // resolves a Shift range over what's on screen rather than the full import order.
   const visibleTracksRef = useRef<TrackItem[]>([])
+  // The rows pinned into the current library-filter view, so a background auto-match that
+  // flips a row's "already owned" verdict can't drop it out from under the user mid-work
+  // (see filterWithSticky). Tied to the filter it was built for: switching filter (or
+  // re-clicking the same chip) resets it, which is the deliberate "refresh" that
+  // recomputes membership from the live verdicts.
+  const stickyFilter = useRef<QualityFilter>('all')
+  const stickyIds = useRef<Set<string>>(new Set())
   // Merging a cached spectrum onto a track mints a new object; caching it by id keeps
   // the reference stable across renders so memoized rows only re-render when their own
   // spectrum lands.
@@ -793,14 +800,21 @@ export default function App(): React.JSX.Element {
   tracksViewRef.current = tracksView
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
-  const visibleTracks = useMemo(
-    () =>
-      sortTracks(
-        filterByQuality(tracksView, qualityFilter).filter((t) => matchesSearch(t, search)),
-        sortBy,
+  const visibleTracks = useMemo(() => {
+    // Reset the pinned set the moment the active filter changes, so each filter session
+    // starts from the live verdicts; within a session filterWithSticky keeps already-shown
+    // library rows put even after a background auto-match flips their verdict.
+    if (stickyFilter.current !== qualityFilter) {
+      stickyFilter.current = qualityFilter
+      stickyIds.current = new Set()
+    }
+    return sortTracks(
+      filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter((t) =>
+        matchesSearch(t, search),
       ),
-    [tracksView, qualityFilter, search, sortBy],
-  )
+      sortBy,
+    )
+  }, [tracksView, qualityFilter, search, sortBy])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.

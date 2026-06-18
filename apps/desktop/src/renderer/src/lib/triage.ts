@@ -55,6 +55,30 @@ export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): Tra
   return tracks.filter((t) => trackQuality(t) === filter)
 }
 
+// The two filters whose verdict can flip under the user without any action of theirs: a
+// background auto-match rewrites a row's tags to the canonical name, which then matches
+// the Apple Music library and moves the row between the "owned" and "missing" buckets.
+const LIBRARY_FILTERS = new Set<QualityFilter>(['inLibrary', 'notInLibrary'])
+
+// Filters the list, but keeps the library buckets sticky: once a row is shown under
+// inLibrary/notInLibrary it stays in view even after a background auto-match flips its
+// verdict, so the list never drops a row out from under the user while they work the
+// match column. `sticky` carries the pinned IDs across renders and is extended in place
+// with the rows matching now; the caller resets it (a fresh Set) when the filter changes,
+// which is the deliberate "refresh" that recomputes membership from the live verdicts.
+// Non-library filters change only by the user's own edits, so they ignore the set and
+// follow the live verdict exactly like filterByQuality.
+export function filterWithSticky(
+  tracks: TrackItem[],
+  filter: QualityFilter,
+  sticky: Set<string>,
+): TrackItem[] {
+  const matching = filterByQuality(tracks, filter)
+  if (!LIBRARY_FILTERS.has(filter)) return matching
+  for (const t of matching) sticky.add(t.id)
+  return tracks.filter((t) => sticky.has(t.id))
+}
+
 // Free-text list search, applied on top of the quality filter. Matches what the user
 // can actually see or recognise the track by: the frozen list label and the source file
 // name (both available before tags are read), plus the core artist/title/album tags, so
