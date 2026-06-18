@@ -17,6 +17,8 @@ export interface OnboardingChoices {
   // platforms these stay at their defaults since the wizard never offers the choice.
   addToAppleMusic: boolean
   keepOutputCopy: boolean
+  // Rewrites the source files in place instead of producing copies (destructive).
+  overwriteOriginal: boolean
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -50,6 +52,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     requiredFields: choices.requiredFields,
     addToAppleMusic: choices.addToAppleMusic,
     keepOutputCopy: choices.keepOutputCopy,
+    overwriteOriginal: choices.overwriteOriginal,
     hasSeenOnboarding: true,
   }
 }

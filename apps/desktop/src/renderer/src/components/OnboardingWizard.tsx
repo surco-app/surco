@@ -37,6 +37,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
+  const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
@@ -59,17 +60,24 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         requiredFields,
         addToAppleMusic,
         keepOutputCopy,
+        overwriteOriginal,
       }),
     )
   }
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
   // it's the format. chooseDestination maps the single radio back onto the two booleans.
-  const destination = toDestination(addToAppleMusic, keepOutputCopy, outputFormat === 'flac', false)
+  const destination = toDestination(
+    addToAppleMusic,
+    keepOutputCopy,
+    outputFormat === 'flac',
+    overwriteOriginal,
+  )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
     setKeepOutputCopy(next.keepOutputCopy)
+    setOverwriteOriginal(next.overwriteOriginal)
   }
 
   return (
@@ -210,7 +218,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       {tr('settings.destination')}
                     </span>
                     <DestinationPicker
-                      destinations={DESTINATIONS.filter((d) => d !== 'overwrite')}
+                      destinations={DESTINATIONS}
                       value={destination}
                       onChange={chooseDestination}
                       flacOnly={outputFormat === 'flac'}

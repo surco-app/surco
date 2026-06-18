@@ -25,6 +25,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: ['title', 'artist', 'album', 'genre'],
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
+      overwriteOriginal: false,
       keepOutputCopy: false,
     })
     expect(patch).toEqual({
@@ -38,6 +39,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: ['title', 'artist', 'album', 'genre'],
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
+      overwriteOriginal: false,
       keepOutputCopy: false,
       hasSeenOnboarding: true,
     })
@@ -58,6 +60,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: ['title', 'artist'],
       requiredFields: ['title', 'artist'],
       addToAppleMusic: true,
+      overwriteOriginal: false,
       keepOutputCopy: true,
     })
     expect(patch.discogsToken).toBe('tok')
@@ -86,6 +89,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: ['title', 'artist'],
       requiredFields: ['title', 'artist'],
       addToAppleMusic: false,
+      overwriteOriginal: false,
       keepOutputCopy: true,
     })
     expect(patch.autoMatch).toBe(false)
@@ -104,6 +108,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: [],
       requiredFields: [],
       addToAppleMusic: false,
+      overwriteOriginal: false,
       keepOutputCopy: true,
     })
     expect(patch.autoMatch).toBe(true)
@@ -124,6 +129,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: [],
       requiredFields: [],
       addToAppleMusic: true,
+      overwriteOriginal: false,
       keepOutputCopy: false,
     })
     expect(patch.addToAppleMusic).toBe(true)
@@ -144,6 +150,7 @@ describe('buildOnboardingPatch', () => {
       visibleFields: ['artist', 'title', 'bpm'],
       requiredFields: ['artist'],
       addToAppleMusic: false,
+      overwriteOriginal: false,
       keepOutputCopy: true,
     })
     expect(patch.visibleFields).toEqual(['artist', 'title', 'bpm'])
