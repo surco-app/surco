@@ -1,5 +1,6 @@
-import type { Release, SearchPriority, SearchResult } from '../shared/types'
+import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { bandcampLimiter } from './bandcampLimiter'
+import { buildSearchCandidates } from './searchQuery'
 
 // Bandcamp has no public catalog API. Search rides the same autocomplete endpoint the
 // site's own search bar uses; a release is read by fetching its page and parsing the
@@ -50,15 +51,15 @@ function mapResult(r: AutoResult): SearchResult | undefined {
 
 const searchCache = new Map<string, SearchResult[]>()
 
-export async function search(query: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const key = query.trim().toLowerCase()
+async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
+  const key = text.trim().toLowerCase()
   const cached = searchCache.get(key)
   if (cached) return cached
   await bandcampLimiter.acquire(priority)
   const res = await fetch(SEARCH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'User-Agent': USER_AGENT },
-    body: JSON.stringify({ search_text: query, search_filter: '', full_page: false }),
+    body: JSON.stringify({ search_text: text, search_filter: '', full_page: false }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
   if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
@@ -67,6 +68,23 @@ export async function search(query: string, priority?: SearchPriority): Promise<
     .map(mapResult)
     .filter((r): r is SearchResult => r !== undefined)
   searchCache.set(key, results)
+  return results
+}
+
+// Bandcamp's autocomplete is brittle with download-filename noise — the raw file-derived
+// query often returns nothing where a human-typed "artist title" would hit. So try the
+// same cleaned, then relaxed (title-only, title+artist) candidates Discogs uses, keeping
+// the first that returns anything. Each candidate caches on its own key.
+export async function search(
+  query: string,
+  priority?: SearchPriority,
+  hints: SearchHints = {},
+): Promise<SearchResult[]> {
+  let results: SearchResult[] = []
+  for (const candidate of buildSearchCandidates(query, hints)) {
+    results = await searchOnce(candidate, priority)
+    if (results.length) break
+  }
   return results
 }
 

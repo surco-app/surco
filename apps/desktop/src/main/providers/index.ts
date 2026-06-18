@@ -36,7 +36,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
   bandcamp: {
     // Bandcamp's autocomplete takes no token and no format filter, so the hints/formats
     // the Discogs path uses are simply not threaded here.
-    search: (query, priority) => bandcamp.search(query, priority),
+    search: (query, priority, hints) => bandcamp.search(query, priority, hints),
     getRelease: (ref, priority) => bandcamp.getRelease(ref as string, priority),
   },
 }
