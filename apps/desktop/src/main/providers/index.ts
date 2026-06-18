@@ -5,22 +5,20 @@ import type {
   SearchPriority,
   SearchProviderId,
 } from '../../shared/types'
+import * as bandcamp from '../bandcamp'
 import * as discogs from '../discogs'
 import { getSettings } from '../settings'
 
-// Search dispatch seam: the IPC layer talks to a provider by id instead of
-// calling Discogs directly, so adding a source later is a new entry here rather
-// than a change at the call site. Each provider owns its own search strategy,
-// pacing and credentials — this layer only picks one and injects its token.
-// Discogs is the only provider today, so results keep the Discogs shape end-to-end;
-// when a second provider lands these become a normalized type each provider maps onto.
+// Search dispatch seam: the IPC layer talks to a provider by id instead of calling a
+// client directly, so adding a source is a new entry here rather than a change at the
+// call site. Each provider owns its own search strategy, pacing and credentials — this
+// layer only picks one and injects its token. Results are the normalized SearchResult/
+// Release shape, which each client maps its own API onto. A release is addressed by
+// whatever reference its provider needs: Discogs by numeric id, Bandcamp by page URL
+// (it has no public id-addressable release), so the ref is `number | string`.
 export interface SearchProvider {
-  search(
-    query: string,
-    priority?: SearchPriority,
-    hints?: SearchHints,
-  ): Promise<SearchResult[]>
-  getRelease(id: number, priority?: SearchPriority): Promise<Release>
+  search(query: string, priority?: SearchPriority, hints?: SearchHints): Promise<SearchResult[]>
+  getRelease(ref: number | string, priority?: SearchPriority): Promise<Release>
 }
 
 const providers: Record<SearchProviderId, SearchProvider> = {
@@ -32,7 +30,14 @@ const providers: Record<SearchProviderId, SearchProvider> = {
       const formats = Array.isArray(s.discogsFormats) ? s.discogsFormats : []
       return discogs.search(query, s.discogsToken, priority, hints, formats)
     },
-    getRelease: (id, priority) => discogs.getRelease(id, getSettings().discogsToken, priority),
+    getRelease: (ref, priority) =>
+      discogs.getRelease(ref as number, getSettings().discogsToken, priority),
+  },
+  bandcamp: {
+    // Bandcamp's autocomplete takes no token and no format filter, so the hints/formats
+    // the Discogs path uses are simply not threaded here.
+    search: (query, priority) => bandcamp.search(query, priority),
+    getRelease: (ref, priority) => bandcamp.getRelease(ref as string, priority),
   },
 }
 

@@ -8,7 +8,7 @@ export type LanguagePref = 'system' | 'en' | 'es'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
 
-export type SearchProviderId = 'discogs'
+export type SearchProviderId = 'discogs' | 'bandcamp'
 
 // How a search request competes for the provider's rate-limited budget. 'high' is the track
 // the user is actively looking at (the editor's own search); 'low' is background work

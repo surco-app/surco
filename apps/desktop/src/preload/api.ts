@@ -50,7 +50,7 @@ export interface Api {
     hints?: SearchHints,
   ) => Promise<SearchResult[]>
   getRelease: (
-    id: number,
+    ref: number | string,
     provider?: SearchProviderId,
     priority?: SearchPriority,
   ) => Promise<Release>

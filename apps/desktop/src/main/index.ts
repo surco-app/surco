@@ -502,8 +502,8 @@ function registerIpc(): void {
   ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
     getProvider(provider).search(query, priority, hints),
   )
-  ipcMain.handle('search:release', (_e, id: number, provider, priority) =>
-    getProvider(provider).getRelease(id, priority),
+  ipcMain.handle('search:release', (_e, ref: number | string, provider, priority) =>
+    getProvider(provider).getRelease(ref, priority),
   )
 
   registerAppleMusicIpc()
@@ -784,7 +784,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com",
+      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com https://*.bcbits.com",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')
