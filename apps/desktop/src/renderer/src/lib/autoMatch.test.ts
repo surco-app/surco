@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { DiscogsRelease, DiscogsSearchResult } from '../../../shared/types'
+import type { Release, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
 
-function release(id: number, over: Partial<DiscogsRelease> = {}): DiscogsRelease {
-  return { id, title: 'Album', artists: [], tracklist: [], ...over }
+function release(id: number, over: Partial<Release> = {}): Release {
+  return { provider: 'discogs', id, title: 'Album', artists: [], tracklist: [], ...over }
 }
 
-function searchResult(id: number): DiscogsSearchResult {
-  return { id, title: `Result ${id}` }
+function searchResult(id: number): SearchResult {
+  return { provider: 'discogs', id, title: `Result ${id}` }
 }
 
 // Title + duration both agreeing scores 1.0 → 'high', the only tier auto-match applies.
@@ -21,7 +21,7 @@ const target = { title: 'My Song', durationSec: 200 }
 describe('autoMatchRelease', () => {
   it('returns the first release whose best track is high confidence', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
       getRelease: vi
         .fn()
         .mockResolvedValueOnce(release(1, { tracklist: [REVIEW] }))
@@ -34,7 +34,7 @@ describe('autoMatchRelease', () => {
 
   it('stops probing once a high match is found', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
       getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
     }
     await autoMatchRelease('my song', target, api)
@@ -44,7 +44,7 @@ describe('autoMatchRelease', () => {
 
   it('returns undefined when nothing reaches high confidence', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1)]),
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
       getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [REVIEW] })),
     }
     expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
@@ -55,10 +55,10 @@ describe('autoMatchRelease', () => {
   // it would sink a whole sweep as an unhandled rejection.
   it('skips a malformed release and probes the next', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
       getRelease: vi
         .fn()
-        .mockResolvedValueOnce({ id: 1, title: 'Album' } as DiscogsRelease)
+        .mockResolvedValueOnce({ id: 1, title: 'Album' } as Release)
         .mockResolvedValueOnce(release(2, { tracklist: [HIGH] })),
     }
     const m = await autoMatchRelease('my song', target, api)
@@ -67,7 +67,7 @@ describe('autoMatchRelease', () => {
 
   it('skips a release that fails to load and probes the next', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
       getRelease: vi
         .fn()
         .mockRejectedValueOnce(new Error('429'))
@@ -79,23 +79,23 @@ describe('autoMatchRelease', () => {
 
   it('returns undefined when the search itself fails rather than throwing', async () => {
     const api = {
-      searchDiscogs: vi.fn().mockRejectedValue(new Error('network')),
+      search: vi.fn().mockRejectedValue(new Error('network')),
       getRelease: vi.fn(),
     }
     expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
   })
 
   it('does not call the network without a query or a title to match on', async () => {
-    const api = { searchDiscogs: vi.fn(), getRelease: vi.fn() }
+    const api = { search: vi.fn(), getRelease: vi.fn() }
     expect(await autoMatchRelease('', target, api)).toBeUndefined()
     expect(await autoMatchRelease('my song', { title: '' }, api)).toBeUndefined()
-    expect(api.searchDiscogs).not.toHaveBeenCalled()
+    expect(api.search).not.toHaveBeenCalled()
   })
 
   it('probes the release naming the file artist first, even when Discogs ranks it lower', async () => {
     const artistTarget = { title: 'One More Time', artist: 'Daft Punk', durationSec: 320 }
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue([
+      search: vi.fn().mockResolvedValue([
         { id: 1, title: 'Various - Mega Compilation' },
         { id: 2, title: 'Daft Punk - Discovery' },
       ]),
@@ -116,7 +116,7 @@ describe('autoMatchRelease', () => {
   it('probes at most the cap, even when no match is found', async () => {
     const results = Array.from({ length: 20 }, (_, i) => searchResult(i + 1))
     const api = {
-      searchDiscogs: vi.fn().mockResolvedValue(results),
+      search: vi.fn().mockResolvedValue(results),
       getRelease: vi.fn().mockResolvedValue(release(0, { tracklist: [REVIEW] })),
     }
     await autoMatchRelease('my song', target, api, 8)

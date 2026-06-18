@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // these unit tests don't wait on real timers between requests.
 vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
 
-import type { DiscogsSearchResult } from '../shared/types'
+import type { SearchResult } from '../shared/types'
 import {
   dedupeResults,
   downloadCover,
@@ -16,8 +16,8 @@ import {
   search,
 } from './discogs'
 
-const result = (over: Partial<DiscogsSearchResult>): DiscogsSearchResult =>
-  ({ id: 1, title: 'X', ...over }) as DiscogsSearchResult
+const result = (over: Partial<SearchResult>): SearchResult =>
+  ({ id: 1, title: 'X', ...over }) as SearchResult
 
 // A response double covering the fields api() reads: status/ok, the JSON body, and
 // a headers.get used only on the 429 path.
@@ -116,7 +116,7 @@ describe('search', () => {
       res(200, { results: [{ id: 9 }] }),
     ])
     const out = await search('Cascade Probe (Original Mix)', 'tok')
-    expect(out).toEqual([{ id: 9 }])
+    expect(out).toEqual([{ id: 9, provider: 'discogs' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     const second = fetchMock.mock.calls[1][0] as string
     expect(second).toContain(encodeURIComponent('Cascade Probe'))
@@ -180,7 +180,7 @@ describe('search rate-limit retry', () => {
   it('retries after a 429 and returns the eventual results', async () => {
     const fetchMock = mockSequence([res(429, {}, '0'), res(200, { results: [{ id: 9 }] })])
     const out = await search('retry once query', 'tok')
-    expect(out).toEqual([{ id: 9 }])
+    expect(out).toEqual([{ id: 9, provider: 'discogs' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 

@@ -1,4 +1,4 @@
-import type { DiscogsTrack } from '../../../shared/types'
+import type { ReleaseTrack } from '../../../shared/types'
 import { parseDuration } from './duration'
 import { scoreTrack, type ScoreWeights, type TrackMatchTarget } from './release'
 
@@ -24,11 +24,11 @@ export interface Assignment {
   // Kept so a manual reassignment can re-score the new pairing without the caller
   // having to thread the file's metadata back in.
   target: TrackMatchTarget
-  track: DiscogsTrack | undefined
+  track: ReleaseTrack | undefined
   confidence: number
 }
 
-function durationDisqualifies(target: TrackMatchTarget, track: DiscogsTrack): boolean {
+function durationDisqualifies(target: TrackMatchTarget, track: ReleaseTrack): boolean {
   const trackSec = parseDuration(track.duration)
   if (target.durationSec === undefined || trackSec === undefined) return false
   return Math.abs(target.durationSec - trackSec) > DURATION_MARGIN_SEC
@@ -39,9 +39,9 @@ function durationDisqualifies(target: TrackMatchTarget, track: DiscogsTrack): bo
 // file on purpose: two copies of the same cut should both land on it, so nothing here
 // forces a one-to-one mapping. A file whose length matches no track within the margin
 // is left unassigned rather than pushed onto a clearly-wrong entry.
-export function assignTracks(files: AssignInput[], tracklist: DiscogsTrack[]): Assignment[] {
+export function assignTracks(files: AssignInput[], tracklist: ReleaseTrack[]): Assignment[] {
   return files.map((file) => {
-    let best: { track: DiscogsTrack; confidence: number } | undefined
+    let best: { track: ReleaseTrack; confidence: number } | undefined
     for (const track of tracklist) {
       if (durationDisqualifies(file.target, track)) continue
       const confidence = scoreTrack(track, file.target, ASSIGN_WEIGHTS)
@@ -62,7 +62,7 @@ export function assignTracks(files: AssignInput[], tracklist: DiscogsTrack[]): A
 export function reassign(
   assignments: Assignment[],
   fileId: string,
-  track: DiscogsTrack | undefined,
+  track: ReleaseTrack | undefined,
 ): Assignment[] {
   return assignments.map((a) =>
     a.id === fileId

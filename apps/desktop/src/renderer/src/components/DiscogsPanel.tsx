@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { DiscogsTrack } from '../../../shared/types'
+import type { ReleaseTrack } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import type { ReleaseMetaPatch } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
@@ -18,13 +18,13 @@ interface Props {
   // lookup — so the highlight and the library badge can never disagree. Already gated:
   // a 'low'-tier match arrives as undefined, since one incidental shared word must not
   // badge a random mix and invite the user to apply the wrong one.
-  matchedTrack: DiscogsTrack | undefined
+  matchedTrack: ReleaseTrack | undefined
   matchTier: 'high' | 'review' | 'low' | undefined
   hasToken: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
   onApplyMatches: ((patches: { id: string; patch: ReleaseMetaPatch }[]) => void) | undefined
-  selectTrack: (track: DiscogsTrack) => void
+  selectTrack: (track: ReleaseTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
   // The release formats search is restricted to (Settings → Search). Empty = no filter.

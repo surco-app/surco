@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { DiscogsTrack } from '../../../shared/types'
+import type { ReleaseTrack } from '../../../shared/types'
 import { type AssignInput, assignTracks, reassign } from './assign'
 
-const t = (position: string, title: string, duration: string): DiscogsTrack => ({
+const t = (position: string, title: string, duration: string): ReleaseTrack => ({
   position,
   title,
   duration,

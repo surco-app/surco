@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { SearchHints, SearchPriority } from '../../../shared/types'
 import {
   autoMatchRelease,
-  type DiscogsApi,
+  type SearchApi,
   matchTargetOf,
   tracksToAutoMatch,
 } from '../lib/autoMatch'
@@ -66,8 +66,8 @@ export function useAutoMatch({ tracksRef, updateTrack }: Params): AutoMatchSweep
   // call through one shared per-minute bucket so a big crate can't earn 429s. The focused
   // track is the one exception — it rides the same high-priority lane as a manual search.
   const discogsAt = useCallback(
-    (priority: SearchPriority, hints?: SearchHints): DiscogsApi => ({
-      searchDiscogs: (q) => window.api.searchDiscogs(q, undefined, priority, hints),
+    (priority: SearchPriority, hints?: SearchHints): SearchApi => ({
+      search: (q) => window.api.search(q, undefined, priority, hints),
       getRelease: (id) => window.api.getRelease(id, undefined, priority),
     }),
     [],

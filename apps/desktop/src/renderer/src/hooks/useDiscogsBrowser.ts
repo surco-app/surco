@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
-import type { DiscogsRelease, DiscogsSearchResult } from '../../../shared/types'
+import type { Release, SearchResult } from '../../../shared/types'
 import { probeReleases } from '../lib/autoMatch'
 import { resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
@@ -13,14 +13,14 @@ export interface DiscogsBrowser {
   query: string
   setQuery: (q: string) => void
   doSearch: () => void
-  results: DiscogsSearchResult[]
+  results: SearchResult[]
   // The release whose tracklist is open, or null when none is expanded.
-  release: DiscogsRelease | null
+  release: Release | null
   // The id of the result currently loading its tracklist, so its row shows a skeleton.
   loadingId: number | null
   busy: boolean
   error: string
-  previewRelease: (result: DiscogsSearchResult) => void
+  previewRelease: (result: SearchResult) => void
 }
 
 function errorMessage(e: unknown, fallback: string): string {
@@ -51,7 +51,7 @@ export function useDiscogsBrowser(
 
   const loadRelease = useCallback(
     (id: number) =>
-      queryClient.fetchQuery<DiscogsRelease>({
+      queryClient.fetchQuery<Release>({
         queryKey: ['discogs-release', id],
         // The track the user is looking at: high priority so it jumps ahead of the
         // background auto-match sweep at the main process's Discogs rate limiter.
@@ -81,7 +81,7 @@ export function useDiscogsBrowser(
         const rel = await loadRelease(id)
         return { results: [resultFromRelease(rel)], directId: rel.id as number | null }
       }
-      const results = await window.api.searchDiscogs(searchTerm, undefined, 'high', {
+      const results = await window.api.search(searchTerm, undefined, 'high', {
         artist: item.meta.artist,
         title: item.meta.title,
         catalogNumber: item.meta.catalogNumber,
@@ -158,7 +158,7 @@ export function useDiscogsBrowser(
   const release = openId !== null ? (releaseQuery.data ?? null) : null
 
   // A click previews (expands) a result; clicking the open one collapses it again.
-  const previewRelease = useCallback((result: DiscogsSearchResult) => {
+  const previewRelease = useCallback((result: SearchResult) => {
     setOpenId((current) => (current === result.id ? null : result.id))
   }, [])
 

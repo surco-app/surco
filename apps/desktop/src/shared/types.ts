@@ -138,7 +138,12 @@ export interface TrackMetadata {
   compilation?: string
 }
 
-export interface DiscogsSearchResult {
+// A search hit normalized across providers. Discogs and Bandcamp fill what they
+// carry and leave the rest empty (Bandcamp has no format/catalog), so the list and
+// scoring stay provider-agnostic and a result only needs its `provider` to render
+// the right pill and route its release fetch.
+export interface SearchResult {
+  provider: SearchProviderId
   id: number
   title: string
   year?: string
@@ -146,9 +151,12 @@ export interface DiscogsSearchResult {
   cover_image?: string
   format?: string[]
   label?: string[]
+  // Bandcamp releases are fetched by their page URL, not a numeric id; unset for
+  // Discogs, which loads by `id`.
+  releaseUrl?: string
 }
 
-export interface DiscogsTrack {
+export interface ReleaseTrack {
   position: string
   title: string
   artists?: { name: string }[]
@@ -159,7 +167,8 @@ export interface DiscogsTrack {
   extraartists?: { name: string; role: string }[]
 }
 
-export interface DiscogsRelease {
+export interface Release {
+  provider: SearchProviderId
   id: number
   title: string
   artists: { name: string }[]
@@ -168,7 +177,7 @@ export interface DiscogsRelease {
   styles?: string[]
   labels?: { name: string; catno: string }[]
   images?: { uri: string; type: string; resource_url: string }[]
-  tracklist: DiscogsTrack[]
+  tracklist: ReleaseTrack[]
   // Release-wide credits. `tracks` ("A1 to B2"), when present, scopes a credit to
   // part of the tracklist.
   extraartists?: { name: string; role: string; tracks?: string }[]

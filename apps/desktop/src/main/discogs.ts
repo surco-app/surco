@@ -2,8 +2,8 @@ import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type {
-  DiscogsRelease,
-  DiscogsSearchResult,
+  Release,
+  SearchResult,
   SearchHints,
   SearchPriority,
 } from '../shared/types'
@@ -66,13 +66,13 @@ async function api<T>(path: string, token: string): Promise<T> {
   }
 }
 
-const searchCache = new Map<string, DiscogsSearchResult[]>()
+const searchCache = new Map<string, SearchResult[]>()
 
 // Whether a release matches the user's format filter: empty filter accepts everything,
 // otherwise the result's `format` array (e.g. ["Vinyl","LP","Album"]) must carry one of
 // the selected buckets. Discogs lists the broad bucket as one of those tokens, so a plain
 // membership check is enough — no token normalization needed.
-export function matchesFormats(result: DiscogsSearchResult, formats: string[]): boolean {
+export function matchesFormats(result: SearchResult, formats: string[]): boolean {
   if (formats.length === 0) return true
   const have = result.format ?? []
   return formats.some((f) => have.includes(f))
@@ -101,7 +101,7 @@ async function searchOnce(
   query: string,
   token: string,
   opts: SearchOpts = {},
-): Promise<DiscogsSearchResult[]> {
+): Promise<SearchResult[]> {
   const perPage = opts.perPage ?? 20
   const key = searchKey(query, opts.format, perPage)
   const cached = searchCache.get(key)
@@ -109,11 +109,13 @@ async function searchOnce(
   // The API's `format` param filters server-side, so the whole page comes back in the
   // wanted format instead of a mix we'd thin out afterwards.
   const formatParam = opts.format ? `&format=${encodeURIComponent(opts.format)}` : ''
-  const data = await api<{ results: DiscogsSearchResult[] }>(
+  const data = await api<{ results: Omit<SearchResult, 'provider'>[] }>(
     `/database/search?type=release&q=${encodeURIComponent(query)}&per_page=${perPage}${formatParam}`,
     token,
   )
-  const results = data.results ?? []
+  // Discogs' JSON carries no provider tag; stamp it here so the normalized result
+  // identifies its source for the pill and release routing downstream.
+  const results: SearchResult[] = (data.results ?? []).map((r) => ({ ...r, provider: 'discogs' }))
   searchCache.set(key, results)
   return results
 }
@@ -123,9 +125,9 @@ async function searchOnce(
 // search for a popular album otherwise shows the same row a dozen times, once per
 // repress. Editions that differ in any shown field stay, since their tracklist or catalog
 // number can be the one the user is tagging from.
-export function dedupeResults(results: DiscogsSearchResult[]): DiscogsSearchResult[] {
+export function dedupeResults(results: SearchResult[]): SearchResult[] {
   const seen = new Set<string>()
-  const out: DiscogsSearchResult[] = []
+  const out: SearchResult[] = []
   for (const r of results) {
     const key = [r.title, r.year ?? '', (r.label ?? []).join(','), (r.format ?? []).join(',')].join(
       ' ',
@@ -154,10 +156,10 @@ export async function search(
   priority?: SearchPriority,
   hints?: SearchHints,
   formats: string[] = [],
-): Promise<DiscogsSearchResult[]> {
+): Promise<SearchResult[]> {
   const serverFormat = formats.length === 1 ? formats[0] : undefined
   const perPage = formats.length > 1 ? 50 : 20
-  let results: DiscogsSearchResult[] = []
+  let results: SearchResult[] = []
   for (const candidate of buildSearchCandidates(query, hints)) {
     const opts: SearchOpts = { format: serverFormat, perPage }
     if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
@@ -168,7 +170,7 @@ export async function search(
   return results
 }
 
-const releaseCache = new Map<number, DiscogsRelease>()
+const releaseCache = new Map<number, Release>()
 
 export function hasCachedRelease(id: number): boolean {
   return releaseCache.has(id)
@@ -178,11 +180,12 @@ export async function getRelease(
   id: number,
   token: string,
   priority?: SearchPriority,
-): Promise<DiscogsRelease> {
+): Promise<Release> {
   const cached = releaseCache.get(id)
   if (cached) return cached
   await discogsLimiter.acquire(priority)
-  const release = await api<DiscogsRelease>(`/releases/${id}`, token)
+  const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token)
+  const release: Release = { ...raw, provider: 'discogs' }
   releaseCache.set(id, release)
   return release
 }

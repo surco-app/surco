@@ -107,9 +107,9 @@ const PREFETCH_HOVER_MS = 150
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
 // process, so opening the track (and clicking that release) then hits no network.
-async function warmDiscogs(query: string): Promise<void> {
+async function warmSearch(query: string): Promise<void> {
   // Background warming yields to the editor's own search, so it acquires at low priority.
-  const results = await window.api.searchDiscogs(query, undefined, 'low')
+  const results = await window.api.search(query, undefined, 'low')
   if (results[0]) await window.api.getRelease(results[0].id, undefined, 'low')
 }
 
@@ -385,7 +385,7 @@ export default function App(): React.JSX.Element {
           !discogsPrefetched.current.has(id)
         ) {
           discogsPrefetched.current.add(id)
-          warmDiscogs(track.query).catch(() => discogsPrefetched.current.delete(id))
+          warmSearch(track.query).catch(() => discogsPrefetched.current.delete(id))
         }
       }, PREFETCH_HOVER_MS)
     },

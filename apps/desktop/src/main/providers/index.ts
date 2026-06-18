@@ -1,6 +1,6 @@
 import type {
-  DiscogsRelease,
-  DiscogsSearchResult,
+  Release,
+  SearchResult,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -19,8 +19,8 @@ export interface SearchProvider {
     query: string,
     priority?: SearchPriority,
     hints?: SearchHints,
-  ): Promise<DiscogsSearchResult[]>
-  getRelease(id: number, priority?: SearchPriority): Promise<DiscogsRelease>
+  ): Promise<SearchResult[]>
+  getRelease(id: number, priority?: SearchPriority): Promise<Release>
 }
 
 const providers: Record<SearchProviderId, SearchProvider> = {

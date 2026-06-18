@@ -9,8 +9,8 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
-  DiscogsRelease,
-  DiscogsSearchResult,
+  Release,
+  SearchResult,
   DockIconFrames,
   KeyResult,
   LoudnessResult,
@@ -43,17 +43,17 @@ export interface Api {
   pickConfigDir: () => Promise<string | null>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
-  searchDiscogs: (
+  search: (
     query: string,
     provider?: SearchProviderId,
     priority?: SearchPriority,
     hints?: SearchHints,
-  ) => Promise<DiscogsSearchResult[]>
+  ) => Promise<SearchResult[]>
   getRelease: (
     id: number,
     provider?: SearchProviderId,
     priority?: SearchPriority,
-  ) => Promise<DiscogsRelease>
+  ) => Promise<Release>
   lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]) => Promise<boolean>
   // The whole Apple Music library as title/artist pairs, matched against the crate in
   // the renderer to flag already-owned tracks. Empty off macOS.

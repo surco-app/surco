@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type {
-  DiscogsRelease,
-  DiscogsSearchResult,
-  DiscogsTrack,
+  Release,
+  SearchResult,
+  ReleaseTrack,
   TrackMetadata,
 } from '../../../shared/types'
 import {
@@ -18,8 +18,8 @@ import {
   stepImageIndex,
 } from './release'
 
-function release(over: Partial<DiscogsRelease> = {}): DiscogsRelease {
-  return { id: 1, title: 'Album', artists: [], tracklist: [], ...over }
+function release(over: Partial<Release> = {}): Release {
+  return { provider: 'discogs', id: 1, title: 'Album', artists: [], tracklist: [], ...over }
 }
 
 describe('stepImageIndex', () => {
@@ -235,7 +235,7 @@ describe('scoreTrack', () => {
 })
 
 describe('bestMatch', () => {
-  const tracks: DiscogsTrack[] = [
+  const tracks: ReleaseTrack[] = [
     { position: 'A1', title: 'Windowlicker' },
     { position: 'A2', title: 'Windowlicker (Acid Edit)' },
     { position: 'B1', title: 'Nannou' },
@@ -262,7 +262,7 @@ describe('bestMatch', () => {
   })
 
   it('uses duration to pick the right mix when the titles tie', () => {
-    const mixes: DiscogsTrack[] = [
+    const mixes: ReleaseTrack[] = [
       { position: 'A1', title: 'Acid', duration: '3:00' },
       { position: 'A2', title: 'Acid', duration: '5:58' },
     ]
@@ -276,7 +276,7 @@ describe('bestMatch', () => {
   // The whole point of version-aware scoring: with no durations to separate them, the
   // file naming a mix must land on the cut that carries one, not the bare original.
   it('prefers the versioned cut over a bare title when the file names a mix', () => {
-    const mixes: DiscogsTrack[] = [
+    const mixes: ReleaseTrack[] = [
       { position: 'A1', title: 'Acid' },
       { position: 'A2', title: 'Acid (Extended Version)' },
     ]
@@ -285,7 +285,7 @@ describe('bestMatch', () => {
 })
 
 describe('preRankResults', () => {
-  const r = (id: number, title: string): DiscogsSearchResult => ({ id, title })
+  const r = (id: number, title: string): SearchResult => ({ provider: 'discogs', id, title })
 
   // Discogs ranks results by its own relevance, not the file's artist, so the real
   // release can sit past the probe cap behind compilations and other pressings. Floating
@@ -331,7 +331,7 @@ describe('confidenceTier', () => {
 })
 
 describe('buildReleaseMeta', () => {
-  const track: DiscogsTrack = { position: 'A1', title: 'Track One' }
+  const track: ReleaseTrack = { position: 'A1', title: 'Track One' }
 
   it('overwrites album-level data and clears the cover path', () => {
     const rel = release({

@@ -2,7 +2,7 @@ import { ArrowRight, Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DiscogsRelease } from '../../../shared/types'
+import type { Release } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
@@ -11,7 +11,7 @@ import { Tooltip } from './Tooltip'
 
 interface Props {
   files: TrackItem[]
-  release: DiscogsRelease
+  release: Release
   onApply: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
 }
 

@@ -1,4 +1,4 @@
-import type { DiscogsRelease, DiscogsSearchResult, DiscogsTrack } from '../../../shared/types'
+import type { Release, SearchResult, ReleaseTrack } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { bestMatch, confidenceTier, preRankResults, type TrackMatchTarget } from './release'
 
@@ -32,8 +32,8 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
 export const MAX_AUTO_PROBE = 8
 
 export interface ProbeMatch {
-  release: DiscogsRelease
-  track: DiscogsTrack
+  release: Release
+  track: ReleaseTrack
   confidence: number
 }
 
@@ -44,10 +44,10 @@ export interface ProbeMatch {
 // release that fails to load — or arrives structurally broken — is skipped, never
 // thrown; `cancelled` lets a superseding search stop the walk between loads.
 export async function probeReleases(
-  results: DiscogsSearchResult[],
+  results: SearchResult[],
   target: TrackMatchTarget,
   opts: {
-    loadRelease: (id: number) => Promise<DiscogsRelease>
+    loadRelease: (id: number) => Promise<Release>
     accepts: (tier: 'high' | 'review' | 'low') => boolean
     maxProbe?: number
     cancelled?: () => boolean
@@ -55,7 +55,7 @@ export async function probeReleases(
 ): Promise<ProbeMatch | undefined> {
   for (const result of preRankResults(results, target).slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
     if (opts.cancelled?.()) return undefined
-    let rel: DiscogsRelease
+    let rel: Release
     let m: ReturnType<typeof bestMatch>
     try {
       rel = await opts.loadRelease(result.id)
@@ -73,9 +73,9 @@ export async function probeReleases(
 
 // The slice of the IPC surface auto-matching needs, narrowed so the sweep is
 // testable with a stub instead of the whole window.api.
-export interface DiscogsApi {
-  searchDiscogs: (query: string) => Promise<DiscogsSearchResult[]>
-  getRelease: (id: number) => Promise<DiscogsRelease>
+export interface SearchApi {
+  search: (query: string) => Promise<SearchResult[]>
+  getRelease: (id: number) => Promise<Release>
 }
 
 export type AutoMatch = ProbeMatch
@@ -88,13 +88,13 @@ export type AutoMatch = ProbeMatch
 export async function autoMatchRelease(
   query: string,
   target: TrackMatchTarget,
-  api: DiscogsApi,
+  api: SearchApi,
   maxProbe = MAX_AUTO_PROBE,
 ): Promise<AutoMatch | undefined> {
   if (!query.trim() || !target.title.trim()) return undefined
-  let results: DiscogsSearchResult[]
+  let results: SearchResult[]
   try {
-    results = await api.searchDiscogs(query)
+    results = await api.search(query)
   } catch {
     return undefined
   }

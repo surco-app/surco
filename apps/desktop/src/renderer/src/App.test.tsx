@@ -124,7 +124,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     readCover: vi.fn().mockResolvedValue(null),
     properties: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
-    searchDiscogs: vi.fn().mockResolvedValue([]),
+    search: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
     waveform: vi.fn().mockResolvedValue(wave),
@@ -280,21 +280,21 @@ describe('App auto-match', () => {
   }
 
   it('applies a confident Discogs match unattended and flags the row', async () => {
-    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     const getRelease = vi.fn().mockResolvedValue(release)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
       // A title + duration the release agrees with scores 'high', the bar for applying.
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
-      searchDiscogs,
+      search,
       getRelease,
     })
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('auto-match'))
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
-    expect(searchDiscogs).toHaveBeenCalled()
+    expect(search).toHaveBeenCalled()
   })
 
   it('leaves the button disabled without a Discogs token to search', async () => {
@@ -308,12 +308,12 @@ describe('App auto-match', () => {
   // happens to scroll into view. The on-screen rows are merely probed first (the rate
   // limiter in main paces the calls so the whole crate can't trip a 429).
   it('matches the whole imported crate, not only the rows scrolled into view', async () => {
-    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
-      searchDiscogs,
+      search,
       getRelease: vi.fn().mockResolvedValue(release),
     })
     await renderApp()
@@ -327,12 +327,12 @@ describe('App auto-match', () => {
   // once the selection rests on a row it gets matched even if it was never scrolled into
   // view (the import gating only holds back the rows you aren't looking at).
   it('auto-matches the selected track without the toolbar button', async () => {
-    const searchDiscogs = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
-      searchDiscogs,
+      search,
       getRelease: vi.fn().mockResolvedValue(release),
     })
     await renderApp()
@@ -345,7 +345,7 @@ describe('App auto-match', () => {
         timeout: 2000,
       },
     )
-    expect(searchDiscogs).toHaveBeenCalled()
+    expect(search).toHaveBeenCalled()
   })
 
   // One row's malformed Discogs payload (a release without a tracklist) must skip
@@ -360,7 +360,7 @@ describe('App auto-match', () => {
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
-      searchDiscogs: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
       getRelease,
     })
     await renderApp()
@@ -386,7 +386,7 @@ describe('App auto-match', () => {
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
-      searchDiscogs: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
       getRelease,
     })
     await renderApp()

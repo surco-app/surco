@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import type { DiscogsRelease, TrackMetadata } from '../../../shared/types'
+import type { Release, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 
@@ -40,7 +40,8 @@ function track(id: string, title: string, durationSec: number): TrackItem {
   }
 }
 
-const release: DiscogsRelease = {
+const release: Release = {
+  provider: 'discogs',
   id: 5,
   title: 'Hard House Nation',
   artists: [{ name: 'Various' }],

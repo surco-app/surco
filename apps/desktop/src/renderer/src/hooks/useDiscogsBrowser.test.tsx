@@ -7,7 +7,12 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { useDiscogsBrowser } from './useDiscogsBrowser'
 
-const searchResult = { id: 1, title: 'Some Album', cover_image: 'cover.jpg' }
+const searchResult = {
+  provider: 'discogs' as const,
+  id: 1,
+  title: 'Some Album',
+  cover_image: 'cover.jpg',
+}
 const release = {
   id: 1,
   title: 'Some Album',
@@ -21,7 +26,7 @@ const release = {
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
-    searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+    search: vi.fn().mockResolvedValue([searchResult]),
     getRelease: vi.fn().mockResolvedValue(release),
     ...over,
   }
@@ -102,7 +107,7 @@ describe('useDiscogsBrowser', () => {
       return Promise.resolve({ ...release, id })
     })
     setApi({
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult, { ...searchResult, id: 2 }]),
+      search: vi.fn().mockResolvedValue([searchResult, { ...searchResult, id: 2 }]),
       getRelease,
     })
     const { result } = renderHook(
@@ -131,14 +136,14 @@ describe('useDiscogsBrowser', () => {
   // A pasted release id loads that release directly instead of running a text search,
   // so the user can jump straight to a known release.
   it('loads a release directly from a pasted id without searching', async () => {
-    const searchDiscogs = vi.fn().mockResolvedValue([])
-    setApi({ searchDiscogs })
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
     const { result } = renderHook(() => useDiscogsBrowser(item({ query: '1' }), tr), {
       wrapper: wrapper(),
     })
     act(() => result.current.doSearch())
     await waitFor(() => expect(result.current.release?.id).toBe(1))
-    expect(searchDiscogs).not.toHaveBeenCalled()
+    expect(search).not.toHaveBeenCalled()
   })
 
   // A refined search is navigation state the user expects to survive a track flip;
@@ -173,7 +178,7 @@ describe('useDiscogsBrowser', () => {
   // refetch the error would stay on screen until the user edits the text.
   it('retries a failed search when run again with the same term', async () => {
     setApi({
-      searchDiscogs: vi
+      search: vi
         .fn()
         .mockRejectedValueOnce(new Error('rate limited'))
         .mockResolvedValue([searchResult]),

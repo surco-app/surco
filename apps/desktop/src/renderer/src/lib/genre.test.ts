@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { DiscogsRelease } from '../../../shared/types'
+import type { Release } from '../../../shared/types'
 import { genrePresets } from './genre'
 
-function release(patch: Partial<DiscogsRelease>): DiscogsRelease {
-  return { id: 1, title: '', artists: [], tracklist: [], ...patch }
+function release(patch: Partial<Release>): Release {
+  return { provider: 'discogs', id: 1, title: '', artists: [], tracklist: [], ...patch }
 }
 
 describe('genrePresets', () => {

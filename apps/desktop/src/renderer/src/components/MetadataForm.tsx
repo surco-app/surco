@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DiscogsRelease, TrackMetadata } from '../../../shared/types'
+import type { Release, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
@@ -28,7 +28,7 @@ interface MetadataFormProps {
   item: TrackItem
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
-  release: DiscogsRelease | null
+  release: Release | null
   coverDims: { w: number; h: number } | null
   setCoverDims: (dims: { w: number; h: number } | null) => void
   onChange: (patch: Partial<TrackItem>) => void

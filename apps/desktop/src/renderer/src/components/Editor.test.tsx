@@ -558,7 +558,7 @@ describe('Editor Discogs loading skeleton', () => {
   // column's shape so the results don't pop into an area that looked idle.
   it('holds the results column with a skeleton while the search is in flight', async () => {
     let settle: (r: unknown[]) => void = () => {}
-    ;(window as unknown as { api: Record<string, unknown> }).api.searchDiscogs = vi.fn(
+    ;(window as unknown as { api: Record<string, unknown> }).api.search = vi.fn(
       () =>
         new Promise((res) => {
           settle = res
@@ -1148,7 +1148,7 @@ describe('Editor Discogs apply', () => {
       properties: vi.fn().mockResolvedValue(null),
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      search: vi.fn().mockResolvedValue([searchResult]),
       getRelease,
     }
     return { getRelease }
@@ -1247,7 +1247,7 @@ describe('Editor Discogs apply', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      search: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(withImage),
     }
   }
@@ -1299,7 +1299,7 @@ describe('Editor Discogs apply', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      search: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(threeImages),
     }
     renderEditor({ id: 'a', coverUrl: 'old-release.jpg' })
@@ -1362,7 +1362,7 @@ describe('Editor track preselection', () => {
       properties: vi.fn().mockResolvedValue(null),
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
-      searchDiscogs: vi.fn().mockResolvedValue([searchResult]),
+      search: vi.fn().mockResolvedValue([searchResult]),
       getRelease: vi.fn().mockResolvedValue(release),
     }
   }
@@ -1629,7 +1629,7 @@ describe('Editor Apple Music library badge', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       lookupAppleMusic: lookup,
-      searchDiscogs: vi.fn().mockResolvedValue([{ id: 2, title: 'The Artist - Some Album' }]),
+      search: vi.fn().mockResolvedValue([{ id: 2, title: 'The Artist - Some Album' }]),
       getRelease: vi.fn().mockResolvedValue({
         id: 2,
         title: 'Some Album',

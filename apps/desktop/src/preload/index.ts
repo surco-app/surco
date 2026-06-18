@@ -39,7 +39,7 @@ const api: Api = {
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportTraktor', nml),
-  searchDiscogs: (
+  search: (
     query: string,
     provider?: SearchProviderId,
     priority?: SearchPriority,

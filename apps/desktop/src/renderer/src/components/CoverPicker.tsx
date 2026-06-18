@@ -11,7 +11,7 @@ import {
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DiscogsRelease } from '../../../shared/types'
+import type { Release } from '../../../shared/types'
 import { coverSourceOf } from '../lib/coverSource'
 import { revokeCoverUrl } from '../lib/coverUrl'
 import { isLowResCover } from '../lib/quality'
@@ -84,7 +84,7 @@ interface Props {
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
   // The open release, whose images join the file's own artwork in the picker.
-  release: DiscogsRelease | null
+  release: Release | null
   // Lifted to the editor because selectTrack reads it to decide whether a release
   // should replace a low-res existing cover; the <img> onLoad reports it back up.
   coverDims: { w: number; h: number } | null

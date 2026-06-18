@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
-  DiscogsTrack,
+  ReleaseTrack,
   KeyNotation,
   NormalizeConfig,
   OutputFormat,
@@ -264,7 +264,7 @@ export const Editor = memo(function Editor({
       : [{ artist: item.meta.artist, title: item.meta.title }],
   )
 
-  function selectTrack(track: DiscogsTrack): void {
+  function selectTrack(track: ReleaseTrack): void {
     if (!release) return
     // Keep the file's own cover unless it's missing or measured as low-res, in which
     // case the release fills it. Keeping is the safe default — when the size hasn't

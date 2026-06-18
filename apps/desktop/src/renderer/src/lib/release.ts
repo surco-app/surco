@@ -1,7 +1,7 @@
 import type {
-  DiscogsRelease,
-  DiscogsSearchResult,
-  DiscogsTrack,
+  Release,
+  SearchResult,
+  ReleaseTrack,
   TrackMetadata,
 } from '../../../shared/types'
 import { parseDuration } from './duration'
@@ -16,7 +16,7 @@ export function joinArtists(artists?: { name: string }[]): string {
   return (artists ?? []).map((a) => cleanName(a.name)).join(', ')
 }
 
-export function coverOf(release: DiscogsRelease, fallback?: string): string | undefined {
+export function coverOf(release: Release, fallback?: string): string | undefined {
   return (
     release.images?.find((i) => i.type === 'primary')?.uri ?? release.images?.[0]?.uri ?? fallback
   )
@@ -39,9 +39,10 @@ export function stepImageIndex(
 
 // A release fetched by id has no search-result row to show, so synthesise one
 // from the release itself — the list and tracklist UI then work unchanged.
-export function resultFromRelease(rel: DiscogsRelease): DiscogsSearchResult {
+export function resultFromRelease(rel: Release): SearchResult {
   const albumArtist = joinArtists(rel.artists)
   return {
+    provider: rel.provider,
     id: rel.id,
     title: albumArtist ? `${albumArtist} - ${rel.title}` : rel.title,
     year: rel.year ? String(rel.year) : undefined,
@@ -65,7 +66,7 @@ export interface TrackMatchTarget {
 }
 
 export interface ScoredTrack {
-  track: DiscogsTrack
+  track: ReleaseTrack
   confidence: number
 }
 
@@ -151,7 +152,7 @@ function artistMatch(target: string, artists: { name: string }[] | undefined): n
 // renormalised over the signals actually present — so a release with no track
 // durations is judged on title alone rather than dragged down by the gap.
 export function scoreTrack(
-  track: DiscogsTrack,
+  track: ReleaseTrack,
   target: TrackMatchTarget,
   weights: ScoreWeights = DEFAULT_WEIGHTS,
 ): number {
@@ -175,7 +176,7 @@ export function scoreTrack(
 // right mix is preselected instead of the user hunting for it. Returns the
 // winner with its confidence, or undefined when nothing scores above zero.
 export function bestMatch(
-  tracks: DiscogsTrack[],
+  tracks: ReleaseTrack[],
   target: TrackMatchTarget,
 ): ScoredTrack | undefined {
   let best: ScoredTrack | undefined
@@ -206,10 +207,10 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 // recall hinges on the real release being reached inside the cap. The sort is stable, so
 // Discogs' order stands as the tie-break and equally-relevant rows keep their place.
 export function preRankResults(
-  results: DiscogsSearchResult[],
+  results: SearchResult[],
   target: TrackMatchTarget,
-): DiscogsSearchResult[] {
-  const relevance = (result: DiscogsSearchResult): number => {
+): SearchResult[] {
+  const relevance = (result: SearchResult): number => {
     const hay = normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
     const fraction = (field: string | undefined): number => {
       const words = field ? normalize(field).split(' ').filter(Boolean) : []
@@ -237,7 +238,7 @@ export interface ReleaseMetaPatch {
 // skipped rather than range-parsed — attributing them to every track would be
 // wrong more often than dropping them.
 const WRITING_ROLE = /written|composed/i
-function composerOf(rel: DiscogsRelease, track: DiscogsTrack | undefined): string {
+function composerOf(rel: Release, track: ReleaseTrack | undefined): string {
   const own = (track?.extraartists ?? []).filter((a) => WRITING_ROLE.test(a.role))
   if (own.length) return joinArtists(own)
   return joinArtists(
@@ -254,8 +255,8 @@ function composerOf(rel: DiscogsRelease, track: DiscogsTrack | undefined): strin
 // doesn't carry keep their current value.
 export function buildReleaseMeta(
   current: TrackMetadata,
-  rel: DiscogsRelease,
-  track: DiscogsTrack | undefined,
+  rel: Release,
+  track: ReleaseTrack | undefined,
   cover: { url?: string; path?: string; keep?: boolean } = {},
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
