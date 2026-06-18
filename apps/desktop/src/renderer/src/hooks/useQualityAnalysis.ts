@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
 import { tracksToAnalyze } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { spectrogramOptions } from './useSpectrogram'
+import { useWindowFocus } from './useWindowFocus'
 
 interface Params {
   // Live spectrum-merged view of the tracks, so the sweep targets what the list
@@ -31,7 +32,7 @@ export function useQualityAnalysis({ tracksViewRef }: Params): QualityAnalysis {
   // blur/focus events) so it stops spawning ffmpeg until the app returns.
   const focusGate = useRef(createFocusGate())
 
-  useEffect(() => window.api.onWindowFocus((focused) => focusGate.current.set(focused)), [])
+  useWindowFocus((focused) => focusGate.current.set(focused))
 
   // Analyzes every not-yet-measured track's spectrum at once. Capped at 3 in flight
   // (each is an ffmpeg pass) and cancellable; fetchQuery fills the shared cache the

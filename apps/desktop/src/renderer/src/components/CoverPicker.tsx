@@ -12,6 +12,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
+import { useWindowFocus } from '../hooks/useWindowFocus'
 import { coverSourceOf } from '../lib/coverSource'
 import { revokeCoverUrl } from '../lib/coverUrl'
 import { isLowResCover } from '../lib/quality'
@@ -179,12 +180,10 @@ export function CoverPicker({
   const refreshCanPaste = useCallback(() => {
     void window.api.hasClipboardImage().then(setCanPaste)
   }, [])
-  useEffect(() => {
-    refreshCanPaste()
-    return window.api.onWindowFocus((focused) => {
-      if (focused) refreshCanPaste()
-    })
-  }, [refreshCanPaste])
+  useEffect(() => refreshCanPaste(), [refreshCanPaste])
+  useWindowFocus((focused) => {
+    if (focused) refreshCanPaste()
+  })
 
   async function onCoverCopy(): Promise<void> {
     if (isMulti || !displayCover) return

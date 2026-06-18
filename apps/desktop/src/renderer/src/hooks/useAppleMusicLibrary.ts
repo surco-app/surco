@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { useWindowFocus } from './useWindowFocus'
 
 const LIBRARY_KEY = ['applemusic-library']
 
@@ -30,15 +30,12 @@ export function useAppleMusicLibrary(trackCount: number): AppleMusicIndex | null
     staleTime: Number.POSITIVE_INFINITY,
     select: buildLibraryIndex,
   })
-  useEffect(() => {
-    if (window.api.platform !== 'darwin') return
-    return window.api.onWindowFocus((focused) => {
-      if (!focused) return
-      const state = queryClient.getQueryState(LIBRARY_KEY)
-      if (state?.data && Date.now() - state.dataUpdatedAt > REFRESH_AFTER_MS) {
-        void queryClient.invalidateQueries({ queryKey: LIBRARY_KEY })
-      }
-    })
-  }, [queryClient])
+  useWindowFocus((focused) => {
+    if (!focused || window.api.platform !== 'darwin') return
+    const state = queryClient.getQueryState(LIBRARY_KEY)
+    if (state?.data && Date.now() - state.dataUpdatedAt > REFRESH_AFTER_MS) {
+      void queryClient.invalidateQueries({ queryKey: LIBRARY_KEY })
+    }
+  })
   return data ?? null
 }
