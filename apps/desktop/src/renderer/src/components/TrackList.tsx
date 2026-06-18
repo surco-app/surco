@@ -232,33 +232,40 @@ const TrackRow = memo(function TrackRow({
               >
                 {t.meta.artist || tr('trackList.noArtist')}
               </span>
-              {t.autoMatched && (
-                <span
-                  data-testid="track-automatched"
-                  className="group/dot relative flex shrink-0 items-center text-[var(--color-accent)]"
-                >
-                  <Sparkles className="h-3 w-3" aria-hidden="true" />
-                  <Tooltip label={tr('trackList.autoMatched')} align="end" scope="dot" />
-                </span>
-              )}
-              {quality !== 'unanalyzed' ? (
-                <span
-                  data-testid="track-quality"
-                  data-quality={quality}
-                  className={`group/dot relative h-2 w-2 shrink-0 rounded-full ring-2 ${qualityDot[quality]}`}
-                >
-                  <Tooltip label={tr(qualityLabel[quality])} align="end" scope="dot" />
-                </span>
-              ) : (
-                t.analyzing && (
+              {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
+                  badge and duration line up in the same column down every row instead of
+                  shifting whenever a track lacks a sparkle or a quality verdict. */}
+              <span className="flex w-3 shrink-0 justify-center">
+                {t.autoMatched && (
                   <span
-                    data-testid="track-quality-loading"
-                    className="group/dot relative h-2 w-2 shrink-0 animate-pulse rounded-full bg-fg-faint ring-2 ring-fg-faint/20"
+                    data-testid="track-automatched"
+                    className="group/dot relative flex items-center text-[var(--color-accent)]"
                   >
-                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                    <Sparkles className="h-3 w-3" aria-hidden="true" />
+                    <Tooltip label={tr('trackList.autoMatched')} align="end" scope="dot" />
                   </span>
-                )
-              )}
+                )}
+              </span>
+              <span className="flex w-3 shrink-0 justify-center">
+                {quality !== 'unanalyzed' ? (
+                  <span
+                    data-testid="track-quality"
+                    data-quality={quality}
+                    className={`group/dot relative h-2 w-2 rounded-full ring-2 ${qualityDot[quality]}`}
+                  >
+                    <Tooltip label={tr(qualityLabel[quality])} align="end" scope="dot" />
+                  </span>
+                ) : (
+                  t.analyzing && (
+                    <span
+                      data-testid="track-quality-loading"
+                      className="group/dot relative h-2 w-2 animate-pulse rounded-full bg-fg-faint ring-2 ring-fg-faint/20"
+                    >
+                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                    </span>
+                  )
+                )}
+              </span>
               {sourceFormat && (
                 <span
                   data-testid="track-format"
