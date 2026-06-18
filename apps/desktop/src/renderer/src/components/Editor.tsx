@@ -32,6 +32,7 @@ import {
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
+import { stripParentheticals } from '../lib/textClean'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -301,6 +302,14 @@ export const Editor = memo(function Editor({
         (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
       )
 
+  // "Without version" proposal for the album menu: strip the mix/label parenthetical
+  // from the album, or from the title when the album is still empty (the common case
+  // for a single release). Only set when stripping actually removes something, so the
+  // menu offers the row only when there is a version to drop.
+  const albumCleanSource = isMulti ? '' : (item.meta.album ?? '').trim() || (item.meta.title ?? '')
+  const albumClean = stripParentheticals(albumCleanSource)
+  const albumCleanResult = albumClean && albumClean !== albumCleanSource ? albumClean : undefined
+
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
   function deriveFromNames(): void {
@@ -399,6 +408,7 @@ export const Editor = memo(function Editor({
               onChange: (v: string) => setField(def.key, v),
               insertSources:
                 !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
+              cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
               wide: def.wide,
               invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
               suggestions:

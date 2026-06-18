@@ -8,6 +8,10 @@
     <meta name="theme-color" content="#1a1b26" />
     <meta name="robots" content="index, follow" />
 
+    <!-- The download button resolves the installer from the GitHub API on load;
+         warming the connection shaves the TLS handshake off that round-trip. -->
+    <link rel="preconnect" href="https://api.github.com" />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Surco" />
     <meta property="og:image" content="https://getsurco.app/og.png" />

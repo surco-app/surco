@@ -1556,6 +1556,46 @@ describe('Editor properties panel', () => {
   })
 })
 
+describe('Editor album "without version" suggestion', () => {
+  beforeEach(() => void i18n.changeLanguage('en'))
+
+  function openAlbumMenu(): void {
+    const trigger = screen.getByTestId('field-insert-album')
+    fireEvent.mouseDown(trigger)
+    fireEvent.click(trigger)
+  }
+
+  // The common single-release case: the album tag is empty, so the clean album is
+  // derived from the title with its mix parenthetical stripped.
+  it('derives the clean album from the title when the album is empty', () => {
+    renderEditor({ id: 'a', meta: { title: 'My Weapon (Original Mix)', album: '' } }, 'wav', {
+      visibleFields: ['title', 'album'],
+    })
+    openAlbumMenu()
+    expect(screen.getByTestId('field-insert-option-clean')).toHaveTextContent('My Weapon')
+  })
+
+  // When the album already has a value, that — not the title — is what gets cleaned.
+  it('cleans the album value itself when the album is filled', () => {
+    renderEditor(
+      { id: 'a', meta: { title: 'Other (mix)', album: 'Nordic Dome (Original mix)' } },
+      'wav',
+      { visibleFields: ['title', 'album'] },
+    )
+    openAlbumMenu()
+    expect(screen.getByTestId('field-insert-option-clean')).toHaveTextContent('Nordic Dome')
+  })
+
+  // Nothing to strip → no row, so the menu never offers a no-op clean-up.
+  it('offers no clean row when neither album nor title carries a parenthetical', () => {
+    renderEditor({ id: 'a', meta: { title: 'My Weapon', album: '' } }, 'wav', {
+      visibleFields: ['title', 'album'],
+    })
+    openAlbumMenu()
+    expect(screen.queryByTestId('field-insert-option-clean')).toBeNull()
+  })
+})
+
 describe('Editor Apple Music library badge', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 

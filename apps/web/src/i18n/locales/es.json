@@ -192,7 +192,31 @@
     "spectrum": "espectro"
   },
   "showcase": {
-    "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad"
+    "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad",
+    "zoom": "Ampliar la captura",
+    "tourHint": "Pasa el cursor o toca para explorar",
+    "tour": {
+      "tracks": {
+        "title": "Lista de pistas",
+        "desc": "Tus pistas y el filtro de lo que ya está en tu biblioteca de Apple Music."
+      },
+      "discogs": {
+        "title": "Match de Discogs",
+        "desc": "Busca el lanzamiento exacto y elige la versión correcta del vinilo."
+      },
+      "metadata": {
+        "title": "Editor de metadatos",
+        "desc": "Título, artista, álbum, género y carátula: edítalo todo en un sitio."
+      },
+      "quality": {
+        "title": "Calidad de audio",
+        "desc": "El espectro delata los fakes: agudos que faltan en un supuesto lossless."
+      },
+      "convert": {
+        "title": "Convierte y archiva",
+        "desc": "A AIFF, WAV, FLAC o MP3 y directo a tu biblioteca de Apple Music, en un clic."
+      }
+    }
   },
   "pricing": {
     "kicker": "Precio",

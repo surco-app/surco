@@ -14,6 +14,7 @@ interface FieldProps {
   suggestions?: string[]
   multiSuggestions?: boolean
   insertSources?: InsertSource[]
+  cleanResult?: string
 }
 
 export function Field({
@@ -27,14 +28,16 @@ export function Field({
   suggestions,
   multiSuggestions,
   insertSources,
+  cleanResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   // A field never offers itself, and an empty field has nothing to insert.
   const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
-  // The menu also formats the field's own text, so on fields that host it
-  // (insertSources provided) it appears whenever there is something to insert OR
-  // text to format — not only when another field has a value.
-  const hasMenu = insertSources !== undefined && (insertable.length > 0 || value.trim() !== '')
+  // The menu also formats the field's own text and can offer a "without version"
+  // result, so on fields that host it (insertSources provided) it appears whenever
+  // there is something to insert, text to format, OR a clean-up to apply.
+  const hasMenu =
+    insertSources !== undefined && (insertable.length > 0 || value.trim() !== '' || !!cleanResult)
   return (
     <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
@@ -68,6 +71,7 @@ export function Field({
             fieldName={name}
             sources={insertable}
             value={value}
+            cleanResult={cleanResult}
             inputRef={inputRef}
             onChange={onChange}
           />

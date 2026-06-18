@@ -10,6 +10,7 @@ import Reveal from './components/Reveal'
 import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
 import DownloadButton from './components/DownloadButton'
+import HeroTour from './components/HeroTour'
 import InstallSection from './components/InstallSection'
 import Faq from './components/Faq'
 import Band from './components/Band'
@@ -68,9 +69,8 @@ function Kbd({ k }: { k: string }) {
 }
 
 export default function App() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   useAutoLanguage()
-  const appShot = `/app-${i18n.language === 'en' ? 'en' : 'es'}.webp`
   const featureGroups = t('features.groups', { returnObjects: true }) as {
     kick: string
     title: string
@@ -153,24 +153,7 @@ export default function App() {
 
           <Reveal delay={200}>
             <div className="relative mt-16 ml-[calc(50%-50vw)] w-screen px-6 sm:mt-20">
-              <figure className="relative mx-auto max-w-6xl">
-                <div
-                  className="pointer-events-none absolute -inset-x-6 -top-10 bottom-10 -z-10"
-                  style={{
-                    background:
-                      'radial-gradient(50% 55% at 50% 0%, rgba(122,162,247,0.22) 0%, rgba(26,27,38,0) 70%)'
-                  }}
-                />
-                <img
-                  src={appShot}
-                  alt={t('showcase.alt')}
-                  width={2000}
-                  height={1242}
-                  fetchPriority="high"
-                  decoding="async"
-                  className="block w-full rounded-2xl border border-line bg-bg2 shadow-2xl shadow-black/60 ring-1 ring-white/5"
-                />
-              </figure>
+              <HeroTour />
             </div>
           </Reveal>
         </section>
