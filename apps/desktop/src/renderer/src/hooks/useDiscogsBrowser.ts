@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
-import type { Release, SearchResult } from '../../../shared/types'
+import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { probeReleases } from '../lib/autoMatch'
-import { resultFromRelease } from '../lib/release'
+import { preRankResults, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 
@@ -42,6 +42,10 @@ export function useDiscogsBrowser(
   item: TrackItem,
   tr: (key: string) => string,
   onQueryCommitted?: (query: string) => void,
+  // The catalog sources to search, from Settings. Results are merged and re-ranked, so
+  // order is irrelevant. Defaults to Discogs so callers that don't pass it (tests) behave
+  // as before.
+  providers: SearchProviderId[] = ['discogs'],
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
@@ -81,19 +85,39 @@ export function useDiscogsBrowser(
   }, [query])
 
   const searchQuery = useQuery({
-    queryKey: ['discogs-search', searchTerm],
+    queryKey: ['search', searchTerm, providers],
     queryFn: async () => {
-      // A pasted release id/URL loads that release directly instead of searching.
+      // A pasted release id/URL loads that release directly instead of searching (Discogs
+      // only — it's the one source with id-addressable releases).
       const id = parseReleaseId(searchTerm)
       if (id !== null) {
         const rel = await loadRelease({ provider: 'discogs', id, title: '' })
         const result = resultFromRelease(rel)
         return { results: [result], direct: result as SearchResult | null }
       }
-      const results = await window.api.search(searchTerm, undefined, 'high', {
+      const hints = {
         artist: item.meta.artist,
         title: item.meta.title,
         catalogNumber: item.meta.catalogNumber,
+      }
+      // Query the enabled providers in parallel. One source failing (e.g. Bandcamp's
+      // unofficial endpoint) must not sink the whole search, so surface an error only when
+      // every provider failed — a partial failure still shows what did come back.
+      const settled = await Promise.allSettled(
+        providers.map((p) => window.api.search(searchTerm, p, 'high', hints)),
+      )
+      const ok = settled
+        .filter((s): s is PromiseFulfilledResult<SearchResult[]> => s.status === 'fulfilled')
+        .map((s) => s.value)
+      if (ok.length === 0) {
+        const failed = settled.find((s): s is PromiseRejectedResult => s.status === 'rejected')
+        throw failed ? failed.reason : new Error('search failed')
+      }
+      // Merge and re-rank by how well each row matches the file, so the likeliest release —
+      // from whichever provider — leads, instead of one source always sitting on top.
+      const results = preRankResults(ok.flat(), {
+        title: item.meta.title,
+        artist: item.meta.artist,
       })
       return { results, direct: null as SearchResult | null }
     },

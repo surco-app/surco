@@ -7,6 +7,7 @@ import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
   OutputFormat,
+  SearchProviderId,
   Settings,
   SpectrumResult,
   TrackMetadata,
@@ -103,6 +104,10 @@ const CommandPalette = lazy(() =>
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
+
+// Stable fallback while settings load, so the memoized Editor doesn't see a new array
+// each render. Mirrors the persisted default (Discogs only).
+const DEFAULT_SEARCH_PROVIDERS: SearchProviderId[] = ['discogs']
 
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
@@ -1150,6 +1155,7 @@ export default function App(): React.JSX.Element {
                 visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
                 requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
                 discogsFormats={settings?.discogsFormats ?? EMPTY_FORMATS}
+                searchProviders={settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS}
                 showSpectrum={settings?.showSpectrum ?? true}
                 showLoudness={settings?.showLoudness ?? true}
                 keyNotation={settings?.keyNotation ?? 'camelot'}

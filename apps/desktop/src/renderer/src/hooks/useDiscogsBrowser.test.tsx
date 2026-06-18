@@ -60,6 +60,29 @@ afterEach(() => {
 })
 
 describe('useDiscogsBrowser', () => {
+  // With more than one source enabled the list must show hits from all of them, so the
+  // user sees Bandcamp-only releases alongside Discogs ones in a single ranked list.
+  it('merges results from every enabled provider', async () => {
+    const bcResult = {
+      provider: 'bandcamp' as const,
+      id: 9,
+      title: 'BC Album',
+      releaseUrl: 'https://x.bc/a',
+    }
+    setApi({
+      search: vi.fn(async (_q: string, provider?: string) =>
+        provider === 'bandcamp' ? [bcResult] : [searchResult],
+      ),
+    })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.results.map((r) => r.provider).sort()).toEqual(['bandcamp', 'discogs'])
+  })
+
   // The search box's whole job: commit the query and surface the matching releases.
   it('returns the search results once a search is run', async () => {
     setApi()

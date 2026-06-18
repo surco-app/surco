@@ -11,6 +11,8 @@ const defaults: Settings = {
   discogsToken: '',
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
+  // Search Discogs only by default; Bandcamp is opt-in (Settings → Search).
+  searchProviders: ['discogs'],
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
   addToAppleMusic: process.platform === 'darwin',

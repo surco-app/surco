@@ -170,8 +170,17 @@ export function DiscogsPanel({
                       <span data-fit className="block truncate text-sm">
                         {r.title}
                       </span>
-                      <span className="block truncate text-xs text-fg-dim">
-                        {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
+                      <span className="mt-0.5 flex items-center gap-1.5">
+                        <span
+                          data-testid="result-provider"
+                          data-provider={r.provider}
+                          className="shrink-0 rounded-full bg-[var(--color-panel-2)] px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-fg-faint"
+                        >
+                          {tr(`settings.provider.${r.provider}`)}
+                        </span>
+                        <span className="truncate text-xs text-fg-dim">
+                          {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
+                        </span>
                       </span>
                     </span>
                     <ChevronRight

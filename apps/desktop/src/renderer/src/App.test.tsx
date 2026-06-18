@@ -43,6 +43,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     language: 'system',
     discogsToken: '',
     discogsFormats: [],
+    searchProviders: ['discogs'],
     outputDir: '',
     outputFormat: 'aiff',
     addToAppleMusic: false,

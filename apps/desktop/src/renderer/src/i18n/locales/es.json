@@ -396,6 +396,12 @@
     "autoMatchNeedsToken": "Añade tu token de Discogs arriba para activar el auto-emparejado.",
     "discogsFormats": "Mostrar solo estos formatos",
     "discogsFormatsHint": "Limita los resultados de Discogs a los formatos que marques. Sin ninguno marcado, se muestran todos.",
+    "searchProviders": "Fuentes de búsqueda",
+    "searchProvidersHint": "Qué catálogos consulta la búsqueda del editor. Discogs está curado; Bandcamp añade material autoeditado y exclusivo.",
+    "provider": {
+      "discogs": "Discogs",
+      "bandcamp": "Bandcamp"
+    },
     "format": {
       "Vinyl": "Vinyl",
       "CD": "CD",

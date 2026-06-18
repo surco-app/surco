@@ -287,7 +287,10 @@ export function buildReleaseMeta(
       publisher: publisher || current.publisher,
       catalogNumber: catalogNumber || current.catalogNumber,
       composer: composerOf(rel, track) || current.composer,
-      discogsReleaseId: String(rel.id),
+      // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
+      // Discogs field (it gates auto-match's "skip already-matched" and the release link),
+      // so a non-Discogs apply leaves whatever was there untouched.
+      discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : current.discogsReleaseId,
     },
   }
 }

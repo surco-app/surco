@@ -24,6 +24,7 @@ const settings: Settings = {
   language: 'system',
   discogsToken: '',
   discogsFormats: [],
+  searchProviders: ['discogs'],
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,
@@ -169,6 +170,18 @@ describe('SettingsModal auto-match', () => {
     expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
     fireEvent.change(screen.getByTestId('settings-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('settings-auto-match')).toBeEnabled()
+  })
+
+  // Bandcamp is opt-in: ticking it adds the source the editor search queries, alongside
+  // Discogs, so the user can reach self-released and Bandcamp-exclusive material.
+  it('adds Bandcamp to the searched providers when its checkbox is ticked', () => {
+    const onSave = vi.fn()
+    openSearch(onSave)
+    fireEvent.click(screen.getByTestId('settings-provider-bandcamp'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ searchProviders: ['discogs', 'bandcamp'] }),
+    )
   })
 
   it('saves auto-match enabled only once a token backs it', () => {

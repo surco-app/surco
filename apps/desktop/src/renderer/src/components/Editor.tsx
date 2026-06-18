@@ -9,6 +9,7 @@ import type {
   KeyNotation,
   NormalizeConfig,
   OutputFormat,
+  SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
@@ -71,6 +72,8 @@ interface Props {
   // The Discogs release formats search is restricted to (Settings), shown as a hint in
   // the Discogs column so an empty or thinned result set is explained, not a mystery.
   discogsFormats: string[]
+  // The catalog sources the editor search queries (Settings → Search).
+  searchProviders: SearchProviderId[]
   showSpectrum: boolean
   showLoudness: boolean
   // Which notation the key suggestion chip offers (Settings choice).
@@ -135,6 +138,7 @@ export const Editor = memo(function Editor({
   visibleFields,
   requiredFields,
   discogsFormats,
+  searchProviders,
   showSpectrum,
   showLoudness,
   keyNotation,
@@ -163,7 +167,7 @@ export const Editor = memo(function Editor({
   const { t: tr } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
-  const browser = useDiscogsBrowser(item, tr, (query) => onChange({ query }))
+  const browser = useDiscogsBrowser(item, tr, (query) => onChange({ query }), searchProviders)
   const { release } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding
   // a section away persists as the user browses the crate instead of resetting on every

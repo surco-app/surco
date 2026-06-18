@@ -118,6 +118,9 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
   stats: ChartColumn,
 }
 
+// The catalog sources offered as search-provider checkboxes (Settings → Search).
+const SEARCH_PROVIDERS: Settings['searchProviders'] = ['discogs', 'bandcamp']
+
 // The synced staged fields in their editable forms (presets as comma text, the cover
 // cap as a string), derived from Settings in one place so seeding and the config-dir
 // re-seed can never disagree on the field list.
@@ -143,6 +146,7 @@ interface SyncedDraft {
   normalize: Settings['normalize']
   shortcutOverrides: Settings['shortcutOverrides']
   discogsFormats: string[]
+  searchProviders: Settings['searchProviders']
 }
 
 function pickSynced(s: Settings): SyncedDraft {
@@ -151,6 +155,7 @@ function pickSynced(s: Settings): SyncedDraft {
     language: s.language,
     outputFormat: s.outputFormat,
     discogsFormats: s.discogsFormats,
+    searchProviders: s.searchProviders,
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
@@ -450,6 +455,34 @@ export function SettingsModal({
 
         {tab === 'search' && (
           <>
+            <p className="mb-1.5 text-sm font-medium text-fg-muted">
+              {tr('settings.searchProviders')}
+            </p>
+            <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchProvidersHint')}</p>
+            <div
+              className="mb-6 flex flex-wrap gap-x-5 gap-y-2"
+              data-testid="settings-search-providers"
+            >
+              {SEARCH_PROVIDERS.map((p) => (
+                <label key={p} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    data-testid={`settings-provider-${p}`}
+                    type="checkbox"
+                    checked={synced.searchProviders.includes(p)}
+                    onChange={(e) =>
+                      patch(
+                        'searchProviders',
+                        e.target.checked
+                          ? [...synced.searchProviders, p]
+                          : synced.searchProviders.filter((x) => x !== p),
+                      )
+                    }
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
+                </label>
+              ))}
+            </div>
             <label
               htmlFor="settings-token"
               className="mb-1.5 block text-sm font-medium text-fg-muted"

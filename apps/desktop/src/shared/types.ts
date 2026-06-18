@@ -52,6 +52,9 @@ export interface Settings {
   // e.g. "Vinyl", "CD"). Empty (the default) shows every format. A single selection
   // filters server-side via the API's `format` param; several filter client-side.
   discogsFormats: string[]
+  // Which catalog sources the editor search queries. Discogs is the default; Bandcamp is
+  // opt-in. Order is irrelevant — results are merged and re-ranked by match relevance.
+  searchProviders: SearchProviderId[]
   outputDir: string
   outputFormat: OutputFormat
   addToAppleMusic: boolean

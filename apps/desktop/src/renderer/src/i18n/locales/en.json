@@ -396,6 +396,12 @@
     "autoMatchNeedsToken": "Add your Discogs token above to enable auto-match.",
     "discogsFormats": "Show only these formats",
     "discogsFormatsHint": "Limit Discogs results to the formats you check. With none checked, every format shows.",
+    "searchProviders": "Search sources",
+    "searchProvidersHint": "Which catalogs the editor search queries. Discogs is curated; Bandcamp adds self-released and exclusive material.",
+    "provider": {
+      "discogs": "Discogs",
+      "bandcamp": "Bandcamp"
+    },
     "format": {
       "Vinyl": "Vinyl",
       "CD": "CD",

@@ -130,6 +130,7 @@ function renderEditor(
       visibleFields={props.visibleFields ?? []}
       requiredFields={props.requiredFields ?? []}
       discogsFormats={props.discogsFormats ?? []}
+      searchProviders={['discogs']}
       showSpectrum={false}
       showLoudness={props.showLoudness ?? false}
       keyNotation={props.keyNotation ?? 'camelot'}
@@ -509,6 +510,7 @@ function MultiHarness() {
         visibleFields={['title', 'album', 'year', 'genre']}
         requiredFields={[]}
         discogsFormats={[]}
+        searchProviders={['discogs']}
         showSpectrum={false}
         showLoudness={false}
         normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
@@ -717,6 +719,7 @@ describe('Editor multi-select', () => {
         visibleFields={opts.visibleFields ?? ['title', 'album']}
         requiredFields={[]}
         discogsFormats={[]}
+        searchProviders={['discogs']}
         showSpectrum
         showLoudness={opts.loudness ?? false}
         normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}

@@ -356,6 +356,18 @@ describe('buildReleaseMeta', () => {
     )
   })
 
+  // A Bandcamp match is not a Discogs release, so it must not stamp its id into the Discogs
+  // provenance field — that field gates the auto-match "skip already-matched" check and the
+  // release link, both of which are Discogs-specific. Whatever was there stays.
+  it('leaves the Discogs release id untouched when the match is from another provider', () => {
+    const patch = buildReleaseMeta(
+      meta({ discogsReleaseId: '111' }),
+      release({ id: 999, provider: 'bandcamp' }),
+      undefined,
+    )
+    expect(patch.meta.discogsReleaseId).toBe('111')
+  })
+
   it('prefers a style over a genre, and falls back to a genre with no style', () => {
     const styled = buildReleaseMeta(
       meta(),
