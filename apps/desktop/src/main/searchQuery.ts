@@ -39,6 +39,16 @@ function stripParentheticals(query: string): string {
   return squeeze(query.replace(/\([^)]*\)/g, ' '))
 }
 
+// DJ-pool / batch exports often append a track number and a repeat of the artist–title to
+// the end ("Artist - Title (Original Mix) - 02 Artist - Title (Original Mix)"). The part
+// before that mid-string track number is already a complete query, and the duplication
+// throws free-text search off (Bandcamp's autocomplete returns nothing). Cut from the
+// first " - NN " — a 1-3 digit track number, never a 4-digit year — onward. Leaves a
+// query with no such marker unchanged, so it adds a candidate only when it helps.
+function dropTrackNumberTail(query: string): string {
+  return squeeze(query.replace(/\s-\s\d{1,3}(?:\s.*)?$/, ''))
+}
+
 // Ordered, de-duped queries to try in turn, most precise to most forgiving:
 //   1. cleaned query (keeps a mix name so a remix still resolves)
 //   2. same without any parenthetical (the bare title that usually works)
@@ -56,6 +66,11 @@ export function buildSearchCandidates(query: string, hints: SearchHints = {}): s
   }
   add(cleaned)
   add(stripParentheticals(cleaned))
+  // A duplicated, track-numbered tail cut off — then also without parentheticals. Both
+  // collapse to the candidates above (and are skipped) when there's no such tail.
+  const trimmed = dropTrackNumberTail(cleaned)
+  add(trimmed)
+  add(stripParentheticals(trimmed))
   if (hints.catalogNumber) add(hints.catalogNumber)
   if (hints.title) add(cleanQuery(hints.title))
   if (hints.artist && hints.title) add(cleanQuery(`${hints.title} ${hints.artist}`))

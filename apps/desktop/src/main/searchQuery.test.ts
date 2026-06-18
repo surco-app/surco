@@ -72,4 +72,20 @@ describe('buildSearchCandidates', () => {
     // Title-only equal to the cleaned query must not produce a duplicate candidate.
     expect(buildSearchCandidates('Some Title', { title: 'Some Title' })).toEqual(['Some Title'])
   })
+
+  it('cuts a duplicated, track-numbered tail off a DJ-pool file name', () => {
+    // "Artist - Title (Mix) - 02 Artist - Title (Mix)": the part before the mid-string
+    // track number is already a complete query, and the duplication makes free-text
+    // search (Bandcamp's autocomplete especially) return nothing.
+    expect(
+      buildSearchCandidates(
+        'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
+      ),
+    ).toEqual([
+      'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
+      'Francesco Donadoni - Rock that sound - 02 Francesco Donadoni - Rock that sound',
+      'Francesco Donadoni - Rock that sound (Original mix)',
+      'Francesco Donadoni - Rock that sound',
+    ])
+  })
 })
