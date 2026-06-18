@@ -3,11 +3,9 @@ import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
   buildLibraryDumpScript,
-  buildLookupScript,
   buildRevealScript,
   buildUpdateScript,
   isAppleMusicOnly,
-  lookupCandidates,
   parseLibraryDump,
   shouldAddToAppleMusic,
 } from './applemusic'
@@ -153,47 +151,6 @@ describe('buildRevealScript', () => {
   })
 })
 
-describe('buildLookupScript', () => {
-  it('counts library tracks matching the name and the primary artist so a different song with the same title is not flagged as a duplicate', () => {
-    const script = buildLookupScript([{ artist: 'Tom Hafman', title: 'ATB (Till I Come)' }])
-    // Querying library playlist 1 (not a specific source) is what scopes the
-    // search to the user's whole library; matching name AND artist is what keeps
-    // it from flagging unrelated songs that happen to share a title.
-    expect(script).toContain('every track of library playlist 1 whose')
-    expect(script).toContain('name is "ATB (Till I Come)"')
-    expect(script).toContain('artist contains "Tom Hafman"')
-    expect(script).toContain('return (count of')
-  })
-
-  it('matches on the first artist only so a feat./multi-artist tag still finds the track Apple Music stored under its primary artist', () => {
-    // Apple Music keeps only the primary artist, so a tag joined as
-    // "Alfredo Pareja, Saint Etien" must still match the library's
-    // "Alfredo Pareja" — otherwise every collaboration reads as "not in library".
-    const script = buildLookupScript([
-      { artist: 'Alfredo Pareja, Saint Etien', title: 'Sorrow Town (Phone On The Mix)' },
-    ])
-    expect(script).toContain('artist contains "Alfredo Pareja"')
-    expect(script).not.toContain('Saint Etien')
-  })
-
-  it('trims the values so trailing whitespace from the tag fields does not break the match Music performs', () => {
-    const script = buildLookupScript([{ artist: '  Tom Hafman  ', title: '  ATB (Till I Come)  ' }])
-    expect(script).toContain('name is "ATB (Till I Come)"')
-    expect(script).toContain('artist contains "Tom Hafman"')
-  })
-
-  it('ORs every candidate into a single query so checking the tags and the Discogs suggestion costs one osascript spawn, not two', () => {
-    const script = buildLookupScript([
-      { artist: 'Jessy', title: 'How long' },
-      { artist: 'Jessy', title: 'How Long (Extended Mix)' },
-    ])
-    expect(script).toContain(
-      '(name is "How long" and artist contains "Jessy") or (name is "How Long (Extended Mix)" and artist contains "Jessy")',
-    )
-    expect(script.match(/every track of library playlist 1/g)).toHaveLength(1)
-  })
-})
-
 describe('buildLibraryDumpScript', () => {
   it('reads name and artist of every library track as lists, not one track at a time, so a multi-thousand-track library dumps in one fast pass instead of N AppleScript round-trips', () => {
     const script = buildLibraryDumpScript()
@@ -227,29 +184,6 @@ describe('parseLibraryDump', () => {
     expect(parseLibraryDump('Strobe\tdeadmau5\n\nNoTabLine\n')).toEqual([
       { title: 'Strobe', artist: 'deadmau5' },
     ])
-  })
-})
-
-describe('lookupCandidates', () => {
-  it('drops candidates missing a title or artist — an empty artist would `contains ""`-match the entire library and flag every track as a duplicate', () => {
-    expect(
-      lookupCandidates([
-        { artist: '', title: 'Strobe' },
-        { artist: 'deadmau5', title: ' ' },
-        { artist: 'deadmau5', title: 'Strobe' },
-      ]),
-    ).toEqual([{ artist: 'deadmau5', title: 'Strobe' }])
-  })
-
-  it('dedupes candidates that collapse to the same title and primary artist, so tags already applied from Discogs do not ask the library the same question twice', () => {
-    // AppleScript compares text case-insensitively and the lookup keeps only the
-    // first comma-separated artist, so these two are one query to Music.
-    expect(
-      lookupCandidates([
-        { artist: 'Jessy, Someone Else', title: 'How Long (Extended Mix) ' },
-        { artist: 'jessy', title: 'how long (extended mix)' },
-      ]),
-    ).toHaveLength(1)
   })
 })
 

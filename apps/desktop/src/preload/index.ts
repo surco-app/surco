@@ -47,8 +47,6 @@ const api: Api = {
   ) => ipcRenderer.invoke('search:query', query, provider, priority, hints),
   getRelease: (ref: number | string, provider?: SearchProviderId, priority?: SearchPriority) =>
     ipcRenderer.invoke('search:release', ref, provider, priority),
-  lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]): Promise<boolean> =>
-    ipcRenderer.invoke('applemusic:lookup', candidates),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

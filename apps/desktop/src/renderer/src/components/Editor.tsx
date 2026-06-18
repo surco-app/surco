@@ -12,7 +12,6 @@ import type {
   SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
-import { useAppleMusicLookup } from '../hooks/useAppleMusicLookup'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections } from '../hooks/useEditorSections'
@@ -23,12 +22,12 @@ import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
+import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { isLowResCover } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
   confidenceTier,
-  joinArtists,
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
@@ -59,6 +58,10 @@ const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
 
 interface Props {
   item: TrackItem
+  // The session snapshot of the Apple Music library (null until it lands / off macOS),
+  // the same one the list and quality filter read, so the "already owned" badge can never
+  // disagree with them. App owns it; the editor only reads.
+  libraryIndex: AppleMusicIndex | null
   hasToken: boolean
   outputFormat: OutputFormat
   addToAppleMusic: boolean
@@ -130,6 +133,7 @@ interface Props {
 // skip this whole subtree.
 export const Editor = memo(function Editor({
   item,
+  libraryIndex,
   hasToken,
   outputFormat,
   addToAppleMusic,
@@ -252,22 +256,17 @@ export const Editor = memo(function Editor({
   const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
 
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
-  // re-import it. Tracks the live title/artist (debounced, macOS-only) and reports
-  // 'idle' off macOS, where the badge hides. The Discogs-suggested track joins as a
-  // second candidate: the tags may still hold the filename's rough spelling while the
-  // library stores the song under its canonical name, which the tags alone would miss.
-  const inLibrary = useAppleMusicLookup(
-    matchedTrack && release
-      ? [
-          { artist: item.meta.artist, title: item.meta.title },
-          {
-            artist:
-              joinArtists(matchedTrack.artists) || joinArtists(release.artists) || item.meta.artist,
-            title: matchedTrack.title,
-          },
-        ]
-      : [{ artist: item.meta.artist, title: item.meta.title }],
-  )
+  // re-import it. Read from the same session snapshot, and against the same live tags, the
+  // list and quality filter use (isInLibrary on item.meta), so the badge can never
+  // disagree with the row's in-library state. A track Surco itself added (musicPersistentId)
+  // counts as owned even before the snapshot lands; 'idle' hides the badge off macOS and
+  // until the snapshot arrives.
+  const inLibrary: 'idle' | 'yes' | 'no' = ((): 'idle' | 'yes' | 'no' => {
+    if (window.api.platform !== 'darwin') return 'idle'
+    if (item.musicPersistentId) return 'yes'
+    if (!libraryIndex) return 'idle'
+    return isInLibrary(libraryIndex, item.meta) ? 'yes' : 'no'
+  })()
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
@@ -503,16 +502,9 @@ export const Editor = memo(function Editor({
             onToggle={() => setSectionOpen('form', !formOpen)}
             right={
               <div className="flex items-center gap-3">
-                {/* Badge first, button last: the badge comes and goes with the lookup, so
-                    keeping the button at the row's end stops it shifting when the badge
-                    (un)mounts. While the lookup runs a skeleton holds the badge's slot. */}
-                {!isMulti && inLibrary === 'pending' && (
-                  <span
-                    data-testid="apple-music-skeleton"
-                    aria-hidden="true"
-                    className="h-6 w-44 animate-pulse rounded-full bg-[var(--color-panel-2)]"
-                  />
-                )}
+                {/* Badge first, button last: the badge appears once the snapshot resolves
+                    a verdict, so keeping the button at the row's end stops it shifting when
+                    the badge mounts. */}
                 {!isMulti && inLibrary === 'yes' && (
                   <span
                     data-testid="apple-music-status"

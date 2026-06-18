@@ -1,13 +1,8 @@
 import { app, ipcMain } from 'electron'
-import type {
-  AppleMusicAddJob,
-  AppleMusicLookupCandidate,
-  AppleMusicUpdateJob,
-} from '../shared/types'
+import type { AppleMusicAddJob, AppleMusicUpdateJob } from '../shared/types'
 import {
   addToAppleMusic,
   dumpAppleMusicLibrary,
-  lookupInAppleMusic,
   revealInAppleMusic,
   updateInAppleMusic,
 } from './applemusic'
@@ -20,12 +15,6 @@ import { getSettings } from './settings'
 // handler short-circuits off macOS rather than spawning a missing osascript. Self-contained
 // — no window or session state — so it lives apart from the stateful handlers in index.ts.
 export function registerAppleMusicIpc(): void {
-  // The Music AppleScript bridge is macOS-only; off macOS there is no library to
-  // query, so report "not present" rather than spawning a missing osascript.
-  ipcMain.handle('applemusic:lookup', (_e, candidates: AppleMusicLookupCandidate[]) =>
-    process.platform === 'darwin' ? lookupInAppleMusic(candidates) : false,
-  )
-
   // The whole-library snapshot the renderer matches the crate against to flag which
   // tracks are already owned; empty off macOS, where there is no library to read.
   ipcMain.handle('applemusic:library', () =>

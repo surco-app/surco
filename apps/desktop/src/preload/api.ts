@@ -54,7 +54,6 @@ export interface Api {
     provider?: SearchProviderId,
     priority?: SearchPriority,
   ) => Promise<Release>
-  lookupAppleMusic: (candidates: AppleMusicLookupCandidate[]) => Promise<boolean>
   // The whole Apple Music library as title/artist pairs, matched against the crate in
   // the renderer to flag already-owned tracks. Empty off macOS.
   loadAppleMusicLibrary: () => Promise<AppleMusicLookupCandidate[]>

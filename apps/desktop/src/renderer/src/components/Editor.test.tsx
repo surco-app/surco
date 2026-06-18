@@ -15,6 +15,7 @@ import type {
 } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
+import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -95,6 +96,7 @@ function renderEditor(
     overwriteOriginal?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
+    libraryIndex?: AppleMusicIndex | null
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -121,6 +123,7 @@ function renderEditor(
   renderWithQuery(
     <Editor
       item={item(over)}
+      libraryIndex={props.libraryIndex ?? null}
       hasToken
       outputFormat={outputFormat}
       addToAppleMusic={false}
@@ -501,6 +504,7 @@ function MultiHarness() {
       <Editor
         key={selected.id}
         item={selected}
+        libraryIndex={null}
         overwriteOriginal={false}
         keyNotation="camelot"
         hasToken
@@ -710,6 +714,7 @@ describe('Editor multi-select', () => {
     renderWithQuery(
       <Editor
         item={a}
+        libraryIndex={null}
         hasToken
         outputFormat="aiff"
         addToAppleMusic={opts.music ?? false}
@@ -1599,108 +1604,86 @@ describe('Editor album "without version" suggestion', () => {
 describe('Editor Apple Music library badge', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
-  function setApi(platform: string, found: boolean): void {
+  function setApi(platform: string): void {
     ;(window as unknown as { api: unknown }).api = {
       platform,
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
-      lookupAppleMusic: vi.fn().mockResolvedValue(found),
     }
   }
 
+  const owned: AppleMusicIndex = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5' }])
+
   // The badge exists so a DJ doesn't re-import a song they already own; on macOS it
-  // checks the live title/artist against the library and flags a match.
-  it('flags a track already in the Apple Music library on macOS', async () => {
-    setApi('darwin', true)
-    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
-    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
+  // checks the live title/artist against the same library snapshot the list and filter
+  // read, so the badge can never disagree with the row's in-library state.
+  it('flags a track already in the Apple Music library on macOS', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
       'Already in your Apple Music library',
     )
   })
 
-  // The complement: a song not found in the library reassures the user it's safe to add.
-  it('flags a track that is not in the library', async () => {
-    setApi('darwin', false)
-    renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } })
-    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
+  // The complement: a song not found in the snapshot reassures the user it's safe to add.
+  it('flags a track that is not in the library', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
       'Not in your Apple Music library',
     )
   })
 
-  // While the lookup is in flight the slot holds a skeleton instead of unmounting,
-  // so the header doesn't reflow when the verdict lands.
-  it('holds a skeleton in the badge slot while the lookup is in flight', () => {
-    setApi('darwin', true)
-    ;(window as unknown as { api: { lookupAppleMusic: unknown } }).api.lookupAppleMusic = vi
-      .fn()
-      .mockReturnValue(new Promise(() => {}))
-    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
-    expect(screen.getByTestId('apple-music-skeleton')).toBeInTheDocument()
+  // A track Surco itself added carries its library copy's persistent ID, so it reads as
+  // owned even before the snapshot lands — mirroring the list's verdict for the same row.
+  it('flags a Surco-added track as owned before the snapshot has loaded', () => {
+    setApi('darwin')
+    renderEditor(
+      { id: 'a', musicPersistentId: 'ABCD1234', meta: { title: 'Fresh', artist: 'New' } },
+      'wav',
+      { libraryIndex: null },
+    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
+      'Already in your Apple Music library',
+    )
+  })
+
+  // Until the snapshot arrives there is no verdict to show, so the badge stays hidden
+  // rather than guessing — the slot fills once the library has loaded.
+  it('hides the badge until the snapshot has loaded', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: null,
+    })
     expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 
-  // The badge comes and goes with the lookup; rendering it before the
-  // "Fill from filename" button keeps that button anchored at the header's edge.
-  it('renders the badge before the fill-from-filename button', async () => {
-    setApi('darwin', true)
-    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
-    const badge = await screen.findByTestId('apple-music-status')
+  // Rendering the badge before the "Fill from filename" button keeps that button
+  // anchored at the header's edge when the badge mounts.
+  it('renders the badge before the fill-from-filename button', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    const badge = screen.getByTestId('apple-music-status')
     const derive = screen.getByTestId('derive-btn')
     expect(badge.compareDocumentPosition(derive) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  // Off macOS there is no Apple Music library to query, so the lookup never runs and
-  // the badge stays hidden rather than making a promise the platform can't keep.
-  it('never queries or shows the badge off macOS', async () => {
-    setApi('win32', true)
-    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } })
-    await Promise.resolve()
+  // Off macOS there is no Apple Music library, so the badge stays hidden rather than
+  // making a promise the platform can't keep.
+  it('never shows the badge off macOS', () => {
+    setApi('win32')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
     expect(screen.queryByTestId('apple-music-status')).toBeNull()
-    expect(
-      (window as unknown as { api: { lookupAppleMusic: ReturnType<typeof vi.fn> } }).api
-        .lookupAppleMusic,
-    ).not.toHaveBeenCalled()
-  })
-
-  // The tags may still hold the filename's rough spelling while Discogs already
-  // points at the canonical track; looking the suggestion up too catches a library
-  // copy stored under the canonical name that the raw tags alone would miss.
-  it('also looks up the Discogs-suggested track so a library copy under the canonical title is caught', async () => {
-    const lookup = vi.fn().mockResolvedValue(false)
-    ;(window as unknown as { api: unknown }).api = {
-      platform: 'darwin',
-      reveal: vi.fn(),
-      properties: vi.fn().mockResolvedValue(null),
-      hasClipboardImage: vi.fn().mockResolvedValue(false),
-      onWindowFocus: vi.fn(() => () => {}),
-      lookupAppleMusic: lookup,
-      search: vi.fn().mockResolvedValue([{ id: 2, title: 'The Artist - Some Album' }]),
-      getRelease: vi.fn().mockResolvedValue({
-        id: 2,
-        title: 'Some Album',
-        artists: [{ name: 'The Artist' }],
-        tracklist: [
-          { position: 'A1', title: 'Track One' },
-          { position: 'A2', title: 'Track Two (Remix)' },
-        ],
-      }),
-    }
-    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'The Artist' } })
-    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
-    // The auto-probe opens the matching release on its own; once its tracklist is
-    // on screen the lookup must re-run with the suggestion as a second candidate.
-    await screen.findAllByTestId('discogs-track')
-    await waitFor(
-      () =>
-        expect(lookup).toHaveBeenCalledWith([
-          { artist: 'The Artist', title: 'track two remix' },
-          { artist: 'The Artist', title: 'Track Two (Remix)' },
-        ]),
-      { timeout: 3000 },
-    )
   })
 })
 

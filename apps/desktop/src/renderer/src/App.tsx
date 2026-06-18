@@ -1157,6 +1157,7 @@ export default function App(): React.JSX.Element {
             >
               <Editor
                 item={selected}
+                libraryIndex={libraryIndex}
                 hasToken={!!settings?.discogsToken}
                 outputFormat={settings?.outputFormat ?? 'aiff'}
                 addToAppleMusic={settings?.addToAppleMusic ?? false}
