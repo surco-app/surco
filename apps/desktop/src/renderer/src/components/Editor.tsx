@@ -22,7 +22,7 @@ import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
-import { genrePresets as discogsGenres } from '../lib/genre'
+import { genreChips as buildGenreChips } from '../lib/genre'
 import { isLowResCover } from '../lib/quality'
 import {
   bestMatch,
@@ -356,11 +356,12 @@ export const Editor = memo(function Editor({
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
       })
     : undefined
-  // The user's default genres come first so they're always one click away even
-  // when a release isn't on Discogs; the release's own genres/styles follow,
-  // deduped so a shared name shows a single pill.
+  // The user's default genres come first so they're always one click away even when a
+  // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
+  // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
+  // pill in the user's casing.
   const genreChips = useMemo(
-    () => Array.from(new Set([...genrePresets, ...discogsGenres(release)])),
+    () => buildGenreChips(genrePresets, release),
     [genrePresets, release],
   )
   // Default to the file's own name so converting keeps it; the metadata-derived
