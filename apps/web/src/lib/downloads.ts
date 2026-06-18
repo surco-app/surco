@@ -26,3 +26,21 @@ export function countDownloads(releases: Release[]): number {
     0,
   )
 }
+
+interface InstallerRelease {
+  tag_name: string
+  draft?: boolean
+  assets?: { name: string; browser_download_url: string }[]
+}
+
+// The newest release whose installer for `suffix` (e.g. "arm64.dmg", ".exe") is actually
+// uploaded. During a release CI creates the new release before it finishes uploading its
+// assets, so /releases/latest would point at a build with no installer yet; walking the
+// list and skipping it falls back to the previous build that still downloads, instead of
+// showing "unavailable". GitHub returns releases newest-first, so the first match wins.
+export function pickInstallerRelease(
+  releases: InstallerRelease[],
+  suffix: string,
+): InstallerRelease | undefined {
+  return releases.find((r) => !r.draft && (r.assets ?? []).some((a) => a.name.endsWith(suffix)))
+}

@@ -285,7 +285,6 @@
   "download": {
     "viewDownloads": "Ver descargas",
     "cta": "Descargar para {{os}}",
-    "viewAnalysis": "Ver el análisis →",
     "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
     "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
     "countSuffix": "descargas y subiendo"

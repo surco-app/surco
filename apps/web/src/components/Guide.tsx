@@ -155,7 +155,7 @@ export default function Guide() {
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('guide.outroTitle')}</h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">{t('guide.outroLede')}</p>
             <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton showAnalysis={false} />
+              <DownloadButton />
             </div>
           </Reveal>
         </section>

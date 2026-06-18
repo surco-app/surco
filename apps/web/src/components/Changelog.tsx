@@ -75,7 +75,7 @@ export default function Changelog() {
               {t('changelog.outroLede')}
             </p>
             <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton showAnalysis={false} />
+              <DownloadButton />
             </div>
           </Reveal>
         </section>

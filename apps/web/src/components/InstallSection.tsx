@@ -24,7 +24,7 @@ export default function InstallSection() {
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('install.kicker')}</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('install.title')}</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('install.lede')}</p>
-        <DownloadButton showAnalysis={false} showMeta={false} />
+        <DownloadButton showMeta={false} />
       </Reveal>
 
       <Reveal delay={120}>

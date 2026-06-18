@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { pickInstallerRelease } from '../lib/downloads'
 import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
 
@@ -21,21 +22,15 @@ const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', other: '' 
 const primary =
   'inline-flex items-center rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg shadow-lg shadow-blue/20 transition-[background-color,box-shadow,translate,scale] duration-200 hover:bg-cyan hover:shadow-xl hover:shadow-cyan/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96]'
 
-// Resolves the installer for the visitor's OS from the newest published GitHub
-// release. /releases/latest skips drafts, so until the first release is
-// published the fetch 404s and the button stays disabled on its own — no manual
-// flag to flip when the binaries land.
+// Resolves the installer for the visitor's OS from the newest published release that
+// actually carries it. A brand-new release shows up before CI finishes uploading its 12
+// assets, so picking from the releases list (not just /releases/latest) keeps the previous
+// build's working download instead of flashing "unavailable" during a release.
 //
 // macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
-export default function DownloadButton({
-  showAnalysis = true,
-  showMeta = true,
-}: {
-  showAnalysis?: boolean
-  showMeta?: boolean
-}) {
+export default function DownloadButton({ showMeta = true }: { showMeta?: boolean }) {
   const { t } = useTranslation()
   const [os] = useState(detectOS)
   const [href, setHref] = useState<string | null>(null)
@@ -45,14 +40,15 @@ export default function DownloadButton({
   useEffect(() => {
     if (os === 'other') return
     let cancelled = false
-    fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+    fetch(`https://api.github.com/repos/${REPO}/releases?per_page=20`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.assets) return
-        setVersion(formatVersion(data.tag_name))
+      .then((releases) => {
+        if (cancelled || !Array.isArray(releases)) return
+        const rel = pickInstallerRelease(releases, os === 'mac' ? 'arm64.dmg' : '.exe')
+        if (!rel) return
+        setVersion(formatVersion(rel.tag_name))
         const url = (suffix: string) =>
-          data.assets.find((a: { name: string }) => a.name.endsWith(suffix))?.browser_download_url ??
-          null
+          rel.assets?.find((a) => a.name.endsWith(suffix))?.browser_download_url ?? null
         if (os === 'mac') {
           setHref(url('arm64.dmg'))
           setIntelHref(url('x64.dmg'))
@@ -88,14 +84,6 @@ export default function DownloadButton({
           >
             {t('download.cta', { os: LABEL[os] || 'macOS' })}
           </button>
-        )}
-        {showAnalysis && (
-          <a
-            href="#analisis"
-            className="text-sm font-medium text-fg transition-colors hover:text-blue"
-          >
-            {t('download.viewAnalysis')}
-          </a>
         )}
       </div>
       {os === 'mac' && intelHref && (
