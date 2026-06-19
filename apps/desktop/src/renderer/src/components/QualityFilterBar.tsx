@@ -85,12 +85,10 @@ export function QualityFilterBar({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // The buckets in logical groups, rendered with a thin divider between them so the menu
-  // reads by dimension (quality, then conversion/provenance, then library, then format)
-  // rather than as one long flat list. Empty groups drop out, so the dividers only ever
-  // separate groups that actually have something to show.
-  const allGroups: QualityFilter[][] = [
-    ['all'],
+  // The primary buckets that follow "All" and the format axis, in logical groups rendered
+  // with a thin divider between them so the menu reads by dimension. Empty groups drop out,
+  // so the dividers only ever separate groups that actually have something to show.
+  const primarySections: QualityFilter[][] = [
     // The quality verdict.
     ['unanalyzed', 'suspect', 'good'],
     // Conversion status and provenance: the auto-matched bucket joins only once something
@@ -99,11 +97,16 @@ export function QualityFilterBar({
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
-    tally.inLibrary + tally.notInLibrary > 0 ? ['notInLibrary', 'inLibrary'] : [],
+    ...(tally.inLibrary + tally.notInLibrary > 0
+      ? [['notInLibrary', 'inLibrary'] as QualityFilter[]]
+      : []),
   ]
-  const groups = allGroups.filter((g) => g.length > 0)
   const countOf = (mode: QualityFilter): number =>
     mode === 'all' ? trackCount : tally[mode as keyof Tally]
+  // "All" is the reset, not a primary value alongside a format: it reads as selected only
+  // when nothing is filtered on either axis, so picking a format (or a bucket) visibly
+  // clears its tick.
+  const allActive = value === 'all' && !formatValue
 
   // Focus the active option when the menu opens, so the arrows continue from the current
   // choice like a native select.
@@ -126,6 +129,14 @@ export function QualityFilterBar({
   // (the primary stays selected in state), the user just reopens to layer the other axis.
   function chooseFormat(format: string | null): void {
     onFormatChange(format)
+    close()
+  }
+
+  // "All" clears both axes at once, so it's a true "show everything" reset rather than only
+  // resetting the primary bucket and leaving a format quietly applied.
+  function chooseAll(): void {
+    onChange('all')
+    onFormatChange(null)
     close()
   }
 
@@ -157,11 +168,73 @@ export function QualityFilterBar({
     items[next].focus()
   }
 
-  const ActiveIcon = FILTER_ICONS[value]
+  // With no primary bucket chosen, surface the active format on the trigger instead of a
+  // bare "All" (which the menu now shows unchecked once a format is on) — so a closed menu
+  // still tells the user what's filtering. A chosen bucket takes the label; format then
+  // only shows inside the menu.
+  const triggerFormat = value === 'all' ? formats.find((f) => f.format === formatValue) : undefined
+  const ActiveIcon = triggerFormat ? FileAudio : FILTER_ICONS[value]
   // Keep the suspect nudge on the trigger even when another filter is active, so a crate
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
   const triggerDot =
     attentionDot(value, tally) ?? (value !== 'suspect' && tally.suspect > 0 ? 'bg-warn' : null)
+
+  const rowClass =
+    'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]'
+  const divider = (
+    <hr
+      data-testid="quality-filter-separator"
+      className="my-1 border-0 border-t border-[var(--color-line)]"
+    />
+  )
+  // A primary bucket row. "All" is the odd one out: it reads as selected only when nothing
+  // is filtered and clears both axes, so it gets allActive/chooseAll instead of the plain
+  // value match.
+  const renderPrimary = (mode: QualityFilter): React.JSX.Element => {
+    const Icon = FILTER_ICONS[mode]
+    const dot = attentionDot(mode, tally)
+    const selected = mode === 'all' ? allActive : mode === value
+    return (
+      <button
+        key={mode}
+        type="button"
+        role="option"
+        aria-selected={selected}
+        data-testid={`quality-filter-${mode}`}
+        onClick={mode === 'all' ? chooseAll : () => choose(mode)}
+        className={rowClass}
+      >
+        <span className="relative">
+          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {dot && <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`} />}
+        </span>
+        <span className="flex-1">{tr(`sidebar.filter.${mode}`)}</span>
+        <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
+        <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
+      </button>
+    )
+  }
+  // A format bucket row: an independent toggle that ANDs with the primary bucket. Clicking
+  // the active one clears it.
+  const renderFormat = (f: { format: string; count: number }): React.JSX.Element => {
+    const active = formatValue === f.format
+    return (
+      <button
+        key={f.format}
+        type="button"
+        role="option"
+        aria-selected={active}
+        data-testid={`quality-filter-ext:${f.format}`}
+        onClick={() => chooseFormat(active ? null : f.format)}
+        className={rowClass}
+      >
+        <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="flex-1">{f.format}</span>
+        <span className="tabular-nums text-fg-dim">{f.count}</span>
+        <Check aria-hidden="true" className={`size-3 shrink-0 ${active ? '' : 'invisible'}`} />
+      </button>
+    )
+  }
 
   return (
     <div
@@ -186,8 +259,10 @@ export function QualityFilterBar({
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span>{tr(`sidebar.filter.${value}`)}</span>
-          <span className="tabular-nums opacity-70">{countOf(value)}</span>
+          <span>{triggerFormat ? triggerFormat.format : tr(`sidebar.filter.${value}`)}</span>
+          <span className="tabular-nums opacity-70">
+            {triggerFormat ? triggerFormat.count : countOf(value)}
+          </span>
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
         {open && (
@@ -207,83 +282,23 @@ export function QualityFilterBar({
               onKeyDown={onListKeyDown}
               className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
             >
-              {groups.map((group, groupIndex) => (
-                // A Fragment, not a wrapper element, so the options stay direct children of
-                // the listbox (the dividers are siblings between groups). The group's first
-                // bucket keys it — buckets are unique across the whole menu.
+              {/* "All" leads as the reset. The format axis sits right under it (both narrow
+                  the view's "scope"), then the quality/conversion/library buckets. Fragments
+                  keep every option a direct child of the listbox, with a divider between
+                  sections; empty sections (no formats, no library) drop their divider too. */}
+              {renderPrimary('all')}
+              {formats.length > 0 && (
+                <Fragment key="formats">
+                  {divider}
+                  {formats.map(renderFormat)}
+                </Fragment>
+              )}
+              {primarySections.map((group) => (
                 <Fragment key={group[0]}>
-                  {groupIndex > 0 && (
-                    <hr
-                      data-testid="quality-filter-separator"
-                      className="my-1 border-0 border-t border-[var(--color-line)]"
-                    />
-                  )}
-                  {group.map((mode) => {
-                    const Icon = FILTER_ICONS[mode]
-                    const dot = attentionDot(mode, tally)
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        role="option"
-                        aria-selected={mode === value}
-                        data-testid={`quality-filter-${mode}`}
-                        onClick={() => choose(mode)}
-                        className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
-                      >
-                        <span className="relative">
-                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                          {dot && (
-                            <span
-                              className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
-                            />
-                          )}
-                        </span>
-                        <span className="flex-1">{tr(`sidebar.filter.${mode}`)}</span>
-                        <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
-                        <Check
-                          aria-hidden="true"
-                          className={`size-3 shrink-0 ${mode === value ? '' : 'invisible'}`}
-                        />
-                      </button>
-                    )
-                  })}
+                  {divider}
+                  {group.map(renderPrimary)}
                 </Fragment>
               ))}
-              {/* The format axis: a separate, independently-toggled section that ANDs with
-                  the primary bucket above. Selecting one keeps the menu open (and the
-                  primary check) so a DJ can layer "… and only WAV"; clicking it again
-                  clears it. Only present for a mixed crate. */}
-              {formats.length > 0 && (
-                <>
-                  <hr
-                    data-testid="quality-filter-separator"
-                    className="my-1 border-0 border-t border-[var(--color-line)]"
-                  />
-                  {formats.map((f) => {
-                    const active = formatValue === f.format
-                    return (
-                      <button
-                        key={f.format}
-                        type="button"
-                        role="option"
-                        aria-selected={active}
-                        data-testid={`quality-filter-ext:${f.format}`}
-                        onClick={() => chooseFormat(active ? null : f.format)}
-                        className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
-                      >
-                        <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        <span className="flex-1">{f.format}</span>
-                        <span className="tabular-nums text-fg-dim">{f.count}</span>
-                        <Check
-                          aria-hidden="true"
-                          className={`size-3 shrink-0 ${active ? '' : 'invisible'}`}
-                        />
-                      </button>
-                    )
-                  })}
-                </>
-              )}
             </div>
           </>
         )}

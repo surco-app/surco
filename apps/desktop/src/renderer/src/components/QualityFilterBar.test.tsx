@@ -136,6 +136,36 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveAttribute('aria-selected', 'false')
   })
 
+  // "All" means "no filter at all", so a live format must visibly clear its tick — otherwise
+  // it reads as "everything AND only WAV", which is a contradiction.
+  it('shows All unchecked once a format is selected', () => {
+    renderBar({ value: 'all', formats: [{ format: 'WAV', count: 5 }], formatValue: 'WAV' })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-all')).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByTestId('quality-filter-ext:WAV')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('clears both the primary bucket and the format when All is picked', () => {
+    const { onChange, onFormatChange } = renderBar({
+      value: 'good',
+      formats: [{ format: 'WAV', count: 5 }],
+      formatValue: 'WAV',
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-all'))
+    expect(onChange).toHaveBeenCalledWith('all')
+    expect(onFormatChange).toHaveBeenCalledWith(null)
+  })
+
+  // With no primary bucket chosen the trigger surfaces the active format (the pill was
+  // dropped), so a closed menu still shows that WAV is filtering rather than a bare "All".
+  it('surfaces the active format on the trigger when no primary bucket is chosen', () => {
+    renderBar({ value: 'all', formats: [{ format: 'WAV', count: 5 }], formatValue: 'WAV' })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).toHaveTextContent('WAV')
+    expect(trigger).toHaveTextContent('5')
+  })
+
   // The buckets span several dimensions (quality, conversion, library, format); a divider
   // between each group keeps the now-long menu scannable instead of one flat run. The
   // dividers track the groups that actually show, so an extra dimension adds exactly one.
