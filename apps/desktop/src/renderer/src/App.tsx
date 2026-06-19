@@ -764,6 +764,7 @@ export default function App(): React.JSX.Element {
     buildCommands({
       tr,
       hintFor,
+      platform: window.api.platform,
       tracks,
       tracksView,
       visibleTracks,
@@ -791,6 +792,7 @@ export default function App(): React.JSX.Element {
       enqueueAutoMatch,
       addTrackToAppleMusic,
       removeTrack,
+      reveal: window.api.reveal,
       askClearAll,
       openSettings,
       openFindReplace: overlays.openFindReplace,

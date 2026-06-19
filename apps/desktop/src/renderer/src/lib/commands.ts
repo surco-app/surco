@@ -36,6 +36,9 @@ export interface CommandDeps {
   tr: (key: string) => string
   // The palette hint for a command's effective key binding (defaults + overrides).
   hintFor: (id: string) => string
+  // The host OS, supplied so the registry stays free of IPC: the Apple Music gate is
+  // macOS-only and reads it through this instead of reaching for window.api.
+  platform: string
   tracks: TrackItem[]
   // The triage view (spectrum-merged) the sweeps run over, and its filtered/sorted
   // counterpart the prev/next navigation steps through.
@@ -66,6 +69,9 @@ export interface CommandDeps {
   enqueueAutoMatch: (candidates: TrackItem[], visibleOnly: boolean) => void
   addTrackToAppleMusic: (id: string) => unknown
   removeTrack: (id: string) => void
+  // Opens the converted file in the OS file manager. Injected so the registry doesn't
+  // call window.api.reveal directly.
+  reveal: (path: string) => void
   askClearAll: () => void
   openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
   openFindReplace: () => void
@@ -79,6 +85,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
   const {
     tr,
     hintFor,
+    platform,
     tracks,
     tracksView,
     visibleTracks,
@@ -106,6 +113,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     enqueueAutoMatch,
     addTrackToAppleMusic,
     removeTrack,
+    reveal,
     askClearAll,
     openSettings,
     openFindReplace,
@@ -232,7 +240,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.reveal'),
       hint: hintFor('reveal'),
       enabled: !!selected?.outputPath,
-      run: () => selected?.outputPath && window.api.reveal(selected.outputPath),
+      run: () => selected?.outputPath && reveal(selected.outputPath),
     },
     {
       // Builds the output name from a pattern. Only one track has a File name section
@@ -249,8 +257,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.addAppleMusic'),
       hint: hintFor('add-apple-music'),
       enabled:
-        !!selected &&
-        canAddToAppleMusic(selected, window.api.platform, settings?.outputFormat ?? 'aiff'),
+        !!selected && canAddToAppleMusic(selected, platform, settings?.outputFormat ?? 'aiff'),
       run: () => selected && addTrackToAppleMusic(selected.id),
     },
     {
