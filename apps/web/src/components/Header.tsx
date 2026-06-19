@@ -32,7 +32,13 @@ export default function Header({ page }: { page?: Page }) {
       if (e.key === 'Escape') setOpen(false)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    // Lock the page behind the open menu so scrolling acts on the menu, not the
+    // content under it; the panel scrolls internally when it's taller than the viewport.
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
   }, [open])
 
   // Keep the in-page anchor when switching language: both pages share the same
@@ -135,7 +141,7 @@ export default function Header({ page }: { page?: Page }) {
       {open && (
         <nav
           id="mobile-nav"
-          className="border-t border-line/70 bg-bg/95 backdrop-blur-md lg:hidden"
+          className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-line/70 bg-bg/95 backdrop-blur-md lg:hidden"
         >
           <div className="mx-auto max-w-5xl px-6 py-2">
             {HEADER_SECTIONS.map((id) => (
