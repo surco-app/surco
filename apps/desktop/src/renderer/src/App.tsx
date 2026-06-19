@@ -288,11 +288,12 @@ export default function App(): React.JSX.Element {
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
   // Opening the palette is the one exception: it's a UI affordance, not a track
   // command, so it never lists itself.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe-once listener; getCommands has a stable identity (and is declared below, so it can't go in the deps), and is called at fire time for the current registry.
   useEffect(
     () =>
       window.api.onMenuCommand((id) => {
         if (id === 'palette') setActiveModal({ type: 'palette' })
-        else runCommand(commandsRef.current, id)
+        else runCommand(getCommands(), id)
       }),
     [],
   )
@@ -345,7 +346,8 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       // Enqueue the whole crate (not visible-only): with auto-match on, every imported
       // track gets matched, the sweep just probes the on-screen rows first.
-      if (settings && settings.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], false)
+      if (settings && settings.autoMatch && autoMatchAvailable(settings))
+        enqueueAutoMatch([t], false)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
@@ -860,47 +862,53 @@ export default function App(): React.JSX.Element {
   // O(N) per evaluation, so computed once per tracksView instead of inline in JSX.
   const allAnalyzed = useMemo(() => tracksView.every((t) => Boolean(t.spectrum)), [tracksView])
 
-  const commands: Command[] = buildCommands({
-    tr,
-    hintFor,
-    tracks,
-    tracksView,
-    visibleTracks,
-    selected,
-    selectedTracksCount: selectedTracks.length,
-    settings,
-    analysis,
-    matching,
-    autoMatchable,
-    canProcessSelected,
-    canProcessAll,
-    editorFormatRef,
-    editorNormalizeRef,
-    searchInputRef,
-    pickFiles: () => void pickFiles(),
-    selectAll,
-    askFillAll,
-    moveSelection,
-    togglePlay,
-    processOne,
-    askConvertAll,
-    cancelAnalysis,
-    analyzeAllQuality,
-    cancelAutoMatch,
-    enqueueAutoMatch,
-    addTrackToAppleMusic,
-    removeTrack,
-    askClearAll,
-    openSettings,
-    openFindReplace: () => setActiveModal({ type: 'findReplace' }),
-    openExport: () => setActiveModal({ type: 'export' }),
-    openRename: () => setActiveModal({ type: 'rename' }),
-    openHelp: () => setActiveModal({ type: 'help' }),
-    toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
-  })
+  // The command registry is data, rebuilt from the current state each time it's read.
+  // Built lazily through a stable getter (rather than every render) because its only
+  // readers are rare: a fired menu/keyboard command, and the palette while it's open.
+  // useStableCallback keeps one identity while reading the latest closure, so the 27
+  // i18n + shortcut lookups buildCommands does no longer run on every keystroke, drag
+  // and progress tick.
+  const getCommands = useStableCallback((): Command[] =>
+    buildCommands({
+      tr,
+      hintFor,
+      tracks,
+      tracksView,
+      visibleTracks,
+      selected,
+      selectedTracksCount: selectedTracks.length,
+      settings,
+      analysis,
+      matching,
+      autoMatchable,
+      canProcessSelected,
+      canProcessAll,
+      editorFormatRef,
+      editorNormalizeRef,
+      searchInputRef,
+      pickFiles: () => void pickFiles(),
+      selectAll,
+      askFillAll,
+      moveSelection,
+      togglePlay,
+      processOne,
+      askConvertAll,
+      cancelAnalysis,
+      analyzeAllQuality,
+      cancelAutoMatch,
+      enqueueAutoMatch,
+      addTrackToAppleMusic,
+      removeTrack,
+      askClearAll,
+      openSettings,
+      openFindReplace: () => setActiveModal({ type: 'findReplace' }),
+      openExport: () => setActiveModal({ type: 'export' }),
+      openRename: () => setActiveModal({ type: 'rename' }),
+      openHelp: () => setActiveModal({ type: 'help' }),
+      toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
+    }),
+  )
 
-  const commandsRef = useRef<Command[]>(commands)
-  commandsRef.current = commands
   // Closes the open overlay on Escape. Onboarding is deliberately omitted: it forces a
   // deliberate choice, not an Escape dismissal.
   function closeTopOverlay(): void {
@@ -917,7 +925,7 @@ export default function App(): React.JSX.Element {
     isMac,
     overlayOpen,
     bindings,
-    commands,
+    getCommands,
     onTogglePalette: () =>
       setActiveModal((m) => (m?.type === 'palette' ? null : { type: 'palette' })),
     onEscape: closeTopOverlay,
@@ -1238,7 +1246,7 @@ export default function App(): React.JSX.Element {
 
         {activeModal?.type === 'palette' && (
           <CommandPalette
-            commands={commands}
+            commands={getCommands()}
             // A command's run() may itself open another modal (settings, find & replace,
             // export…). Closing the palette must not clobber that: only dismiss it when the
             // palette is still the active modal, so a command that navigated elsewhere wins.

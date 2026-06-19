@@ -10,7 +10,9 @@ interface Params {
   // and don't act on the list behind the dialog.
   overlayOpen: boolean
   bindings: Map<string, Chord>
-  commands: Command[]
+  // Builds the current command registry on demand. App keeps it lazy (not rebuilt every
+  // render); the listener subscribes once and calls this at fire time for the latest state.
+  getCommands: () => Command[]
   // ⌘K / Ctrl+K — toggles the command palette.
   onTogglePalette: () => void
   // Escape — closes the topmost open overlay (the priority chain lives in App).
@@ -46,7 +48,7 @@ export function useKeyboardShortcuts(params: Params): void {
       // Every other command is swallowed while an overlay owns the screen.
       if (p.overlayOpen && id !== 'toggle-language') return
       e.preventDefault()
-      runCommand(p.commands, id)
+      runCommand(p.getCommands(), id)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

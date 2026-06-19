@@ -25,7 +25,7 @@ function setup(overlayOpen: boolean): { language: () => void; play: () => void }
       isMac: true,
       overlayOpen,
       bindings: resolveBindings(),
-      commands,
+      getCommands: () => commands,
       onTogglePalette: () => {},
       onEscape: () => {},
     }),
