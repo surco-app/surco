@@ -1,4 +1,4 @@
-import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { AudioLines, Search, X } from 'lucide-react'
 import type React from 'react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -10,7 +10,6 @@ import type {
   OutputFormat,
   SearchProviderId,
   Settings,
-  SpectrumResult,
   TrackMetadata,
 } from '../../shared/types'
 import { ConfirmDialog } from './components/ConfirmDialog'
@@ -26,7 +25,6 @@ import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
-import { useAppleMusicLibrary } from './hooks/useAppleMusicLibrary'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { editorSectionOpen } from './hooks/useEditorSections'
@@ -38,10 +36,10 @@ import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
+import { type ViewCacheEntry, useTracksView } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
-import { type AppleMusicIndex, isInLibrary } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
@@ -258,18 +256,9 @@ export default function App(): React.JSX.Element {
   const stickyIds = useRef<Set<string>>(new Set())
   // Merging a cached spectrum onto a track mints a new object; caching it by id keeps
   // the reference stable across renders so memoized rows only re-render when their own
-  // spectrum lands.
-  const viewCache = useRef(
-    new Map<
-      string,
-      {
-        track: TrackItem
-        spectrum: SpectrumResult | undefined
-        index: AppleMusicIndex | null
-        view: TrackItem
-      }
-    >(),
-  )
+  // spectrum lands. Owned here (not in useTracksView) so the track-removal callbacks
+  // below can evict an entry as its row leaves.
+  const viewCache = useRef(new Map<string, ViewCacheEntry>())
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
@@ -740,63 +729,9 @@ export default function App(): React.JSX.Element {
     [selectedTracks, settings?.requiredFields],
   )
 
-  // Each track's spectrum, read from the shared React Query cache the hover prefetch,
-  // the analyze sweep and the editor all fill. enabled:false so the list only observes —
-  // it never triggers an analysis itself. combine matters: its output is cached by the
-  // observer until an underlying result changes, so this hook keeps a stable identity
-  // across unrelated renders — without it, useQueries returns a fresh array per render,
-  // which broke the tracksView memo below and re-ran the whole triage pipeline on every
-  // keystroke and progress tick.
-  const spectra = useQueries({
-    queries: tracks.map((t) => ({
-      ...spectrogramOptions(t.inputPath),
-      enabled: false,
-    })),
-    combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
-  })
-  // The session snapshot of the Apple Music library, fetched once there are tracks to
-  // check, so each row's "already owned" verdict is a local lookup rather than an
-  // osascript per track. Null until it lands / off macOS.
-  const libraryIndex = useAppleMusicLibrary(tracks.length)
-  // Merge each cached spectrum and the Apple Music verdict onto its track for the quality
-  // triage and the list, preserving object identity (via viewCache, now keyed on the
-  // library snapshot too) so memoized rows don't all re-render. Memoized so a progress
-  // tick during an analyze/convert/match sweep doesn't rebuild the whole list (and re-run
-  // the quality/auto-match scans below) on every re-render. A row whose analysis is still
-  // in flight gets a transient `analyzing` view so the list can show a placeholder where
-  // the verdict dot will land; it is minted per recompute (not cached) because it only
-  // exists for the duration of the fetch. A track Surco itself added (musicPersistentId
-  // set) is owned by definition, so it reads in-library even before the snapshot loads.
-  const tracksView = useMemo(
-    () =>
-      tracks.map((t, i) => {
-        const { data: spectrum, fetching } = spectra[i]
-        const inAppleMusic = t.musicPersistentId
-          ? true
-          : libraryIndex
-            ? isInLibrary(libraryIndex, t.meta)
-            : undefined
-        if (!spectrum && fetching)
-          return inAppleMusic === undefined
-            ? { ...t, analyzing: true }
-            : { ...t, analyzing: true, inAppleMusic }
-        if (!spectrum && inAppleMusic === undefined) return t
-        const cached = viewCache.current.get(t.id)
-        if (
-          cached &&
-          cached.track === t &&
-          cached.spectrum === spectrum &&
-          cached.index === libraryIndex
-        )
-          return cached.view
-        const view: TrackItem = { ...t }
-        if (spectrum) view.spectrum = spectrum
-        if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
-        viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, view })
-        return view
-      }),
-    [tracks, spectra, libraryIndex],
-  )
+  // Merges each track's cached spectrum and Apple Music verdict onto it (identity-stable
+  // via viewCache), driving the quality triage, the list and the editor's library badge.
+  const { tracksView, libraryIndex } = useTracksView(tracks, viewCache)
   tracksViewRef.current = tracksView
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
