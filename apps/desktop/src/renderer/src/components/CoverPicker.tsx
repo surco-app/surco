@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { useWindowFocus } from '../hooks/useWindowFocus'
 import { coverSourceOf } from '../lib/coverSource'
-import { revokeCoverUrl } from '../lib/coverUrl'
 import { isLowResCover } from '../lib/quality'
 import { stepImageIndex } from '../lib/release'
 import type { TrackItem } from '../types'
@@ -156,10 +155,10 @@ export function CoverPicker({
   useEffect(() => setCoverDims(null), [displayCover])
 
   // Sets the artwork from a resolved (url, path) pair: stamps onto every selected
-  // track in multi-select, otherwise just the primary. Replacing a previously picked
-  // file frees its blob URL — nothing else shows it.
+  // track in multi-select, otherwise just the primary. Freeing the previous blob URL
+  // is left to App, the only place that knows whether another track still shows it (a
+  // multi-select apply makes several tracks share one blob).
   function applyCover(coverUrl: string, coverPath?: string): void {
-    revokeCoverUrl(item.coverUrl)
     if (isMulti) onApplyCoverAll?.(coverUrl, coverPath)
     else onChange({ coverUrl, coverPath, coverRemoved: false })
   }
@@ -221,7 +220,6 @@ export function CoverPicker({
   }, [])
 
   function onCoverRemove(): void {
-    revokeCoverUrl(item.coverUrl)
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 

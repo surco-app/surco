@@ -45,7 +45,7 @@ import { type AppError, type AppStore, createAppStore, useAppStore } from './lib
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
-import { revokeCoverUrl } from './lib/coverUrl'
+import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
@@ -307,7 +307,11 @@ export default function App(): React.JSX.Element {
       discogsPrefetched.current.delete(id)
       viewCache.current.delete(id)
       forgetAutoMatch(id)
-      revokeCoverUrl(tracksRef.current.find((t) => t.id === id)?.coverUrl)
+      // Free the rebuilt row's old blob only if no other track still shows it.
+      revokeCoverUrlIfUnused(
+        tracksRef.current.find((t) => t.id === id)?.coverUrl,
+        tracksRef.current.filter((t) => t.id !== id).map((t) => t.coverUrl),
+      )
     },
     // A row leaving the list also evicts its probe results from the session-long
     // query cache, where the spectrogram image would otherwise be retained until quit.
@@ -316,8 +320,12 @@ export default function App(): React.JSX.Element {
       viewCache.current.delete(track.id)
       forgetAutoMatch(track.id)
       removeAnalysisQueries(queryClient, track.inputPath)
-      // A picked cover's blob URL would otherwise pin the image file until quit.
-      revokeCoverUrl(track.coverUrl)
+      // A picked cover's blob URL would otherwise pin the image file until quit — but a
+      // cover applied across a selection is shared, so keep it while another row uses it.
+      revokeCoverUrlIfUnused(
+        track.coverUrl,
+        tracksRef.current.filter((t) => t.id !== track.id).map((t) => t.coverUrl),
+      )
     },
     onClear: (cleared) => {
       discogsPrefetched.current.clear()
@@ -805,11 +813,25 @@ export default function App(): React.JSX.Element {
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (copiedMeta) updateTracksMeta([track.id], copiedMeta)
   })
-  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) =>
-    patchTracks(selectedIds, { coverUrl, coverPath }),
-  )
+  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
+    const ids = new Set(selectedIds)
+    const displaced = tracksRef.current.filter((t) => ids.has(t.id)).map((t) => t.coverUrl)
+    patchTracks(selectedIds, { coverUrl, coverPath })
+    // The selected tracks just took the new cover; free each old blob only if no
+    // unselected track still shows it (a prior apply-to-all can share one blob).
+    const kept = tracksRef.current.filter((t) => !ids.has(t.id)).map((t) => t.coverUrl)
+    for (const old of new Set(displaced)) revokeCoverUrlIfUnused(old, kept)
+  })
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
-    if (selected) updateTrack(selected.id, patch)
+    if (!selected) return
+    // A cover change or removal may strand the selected track's old blob; free it only
+    // if no other track still references it.
+    if ('coverUrl' in patch && patch.coverUrl !== selected.coverUrl)
+      revokeCoverUrlIfUnused(
+        selected.coverUrl,
+        tracksRef.current.filter((t) => t.id !== selected.id).map((t) => t.coverUrl),
+      )
+    updateTrack(selected.id, patch)
   })
   const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
     if (!selected) return
