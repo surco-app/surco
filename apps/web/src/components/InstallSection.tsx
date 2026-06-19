@@ -30,7 +30,7 @@ export default function InstallSection() {
       <Reveal delay={120}>
         <div className="mt-10 max-w-2xl">
           <p className="font-mono text-xs tracking-wider text-faint uppercase">{t('install.or')}</p>
-          <div className="inset-shadow-edge mt-3 flex items-center justify-between gap-4 rounded-xl border border-line bg-surface2/50 px-5 py-4 transition-colors hover:border-blue/30">
+          <div className="inset-shadow-edge mt-3 flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface2/50 px-5 py-4 transition-colors hover:border-blue/30">
             <code className="overflow-x-auto font-mono text-sm whitespace-nowrap text-fg">
               <span className="select-none text-faint">$ </span>
               {COMMAND}
