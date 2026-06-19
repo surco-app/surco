@@ -108,6 +108,19 @@ button:not(:disabled) {
   transform: none;
 }
 
+/* Above-the-fold (hero) content can't fade in from opacity:0: the browser doesn't
+   count an invisible element as painted, so a JS-gated opacity reveal delays LCP and
+   leaves the hero blank until hydration. Eager reveals stay fully opaque from the
+   first paint and only slide up, so the choreography survives without costing LCP or
+   hiding text when JS is slow/absent. */
+.reveal-eager {
+  transform: translateY(16px);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-eager.reveal-in {
+  transform: none;
+}
+
 /* "Replaces five apps" list: once the list scrolls into view each program crosses
    itself off in sequence (staggered by its --i index) — the line draws across the
    name and the row fades to a "done" state, so the section narrates 5 → 1 instead of
@@ -186,6 +199,9 @@ button:not(:disabled) {
   }
   .reveal-init {
     opacity: 1 !important;
+    transform: none !important;
+  }
+  .reveal-eager {
     transform: none !important;
   }
   html {

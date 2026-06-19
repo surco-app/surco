@@ -116,7 +116,7 @@ export default function App() {
         <GrooveArcs className="top-[40%]" side="right" />
         <WaveBackdrop className="top-[66%]" flip side="left" delay="-29s" />
         <section className="pt-12 pb-24 text-center sm:pt-20">
-          <Reveal>
+          <Reveal eager>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
               <span
                 className="h-1.5 w-1.5 rounded-full bg-blue"
@@ -125,19 +125,19 @@ export default function App() {
               {t('betaPill')}
             </div>
           </Reveal>
-          <Reveal delay={80}>
+          <Reveal eager delay={80}>
             <h1 className="mx-auto mt-7 max-w-4xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
               {t('hero.h1a')}
               <br />
               <span className="text-grad">{t('hero.h1b')}</span>
             </h1>
           </Reveal>
-          <Reveal delay={160}>
+          <Reveal eager delay={160}>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">
               {t('hero.ledeShort')}
             </p>
           </Reveal>
-          <Reveal delay={240}>
+          <Reveal eager delay={240}>
             <div className="mt-6 font-mono text-sm text-muted">
               <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
               <span className="text-fg">WAV</span> <span className="text-cyan">⇄</span>{' '}
@@ -145,13 +145,13 @@ export default function App() {
               <span className="text-fg">MP3</span>
             </div>
           </Reveal>
-          <Reveal delay={320}>
+          <Reveal eager delay={320}>
             <div className="flex flex-col items-center">
               <DownloadButton />
             </div>
           </Reveal>
 
-          <Reveal delay={200}>
+          <Reveal eager delay={200}>
             <div className="relative mt-16 ml-[calc(50%-50vw)] w-screen px-6 sm:mt-20">
               <HeroTour />
             </div>
