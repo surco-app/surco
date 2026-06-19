@@ -66,6 +66,32 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(result.current.matching).toBeNull())
   })
 
+  // A plausible-but-unconfirmed match (review tier) is flagged on the row for the user to
+  // confirm in the editor — its metadata is NOT written, so the file keeps its own tags and
+  // the sweep won't re-probe it.
+  it('flags a review-tier match without applying its metadata', async () => {
+    setApi({
+      getRelease: vi.fn().mockResolvedValue({
+        id: 1,
+        title: 'Album',
+        artists: [{ name: 'Artist' }],
+        // A title-only hit with no duration to corroborate it scores 'review', not 'high'.
+        tracklist: [{ position: '1', title: 'My Song (Club Mix)' }],
+      }),
+    })
+    const tracks = [track('a')]
+    const { result, updateTrack } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks, false))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalled())
+    expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ matchReview: true }))
+    const patch = updateTrack.mock.calls[0][1]
+    expect(patch.meta).toBeUndefined()
+    expect(patch.matched).toBeUndefined()
+    expect(patch.matchConfidence).toBeGreaterThan(0)
+  })
+
   // The import path: a dropped crate must not fire one Discogs search per file at the
   // rate limit — each row waits until the user actually scrolls it into view.
   it('holds an import-enqueued track until its row reports visible', async () => {

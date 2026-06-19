@@ -126,6 +126,7 @@
   "trackList": {
     "noArtist": "Sin artista",
     "autoMatched": "Auto-emparejada desde Discogs",
+    "matchReview": "Revisa esta coincidencia",
     "remove": "Quitar",
     "status": {
       "idle": "Sin convertir",

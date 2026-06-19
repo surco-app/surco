@@ -120,6 +120,21 @@ describe('TrackList', () => {
     expect(screen.getByText('Artist A')).toBeInTheDocument()
   })
 
+  // A high-confidence auto-match shows the applied sparkle; a review-tier one shows a
+  // distinct flag so the user knows to confirm it in the editor before trusting the tags.
+  it('flags a review-tier auto-match for the user to confirm', () => {
+    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
+    expect(screen.getByTestId('track-match-review')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-automatched')).not.toBeInTheDocument()
+  })
+
+  // Once the user (or a later high match) actually tags the track, the pending-review flag
+  // is moot — the row must not keep nagging to confirm an already-applied match.
+  it('hides the review flag once the track has been matched', () => {
+    renderList([track({ id: 'a', matchReview: true, matched: true })])
+    expect(screen.queryByTestId('track-match-review')).not.toBeInTheDocument()
+  })
+
   it('shows the stable list label, not in-progress metadata edits', () => {
     // The label freezes what the row was when imported (or last applied a match), so typing
     // a new title into the editor on the right never renames the pill on the left mid-edit.

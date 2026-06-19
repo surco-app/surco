@@ -126,6 +126,7 @@
   "trackList": {
     "noArtist": "No artist",
     "autoMatched": "Auto-matched from Discogs",
+    "matchReview": "Review this match",
     "remove": "Remove",
     "status": {
       "idle": "Not converted",

@@ -351,6 +351,8 @@ describe('Editor clear metadata', () => {
         compilation: '',
       },
       matched: false,
+      // Clearing the tags also drops any pending review flag, so a retag is probed afresh.
+      matchReview: false,
     })
   })
 })

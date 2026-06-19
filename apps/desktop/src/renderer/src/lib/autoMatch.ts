@@ -12,6 +12,10 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
     (t) =>
       !t.autoMatched &&
       !t.matched &&
+      // A review-flagged track already has a pending suggestion waiting for the user's
+      // glance; re-probing it on every sweep would churn the same call and overwrite that
+      // pending state, so leave it until the user confirms or clears it.
+      !t.matchReview &&
       !t.meta.discogsReleaseId &&
       t.query.trim() !== '' &&
       t.meta.title.trim() !== '',
@@ -60,10 +64,15 @@ export async function probeReleases(
     // A floor on the raw confidence, on top of the tier check. Used to hold an uncurated
     // source (Bandcamp) to a stricter bar than the curated one before applying unattended.
     minConfidence?: number
+    // When set, the best 'review'-tier match seen while hunting for an accepted one is
+    // returned as a fallback if nothing clears `accepts` — so the sweep can flag a
+    // plausible-but-uncertain suggestion for the user without a second pass of release loads.
+    collectReview?: boolean
     maxProbe?: number
     cancelled?: () => boolean
   },
 ): Promise<ProbeMatch | undefined> {
+  let review: ProbeMatch | undefined
   for (const result of preRankResults(results, target).slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
     if (opts.cancelled?.()) return undefined
     let rel: Release
@@ -82,8 +91,19 @@ export async function probeReleases(
     ) {
       return { release: rel, track: m.track, confidence: m.confidence, result }
     }
+    // Keep walking for an accepted match, but remember the strongest review-tier hit in case
+    // none turns up — the probe order isn't confidence order, so the best review can sit
+    // behind a weaker one.
+    if (
+      opts.collectReview &&
+      m &&
+      confidenceTier(m.confidence) === 'review' &&
+      (!review || m.confidence > review.confidence)
+    ) {
+      review = { release: rel, track: m.track, confidence: m.confidence, result }
+    }
   }
-  return undefined
+  return opts.collectReview ? review : undefined
 }
 
 // The slice of the IPC surface auto-matching needs, narrowed so the sweep is
@@ -125,6 +145,9 @@ export async function autoMatchRelease(
   maxProbe = MAX_AUTO_PROBE,
 ): Promise<AutoMatch | undefined> {
   if (!query.trim() || !target.title.trim()) return undefined
+  // A review-tier suggestion from the curated source, held while the other sources are still
+  // tried: a high match anywhere outranks it, so it's only returned once nothing scores high.
+  let review: AutoMatch | undefined
   for (const provider of discogsFirst(api.providers ?? ['discogs'])) {
     // No duration to cross-check against → don't trust an uncurated catalog unattended.
     if (provider !== 'discogs' && target.durationSec === undefined) continue
@@ -138,9 +161,17 @@ export async function autoMatchRelease(
       loadRelease: api.getRelease,
       accepts: (tier) => tier === 'high',
       minConfidence: provider === 'discogs' ? undefined : FALLBACK_MIN_CONFIDENCE,
+      // Only the curated source may suggest a review-tier match: an uncurated catalog's
+      // borderline title hit is noise, never worth flagging for a human glance.
+      collectReview: provider === 'discogs',
       maxProbe,
     })
-    if (match) return match
+    if (match) {
+      if (confidenceTier(match.confidence) === 'high') return match
+      // A Discogs review suggestion: hold it, but keep trying the other sources for a high
+      // match that would win outright.
+      review ??= match
+    }
   }
-  return undefined
+  return review
 }

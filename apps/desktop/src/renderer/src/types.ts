@@ -50,6 +50,13 @@ export interface TrackItem {
   // also guarded by meta.discogsReleaseId; this covers providers that write no such id
   // (Bandcamp). Cleared when the track's metadata is cleared.
   matched?: boolean
+  // A plausible but unconfirmed auto-match the sweep found ('review' tier): its metadata is
+  // NOT applied — the row is flagged so the user can confirm it in the editor — and the sweep
+  // won't re-probe it. Cleared when the track's metadata is cleared so a retag re-probes.
+  matchReview?: boolean
+  // The confidence (0–1) of the auto-match applied (autoMatched) or suggested (matchReview),
+  // so the row can surface how strong the match was. Undefined for hand-picked matches.
+  matchConfidence?: number
   // Whether this track's tags were found in the user's Apple Music library, merged in
   // at the App boundary from the session library snapshot (like spectrum) so the list
   // can filter "already owned" vs "missing". Undefined until the snapshot loads, off

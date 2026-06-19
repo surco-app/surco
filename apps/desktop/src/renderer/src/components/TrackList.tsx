@@ -61,6 +61,12 @@ const qualityLabel: Record<Verdict, string> = {
   processed: 'editor.qualityProcessed',
 }
 
+// Appends the match's confidence ("· 96%") to the tooltip so hovering the row surfaces how
+// strong the auto-match was. Hand-picked matches carry no confidence, so the label stands alone.
+function matchTooltip(label: string, confidence: number | undefined): string {
+  return confidence === undefined ? label : `${label} · ${Math.round(confidence * 100)}%`
+}
+
 interface RowProps {
   track: TrackItem
   selected: boolean
@@ -236,14 +242,37 @@ const TrackRow = memo(function TrackRow({
                   badge and duration line up in the same column down every row instead of
                   shifting whenever a track lacks a sparkle or a quality verdict. */}
               <span className="flex w-3 shrink-0 justify-center">
-                {t.autoMatched && (
+                {t.autoMatched ? (
                   <span
                     data-testid="track-automatched"
+                    data-confidence="high"
                     className="group/dot relative flex items-center text-[var(--color-accent)]"
                   >
                     <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={tr('trackList.autoMatched')} align="end" scope="dot" />
+                    <Tooltip
+                      label={matchTooltip(tr('trackList.autoMatched'), t.matchConfidence)}
+                      align="end"
+                      scope="dot"
+                    />
                   </span>
+                ) : (
+                  // A review-tier suggestion the user hasn't acted on yet: amber, distinct from
+                  // the applied accent sparkle, and gone the moment the track is actually matched.
+                  t.matchReview &&
+                  !t.matched && (
+                    <span
+                      data-testid="track-match-review"
+                      data-confidence="review"
+                      className="group/dot relative flex items-center text-warn"
+                    >
+                      <Sparkles className="h-3 w-3" aria-hidden="true" />
+                      <Tooltip
+                        label={matchTooltip(tr('trackList.matchReview'), t.matchConfidence)}
+                        align="end"
+                        scope="dot"
+                      />
+                    </span>
+                  )
                 )}
               </span>
               <span className="flex w-3 shrink-0 justify-center">

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
+import { confidenceTier } from './release'
 
 function release(id: number, over: Partial<Release> = {}): Release {
   return { provider: 'discogs', id, title: 'Album', artists: [], tracklist: [], ...over }
@@ -15,6 +16,8 @@ function searchResult(id: number): SearchResult {
 const HIGH = { position: '1', title: 'My Song', duration: '3:20' }
 // Title alone, a substring hit (0.7) with no duration → 'review', not auto-applied.
 const REVIEW = { title: 'My Song (Club Mix)', position: '1' }
+// One shared word (0.3) and no duration → 'low', too weak even to flag for review.
+const LOW = { title: 'My Different Tune', position: '1' }
 
 const target = { title: 'My Song', durationSec: 200 }
 
@@ -42,10 +45,55 @@ describe('autoMatchRelease', () => {
     expect(api.getRelease).toHaveBeenCalledTimes(1)
   })
 
-  it('returns undefined when nothing reaches high confidence', async () => {
+  // No release clears the 'high' bar, but a plausible Discogs title hit ('review' tier) is
+  // surfaced as a suggestion for the user to confirm, not dropped: the sweep flags it
+  // instead of applying it unattended.
+  it('returns a Discogs review-tier match when no high is found', async () => {
     const api = {
       search: vi.fn().mockResolvedValue([searchResult(1)]),
       getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [REVIEW] })),
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.release.id).toBe(1)
+    expect(confidenceTier(m?.confidence ?? 0)).toBe('review')
+  })
+
+  // Below the review bar there's nothing worth a human glance, so the sweep stays silent
+  // and leaves the row open for a later re-probe.
+  it('returns undefined when nothing even reaches the review bar', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [LOW] })),
+    }
+    expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
+  })
+
+  // A high match anywhere outranks a Discogs review suggestion: when Discogs only musters
+  // a review-tier hit, a confident Bandcamp match still wins and is applied outright.
+  it('prefers a high match from any source over a Discogs review suggestion', async () => {
+    const api = {
+      search: vi.fn(async (_q: string, provider: SearchProviderId) => [
+        searchResult(provider === 'discogs' ? 1 : 2),
+      ]),
+      getRelease: vi.fn(async (r: { id: number }) =>
+        r.id === 1 ? release(1, { tracklist: [REVIEW] }) : release(2, { tracklist: [HIGH] }),
+      ),
+      providers: ['discogs', 'bandcamp'] as SearchProviderId[],
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.release.id).toBe(2)
+    expect(confidenceTier(m?.confidence ?? 0)).toBe('high')
+  })
+
+  // The review suggestion is curated-source only: Bandcamp's uncurated catalog never
+  // surfaces a borderline hit for review — only its high-confidence matches are applied.
+  it('never surfaces a review-tier suggestion from Bandcamp', async () => {
+    const api = {
+      search: vi.fn(async (_q: string, provider: SearchProviderId) =>
+        provider === 'bandcamp' ? [searchResult(2)] : [],
+      ),
+      getRelease: vi.fn().mockResolvedValue(release(2, { tracklist: [REVIEW] })),
+      providers: ['discogs', 'bandcamp'] as SearchProviderId[],
     }
     expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
   })
@@ -213,6 +261,12 @@ describe('tracksToAutoMatch', () => {
   // deliberate match: the neutral `matched` flag keeps the sweep from overwriting it.
   it('skips a track already matched even when it carries no Discogs id', () => {
     expect(tracksToAutoMatch([track({ matched: true })])).toHaveLength(0)
+  })
+
+  // A track the sweep flagged for review (a plausible but unconfirmed suggestion) waits for
+  // the user to confirm it in the editor; re-running the sweep must not re-probe it.
+  it('skips a track flagged for review so a re-run never re-probes it', () => {
+    expect(tracksToAutoMatch([track({ matchReview: true })])).toHaveLength(0)
   })
 
   it('skips tracks with nothing to search or score on', () => {

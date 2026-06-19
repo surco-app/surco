@@ -325,8 +325,9 @@ export const Editor = memo(function Editor({
   function clearAllMeta(): void {
     const blank = emptyMetadata()
     if (isMulti) onChangeAllMeta?.(blank)
-    // Clearing the tags un-matches the track, so the sweep may fill it again.
-    else onChange({ meta: blank, matched: false })
+    // Clearing the tags un-matches the track, so the sweep may fill it again — including
+    // dropping any pending review flag so a retag is probed afresh.
+    else onChange({ meta: blank, matched: false, matchReview: false })
   }
 
   const stale = isStale(item)

@@ -10,7 +10,7 @@ import {
 import { mapWithConcurrency } from '../lib/concurrency'
 import { keepCoverArg } from '../lib/coverSource'
 import { fetchRelease } from '../lib/fetchRelease'
-import { buildReleaseMeta } from '../lib/release'
+import { buildReleaseMeta, confidenceTier } from '../lib/release'
 import type { TrackItem } from '../types'
 
 // Auto-match fires a Discogs search plus release loads per track, so the sweep stays
@@ -103,6 +103,13 @@ export function useAutoMatch({
       // mints a new meta object, so an identity check covers all fields at once.
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta) return
+      // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
+      // for the user to confirm in the editor, but don't write the metadata — the file keeps
+      // its own tags until the user accepts the suggestion.
+      if (confidenceTier(m.confidence) !== 'high') {
+        updateTrack(t.id, { matchReview: true, matchConfidence: m.confidence })
+        return
+      }
       const patch = buildReleaseMeta(live.meta, m.release, m.track, keepCoverArg(live))
       updateTrack(t.id, {
         meta: patch.meta,
@@ -110,6 +117,7 @@ export function useAutoMatch({
         coverPath: patch.coverPath,
         autoMatched: true,
         matched: true,
+        matchConfidence: m.confidence,
       })
     },
     [searchApiAt, updateTrack, tracksRef],
