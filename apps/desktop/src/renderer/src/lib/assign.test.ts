@@ -79,6 +79,40 @@ describe('assignTracks', () => {
   })
 })
 
+describe('assignTracks with a known album title', () => {
+  it('leaves a file unassigned when its title belongs to neither the album nor the near-length cut', () => {
+    // The real bug: three rips of similar length were matched to a single "Rocket Man"
+    // release, so a different song ("Searching For The Golden Eye") of the same duration
+    // got stamped with "Rocket Man". A specific title that matches neither the album nor
+    // the candidate cut isn't this cut, however close the length — leave it unassigned.
+    const tracklist = [t('A', 'Rocket Man', '6:13')]
+    const files: AssignInput[] = [
+      { id: 'wrong', target: { title: 'Searching For The Golden Eye', durationSec: 370 } },
+    ]
+    expect(assignTracks(files, tracklist, 'Rocket Man')[0].track).toBeUndefined()
+  })
+
+  it('still places a file tagged with the album name by duration (the album-rip case)', () => {
+    // Album rips often carry the release name as every file's title; that generic title
+    // carries no per-cut signal, so it's exempt from the guard and duration still decides.
+    const tracklist = [t('A', 'Some Song', '4:00'), t('B', 'Other', '6:00')]
+    const files: AssignInput[] = [
+      { id: 'rip', target: { title: 'Greatest Hits', durationSec: 360 } },
+    ]
+    expect(assignTracks(files, tracklist, 'Greatest Hits')[0].track?.position).toBe('B')
+  })
+
+  it('keeps a cut whose title matches its track even when it differs from the album name', () => {
+    // A normal album: the file's title matches its own track but not the album name, and
+    // must still be assigned — the guard only fires on titles unrelated to BOTH.
+    const tracklist = [t('A', 'One More Time', '5:20')]
+    const files: AssignInput[] = [
+      { id: 'omt', target: { title: 'One More Time', durationSec: 318 } },
+    ]
+    expect(assignTracks(files, tracklist, 'Discovery')[0].track?.position).toBe('A')
+  })
+})
+
 describe('reassign', () => {
   const tracklist = [t('A', 'Radio', '3:00'), t('B', 'Extended', '6:00')]
   const initial = assignTracks(

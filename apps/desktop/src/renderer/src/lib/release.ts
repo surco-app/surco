@@ -1,4 +1,4 @@
-import type { Release, SearchResult, ReleaseTrack, TrackMetadata } from '../../../shared/types'
+import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import { parseDuration } from './duration'
 import { foldText } from './normalizeText'
 import { splitPosition } from './position'
@@ -55,7 +55,7 @@ export function releaseKey(result: Pick<SearchResult, 'provider' | 'id'> | null)
   return ['release', result?.provider, result?.id] as const
 }
 
-function normalize(s: string): string {
+export function normalize(s: string): string {
   return foldText(s)
 }
 
@@ -97,7 +97,7 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 const DURATION_EXACT_SEC = 2
 const DURATION_MISS_SEC = 8
 
-function titleSimilarity(target: string, candidate: string): number {
+export function titleSimilarity(target: string, candidate: string): number {
   const a = normalize(target)
   const b = normalize(candidate)
   if (!a || !b) return 0

@@ -50,6 +50,9 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
           target: matchTargetOf(f),
         })),
         release.tracklist,
+        // Pass the album name so a file whose title belongs to neither it nor the
+        // near-length cut is left unassigned instead of force-matched by duration alone.
+        release.title,
       ),
     )
   }, [release, fileIds])
