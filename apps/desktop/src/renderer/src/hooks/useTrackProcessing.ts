@@ -14,6 +14,7 @@ import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
 import type { TrackItem } from '../types'
+import { useStableCallback } from './useStableCallback'
 
 interface Params {
   tracks: TrackItem[]
@@ -79,89 +80,94 @@ export function useTrackProcessing({
     return () => clearTimeout(id)
   }, [batchSummary])
 
-  async function processOne(
-    id: string,
-    formatOverride?: OutputFormat,
-    normalizeOverride?: NormalizeConfig,
-  ): Promise<BatchOutcome> {
-    const track = tracksRef.current.find((t) => t.id === id)
-    // A track removed after being queued was a user decision, not a failure — count
-    // it as skipped so the summary never reports an error with no visible row.
-    if (!track) return 'skipped'
-    const missing = missingRequired(track.meta, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-    if (missing.length) {
-      const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
-      updateTrack(id, {
-        status: 'error',
-        error: tr('editor.missingRequired', { fields: names }),
-        stage: undefined,
-      })
-      return 'failed'
-    }
-    // Re-processing an edited (stale) track resets the Apple Music state too, since
-    // the file it referred to is being rewritten — the user may want to add it again.
-    // musicPersistentId deliberately survives the reset: it is what turns that next
-    // add (manual or automatic) into a sync of the existing library copy.
-    updateTrack(id, {
-      status: 'processing',
-      error: undefined,
-      stage: undefined,
-      format: formatOverride ?? settings?.outputFormat ?? 'aiff',
-      musicStatus: undefined,
-      musicError: undefined,
-    })
-    const meta = sanitizeMeta(track.meta, {
-      trim: settings?.trimWhitespace ?? true,
-      zeroPad: settings?.zeroPadTrack ?? true,
-    })
-    // Default to the source file's own name: users expect "load and convert" to keep
-    // their filename. A metadata-derived name is only used when the editor's
-    // "Regenerate from metadata" button (or a manual edit) set track.outputName.
-    // Overwrite mode pins the name to the original regardless of any stale outputName,
-    // so the rewrite lands back on the source file the user means to replace.
-    const outputName = settings?.overwriteOriginal
-      ? track.fileName
-      : track.outputName?.trim() || track.fileName
-    try {
-      const result = await window.api.processTrack({
-        id: track.id,
-        inputPath: track.inputPath,
-        outputName,
-        meta,
-        ...coverSourceOf(track),
-        removeCover: track.coverRemoved,
-        format: formatOverride,
-        normalize: normalizeOverride,
-        previousOutputPath: track.outputPath,
-        musicPersistentId: track.musicPersistentId,
-      })
-      // The user declined to overwrite a conflicting file: nothing was written, so
-      // leave the track convertible (idle) rather than marking it done or failed.
-      if (result.skipped) {
-        updateTrack(id, { status: 'idle', stage: undefined })
-        return 'skipped'
+  const processOne = useStableCallback(
+    async (
+      id: string,
+      formatOverride?: OutputFormat,
+      normalizeOverride?: NormalizeConfig,
+    ): Promise<BatchOutcome> => {
+      const track = tracksRef.current.find((t) => t.id === id)
+      // A track removed after being queued was a user decision, not a failure — count
+      // it as skipped so the summary never reports an error with no visible row.
+      if (!track) return 'skipped'
+      const missing = missingRequired(
+        track.meta,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      )
+      if (missing.length) {
+        const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
+        updateTrack(id, {
+          status: 'error',
+          error: tr('editor.missingRequired', { fields: names }),
+          stage: undefined,
+        })
+        return 'failed'
       }
-      // Converted, but the requested loudness normalization couldn't be measured, so the
-      // file went out at its original level — tell the user rather than letting it pass.
-      if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
-      updateTrack(id, exportedPatch(track, result))
-      // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
-      // so any cached probe of it now describes the old bytes. Evict both paths (they
-      // differ when the rewrite also renamed) so the readouts measure the new file.
-      if (result.inPlace) {
-        removeAnalysisQueries(queryClient, track.inputPath)
-        removeAnalysisQueries(queryClient, result.outputPath)
-      }
-      return 'converted'
-    } catch (e) {
+      // Re-processing an edited (stale) track resets the Apple Music state too, since
+      // the file it referred to is being rewritten — the user may want to add it again.
+      // musicPersistentId deliberately survives the reset: it is what turns that next
+      // add (manual or automatic) into a sync of the existing library copy.
       updateTrack(id, {
-        status: 'error',
-        error: e instanceof Error ? e.message : tr('editor.processError'),
+        status: 'processing',
+        error: undefined,
         stage: undefined,
+        format: formatOverride ?? settings?.outputFormat ?? 'aiff',
+        musicStatus: undefined,
+        musicError: undefined,
       })
-      return 'failed'
-    }
-  }
+      const meta = sanitizeMeta(track.meta, {
+        trim: settings?.trimWhitespace ?? true,
+        zeroPad: settings?.zeroPadTrack ?? true,
+      })
+      // Default to the source file's own name: users expect "load and convert" to keep
+      // their filename. A metadata-derived name is only used when the editor's
+      // "Regenerate from metadata" button (or a manual edit) set track.outputName.
+      // Overwrite mode pins the name to the original regardless of any stale outputName,
+      // so the rewrite lands back on the source file the user means to replace.
+      const outputName = settings?.overwriteOriginal
+        ? track.fileName
+        : track.outputName?.trim() || track.fileName
+      try {
+        const result = await window.api.processTrack({
+          id: track.id,
+          inputPath: track.inputPath,
+          outputName,
+          meta,
+          ...coverSourceOf(track),
+          removeCover: track.coverRemoved,
+          format: formatOverride,
+          normalize: normalizeOverride,
+          previousOutputPath: track.outputPath,
+          musicPersistentId: track.musicPersistentId,
+        })
+        // The user declined to overwrite a conflicting file: nothing was written, so
+        // leave the track convertible (idle) rather than marking it done or failed.
+        if (result.skipped) {
+          updateTrack(id, { status: 'idle', stage: undefined })
+          return 'skipped'
+        }
+        // Converted, but the requested loudness normalization couldn't be measured, so the
+        // file went out at its original level — tell the user rather than letting it pass.
+        if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
+        updateTrack(id, exportedPatch(track, result))
+        // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
+        // so any cached probe of it now describes the old bytes. Evict both paths (they
+        // differ when the rewrite also renamed) so the readouts measure the new file.
+        if (result.inPlace) {
+          removeAnalysisQueries(queryClient, track.inputPath)
+          removeAnalysisQueries(queryClient, result.outputPath)
+        }
+        return 'converted'
+      } catch (e) {
+        updateTrack(id, {
+          status: 'error',
+          error: e instanceof Error ? e.message : tr('editor.processError'),
+          stage: undefined,
+        })
+        return 'failed'
+      }
+    },
+  )
 
   // Pushes an already-converted track into Apple Music by hand, the escape hatch
   // for when the automatic add is off. A track whose previous add stored a
@@ -171,7 +177,7 @@ export function useTrackProcessing({
   // the conversion does so the library entry matches the file; musicStatus drives
   // the button's adding/added/error states without disturbing the track's own
   // status.
-  async function addTrackToAppleMusic(id: string): Promise<void> {
+  const addTrackToAppleMusic = useStableCallback(async (id: string): Promise<void> => {
     const track = tracksRef.current.find((t) => t.id === id)
     if (!track || track.musicStatus === 'adding') return
     const { musicPersistentId, outputPath } = track
@@ -217,14 +223,14 @@ export function useTrackProcessing({
         musicError: e instanceof Error ? e.message : tr('editor.appleMusicError'),
       })
     }
-  }
+  })
 
   // Adds every selected track to Apple Music in turn — the multi-select counterpart of
   // the per-track button, reusing the same single-track add (which skips ones not yet
   // converted) so the two paths can never drift. Runs through the shared batch state:
   // the top bar shows its progress and the same cancel that stops a convert-all stops
   // it between adds (an in-flight AppleScript add still finishes, like a conversion).
-  async function addAllToAppleMusic(ids: string[]): Promise<void> {
+  const addAllToAppleMusic = useStableCallback(async (ids: string[]): Promise<void> => {
     if (batching) return
     cancelBatchRef.current = false
     setBatching(true)
@@ -242,42 +248,44 @@ export function useTrackProcessing({
     } finally {
       setBatching(false)
     }
-  }
+  })
 
-  async function processAll(
-    targets: TrackItem[],
-    formatOverride?: OutputFormat,
-    normalizeOverride?: NormalizeConfig,
-  ): Promise<void> {
-    if (batching) return
-    // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
-    // so aren't marked failed) — they stay flagged in the list for the user to finish.
-    const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-    cancelBatchRef.current = false
-    setBatching(true)
-    setBatchSummary(null)
-    setBatchProgress({ done: 0, total: ids.length })
-    const results: BatchOutcome[] = []
-    try {
-      for (const id of ids) {
-        // Cancel stops the loop before the next track; the one already converting
-        // in the main process can't be aborted, so it finishes and is counted.
-        if (cancelBatchRef.current) break
-        results.push(await processOne(id, formatOverride, normalizeOverride))
-        setBatchProgress({ done: results.length, total: ids.length })
+  const processAll = useStableCallback(
+    async (
+      targets: TrackItem[],
+      formatOverride?: OutputFormat,
+      normalizeOverride?: NormalizeConfig,
+    ): Promise<void> => {
+      if (batching) return
+      // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
+      // so aren't marked failed) — they stay flagged in the list for the user to finish.
+      const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+      cancelBatchRef.current = false
+      setBatching(true)
+      setBatchSummary(null)
+      setBatchProgress({ done: 0, total: ids.length })
+      const results: BatchOutcome[] = []
+      try {
+        for (const id of ids) {
+          // Cancel stops the loop before the next track; the one already converting
+          // in the main process can't be aborted, so it finishes and is counted.
+          if (cancelBatchRef.current) break
+          results.push(await processOne(id, formatOverride, normalizeOverride))
+          setBatchProgress({ done: results.length, total: ids.length })
+        }
+      } finally {
+        setBatching(false)
+        setBatchSummary(summarizeBatch(results))
       }
-    } finally {
-      setBatching(false)
-      setBatchSummary(summarizeBatch(results))
-    }
-    // After the summary, never mid-run: a run that converted nothing (all skipped or
-    // failed) is no moment of value, so asking for support then would read as nagware.
-    if (results.includes('converted')) onConversion?.()
-  }
+      // After the summary, never mid-run: a run that converted nothing (all skipped or
+      // failed) is no moment of value, so asking for support then would read as nagware.
+      if (results.includes('converted')) onConversion?.()
+    },
+  )
 
-  function cancelBatch(): void {
+  const cancelBatch = useStableCallback((): void => {
     cancelBatchRef.current = true
-  }
+  })
 
   return {
     processOne,
