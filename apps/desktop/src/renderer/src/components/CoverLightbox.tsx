@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useCoverFull } from '../hooks/useCoverFull'
 import { ModalShell } from './ModalShell'
 
 interface Props {
@@ -27,13 +27,7 @@ interface Props {
 export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
-  // Keyed by path like every analysis query, so reopening the lightbox (or another
-  // editor visit to the same file) never re-extracts the artwork.
-  const { data: fullSrc } = useQuery({
-    queryKey: ['coverFull', fullResFrom],
-    queryFn: () => (fullResFrom ? window.api.readCoverFull(fullResFrom) : null),
-    enabled: !!fullResFrom,
-  })
+  const { data: fullSrc } = useCoverFull(fullResFrom)
 
   // App's global Escape only closes App-owned modals; the lightbox is editor-local,
   // so it dismisses itself (a no-op overlap: with no app modal open, App's handler
