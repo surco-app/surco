@@ -35,12 +35,20 @@ jobs:
           done
           exit 1
 
-      - name: Lint
+      - name: Lint desktop
         run: npm run lint -w apps/desktop
 
-      - name: Type-check
+      - name: Lint web
+        run: npm run lint -w apps/web
+
+      - name: Type-check desktop
         run: npx tsc --build
         working-directory: apps/desktop
+
+      # The web build runs `tsc --noEmit` and then the SSG render, so it gates both
+      # type errors and pages that throw at prerender time.
+      - name: Build web
+        run: npm run build -w apps/web
 
       - name: Test
         run: npm test
