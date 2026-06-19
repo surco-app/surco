@@ -26,10 +26,11 @@ import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
 import { useAutoMatch } from './hooks/useAutoMatch'
-import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
+import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { editorSectionOpen } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useListNavigation } from './hooks/useListNavigation'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -38,7 +39,7 @@ import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
-import { type ViewCacheEntry, useTracksView } from './hooks/useTracksView'
+import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
@@ -49,14 +50,12 @@ import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
-import { moveIndex } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
-import { pageScrollTop } from './lib/scroll'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import {
@@ -519,56 +518,6 @@ export default function App(): React.JSX.Element {
     overlays.close()
   }
 
-  function moveSelection(delta: number): void {
-    // Step through the rows the user can actually see (after the quality filter and the
-    // search), so arrow/j-k navigation never lands on a track hidden by the current view —
-    // and so the index lines up with the rendered rows queried below.
-    const next = moveIndex(
-      visibleTracks.length,
-      visibleTracks.findIndex((t) => t.id === selectedId),
-      delta,
-    )
-    if (next === -1) return
-    setSelection({ ids: [visibleTracks[next].id], anchor: visibleTracks[next].id })
-    // Move DOM focus with the selection so the native focus ring follows the
-    // keyboard instead of staying on the last clicked row, which left two rows
-    // looking highlighted at once. preventScroll: we page the list ourselves below
-    // rather than let the browser nudge the row flush to the margin.
-    const row = rowEls.current.get(visibleTracks[next].id)
-    if (!row) return
-    row.focus({ preventScroll: true })
-    const container = listScrollRef.current
-    if (!container) return
-    const cRect = container.getBoundingClientRect()
-    const rRect = row.getBoundingClientRect()
-    const header = qualityFilterRef.current
-    const top = pageScrollTop({
-      delta,
-      rowTop: rRect.top - cRect.top,
-      rowBottom: rRect.bottom - cRect.top,
-      viewport: container.clientHeight,
-      headerH: header?.offsetHeight ?? 0,
-      // The floating player reserves the list's bottom 128px (pb-32 above).
-      footerH: playerVisible && playerTrack ? 128 : 0,
-      rowStep: rRect.height + 4, // row height + the gap-1 between rows
-      scrollTop: container.scrollTop,
-    })
-    // Ease into the new page rather than snapping, so the eye can follow the jump.
-    if (top !== null) container.scrollTo({ top, behavior: 'smooth' })
-  }
-
-  // When a track finishes: in continuous mode advance to the next visible track —
-  // the selection-follows-playback effect plays it and moveSelection scrolls it
-  // into view. Otherwise, or once the list runs out, close the player.
-  function onTrackEnded(): void {
-    const idx = visibleTracks.findIndex((t) => t.id === selectedId)
-    if (settings?.continuousPlayback && idx >= 0 && idx + 1 < visibleTracks.length) {
-      moveSelection(1)
-    } else {
-      closePlayer()
-    }
-  }
-
   const sidebar = useResizableWidth(300, 300, 600)
 
   // Double-clicking the divider fits the list to its tracks: measure how far each title and
@@ -648,6 +597,19 @@ export default function App(): React.JSX.Element {
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
+  // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
+  const { moveSelection, onTrackEnded } = useListNavigation({
+    visibleTracks,
+    selectedId,
+    setSelection,
+    continuousPlayback: settings?.continuousPlayback ?? false,
+    playerVisible,
+    playerTrack,
+    closePlayer,
+    rowEls,
+    listScrollRef,
+    qualityFilterRef,
+  })
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
   // is selected (or the selection was filtered out of view).
@@ -1130,9 +1092,7 @@ export default function App(): React.JSX.Element {
             onClose={overlays.close}
           />
         )}
-        {activeModal?.type === 'export' && (
-          <ExportModal tracks={tracks} onClose={overlays.close} />
-        )}
+        {activeModal?.type === 'export' && <ExportModal tracks={tracks} onClose={overlays.close} />}
         {activeModal?.type === 'confirm' && (
           <ConfirmDialog
             title={activeModal.confirm.title}
