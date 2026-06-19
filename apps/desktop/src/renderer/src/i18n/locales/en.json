@@ -15,6 +15,7 @@
     "subtitle": "Surco saves a collection file. Your DJ software reads it as an import source — nothing is added to its library automatically; you import the tracks from there.",
     "rekordboxHint": "In rekordbox: Preferences → Advanced → rekordbox xml → pick this file, then import from the “rekordbox xml” node.",
     "traktorHint": "In Traktor: File → Import Collection → pick this file.",
+    "seratoHint": "In Serato: drop the saved file into your _Serato_/Subcrates folder, then restart Serato — your tracks show up in the sidebar.",
     "failed": "Export failed: {{error}}"
   },
   "header": {

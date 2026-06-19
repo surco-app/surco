@@ -2,6 +2,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildRekordboxXml } from '../lib/rekordbox'
+import { buildSeratoCrate } from '../lib/serato'
 import { buildTraktorNml } from '../lib/traktor'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
@@ -33,6 +34,13 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
       ext: '.nml',
       hint: tr('export.traktorHint'),
       run: () => window.api.exportTraktor(buildTraktorNml(tracks)),
+    },
+    {
+      id: 'serato',
+      label: 'Serato DJ',
+      ext: '.crate',
+      hint: tr('export.seratoHint'),
+      run: () => window.api.exportSerato(buildSeratoCrate(tracks)),
     },
   ]
 

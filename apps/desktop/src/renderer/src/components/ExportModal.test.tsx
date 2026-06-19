@@ -9,6 +9,7 @@ import { ExportModal } from './ExportModal'
 const api = {
   exportRekordbox: vi.fn().mockResolvedValue('/out/rekordbox.xml'),
   exportTraktor: vi.fn().mockResolvedValue('/out/collection.nml'),
+  exportSerato: vi.fn().mockResolvedValue('/out/Surco.crate'),
 }
 
 beforeEach(() => {
@@ -76,6 +77,16 @@ describe('ExportModal', () => {
     fireEvent.click(screen.getByTestId('export-rekordbox'))
     expect(api.exportRekordbox).toHaveBeenCalledTimes(1)
     expect(api.exportRekordbox.mock.calls[0][0]).toContain('<DJ_PLAYLISTS')
+  })
+
+  // Serato's crate is binary, not text: the modal hands the IPC the raw bytes, which must
+  // begin with the crate's "vrsn" version frame.
+  it('writes a Serato crate when Serato is chosen', () => {
+    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('export-serato'))
+    expect(api.exportSerato).toHaveBeenCalledTimes(1)
+    const data = api.exportSerato.mock.calls[0][0] as Uint8Array
+    expect(String.fromCharCode(data[0], data[1], data[2], data[3])).toBe('vrsn')
   })
 
   // The modal must teach that it's an import bridge, not a live add — that was the user's

@@ -15,6 +15,7 @@
     "subtitle": "Surco guarda un fichero de colección. Tu software DJ lo lee como fuente de importación — no se añade nada a su biblioteca automáticamente; importas las pistas desde ahí.",
     "rekordboxHint": "En rekordbox: Preferencias → Avanzado → rekordbox xml → elige este fichero, y luego importa desde el nodo “rekordbox xml”.",
     "traktorHint": "En Traktor: File → Import Collection → elige este fichero.",
+    "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "failed": "Error al exportar: {{error}}"
   },
   "header": {

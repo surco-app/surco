@@ -499,6 +499,19 @@ function registerIpc(): void {
     return filePath
   })
 
+  // Writes a Serato DJ crate (binary). The renderer builds the bytes; the DJ drops the file
+  // into their _Serato_/Subcrates folder. Returns the saved path, or null when cancelled.
+  ipcMain.handle('dialog:exportSerato', async (_e, data: Uint8Array) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta a Serato',
+      defaultPath: 'Surco.crate',
+      filters: [{ name: 'Serato crate', extensions: ['crate'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, data)
+    return filePath
+  })
+
   ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
     getProvider(provider).search(query, priority, hints),
   )

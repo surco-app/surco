@@ -39,6 +39,8 @@ const api: Api = {
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportTraktor', nml),
+  exportSerato: (data: Uint8Array): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportSerato', data),
   search: (
     query: string,
     provider?: SearchProviderId,
