@@ -417,6 +417,7 @@ export default function App(): React.JSX.Element {
   // the selection rests on a row, enqueue it just like an import would. Already-matched
   // tracks are filtered out downstream, so revisiting one never re-probes. Debounced so
   // arrowing through a crate doesn't fire a Discogs probe per row.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the exact settings fields autoMatchAvailable reads (autoMatch/discogsToken/searchProviders), not settings' identity — depending on the whole object would re-run the debounce on unrelated settings changes; tracksRef is read fresh.
   useEffect(() => {
     if (!selectedId || !settings?.autoMatch || !autoMatchAvailable(settings)) return
     const id = setTimeout(() => {
