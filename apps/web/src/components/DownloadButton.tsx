@@ -91,16 +91,26 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
           </button>
         )}
       </div>
-      {os === 'mac' && intelHref && (
-        <a
-          href={intelHref}
-          className="mt-3 inline-block font-mono text-xs text-faint underline-offset-2 transition-colors hover:text-blue hover:underline"
-        >
-          {t('download.intel')}
-        </a>
-      )}
+      {/* Always mounted (invisible until the Intel build resolves on a Mac) so the
+          link occupies its line in the prerendered HTML and every client state
+          alike. The page is statically prerendered with os='other', so gating this
+          on the OS check or the releases fetch would insert the line only after
+          hydration — shoving the hero screenshot and decorative waves down and
+          spiking CLS. The reserved line costs non-Mac visitors a blank row. */}
+      <a
+        href={os === 'mac' && intelHref ? intelHref : undefined}
+        aria-hidden={os === 'mac' && intelHref ? undefined : true}
+        tabIndex={os === 'mac' && intelHref ? undefined : -1}
+        className={`mt-3 inline-block font-mono text-xs text-faint underline-offset-2 transition-colors hover:text-blue hover:underline ${
+          os === 'mac' && intelHref ? '' : 'invisible'
+        }`}
+      >
+        {t('download.intel')}
+      </a>
       {showMeta && (
-        <div className="mt-5 font-mono text-xs text-faint">
+        // min-h reserves one line so the row doesn't grow from empty (prerender) to
+        // count+version once the releases fetch lands, which would shift the hero.
+        <div className="mt-5 min-h-5 font-mono text-xs text-faint">
           {!ready ? (
             <p>{t('download.unavailable')}</p>
           ) : (
