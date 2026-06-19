@@ -1241,6 +1241,25 @@ describe('App donate nudge', () => {
     await flush()
   })
 
+  // Converting the selected track through the process-current shortcut (mod+Enter) is the
+  // same moment of value as the Editor's convert button, so it must reveal the nudge too —
+  // otherwise a keyboard user converting one track at a time would never see it.
+  it('shows the nudge after a single convert via the process-current shortcut', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(eligible()),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false }),
+      saveSettings: vi.fn().mockResolvedValue(eligible()),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
+    expect(await screen.findByTestId('donate-nudge-count')).toHaveTextContent('50')
+    await flush()
+  })
+
   // "No volver a mostrar" is a promise: ticking it must persist, not just close.
   it('persists the permanent dismissal from the checkbox', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.01)

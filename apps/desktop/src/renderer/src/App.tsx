@@ -697,10 +697,20 @@ export default function App(): React.JSX.Element {
       )
     updateTrack(selected.id, patch)
   })
+  // Converting a single track is the donate nudge's moment of value, so every entry
+  // point to it must run through here — the Editor's convert button and the
+  // process-current command/shortcut alike — or the same action nudges from one and
+  // stays silent from the other.
+  const convertSelected = useStableCallback(
+    async (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => {
+      const outcome = await processOne(id, format, normalize)
+      if (outcome === 'converted') void maybeShowDonateNudge()
+      return outcome
+    },
+  )
   const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
-    if (!selected) return
-    const outcome = await processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
-    if (outcome === 'converted') void maybeShowDonateNudge()
+    if (selected)
+      await convertSelected(selected.id, format, editorNormalizeRef.current ?? undefined)
   })
   const onFormatChange = useStableCallback((format: OutputFormat) => {
     editorFormatRef.current = format
@@ -761,7 +771,7 @@ export default function App(): React.JSX.Element {
       askFillAll,
       moveSelection,
       togglePlay,
-      processOne,
+      processOne: convertSelected,
       askConvertAll,
       cancelAnalysis,
       analyzeAllQuality,
