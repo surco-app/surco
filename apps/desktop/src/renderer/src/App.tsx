@@ -338,8 +338,7 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       // Enqueue the whole crate (not visible-only): with auto-match on, every imported
       // track gets matched, the sweep just probes the on-screen rows first.
-      if (settings && settings.autoMatch && autoMatchAvailable(settings))
-        enqueueAutoMatch([t], false)
+      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], false)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
@@ -419,7 +418,7 @@ export default function App(): React.JSX.Element {
   // tracks are filtered out downstream, so revisiting one never re-probes. Debounced so
   // arrowing through a crate doesn't fire a Discogs probe per row.
   useEffect(() => {
-    if (!selectedId || !settings || !settings.autoMatch || !autoMatchAvailable(settings)) return
+    if (!selectedId || !settings?.autoMatch || !autoMatchAvailable(settings)) return
     const id = setTimeout(() => {
       const track = tracksRef.current.find((t) => t.id === selectedId)
       if (track) enqueueAutoMatch([track], false)
