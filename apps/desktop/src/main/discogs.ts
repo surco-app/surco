@@ -8,6 +8,7 @@ import type {
   SearchPriority,
 } from '../shared/types'
 import { discogsLimiter } from './discogsLimiter'
+import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
 import { tmpName } from './tmp'
 
@@ -218,6 +219,9 @@ export function imageExt(buf: Buffer): 'jpg' | 'png' | 'gif' | 'webp' | undefine
 }
 
 export async function downloadCover(url: string): Promise<string> {
+  // The renderer names this URL, so refuse the SSRF-shaped ones (loopback, cloud
+  // metadata, private ranges) before the trusted main process ever connects.
+  if (isBlockedFetchUrl(url)) throw new Error('La URL de la carátula no está permitida')
   const res = await fetch(url, {
     headers: { 'User-Agent': USER_AGENT },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

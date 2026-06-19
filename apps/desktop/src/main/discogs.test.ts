@@ -260,6 +260,16 @@ describe('downloadCover image validation', () => {
     mockBytes([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     await expect(downloadCover('https://img.example/cover.jpg')).resolves.toMatch(/\.png$/)
   })
+
+  // SSRF guard: a renderer-named loopback/metadata URL must be refused before any
+  // fetch, so the main process never connects to an internal service on its behalf.
+  it('refuses an SSRF-shaped URL without fetching it', async () => {
+    const fetchMock = mockBytes([0xff, 0xd8, 0xff])
+    await expect(downloadCover('http://169.254.169.254/latest/meta-data/')).rejects.toThrow(
+      /no está permitida/i,
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('matchesFormats', () => {
