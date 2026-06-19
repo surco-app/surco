@@ -613,6 +613,18 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])
+  // A per-format filter is tied to the crate's contents (unlike the deliberately-sticky
+  // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
+  // the crate gone single-format — fall back to "all" so the user is never stranded on an
+  // empty, no-longer-offered bucket.
+  useEffect(() => {
+    if (
+      qualityFilter.startsWith('ext:') &&
+      !formatTally.some((f) => `ext:${f.format}` === qualityFilter)
+    ) {
+      setQualityFilter('all')
+    }
+  }, [formatTally, qualityFilter, setQualityFilter])
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment the active filter changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown

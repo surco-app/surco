@@ -1213,6 +1213,30 @@ describe('App sort direction', () => {
   })
 })
 
+describe('App per-format filter', () => {
+  // A per-format filter is scoped to the current crate, so when its format leaves the list
+  // it must fall back to "all" rather than strand the user on an empty, no-longer-offered
+  // bucket (unlike the deliberately-sticky Apple Music buckets).
+  it('falls back to all tracks when the filtered format is no longer present', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // Narrow to just the MP3 — now the lone visible row is the one we'll remove.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    // The crate is now WAV-only: had the filter stayed on ext:MP3 the WAV row would be
+    // hidden (0 rows). Seeing it proves the filter reset to all.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+})
+
 describe('App donate nudge', () => {
   afterEach(() => vi.restoreAllMocks())
 
