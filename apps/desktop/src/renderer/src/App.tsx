@@ -29,6 +29,7 @@ import { useAutoMatch } from './hooks/useAutoMatch'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { editorSectionOpen } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { type ConfirmModal, type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSettings } from './hooks/useSettings'
@@ -133,33 +134,6 @@ const isMac = window.api.platform === 'darwin'
 // doesn't hand the memoized Editor a fresh [] each render.
 const EMPTY_FORMATS: string[] = []
 
-type SettingsTab = 'general' | 'search' | 'stats' | 'naming' | 'shortcuts'
-
-interface ConfirmModal {
-  title: string
-  message: string
-  confirmLabel: string
-  confirmDisabled?: boolean
-  destructive?: boolean
-  onConfirm: () => void
-}
-
-// The one modal/overlay currently open, or null. A single discriminated union (instead
-// of a boolean per modal) makes the "only one open at a time" invariant impossible to
-// break, and lets the keyboard/overlay logic read a single value.
-type ActiveModal =
-  | { type: 'settings'; tab: SettingsTab }
-  | { type: 'onboarding' }
-  | { type: 'donateNudge' }
-  | { type: 'help' }
-  | { type: 'loudnessHelp' }
-  | { type: 'findReplace' }
-  | { type: 'rename' }
-  | { type: 'export' }
-  | { type: 'palette' }
-  | { type: 'confirm'; confirm: ConfirmModal }
-  | null
-
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
@@ -169,7 +143,9 @@ export default function App(): React.JSX.Element {
   // pass is O(1) per row instead of Array.includes scanning the whole selection for each
   // of N rows (O(N·selection) on a large multi-selection).
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds])
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  // The single-overlay state machine (which modal is open) and its typed openers/closers.
+  const overlays = useOverlays()
+  const activeModal = overlays.activeModal
   // UI-orchestration state (search, sort, filter, notices, drag, copied tags…) lives in a
   // small per-mount external store so stable callbacks read the latest value via getState()
   // instead of a ref-mirror; the field comments live in appStore. Lazily created so the
@@ -192,7 +168,7 @@ export default function App(): React.JSX.Element {
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     onFirstLoad: (s) => {
-      if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
+      if (shouldShowOnboarding(s)) overlays.openOnboarding()
     },
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
@@ -207,7 +183,7 @@ export default function App(): React.JSX.Element {
     const s = await window.api.getSettings()
     if (!shouldShowDonateNudge(s, new Date(), Math.random())) return
     setSettings(s)
-    setActiveModal({ type: 'donateNudge' })
+    overlays.openDonateNudge()
     void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
   })
   // Quality triage filter, free-text search and display order — read from the store with a
@@ -297,11 +273,11 @@ export default function App(): React.JSX.Element {
   // palette and keyboard shortcuts use, so the three surfaces never drift apart.
   // Opening the palette is the one exception: it's a UI affordance, not a track
   // command, so it never lists itself.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe-once listener; getCommands has a stable identity (and is declared below, so it can't go in the deps), and is called at fire time for the current registry.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe-once listener; getCommands and overlays.openPalette have stable identities (getCommands is declared below, so it can't go in the deps), and getCommands is called at fire time for the current registry.
   useEffect(
     () =>
       window.api.onMenuCommand((id) => {
-        if (id === 'palette') setActiveModal({ type: 'palette' })
+        if (id === 'palette') overlays.openPalette()
         else runCommand(getCommands(), id)
       }),
     [],
@@ -619,23 +595,19 @@ export default function App(): React.JSX.Element {
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
   })
 
-  function openSettings(tab: SettingsTab = 'general'): void {
-    setActiveModal({ type: 'settings', tab })
-  }
+  const openSettings = (tab: SettingsTab = 'general'): void => overlays.openSettings(tab)
 
   function closeSettings(): void {
-    setActiveModal(null)
+    overlays.close()
     setThemePreview(null)
   }
 
   function finishOnboarding(patch: Partial<Settings>): void {
     saveSettings(patch)
-    setActiveModal(null)
+    overlays.close()
   }
 
-  function askConfirm(confirm: ConfirmModal): void {
-    setActiveModal({ type: 'confirm', confirm })
-  }
+  const askConfirm = (confirm: ConfirmModal): void => overlays.openConfirm(confirm)
 
   function moveSelection(delta: number): void {
     // Step through the rows the user can actually see (after the quality filter and the
@@ -807,14 +779,14 @@ export default function App(): React.JSX.Element {
   const onAdd = useStableCallback(() => void pickFiles())
   const onSelectAllTracks = useStableCallback(selectAll)
   const onFillAll = useStableCallback(askFillAll)
-  const onFindReplace = useStableCallback(() => setActiveModal({ type: 'findReplace' }))
+  const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
   const onConvertSelected = useStableCallback(() => askConvertAll(selectedTracks))
   const onCancelConvert = useStableCallback(cancelBatch)
-  const onOpenExport = useStableCallback(() => setActiveModal({ type: 'export' }))
+  const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(askClearAll)
-  const onOpenPalette = useStableCallback(() => setActiveModal({ type: 'palette' }))
+  const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
   const onApplyMatches = useStableCallback((patches: { id: string; patch: ReleaseMetaPatch }[]) => {
@@ -856,8 +828,8 @@ export default function App(): React.JSX.Element {
   const onTrashOriginal = useStableCallback(() => {
     if (selected) askDeleteOriginal(selected)
   })
-  const onShowLoudnessHelp = useStableCallback(() => setActiveModal({ type: 'loudnessHelp' }))
-  const onOpenRename = useStableCallback(() => setActiveModal({ type: 'rename' }))
+  const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
+  const onOpenRename = useStableCallback(overlays.openRename)
   const onRegenerateName = useStableCallback(() => {
     if (!selected) return
     const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
@@ -913,10 +885,10 @@ export default function App(): React.JSX.Element {
       removeTrack,
       askClearAll,
       openSettings,
-      openFindReplace: () => setActiveModal({ type: 'findReplace' }),
-      openExport: () => setActiveModal({ type: 'export' }),
-      openRename: () => setActiveModal({ type: 'rename' }),
-      openHelp: () => setActiveModal({ type: 'help' }),
+      openFindReplace: overlays.openFindReplace,
+      openExport: overlays.openExport,
+      openRename: overlays.openRename,
+      openHelp: overlays.openHelp,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
     }),
   )
@@ -926,7 +898,7 @@ export default function App(): React.JSX.Element {
   function closeTopOverlay(): void {
     if (!activeModal || activeModal.type === 'onboarding') return
     if (activeModal.type === 'settings') setThemePreview(null)
-    setActiveModal(null)
+    overlays.close()
   }
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
@@ -938,8 +910,7 @@ export default function App(): React.JSX.Element {
     overlayOpen,
     bindings,
     getCommands,
-    onTogglePalette: () =>
-      setActiveModal((m) => (m?.type === 'palette' ? null : { type: 'palette' })),
+    onTogglePalette: overlays.togglePalette,
     onEscape: closeTopOverlay,
   })
 
@@ -1216,21 +1187,15 @@ export default function App(): React.JSX.Element {
             conversionCount={settings?.conversionCount ?? 0}
             onClose={(dismissForever) => {
               if (dismissForever) saveSettings({ donateNudgeDismissed: true })
-              setActiveModal(null)
+              overlays.close()
             }}
           />
         )}
 
-        {activeModal?.type === 'help' && <HelpModal onClose={() => setActiveModal(null)} />}
-        {activeModal?.type === 'loudnessHelp' && (
-          <LoudnessHelpModal onClose={() => setActiveModal(null)} />
-        )}
+        {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}
+        {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
         {activeModal?.type === 'findReplace' && (
-          <FindReplaceModal
-            tracks={tracks}
-            onApply={deriveTracks}
-            onClose={() => setActiveModal(null)}
-          />
+          <FindReplaceModal tracks={tracks} onApply={deriveTracks} onClose={overlays.close} />
         )}
         {activeModal?.type === 'rename' && selected && (
           <RenameModal
@@ -1238,11 +1203,11 @@ export default function App(): React.JSX.Element {
             initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
             extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
             onApply={(outputName) => updateTrack(selected.id, { outputName })}
-            onClose={() => setActiveModal(null)}
+            onClose={overlays.close}
           />
         )}
         {activeModal?.type === 'export' && (
-          <ExportModal tracks={tracks} onClose={() => setActiveModal(null)} />
+          <ExportModal tracks={tracks} onClose={overlays.close} />
         )}
         {activeModal?.type === 'confirm' && (
           <ConfirmDialog
@@ -1252,7 +1217,7 @@ export default function App(): React.JSX.Element {
             confirmDisabled={activeModal.confirm.confirmDisabled}
             destructive={activeModal.confirm.destructive}
             onConfirm={activeModal.confirm.onConfirm}
-            onClose={() => setActiveModal(null)}
+            onClose={overlays.close}
           />
         )}
 
@@ -1262,7 +1227,7 @@ export default function App(): React.JSX.Element {
             // A command's run() may itself open another modal (settings, find & replace,
             // export…). Closing the palette must not clobber that: only dismiss it when the
             // palette is still the active modal, so a command that navigated elsewhere wins.
-            onClose={() => setActiveModal((m) => (m?.type === 'palette' ? null : m))}
+            onClose={overlays.closeIfPalette}
           />
         )}
       </Suspense>
