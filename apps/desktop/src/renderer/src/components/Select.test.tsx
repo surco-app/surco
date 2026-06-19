@@ -56,8 +56,13 @@ describe('Select', () => {
     fireEvent.click(screen.getByTestId('sort'))
     // The icon's svg sits alongside the selection-tick svg, so the iconed option carries
     // two graphics where the plain one carries only the tick.
-    expect(screen.getByTestId('sort-option-time').querySelectorAll('svg')).toHaveLength(2)
+    const iconed = screen.getByTestId('sort-option-time')
+    expect(iconed.querySelectorAll('svg')).toHaveLength(2)
     expect(screen.getByTestId('sort-option-name').querySelectorAll('svg')).toHaveLength(1)
+    // Layout mirrors the quality filter's buckets: the mode icon leads, the selection tick
+    // trails on the right — so the option's first and last children are both graphics.
+    expect(iconed.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+    expect(iconed.lastElementChild?.tagName.toLowerCase()).toBe('svg')
   })
 
   it('reports the picked value and closes', () => {
