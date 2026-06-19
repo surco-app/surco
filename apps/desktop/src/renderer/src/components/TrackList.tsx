@@ -16,7 +16,7 @@ import { TrackContextMenu } from './TrackContextMenu'
 interface Props {
   tracks: TrackItem[]
   selectedId: string | null
-  selectedIds: string[]
+  selectedIds: ReadonlySet<string>
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
   // Double-clicking a row plays it: opens the floating player straight on that track.
@@ -331,8 +331,8 @@ export function TrackList({
     const { tracks, selectedIds } = dragState.current
     // Dragging a row that's part of the selection drags the whole selection (Finder's
     // convention); dragging an unselected row drags just that one. List order is kept.
-    const paths = selectedIds.includes(track.id)
-      ? tracks.filter((t) => selectedIds.includes(t.id)).map((t) => t.inputPath)
+    const paths = selectedIds.has(track.id)
+      ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.inputPath)
       : [track.inputPath]
     window.api.startTrackDrag(paths, track.coverUrl)
   }, [])
@@ -371,7 +371,7 @@ export function TrackList({
         <TrackRow
           key={t.id}
           track={t}
-          selected={selectedIds.includes(t.id)}
+          selected={selectedIds.has(t.id)}
           primary={t.id === selectedId}
           outputFormat={outputFormat}
           onSelect={onSelect}

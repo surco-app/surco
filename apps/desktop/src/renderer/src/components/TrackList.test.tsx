@@ -81,7 +81,7 @@ function renderList(
     <TrackList
       tracks={tracks}
       selectedId={selectedId}
-      selectedIds={selectedIds}
+      selectedIds={new Set(selectedIds)}
       outputFormat="aiff"
       onSelect={onSelect}
       onActivate={onActivate}

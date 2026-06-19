@@ -165,6 +165,10 @@ export default function App(): React.JSX.Element {
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
+  // A Set for the list's per-row membership test, so the parent's "is this row selected?"
+  // pass is O(1) per row instead of Array.includes scanning the whole selection for each
+  // of N rows (O(N·selection) on a large multi-selection).
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds])
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   // UI-orchestration state (search, sort, filter, notices, drag, copied tags…) lives in a
   // small per-mount external store so stable callbacks read the latest value via getState()
@@ -1063,7 +1067,7 @@ export default function App(): React.JSX.Element {
                   <TrackList
                     tracks={visibleTracks}
                     selectedId={selectedId}
-                    selectedIds={selectedIds}
+                    selectedIds={selectedIdSet}
                     outputFormat={settings?.outputFormat ?? 'aiff'}
                     onSelect={onSelectTrack}
                     onActivate={toggleTrack}
