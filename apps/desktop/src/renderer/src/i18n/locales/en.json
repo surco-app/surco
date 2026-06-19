@@ -62,7 +62,8 @@
       "import": "Default",
       "name": "Name",
       "artist": "Artist",
-      "duration": "Time"
+      "duration": "Time",
+      "format": "Format"
     },
     "position": "Track {{current}} of {{total}}"
   },

@@ -8,7 +8,7 @@ import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { Verdict } from '../lib/quality'
 import type { ClickMods } from '../lib/selection'
-import { trackQuality } from '../lib/triage'
+import { sourceFormat, trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
 import { Tooltip } from './Tooltip'
 import { TrackContextMenu } from './TrackContextMenu'
@@ -109,8 +109,9 @@ const TrackRow = memo(function TrackRow({
   const quality = trackQuality(t)
   // Source format read off the input path — the parsed fileName drops its extension —
   // so a mixed crate (WAV rips next to bought MP3s) can be scanned for what still
-  // needs a conversion without opening each track.
-  const sourceFormat = /\.([^./]+)$/.exec(t.inputPath)?.[1]?.toUpperCase()
+  // needs a conversion without opening each track. Shared with the per-format filter
+  // and sort, so the pill, the filter chip and the sort order all agree.
+  const format = sourceFormat(t)
   const rowRef = useRef<HTMLLIElement>(null)
   // Report this row entering/leaving the scroll pane so App can run auto-match for
   // what's on screen, through the list's single shared observer.
@@ -295,12 +296,12 @@ const TrackRow = memo(function TrackRow({
                   )
                 )}
               </span>
-              {sourceFormat && (
+              {format && (
                 <span
                   data-testid="track-format"
                   className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
                 >
-                  {sourceFormat}
+                  {format}
                 </span>
               )}
               {t.duration !== undefined && (

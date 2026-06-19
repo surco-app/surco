@@ -69,6 +69,7 @@ import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from '
 import { formatShortcut } from './lib/shortcuts'
 import {
   filterWithSticky,
+  formatBuckets,
   matchesSearch,
   type QualityFilter,
   qualityCounts,
@@ -590,6 +591,7 @@ export default function App(): React.JSX.Element {
   tracksViewRef.current = tracksView
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
+  const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment the active filter changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -935,6 +937,7 @@ export default function App(): React.JSX.Element {
                         { value: 'name', label: tr('sidebar.sort.name') },
                         { value: 'artist', label: tr('sidebar.sort.artist') },
                         { value: 'duration', label: tr('sidebar.sort.duration') },
+                        { value: 'format', label: tr('sidebar.sort.format') },
                       ]}
                     />
                   </div>
@@ -943,6 +946,7 @@ export default function App(): React.JSX.Element {
                     value={qualityFilter}
                     onChange={setQualityFilter}
                     tally={qualityTally}
+                    formats={formatTally}
                     trackCount={tracks.length}
                     visibleCount={visibleTracks.length}
                     selectedPosition={selectedPosition}

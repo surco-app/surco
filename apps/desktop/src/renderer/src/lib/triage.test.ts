@@ -4,9 +4,11 @@ import type { TrackItem, TrackStatus } from '../types'
 import {
   filterByQuality,
   filterWithSticky,
+  formatBuckets,
   matchesSearch,
   qualityCounts,
   sortTracks,
+  sourceFormat,
   trackQuality,
   tracksToAnalyze,
 } from './triage'
@@ -285,6 +287,73 @@ describe('sortTracks', () => {
   it('keeps equal rows in their import order so toggling never scrambles ties', () => {
     const list = [mk({ id: 'x', listLabel: 'Same' }), mk({ id: 'y', listLabel: 'Same' })]
     expect(sortTracks(list, 'name').map((t) => t.id)).toEqual(['x', 'y'])
+  })
+
+  it('sorts by source format, grouping a mixed crate by container', () => {
+    const list = [
+      mk({ id: 'wav', inputPath: '/m/c.wav' }),
+      mk({ id: 'flac', inputPath: '/m/a.flac' }),
+      mk({ id: 'mp3', inputPath: '/m/b.mp3' }),
+    ]
+    expect(sortTracks(list, 'format').map((t) => t.id)).toEqual(['flac', 'mp3', 'wav'])
+  })
+
+  it('pushes tracks without a recognisable extension to the end of a format sort', () => {
+    const list = [
+      mk({ id: 'none', inputPath: '/m/no-ext' }),
+      mk({ id: 'mp3', inputPath: '/m/b.mp3' }),
+    ]
+    expect(sortTracks(list, 'format').map((t) => t.id)).toEqual(['mp3', 'none'])
+  })
+})
+
+describe('sourceFormat', () => {
+  const t = (inputPath: string): TrackItem => ({ inputPath }) as TrackItem
+
+  it('reads the extension off the input path, uppercased like the row pill', () => {
+    // The parsed fileName has dropped its extension, so the source container is read
+    // from the original path — the same value the row pill shows.
+    expect(sourceFormat(t('/music/A1 - Untitled.flac'))).toBe('FLAC')
+    expect(sourceFormat(t('/music/bought.mp3'))).toBe('MP3')
+  })
+
+  it('keys off the last extension only, so a dotted name does not split the format', () => {
+    expect(sourceFormat(t('/music/Mr. Fingers - Can You Feel It.aiff'))).toBe('AIFF')
+  })
+
+  it('is undefined when the path has no extension', () => {
+    expect(sourceFormat(t('/music/no-extension'))).toBeUndefined()
+  })
+})
+
+describe('per-format filter and buckets', () => {
+  const t = (id: string, inputPath: string): TrackItem => ({ id, inputPath }) as TrackItem
+  const tracks = [
+    t('a', '/m/a.flac'),
+    t('b', '/m/b.mp3'),
+    t('c', '/m/c.wav'),
+    t('d', '/m/d.mp3'),
+  ]
+
+  it('keeps only the tracks of the requested source format', () => {
+    expect(filterByQuality(tracks, 'ext:MP3').map((x) => x.id)).toEqual(['b', 'd'])
+    expect(filterByQuality(tracks, 'ext:FLAC').map((x) => x.id)).toEqual(['a'])
+  })
+
+  it('lists each present format with its count, sorted, for the filter chips', () => {
+    expect(formatBuckets(tracks)).toEqual([
+      { format: 'FLAC', count: 1 },
+      { format: 'MP3', count: 2 },
+      { format: 'WAV', count: 1 },
+    ])
+  })
+
+  it('offers no per-format filter for a single-format crate, since one format needs no filter', () => {
+    expect(formatBuckets([t('a', '/m/a.flac'), t('b', '/m/b.flac')])).toEqual([])
+  })
+
+  it('offers no per-format filter for an empty list', () => {
+    expect(formatBuckets([])).toEqual([])
   })
 })
 

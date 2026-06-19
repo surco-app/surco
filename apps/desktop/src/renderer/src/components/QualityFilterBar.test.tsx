@@ -29,6 +29,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       value="all"
       onChange={onChange}
       tally={tally()}
+      formats={[]}
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
@@ -77,6 +78,28 @@ describe('QualityFilterBar', () => {
     renderBar({ tally: tally({ notInLibrary: 459, inLibrary: 2 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-notInLibrary')).toBeInTheDocument()
+  })
+
+  // Per-format buckets only appear for a mixed crate, and each carries its own count so a
+  // DJ can isolate "just the MP3s" before converting.
+  it('lists a per-format bucket for each source format present, with its count', () => {
+    renderBar({
+      formats: [
+        { format: 'FLAC', count: 12 },
+        { format: 'MP3', count: 27 },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-ext:MP3')).toHaveTextContent('MP3')
+    expect(screen.getByTestId('quality-filter-ext:MP3')).toHaveTextContent('27')
+    expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveTextContent('12')
+  })
+
+  it('selects a per-format bucket by its ext: value', () => {
+    const { onChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
+    expect(onChange).toHaveBeenCalledWith('ext:WAV')
   })
 
   // The x/total position indicator the user relies on must stay visible beside the

@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleCheckBig,
+  FileAudio,
   List,
   type LucideIcon,
   Plus,
@@ -15,8 +16,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QualityFilter, qualityCounts } from '../lib/triage'
 
-// One Lucide glyph per filter bucket, kept visually consistent with the toolbar.
-const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
+// The fixed filter buckets, excluding the dynamic per-format ones ('ext:MP3'…).
+type FixedFilter = Exclude<QualityFilter, `ext:${string}`>
+
+// One Lucide glyph per fixed filter bucket, kept visually consistent with the toolbar.
+const FILTER_ICONS: Record<FixedFilter, LucideIcon> = {
   all: List,
   suspect: TriangleAlert,
   good: CircleCheckBig,
@@ -26,6 +30,12 @@ const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
   inLibrary: Check,
   notInLibrary: Plus,
 }
+
+// A per-format bucket ('ext:MP3') reuses the audio-file glyph and shows its uppercased
+// extension ('MP3') — the same token as the row pill — instead of a translated label.
+const isFormatFilter = (mode: QualityFilter): boolean => mode.startsWith('ext:')
+const iconFor = (mode: QualityFilter): LucideIcon =>
+  isFormatFilter(mode) ? FileAudio : FILTER_ICONS[mode as FixedFilter]
 
 type Tally = ReturnType<typeof qualityCounts>
 
@@ -43,6 +53,9 @@ interface Props {
   value: QualityFilter
   onChange: (mode: QualityFilter) => void
   tally: Tally
+  // The distinct source formats present (each 'ext:MP3' with its count), only populated
+  // for a mixed crate so a single-format list grows no extra buckets.
+  formats: { format: string; count: number }[]
   trackCount: number
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
@@ -61,6 +74,7 @@ export function QualityFilterBar({
   value,
   onChange,
   tally,
+  formats,
   trackCount,
   visibleCount,
   selectedPosition,
@@ -83,9 +97,21 @@ export function QualityFilterBar({
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
     ...(tally.inLibrary + tally.notInLibrary > 0 ? (['notInLibrary', 'inLibrary'] as const) : []),
+    // Per-format buckets, last so they don't push the quality triage down. Empty unless
+    // the crate is mixed (App passes nothing for a single-format list).
+    ...formats.map((f): QualityFilter => `ext:${f.format}`),
   ]
+  const formatCount = new Map(formats.map((f) => [`ext:${f.format}`, f.count]))
   const countOf = (mode: QualityFilter): number =>
-    mode === 'all' ? trackCount : tally[mode as keyof Tally]
+    mode === 'all'
+      ? trackCount
+      : isFormatFilter(mode)
+        ? (formatCount.get(mode) ?? 0)
+        : tally[mode as keyof Tally]
+  // The menu label is a translated bucket name, except a per-format bucket shows its
+  // uppercased extension verbatim, matching the row pill.
+  const labelOf = (mode: QualityFilter): string =>
+    isFormatFilter(mode) ? mode.slice(4) : tr(`sidebar.filter.${mode}`)
 
   // Focus the active option when the menu opens, so the arrows continue from the current
   // choice like a native select.
@@ -132,7 +158,7 @@ export function QualityFilterBar({
     items[next].focus()
   }
 
-  const ActiveIcon = FILTER_ICONS[value]
+  const ActiveIcon = iconFor(value)
   // Keep the suspect nudge on the trigger even when another filter is active, so a crate
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
   const triggerDot =
@@ -161,7 +187,7 @@ export function QualityFilterBar({
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span>{tr(`sidebar.filter.${value}`)}</span>
+          <span>{labelOf(value)}</span>
           <span className="tabular-nums opacity-70">{countOf(value)}</span>
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
@@ -183,9 +209,9 @@ export function QualityFilterBar({
               className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
             >
               {modes.map((mode) => {
-                const Icon = FILTER_ICONS[mode]
+                const Icon = iconFor(mode)
                 const dot = attentionDot(mode, tally)
-                const name = tr(`sidebar.filter.${mode}`)
+                const name = labelOf(mode)
                 return (
                   <button
                     key={mode}

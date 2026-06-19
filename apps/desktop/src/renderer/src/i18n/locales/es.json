@@ -62,7 +62,8 @@
       "import": "Por defecto",
       "name": "Nombre",
       "artist": "Artista",
-      "duration": "Duración"
+      "duration": "Duración",
+      "format": "Formato"
     },
     "position": "Pista {{current}} de {{total}}"
   },

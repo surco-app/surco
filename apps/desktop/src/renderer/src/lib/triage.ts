@@ -34,9 +34,25 @@ export type QualityFilter =
   | 'automatched'
   | 'inLibrary'
   | 'notInLibrary'
+  // Per-source-format buckets ('ext:MP3', 'ext:WAV'…), only offered for a mixed crate.
+  // The fixed buckets above are quality/provenance dimensions; this one is the container.
+  | `ext:${string}`
+
+// The source container read straight off the input path's extension, uppercased (FLAC,
+// MP3, WAV, AIFF). The parsed fileName has already dropped its extension, so the row pill,
+// the per-format filter and the format sort all derive it here to stay in lockstep.
+export function sourceFormat(track: TrackItem): string | undefined {
+  return /\.([^./]+)$/.exec(track.inputPath)?.[1]?.toUpperCase()
+}
 
 export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
   if (filter === 'all') return tracks
+  // Per-format bucket: 'ext:MP3' keeps only the tracks whose source container matches,
+  // so a mixed crate can be worked one format at a time.
+  if (filter.startsWith('ext:')) {
+    const fmt = filter.slice(4)
+    return tracks.filter((t) => sourceFormat(t) === fmt)
+  }
   if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
   if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
   // The Apple Music library buckets are a third dimension, gated on a known verdict:
@@ -93,8 +109,9 @@ export function matchesSearch(track: TrackItem, query: string): boolean {
     .some((field) => foldText(field).includes(q))
 }
 
-// The list sort modes: the drop order ('import'), or by name, artist or length.
-export type TrackSort = 'import' | 'name' | 'artist' | 'duration'
+// The list sort modes: the drop order ('import'), or by name, artist, length or source
+// format (which groups a mixed crate by container).
+export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'format'
 
 // One shared collator instead of per-comparison localeCompare: the sort re-runs on
 // every list-affecting render (each editor keystroke while a sort is active), and
@@ -112,6 +129,12 @@ export function sortTracks(tracks: TrackItem[], sort: TrackSort): TrackItem[] {
     if (sort === 'artist') {
       const aa = a.meta.artist || ''
       const bb = b.meta.artist || ''
+      if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
+      return collator.compare(aa, bb)
+    }
+    if (sort === 'format') {
+      const aa = sourceFormat(a)
+      const bb = sourceFormat(b)
       if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
       return collator.compare(aa, bb)
     }
@@ -149,4 +172,20 @@ export function qualityCounts(tracks: TrackItem[]): {
     else if (t.inAppleMusic === false) notInLibrary += 1
   }
   return { suspect, good, unanalyzed, unconverted, automatched, inLibrary, notInLibrary }
+}
+
+// The distinct source formats present, each with its count, for the per-format filter
+// chips. Returns nothing for a single-format crate (or an empty list): one format needs
+// no filter, so the menu only grows the extra buckets once the crate is actually mixed.
+// Sorted by format so the chips keep a stable order across re-imports.
+export function formatBuckets(tracks: TrackItem[]): { format: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const t of tracks) {
+    const fmt = sourceFormat(t)
+    if (fmt) counts.set(fmt, (counts.get(fmt) ?? 0) + 1)
+  }
+  if (counts.size < 2) return []
+  return [...counts.entries()]
+    .map(([format, count]) => ({ format, count }))
+    .sort((a, b) => collator.compare(a.format, b.format))
 }
