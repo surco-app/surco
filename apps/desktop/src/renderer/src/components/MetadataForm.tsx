@@ -1,29 +1,16 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Release, TrackMetadata } from '../../../shared/types'
+import type { Release } from '../../../shared/types'
+import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
-import type { InsertSource } from './FieldInsertMenu'
 import { StarRating } from './StarRating'
 
-// One renderable form field. The editor builds these per mode — bulk specs read the
-// selection's common value and write through onChangeAllMeta, single specs read the
-// open track and write through setField — so the form itself renders a single tree
-// instead of forking on every field.
-export interface FieldSpec {
-  key: keyof TrackMetadata
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  wide?: boolean
-  invalid?: boolean
-  suggestions?: string[]
-  multiSuggestions?: boolean
-  insertSources?: InsertSource[]
-  cleanResult?: string
-}
+// Re-exported from lib so the form and its callers keep a single import site for the
+// spec shape while the builder (buildFieldSpecs) stays a pure, testable lib function.
+export type { FieldSpec }
+export { buildFieldSpecs }
 
 interface MetadataFormProps {
   item: TrackItem

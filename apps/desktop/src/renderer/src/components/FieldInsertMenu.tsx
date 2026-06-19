@@ -2,13 +2,12 @@ import { Ellipsis } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { InsertSource } from '../lib/fieldSpecs'
 import { titleCase } from '../lib/textCase'
 
-export interface InsertSource {
-  key: string
-  label: string
-  value: string
-}
+// Re-exported so Field.tsx keeps importing the shape from here while the definition
+// lives in lib alongside the buildFieldSpecs that produces it.
+export type { InsertSource }
 
 interface Props {
   fieldName: string

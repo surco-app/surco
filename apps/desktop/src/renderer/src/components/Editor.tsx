@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
-  ReleaseTrack,
   KeyNotation,
   NormalizeConfig,
   OutputFormat,
+  ReleaseTrack,
   SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
@@ -17,13 +17,13 @@ import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
-import { BULK_FIELDS, commonValue } from '../lib/bulkEdit'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
+import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { isLowResCover } from '../lib/quality'
 import { bestMatch, buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
@@ -33,24 +33,13 @@ import { ConvertFooter } from './ConvertFooter'
 import { DiscogsPanel } from './DiscogsPanel'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
-import { type FieldSpec, MetadataForm } from './MetadataForm'
+import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
-
-// Only free-text fields make sense as insert TARGETS — composing into structured
-// values (year, BPM, key, track numbers…) would produce garbage — but every
-// visible field still feeds the menu as a source.
-const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
-  'title',
-  'artist',
-  'albumArtist',
-  'album',
-  'comment',
-])
 
 interface Props {
   item: TrackItem
@@ -371,57 +360,23 @@ export const Editor = memo(function Editor({
   const lossyOverwrite =
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
-  // The bulk and single forms render the same tree; only where a field's value comes
-  // from and where an edit goes differ, so each mode reduces to a list of specs the
-  // form maps over.
-  // Bulk mode starts from BULK_FIELDS (only release-level fields make sense across a
-  // selection) but still honours the user's visible-fields setting, so hidden fields
-  // don't reappear just because several tracks are selected.
-  const fieldSpecs: FieldSpec[] =
-    isMulti && selectedTracks
-      ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
-          const shared = commonValue(selectedTracks, key)
-          return {
-            key,
-            label: tr(`fields.${key}`),
-            value: shared ?? '',
-            placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
-            onChange: (v: string) => onChangeAllMeta?.({ [key]: v }),
-            suggestions:
-              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
-            multiSuggestions: key === 'grouping',
-          }
-        })
-      : visibleFields.flatMap((key) => {
-          const def = FIELD_DEFS.find((d) => d.key === key)
-          if (!def) return []
-          return [
-            {
-              key: def.key,
-              label: tr(`fields.${def.key}`),
-              value: item.meta[def.key] ?? '',
-              onChange: (v: string) => setField(def.key, v),
-              insertSources:
-                !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
-              cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
-              wide: def.wide,
-              invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
-              suggestions:
-                def.key === 'genre'
-                  ? genreChips
-                  : def.key === 'grouping'
-                    ? groupingPresets
-                    : def.key === 'bpm' && detectedBpm
-                      ? // The tag layer stores whole beats per minute, so the chip
-                        // offers the rounded figure.
-                        [String(Math.round(detectedBpm.bpm))]
-                      : def.key === 'key' && detectedKey
-                        ? [keyNotation === 'camelot' ? detectedKey.camelot : detectedKey.name]
-                        : undefined,
-              multiSuggestions: def.key === 'grouping',
-            },
-          ]
-        })
+  const fieldSpecs = buildFieldSpecs({
+    isMulti,
+    selectedTracks,
+    visibleFields,
+    requiredFields,
+    item,
+    genreChips,
+    groupingPresets,
+    detectedBpm,
+    detectedKey,
+    keyNotation,
+    insertSources,
+    albumCleanResult,
+    tr,
+    setField,
+    onChangeAllMeta,
+  })
 
   // One-click "empty every tag", next to the fill button so set-and-clear read as a
   // pair. Icon-only (like the output-name pencil) because the Apple Music badge
