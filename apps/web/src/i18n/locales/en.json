@@ -1,4 +1,7 @@
 {
+  "lightbox": {
+    "close": "Close"
+  },
   "meta": {
     "htmlLang": "en",
     "ogLocale": "en_US",

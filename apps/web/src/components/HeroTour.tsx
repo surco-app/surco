@@ -171,7 +171,13 @@ export default function HeroTour() {
         </div>
       </div>
 
-      <Lightbox open={zoomed} src={src} alt={t('showcase.alt')} onClose={() => setZoomed(false)} />
+      <Lightbox
+        open={zoomed}
+        src={src}
+        alt={t('showcase.alt')}
+        closeLabel={t('lightbox.close')}
+        onClose={() => setZoomed(false)}
+      />
     </figure>
   )
 }

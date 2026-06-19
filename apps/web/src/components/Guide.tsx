@@ -166,6 +166,7 @@ export default function Guide() {
         src={lightboxShot?.src ?? null}
         alt={lightboxShot?.caption ?? ''}
         caption={lightboxShot?.caption}
+        closeLabel={t('lightbox.close')}
         onClose={() => setLightboxOpen(false)}
       />
 
