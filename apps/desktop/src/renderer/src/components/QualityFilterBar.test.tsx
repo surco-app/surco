@@ -23,6 +23,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
 
 function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
   const onChange = vi.fn()
+  const onFormatChange = vi.fn()
   render(
     <QualityFilterBar
       filterRef={createRef()}
@@ -30,13 +31,15 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       onChange={onChange}
       tally={tally()}
       formats={[]}
+      formatValue={null}
+      onFormatChange={onFormatChange}
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
       {...over}
     />,
   )
-  return { onChange }
+  return { onChange, onFormatChange }
 }
 
 describe('QualityFilterBar', () => {
@@ -95,11 +98,44 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveTextContent('12')
   })
 
-  it('selects a per-format bucket by its ext: value', () => {
-    const { onChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
+  // Format is its own axis: picking it reports through onFormatChange (not onChange) and
+  // leaves the menu open so the user can also set a primary bucket in the same session.
+  it('reports a format pick through the format axis and keeps the menu open', () => {
+    const { onChange, onFormatChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
-    expect(onChange).toHaveBeenCalledWith('ext:WAV')
+    expect(onFormatChange).toHaveBeenCalledWith('WAV')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
+  })
+
+  it('toggles the active format off when picked again', () => {
+    const { onFormatChange } = renderBar({
+      formats: [{ format: 'WAV', count: 3 }],
+      formatValue: 'WAV',
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
+    expect(onFormatChange).toHaveBeenCalledWith(null)
+  })
+
+  // The whole point of the combine: a primary bucket and a format can be checked at once,
+  // so "in Apple Music AND only WAV" shows two ticks, not one replacing the other.
+  it('shows the primary bucket and the format checked together', () => {
+    renderBar({
+      value: 'good',
+      formats: [
+        { format: 'FLAC', count: 5 },
+        { format: 'WAV', count: 5 },
+      ],
+      formatValue: 'WAV',
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-good')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('quality-filter-ext:WAV')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveAttribute('aria-selected', 'false')
+    // The closed-menu trigger still reveals the format refinement as a pill.
+    expect(screen.getByTestId('quality-filter-format-badge')).toHaveTextContent('WAV')
   })
 
   // The buckets span several dimensions (quality, conversion, library, format); a divider

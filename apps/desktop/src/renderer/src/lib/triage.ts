@@ -21,10 +21,11 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
   return tracks.filter((t) => !t.spectrum && !inFlight.has(t.id))
 }
 
-// The list filter modes: everything, the suspect (likely fake-lossless) rips, the ones
+// The primary list filter: everything, the suspect (likely fake-lossless) rips, the ones
 // that passed as genuine lossless ('good'), the ones still without a verdict, or the ones
 // not yet converted. 'unconverted' is a processing-status filter (status !== 'done'),
-// orthogonal to the quality verdict.
+// orthogonal to the quality verdict. Source format is a SEPARATE axis (see formatBuckets /
+// sourceFormat) that combines with this one, so it isn't a value here.
 export type QualityFilter =
   | 'all'
   | 'suspect'
@@ -34,9 +35,6 @@ export type QualityFilter =
   | 'automatched'
   | 'inLibrary'
   | 'notInLibrary'
-  // Per-source-format buckets ('ext:MP3', 'ext:WAV'…), only offered for a mixed crate.
-  // The fixed buckets above are quality/provenance dimensions; this one is the container.
-  | `ext:${string}`
 
 // The source container read straight off the input path's extension, uppercased (FLAC,
 // MP3, WAV, AIFF). The parsed fileName has already dropped its extension, so the row pill,
@@ -47,12 +45,6 @@ export function sourceFormat(track: TrackItem): string | undefined {
 
 export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
   if (filter === 'all') return tracks
-  // Per-format bucket: 'ext:MP3' keeps only the tracks whose source container matches,
-  // so a mixed crate can be worked one format at a time.
-  if (filter.startsWith('ext:')) {
-    const fmt = filter.slice(4)
-    return tracks.filter((t) => sourceFormat(t) === fmt)
-  }
   if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
   if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
   // The Apple Music library buckets are a third dimension, gated on a known verdict:

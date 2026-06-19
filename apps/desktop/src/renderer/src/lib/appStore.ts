@@ -23,6 +23,9 @@ export interface AppState {
   sortDir: SortDir
   // Quality triage view filter: narrows the list to suspect/unanalyzed/etc tracks.
   qualityFilter: QualityFilter
+  // Source-format filter ('WAV', 'FLAC'…), a separate axis ANDed with qualityFilter so a
+  // DJ can say "in Apple Music AND only WAV". Null means every format.
+  formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
   // A transient, non-blocking status line (e.g. "skipped N already-added files"); cleared
@@ -45,6 +48,7 @@ const INITIAL: AppState = {
   sortBy: 'import',
   sortDir: 'asc',
   qualityFilter: 'all',
+  formatFilter: null,
   dragging: false,
   notice: null,
   appError: null,

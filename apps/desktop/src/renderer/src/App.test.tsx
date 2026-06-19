@@ -1218,10 +1218,8 @@ describe('App sort direction', () => {
 })
 
 describe('App per-format filter', () => {
-  // A per-format filter is scoped to the current crate, so when its format leaves the list
-  // it must fall back to "all" rather than strand the user on an empty, no-longer-offered
-  // bucket (unlike the deliberately-sticky Apple Music buckets).
-  it('falls back to all tracks when the filtered format is no longer present', async () => {
+  // Drops the wav + mp3 pair the format cases lean on (both unconverted, distinct formats).
+  async function addMixedCrate(): Promise<void> {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -1229,14 +1227,37 @@ describe('App per-format filter', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    // Narrow to just the MP3 — now the lone visible row is the one we'll remove.
+  }
+
+  // The format axis ANDs with the primary bucket instead of replacing it: narrowing to a
+  // primary, then to a format, refines the already-filtered set rather than resetting it.
+  it('combines a primary bucket with a format, narrowing to their intersection', async () => {
+    await addMixedCrate()
+    // Both tracks are unconverted, so the primary alone keeps the pair…
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // …then layering the WAV format narrows it to just the wav, the primary still applied.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
+    fireEvent.click(screen.getByTestId('quality-filter-backdrop'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // The format axis is scoped to the current crate, so when its format leaves the list it
+  // must fall back to every format rather than strand the user on an empty refinement
+  // (unlike the deliberately-sticky Apple Music buckets).
+  it('falls back to every format when the filtered format is no longer present', async () => {
+    await addMixedCrate()
+    // Narrow to just the MP3, then close the menu to reach the row beneath it.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    fireEvent.click(screen.getByTestId('quality-filter-backdrop'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.contextMenu(screen.getByTestId('track-row'))
     fireEvent.click(screen.getByTestId('track-menu-remove'))
-    // The crate is now WAV-only: had the filter stayed on ext:MP3 the WAV row would be
-    // hidden (0 rows). Seeing it proves the filter reset to all.
+    // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
+    // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 })

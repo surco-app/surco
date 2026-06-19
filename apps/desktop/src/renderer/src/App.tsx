@@ -86,6 +86,7 @@ import {
   type QualityFilter,
   qualityCounts,
   sortTracks,
+  sourceFormat,
   type TrackSort,
 } from './lib/triage'
 import type { TrackItem } from './types'
@@ -212,6 +213,11 @@ export default function App(): React.JSX.Element {
   const qualityFilter = useAppStore(store, (s) => s.qualityFilter)
   const setQualityFilter = useCallback(
     (f: QualityFilter) => store.setState({ qualityFilter: f }),
+    [store],
+  )
+  const formatFilter = useAppStore(store, (s) => s.formatFilter)
+  const setFormatFilter = useCallback(
+    (f: string | null) => store.setState({ formatFilter: f }),
     [store],
   )
   const search = useAppStore(store, (s) => s.search)
@@ -614,18 +620,15 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])
-  // A per-format filter is tied to the crate's contents (unlike the deliberately-sticky
+  // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
-  // the crate gone single-format — fall back to "all" so the user is never stranded on an
-  // empty, no-longer-offered bucket.
+  // the crate gone single-format — fall back to every format so the user is never stranded
+  // on an empty, no-longer-offered refinement.
   useEffect(() => {
-    if (
-      qualityFilter.startsWith('ext:') &&
-      !formatTally.some((f) => `ext:${f.format}` === qualityFilter)
-    ) {
-      setQualityFilter('all')
+    if (formatFilter && !formatTally.some((f) => f.format === formatFilter)) {
+      setFormatFilter(null)
     }
-  }, [formatTally, qualityFilter, setQualityFilter])
+  }, [formatTally, formatFilter, setFormatFilter])
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment the active filter changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -635,13 +638,14 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     return sortTracks(
-      filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter((t) =>
-        matchesSearch(t, deferredSearch),
+      filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter(
+        // The format axis ANDs with the primary bucket and the search.
+        (t) => matchesSearch(t, deferredSearch) && (!formatFilter || sourceFormat(t) === formatFilter),
       ),
       sortBy,
       sortDir,
     )
-  }, [tracksView, qualityFilter, deferredSearch, sortBy, sortDir])
+  }, [tracksView, qualityFilter, formatFilter, deferredSearch, sortBy, sortDir])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -969,6 +973,8 @@ export default function App(): React.JSX.Element {
                     onChange={setQualityFilter}
                     tally={qualityTally}
                     formats={formatTally}
+                    formatValue={formatFilter}
+                    onFormatChange={setFormatFilter}
                     trackCount={tracks.length}
                     visibleCount={visibleTracks.length}
                     selectedPosition={selectedPosition}

@@ -16,11 +16,9 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QualityFilter, qualityCounts } from '../lib/triage'
 
-// The fixed filter buckets, excluding the dynamic per-format ones ('ext:MP3'…).
-type FixedFilter = Exclude<QualityFilter, `ext:${string}`>
-
-// One Lucide glyph per fixed filter bucket, kept visually consistent with the toolbar.
-const FILTER_ICONS: Record<FixedFilter, LucideIcon> = {
+// One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
+// Per-format buckets are a separate axis and all share the audio-file glyph.
+const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
   all: List,
   suspect: TriangleAlert,
   good: CircleCheckBig,
@@ -30,12 +28,6 @@ const FILTER_ICONS: Record<FixedFilter, LucideIcon> = {
   inLibrary: Check,
   notInLibrary: Plus,
 }
-
-// A per-format bucket ('ext:MP3') reuses the audio-file glyph and shows its uppercased
-// extension ('MP3') — the same token as the row pill — instead of a translated label.
-const isFormatFilter = (mode: QualityFilter): boolean => mode.startsWith('ext:')
-const iconFor = (mode: QualityFilter): LucideIcon =>
-  isFormatFilter(mode) ? FileAudio : FILTER_ICONS[mode as FixedFilter]
 
 type Tally = ReturnType<typeof qualityCounts>
 
@@ -53,9 +45,12 @@ interface Props {
   value: QualityFilter
   onChange: (mode: QualityFilter) => void
   tally: Tally
-  // The distinct source formats present (each 'ext:MP3' with its count), only populated
-  // for a mixed crate so a single-format list grows no extra buckets.
+  // The distinct source formats present, each with its count — only populated for a mixed
+  // crate so a single-format list grows no format section. This is a separate filter axis
+  // (formatValue), ANDed with the primary `value` bucket.
   formats: { format: string; count: number }[]
+  formatValue: string | null
+  onFormatChange: (format: string | null) => void
   trackCount: number
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
@@ -78,6 +73,8 @@ export function QualityFilterBar({
   onChange,
   tally,
   formats,
+  formatValue,
+  onFormatChange,
   trackCount,
   visibleCount,
   selectedPosition,
@@ -103,21 +100,10 @@ export function QualityFilterBar({
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
     tally.inLibrary + tally.notInLibrary > 0 ? ['notInLibrary', 'inLibrary'] : [],
-    // Per-format buckets. Empty unless the crate is mixed (App passes nothing otherwise).
-    formats.map((f): QualityFilter => `ext:${f.format}`),
   ]
   const groups = allGroups.filter((g) => g.length > 0)
-  const formatCount = new Map(formats.map((f) => [`ext:${f.format}`, f.count]))
   const countOf = (mode: QualityFilter): number =>
-    mode === 'all'
-      ? trackCount
-      : isFormatFilter(mode)
-        ? (formatCount.get(mode) ?? 0)
-        : tally[mode as keyof Tally]
-  // The menu label is a translated bucket name, except a per-format bucket shows its
-  // uppercased extension verbatim, matching the row pill.
-  const labelOf = (mode: QualityFilter): string =>
-    isFormatFilter(mode) ? mode.slice(4) : tr(`sidebar.filter.${mode}`)
+    mode === 'all' ? trackCount : tally[mode as keyof Tally]
 
   // Focus the active option when the menu opens, so the arrows continue from the current
   // choice like a native select.
@@ -164,7 +150,7 @@ export function QualityFilterBar({
     items[next].focus()
   }
 
-  const ActiveIcon = iconFor(value)
+  const ActiveIcon = FILTER_ICONS[value]
   // Keep the suspect nudge on the trigger even when another filter is active, so a crate
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
   const triggerDot =
@@ -193,8 +179,18 @@ export function QualityFilterBar({
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span>{labelOf(value)}</span>
+          <span>{tr(`sidebar.filter.${value}`)}</span>
           <span className="tabular-nums opacity-70">{countOf(value)}</span>
+          {/* The active format axis, shown as a pill so a closed menu still reveals the
+              "… and only WAV" refinement layered on top of the primary bucket. */}
+          {formatValue && (
+            <span
+              data-testid="quality-filter-format-badge"
+              className="rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
+            >
+              {formatValue}
+            </span>
+          )}
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
         {open && (
@@ -226,9 +222,8 @@ export function QualityFilterBar({
                     />
                   )}
                   {group.map((mode) => {
-                    const Icon = iconFor(mode)
+                    const Icon = FILTER_ICONS[mode]
                     const dot = attentionDot(mode, tally)
-                    const name = labelOf(mode)
                     return (
                       <button
                         key={mode}
@@ -247,7 +242,7 @@ export function QualityFilterBar({
                             />
                           )}
                         </span>
-                        <span className="flex-1">{name}</span>
+                        <span className="flex-1">{tr(`sidebar.filter.${mode}`)}</span>
                         <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
                         <Check
                           aria-hidden="true"
@@ -258,6 +253,40 @@ export function QualityFilterBar({
                   })}
                 </Fragment>
               ))}
+              {/* The format axis: a separate, independently-toggled section that ANDs with
+                  the primary bucket above. Selecting one keeps the menu open (and the
+                  primary check) so a DJ can layer "… and only WAV"; clicking it again
+                  clears it. Only present for a mixed crate. */}
+              {formats.length > 0 && (
+                <>
+                  <hr
+                    data-testid="quality-filter-separator"
+                    className="my-1 border-0 border-t border-[var(--color-line)]"
+                  />
+                  {formats.map((f) => {
+                    const active = formatValue === f.format
+                    return (
+                      <button
+                        key={f.format}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        data-testid={`quality-filter-ext:${f.format}`}
+                        onClick={() => onFormatChange(active ? null : f.format)}
+                        className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
+                      >
+                        <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="flex-1">{f.format}</span>
+                        <span className="tabular-nums text-fg-dim">{f.count}</span>
+                        <Check
+                          aria-hidden="true"
+                          className={`size-3 shrink-0 ${active ? '' : 'invisible'}`}
+                        />
+                      </button>
+                    )
+                  })}
+                </>
+              )}
             </div>
           </>
         )}

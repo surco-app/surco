@@ -352,14 +352,9 @@ describe('sourceFormat', () => {
   })
 })
 
-describe('per-format filter and buckets', () => {
+describe('per-format buckets', () => {
   const t = (id: string, inputPath: string): TrackItem => ({ id, inputPath }) as TrackItem
   const tracks = [t('a', '/m/a.flac'), t('b', '/m/b.mp3'), t('c', '/m/c.wav'), t('d', '/m/d.mp3')]
-
-  it('keeps only the tracks of the requested source format', () => {
-    expect(filterByQuality(tracks, 'ext:MP3').map((x) => x.id)).toEqual(['b', 'd'])
-    expect(filterByQuality(tracks, 'ext:FLAC').map((x) => x.id)).toEqual(['a'])
-  })
 
   it('lists each present format with its count, sorted, for the filter chips', () => {
     expect(formatBuckets(tracks)).toEqual([
