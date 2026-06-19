@@ -228,6 +228,8 @@ export function useTrackProcessing({
     if (batching) return
     cancelBatchRef.current = false
     setBatching(true)
+    // Drop any lingering convert summary so its banner doesn't overlap this sweep.
+    setBatchSummary(null)
     setBatchProgress({ done: 0, total: ids.length })
     try {
       let done = 0

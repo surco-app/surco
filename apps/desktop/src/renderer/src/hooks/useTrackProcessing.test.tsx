@@ -357,6 +357,29 @@ describe('useTrackProcessing', () => {
     expect(addToAppleMusic).toHaveBeenCalledTimes(1)
   })
 
+  // The convert summary banner auto-dismisses after a few seconds; starting an Apple
+  // Music sweep before it does must clear it, or the stale "N converted" banner overlaps
+  // the sweep's own progress UI.
+  it('clears a lingering convert summary when the Apple Music sweep starts', async () => {
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      addToAppleMusic: vi.fn().mockResolvedValue(undefined),
+    })
+    const tracks = [track({ id: 'a', outputPath: '/out/a.aiff' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    await waitFor(() => expect(result.current.batchSummary).not.toBeNull())
+    await act(async () => {
+      await result.current.addAllToAppleMusic(['a'])
+    })
+    expect(result.current.batchSummary).toBeNull()
+  })
+
   it('hands the stored persistent ID to the conversion, so the automatic Apple Music step syncs the existing library copy instead of importing a duplicate', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
     setApi({ processTrack })
