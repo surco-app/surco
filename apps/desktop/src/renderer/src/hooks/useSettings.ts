@@ -10,7 +10,7 @@ interface Params {
   // True while the Settings modal is open, driving the re-read below.
   settingsOpen: boolean
   // Fired once with the first loaded settings, so App can pick the launch modal
-  // (onboarding wizard or donate nudge) — a decision that belongs to App, not here.
+  // (the onboarding wizard) — a decision that belongs to App, not here.
   onFirstLoad: (s: Settings) => void
   onLoadError: () => void
   onSaveError: () => void

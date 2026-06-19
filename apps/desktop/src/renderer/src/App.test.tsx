@@ -1200,14 +1200,42 @@ describe('App donate nudge', () => {
     return settings({ conversionCount: 50, ...over })
   }
 
-  // The occasional "what Surco saved you" summary: when the random draw lands on an
-  // eligible profile, it appears on launch — and the showing is stamped immediately,
-  // so the cooldown holds even if the app quits right after.
-  it('shows the stats summary when the draw lands and stamps the showing', async () => {
+  // An eligible profile that just converted a selection: the nudge rides that moment of
+  // value (not app launch), so a successful run is what reveals it. The convert path
+  // produces a real output, the api returns the eligible profile both at load and on the
+  // re-read, and the draw is forced to land.
+  async function convertOnEligibleProfile(over: Record<string, unknown> = {}): Promise<void> {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(eligible()),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false }),
+      ...over,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('convert-selected'))
+  }
+
+  // The nudge moved off app launch onto the moment of value: opening Surco is when the
+  // user wants to work, not be asked for money. An eligible profile that just launched
+  // and hasn't converted anything yet must see nothing, even when the draw would land.
+  it('does not appear on launch before any conversion', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()) })
+    await renderApp()
+    await flush()
+    expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
+  })
+
+  // After a conversion lands, the occasional "what Surco saved you" summary appears — and
+  // the showing is stamped immediately, so the cooldown holds even if the app quits right
+  // after. The count reads the re-read profile, so it reflects the conversion just done.
+  it('shows the stats summary after a conversion when the draw lands and stamps the showing', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.01)
     const saveSettings = vi.fn().mockResolvedValue(eligible())
-    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()), saveSettings })
-    await renderApp()
+    await convertOnEligibleProfile({ saveSettings })
     expect(await screen.findByTestId('donate-nudge-count')).toHaveTextContent('50')
     expect(saveSettings).toHaveBeenCalledWith({ donateNudgeLastShown: expect.any(String) })
     await flush()
@@ -1217,8 +1245,7 @@ describe('App donate nudge', () => {
   it('persists the permanent dismissal from the checkbox', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.01)
     const saveSettings = vi.fn().mockResolvedValue(eligible())
-    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()), saveSettings })
-    await renderApp()
+    await convertOnEligibleProfile({ saveSettings })
     await screen.findByTestId('donate-nudge-dismiss')
     fireEvent.click(screen.getByTestId('donate-nudge-dismiss'))
     fireEvent.click(screen.getByTestId('donate-nudge-close'))
@@ -1227,13 +1254,13 @@ describe('App donate nudge', () => {
     await flush()
   })
 
-  // The other side of "random, every now and then": most launches show nothing.
+  // The other side of "random, every now and then": most conversions show nothing.
   it('stays away when the draw misses', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.9)
-    setApi({ getSettings: vi.fn().mockResolvedValue(eligible()) })
-    await renderApp()
-    await flush()
+    await convertOnEligibleProfile()
+    await screen.findByTestId('batch-summary')
     expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
+    await flush()
   })
 })
 

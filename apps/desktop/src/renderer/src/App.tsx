@@ -193,17 +193,22 @@ export default function App(): React.JSX.Element {
     settingsOpen,
     onFirstLoad: (s) => {
       if (shouldShowOnboarding(s)) setActiveModal({ type: 'onboarding' })
-      else if (shouldShowDonateNudge(s, new Date(), Math.random())) {
-        setActiveModal({ type: 'donateNudge' })
-        // Stamp the showing immediately, not on close, so a quick quit still
-        // counts toward the cooldown and the nudge can never appear twice in a
-        // row. Straight to the bridge: only the next launch reads this value,
-        // so the renderer settings state doesn't need the refresh.
-        void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
-      }
     },
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
+  })
+  // Evaluated after a conversion run — the moment of value, when the savings summary
+  // means something. Re-reads settings so the conversion just recorded in main is
+  // counted and the modal shows the live total; never stomps an open modal. The
+  // showing is stamped immediately (not on close) so a quick quit still counts toward
+  // the cooldown and it can never appear twice in a row.
+  const maybeShowDonateNudge = useStableCallback(async () => {
+    if (activeModal !== null) return
+    const s = await window.api.getSettings()
+    if (!shouldShowDonateNudge(s, new Date(), Math.random())) return
+    setSettings(s)
+    setActiveModal({ type: 'donateNudge' })
+    void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
@@ -610,6 +615,7 @@ export default function App(): React.JSX.Element {
     tracks,
     settings,
     updateTrack,
+    onConversion: maybeShowDonateNudge,
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
   })
 
@@ -833,8 +839,10 @@ export default function App(): React.JSX.Element {
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (selected) updateTrack(selected.id, patch)
   })
-  const onProcessSelected = useStableCallback((format: OutputFormat) => {
-    if (selected) void processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
+  const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
+    if (!selected) return
+    const outcome = await processOne(selected.id, format, editorNormalizeRef.current ?? undefined)
+    if (outcome === 'converted') void maybeShowDonateNudge()
   })
   const onFormatChange = useStableCallback((format: OutputFormat) => {
     editorFormatRef.current = format

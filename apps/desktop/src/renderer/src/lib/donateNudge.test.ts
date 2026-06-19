@@ -51,9 +51,9 @@ describe('shouldShowDonateNudge', () => {
     ).toBe(true)
   })
 
-  // Past the cooldown it stays random per launch, so it lands "every now and then"
-  // instead of greeting the user on a predictable schedule.
-  it('only shows when the per-launch draw lands under the chance', () => {
+  // Past the cooldown it stays random per run, so it lands "every now and then"
+  // instead of on the exact conversion the cooldown expires.
+  it('only shows when the per-run draw lands under the chance', () => {
     expect(shouldShowDonateNudge(state(), now, SHOW_CHANCE - 0.01)).toBe(true)
     expect(shouldShowDonateNudge(state(), now, SHOW_CHANCE)).toBe(false)
   })

@@ -176,6 +176,40 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // The donate nudge rides the moment of value, and a convert-all is one moment no
+  // matter how many tracks it spans — firing per track would ask for support thirty
+  // times in a thirty-track run, the exact nagware the nudge is built to avoid.
+  it('fires onConversion once per run, not once per converted track', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' }) })
+    const onConversion = vi.fn()
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn(), onConversion }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(onConversion).toHaveBeenCalledTimes(1)
+  })
+
+  // A run that wrote nothing (every track skipped or failed) is no moment of value:
+  // asking for a donation right after it produced no result reads as nagware, so the
+  // nudge must stay silent unless at least one track actually converted.
+  it('does not fire onConversion when a run converted nothing', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '', skipped: true }) })
+    const onConversion = vi.fn()
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn(), onConversion }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(onConversion).not.toHaveBeenCalled()
+  })
+
   // A per-track custom name (set via rename/regenerate) is normally honored, so the
   // export lands under the user's chosen file name rather than the source's.
   it('honors a custom output name when not overwriting', async () => {

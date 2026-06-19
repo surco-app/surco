@@ -22,6 +22,10 @@ interface Params {
   // Surfaced when a track converted without the requested loudness normalization (its
   // measurement failed), so the skip doesn't pass silently. Receives the track's label.
   onNormalizeSkipped?: (name: string) => void
+  // Fired once after a convert-all run that produced at least one conversion — the
+  // moment of value the donate nudge rides. Fires per run, never per track, so a
+  // thirty-track batch triggers one evaluation, not thirty.
+  onConversion?: () => void
 }
 
 export interface TrackProcessing {
@@ -52,6 +56,7 @@ export function useTrackProcessing({
   settings,
   updateTrack,
   onNormalizeSkipped,
+  onConversion,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -263,6 +268,9 @@ export function useTrackProcessing({
       setBatching(false)
       setBatchSummary(summarizeBatch(results))
     }
+    // After the summary, never mid-run: a run that converted nothing (all skipped or
+    // failed) is no moment of value, so asking for support then would read as nagware.
+    if (results.includes('converted')) onConversion?.()
   }
 
   function cancelBatch(): void {

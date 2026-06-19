@@ -1,14 +1,15 @@
 import type { Settings } from '../../../shared/types'
 
-// The donate nudge is deliberately rare: Surco asks for support, it never nags.
-// Three gates make that hold — enough real usage that the savings summary means
-// something, a hard two-week cooldown between showings (the showing is stamped
-// on display, so twice in a day is impossible; a daily user sees it roughly
-// every two and a half weeks), and a per-launch random draw so it lands "every
-// now and then" instead of on a predictable schedule. The dismissed flag (the
-// modal's "don't show again") wins over everything.
-export const MIN_CONVERSIONS = 10
-export const MIN_DAYS_BETWEEN = 14
+// The donate nudge is deliberately gentle: Surco asks for support, it never nags.
+// It rides the moment of value — it's evaluated after a conversion run finishes,
+// when the savings summary it shows actually means something — held back by three
+// gates: enough real usage (a handful of conversions), a hard one-week cooldown
+// between showings (stamped on display, so twice in a session is impossible), and a
+// per-run random draw so it lands "every now and then" rather than on the exact
+// conversion the cooldown expires. The dismissed flag (the modal's "don't show
+// again") wins over everything.
+export const MIN_CONVERSIONS = 5
+export const MIN_DAYS_BETWEEN = 7
 export const SHOW_CHANCE = 0.25
 
 type NudgeState = Pick<
