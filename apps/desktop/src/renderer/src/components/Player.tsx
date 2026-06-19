@@ -220,7 +220,11 @@ export function Player({
             ) : loading ? (
               // Streaming from a network drive can take seconds to deliver the first
               // bytes; the spinner shows the click registered and the file is coming.
-              <LoaderCircle data-testid="player-loading" className="h-4 w-4 animate-spin" aria-hidden="true" />
+              <LoaderCircle
+                data-testid="player-loading"
+                className="h-4 w-4 animate-spin"
+                aria-hidden="true"
+              />
             ) : (
               <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
             )}

@@ -111,9 +111,8 @@ describe('search', () => {
     const fn = vi.fn(async (_url: string, init: { body: string }) => {
       const { search_text } = JSON.parse(init.body) as { search_text: string }
       // Only the bare-title candidate resolves; the noisy file-derived ones return nothing.
-      const results = search_text.includes('Rock that sound') && !search_text.includes('02')
-        ? [hit]
-        : []
+      const results =
+        search_text.includes('Rock that sound') && !search_text.includes('02') ? [hit] : []
       return { status: 200, ok: true, json: async () => ({ auto: { results } }) }
     })
     vi.stubGlobal('fetch', fn)

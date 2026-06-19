@@ -58,7 +58,15 @@ describe('detectKey', () => {
     // C–F–G–C covers the full major scale with the tonic emphasized — the
     // clearest possible statement of C major. 8B is what a DJ sorting by
     // Camelot expects to read for it.
-    const result = detectKey(progression([[C, E, G], [F, A, C], [G, B, D], [C, E, G]]), SR)
+    const result = detectKey(
+      progression([
+        [C, E, G],
+        [F, A, C],
+        [G, B, D],
+        [C, E, G],
+      ]),
+      SR,
+    )
     expect(result?.name).toBe('C')
     expect(result?.camelot).toBe('8B')
   })
@@ -67,7 +75,15 @@ describe('detectKey', () => {
     // A minor shares every note with C major; only the tonal centre differs.
     // An i–iv–v progression around A must read as Am (8A), not C — this is
     // the discrimination the major/minor profile pair exists for.
-    const result = detectKey(progression([[A, C, E], [D, F, A], [E, G, B], [A, C, E]]), SR)
+    const result = detectKey(
+      progression([
+        [A, C, E],
+        [D, F, A],
+        [E, G, B],
+        [A, C, E],
+      ]),
+      SR,
+    )
     expect(result?.name).toBe('Am')
     expect(result?.camelot).toBe('8A')
   })
@@ -102,7 +118,15 @@ describe('detectKey', () => {
   })
 
   it('reports a clear progression with high confidence', () => {
-    const result = detectKey(progression([[C, E, G], [F, A, C], [G, B, D], [C, E, G]]), SR)
+    const result = detectKey(
+      progression([
+        [C, E, G],
+        [F, A, C],
+        [G, B, D],
+        [C, E, G],
+      ]),
+      SR,
+    )
     expect(result?.confidence).toBeGreaterThan(0.5)
   })
 })

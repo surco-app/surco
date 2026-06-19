@@ -83,7 +83,7 @@ export function detectKey(samples: Float32Array, sampleRate: number): KeyResult 
   const binPitchClass = new Int8Array(maxBin + 1)
   for (let bin = minBin; bin <= maxBin; bin++) {
     const hz = (bin * sampleRate) / FRAME
-    binPitchClass[bin] = ((Math.round(12 * Math.log2(hz / 440)) + 9) % 12 + 12) % 12
+    binPitchClass[bin] = (((Math.round(12 * Math.log2(hz / 440)) + 9) % 12) + 12) % 12
   }
 
   const chroma = new Array(12).fill(0)

@@ -60,8 +60,7 @@ export function QualitySection({
   // The raw ffmpeg failure (with its temp paths and full command) is no help to a
   // user and is already logged in the main process; keep it only as a hover title
   // so the inline state can be a friendly icon + message instead of a red wall.
-  const analyzeErrorDetail =
-    spectrumQuery.error instanceof Error ? spectrumQuery.error.message : ''
+  const analyzeErrorDetail = spectrumQuery.error instanceof Error ? spectrumQuery.error.message : ''
   // Keyed by input path, so it measures once per file and reads the right figures on
   // a track switch. The ffmpeg pass waits for the selection to rest (this section
   // remounts with the per-track editor). A failed measure resolves null and the

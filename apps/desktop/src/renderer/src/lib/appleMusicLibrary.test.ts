@@ -89,9 +89,7 @@ describe('buildLibraryIndex / isInLibrary', () => {
   // And the other direction: a versioned tag matches a library copy stored under the base.
   it('matches a versioned tag against a base-title library entry', () => {
     const idx = buildLibraryIndex([{ title: 'It’s Not Over', artist: '3 Styles' }])
-    expect(isInLibrary(idx, { title: 'It’s Not Over (Hard House)', artist: '3 Styles' })).toBe(
-      true,
-    )
+    expect(isInLibrary(idx, { title: 'It’s Not Over (Hard House)', artist: '3 Styles' })).toBe(true)
   })
 
   // The version-suffix tolerance must not blow the title gate open: a different song by

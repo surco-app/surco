@@ -75,7 +75,8 @@ describe('useDiscogsBrowser', () => {
       ),
     })
     const { result } = renderHook(
-      () => useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+      () =>
+        useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
       { wrapper: wrapper() },
     )
     act(() => result.current.doSearch())

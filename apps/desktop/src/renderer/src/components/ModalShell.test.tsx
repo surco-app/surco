@@ -10,7 +10,12 @@ afterEach(cleanup)
 describe('ModalShell', () => {
   it('names the dialog from the heading it wraps', () => {
     render(
-      <ModalShell onClose={() => {}} backdropTestId="shell-backdrop" labelledBy="t" className="w-80">
+      <ModalShell
+        onClose={() => {}}
+        backdropTestId="shell-backdrop"
+        labelledBy="t"
+        className="w-80"
+      >
         <h2 id="t">Do the thing?</h2>
       </ModalShell>,
     )

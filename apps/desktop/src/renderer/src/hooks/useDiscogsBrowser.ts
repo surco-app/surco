@@ -196,5 +196,16 @@ export function useDiscogsBrowser(
       ? errorMessage(releaseQuery.error, tr('editor.releaseError'))
       : ''
 
-  return { query, setQuery, doSearch, results, release, openKey, loading, busy, error, previewRelease }
+  return {
+    query,
+    setQuery,
+    doSearch,
+    results,
+    release,
+    openKey,
+    loading,
+    busy,
+    error,
+    previewRelease,
+  }
 }

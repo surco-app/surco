@@ -12,9 +12,13 @@ const NYQUIST = 22050
 // (53.x dB across 17-22 kHz) holds to Nyquist — added highs.
 const KLIS = [68.1, 67.3, 67.0, 65.9, 64.2, 62.2, 60.2, 56.8, 54.2, 53.4, 53.1, 53.1, 53.0, 53.0]
 // Alex & Giro - Konichiwa: same fingerprint, a touch deeper shelf.
-const KONICHIWA = [70.3, 68.7, 66.6, 64.1, 61.9, 59.8, 58.0, 56.3, 53.5, 51.9, 51.2, 51.1, 51.1, 51.3]
+const KONICHIWA = [
+  70.3, 68.7, 66.6, 64.1, 61.9, 59.8, 58.0, 56.3, 53.5, 51.9, 51.2, 51.1, 51.1, 51.3,
+]
 // DJ DBC - Check Check This Out: genuine taper that keeps falling to the top.
-const CHECK_CHECK = [75.2, 73.9, 72.7, 71.9, 70.3, 68.3, 65.6, 62.0, 61.6, 60.5, 59.5, 59.6, 59.0, 58.6]
+const CHECK_CHECK = [
+  75.2, 73.9, 72.7, 71.9, 70.3, 68.3, 65.6, 62.0, 61.6, 60.5, 59.5, 59.6, 59.0, 58.6,
+]
 // Lazzard - Save Me: the nearest genuine file, still clearly declining.
 const LAZZARD = [70.8, 68.6, 68.4, 66.7, 65.8, 64.7, 64.1, 61.4, 59.7, 58.8, 58.1, 57.2, 56.7, 56.3]
 // DJ Misjah - The Professional: genuine dark master, deep continuous taper.

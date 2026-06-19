@@ -3,14 +3,26 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { buildTraktorNml } from './traktor'
 
-const track = (over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> }): TrackItem =>
+const track = (
+  over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> },
+): TrackItem =>
   ({
     id: over.id ?? 'x',
     inputPath: over.inputPath ?? '/music/x.wav',
     fileName: over.fileName ?? 'x.wav',
     duration: over.duration,
     outputPath: over.outputPath,
-    meta: { title: '', artist: '', album: '', genre: '', bpm: '', key: '', trackNumber: '', year: '', ...over.meta },
+    meta: {
+      title: '',
+      artist: '',
+      album: '',
+      genre: '',
+      bpm: '',
+      key: '',
+      trackNumber: '',
+      year: '',
+      ...over.meta,
+    },
   }) as TrackItem
 
 describe('buildTraktorNml', () => {
@@ -19,7 +31,15 @@ describe('buildTraktorNml', () => {
       id: 'a',
       inputPath: '/music/Run To Me.wav',
       duration: 313,
-      meta: { title: 'Run To Me', artist: 'Ruffcut', album: '21st Century', genre: 'Hardcore', bpm: '160', key: '8A', trackNumber: '1' },
+      meta: {
+        title: 'Run To Me',
+        artist: 'Ruffcut',
+        album: '21st Century',
+        genre: 'Hardcore',
+        bpm: '160',
+        key: '8A',
+        trackNumber: '1',
+      },
     }),
     track({ id: 'b', inputPath: '/music/b.aiff', meta: { title: 'B Side', artist: 'Nobody' } }),
   ])
@@ -57,14 +77,18 @@ describe('buildTraktorNml', () => {
   })
 
   it('uses the Windows drive letter as the VOLUME', () => {
-    const win = buildTraktorNml([track({ id: 'a', inputPath: 'C:\\Music\\track.wav', meta: { title: 'A' } })])
+    const win = buildTraktorNml([
+      track({ id: 'a', inputPath: 'C:\\Music\\track.wav', meta: { title: 'A' } }),
+    ])
     expect(win).toContain('VOLUME="C:"')
     expect(win).toContain('DIR="/:Music/:"')
     expect(win).toContain('KEY="C:/:Music/:track.wav"')
   })
 
   it('points the LOCATION at the converted output when present', () => {
-    const out = buildTraktorNml([track({ id: 'a', inputPath: '/in/a.wav', outputPath: '/out/a.aiff', meta: { title: 'A' } })])
+    const out = buildTraktorNml([
+      track({ id: 'a', inputPath: '/in/a.wav', outputPath: '/out/a.aiff', meta: { title: 'A' } }),
+    ])
     expect(out).toContain('DIR="/:out/:"')
     expect(out).toContain('FILE="a.aiff"')
   })

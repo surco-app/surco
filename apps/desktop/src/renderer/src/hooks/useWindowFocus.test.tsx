@@ -16,10 +16,12 @@ describe('useWindowFocus', () => {
   // The handler must run with the focus state on every focus/blur the main process reports.
   it('runs the handler with the reported focus state', () => {
     let emit: ((focused: boolean) => void) | undefined
-    setApi(vi.fn((cb) => {
-      emit = cb
-      return vi.fn()
-    }))
+    setApi(
+      vi.fn((cb) => {
+        emit = cb
+        return vi.fn()
+      }),
+    )
     const onFocus = vi.fn()
     renderHook(() => useWindowFocus(onFocus))
 

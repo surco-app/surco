@@ -5,7 +5,8 @@ import { open } from 'node:fs/promises'
 // production, without either knowing about the other.
 export type Reader = (offset: number, length: number) => Promise<Buffer>
 
-const ascii = (buf: Buffer, start: number, end: number): string => buf.toString('latin1', start, end)
+const ascii = (buf: Buffer, start: number, end: number): string =>
+  buf.toString('latin1', start, end)
 
 // Names a metadata container by sniffing the file's structure, since ffprobe reports
 // the tags' values but never which envelope they came from (ID3v2.3 vs an INFO list,

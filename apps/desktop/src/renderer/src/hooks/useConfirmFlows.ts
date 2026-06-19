@@ -1,10 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type {
-  NormalizeConfig,
-  OutputFormat,
-  Settings,
-  TrackMetadata,
-} from '../../../shared/types'
+import type { NormalizeConfig, OutputFormat, Settings, TrackMetadata } from '../../../shared/types'
 import { eligibleForBatch } from '../lib/batch'
 import { smartDeriveTags } from '../lib/deriveTags'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
@@ -154,7 +149,8 @@ export function useConfirmFlows({
     openConfirm({
       title: tr('confirm.convertInPlaceTitle'),
       message: tr('confirm.convertInPlaceMessage', {
-        count: eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
+        count: eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+          .length,
       }),
       confirmLabel: tr('confirm.convertInPlaceConfirm'),
       destructive: true,

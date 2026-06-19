@@ -1298,11 +1298,9 @@ describe('Editor Discogs apply', () => {
   // release image so the track ends up with sharper art.
   it('replaces a low-res cover with the release image when the setting is on', async () => {
     withImages()
-    const { onChange } = renderEditor(
-      { id: 'a', coverUrl: 'tiny.jpg' },
-      'wav',
-      { replaceLowResCover: true },
-    )
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg' }, 'wav', {
+      replaceLowResCover: true,
+    })
     const img = screen.getByTestId('cover-preview')
     Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
     Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })

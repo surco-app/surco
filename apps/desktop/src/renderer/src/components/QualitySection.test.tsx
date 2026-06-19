@@ -178,7 +178,7 @@ describe('QualitySection analysis failure', () => {
     // ffmpeg dumps its full command and temp paths on failure — useless to a user
     // and already logged in main. The section must show a friendly icon + message,
     // never that wall of text.
-    const raw = "Command failed: /Applications/Surco.app/.../ffmpeg ... Cannot determine format"
+    const raw = 'Command failed: /Applications/Surco.app/.../ffmpeg ... Cannot determine format'
     ;(window as unknown as { api: unknown }).api = {
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }

@@ -77,7 +77,10 @@ describe('detectTagFormats', () => {
     const file = wav(
       riffChunk('fmt ', Buffer.alloc(16)),
       riffChunk('data', Buffer.alloc(40)),
-      riffChunk('LIST', Buffer.concat([Buffer.from('INFO'), riffChunk('INAM', Buffer.from('Song\0'))])),
+      riffChunk(
+        'LIST',
+        Buffer.concat([Buffer.from('INFO'), riffChunk('INAM', Buffer.from('Song\0'))]),
+      ),
       riffChunk('id3 ', id3v2(3)),
     )
     expect(await detect(file)).toEqual(['ID3v2.3', 'INFO'])

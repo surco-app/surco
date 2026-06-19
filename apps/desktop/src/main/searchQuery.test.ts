@@ -38,9 +38,7 @@ describe('cleanQuery', () => {
   })
 
   it('drops a feat./ft. credit, which the release title usually omits', () => {
-    expect(cleanQuery('Tiesto Adagio For Strings feat. Someone')).toBe(
-      'Tiesto Adagio For Strings',
-    )
+    expect(cleanQuery('Tiesto Adagio For Strings feat. Someone')).toBe('Tiesto Adagio For Strings')
   })
 
   it('keeps a musical parenthetical and the real words intact', () => {

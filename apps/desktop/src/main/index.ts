@@ -604,7 +604,13 @@ function registerIpc(): void {
       // cleaned up in finally — tell the renderer there is no file to reveal, only an
       // Apple Music entry.
       if (musicOnly)
-        return { outputPath: '', inPlace, addedToMusicOnly: true, musicPersistentId, normalizeSkipped }
+        return {
+          outputPath: '',
+          inPlace,
+          addedToMusicOnly: true,
+          musicPersistentId,
+          normalizeSkipped,
+        }
 
       // The conversion wrote a real file the renderer may play next — directly, or
       // as the track's new source after an in-place rename — so let surco:// serve it.

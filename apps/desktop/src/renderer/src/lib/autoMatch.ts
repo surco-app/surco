@@ -75,7 +75,11 @@ export async function probeReleases(
       continue
     }
     if (opts.cancelled?.()) return undefined
-    if (m && m.confidence >= (opts.minConfidence ?? 0) && opts.accepts(confidenceTier(m.confidence))) {
+    if (
+      m &&
+      m.confidence >= (opts.minConfidence ?? 0) &&
+      opts.accepts(confidenceTier(m.confidence))
+    ) {
       return { release: rel, track: m.track, confidence: m.confidence, result }
     }
   }

@@ -1,12 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type {
-  Release,
-  SearchResult,
-  SearchHints,
-  SearchPriority,
-} from '../shared/types'
+import type { Release, SearchResult, SearchHints, SearchPriority } from '../shared/types'
 import { discogsLimiter } from './discogsLimiter'
 import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
@@ -37,8 +32,7 @@ const MAX_DELAY_MS = 8000
 
 export function retryDelayMs(attempt: number, retryAfter: string | null): number {
   const headerSec = retryAfter ? Number(retryAfter) : Number.NaN
-  if (Number.isFinite(headerSec) && headerSec >= 0)
-    return Math.min(headerSec * 1000, MAX_DELAY_MS)
+  if (Number.isFinite(headerSec) && headerSec >= 0) return Math.min(headerSec * 1000, MAX_DELAY_MS)
   return Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS)
 }
 

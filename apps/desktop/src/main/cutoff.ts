@@ -182,7 +182,8 @@ export function detectCutoff(
   if (valley) return { cutoffHz: valley.freqHz, processed: true, hasKnee: false }
 
   const kneeIndex = findKneeIndex(bands)
-  if (kneeIndex !== -1) return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
+  if (kneeIndex !== -1)
+    return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
   const ceiling = roughnessCeiling(fineBands)
   if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true, hasKnee: false }

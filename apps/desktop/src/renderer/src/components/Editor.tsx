@@ -25,12 +25,7 @@ import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { isLowResCover } from '../lib/quality'
-import {
-  bestMatch,
-  buildReleaseMeta,
-  confidenceTier,
-  type ReleaseMetaPatch,
-} from '../lib/release'
+import { bestMatch, buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
 import { stripParentheticals } from '../lib/textClean'
 import type { TrackItem } from '../types'
@@ -361,10 +356,7 @@ export const Editor = memo(function Editor({
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
   // pill in the user's casing.
-  const genreChips = useMemo(
-    () => buildGenreChips(genrePresets, release),
-    [genrePresets, release],
-  )
+  const genreChips = useMemo(() => buildGenreChips(genrePresets, release), [genrePresets, release])
   // Default to the file's own name so converting keeps it; the metadata-derived
   // name is opt-in via the "Regenerate from metadata" button below.
   const defaultOutputName = item.fileName

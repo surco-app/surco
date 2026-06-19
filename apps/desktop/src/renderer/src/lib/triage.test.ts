@@ -150,8 +150,7 @@ describe('filterByQuality / qualityCounts', () => {
 })
 
 describe('Apple Music library filter', () => {
-  const t = (id: string, inAppleMusic?: boolean): TrackItem =>
-    ({ id, inAppleMusic }) as TrackItem
+  const t = (id: string, inAppleMusic?: boolean): TrackItem => ({ id, inAppleMusic }) as TrackItem
   // 'unknown' has no verdict yet (library not loaded, or non-macOS) — neither filter
   // should claim it, or the user sees a track in both "owned" and "missing" buckets.
   const tracks = [t('owned', true), t('missing', false), t('unknown')]
@@ -172,8 +171,7 @@ describe('Apple Music library filter', () => {
 })
 
 describe('filterWithSticky', () => {
-  const t = (id: string, inAppleMusic?: boolean): TrackItem =>
-    ({ id, inAppleMusic }) as TrackItem
+  const t = (id: string, inAppleMusic?: boolean): TrackItem => ({ id, inAppleMusic }) as TrackItem
   const am = (id: string, autoMatched?: boolean): TrackItem =>
     ({ id, status: 'idle', autoMatched }) as TrackItem
 
@@ -183,23 +181,21 @@ describe('filterWithSticky', () => {
     // tags to the canonical name, which now matches the library and flips inAppleMusic
     // true. Without pinning the row would vanish from under them mid-work.
     const sticky = new Set<string>()
-    expect(filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
-      'a',
-      'b',
-    ])
-    expect(filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
-      'a',
-      'b',
-    ])
+    expect(
+      filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+    ).toEqual(['a', 'b'])
+    expect(
+      filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+    ).toEqual(['a', 'b'])
   })
 
   it('recomputes membership from scratch when the filter is re-applied (a fresh sticky set)', () => {
     // Re-clicking the chip is the deliberate "refresh" — the caller hands a new empty set,
     // so the now-owned row finally drops and the list reflects the current verdicts.
     const fresh = new Set<string>()
-    expect(filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', fresh).map((x) => x.id)).toEqual([
-      'b',
-    ])
+    expect(
+      filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', fresh).map((x) => x.id),
+    ).toEqual(['b'])
   })
 
   it('still surfaces a row that newly qualifies once its library verdict resolves', () => {
@@ -207,10 +203,9 @@ describe('filterWithSticky', () => {
     // slow library lookup would leave real not-in-library tracks hidden.
     const sticky = new Set<string>()
     filterWithSticky([t('a', false)], 'notInLibrary', sticky)
-    expect(filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id)).toEqual([
-      'a',
-      'b',
-    ])
+    expect(
+      filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+    ).toEqual(['a', 'b'])
   })
 
   it('does not pin non-library filters, which drop a row as soon as it stops matching', () => {

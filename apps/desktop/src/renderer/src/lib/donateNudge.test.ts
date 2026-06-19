@@ -28,9 +28,9 @@ describe('shouldShowDonateNudge', () => {
   // A summary of "what Surco saved you" is meaningless to someone who has barely
   // used it — and asking them for money on day one would read as nagware.
   it('waits until there is real usage to summarize', () => {
-    expect(
-      shouldShowDonateNudge(state({ conversionCount: MIN_CONVERSIONS - 1 }), now, 0),
-    ).toBe(false)
+    expect(shouldShowDonateNudge(state({ conversionCount: MIN_CONVERSIONS - 1 }), now, 0)).toBe(
+      false,
+    )
     expect(shouldShowDonateNudge(state({ conversionCount: MIN_CONVERSIONS }), now, 0)).toBe(true)
   })
 

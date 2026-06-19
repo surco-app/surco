@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type {
-  Release,
-  SearchResult,
-  ReleaseTrack,
-  TrackMetadata,
-} from '../../../shared/types'
+import type { Release, SearchResult, ReleaseTrack, TrackMetadata } from '../../../shared/types'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -186,7 +181,10 @@ describe('scoreTrack', () => {
   // far above a mere partial overlap — otherwise a duration tie picks the wrong mix.
   it('scores a reordered title high, well above a loose partial match', () => {
     const reordered = scoreTrack({ position: 'A1', title: 'All Love' }, { title: 'Love All' })
-    const partial = scoreTrack({ position: 'A1', title: 'Love Hurts Always' }, { title: 'Love All' })
+    const partial = scoreTrack(
+      { position: 'A1', title: 'Love Hurts Always' },
+      { title: 'Love All' },
+    )
     expect(reordered).toBeGreaterThan(0.85)
     expect(reordered).toBeGreaterThan(partial)
   })

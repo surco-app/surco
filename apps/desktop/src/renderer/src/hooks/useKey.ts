@@ -8,5 +8,8 @@ import { analysisOptions } from '../lib/analysisQueries'
 // multi-select) — there is nowhere to suggest the value. An atonal track
 // resolves null and the suggestion chip simply doesn't render.
 export function useKey(inputPath: string, enabled: boolean): UseQueryResult<KeyResult | null> {
-  return useQuery({ ...analysisOptions('key', inputPath, () => window.api.key(inputPath)), enabled })
+  return useQuery({
+    ...analysisOptions('key', inputPath, () => window.api.key(inputPath)),
+    enabled,
+  })
 }

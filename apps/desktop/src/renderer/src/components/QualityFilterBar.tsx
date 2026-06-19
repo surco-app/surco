@@ -116,7 +116,9 @@ export function QualityFilterBar({
       e.stopPropagation()
       return
     }
-    const items = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
+    const items = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
+    )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     let next = -1

@@ -73,7 +73,12 @@ describe('Waveform', () => {
     const onScrub = vi.fn()
     setWaveform(wave)
     renderWithQuery(
-      <Waveform inputPath="/m/a.wav" audioRef={{ current: null }} active={false} onScrub={onScrub} />,
+      <Waveform
+        inputPath="/m/a.wav"
+        audioRef={{ current: null }}
+        active={false}
+        onScrub={onScrub}
+      />,
     )
     const strip = await screen.findByTestId('waveform')
     // With no <audio> duration to lean on, the strip maps clicks once the decoded
@@ -143,7 +148,12 @@ describe('Waveform', () => {
   it('hides the playhead when another track (or none) is playing', async () => {
     setWaveform(wave)
     renderWithQuery(
-      <Waveform inputPath="/m/a.wav" audioRef={{ current: null }} active={false} onScrub={vi.fn()} />,
+      <Waveform
+        inputPath="/m/a.wav"
+        audioRef={{ current: null }}
+        active={false}
+        onScrub={vi.fn()}
+      />,
     )
     await screen.findByTestId('waveform')
     expect(screen.queryByTestId('waveform-playhead')).not.toBeInTheDocument()
@@ -154,7 +164,12 @@ describe('Waveform', () => {
     // imply a zero-length track instead of "no waveform".
     setWaveform(null)
     const { container } = renderWithQuery(
-      <Waveform inputPath="/m/a.wav" audioRef={{ current: null }} active={false} onScrub={vi.fn()} />,
+      <Waveform
+        inputPath="/m/a.wav"
+        audioRef={{ current: null }}
+        active={false}
+        onScrub={vi.fn()}
+      />,
     )
     await waitFor(() => expect(screen.queryByTestId('waveform-loading')).not.toBeInTheDocument())
     expect(screen.queryByTestId('waveform')).not.toBeInTheDocument()

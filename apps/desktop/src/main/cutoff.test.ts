@@ -235,8 +235,8 @@ describe('detectCutoff', () => {
 // patches meet — the only measurable trace of a source that fooled every
 // coarse rule by tapering smoothly all the way to Nyquist.
 const FINE_FREQS = [
-  13000, 13500, 14000, 14500, 15000, 15500, 16000, 16500, 17000, 17500, 18000, 18500, 19000,
-  19500, 20000, 20500, 21000,
+  13000, 13500, 14000, 14500, 15000, 15500, 16000, 16500, 17000, 17500, 18000, 18500, 19000, 19500,
+  20000, 20500, 21000,
 ]
 const fine = (rms: number[]): Band[] => FINE_FREQS.map((freqHz, i) => ({ freqHz, rmsDb: rms[i] }))
 
@@ -248,14 +248,14 @@ const SBR_COARSE = band([
   -31.1, -30.9, -31.8, -32.4, -33.7, -35.6, -37.2, -39.4, -42.4, -46.6, -50.4, -53.0, -55.7,
 ])
 const SBR_FINE = fine([
-  -38.6, -38.5, -39.6, -40.1, -41.5, -42.4, -43.4, -45.2, -50.1, -50.1, -48.4, -54.6, -52.3,
-  -56.8, -55.7, -58.3, -64.8,
+  -38.6, -38.5, -39.6, -40.1, -41.5, -42.4, -43.4, -45.2, -50.1, -50.1, -48.4, -54.6, -52.3, -56.8,
+  -55.7, -58.3, -64.8,
 ])
 // The same fine measurement on a genuine 320 (the SMOOTH_TAPER_320 file):
 // perfectly monotone, zero roughness — the population the threshold must spare.
 const SMOOTH_TAPER_320_FINE = fine([
-  -41.7, -42.6, -44.1, -47.1, -48.4, -50.2, -52.4, -55.0, -58.1, -60.5, -62.3, -63.9, -66.1,
-  -68.8, -71.3, -74.6, -77.6,
+  -41.7, -42.6, -44.1, -47.1, -48.4, -50.2, -52.4, -55.0, -58.1, -60.5, -62.3, -63.9, -66.1, -68.8,
+  -71.3, -74.6, -77.6,
 ])
 
 describe('detectCutoff fine-band roughness', () => {

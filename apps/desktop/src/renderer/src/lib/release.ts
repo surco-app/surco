@@ -1,9 +1,4 @@
-import type {
-  Release,
-  SearchResult,
-  ReleaseTrack,
-  TrackMetadata,
-} from '../../../shared/types'
+import type { Release, SearchResult, ReleaseTrack, TrackMetadata } from '../../../shared/types'
 import { parseDuration } from './duration'
 import { foldText } from './normalizeText'
 import { splitPosition } from './position'
@@ -215,10 +210,7 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 // name the file's artist (and, secondarily, its title) are probed first: the auto-match's
 // recall hinges on the real release being reached inside the cap. The sort is stable, so
 // Discogs' order stands as the tie-break and equally-relevant rows keep their place.
-export function preRankResults(
-  results: SearchResult[],
-  target: TrackMatchTarget,
-): SearchResult[] {
+export function preRankResults(results: SearchResult[], target: TrackMatchTarget): SearchResult[] {
   const relevance = (result: SearchResult): number => {
     const hay = normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
     const fraction = (field: string | undefined): number => {

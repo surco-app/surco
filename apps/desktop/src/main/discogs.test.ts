@@ -112,10 +112,7 @@ describe('search', () => {
   // The first candidate keeps the mix name; when it finds nothing the client retries
   // the parenthetical-stripped query, which is what surfaces the release.
   it('falls back to the parenthetical-stripped query when the fuller one finds nothing', async () => {
-    const fetchMock = mockSequence([
-      res(200, { results: [] }),
-      res(200, { results: [{ id: 9 }] }),
-    ])
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 9 }] })])
     const out = await search('Cascade Probe (Original Mix)', 'tok')
     expect(out).toEqual([{ id: 9, provider: 'discogs' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -334,8 +331,20 @@ describe('dedupeResults', () => {
   // identically (title, year, label, format) keeps the list readable.
   it('collapses results that would render identically, keeping the first', () => {
     const out = dedupeResults([
-      result({ id: 1, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['Vinyl', 'LP'] }),
-      result({ id: 2, title: 'Discovery', year: '2001', label: ['Virgin'], format: ['Vinyl', 'LP'] }),
+      result({
+        id: 1,
+        title: 'Discovery',
+        year: '2001',
+        label: ['Virgin'],
+        format: ['Vinyl', 'LP'],
+      }),
+      result({
+        id: 2,
+        title: 'Discovery',
+        year: '2001',
+        label: ['Virgin'],
+        format: ['Vinyl', 'LP'],
+      }),
     ])
     expect(out.map((r) => r.id)).toEqual([1])
   })

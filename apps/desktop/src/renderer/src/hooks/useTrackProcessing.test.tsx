@@ -85,7 +85,9 @@ describe('useTrackProcessing', () => {
   // passing silently and the file landing un-normalized without warning.
   it('reports the track name when normalization was skipped', async () => {
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', normalizeSkipped: true }),
+      processTrack: vi
+        .fn()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', normalizeSkipped: true }),
     })
     const onNormalizeSkipped = vi.fn()
     const { result } = renderHook(

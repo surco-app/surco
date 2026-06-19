@@ -3,14 +3,26 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { buildRekordboxXml } from './rekordbox'
 
-const track = (over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> }): TrackItem =>
+const track = (
+  over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> },
+): TrackItem =>
   ({
     id: over.id ?? 'x',
     inputPath: over.inputPath ?? '/music/x.wav',
     fileName: over.fileName ?? 'x.wav',
     duration: over.duration,
     outputPath: over.outputPath,
-    meta: { title: '', artist: '', album: '', genre: '', bpm: '', key: '', trackNumber: '', year: '', ...over.meta },
+    meta: {
+      title: '',
+      artist: '',
+      album: '',
+      genre: '',
+      bpm: '',
+      key: '',
+      trackNumber: '',
+      year: '',
+      ...over.meta,
+    },
   }) as TrackItem
 
 describe('buildRekordboxXml', () => {
@@ -19,7 +31,16 @@ describe('buildRekordboxXml', () => {
       id: 'a',
       inputPath: '/music/Run To Me.wav',
       duration: 313,
-      meta: { title: 'Run To Me', artist: 'Ruffcut', album: '21st Century', genre: 'Hardcore', bpm: '160', key: '8A', trackNumber: '1', year: '1999' },
+      meta: {
+        title: 'Run To Me',
+        artist: 'Ruffcut',
+        album: '21st Century',
+        genre: 'Hardcore',
+        bpm: '160',
+        key: '8A',
+        trackNumber: '1',
+        year: '1999',
+      },
     }),
     track({ id: 'b', inputPath: '/music/b.aiff', meta: { title: 'B Side', artist: 'Nobody' } }),
   ])

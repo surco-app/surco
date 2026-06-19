@@ -46,9 +46,7 @@ function setup(tracks: TrackItem[]): {
   const updateTrack = vi.fn()
   const tracksRef = { current: tracks }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
-  const { result } = renderHook(() =>
-    useAutoMatch({ tracksRef, updateTrack, searchProvidersRef }),
-  )
+  const { result } = renderHook(() => useAutoMatch({ tracksRef, updateTrack, searchProvidersRef }))
   return { result, updateTrack, tracksRef }
 }
 

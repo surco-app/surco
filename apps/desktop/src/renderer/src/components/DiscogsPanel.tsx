@@ -49,8 +49,18 @@ export function DiscogsPanel({
   formatFilter,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { query, setQuery, doSearch, results, release, openKey, loading, busy, error, previewRelease } =
-    browser
+  const {
+    query,
+    setQuery,
+    doSearch,
+    results,
+    release,
+    openKey,
+    loading,
+    busy,
+    error,
+    previewRelease,
+  } = browser
   const discogs = useResizableWidth(315, 300, 720)
 
   // Double-clicking the divider fits the Discogs column to its results: measure how far each

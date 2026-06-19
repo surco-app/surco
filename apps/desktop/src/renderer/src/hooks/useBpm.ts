@@ -8,5 +8,8 @@ import { analysisOptions } from '../lib/analysisQueries'
 // there is nowhere to suggest the value. A beatless track resolves null and
 // the suggestion chip simply doesn't render.
 export function useBpm(inputPath: string, enabled: boolean): UseQueryResult<BpmResult | null> {
-  return useQuery({ ...analysisOptions('bpm', inputPath, () => window.api.bpm(inputPath)), enabled })
+  return useQuery({
+    ...analysisOptions('bpm', inputPath, () => window.api.bpm(inputPath)),
+    enabled,
+  })
 }
