@@ -54,9 +54,16 @@ export function useSettings({
 
   // Conversions bump the persisted count from the main process, so re-read settings
   // each time the Settings modal opens to keep the Stats tab current within a session.
+  // Guarded against a late resolve: if the modal closes (or a save lands) before this
+  // read returns, dropping it keeps the stale value from clobbering the newer state.
   useEffect(() => {
-    if (settingsOpen) {
-      window.api.getSettings().then(setSettings)
+    if (!settingsOpen) return
+    let cancelled = false
+    window.api.getSettings().then((s) => {
+      if (!cancelled) setSettings(s)
+    })
+    return () => {
+      cancelled = true
     }
   }, [settingsOpen])
 
