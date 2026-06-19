@@ -99,14 +99,14 @@ describe('QualityFilterBar', () => {
   })
 
   // Format is its own axis: picking it reports through onFormatChange (not onChange) and
-  // leaves the menu open so the user can also set a primary bucket in the same session.
-  it('reports a format pick through the format axis and keeps the menu open', () => {
+  // closes the menu like a primary pick — the combination still holds via state.
+  it('reports a format pick through the format axis and closes the menu', () => {
     const { onChange, onFormatChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
     expect(onFormatChange).toHaveBeenCalledWith('WAV')
     expect(onChange).not.toHaveBeenCalled()
-    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-listbox')).toBeNull()
   })
 
   it('toggles the active format off when picked again', () => {
@@ -134,8 +134,6 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-good')).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByTestId('quality-filter-ext:WAV')).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveAttribute('aria-selected', 'false')
-    // The closed-menu trigger still reveals the format refinement as a pill.
-    expect(screen.getByTestId('quality-filter-format-badge')).toHaveTextContent('WAV')
   })
 
   // The buckets span several dimensions (quality, conversion, library, format); a divider

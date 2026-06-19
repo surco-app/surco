@@ -640,7 +640,8 @@ export default function App(): React.JSX.Element {
     return sortTracks(
       filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter(
         // The format axis ANDs with the primary bucket and the search.
-        (t) => matchesSearch(t, deferredSearch) && (!formatFilter || sourceFormat(t) === formatFilter),
+        (t) =>
+          matchesSearch(t, deferredSearch) && (!formatFilter || sourceFormat(t) === formatFilter),
       ),
       sortBy,
       sortDir,
@@ -671,11 +672,13 @@ export default function App(): React.JSX.Element {
     const i = visibleTracks.findIndex((t) => t.id === selectedId)
     return i < 0 ? null : i + 1
   }, [visibleTracks, selectedId])
-  // A quality-filter change can hide the selected track; left alone its editor lingers
-  // out of view and the position pill reads "–/N". Drop to the first track the new
-  // filter shows (or clear when it shows none) so the editor and count always reflect
-  // what's on screen. Scoped to the filter — not search, which changes per keystroke and
-  // would thrash the editor's per-track fetches; sort only reorders, never hides.
+  // A filter change (quality bucket or format axis) can hide the selected track; left alone
+  // its editor lingers out of view and the position pill reads "–/N". Drop to the first
+  // track the new filter shows (or clear when it shows none) so the editor and count always
+  // reflect what's on screen. Must react to BOTH filter axes — the format filter hiding the
+  // selection used to leave the list with no visible row selected. Scoped to the filters —
+  // not search, which changes per keystroke and would thrash the editor's per-track fetches;
+  // sort only reorders, never hides.
   // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selectedId are read from the latest render.
   useEffect(() => {
     const next = reanchorToVisible(
@@ -683,7 +686,7 @@ export default function App(): React.JSX.Element {
       selectedId,
     )
     if (next) setSelection(next)
-  }, [qualityFilter])
+  }, [qualityFilter, formatFilter])
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
   const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])

@@ -122,6 +122,13 @@ export function QualityFilterBar({
     close()
   }
 
+  // Toggling a format closes the menu like a primary pick — the combination still holds
+  // (the primary stays selected in state), the user just reopens to layer the other axis.
+  function chooseFormat(format: string | null): void {
+    onFormatChange(format)
+    close()
+  }
+
   // The open menu owns its keys: each handled press stops propagating so the window-level
   // shortcut handler can't also move the track selection behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
@@ -181,16 +188,6 @@ export function QualityFilterBar({
           </span>
           <span>{tr(`sidebar.filter.${value}`)}</span>
           <span className="tabular-nums opacity-70">{countOf(value)}</span>
-          {/* The active format axis, shown as a pill so a closed menu still reveals the
-              "… and only WAV" refinement layered on top of the primary bucket. */}
-          {formatValue && (
-            <span
-              data-testid="quality-filter-format-badge"
-              className="rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
-            >
-              {formatValue}
-            </span>
-          )}
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
         {open && (
@@ -272,7 +269,7 @@ export function QualityFilterBar({
                         role="option"
                         aria-selected={active}
                         data-testid={`quality-filter-ext:${f.format}`}
-                        onClick={() => onFormatChange(active ? null : f.format)}
+                        onClick={() => chooseFormat(active ? null : f.format)}
                         className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
                       >
                         <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />

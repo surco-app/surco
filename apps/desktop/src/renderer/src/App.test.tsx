@@ -1238,9 +1238,9 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // …then layering the WAV format narrows it to just the wav, the primary still applied.
+    // (Picking a format closes the menu on its own.)
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
-    fireEvent.click(screen.getByTestId('quality-filter-backdrop'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
@@ -1249,16 +1249,37 @@ describe('App per-format filter', () => {
   // (unlike the deliberately-sticky Apple Music buckets).
   it('falls back to every format when the filtered format is no longer present', async () => {
     await addMixedCrate()
-    // Narrow to just the MP3, then close the menu to reach the row beneath it.
+    // Narrow to just the MP3 (picking a format closes the menu on its own).
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
-    fireEvent.click(screen.getByTestId('quality-filter-backdrop'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.contextMenu(screen.getByTestId('track-row'))
     fireEvent.click(screen.getByTestId('track-menu-remove'))
     // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
     // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+})
+
+describe('App filter selection', () => {
+  // A filter that hides the selected track (here the format axis, which used not to react)
+  // must drop the selection onto the first row the new view shows — otherwise the list sits
+  // with nothing visibly selected and the editor lingers on an off-screen track.
+  it('moves the selection to the first visible track when the format filter hides the selected one', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // Import auto-selects the first row (the wav). Filtering to MP3 hides it…
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    // …so the lone remaining row (the mp3) becomes the selected one.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-pressed', 'true')
   })
 })
 
