@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
 
 import type { SearchResult } from '../shared/types'
-import { discogsLimiter } from './discogsLimiter'
 import {
   dedupeResults,
   downloadCover,
@@ -16,6 +15,7 @@ import {
   retryDelayMs,
   search,
 } from './discogs'
+import { discogsLimiter } from './discogsLimiter'
 
 const result = (over: Partial<SearchResult>): SearchResult =>
   ({ id: 1, title: 'X', ...over }) as SearchResult
