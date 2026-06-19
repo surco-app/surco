@@ -41,6 +41,9 @@ export function createWorkerClient(spawn: () => Worker): WorkerClient {
     pending.clear()
     for (const queued of queue.splice(0)) queued.reject(error)
     inFlightId = null
+    // An 'error' can fire on a thread that hasn't exited; terminate it so the
+    // respawn never leaves the dead worker's OS thread alive.
+    worker?.terminate()
     worker = null
   }
 

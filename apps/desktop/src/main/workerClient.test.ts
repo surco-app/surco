@@ -6,8 +6,12 @@ import { createWorkerClient } from './workerClient'
 // A stand-in worker: an EventEmitter with a recorded postMessage, so tests drive
 // responses by emitting 'message' and failures by emitting 'error'.
 function fakeWorker() {
-  const w = new EventEmitter() as EventEmitter & { postMessage: ReturnType<typeof vi.fn> }
+  const w = new EventEmitter() as EventEmitter & {
+    postMessage: ReturnType<typeof vi.fn>
+    terminate: ReturnType<typeof vi.fn>
+  }
   w.postMessage = vi.fn()
+  w.terminate = vi.fn()
   return w
 }
 
@@ -80,6 +84,23 @@ describe('createWorkerClient', () => {
     second.emit('message', { id: second.postMessage.mock.calls[0][0].id, ok: true, result: 'ok' })
     await expect(revived).resolves.toBe('ok')
     expect(spawn).toHaveBeenCalledTimes(2)
+  })
+
+  // A worker that emits 'error' without exiting leaves its OS thread alive. The
+  // client must terminate it before respawning, or a session of crashes leaks one
+  // thread per failure.
+  it('terminates the dead worker so a respawn never leaks the thread', async () => {
+    const first = fakeWorker()
+    const second = fakeWorker()
+    const spawn = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Worker)
+      .mockReturnValueOnce(second as unknown as Worker)
+    const client = createWorkerClient(spawn)
+    const doomed = client.run(job)
+    first.emit('error', new Error('worker crashed'))
+    await expect(doomed).rejects.toThrow('worker crashed')
+    expect(first.terminate).toHaveBeenCalledTimes(1)
   })
 
   // Jobs still waiting in the client when the thread dies must reject like the
