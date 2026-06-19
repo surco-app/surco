@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
+import type { SettingsTab } from '../lib/settingsTabs'
 
-export type SettingsTab = 'general' | 'search' | 'stats' | 'naming' | 'shortcuts'
+export type { SettingsTab }
 
 export interface ConfirmModal {
   title: string
