@@ -98,6 +98,16 @@ describe('prepareProcessedCover', () => {
     expect(unlink).toHaveBeenCalledWith('/tmp/processed.jpg')
   })
 
+  // A failed processing pass must not strand the file we just downloaded: cleanup is
+  // only returned on success, so the temp has to be removed before the error propagates.
+  it('removes the downloaded temp when processing fails', async () => {
+    processCover.mockRejectedValue(new Error('ffmpeg blew up'))
+    await expect(
+      prepareProcessedCover({ coverUrl: 'https://img/cover.jpg' }, opts),
+    ).rejects.toThrow('ffmpeg blew up')
+    expect(unlink).toHaveBeenCalledWith('/tmp/downloaded.jpg')
+  })
+
   it('decodes embedded art carried as a data URL before processing it', async () => {
     const prepared = await prepareProcessedCover({ coverUrl: 'data:image/jpeg;base64,QUJD' }, opts)
     expect(writeFile).toHaveBeenCalledTimes(1)
