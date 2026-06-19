@@ -28,6 +28,11 @@ export function useQualityAnalysis({ tracksViewRef }: Params): QualityAnalysis {
   // cancelling stops new analyses without killing the ones already handed to ffmpeg.
   const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
   const analyzeCancel = useRef(false)
+  // Re-entry guard read synchronously (unlike the analysis state, which lags a render),
+  // so a second trigger in the same tick can't start a competing sweep — mirroring the
+  // ref guards in useTrackProcessing/useAutoMatch and keeping this callback's identity
+  // stable so the command registry isn't rebuilt on every progress tick.
+  const runningRef = useRef(false)
   // Pauses the sweep while the window is in the background (fed by the main process's
   // blur/focus events) so it stops spawning ffmpeg until the app returns.
   const focusGate = useRef(createFocusGate())
@@ -39,7 +44,8 @@ export function useQualityAnalysis({ tracksViewRef }: Params): QualityAnalysis {
   // list reads its verdicts from, and dedups with a concurrent hover for the same file.
   const analyzeAllQuality = useCallback((): void => {
     const targets = tracksToAnalyze(tracksViewRef.current, new Set())
-    if (analysis || targets.length === 0) return
+    if (runningRef.current || targets.length === 0) return
+    runningRef.current = true
     analyzeCancel.current = false
     let done = 0
     setAnalysis({ done: 0, total: targets.length })
@@ -57,8 +63,11 @@ export function useQualityAnalysis({ tracksViewRef }: Params): QualityAnalysis {
         done += 1
         setAnalysis((a) => (a ? { ...a, done } : a))
       }
-    }).finally(() => setAnalysis(null))
-  }, [analysis, queryClient, tracksViewRef])
+    }).finally(() => {
+      runningRef.current = false
+      setAnalysis(null)
+    })
+  }, [queryClient, tracksViewRef])
 
   const cancelAnalysis = useCallback((): void => {
     analyzeCancel.current = true
