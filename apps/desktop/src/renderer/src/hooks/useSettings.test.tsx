@@ -63,4 +63,50 @@ describe('useSettings modal-open refresh', () => {
 
     expect(result.current.settings).toEqual(initial)
   })
+
+  // A config-dir adoption (or save) can land while the modal is still open and an
+  // earlier modal-open refresh is in flight. The stale refresh only exists to bump the
+  // Stats count, so it must merge that count — never replace the whole object and revert
+  // the freshly adopted fields.
+  it('keeps a setting adopted while a modal-open refresh is still in flight', async () => {
+    const initial = settings({ conversionCount: 1, theme: 'light' })
+    const staleOnDisk = settings({ conversionCount: 5, theme: 'light' })
+    let resolveRefresh: (s: Settings) => void = () => {}
+    const refresh = new Promise<Settings>((r) => {
+      resolveRefresh = r
+    })
+    const getSettings = vi
+      .fn()
+      .mockResolvedValueOnce(initial) // initial load
+      .mockReturnValueOnce(refresh) // modal-open refresh, controlled below
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings }
+
+    const noop = (): void => {}
+    const { result, rerender } = renderHook(
+      ({ open }) =>
+        useSettings({
+          settingsOpen: open,
+          onFirstLoad: noop,
+          onLoadError: noop,
+          onSaveError: noop,
+        }),
+      { initialProps: { open: false } },
+    )
+
+    await waitFor(() => expect(result.current.settings).toEqual(initial))
+
+    rerender({ open: true }) // open the modal — fires the refresh, which stays in flight
+    // A config-dir switch adopts another machine's prefs mid-session via setSettings.
+    act(() => result.current.setSettings(settings({ conversionCount: 1, theme: 'dark' })))
+
+    await act(async () => {
+      resolveRefresh(staleOnDisk)
+      await refresh
+    })
+
+    // The adopted theme survives; only the Stats count is allowed to refresh.
+    expect(result.current.settings?.theme).toBe('dark')
+    expect(result.current.settings?.conversionCount).toBe(5)
+  })
 })
