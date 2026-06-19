@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { pickInstallerRelease } from '../lib/downloads'
+import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
 
@@ -19,8 +20,7 @@ function detectOS(): OS {
 
 const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', other: '' }
 
-const primary =
-  'inline-flex items-center rounded-full bg-blue px-7 py-3 text-sm font-semibold text-bg shadow-lg shadow-blue/20 transition-[background-color,box-shadow,translate,scale] duration-200 hover:bg-cyan hover:shadow-xl hover:shadow-cyan/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96]'
+const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 
 // Resolves the installer for the visitor's OS from the newest published release that
 // actually carries it. A brand-new release shows up before CI finishes uploading its 12
