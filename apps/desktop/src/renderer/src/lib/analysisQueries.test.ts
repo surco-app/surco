@@ -23,14 +23,14 @@ describe('removeAnalysisQueries', () => {
   // premise for one path — eviction must clear that path's facts and only that path's.
   it('drops every probe family for the path and leaves other paths alone', () => {
     const client = new QueryClient()
-    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key']) {
+    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key', 'waveform']) {
       client.setQueryData([key, '/m/a.wav'], { fact: key })
       client.setQueryData([key, '/m/b.wav'], { fact: key })
     }
 
     removeAnalysisQueries(client, '/m/a.wav')
 
-    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key']) {
+    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key', 'waveform']) {
       expect(client.getQueryData([key, '/m/a.wav'])).toBeUndefined()
       expect(client.getQueryData([key, '/m/b.wav'])).toEqual({ fact: key })
     }

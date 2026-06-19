@@ -15,7 +15,14 @@ export function analysisOptions<T>(name: string, inputPath: string, probe: () =>
 // break that premise — an in-place export rewriting the file, and a track leaving the
 // list (whose cached spectrogram image would otherwise be retained forever) — and both
 // must evict through here so no family is ever missed.
-export const ANALYSIS_QUERY_KEYS = ['properties', 'loudness', 'spectrogram', 'bpm', 'key'] as const
+export const ANALYSIS_QUERY_KEYS = [
+  'properties',
+  'loudness',
+  'spectrogram',
+  'bpm',
+  'key',
+  'waveform',
+] as const
 
 export function removeAnalysisQueries(client: QueryClient, inputPath: string): void {
   for (const key of ANALYSIS_QUERY_KEYS) {
