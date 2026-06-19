@@ -172,6 +172,12 @@ describe('retryDelayMs', () => {
   it('caps the backoff so a late attempt never waits absurdly long', () => {
     expect(retryDelayMs(10, null)).toBe(8000)
   })
+
+  // A hostile or buggy Retry-After (e.g. 3600s) would otherwise sleep for an hour
+  // while still holding the request's rate-limiter token. The same ceiling applies.
+  it('caps an oversized Retry-After header to the same ceiling', () => {
+    expect(retryDelayMs(0, '3600')).toBe(8000)
+  })
 })
 
 describe('search rate-limit retry', () => {

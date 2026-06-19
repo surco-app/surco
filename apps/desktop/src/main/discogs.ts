@@ -27,15 +27,17 @@ function authParams(token: string): string {
 
 // Discogs caps requests (60/min on the shared key); a burst earns a 429. How long
 // to wait before retrying: honor the server's Retry-After (seconds → ms) when it
-// sends one, otherwise back off exponentially with a ceiling so a late attempt
-// never waits absurdly long.
+// sends one, otherwise back off exponentially — both capped by the same ceiling so
+// neither a late attempt nor an oversized header ever waits absurdly long (the wait
+// holds the request's rate-limiter token, and the fetch timeout doesn't cover it).
 const MAX_RETRIES = 3
 const BASE_DELAY_MS = 1000
 const MAX_DELAY_MS = 8000
 
 export function retryDelayMs(attempt: number, retryAfter: string | null): number {
   const headerSec = retryAfter ? Number(retryAfter) : Number.NaN
-  if (Number.isFinite(headerSec) && headerSec >= 0) return headerSec * 1000
+  if (Number.isFinite(headerSec) && headerSec >= 0)
+    return Math.min(headerSec * 1000, MAX_DELAY_MS)
   return Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS)
 }
 
