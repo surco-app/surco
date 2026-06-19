@@ -8,7 +8,7 @@ const extractCoverFile = vi.fn()
 const writeFile = vi.fn()
 const unlink = vi.fn()
 
-vi.mock('./discogs', () => ({ downloadCover: (url: string) => downloadCover(url) }))
+vi.mock('./coverDownload', () => ({ downloadCover: (url: string) => downloadCover(url) }))
 vi.mock('./ffmpeg', () => ({
   processCover: (p: string, o: unknown) => processCover(p, o),
   extractCoverFile: (p: string) => extractCoverFile(p),

@@ -1,14 +1,9 @@
-import { writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import type { Release, SearchResult, SearchHints, SearchPriority } from '../shared/types'
+import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { discogsLimiter } from './discogsLimiter'
-import { isBlockedFetchUrl } from './navigation'
+import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { buildSearchCandidates } from './searchQuery'
-import { tmpName } from './tmp'
 
 const BASE = 'https://api.discogs.com'
-const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/surco'
 
 // Surco's own Discogs app credentials. They let search work out of the box
 // without each user creating a token, at the cost of a 60 req/min limit shared
@@ -37,11 +32,6 @@ export function retryDelayMs(attempt: number, retryAfter: string | null): number
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
-
-// A stalled socket (sleep/wake, captive portal) would otherwise leave the request —
-// and the rate-limiter token it spent — hanging forever; 10s is generous for an API
-// that answers in well under a second.
-const REQUEST_TIMEOUT_MS = 10_000
 
 async function api<T>(path: string, token: string, priority?: SearchPriority): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
@@ -191,43 +181,4 @@ export async function getRelease(
   const release: Release = { ...raw, provider: 'discogs' }
   releaseCache.set(id, release)
   return release
-}
-
-// Sniffs the image type from the leading magic bytes, independent of the URL's
-// extension or a content-type header (servers lie, and a URL dragged from a browser
-// often carries none). Returns undefined when the bytes are not a known image — e.g. a
-// hotlink-protection or article HTML page served in place of the picture, which is
-// exactly what a link dragged from a browser can resolve to. ffmpeg can decode all four.
-export function imageExt(buf: Buffer): 'jpg' | 'png' | 'gif' | 'webp' | undefined {
-  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg'
-  if (buf.length >= 8 && buf.toString('latin1', 0, 8) === '\x89PNG\r\n\x1a\n') return 'png'
-  const head6 = buf.toString('latin1', 0, 6)
-  if (head6 === 'GIF87a' || head6 === 'GIF89a') return 'gif'
-  if (
-    buf.length >= 12 &&
-    buf.toString('latin1', 0, 4) === 'RIFF' &&
-    buf.toString('latin1', 8, 12) === 'WEBP'
-  )
-    return 'webp'
-  return undefined
-}
-
-export async function downloadCover(url: string): Promise<string> {
-  // The renderer names this URL, so refuse the SSRF-shaped ones (loopback, cloud
-  // metadata, private ranges) before the trusted main process ever connects.
-  if (isBlockedFetchUrl(url)) throw new Error('La URL de la carátula no está permitida')
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  })
-  if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
-  const buf = Buffer.from(await res.arrayBuffer())
-  // Trust the bytes, not the extension: a URL that resolves to an HTML page (the common
-  // outcome of a link dragged from a browser) would otherwise be saved as .jpg and only
-  // blow up later inside ffmpeg with an inscrutable "No JPEG data found".
-  const ext = imageExt(buf)
-  if (!ext) throw new Error('La URL no apunta a una imagen')
-  const path = join(tmpdir(), tmpName('cover', ext))
-  await writeFile(path, buf)
-  return path
 }

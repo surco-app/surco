@@ -1,7 +1,7 @@
 import { unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { downloadCover } from './discogs'
+import { downloadCover } from './coverDownload'
 import { extractCoverFile, processCover } from './ffmpeg'
 import { tmpName } from './tmp'
 
