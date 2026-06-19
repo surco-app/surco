@@ -1,7 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AudioLines, Search, X } from 'lucide-react'
 import type React from 'react'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -194,6 +203,9 @@ export default function App(): React.JSX.Element {
   )
   const search = useAppStore(store, (s) => s.search)
   const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
+  // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
+  // pass below keys off the deferred value so typing in a large crate never blocks paint.
+  const deferredSearch = useDeferredValue(search)
   const sortBy = useAppStore(store, (s) => s.sortBy)
   const setSortBy = useCallback((v: TrackSort) => store.setState({ sortBy: v }), [store])
   const dragging = useAppStore(store, (s) => s.dragging)
@@ -588,11 +600,11 @@ export default function App(): React.JSX.Element {
     }
     return sortTracks(
       filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter((t) =>
-        matchesSearch(t, search),
+        matchesSearch(t, deferredSearch),
       ),
       sortBy,
     )
-  }, [tracksView, qualityFilter, search, sortBy])
+  }, [tracksView, qualityFilter, deferredSearch, sortBy])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
