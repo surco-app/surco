@@ -48,10 +48,10 @@ export default function Changelog() {
           <section key={r.version} className="border-t border-line/60 py-12 first-of-type:border-t-0">
             <Reveal>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue">
+                <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                   v{r.version}
                 </span>
-                <span className="font-mono text-xs text-faint">{r.date}</span>
+                <span className="font-mono text-xs text-faint tabular-nums">{r.date}</span>
               </div>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
               <ul className="mt-5 space-y-2.5">

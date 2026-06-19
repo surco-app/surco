@@ -117,7 +117,7 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
             <p className="flex flex-wrap items-center gap-x-2">
               <DownloadCount />
               {version && (
-                <span data-testid="app-version" className="text-faint">
+                <span data-testid="app-version" className="text-faint tabular-nums">
                   {version}
                 </span>
               )}
