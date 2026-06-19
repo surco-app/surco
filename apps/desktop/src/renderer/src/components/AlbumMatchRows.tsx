@@ -1,15 +1,23 @@
-import { ArrowRight, Check, ChevronDown } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Release } from '../../../shared/types'
+import type { Release, ReleaseTrack } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import type { TrackItem } from '../types'
+import { Select } from './Select'
 import { Tooltip } from './Tooltip'
+
+// "A1 So Right (Original Mix) (7:17)" — position + title, with the listed duration so two
+// mixes of the same name stay tellable apart in the picker.
+function trackLabel(track: ReleaseTrack): string {
+  const head = [track.position, track.title].filter(Boolean).join(' ')
+  return track.duration ? `${head} (${track.duration})` : head
+}
 
 interface Props {
   files: TrackItem[]
@@ -97,36 +105,25 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                 )}
               </span>
               <ArrowRight className="h-4 w-4 shrink-0 text-fg-faint" aria-hidden="true" />
-              <div className="relative min-w-0 flex-1">
-                <select
-                  data-testid={`match-select-${a.id}`}
+              <div className="min-w-0 flex-1">
+                <Select
+                  fullWidth
+                  testid={`match-select-${a.id}`}
+                  label={file.meta.title || file.fileName}
                   value={a.track ? String(release.tracklist.indexOf(a.track)) : ''}
-                  onChange={(e) => {
+                  onChange={(v) => {
                     setJustApplied(false)
                     setAssignments((prev) =>
-                      reassign(
-                        prev,
-                        a.id,
-                        e.target.value === ''
-                          ? undefined
-                          : release.tracklist[Number(e.target.value)],
-                      ),
+                      reassign(prev, a.id, v === '' ? undefined : release.tracklist[Number(v)]),
                     )
                   }}
-                  className="w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pr-8 pl-2 text-sm outline-none focus:border-[var(--color-accent)]"
-                >
-                  <option value="">{tr('match.unassigned')}</option>
-                  {release.tracklist.map((track, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: the index is the option's value (used to index tracklist) on a static, non-reordered list
-                    <option key={`${track.position}-${track.title}-${i}`} value={String(i)}>
-                      {[track.position, track.title].filter(Boolean).join(' ')}
-                      {track.duration ? ` (${track.duration})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-fg-dim"
+                  options={[
+                    { value: '', label: tr('match.unassigned') },
+                    ...release.tracklist.map((track, i) => ({
+                      value: String(i),
+                      label: trackLabel(track),
+                    })),
+                  ]}
                 />
               </div>
               <span className="w-4 shrink-0 text-center">

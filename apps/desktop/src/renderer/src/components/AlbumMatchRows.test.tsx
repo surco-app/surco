@@ -57,11 +57,20 @@ function renderRows(files: TrackItem[], onApply = vi.fn()) {
   return { onApply }
 }
 
+// The picker is the app's themed Select (a button + popover, not a native <select>): open
+// it, then click the option whose value indexes the tracklist.
+function pickTrack(id: string, optionValue: string): void {
+  fireEvent.click(screen.getByTestId(`match-select-${id}`))
+  fireEvent.click(screen.getByTestId(`match-select-${id}-option-${optionValue}`))
+}
+
 describe('AlbumMatchRows', () => {
   it('auto-assigns each file to the tracklist entry nearest in duration', async () => {
     renderRows([track('short', 'radio edit', 181), track('long', 'extended mix', 359)])
-    await waitFor(() => expect(screen.getByTestId('match-select-short')).toHaveValue('0'))
-    expect(screen.getByTestId('match-select-long')).toHaveValue('1')
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    expect(screen.getByTestId('match-select-long')).toHaveTextContent('Extended Mix')
   })
 
   // The confidence tick is the only signal a row was auto-suggested; as a bare icon it
@@ -100,7 +109,7 @@ describe('AlbumMatchRows', () => {
     fireEvent.click(screen.getByTestId('match-apply'))
     expect(onApply).toHaveBeenCalledTimes(1)
     // Change the assignment, then apply again.
-    fireEvent.change(screen.getByTestId('match-select-short'), { target: { value: '1' } })
+    pickTrack('short', '1')
     fireEvent.click(screen.getByTestId('match-apply'))
     expect(onApply).toHaveBeenCalledTimes(2)
     expect(onApply.mock.calls[1][0][0].patch.meta.title).toBe('Extended Mix')
@@ -130,16 +139,20 @@ describe('AlbumMatchRows', () => {
         onApply={vi.fn()}
       />,
     )
-    await waitFor(() => expect(screen.getByTestId('match-select-noisy')).toHaveValue('0'))
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-noisy')).toHaveTextContent('Sunrise'),
+    )
   })
 
   it('reassigns only the chosen file, leaving the others put', async () => {
     // Duplicates are allowed, so pointing the short file at the extended mix must not
     // reshuffle the long file — a manual pick touches exactly one row.
     renderRows([track('short', 'radio edit', 181), track('long', 'extended mix', 359)])
-    await waitFor(() => expect(screen.getByTestId('match-select-short')).toHaveValue('0'))
-    fireEvent.change(screen.getByTestId('match-select-short'), { target: { value: '1' } })
-    expect(screen.getByTestId('match-select-short')).toHaveValue('1')
-    expect(screen.getByTestId('match-select-long')).toHaveValue('1')
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    pickTrack('short', '1')
+    expect(screen.getByTestId('match-select-short')).toHaveTextContent('Extended Mix')
+    expect(screen.getByTestId('match-select-long')).toHaveTextContent('Extended Mix')
   })
 })

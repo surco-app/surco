@@ -17,6 +17,9 @@ interface Props {
   onChange: (value: string) => void
   label: string
   testid: string
+  // Stretch the trigger to fill its container (and truncate a long label) instead of
+  // sizing to content — for a field-like use such as the album-match track picker.
+  fullWidth?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -24,7 +27,14 @@ interface Props {
 // focus lands on the current option when it opens (so arrows continue from the
 // choice, like a native select), Escape or a click outside closes without picking,
 // and focus hands back to the trigger.
-export function Select({ value, options, onChange, label, testid }: Props): React.JSX.Element {
+export function Select({
+  value,
+  options,
+  onChange,
+  label,
+  testid,
+  fullWidth = false,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -79,7 +89,7 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
   }
 
   return (
-    <div className="relative shrink-0">
+    <div className={`relative ${fullWidth ? 'w-full' : 'shrink-0'}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -88,11 +98,13 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
         aria-expanded={open}
         aria-label={label}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
+        className={`flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
-        {selected?.label}
-        <ChevronDown aria-hidden="true" className="size-3.5" />
+        <span className={fullWidth ? 'min-w-0 flex-1 truncate text-left' : ''}>
+          {selected?.label}
+        </span>
+        <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
       </button>
       {open && (
         <>
@@ -109,7 +121,7 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
             data-testid={`${testid}-listbox`}
             aria-label={label}
             onKeyDown={onListKeyDown}
-            className="animate-pop absolute right-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+            className={`animate-pop absolute z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${fullWidth ? 'left-0' : 'right-0'}`}
           >
             {options.map((o) => (
               <button
