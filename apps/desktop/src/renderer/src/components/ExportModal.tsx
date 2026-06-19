@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { buildEnginePayload } from '../lib/engine'
 import { buildRekordboxXml } from '../lib/rekordbox'
 import { buildSeratoCrate } from '../lib/serato'
 import { buildTraktorNml } from '../lib/traktor'
@@ -41,6 +42,13 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
       ext: '.crate',
       hint: tr('export.seratoHint'),
       run: () => window.api.exportSerato(buildSeratoCrate(tracks)),
+    },
+    {
+      id: 'engine',
+      label: 'Engine DJ',
+      ext: 'Engine Library',
+      hint: tr('export.engineHint'),
+      run: () => window.api.exportEngine(buildEnginePayload(tracks), 'Surco'),
     },
   ]
 

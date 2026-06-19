@@ -9,6 +9,7 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
+  EngineExportTrack,
   Release,
   SearchResult,
   DockIconFrames,
@@ -68,6 +69,7 @@ export interface Api {
   exportRekordbox: (xml: string) => Promise<string | null>
   exportTraktor: (nml: string) => Promise<string | null>
   exportSerato: (data: Uint8Array) => Promise<string | null>
+  exportEngine: (tracks: EngineExportTrack[], playlistName: string) => Promise<string | null>
   prepareCoverDrag: (src: {
     coverUrl?: string
     coverPath?: string

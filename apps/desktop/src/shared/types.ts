@@ -326,6 +326,24 @@ export interface SpectrumResult {
   upsampled?: boolean
 }
 
+// One track in an Engine DJ export request. The renderer ships this serializable shape
+// across IPC; the main process resolves it to an absolute path on disk (for the relative
+// path Engine stores and the file size) before writing the SQLite library.
+export interface EngineExportTrack {
+  // The file Engine should reference — the converted output when there is one, else the source.
+  path: string
+  title: string
+  artist: string
+  album: string
+  genre: string
+  comment: string
+  // Tags are strings in Surco; the main process parses bpm/year to the integers Engine wants.
+  bpm: string
+  year: string
+  // Length in seconds, undefined when the probe never ran.
+  durationSec?: number
+}
+
 // Read-only audio analysis shown beside the spectrum, measured in one ffmpeg pass
 // (astats + ebur128). Integrated loudness and true peak can read -Infinity for
 // digital silence, which the UI renders as "−∞" rather than a misleading number.

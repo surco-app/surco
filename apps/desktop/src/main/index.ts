@@ -1,7 +1,7 @@
 import { createReadStream, existsSync } from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, extname, join, relative } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
@@ -21,7 +21,13 @@ import electronUpdater from 'electron-updater'
 import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
-import type { CoverExportJob, DockIconFrames, ProcessJob, Settings } from '../shared/types'
+import type {
+  CoverExportJob,
+  DockIconFrames,
+  EngineExportTrack,
+  ProcessJob,
+  Settings,
+} from '../shared/types'
 import { pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, updateInAppleMusic } from './applemusic'
@@ -29,6 +35,7 @@ import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
+import { buildEngineDatabase, type EngineTrack } from './engine'
 import { expandPaths } from './expand'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
@@ -495,6 +502,55 @@ function registerIpc(): void {
     await writeFile(filePath, data)
     return filePath
   })
+
+  // Writes a Denon Engine DJ library (Engine Library/Database2/m.db) into a folder the user
+  // picks — its own fresh library, never the user's existing one. Returns the Engine Library
+  // path, or null when cancelled. The renderer ships serializable track data; here we resolve
+  // each to the relative path + file size Engine's SQLite schema wants.
+  ipcMain.handle(
+    'dialog:exportEngine',
+    async (_e, tracks: EngineExportTrack[], playlistName: string) => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: 'Exporta a Engine DJ',
+        message: 'Elige una carpeta para la biblioteca Engine',
+        properties: ['openDirectory', 'createDirectory'],
+      })
+      if (canceled || !filePaths[0]) return null
+      const libraryDir = join(filePaths[0], 'Engine Library')
+      const database2Dir = join(libraryDir, 'Database2')
+      await mkdir(database2Dir, { recursive: true })
+      const resolved: EngineTrack[] = await Promise.all(
+        tracks.map(async (t) => {
+          const bpm = Number.parseFloat(t.bpm)
+          const year = Number.parseInt(t.year, 10)
+          let fileBytes: number | null = null
+          try {
+            fileBytes = (await stat(t.path)).size
+          } catch {
+            // The source may have moved since import; Engine still imports the row without a size.
+          }
+          return {
+            // Engine stores the path relative to the Engine Library dir, forward-slashed.
+            relativePath: relative(libraryDir, t.path).split('\\').join('/'),
+            filename: basename(t.path),
+            fileType: extname(t.path).slice(1).toLowerCase(),
+            fileBytes,
+            title: t.title,
+            artist: t.artist,
+            album: t.album,
+            genre: t.genre,
+            comment: t.comment,
+            bpm: Number.isFinite(bpm) ? Math.round(bpm) : null,
+            bpmAnalyzed: Number.isFinite(bpm) ? bpm : null,
+            year: Number.isFinite(year) ? year : null,
+            durationSec: t.durationSec !== undefined ? Math.round(t.durationSec) : null,
+          }
+        }),
+      )
+      await writeFile(join(database2Dir, 'm.db'), await buildEngineDatabase(resolved, playlistName))
+      return libraryDir
+    },
+  )
 
   ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
     getProvider(provider).search(query, priority, hints),

@@ -10,6 +10,7 @@ const api = {
   exportRekordbox: vi.fn().mockResolvedValue('/out/rekordbox.xml'),
   exportTraktor: vi.fn().mockResolvedValue('/out/collection.nml'),
   exportSerato: vi.fn().mockResolvedValue('/out/Surco.crate'),
+  exportEngine: vi.fn().mockResolvedValue('/out/Engine Library'),
 }
 
 beforeEach(() => {
@@ -87,6 +88,17 @@ describe('ExportModal', () => {
     expect(api.exportSerato).toHaveBeenCalledTimes(1)
     const data = api.exportSerato.mock.calls[0][0] as Uint8Array
     expect(String.fromCharCode(data[0], data[1], data[2], data[3])).toBe('vrsn')
+  })
+
+  // Engine's database is built in the main process, so the modal hands the IPC the serializable
+  // track payload (path + tags) plus the playlist name, not a finished file.
+  it('sends the Engine payload and playlist name when Engine is chosen', () => {
+    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('export-engine'))
+    expect(api.exportEngine).toHaveBeenCalledTimes(1)
+    const [payload, playlist] = api.exportEngine.mock.calls[0]
+    expect(payload[0]).toMatchObject({ path: '/music/a.wav', title: 'A' })
+    expect(playlist).toBe('Surco')
   })
 
   // The modal must teach that it's an import bridge, not a live add — that was the user's
