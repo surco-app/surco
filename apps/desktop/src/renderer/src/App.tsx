@@ -1,5 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AudioLines, Search, X } from 'lucide-react'
+import {
+  ArrowDownNarrowWide,
+  ArrowDownUp,
+  ArrowUpNarrowWide,
+  AudioLines,
+  CaseSensitive,
+  Clock,
+  FileAudio,
+  Search,
+  User,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import {
   lazy,
@@ -208,7 +219,17 @@ export default function App(): React.JSX.Element {
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
   const deferredSearch = useDeferredValue(search)
   const sortBy = useAppStore(store, (s) => s.sortBy)
-  const setSortBy = useCallback((v: TrackSort) => store.setState({ sortBy: v }), [store])
+  // Picking a sort key resets to ascending, so a freshly-chosen column reads top-down
+  // rather than inheriting the previous column's reversed direction.
+  const setSortBy = useCallback(
+    (v: TrackSort) => store.setState({ sortBy: v, sortDir: 'asc' }),
+    [store],
+  )
+  const sortDir = useAppStore(store, (s) => s.sortDir)
+  const toggleSortDir = useCallback(
+    () => store.setState({ sortDir: store.getState().sortDir === 'asc' ? 'desc' : 'asc' }),
+    [store],
+  )
   const dragging = useAppStore(store, (s) => s.dragging)
   const setDragging = useCallback((d: boolean) => store.setState({ dragging: d }), [store])
   const copiedMeta = useAppStore(store, (s) => s.copiedMeta)
@@ -605,8 +626,9 @@ export default function App(): React.JSX.Element {
         matchesSearch(t, deferredSearch),
       ),
       sortBy,
+      sortDir,
     )
-  }, [tracksView, qualityFilter, deferredSearch, sortBy])
+  }, [tracksView, qualityFilter, deferredSearch, sortBy, sortDir])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -927,19 +949,6 @@ export default function App(): React.JSX.Element {
                         </button>
                       )}
                     </div>
-                    <Select
-                      testid="track-sort"
-                      value={sortBy}
-                      onChange={(v) => setSortBy(v as TrackSort)}
-                      label={tr('sidebar.sort.label')}
-                      options={[
-                        { value: 'import', label: tr('sidebar.sort.import') },
-                        { value: 'name', label: tr('sidebar.sort.name') },
-                        { value: 'artist', label: tr('sidebar.sort.artist') },
-                        { value: 'duration', label: tr('sidebar.sort.duration') },
-                        { value: 'format', label: tr('sidebar.sort.format') },
-                      ]}
-                    />
                   </div>
                   <QualityFilterBar
                     filterRef={qualityFilterRef}
@@ -950,7 +959,42 @@ export default function App(): React.JSX.Element {
                     trackCount={tracks.length}
                     visibleCount={visibleTracks.length}
                     selectedPosition={selectedPosition}
-                  />
+                  >
+                    <Select
+                      testid="track-sort"
+                      value={sortBy}
+                      onChange={(v) => setSortBy(v as TrackSort)}
+                      label={tr('sidebar.sort.label')}
+                      options={[
+                        { value: 'import', label: tr('sidebar.sort.import'), icon: ArrowDownUp },
+                        { value: 'name', label: tr('sidebar.sort.name'), icon: CaseSensitive },
+                        { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
+                        { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
+                        { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
+                      ]}
+                    />
+                    {sortBy !== 'import' && (
+                      <button
+                        type="button"
+                        data-testid="track-sort-direction"
+                        aria-pressed={sortDir === 'desc'}
+                        aria-label={tr(
+                          sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
+                        )}
+                        title={tr(
+                          sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
+                        )}
+                        onClick={toggleSortDir}
+                        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                      >
+                        {sortDir === 'asc' ? (
+                          <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    )}
+                  </QualityFilterBar>
                 </div>
                 {visibleTracks.length === 0 ? (
                   <p className="p-6 text-center text-xs text-fg-faint">

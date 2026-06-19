@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { Clock } from 'lucide-react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { Select } from './Select'
@@ -34,6 +35,29 @@ describe('Select', () => {
     expect(screen.getByTestId('sort-listbox')).toBeInTheDocument()
     expect(screen.getByTestId('sort-option-name')).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByTestId('sort-option-import')).toHaveAttribute('aria-selected', 'false')
+  })
+
+  // Options can carry a leading glyph so the sort menu reads at a glance, like the
+  // quality filter's buckets — an option without one stays text-only.
+  it('renders an option icon when the option carries one', () => {
+    const onChange = vi.fn()
+    render(
+      <Select
+        value="time"
+        options={[
+          { value: 'time', label: 'Time', icon: Clock },
+          { value: 'name', label: 'Name' },
+        ]}
+        onChange={onChange}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    // The icon's svg sits alongside the selection-tick svg, so the iconed option carries
+    // two graphics where the plain one carries only the tick.
+    expect(screen.getByTestId('sort-option-time').querySelectorAll('svg')).toHaveLength(2)
+    expect(screen.getByTestId('sort-option-name').querySelectorAll('svg')).toHaveLength(1)
   })
 
   it('reports the picked value and closes', () => {

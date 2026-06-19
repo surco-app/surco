@@ -28,9 +28,9 @@ vi.mock('./components/Editor', async (importOriginal) => {
 })
 vi.mock('./lib/triage', async (importOriginal) => {
   const real = await importOriginal<typeof import('./lib/triage')>()
-  const sortTracks: typeof real.sortTracks = (tracks, sortBy) => {
+  const sortTracks: typeof real.sortTracks = (tracks, sortBy, dir) => {
     sortRuns.count++
-    return real.sortTracks(tracks, sortBy)
+    return real.sortTracks(tracks, sortBy, dir)
   }
   return { ...real, sortTracks }
 })
@@ -1183,6 +1183,33 @@ describe('App derived list stability', () => {
     fireEvent.click(screen.getByTestId('open-find-replace'))
     await screen.findByTestId('find-replace-find')
     expect(sortRuns.count).toBe(before)
+  })
+})
+
+describe('App sort direction', () => {
+  // The drop order ('Default') has no direction to flip, so the toggle stays hidden until
+  // an actual sort key is chosen — otherwise it would imply reversing a non-existent order.
+  it('hides the direction toggle for the default drop order and shows it once a sort is picked', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.queryByTestId('track-sort-direction')).toBeNull()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-name'))
+    expect(screen.getByTestId('track-sort-direction')).toBeInTheDocument()
+  })
+
+  it('flips between ascending and descending when the toggle is pressed', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-name'))
+    const toggle = screen.getByTestId('track-sort-direction')
+    // Ascending is the default a freshly-picked sort starts on.
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
 })
 

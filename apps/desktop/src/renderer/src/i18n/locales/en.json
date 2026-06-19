@@ -64,7 +64,9 @@
       "name": "Name",
       "artist": "Artist",
       "duration": "Time",
-      "format": "Format"
+      "format": "Format",
+      "ascending": "Ascending order",
+      "descending": "Descending order"
     },
     "position": "Track {{current}} of {{total}}"
   },

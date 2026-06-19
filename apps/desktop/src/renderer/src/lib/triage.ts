@@ -113,32 +113,45 @@ export function matchesSearch(track: TrackItem, query: string): boolean {
 // format (which groups a mixed crate by container).
 export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'format'
 
+// The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
+// there; every other mode flips between ascending and descending.
+export type SortDir = 'asc' | 'desc'
+
 // One shared collator instead of per-comparison localeCompare: the sort re-runs on
 // every list-affecting render (each editor keystroke while a sort is active), and
 // localeCompare re-creates the collation tables on every call.
 const collator = new Intl.Collator()
 
+// Compares two text keys, missing values last and direction-independent (see sortTracks).
+// Only the present-vs-present comparison takes the sign, so empties never flip to the top.
+function compareText(a: string | undefined, b: string | undefined, sign: number): number {
+  const aa = a || ''
+  const bb = b || ''
+  if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
+  return sign * collator.compare(aa, bb)
+}
+
 // Orders the (already filtered) list for display. 'import' returns the list untouched so the
 // drop order survives verbatim; the rest sort a copy. Array.sort is stable, so equal rows
-// keep their import order and toggling sorts never scrambles ties. Untagged artists and
-// unprobed durations sort to the end, where missing data is least in the way.
-export function sortTracks(tracks: TrackItem[], sort: TrackSort): TrackItem[] {
+// keep their import order and toggling sorts never scrambles ties. Untagged artists,
+// unprobed durations and extension-less paths sort to the end — and stay there in BOTH
+// directions, since that missing data is noise to keep out of the way, not a value to flip
+// to the top when the order reverses. So only the present-vs-present comparison takes the
+// direction sign; the empty-last rule is applied direction-independently.
+export function sortTracks(
+  tracks: TrackItem[],
+  sort: TrackSort,
+  dir: SortDir = 'asc',
+): TrackItem[] {
   if (sort === 'import') return tracks
+  const sign = dir === 'desc' ? -1 : 1
   return [...tracks].sort((a, b) => {
-    if (sort === 'name') return collator.compare(a.listLabel, b.listLabel)
-    if (sort === 'artist') {
-      const aa = a.meta.artist || ''
-      const bb = b.meta.artist || ''
-      if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
-      return collator.compare(aa, bb)
-    }
-    if (sort === 'format') {
-      const aa = sourceFormat(a)
-      const bb = sourceFormat(b)
-      if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
-      return collator.compare(aa, bb)
-    }
-    return (a.duration ?? Number.POSITIVE_INFINITY) - (b.duration ?? Number.POSITIVE_INFINITY)
+    if (sort === 'name') return sign * collator.compare(a.listLabel, b.listLabel)
+    if (sort === 'artist') return compareText(a.meta.artist, b.meta.artist, sign)
+    if (sort === 'format') return compareText(sourceFormat(a), sourceFormat(b), sign)
+    if (a.duration == null || b.duration == null)
+      return (a.duration == null ? 1 : 0) - (b.duration == null ? 1 : 0)
+    return sign * (a.duration - b.duration)
   })
 }
 

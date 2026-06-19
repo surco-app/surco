@@ -64,7 +64,9 @@
       "name": "Nombre",
       "artist": "Artista",
       "duration": "Duración",
-      "format": "Formato"
+      "format": "Formato",
+      "ascending": "Orden ascendente",
+      "descending": "Orden descendente"
     },
     "position": "Pista {{current}} de {{total}}"
   },

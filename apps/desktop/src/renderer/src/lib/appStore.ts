@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
-import type { QualityFilter, TrackSort } from './triage'
+import type { QualityFilter, SortDir, TrackSort } from './triage'
 
 // A surfaced background failure (a rejected IPC call, an unhandled rejection), stored as a
 // key plus interpolation detail and localized at render so a language switch retranslates it.
@@ -19,6 +19,8 @@ export interface AppState {
   search: string
   // Display order of the (filtered) list. Defaults to the drop order.
   sortBy: TrackSort
+  // Direction of the active sort. Ignored for the drop order, which has none.
+  sortDir: SortDir
   // Quality triage view filter: narrows the list to suspect/unanalyzed/etc tracks.
   qualityFilter: QualityFilter
   // True while a file drag is hovering the window, for the drop overlay.
@@ -41,6 +43,7 @@ export interface AppStore {
 const INITIAL: AppState = {
   search: '',
   sortBy: 'import',
+  sortDir: 'asc',
   qualityFilter: 'all',
   dragging: false,
   notice: null,

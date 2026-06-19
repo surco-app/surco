@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,9 @@ import { useTranslation } from 'react-i18next'
 export interface SelectOption {
   value: string
   label: string
+  // Optional leading glyph, so a menu (e.g. the track sort) reads at a glance like the
+  // quality filter's buckets. Options without one stay text-only.
+  icon?: LucideIcon
 }
 
 interface Props {
@@ -87,6 +90,7 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
         onClick={() => setOpen((v) => !v)}
         className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
       >
+        {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         {selected?.label}
         <ChevronDown aria-hidden="true" className="size-3.5" />
       </button>
@@ -121,6 +125,7 @@ export function Select({ value, options, onChange, label, testid }: Props): Reac
                   aria-hidden="true"
                   className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
                 />
+                {o.icon && <o.icon aria-hidden="true" className="size-3.5 shrink-0" />}
                 {o.label}
               </button>
             ))}

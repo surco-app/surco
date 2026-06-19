@@ -305,6 +305,32 @@ describe('sortTracks', () => {
     ]
     expect(sortTracks(list, 'format').map((t) => t.id)).toEqual(['mp3', 'none'])
   })
+
+  it('reverses the order under a descending sort', () => {
+    const list = [mk({ listLabel: 'Zoo' }), mk({ listLabel: 'apple' }), mk({ listLabel: 'Banana' })]
+    expect(sortTracks(list, 'name', 'desc').map((t) => t.listLabel)).toEqual([
+      'Zoo',
+      'Banana',
+      'apple',
+    ])
+  })
+
+  it('keeps tracks with missing data last even when the sort is descending', () => {
+    // A descending sort flips the order of the real values, but the untagged/unprobed
+    // rows are noise the user wants out of the way — they must stay at the end in both
+    // directions, not jump to the top when the order is reversed.
+    const list = [
+      mk({ id: 'long', duration: 400 }),
+      mk({ id: 'none' }),
+      mk({ id: 'short', duration: 120 }),
+    ]
+    expect(sortTracks(list, 'duration', 'desc').map((t) => t.id)).toEqual(['long', 'short', 'none'])
+  })
+
+  it('leaves the import order untouched regardless of direction (it has no direction)', () => {
+    const list = [mk({ id: 'b' }), mk({ id: 'a' })]
+    expect(sortTracks(list, 'import', 'desc')).toBe(list)
+  })
 })
 
 describe('sourceFormat', () => {
@@ -328,12 +354,7 @@ describe('sourceFormat', () => {
 
 describe('per-format filter and buckets', () => {
   const t = (id: string, inputPath: string): TrackItem => ({ id, inputPath }) as TrackItem
-  const tracks = [
-    t('a', '/m/a.flac'),
-    t('b', '/m/b.mp3'),
-    t('c', '/m/c.wav'),
-    t('d', '/m/d.mp3'),
-  ]
+  const tracks = [t('a', '/m/a.flac'), t('b', '/m/b.mp3'), t('c', '/m/c.wav'), t('d', '/m/d.mp3')]
 
   it('keeps only the tracks of the requested source format', () => {
     expect(filterByQuality(tracks, 'ext:MP3').map((x) => x.id)).toEqual(['b', 'd'])

@@ -102,6 +102,27 @@ describe('QualityFilterBar', () => {
     expect(onChange).toHaveBeenCalledWith('ext:WAV')
   })
 
+  // The buckets span several dimensions (quality, conversion, library, format); a divider
+  // between each group keeps the now-long menu scannable instead of one flat run. The
+  // dividers track the groups that actually show, so an extra dimension adds exactly one.
+  it('separates the bucket groups with a divider, one per gap between shown groups', () => {
+    // Bare crate: All | quality | conversion → three groups, two dividers.
+    renderBar()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(2)
+    cleanup()
+    // Add the library and format dimensions → five groups, four dividers.
+    renderBar({
+      tally: tally({ notInLibrary: 6, inLibrary: 4 }),
+      formats: [
+        { format: 'FLAC', count: 5 },
+        { format: 'WAV', count: 5 },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(4)
+  })
+
   // The x/total position indicator the user relies on must stay visible beside the
   // collapsed control, not fold away into a chip that no longer exists.
   it('keeps the x/total position counter visible next to the dropdown', () => {

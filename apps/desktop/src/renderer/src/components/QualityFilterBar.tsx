@@ -12,7 +12,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QualityFilter, qualityCounts } from '../lib/triage'
 
@@ -60,6 +60,9 @@ interface Props {
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
   selectedPosition: number | null
+  // Controls that share the filter row — the track sort and its direction toggle — sitting
+  // beside the filter trigger so the search box above can take the full width.
+  children?: React.ReactNode
 }
 
 // The sidebar's quality-triage filter: a single dropdown (so a wide crate's many buckets
@@ -78,29 +81,32 @@ export function QualityFilterBar({
   trackCount,
   visibleCount,
   selectedPosition,
+  children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  const modes: QualityFilter[] = [
-    'all',
-    'unanalyzed',
-    'suspect',
-    'good',
-    'unconverted',
-    // Provenance bucket, listed only once something has been auto-filled so the menu
-    // isn't padded with a permanently-empty filter when auto-match is off.
-    ...(tally.automatched > 0 ? (['automatched'] as const) : []),
+  // The buckets in logical groups, rendered with a thin divider between them so the menu
+  // reads by dimension (quality, then conversion/provenance, then library, then format)
+  // rather than as one long flat list. Empty groups drop out, so the dividers only ever
+  // separate groups that actually have something to show.
+  const allGroups: QualityFilter[][] = [
+    ['all'],
+    // The quality verdict.
+    ['unanalyzed', 'suspect', 'good'],
+    // Conversion status and provenance: the auto-matched bucket joins only once something
+    // has been auto-filled, so the menu isn't padded with a permanently-empty filter.
+    ['unconverted', ...(tally.automatched > 0 ? (['automatched'] as const) : [])],
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
-    ...(tally.inLibrary + tally.notInLibrary > 0 ? (['notInLibrary', 'inLibrary'] as const) : []),
-    // Per-format buckets, last so they don't push the quality triage down. Empty unless
-    // the crate is mixed (App passes nothing for a single-format list).
-    ...formats.map((f): QualityFilter => `ext:${f.format}`),
+    tally.inLibrary + tally.notInLibrary > 0 ? ['notInLibrary', 'inLibrary'] : [],
+    // Per-format buckets. Empty unless the crate is mixed (App passes nothing otherwise).
+    formats.map((f): QualityFilter => `ext:${f.format}`),
   ]
+  const groups = allGroups.filter((g) => g.length > 0)
   const formatCount = new Map(formats.map((f) => [`ext:${f.format}`, f.count]))
   const countOf = (mode: QualityFilter): number =>
     mode === 'all'
@@ -208,41 +214,55 @@ export function QualityFilterBar({
               onKeyDown={onListKeyDown}
               className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
             >
-              {modes.map((mode) => {
-                const Icon = iconFor(mode)
-                const dot = attentionDot(mode, tally)
-                const name = labelOf(mode)
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    role="option"
-                    aria-selected={mode === value}
-                    data-testid={`quality-filter-${mode}`}
-                    onClick={() => choose(mode)}
-                    className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
-                  >
-                    <span className="relative">
-                      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      {dot && (
-                        <span
-                          className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
-                        />
-                      )}
-                    </span>
-                    <span className="flex-1">{name}</span>
-                    <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
-                    <Check
-                      aria-hidden="true"
-                      className={`size-3 shrink-0 ${mode === value ? '' : 'invisible'}`}
+              {groups.map((group, groupIndex) => (
+                // A Fragment, not a wrapper element, so the options stay direct children of
+                // the listbox (the dividers are siblings between groups). The group's first
+                // bucket keys it — buckets are unique across the whole menu.
+                <Fragment key={group[0]}>
+                  {groupIndex > 0 && (
+                    <hr
+                      data-testid="quality-filter-separator"
+                      className="my-1 border-0 border-t border-[var(--color-line)]"
                     />
-                  </button>
-                )
-              })}
+                  )}
+                  {group.map((mode) => {
+                    const Icon = iconFor(mode)
+                    const dot = attentionDot(mode, tally)
+                    const name = labelOf(mode)
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="option"
+                        aria-selected={mode === value}
+                        data-testid={`quality-filter-${mode}`}
+                        onClick={() => choose(mode)}
+                        className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
+                      >
+                        <span className="relative">
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {dot && (
+                            <span
+                              className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
+                            />
+                          )}
+                        </span>
+                        <span className="flex-1">{name}</span>
+                        <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
+                        <Check
+                          aria-hidden="true"
+                          className={`size-3 shrink-0 ${mode === value ? '' : 'invisible'}`}
+                        />
+                      </button>
+                    )
+                  })}
+                </Fragment>
+              ))}
             </div>
           </>
         )}
       </div>
+      {children}
       {visibleCount > 0 && (
         <span
           data-testid="track-position"
