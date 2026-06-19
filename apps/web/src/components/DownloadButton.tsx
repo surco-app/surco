@@ -80,8 +80,13 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
             type="button"
             disabled
             aria-disabled="true"
-            className="cursor-not-allowed rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            aria-busy="true"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
+            <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" />
+              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
             {t('download.cta', { os: LABEL[os] || 'macOS' })}
           </button>
         )}
