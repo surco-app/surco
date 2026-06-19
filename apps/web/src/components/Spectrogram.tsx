@@ -68,10 +68,15 @@ const ticks = [20, 15, 10, 5]
 
 export default function Spectrogram({
   suspect = false,
-  axis = false
+  axis = false,
+  label
 }: {
   suspect?: boolean
   axis?: boolean
+  // When set, the canvas is exposed to assistive tech as an image with this
+  // description (it carries the core "good vs suspect audio" message); without it
+  // the canvas stays decorative.
+  label?: string
 }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
@@ -95,7 +100,15 @@ export default function Spectrogram({
 
   return (
     <div className="relative overflow-hidden rounded-xl ring-1 ring-line/70">
-      <canvas ref={ref} width={C * 2} height={R * 2} className="block h-full w-full" />
+      <canvas
+        ref={ref}
+        width={C * 2}
+        height={R * 2}
+        className="block h-full w-full"
+        role={label ? 'img' : undefined}
+        aria-label={label}
+        aria-hidden={label ? undefined : true}
+      />
       <div
         className="pointer-events-none absolute top-0 bottom-0 w-px"
         style={{

@@ -177,7 +177,10 @@ export default function App() {
                     {t('analysis.good')}
                   </span>
                 </div>
-                <Spectrogram axis />
+                <Spectrogram
+                  axis
+                  label={`${t('analysis.goodCaptionPre')}${t('analysis.goodCaptionHz')}${t('analysis.goodCaptionPost')}`}
+                />
                 <p className="mt-3 font-mono text-xs text-muted">
                   {t('analysis.goodCaptionPre')}
                   <span className="text-fg">{t('analysis.goodCaptionHz')}</span>
@@ -195,7 +198,11 @@ export default function App() {
                   </span>
                 </div>
                 <div className="relative">
-                  <Spectrogram suspect axis />
+                  <Spectrogram
+                    suspect
+                    axis
+                    label={`${t('analysis.suspectCaptionPre')}${t('analysis.suspectCaptionHz')}${t('analysis.suspectCaptionPost')}`}
+                  />
                   <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
                     <div className="border-t border-dashed border-red/80" />
                     <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
