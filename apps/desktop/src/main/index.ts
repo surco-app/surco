@@ -1,7 +1,7 @@
 import { createReadStream, existsSync } from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
@@ -21,21 +21,10 @@ import electronUpdater from 'electron-updater'
 import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
-import type {
-  CoverExportJob,
-  DockIconFrames,
-  ProcessJob,
-  ProcessStage,
-  Settings,
-} from '../shared/types'
+import type { CoverExportJob, DockIconFrames, ProcessJob, Settings } from '../shared/types'
 import { pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
-import {
-  addToAppleMusic,
-  isAppleMusicOnly,
-  shouldAddToAppleMusic,
-  updateInAppleMusic,
-} from './applemusic'
+import { addToAppleMusic, updateInAppleMusic } from './applemusic'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
@@ -43,17 +32,12 @@ import { downloadCover, imageExt } from './discogs'
 import { expandPaths } from './expand'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
-import {
-  isOutputConflict,
-  removeRenamedOriginal,
-  resolveOutputTarget,
-  sanitizeOutputName,
-  uniqueOutputPath,
-} from './inplace'
+import { removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
+import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import {
   defaultConfigDir,
@@ -521,57 +505,31 @@ function registerIpc(): void {
 
   registerAppleMusicIpc()
 
-  ipcMain.handle('process:track', async (e, job: ProcessJob) => {
-    const settings = getSettings()
-    const stage = (s: ProcessStage): void =>
-      e.sender.send('process:progress', { id: job.id, stage: s })
-
-    let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
-    // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
-    // Apple Music add never leaves the temp conversion behind.
-    let tmpDir: string | undefined
-    try {
-      if (hasCoverSource(job)) {
-        stage('cover')
-        prepared = await prepareProcessedCover(job, {
-          maxSize: settings.coverMaxSize,
-          square: settings.coverSquare,
-        })
-      }
-      const coverPath = prepared?.path
-
-      stage('converting')
-      const format = job.format ?? settings.outputFormat
-      const { outputPath, inPlace } = resolveOutputTarget(
-        job.inputPath,
-        sanitizeOutputName(job.outputName),
-        format,
-        settings.outputDir,
-        settings.overwriteOriginal,
-      )
-      // "Apple Music only": the user wants the track in Apple Music and no copy left in
-      // the output folder. Apple Music still imports a real path, so write the conversion
-      // to a private temp dir (never the output folder — it can't collide with or clobber
-      // anything there), hand it over, then remove it below.
-      const musicOnly = isAppleMusicOnly(
-        settings.addToAppleMusic,
-        settings.keepOutputCopy,
-        process.platform,
-        format,
-        inPlace,
-      )
-      let target = outputPath
-      if (musicOnly) {
-        tmpDir = await mkdtemp(join(tmpdir(), 'surco-'))
-        target = join(tmpDir, basename(outputPath))
-      } else if (
-        isOutputConflict(outputPath, job.previousOutputPath, inPlace, existsSync(outputPath))
-      ) {
+  ipcMain.handle('process:track', (e, job: ProcessJob) =>
+    runProcessTrack(job, {
+      settings: getSettings(),
+      platform: process.platform,
+      sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
+      hasCoverSource,
+      prepareProcessedCover,
+      convertAudio,
+      recordConversion,
+      removeRenamedOriginal,
+      addToAppleMusic,
+      updateInAppleMusic,
+      allowMedia: (path) => mediaAccess.allow(path),
+      existsSync,
+      mkdir,
+      mkdtemp,
+      rm,
+      // The conflict prompt is the one Electron-bound branch: build the same warning
+      // box as before and map its buttons back to the decision runProcessTrack expects.
+      confirmConflict: async (outputName) => {
         const t = createMenuT(app.getLocale())
         const win = BrowserWindow.fromWebContents(e.sender)
         const opts = {
           type: 'warning' as const,
-          message: basename(outputPath),
+          message: outputName,
           detail: t('conflictExists'),
           buttons: [t('conflictOverwrite'), t('conflictKeepBoth'), t('conflictSkip')],
           defaultId: 1,
@@ -580,60 +538,10 @@ function registerIpc(): void {
         const { response } = win
           ? await dialog.showMessageBox(win, opts)
           : await dialog.showMessageBox(opts)
-        if (response === 2) return { outputPath: '', inPlace, skipped: true }
-        if (response === 1) target = uniqueOutputPath(outputPath, existsSync)
-      }
-
-      // Create the target's folder (and any subfolders the file-name template asks for)
-      // before writing; recursive so it's a no-op when the directory already exists.
-      await mkdir(dirname(target), { recursive: true })
-      const { normalizeSkipped } = await convertAudio(
-        job.inputPath,
-        target,
-        format,
-        job.meta,
-        coverPath,
-        job.normalize ?? settings.normalize,
-        job.removeCover,
-      )
-      if (inPlace) await removeRenamedOriginal(job.inputPath, target)
-      recordConversion()
-
-      // A track that already has a library copy (musicPersistentId from a previous
-      // add) gets its metadata and artwork synced onto that copy instead of being
-      // imported again — re-converting an edited track must never duplicate it in
-      // Music. Only when the user deleted the copy from the library does the fresh
-      // file get imported, which also re-establishes the persistent ID.
-      let musicPersistentId: string | undefined
-      if (shouldAddToAppleMusic(settings.addToAppleMusic, process.platform, format)) {
-        stage('appleMusic')
-        musicPersistentId = job.musicPersistentId
-          ? ((await updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-            (await addToAppleMusic(target, job.meta, coverPath)))
-          : await addToAppleMusic(target, job.meta, coverPath)
-      }
-
-      // The add succeeded (a failure would have thrown above), and the temp dir is
-      // cleaned up in finally — tell the renderer there is no file to reveal, only an
-      // Apple Music entry.
-      if (musicOnly)
-        return {
-          outputPath: '',
-          inPlace,
-          addedToMusicOnly: true,
-          musicPersistentId,
-          normalizeSkipped,
-        }
-
-      // The conversion wrote a real file the renderer may play next — directly, or
-      // as the track's new source after an in-place rename — so let surco:// serve it.
-      mediaAccess.allow(target)
-      return { outputPath: target, inPlace, musicPersistentId, normalizeSkipped }
-    } finally {
-      if (prepared) await prepared.cleanup()
-      if (tmpDir) await rm(tmpDir, { recursive: true, force: true })
-    }
-  })
+        return response === 2 ? 'skip' : response === 1 ? 'keepBoth' : 'overwrite'
+      },
+    }),
+  )
 
   // Saves the artwork the way it gets embedded — run through the same resize/square
   // pipeline — so what the user exports matches what lands in the output file.
