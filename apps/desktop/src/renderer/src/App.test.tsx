@@ -1195,7 +1195,11 @@ describe('App sort direction', () => {
     expect(screen.queryByTestId('track-sort-direction')).toBeNull()
     fireEvent.click(screen.getByTestId('track-sort'))
     fireEvent.click(screen.getByTestId('track-sort-option-name'))
-    expect(screen.getByTestId('track-sort-direction')).toBeInTheDocument()
+    const toggle = screen.getByTestId('track-sort-direction')
+    expect(toggle).toBeInTheDocument()
+    // The hint comes from the themed Tooltip, not a native title — so the control reads
+    // the same as the rest of the app and tracks the theme.
+    expect(toggle).not.toHaveAttribute('title')
   })
 
   it('flips between ascending and descending when the toggle is pressed', async () => {

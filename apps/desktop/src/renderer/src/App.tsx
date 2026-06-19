@@ -42,6 +42,7 @@ import { QualityFilterBar } from './components/QualityFilterBar'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { Select } from './components/Select'
 import { Toolbar } from './components/Toolbar'
+import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
@@ -993,17 +994,21 @@ export default function App(): React.JSX.Element {
                         aria-label={tr(
                           sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
                         )}
-                        title={tr(
-                          sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
-                        )}
                         onClick={toggleSortDir}
-                        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
                       >
                         {sortDir === 'asc' ? (
                           <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
                         ) : (
                           <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
                         )}
+                        <Tooltip
+                          label={tr(
+                            sortDir === 'asc'
+                              ? 'sidebar.sort.ascending'
+                              : 'sidebar.sort.descending',
+                          )}
+                        />
                       </button>
                     )}
                   </QualityFilterBar>
