@@ -530,6 +530,17 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.19",
+        "date": "June 19, 2026",
+        "title": "Export to Serato and Engine DJ",
+        "items": [
+          "Export your tracks to Serato DJ and Engine DJ (Denon), on top of rekordbox and Traktor: Surco writes the file each app imports.",
+          "Auto-match now flags uncertain matches for you to review before trusting them, instead of dropping them, and shows each track's match confidence.",
+          "Fake-lossless detection: a heads-up when a FLAC or WAV is really a lossy source repackaged as lossless.",
+          "Filter and sort your tracks by format, with a toggle to flip the sort direction."
+        ]
+      },
+      {
         "version": "0.18",
         "date": "June 18, 2026",
         "title": "Now you can search Bandcamp too",
