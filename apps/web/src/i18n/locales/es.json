@@ -538,7 +538,8 @@
           "El auto-emparejado es ahora un ajuste global de búsqueda y puede recurrir a Bandcamp cuando Discogs no encuentra nada (con solo Bandcamp no necesita token).",
           "Emparejado más preciso con descargas mal nombradas: Surco limpia el ruido del nombre de archivo y del título, fija la mezcla correcta y da prioridad al artista del archivo.",
           "Nueva limpieza «Título base» en el menú del campo Álbum: quita la versión o mezcla del título de un toque.",
-          "Los géneros que solo difieren en mayúsculas (tu «Electronic» y el «electronic» de una fuente) ya no se duplican: se muestra uno solo, con tu versión."
+          "Los géneros que solo difieren en mayúsculas (tu «Electronic» y el «electronic» de una fuente) ya no se duplican: se muestra uno solo, con tu versión.",
+    "Tus portadas se conservan por defecto: Surco ya no las reemplaza salvo que actives la sustitución de las de baja resolución."
         ]
       },
       {

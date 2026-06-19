@@ -538,7 +538,8 @@
           "Auto-match is now a global search setting and can fall back to Bandcamp when Discogs comes up empty (with only Bandcamp it needs no token).",
           "Sharper matching for badly named downloads: Surco strips file-name and title noise, pins the right mix, and gives the file's own artist priority.",
           "New “Base title” clean-up in the Album field menu: strip the version or mix from a title in one tap.",
-          "Genres that differ only in case (your “Electronic” vs a source's “electronic”) no longer duplicate — a single pill shows, in your casing."
+          "Genres that differ only in case (your “Electronic” vs a source's “electronic”) no longer duplicate — a single pill shows, in your casing.",
+    "Your existing covers are kept by default: Surco no longer replaces them unless you opt in to swapping out low-resolution ones."
         ]
       },
       {
