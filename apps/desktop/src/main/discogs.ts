@@ -48,7 +48,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 // that answers in well under a second.
 const REQUEST_TIMEOUT_MS = 10_000
 
-async function api<T>(path: string, token: string): Promise<T> {
+async function api<T>(path: string, token: string, priority?: SearchPriority): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(url, {
@@ -61,6 +61,10 @@ async function api<T>(path: string, token: string): Promise<T> {
       if (attempt >= MAX_RETRIES)
         throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
       await sleep(retryDelayMs(attempt, res.headers.get('Retry-After')))
+      // The caller spent one token on the first attempt; a retry is another request,
+      // so take a fresh token — otherwise a 429 storm bypasses the limiter exactly
+      // when Discogs is already signalling overload.
+      await discogsLimiter.acquire(priority)
       continue
     }
     if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
@@ -103,6 +107,7 @@ async function searchOnce(
   query: string,
   token: string,
   opts: SearchOpts = {},
+  priority?: SearchPriority,
 ): Promise<SearchResult[]> {
   const perPage = opts.perPage ?? 20
   const key = searchKey(query, opts.format, perPage)
@@ -114,6 +119,7 @@ async function searchOnce(
   const data = await api<{ results: Omit<SearchResult, 'provider'>[] }>(
     `/database/search?type=release&q=${encodeURIComponent(query)}&per_page=${perPage}${formatParam}`,
     token,
+    priority,
   )
   // Discogs' JSON carries no provider tag; stamp it here so the normalized result
   // identifies its source for the pill and release routing downstream.
@@ -165,7 +171,7 @@ export async function search(
   for (const candidate of buildSearchCandidates(query, hints)) {
     const opts: SearchOpts = { format: serverFormat, perPage }
     if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
-    const raw = await searchOnce(candidate, token, opts)
+    const raw = await searchOnce(candidate, token, opts, priority)
     results = dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)
     if (results.length) break
   }
@@ -186,7 +192,7 @@ export async function getRelease(
   const cached = releaseCache.get(id)
   if (cached) return cached
   await discogsLimiter.acquire(priority)
-  const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token)
+  const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
   const release: Release = { ...raw, provider: 'discogs' }
   releaseCache.set(id, release)
   return release

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
 
 import type { SearchResult } from '../shared/types'
+import { discogsLimiter } from './discogsLimiter'
 import {
   dedupeResults,
   downloadCover,
@@ -188,6 +189,15 @@ describe('search rate-limit retry', () => {
     const out = await search('retry once query', 'tok')
     expect(out).toEqual([{ id: 9, provider: 'discogs' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  // The first attempt spends a limiter token; the retry is a separate request, so it
+  // must take another token rather than slipping past the limiter during a 429 storm.
+  it('takes a fresh limiter token for the retry, not just the first attempt', async () => {
+    vi.mocked(discogsLimiter.acquire).mockClear()
+    mockSequence([res(429, {}, '0'), res(200, { results: [{ id: 11 }] })])
+    await search('retry token query', 'tok')
+    expect(discogsLimiter.acquire).toHaveBeenCalledTimes(2)
   })
 
   // Persistent 429s must eventually give up — not loop forever — and surface the
