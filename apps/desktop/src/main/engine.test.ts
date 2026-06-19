@@ -57,6 +57,26 @@ describe('buildEngineDatabase', () => {
     )
   })
 
+  // The export can't be checked against a real Engine DJ install here, so the next-best
+  // assurance is that SQLite itself considers the file sound: no structural corruption and
+  // no dangling foreign keys (e.g. a PlaylistEntity pointing at a missing Track, or a Track
+  // whose albumArtId has no AlbumArt row). A failure here means Engine would reject it too.
+  it('produces a structurally valid SQLite database', () => {
+    expect(rows(db, 'PRAGMA integrity_check').map((r) => r.integrity_check)).toEqual(['ok'])
+    expect(rows(db, 'PRAGMA foreign_key_check')).toEqual([])
+  })
+
+  // Guards that the whole DDL ran (a truncated schema string would silently drop tables and
+  // still "work" for the rows we happen to query). These are the objects Engine reads.
+  it('creates every table the Engine Library schema defines', () => {
+    const names = rows(db, "SELECT name FROM sqlite_master WHERE type = 'table'").map(
+      (r) => r.name,
+    )
+    for (const t of ['Information', 'Track', 'Playlist', 'PlaylistEntity', 'AlbumArt']) {
+      expect(names).toContain(t)
+    }
+  })
+
   it('stamps the Engine Library 2.18.0 schema version and a database uuid', () => {
     const info = rows(db, 'SELECT * FROM Information')
     expect(info).toHaveLength(1)
