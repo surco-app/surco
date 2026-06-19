@@ -1283,6 +1283,24 @@ describe('App filter selection', () => {
   })
 })
 
+describe('App select all', () => {
+  // One control, two jobs: select-all selects every track, and pressing it again once they
+  // are all selected clears the selection instead of pointlessly re-selecting the same set.
+  it('toggles between selecting every track and clearing the selection', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const selectAll = screen.getByTestId('select-all')
+    fireEvent.click(selectAll)
+    let rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(selectAll)
+    rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'false')
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'false')
+  })
+})
+
 describe('App donate nudge', () => {
   afterEach(() => vi.restoreAllMocks())
 

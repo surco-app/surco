@@ -513,6 +513,12 @@ export default function App(): React.JSX.Element {
 
   function selectAll(): void {
     if (tracks.length === 0) return
+    // Toggle: with everything already selected, a second press clears the selection rather
+    // than re-selecting the same set — so the one control both selects all and deselects all.
+    if (selectedIds.length === tracks.length) {
+      setSelection({ ids: [], anchor: null })
+      return
+    }
     setSelection({ ids: tracks.map((t) => t.id), anchor: tracks[0].id })
   }
 
