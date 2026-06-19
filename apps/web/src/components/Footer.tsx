@@ -64,8 +64,8 @@ export default function Footer({ page }: { page?: Page }) {
           <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.contactHeading')}</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             <li>
-              <a href="mailto:vigosan@gmail.com" className="transition-colors hover:text-fg">
-                vigosan@gmail.com
+              <a href="mailto:hello@vicent.io" className="transition-colors hover:text-fg">
+                hello@vicent.io
               </a>
             </li>
             <li>
