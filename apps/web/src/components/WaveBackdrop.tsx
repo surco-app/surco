@@ -61,6 +61,7 @@ export default function WaveBackdrop({
               style={{ animationDuration: w.duration, animationDelay: delay }}
             >
               <svg
+                aria-hidden="true"
                 className="h-full w-full"
                 viewBox="0 0 2400 220"
                 preserveAspectRatio="none"

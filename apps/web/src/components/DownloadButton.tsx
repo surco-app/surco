@@ -97,6 +97,7 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
           on the OS check or the releases fetch would insert the line only after
           hydration — shoving the hero screenshot and decorative waves down and
           spiking CLS. The reserved line costs non-Mac visitors a blank row. */}
+      {/* biome-ignore lint/a11y/useAnchorContent: intentionally aria-hidden when there's no Intel link to show — it's a CLS-reserving placeholder (see above), not a real link for assistive tech */}
       <a
         href={os === 'mac' && intelHref ? intelHref : undefined}
         aria-hidden={os === 'mac' && intelHref ? undefined : true}

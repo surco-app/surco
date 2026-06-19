@@ -25,6 +25,7 @@ export default function GrooveArcs({
       style={{ maskImage: FADE, WebkitMaskImage: FADE }}
     >
       <svg
+        aria-hidden="true"
         className={`spin-slow absolute top-1/2 h-[560px] w-[560px] -translate-y-1/2 ${
           side === 'right' ? '-right-52' : '-left-52'
         }`}

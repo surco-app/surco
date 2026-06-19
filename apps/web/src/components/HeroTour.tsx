@@ -57,6 +57,7 @@ export default function HeroTour() {
         }}
       />
 
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: hover-only affordance that clears the active hotspot on mouse leave; the hotspots themselves are buttons, so there's no keyboard equivalent to add */}
       <div
         className="group relative overflow-hidden rounded-2xl border border-line bg-bg2 shadow-2xl shadow-black/60 ring-1 ring-white/5"
         onMouseLeave={() => setActive(null)}
@@ -123,6 +124,7 @@ export default function HeroTour() {
           className="absolute top-3 right-3 z-30 flex size-9 items-center justify-center rounded-lg border border-white/15 bg-bg/60 text-fg backdrop-blur transition hover:border-blue/60 hover:text-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-blue"
         >
           <svg
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

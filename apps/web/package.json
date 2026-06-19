@@ -8,7 +8,11 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite-react-ssg build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint src",
+    "format": "biome format --write src",
+    "check": "biome check --write src"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -21,6 +25,7 @@
     "vite-react-ssg": "^0.9.1-beta.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.16",
     "@tailwindcss/vite": "^4.1.13",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.0.7",

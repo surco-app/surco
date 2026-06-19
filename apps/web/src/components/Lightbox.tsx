@@ -50,6 +50,7 @@ export default function Lightbox({
   }, [open])
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-close is a mouse convenience; keyboard close (Escape) and the focus trap are handled by the window keydown listener above
     <div
       role="dialog"
       aria-modal="true"
