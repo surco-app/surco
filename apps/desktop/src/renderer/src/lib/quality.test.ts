@@ -7,10 +7,12 @@ import {
   gradeCrest,
   gradeDcOffset,
   gradeLra,
-  gradeNoiseFloor,
   gradeLufs,
+  gradeNoiseFloor,
   gradeTruePeak,
+  isLosslessContainer,
   isLowResCover,
+  isTranscode,
   MIN_COVER_PX,
   qualityVerdict,
 } from './quality'
@@ -73,6 +75,50 @@ describe('qualityVerdict', () => {
 
   it('treats an unknown sample rate as warn rather than inventing a verdict', () => {
     expect(qualityVerdict(20000, 0)).toBe('warn')
+  })
+})
+
+describe('isLosslessContainer', () => {
+  it('recognises the lossless containers a DJ rips to', () => {
+    for (const ext of ['flac', 'wav', 'aif', 'aiff', 'alac', 'FLAC']) {
+      expect(isLosslessContainer(ext)).toBe(true)
+    }
+  })
+  it('treats lossy containers as not lossless', () => {
+    for (const ext of ['mp3', 'm4a', 'aac', 'ogg', '']) expect(isLosslessContainer(ext)).toBe(false)
+  })
+})
+
+describe('isTranscode', () => {
+  // The damning case for a DJ: a .flac/.wav that is really a lossy file re-encoded as
+  // lossless. A real codec knee can't occur in a genuine lossless master, so a knee below
+  // the full-quality line inside a lossless container is a fake.
+  it('flags a lossless container with a codec knee below the full-quality line', () => {
+    expect(isTranscode('flac', 16000, true)).toBe(true)
+    expect(isTranscode('wav', 18000, true)).toBe(true)
+    expect(isTranscode('aiff', 19000, true)).toBe(true)
+  })
+
+  // A lossy file with a knee is just itself, not a fraudulent lossless — never flagged.
+  it('does not flag a lossy container that simply has a codec knee', () => {
+    expect(isTranscode('mp3', 16000, true)).toBe(false)
+  })
+
+  // The corpus's hard false-positive class: a genuine, gently rolled-off dark master in a
+  // lossless file has no codec knee, so it must not be called a transcode.
+  it('does not flag a knee-free taper in a lossless container', () => {
+    expect(isTranscode('flac', 16000, false)).toBe(false)
+  })
+
+  // Regenerated highs are their own verdict (Reprocessed); don't double-flag them.
+  it('does not flag a processed (regenerated-highs) spectrum', () => {
+    expect(isTranscode('flac', 16000, true, true)).toBe(false)
+  })
+
+  // Conservative bar: a near-full knee (the borderline 320-repack) stays a clean "good" so
+  // the flag keeps a high precision and never cries wolf on full-bandwidth lossless.
+  it('does not flag a knee at or above the full-quality line', () => {
+    expect(isTranscode('flac', 20000, true)).toBe(false)
   })
 })
 

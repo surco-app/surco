@@ -4,7 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { formatKHz, GOOD_CUTOFF_HZ, qualityVerdict, type Verdict } from '../lib/quality'
+import {
+  formatKHz,
+  GOOD_CUTOFF_HZ,
+  isTranscode,
+  qualityVerdict,
+  type Verdict,
+} from '../lib/quality'
 import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
 import { SectionHeader } from './SectionHeader'
@@ -77,18 +83,27 @@ export function QualitySection({
           spectrum.hasKnee,
         )
       : null
+  // A lossless container (.flac/.wav/.aiff) hiding a lossy source: a real codec knee can't
+  // occur in genuine lossless, so it's the most damning verdict for a DJ. It outranks the
+  // plain "Bad quality" badge/caption — the file lies about its format, which is the headline.
+  const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
+  const transcoded =
+    spectrum?.cutoffHz != null &&
+    isTranscode(ext, spectrum.cutoffHz, spectrum.hasKnee, spectrum.processed)
   // A knee-free taper graded good but stopping short of the full-quality line is a
   // genuine, gently rolled-off (dark) master, not a lossy cut — its own caption, so
   // "Good quality" doesn't sit over the "reaches the ~20 kHz line" text that a sub-20k
   // extent contradicts.
   const captionKey =
     verdict && spectrum
-      ? spectrum.hasKnee === false &&
-        !spectrum.processed &&
-        spectrum.cutoffHz !== null &&
-        spectrum.cutoffHz < GOOD_CUTOFF_HZ
-        ? 'editor.qualityCaptionGenuine'
-        : qualityCaption[verdict]
+      ? transcoded
+        ? 'editor.qualityCaptionTranscode'
+        : spectrum.hasKnee === false &&
+            !spectrum.processed &&
+            spectrum.cutoffHz !== null &&
+            spectrum.cutoffHz < GOOD_CUTOFF_HZ
+          ? 'editor.qualityCaptionGenuine'
+          : qualityCaption[verdict]
       : null
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -100,9 +115,10 @@ export function QualitySection({
           verdict && (
             <span
               data-testid="quality-badge"
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${qualityBadge[verdict].className}`}
+              data-transcode={transcoded || undefined}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${transcoded ? 'bg-danger/15 text-danger' : qualityBadge[verdict].className}`}
             >
-              {tr(qualityBadge[verdict].label)}
+              {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
             </span>
           )
         }

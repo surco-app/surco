@@ -10,12 +10,13 @@ import { QualitySection } from './QualitySection'
 
 afterEach(cleanup)
 
-function track(): TrackItem {
+function track(inputPath = '/music/a.flac'): TrackItem {
+  const fileName = inputPath.split('/').pop() ?? inputPath
   return {
     id: 'a',
-    inputPath: '/music/a.flac',
-    fileName: 'a.flac',
-    listLabel: 'a.flac',
+    inputPath,
+    fileName,
+    listLabel: fileName,
     query: '',
     status: 'idle',
     meta: {
@@ -38,7 +39,7 @@ function track(): TrackItem {
   }
 }
 
-function renderSection(spectrum: SpectrumResult): void {
+function renderSection(spectrum: SpectrumResult, inputPath?: string): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
@@ -46,7 +47,7 @@ function renderSection(spectrum: SpectrumResult): void {
   render(
     <QueryClientProvider client={client}>
       <QualitySection
-        item={track()}
+        item={track(inputPath)}
         showSpectrum
         showLoudness={false}
         open
@@ -91,15 +92,17 @@ describe('QualitySection analysis gating', () => {
 // it must say WHY this file earned its colour — a generic one-liner reads the same
 // under a green badge and a red one, leaving "Bad quality" unjustified.
 describe('QualitySection verdict caption', () => {
-  it('explains a bad verdict as a lossy transcode signature', async () => {
-    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false })
+  it('explains a bad verdict as a lossy signature for a lossy container', async () => {
+    // An mp3 with a low ceiling is just a low-bitrate file — bad, but expected for the
+    // format, so it gets the plain bad caption rather than the fake-lossless one.
+    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.mp3')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
   })
 
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
-    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false })
+    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.mp3')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
@@ -154,6 +157,34 @@ describe('QualitySection verdict caption', () => {
     })
     expect(await screen.findByTestId('quality-upsampled')).toHaveTextContent(
       i18n.t('editor.qualityUpsampled'),
+    )
+  })
+
+  // The headline case for a DJ: a .flac that is really a re-encoded lossy file. A codec
+  // knee can't occur in genuine lossless, so the badge names the fraud ("Fake lossless")
+  // rather than the generic "Bad quality", and the caption says the container is lying.
+  it('flags a lossless file with a codec knee as a fake-lossless transcode', async () => {
+    renderSection(
+      { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
+      '/music/a.flac',
+    )
+    expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
+      i18n.t('editor.qualityTranscode'),
+    )
+    expect(
+      screen.getByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
+    ).toBeInTheDocument()
+  })
+
+  // The same knee in a lossy container is just a low-bitrate file, not a fraud: no transcode
+  // badge — that distinction is the whole point of gating on the container.
+  it('does not flag the same knee in a lossy container as a transcode', async () => {
+    renderSection(
+      { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
+      '/music/a.mp3',
+    )
+    expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
+      i18n.t('editor.qualityBad'),
     )
   })
 

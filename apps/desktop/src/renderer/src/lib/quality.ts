@@ -29,6 +29,33 @@ export function qualityVerdict(
   return cutoffHz >= WARN_CUTOFF_HZ ? 'warn' : 'bad'
 }
 
+// Containers that are lossless by definition, so any codec lowpass in them betrays a lossy
+// source. .m4a is excluded: it can hold either ALAC (lossless) or AAC (lossy), so the
+// extension alone can't promise lossless and would risk false positives on AAC files.
+const LOSSLESS_CONTAINERS = ['flac', 'wav', 'aif', 'aiff', 'alac']
+
+export function isLosslessContainer(ext: string): boolean {
+  return LOSSLESS_CONTAINERS.includes(ext.toLowerCase())
+}
+
+// A "fake lossless" / transcode: a lossless-container file whose spectrum carries a real
+// codec lowpass (a knee) below the full-quality line — i.e. a lossy file re-encoded as
+// lossless. Gated tightly to stay high-precision: only lossless containers, only a detected
+// knee (a genuine dark master is knee-free and must not trip), never a processed spectrum
+// (regenerated highs are their own verdict), and only below GOOD_CUTOFF_HZ so a near-full
+// knee doesn't cry wolf on full-bandwidth lossless. hasKnee defaults true to match
+// qualityVerdict — an older cached analysis without the flag is graded on the codec scale.
+export function isTranscode(
+  ext: string,
+  cutoffHz: number,
+  hasKnee = true,
+  processed = false,
+): boolean {
+  if (!isLosslessContainer(ext)) return false
+  if (processed || !hasKnee) return false
+  return cutoffHz < GOOD_CUTOFF_HZ
+}
+
 export function formatKHz(hz: number): string {
   return `${(hz / 1000).toFixed(1)} kHz`
 }
