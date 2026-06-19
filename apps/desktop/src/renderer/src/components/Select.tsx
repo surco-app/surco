@@ -121,7 +121,7 @@ export function Select({
             data-testid={`${testid}-listbox`}
             aria-label={label}
             onKeyDown={onListKeyDown}
-            className={`animate-pop absolute z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${fullWidth ? 'left-0' : 'right-0'}`}
+            className={`animate-pop absolute z-50 mt-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${fullWidth ? 'inset-x-0' : 'right-0 min-w-full'}`}
           >
             {options.map((o) => (
               <button
@@ -131,10 +131,10 @@ export function Select({
                 aria-selected={o.value === value}
                 data-testid={`${testid}-option-${o.value}`}
                 onClick={() => choose(o.value)}
-                className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
+                className="flex w-full min-w-0 items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
               >
                 {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
-                <span className="flex-1">{o.label}</span>
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
                 <Check
                   aria-hidden="true"
                   className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
