@@ -3,6 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { openFeedback } from '../lib/feedback'
+import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { ExportButton } from './ExportButton'
@@ -138,7 +139,7 @@ export function ConvertFooter({
               </button>
             )}
             <div className="flex gap-2">
-              {window.api.platform === 'darwin' &&
+              {isMacOS() &&
                 (musicExt !== 'flac' || hasMusicCopy) &&
                 (!inMusicLibraryOnly || hasMusicCopy) && (
                   <button
@@ -199,9 +200,7 @@ export function ConvertFooter({
             done={!isMulti && done}
             outputFormat={format}
             exportedFormat={isMulti ? null : exportedFormat}
-            withAppleMusic={
-              window.api.platform === 'darwin' && format !== 'flac' && addToAppleMusic
-            }
+            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
             incomplete={!isMulti && incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}

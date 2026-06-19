@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SHORTCUT_DEFAULTS } from '../../../../shared/shortcutDefaults'
 import { type Chord, chordEquals, eventToChord } from '../../../../shared/shortcuts'
+import { isMacOS } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { formatShortcut } from '../../lib/shortcuts'
 import { Tooltip } from '../Tooltip'
 
-const isMac = window.api.platform === 'darwin'
+const isMac = isMacOS()
 
 interface Props {
   synced: SyncedDraft

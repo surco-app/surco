@@ -24,6 +24,7 @@ import { isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
+import { isMacOS } from '../lib/platform'
 import { isLowResCover } from '../lib/quality'
 import { bestMatch, buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
@@ -244,7 +245,7 @@ export const Editor = memo(function Editor({
   // counts as owned even before the snapshot lands; 'idle' hides the badge off macOS and
   // until the snapshot arrives.
   const inLibrary: 'idle' | 'yes' | 'no' = ((): 'idle' | 'yes' | 'no' => {
-    if (window.api.platform !== 'darwin') return 'idle'
+    if (!isMacOS()) return 'idle'
     if (item.musicPersistentId) return 'yes'
     if (!libraryIndex) return 'idle'
     return isInLibrary(libraryIndex, item.meta) ? 'yes' : 'no'

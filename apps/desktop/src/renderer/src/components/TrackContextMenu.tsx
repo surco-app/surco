@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 
 interface Props {
@@ -65,7 +66,7 @@ export function TrackContextMenu({
   const { t: tr } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x, y })
-  const isWin = window.api.platform === 'win32'
+  const isWin = isWindows()
 
   // Keep the menu fully on screen — flip it back inside the viewport once we know its size.
   useLayoutEffect(() => {

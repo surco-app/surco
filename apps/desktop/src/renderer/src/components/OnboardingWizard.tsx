@@ -6,6 +6,7 @@ import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { OutputFormat, SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { buildOnboardingPatch } from '../lib/onboarding'
+import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { DestinationPicker } from './DestinationPicker'
 import { FieldsEditor } from './FieldsEditor'
@@ -16,7 +17,7 @@ const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 const STEPS = ['welcome', 'search', 'format', 'grouping', 'genre', 'fields', 'spectrum'] as const
 // Apple Music exists only on macOS, so the destination choice is offered there alone.
-const isMac = window.api.platform === 'darwin'
+const isMac = isMacOS()
 
 interface Props {
   settings: Settings

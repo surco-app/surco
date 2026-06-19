@@ -2,6 +2,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
+import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
@@ -12,7 +13,7 @@ const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
-const isMac = window.api.platform === 'darwin'
+const isMac = isMacOS()
 
 interface Props {
   synced: SyncedDraft
