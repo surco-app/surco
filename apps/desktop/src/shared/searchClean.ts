@@ -78,6 +78,28 @@ export function dropOriginalMarker(s: string): string {
   return squeeze(s.replace(ORIGINAL_SUFFIX, '')) || s
 }
 
+// Generic "version-type" words: on their own they name no specific remix, so a parenthetical
+// built only from these plus words the title already contains ("Sunshine (Sunshine Version)")
+// is a self-referential echo, not a disambiguating mix.
+const VERSION_WORDS = new Set(['version', 'versions', 'mix', 'edit', 'remix'])
+
+// Drops a trailing "(…)" that merely echoes the title — every word in it is either already in
+// the part before it or a generic version word, and at least one is a real title echo. Such a
+// label ("Sunshine (Sunshine Version)") just repeats the song name and drags free-text search
+// onto unrelated compilations, while the bare title finds the single. A parenthetical that
+// names a real remixer ("Love (Love To Infinity Mix)") or a meaningful mix ("(Euro Mix)") is
+// NOT a pure echo and is left intact so it can still find the remix's own release.
+export function dropEchoedVersion(s: string): string {
+  const m = s.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
+  if (!m) return s
+  const baseWords = new Set(squeeze(m[1]).toLowerCase().split(/\s+/).filter(Boolean))
+  const inner = squeeze(m[2]).toLowerCase().split(/\s+/).filter(Boolean)
+  if (inner.length === 0) return s
+  const echoesTitle = inner.some((w) => baseWords.has(w))
+  const allCovered = inner.every((w) => baseWords.has(w) || VERSION_WORDS.has(w))
+  return echoesTitle && allCovered ? squeeze(m[1]) : s
+}
+
 export function cleanMatchTitle(title: string): string {
   const afterTrackNumber = title.match(/\s-\s\d{1,3}\s+(.+)$/)
   return dropOriginalMarker(cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title))

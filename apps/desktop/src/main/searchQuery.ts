@@ -1,6 +1,7 @@
 import type { SearchHints } from '../shared/types'
 import {
   cleanQuery,
+  dropEchoedVersion,
   dropOriginalMarker,
   dropPresentsAlias,
   dropTrackNumberTail,
@@ -35,7 +36,9 @@ export function buildSearchCandidates(query: string, hints: SearchHints = {}): s
     const lead = dropPresentsAlias(hints.artist)
     if (lead !== hints.artist) add(cleanQuery(`${lead} ${hints.title}`))
   }
-  add(dropOriginalMarker(trimmed))
+  // dropEchoedVersion after dropOriginalMarker so an "(Original Mix)" still leads bare, while
+  // a title-echoing "(Sunshine Version)" also collapses to the bare title that resolves.
+  add(dropEchoedVersion(dropOriginalMarker(trimmed)))
   add(trimmed)
   add(stripParentheticals(trimmed))
   add(cleaned)

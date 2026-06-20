@@ -158,4 +158,25 @@ describe('buildSearchCandidates', () => {
       }),
     ).toEqual(['Some Artist Some Title', 'Some Title', 'Some Title Some Artist'])
   })
+
+  // The reported case: a self-referential version label that only echoes the title plus a
+  // generic version word ("Sunshine (Sunshine Version)") drags Discogs onto unrelated
+  // compilations, while the bare "Sevilla Sunshine" finds the single. Lead bare; the file's
+  // own title still recovers the version for the tracklist match.
+  it('leads bare when a version parenthetical only echoes the title', () => {
+    expect(buildSearchCandidates('Sevilla Sunshine (Sunshine Version)')[0]).toBe('Sevilla Sunshine')
+    expect(buildSearchCandidates('Sevilla Sunshine (Sunshine Version)')).toContain(
+      'Sevilla Sunshine (Sunshine Version)',
+    )
+  })
+
+  // A parenthetical that names a real remixer is not a redundant echo even when it shares a
+  // title word ("Love To Infinity" is the remixer), so it stays first to find the remix's
+  // own release. Likewise a plain meaningful mix with no echo.
+  it('keeps a remixer-named or meaningful-mix parenthetical that is not a pure echo', () => {
+    expect(buildSearchCandidates('Love (Love To Infinity Mix)')[0]).toBe(
+      'Love (Love To Infinity Mix)',
+    )
+    expect(buildSearchCandidates('Rank 1 Airwave (Euro Mix)')[0]).toBe('Rank 1 Airwave (Euro Mix)')
+  })
 })
