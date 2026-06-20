@@ -152,11 +152,11 @@ describe('TrackList', () => {
   it('drags a row out to external apps using its source file and cover', () => {
     // DJs drop a track straight onto Spek to eyeball its spectrum without exporting
     // first, so the row hands the OS the untouched source path on dragstart. The
-    // draggable element is the <li>, not the button: Chromium won't start a native
+    // draggable element is the row wrapper, not the button: Chromium won't start a native
     // drag from a <button>, so dragging it must lift the whole row. The cover rides
     // along so the OS drag thumbnail is the track's art, not a generic icon.
     renderList([track({ id: 'a', coverUrl: 'data:image/jpeg;base64,AAA' })])
-    const li = screen.getByTestId('track-row').closest('li')
+    const li = screen.getByTestId('track-row').closest('[draggable]')
     expect(li).toHaveAttribute('draggable', 'true')
     expect(screen.getByTestId('track-row')).not.toHaveAttribute('draggable')
     fireEvent.dragStart(li as Element)
@@ -167,7 +167,7 @@ describe('TrackList', () => {
     // Dragging one of several selected rows lifts the whole selection (Finder's rule),
     // so a DJ can drop a batch onto another app at once. List order is preserved.
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
-    const li = screen.getAllByTestId('track-row')[0].closest('li')
+    const li = screen.getAllByTestId('track-row')[0].closest('[draggable]')
     fireEvent.dragStart(li as Element)
     expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/a.wav', '/music/b.wav'], undefined)
   })
@@ -176,7 +176,7 @@ describe('TrackList', () => {
     // Dragging an unselected row must not sweep up the current selection — it lifts just
     // that one file, matching how Finder treats a drag that starts off the selection.
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
-    const li = screen.getAllByTestId('track-row')[2].closest('li')
+    const li = screen.getAllByTestId('track-row')[2].closest('[draggable]')
     fireEvent.dragStart(li as Element)
     expect(api.startTrackDrag).toHaveBeenCalledWith(['/music/c.wav'], undefined)
   })
@@ -279,9 +279,36 @@ describe('TrackList', () => {
   it('marks every selected row, including ones that are not the primary', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'a', ['a', 'b'])
     const rows = screen.getAllByTestId('track-row')
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
-    expect(rows[1]).toHaveAttribute('aria-pressed', 'true')
-    expect(rows[2]).toHaveAttribute('aria-pressed', 'false')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
+  })
+
+  // The list is a multi-select listbox of options, so a screen reader announces it as one
+  // and the rows as selectable — not a stack of unrelated buttons.
+  it('exposes a multi-select listbox of option rows', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true')
+    expect(screen.getAllByRole('option')).toHaveLength(2)
+  })
+
+  // Roving tabindex: only the active (primary) row is a tab stop, so Tab lands on the list
+  // once and the arrow keys move within it — instead of Tab walking through 500 rows.
+  it('keeps a single tab stop on the primary row', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })], 'b')
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('tabindex', '-1')
+    expect(rows[1]).toHaveAttribute('tabindex', '0')
+    expect(rows[2]).toHaveAttribute('tabindex', '-1')
+  })
+
+  // With nothing selected yet the list must still be reachable by Tab, so the first row
+  // holds the tab stop until a selection takes over.
+  it('puts the tab stop on the first row when nothing is selected', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })])
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('tabindex', '0')
+    expect(rows[1]).toHaveAttribute('tabindex', '-1')
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {

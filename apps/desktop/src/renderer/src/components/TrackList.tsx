@@ -71,6 +71,9 @@ interface RowProps {
   track: TrackItem
   selected: boolean
   primary: boolean
+  // Whether this row holds the listbox's single tab stop (roving tabindex): the primary
+  // row, or the first row while nothing is selected yet.
+  tabbable: boolean
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
@@ -94,6 +97,7 @@ const TrackRow = memo(function TrackRow({
   track: t,
   selected,
   primary,
+  tabbable,
   outputFormat,
   onSelect,
   onActivate,
@@ -112,7 +116,7 @@ const TrackRow = memo(function TrackRow({
   // needs a conversion without opening each track. Shared with the per-format filter
   // and sort, so the pill, the filter chip and the sort order all agree.
   const format = sourceFormat(t)
-  const rowRef = useRef<HTMLLIElement>(null)
+  const rowRef = useRef<HTMLDivElement>(null)
   // Report this row entering/leaving the scroll pane so App can run auto-match for
   // what's on screen, through the list's single shared observer.
   useEffect(() => {
@@ -123,11 +127,15 @@ const TrackRow = memo(function TrackRow({
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
-    // Drag lives on the <li>, not the button: Chromium won't reliably start a native
+    // Drag lives on the row wrapper, not the button: Chromium won't reliably start a native
     // drag from a <button> (its press state swallows the dragstart), so the row could
     // not be picked up at all. The img-based cover never hit this, hence the divergence.
-    <li
+    // biome-ignore lint/a11y/noStaticElementInteractions: the drag must live on the row wrapper (Chromium won't start a native drag from a button); the row's interactive semantics are on the inner role="option" button
+    <div
       ref={rowRef}
+      // Presentational: the listbox semantics live on the button below (role="option"),
+      // so the drag-hosting wrapper drops out of the accessibility tree.
+      role="presentation"
       // content-visibility lets the browser skip layout, paint and style for rows
       // scrolled out of the pane, so a 500-track crate doesn't pay that cost for the
       // ~490 rows off screen. The row stays in the DOM — unlike windowing — so keyboard
@@ -153,7 +161,11 @@ const TrackRow = memo(function TrackRow({
           else rowRegistry.current.delete(t.id)
         }}
         data-testid="track-row"
-        aria-pressed={selected}
+        role="option"
+        aria-selected={selected}
+        // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
+        // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
+        tabIndex={tabbable ? 0 : -1}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onDoubleClick={() => onActivate(t)}
         onContextMenu={(e) => {
@@ -324,7 +336,7 @@ const TrackRow = memo(function TrackRow({
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
-    </li>
+    </div>
   )
 })
 
@@ -395,26 +407,37 @@ export function TrackList({
     [scrollRootRef],
   )
   useEffect(() => () => rowObserver.current?.disconnect(), [])
+  const { t: tr } = useTranslation()
   return (
-    <ul className="flex flex-col gap-1 p-2">
-      {tracks.map((t) => (
-        <TrackRow
-          key={t.id}
-          track={t}
-          selected={selectedIds.has(t.id)}
-          primary={t.id === selectedId}
-          outputFormat={outputFormat}
-          onSelect={onSelect}
-          onActivate={onActivate}
-          onRemove={onRemove}
-          onPrefetch={onPrefetch}
-          onOpenMenu={openMenu}
-          onDragOut={startDragOut}
-          observeRow={observeRow}
-          onVisible={onVisible}
-          rowRegistry={rowRegistry}
-        />
-      ))}
+    <>
+      <div
+        role="listbox"
+        aria-label={tr('trackList.label')}
+        aria-multiselectable="true"
+        className="flex flex-col gap-1 p-2"
+      >
+        {tracks.map((t, i) => (
+          <TrackRow
+            key={t.id}
+            track={t}
+            selected={selectedIds.has(t.id)}
+            primary={t.id === selectedId}
+            // The selection owns the single tab stop; with nothing selected the first row
+            // holds it so the list stays reachable by Tab.
+            tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+            outputFormat={outputFormat}
+            onSelect={onSelect}
+            onActivate={onActivate}
+            onRemove={onRemove}
+            onPrefetch={onPrefetch}
+            onOpenMenu={openMenu}
+            onDragOut={startDragOut}
+            observeRow={observeRow}
+            onVisible={onVisible}
+            rowRegistry={rowRegistry}
+          />
+        ))}
+      </div>
       {menu && (
         <TrackContextMenu
           track={menu.track}
@@ -430,6 +453,6 @@ export function TrackList({
           onTrash={onTrash}
         />
       )}
-    </ul>
+    </>
   )
 }

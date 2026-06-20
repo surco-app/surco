@@ -137,6 +137,7 @@
     "toggleLanguage": "Switch language (English / Spanish)"
   },
   "trackList": {
+    "label": "Tracks",
     "noArtist": "No artist",
     "autoMatched": "Auto-matched from Discogs",
     "matchReview": "Review this match",

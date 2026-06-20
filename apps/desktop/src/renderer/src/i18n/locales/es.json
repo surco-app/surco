@@ -137,6 +137,7 @@
     "toggleLanguage": "Cambiar idioma (español / inglés)"
   },
   "trackList": {
+    "label": "Pistas",
     "noArtist": "Sin artista",
     "autoMatched": "Auto-emparejada desde Discogs",
     "matchReview": "Revisa esta coincidencia",

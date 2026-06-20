@@ -778,7 +778,7 @@ describe('App selection range', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     const pressed = screen
       .getAllByTestId('track-row')
-      .filter((r) => r.getAttribute('aria-pressed') === 'true')
+      .filter((r) => r.getAttribute('aria-selected') === 'true')
     expect(pressed).toHaveLength(2)
   })
 })
@@ -1125,11 +1125,11 @@ describe('App keyboard navigation', () => {
   it('moves the selection and focus to the next row on ArrowDown', async () => {
     await renderApp()
     const rows = await addTwoTracks()
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
 
-    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
+    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-selected', 'true'))
     expect(rows[1]).toHaveFocus()
   })
 
@@ -1153,13 +1153,13 @@ describe('App continuous playback', () => {
     setApi({ getSettings: vi.fn().mockResolvedValue(settings({ continuousPlayback: true })) })
     await renderApp()
     const rows = await addTwoTracks()
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
 
     const audio = document.querySelector('audio')
     if (!audio) throw new Error('expected the player audio element')
     fireEvent(audio, new Event('ended'))
 
-    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-pressed', 'true'))
+    await waitFor(() => expect(rows[1]).toHaveAttribute('aria-selected', 'true'))
   })
 
   // With the mode off, finishing a track leaves the selection put rather than
@@ -1173,8 +1173,8 @@ describe('App continuous playback', () => {
     if (!audio) throw new Error('expected the player audio element')
     fireEvent(audio, new Event('ended'))
 
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
-    expect(rows[1]).toHaveAttribute('aria-pressed', 'false')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'false')
   })
 })
 
@@ -1303,12 +1303,12 @@ describe('App filter selection', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // Import auto-selects the first row (the wav). Filtering to MP3 hides it…
-    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     // …so the lone remaining row (the mp3) becomes the selected one.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
   })
 })
 
@@ -1321,12 +1321,12 @@ describe('App select all', () => {
     const selectAll = screen.getByTestId('select-all')
     fireEvent.click(selectAll)
     let rows = screen.getAllByTestId('track-row')
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true')
-    expect(rows[1]).toHaveAttribute('aria-pressed', 'true')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(selectAll)
     rows = screen.getAllByTestId('track-row')
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'false')
-    expect(rows[1]).toHaveAttribute('aria-pressed', 'false')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'false')
   })
 })
 
