@@ -12,7 +12,9 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
     <div className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]">
       <img
         data-testid="spectrogram"
-        src={spectrum.image}
+        // undefined, not '', when there's no rendered image yet: an empty src makes the
+        // browser refetch the whole page.
+        src={spectrum.image || undefined}
         alt={tr('editor.spectrumAlt')}
         className="block h-60 w-full object-fill"
       />
