@@ -84,6 +84,24 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.results.map((r) => r.provider).sort()).toEqual(['bandcamp', 'discogs'])
   })
 
+  // A broad query can return dozens of rows — a wall of noise. The displayed list is capped,
+  // but the per-provider counts still report the true total so the source chips stay honest.
+  it('caps the displayed list while the provider counts keep the true total', async () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      provider: 'discogs' as const,
+      id: i + 1,
+      title: `Some Album ${i}`,
+    }))
+    setApi({ search: vi.fn().mockResolvedValue(many) })
+    const { result } = renderHook(() => useDiscogsBrowser(item({ query: 'some album' }), tr), {
+      wrapper: wrapper(),
+    })
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
+    expect(result.current.results).toHaveLength(25)
+    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
+  })
+
   // The source filter narrows the merged list to one catalog without re-searching, and
   // counts every source so the user can see (and pick) where results came from.
   it('filters the merged results to a single provider', async () => {
