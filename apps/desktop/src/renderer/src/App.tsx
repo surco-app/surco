@@ -683,7 +683,7 @@ export default function App(): React.JSX.Element {
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
-  const { moveSelection, onTrackEnded } = useListNavigation({
+  const { moveSelection, jumpSelection, pageSelection, onTrackEnded } = useListNavigation({
     visibleTracks,
     selectedId,
     setSelection,
@@ -858,6 +858,8 @@ export default function App(): React.JSX.Element {
       selectAll,
       askFillAll,
       moveSelection,
+      jumpSelection,
+      pageSelection,
       togglePlay,
       processOne: convertSelected,
       askConvertAll,

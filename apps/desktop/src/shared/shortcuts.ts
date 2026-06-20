@@ -19,6 +19,10 @@ const NAMED: Record<string, string> = {
   ' ': 'space',
   ArrowUp: 'up',
   ArrowDown: 'down',
+  Home: 'home',
+  End: 'end',
+  PageUp: 'pageup',
+  PageDown: 'pagedown',
 }
 
 // Canonical key token for an event.key, or null for keys we never bind (Tab, F-keys,

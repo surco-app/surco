@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
-import { isTypingTarget, keyToCommandId, moveIndex } from './keymap'
+import { isTypingTarget, jumpIndex, keyToCommandId, moveIndex, pageSize } from './keymap'
 
 function key(
   k: string,
@@ -31,6 +31,29 @@ describe('moveIndex', () => {
     expect(moveIndex(3, 2, 1)).toBe(2)
     expect(moveIndex(3, 1, 1)).toBe(2)
     expect(moveIndex(3, 1, -1)).toBe(0)
+  })
+})
+
+describe('jumpIndex', () => {
+  it('returns -1 for an empty list so the caller skips selection', () => {
+    expect(jumpIndex(0, 'first')).toBe(-1)
+    expect(jumpIndex(0, 'last')).toBe(-1)
+  })
+
+  it('lands on the first or last row regardless of where the selection was', () => {
+    expect(jumpIndex(5, 'first')).toBe(0)
+    expect(jumpIndex(5, 'last')).toBe(4)
+  })
+})
+
+describe('pageSize', () => {
+  it('pages by the rows that fit minus one, so a row of context carries over', () => {
+    expect(pageSize(560, 56)).toBe(9)
+  })
+
+  it('never returns less than one, even when a single row taller than the viewport', () => {
+    expect(pageSize(40, 56)).toBe(1)
+    expect(pageSize(560, 0)).toBe(1)
   })
 })
 
@@ -71,6 +94,17 @@ describe('keyToCommandId', () => {
     expect(press(key('j'), true)).toBeNull()
     expect(press(key('ArrowDown'), true)).toBeNull()
     expect(press(key('/'), true)).toBeNull()
+  })
+
+  // Home/End/PageUp/PageDown round out list navigation the way Finder and Music do:
+  // fixed aliases like j/k, not rebindable rows, and never stealing a field's keystroke.
+  it('jumps and pages the list with Home/End/PageUp/PageDown, only when not typing', () => {
+    expect(press(key('Home'), false)).toBe('list-top')
+    expect(press(key('End'), false)).toBe('list-bottom')
+    expect(press(key('PageDown'), false)).toBe('list-page-down')
+    expect(press(key('PageUp'), false)).toBe('list-page-up')
+    expect(press(key('Home'), true)).toBeNull()
+    expect(press(key('PageDown'), true)).toBeNull()
   })
 
   it('removes the track on ⌘⌫ only when not typing, so editing a field is safe', () => {

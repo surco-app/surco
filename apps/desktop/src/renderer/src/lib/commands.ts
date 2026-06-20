@@ -60,6 +60,8 @@ export interface CommandDeps {
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
+  jumpSelection: (to: 'first' | 'last') => void
+  pageSelection: (dir: -1 | 1) => void
   togglePlay: () => void
   processOne: (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => unknown
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
@@ -104,6 +106,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     selectAll,
     askFillAll,
     moveSelection,
+    jumpSelection,
+    pageSelection,
     togglePlay,
     processOne,
     askConvertAll,
@@ -164,6 +168,36 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('next'),
       enabled: visibleTracks.length > 1,
       run: () => moveSelection(1),
+    },
+    {
+      // Home/End/PageUp/PageDown are fixed aliases (not in the rebind UI), so their hints
+      // are the literal key glyphs rather than a binding looked up from the keymap.
+      id: 'list-top',
+      title: tr('commands.listTop'),
+      hint: '↖',
+      enabled: visibleTracks.length > 1,
+      run: () => jumpSelection('first'),
+    },
+    {
+      id: 'list-bottom',
+      title: tr('commands.listBottom'),
+      hint: '↘',
+      enabled: visibleTracks.length > 1,
+      run: () => jumpSelection('last'),
+    },
+    {
+      id: 'list-page-up',
+      title: tr('commands.listPageUp'),
+      hint: '⇞',
+      enabled: visibleTracks.length > 1,
+      run: () => pageSelection(-1),
+    },
+    {
+      id: 'list-page-down',
+      title: tr('commands.listPageDown'),
+      hint: '⇟',
+      enabled: visibleTracks.length > 1,
+      run: () => pageSelection(1),
     },
     {
       id: 'play',

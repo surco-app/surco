@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { moveIndex } from '../lib/keymap'
+import { jumpIndex, moveIndex, pageSize } from '../lib/keymap'
 import { pageScrollTop } from '../lib/scroll'
 import type { Selection } from '../lib/selection'
 import type { TrackItem } from '../types'
@@ -23,6 +23,10 @@ interface Params {
 
 export interface ListNavigation {
   moveSelection: (delta: number) => void
+  // Home/End — jump to the first or last visible row.
+  jumpSelection: (to: 'first' | 'last') => void
+  // PageUp/PageDown — step by a viewport's worth of rows.
+  pageSelection: (dir: -1 | 1) => void
   onTrackEnded: () => void
 }
 
@@ -40,15 +44,10 @@ export function useListNavigation({
   listScrollRef,
   qualityFilterRef,
 }: Params): ListNavigation {
-  function moveSelection(delta: number): void {
-    // Step through the rows the user can actually see (after the quality filter and the
-    // search), so arrow/j-k navigation never lands on a track hidden by the current view —
-    // and so the index lines up with the rendered rows queried below.
-    const next = moveIndex(
-      visibleTracks.length,
-      visibleTracks.findIndex((t) => t.id === selectedId),
-      delta,
-    )
+  // Select the row at `next`, follow it with DOM focus, and page the scroll pane to keep
+  // it in view. `delta` is the travel direction (sign) so paging eases toward the row from
+  // the right edge. Shared by step (arrows/j-k), jump (Home/End) and page (PageUp/Down).
+  function selectIndex(next: number, delta: number): void {
     if (next === -1) return
     setSelection({ ids: [visibleTracks[next].id], anchor: visibleTracks[next].id })
     // Move DOM focus with the selection so the native focus ring follows the
@@ -78,6 +77,27 @@ export function useListNavigation({
     if (top !== null) container.scrollTo({ top, behavior: 'smooth' })
   }
 
+  function moveSelection(delta: number): void {
+    // Step through the rows the user can actually see (after the quality filter and the
+    // search), so arrow/j-k navigation never lands on a track hidden by the current view —
+    // and so the index lines up with the rendered rows queried below.
+    const current = visibleTracks.findIndex((t) => t.id === selectedId)
+    selectIndex(moveIndex(visibleTracks.length, current, delta), delta)
+  }
+
+  function jumpSelection(to: 'first' | 'last'): void {
+    selectIndex(jumpIndex(visibleTracks.length, to), to === 'first' ? -1 : 1)
+  }
+
+  function pageSelection(dir: -1 | 1): void {
+    // A page is the rows that fit in the scroll pane; measure a real row (the selected one,
+    // or the first rendered) so it tracks the row height instead of a guessed constant.
+    const sample = rowEls.current.get(selectedId ?? visibleTracks[0]?.id ?? '')
+    const rowStep = sample ? sample.getBoundingClientRect().height + 4 : 0
+    const viewport = listScrollRef.current?.clientHeight ?? 0
+    moveSelection(dir * pageSize(viewport, rowStep))
+  }
+
   // When a track finishes: in continuous mode advance to the next visible track —
   // the selection-follows-playback effect plays it and moveSelection scrolls it
   // into view. Otherwise, or once the list runs out, close the player.
@@ -90,5 +110,5 @@ export function useListNavigation({
     }
   }
 
-  return { moveSelection, onTrackEnded }
+  return { moveSelection, jumpSelection, pageSelection, onTrackEnded }
 }
