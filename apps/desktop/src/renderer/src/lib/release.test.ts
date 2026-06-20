@@ -8,7 +8,7 @@ import {
   coverOf,
   joinArtists,
   preRankResults,
-  providerBuckets,
+  providerCountsOf,
   releaseKey,
   resultFromRelease,
   scoreTrack,
@@ -333,29 +333,32 @@ describe('preRankResults', () => {
   })
 })
 
-describe('providerBuckets', () => {
+describe('providerCountsOf', () => {
   const r = (provider: SearchResult['provider'], id: number): SearchResult => ({
     provider,
     id,
     title: 'x',
   })
 
-  // The provider filter only earns its place when results come from more than one
-  // catalog — a single-source result set has nothing to filter, so the control hides.
-  it('returns nothing when every result shares one provider', () => {
-    expect(providerBuckets([r('discogs', 1), r('discogs', 2)])).toEqual([])
-  })
-
-  it('counts results per provider in first-seen (rank) order', () => {
-    const buckets = providerBuckets([r('bandcamp', 1), r('discogs', 2), r('bandcamp', 3)])
-    expect(buckets).toEqual([
-      { provider: 'bandcamp', count: 2 },
+  it('counts each enabled provider in the given order', () => {
+    const counts = providerCountsOf(
+      [r('bandcamp', 1), r('discogs', 2), r('bandcamp', 3)],
+      ['discogs', 'bandcamp'],
+    )
+    expect(counts).toEqual([
       { provider: 'discogs', count: 1 },
+      { provider: 'bandcamp', count: 2 },
     ])
   })
 
-  it('returns nothing for an empty result set', () => {
-    expect(providerBuckets([])).toEqual([])
+  // The source filter is stable across searches because a configured catalog keeps its
+  // slot — at count 0 — even on a search that returned nothing from it.
+  it('keeps an enabled provider at zero when it returned no results', () => {
+    const counts = providerCountsOf([r('discogs', 1)], ['discogs', 'bandcamp'])
+    expect(counts).toEqual([
+      { provider: 'discogs', count: 1 },
+      { provider: 'bandcamp', count: 0 },
+    ])
   })
 })
 

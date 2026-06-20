@@ -234,16 +234,18 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     .map((x) => x.result)
 }
 
-// Tallies the providers present in a result set, in first-seen (rank) order, for the
-// Discogs column's source filter. Mirrors triage's formatBuckets: a set drawn from a
-// single catalog returns nothing so the filter hides — it only filters a mixed list.
-export function providerBuckets(
+// Counts each enabled catalog's hits in a result set, one entry per provider (in the
+// given order) even when its count is 0. Keying the source filter to the enabled
+// providers rather than to what a search returned is what lets it stay put across
+// searches instead of appearing only when a query happens to span two catalogs.
+export function providerCountsOf(
   results: SearchResult[],
+  providers: SearchProviderId[],
 ): { provider: SearchProviderId; count: number }[] {
-  const counts = new Map<SearchProviderId, number>()
-  for (const r of results) counts.set(r.provider, (counts.get(r.provider) ?? 0) + 1)
-  if (counts.size < 2) return []
-  return [...counts.entries()].map(([provider, count]) => ({ provider, count }))
+  return providers.map((provider) => ({
+    provider,
+    count: results.filter((r) => r.provider === provider).length,
+  }))
 }
 
 export interface ReleaseMetaPatch {

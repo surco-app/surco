@@ -81,14 +81,23 @@ export function DiscogsPanel({
     discogs.autoFit(contentDeficit(rows))
   }, [discogs.autoFit])
 
+  // The source filter is keyed to the enabled catalogs, not to which ones a given search
+  // happened to return: showing it whenever two sources are configured (and there's a
+  // result set to filter) keeps it from flickering in and out between searches.
+  const providerTotal = providerCounts.reduce((n, p) => n + p.count, 0)
+  const showProviderFilter = providerCounts.length > 1 && providerTotal > 0
+
   return (
     <>
       <div
         style={{ width: discogs.width }}
         className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
       >
-        <div className="border-b border-[var(--color-line)] p-3">
-          <div className="flex gap-2">
+        <div className="border-b border-[var(--color-line)] pb-2">
+          {/* Mirrors the track list's header (its search row + filter/sort row) so the two
+              columns read as one toolbar side by side: same paddings, control heights and
+              field chrome, differing only in this column's explicit Search button. */}
+          <div className="flex items-center gap-1.5 px-1.5 pt-2">
             <input
               ref={searchInputRef}
               data-testid="discogs-query"
@@ -97,40 +106,20 @@ export function DiscogsPanel({
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
               aria-label={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
-              className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-xs outline-none focus:border-[var(--color-accent)]"
             />
             <button
               type="button"
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
-              className="press inline-flex h-8 items-center justify-center rounded-lg bg-[var(--color-accent)] px-3.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              className="press inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-3 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
           </div>
-          {providerCounts.length > 0 && (
-            <div className="mt-2 flex">
-              <Select
-                testid="provider-filter"
-                label={tr('editor.providerFilter')}
-                value={providerFilter}
-                onChange={(v) => setProviderFilter(v as typeof providerFilter)}
-                options={[
-                  {
-                    value: 'all',
-                    label: `${tr('editor.providerFilterAll')} (${providerCounts.reduce((n, p) => n + p.count, 0)})`,
-                  },
-                  ...providerCounts.map((p) => ({
-                    value: p.provider,
-                    label: `${tr(`settings.provider.${p.provider}`)} (${p.count})`,
-                  })),
-                ]}
-              />
-            </div>
-          )}
           {!hasToken && (
-            <p className="mt-2 text-xs text-fg-muted">
+            <p className="px-1.5 pt-2 text-xs text-fg-muted">
               <Trans
                 i18nKey="editor.tokenTip"
                 components={[
@@ -144,13 +133,38 @@ export function DiscogsPanel({
               />
             </p>
           )}
-          {error && <p className="mt-2 text-xs text-danger">{error}</p>}
-          {formatFilter.length > 0 && (
-            <p data-testid="discogs-format-filter" className="mt-2 text-xs text-fg-dim">
-              {tr('editor.formatFilter', {
-                formats: formatFilter.map((f) => tr(`settings.format.${f}`)).join(', '),
-              })}
-            </p>
+          {error && <p className="px-1.5 pt-2 text-xs text-danger">{error}</p>}
+          {(showProviderFilter || formatFilter.length > 0) && (
+            <div className="flex items-center gap-2 px-1.5 pt-2">
+              {showProviderFilter && (
+                <Select
+                  testid="provider-filter"
+                  label={tr('editor.providerFilter')}
+                  value={providerFilter}
+                  onChange={(v) => setProviderFilter(v as typeof providerFilter)}
+                  options={[
+                    {
+                      value: 'all',
+                      label: `${tr('editor.providerFilterAll')} (${providerTotal})`,
+                    },
+                    ...providerCounts.map((p) => ({
+                      value: p.provider,
+                      label: `${tr(`settings.provider.${p.provider}`)} (${p.count})`,
+                    })),
+                  ]}
+                />
+              )}
+              {formatFilter.length > 0 && (
+                <p
+                  data-testid="discogs-format-filter"
+                  className="min-w-0 truncate text-xs text-fg-dim"
+                >
+                  {tr('editor.formatFilter', {
+                    formats: formatFilter.map((f) => tr(`settings.format.${f}`)).join(', '),
+                  })}
+                </p>
+              )}
+            </div>
           )}
         </div>
 

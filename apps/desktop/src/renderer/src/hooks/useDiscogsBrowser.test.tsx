@@ -114,9 +114,10 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp'])
   })
 
-  // A filter left active from a two-source search must not blank a later single-source
-  // one; the control hides (no counts) and the filter falls back to showing everything.
-  it('drops the filter when a new search returns a single provider', async () => {
+  // A new search resets the active filter (so a Bandcamp-only filter can't blank a later
+  // Discogs-heavy result set) but keeps a slot for every enabled catalog — Bandcamp stays
+  // listed at 0 rather than vanishing, so the control holds steady across searches.
+  it('resets the filter on a new search yet keeps a slot for each enabled provider', async () => {
     const bcResult = {
       provider: 'bandcamp' as const,
       id: 9,
@@ -148,7 +149,11 @@ describe('useDiscogsBrowser', () => {
     act(() => result.current.doSearch())
     await waitFor(() => expect(result.current.results).toHaveLength(1))
     expect(result.current.results[0].provider).toBe('discogs')
-    expect(result.current.providerCounts).toEqual([])
+    expect(result.current.providerFilter).toBe('all')
+    expect(result.current.providerCounts).toEqual([
+      { provider: 'discogs', count: 1 },
+      { provider: 'bandcamp', count: 0 },
+    ])
   })
 
   // The search box's whole job: commit the query and surface the matching releases.

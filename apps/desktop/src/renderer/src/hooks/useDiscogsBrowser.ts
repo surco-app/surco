@@ -5,7 +5,7 @@ import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
-import { preRankResults, providerBuckets, releaseKey, resultFromRelease } from '../lib/release'
+import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 
@@ -18,8 +18,9 @@ export interface DiscogsBrowser {
   doSearch: () => void
   // Results after the source filter, ready to render.
   results: SearchResult[]
-  // Providers present in the unfiltered results, with counts, for the source filter —
-  // empty when results come from a single catalog, so the filter hides.
+  // One entry per enabled catalog (in `providers` order) with its hit count in the
+  // unfiltered results — counts can be 0. Keyed to the enabled sources, not to what a
+  // search returned, so the source filter stays put instead of flickering per search.
   providerCounts: { provider: SearchProviderId; count: number }[]
   // The active source filter: a provider id, or 'all' for the full result set.
   providerFilter: SearchProviderId | 'all'
@@ -129,15 +130,16 @@ export function useDiscogsBrowser(
     enabled: searchTerm.trim() !== '',
   })
   const allResults = searchQuery.data?.results ?? []
-  const providerCounts = useMemo(() => providerBuckets(allResults), [allResults])
-  // Only filter a genuinely mixed list: with one provider, providerCounts is empty and a
-  // stale filter (left over from a previous, two-source search) must not blank the results.
+  const providerCounts = useMemo(
+    () => providerCountsOf(allResults, providers),
+    [allResults, providers],
+  )
   const results = useMemo(
     () =>
-      providerFilter !== 'all' && providerCounts.length > 0
-        ? allResults.filter((r) => r.provider === providerFilter)
-        : allResults,
-    [allResults, providerFilter, providerCounts.length],
+      providerFilter === 'all'
+        ? allResults
+        : allResults.filter((r) => r.provider === providerFilter),
+    [allResults, providerFilter],
   )
 
   const { refetch: refetchSearch } = searchQuery
