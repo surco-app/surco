@@ -303,6 +303,6 @@ describe('matchTargetOf', () => {
         artist: 'HH Traxx',
       },
     } as TrackItem
-    expect(matchTargetOf(t).title).toBe('Francesco Donadoni - Rock that sound (Original mix)')
+    expect(matchTargetOf(t).title).toBe('Francesco Donadoni - Rock that sound')
   })
 })

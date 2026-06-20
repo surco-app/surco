@@ -8,7 +8,7 @@ describe('cleanMatchTitle', () => {
       cleanMatchTitle(
         'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
       ),
-    ).toBe('Francesco Donadoni - Rock that sound (Original mix)')
+    ).toBe('Francesco Donadoni - Rock that sound')
   })
 
   it('takes the track title that follows the track number, not the release prefix', () => {
@@ -19,8 +19,10 @@ describe('cleanMatchTitle', () => {
     ).toBe('Preview')
   })
 
-  it('leaves an already-clean title untouched', () => {
-    expect(cleanMatchTitle('Rock that sound (Original mix)')).toBe('Rock that sound (Original mix)')
+  it('leaves a title whose only parenthetical is a meaningful mix untouched', () => {
+    // Extended/Dub/Club/… name a distinct version, so they survive to keep disambiguating
+    // mixes — unlike a bare "(Original mix)", which is dropped to match a catalog's plain title.
+    expect(cleanMatchTitle('Rock that sound (Extended mix)')).toBe('Rock that sound (Extended mix)')
   })
 })
 
