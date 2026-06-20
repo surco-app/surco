@@ -17,6 +17,7 @@ import {
   probeDuration,
   probeProperties,
   readTags,
+  tagsFromProbe,
 } from './ffmpeg'
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
@@ -24,7 +25,19 @@ import {
 // depend only on the ffmpeg helpers and the analysis cache/limiter, never on any window or
 // session state — so they live apart from the stateful handlers in index.ts.
 export function registerAudioIpc(): void {
-  ipcMain.handle('audio:tags', (_e, inputPath: string) => readTags(inputPath))
+  ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
+    try {
+      return await readTags(inputPath)
+    } catch (err) {
+      // A file ffmpeg can't read at all (a malformed header the repair pass couldn't
+      // fix) shouldn't reject the whole metadata read — that rejection also discarded
+      // the duration and cover read alongside it. Degrade to empty tags so the row
+      // keeps its name-parsed fields, and log one concise line rather than ffmpeg's
+      // full stderr dump.
+      log.warn('audio:tags failed; using empty tags', inputPath, String(err))
+      return tagsFromProbe({})
+    }
+  })
 
   ipcMain.handle('audio:duration', (_e, inputPath: string) => probeDuration(inputPath))
 
