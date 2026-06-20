@@ -330,6 +330,7 @@ export default function App(): React.JSX.Element {
   // scroll past rather than firing every file at the rate limit.
   const {
     tracks,
+    importProgress,
     setTracks,
     tracksRef,
     addPaths,
@@ -877,7 +878,7 @@ export default function App(): React.JSX.Element {
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const progress = topBarProgress(
-    [analysis, matching, batchProgress],
+    [analysis, matching, batchProgress, importProgress],
     tracks.some((t) => t.loadingMeta),
   )
 
@@ -908,6 +909,7 @@ export default function App(): React.JSX.Element {
         <Toolbar
           isMac={isMac}
           trackCount={tracks.length}
+          importing={importProgress}
           batchSummary={batchSummary}
           batching={batching}
           batchProgress={batchProgress}

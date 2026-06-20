@@ -18,6 +18,9 @@ import { Tooltip } from './Tooltip'
 interface Props {
   isMac: boolean
   trackCount: number
+  // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
+  // counter beside "Add files" so a big drop isn't an opaque wait.
+  importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
   batching: boolean
   batchProgress: { done: number; total: number }
@@ -56,6 +59,7 @@ interface Props {
 export const Toolbar = memo(function Toolbar({
   isMac,
   trackCount,
+  importing,
   batchSummary,
   batching,
   batchProgress,
@@ -102,6 +106,15 @@ export const Toolbar = memo(function Toolbar({
             ]
               .filter(Boolean)
               .join(' · ')}
+          </span>
+        )}
+        {importing && (
+          <span
+            data-testid="import-progress"
+            role="status"
+            className="text-sm tabular-nums text-fg-muted"
+          >
+            {tr('header.importingCount', { done: importing.done, total: importing.total })}
           </span>
         )}
         <button

@@ -458,6 +458,33 @@ describe('App import skeleton', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-loading')).toHaveLength(0))
   })
 
+  // A big drop reads tags for ages; an opaque animated bar gives no sense of how far along
+  // it is. A "done/total" counter beside Add files turns the wait into visible progress and
+  // clears once every file's metadata has landed.
+  it('counts metadata-read progress beside Add files until the drop finishes', async () => {
+    let releaseTags: () => void = () => {}
+    const tagsGate = new Promise<void>((res) => {
+      releaseTags = res
+    })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn(async () => {
+        await tagsGate
+        return { title: 'T', artist: 'A' }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // Reads are still gated → none of the two have resolved yet.
+    expect(screen.getByTestId('import-progress')).toHaveTextContent('0/2')
+    // Once both land, the counter clears.
+    await act(async () => {
+      releaseTags()
+    })
+    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
+  })
+
   // The native file dialog can stay open for a long time; a file that arrives through
   // the OS meanwhile ("Open with Surco") must still dedupe against the picker's result —
   // the dedupe has to read the live list, not the snapshot from when the dialog opened.

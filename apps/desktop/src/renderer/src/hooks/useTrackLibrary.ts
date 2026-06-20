@@ -63,6 +63,10 @@ interface Params {
 
 export interface TrackLibrary {
   tracks: TrackItem[]
+  // Cumulative metadata-read progress across overlapping drops (null when idle), so the top
+  // bar can fill determinately and the toolbar can show a "212/319" counter instead of an
+  // opaque animation while a big crate's tags load.
+  importProgress: { done: number; total: number } | null
   setTracks: React.Dispatch<React.SetStateAction<TrackItem[]>>
   // Live view for long-lived callbacks (sweeps, batch loops) that must read each
   // track at the moment of use rather than from a render snapshot.
@@ -91,6 +95,12 @@ export function useTrackLibrary({
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
+  // Import progress, accumulated across overlapping drops via refs (the React state is just
+  // the render mirror): each drop bumps the total, each finished read bumps done, and the
+  // pair resets to null once everything in flight has landed — like the auto-match sweep.
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
+  const importDone = useRef(0)
+  const importTotal = useRef(0)
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
@@ -114,7 +124,19 @@ export function useTrackLibrary({
     const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
     setTracks((prev) => [...prev, ...bases])
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
-    void mapWithConcurrency(bases, READ_CONCURRENCY, loadTrackMeta)
+    importTotal.current += bases.length
+    setImportProgress({ done: importDone.current, total: importTotal.current })
+    void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
+      await loadTrackMeta(base)
+      importDone.current += 1
+      if (importDone.current >= importTotal.current) {
+        importDone.current = 0
+        importTotal.current = 0
+        setImportProgress(null)
+      } else {
+        setImportProgress({ done: importDone.current, total: importTotal.current })
+      }
+    })
   }
 
   async function loadTrackMeta(base: TrackItem): Promise<void> {
@@ -247,6 +269,7 @@ export function useTrackLibrary({
 
   return {
     tracks,
+    importProgress,
     setTracks,
     tracksRef,
     addPaths,

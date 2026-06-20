@@ -31,6 +31,7 @@
     "stats": "Estadísticas",
     "selectAll": "Seleccionar todo",
     "fillFromName": "Rellenar todo desde el nombre",
+    "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
