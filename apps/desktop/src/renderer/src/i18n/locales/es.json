@@ -46,6 +46,7 @@
     "filter": {
       "label": "Filtro",
       "all": "Todas",
+      "multiple": "Filtros",
       "suspect": "Sospechosas",
       "good": "Buenas",
       "unanalyzed": "Sin analizar",

@@ -80,13 +80,12 @@ import { contentDeficit } from './lib/resize'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import {
+  type FilterSelection,
   filterWithSticky,
   formatBuckets,
   matchesSearch,
-  type QualityFilter,
   qualityCounts,
   sortTracks,
-  sourceFormat,
   type TrackSort,
 } from './lib/triage'
 import type { TrackItem } from './types'
@@ -211,11 +210,30 @@ export default function App(): React.JSX.Element {
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
   const qualityFilter = useAppStore(store, (s) => s.qualityFilter)
-  const setQualityFilter = useCallback(
-    (f: QualityFilter) => store.setState({ qualityFilter: f }),
+  const conversionFilter = useAppStore(store, (s) => s.conversionFilter)
+  const libraryFilter = useAppStore(store, (s) => s.libraryFilter)
+  const formatFilter = useAppStore(store, (s) => s.formatFilter)
+  // The four filter axes bundled for the bar, which toggles one per click; split back onto
+  // the store fields here so each axis stays an independently-readable slice.
+  const filterSelection = useMemo<FilterSelection>(
+    () => ({
+      quality: qualityFilter,
+      conversion: conversionFilter,
+      library: libraryFilter,
+      format: formatFilter,
+    }),
+    [qualityFilter, conversionFilter, libraryFilter, formatFilter],
+  )
+  const setFilterSelection = useCallback(
+    (next: FilterSelection) =>
+      store.setState({
+        qualityFilter: next.quality,
+        conversionFilter: next.conversion,
+        libraryFilter: next.library,
+        formatFilter: next.format,
+      }),
     [store],
   )
-  const formatFilter = useAppStore(store, (s) => s.formatFilter)
   const setFormatFilter = useCallback(
     (f: string | null) => store.setState({ formatFilter: f }),
     [store],
@@ -277,7 +295,7 @@ export default function App(): React.JSX.Element {
   // (see filterWithSticky). Tied to the filter it was built for: switching filter (or
   // re-clicking the same chip) resets it, which is the deliberate "refresh" that
   // recomputes membership from the live verdicts.
-  const stickyFilter = useRef<QualityFilter>('all')
+  const stickyFilter = useRef<string>('')
   const stickyIds = useRef<Set<string>>(new Set())
   // Merging a cached spectrum onto a track mints a new object; caching it by id keeps
   // the reference stable across renders so memoized rows only re-render when their own
@@ -637,23 +655,23 @@ export default function App(): React.JSX.Element {
     }
   }, [formatTally, formatFilter, setFormatFilter])
   const visibleTracks = useMemo(() => {
-    // Reset the pinned set the moment the active filter changes, so each filter session
+    // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // library rows put even after a background auto-match flips their verdict.
-    if (stickyFilter.current !== qualityFilter) {
-      stickyFilter.current = qualityFilter
+    const { quality, conversion, library, format } = filterSelection
+    const key = `${quality ?? ''}|${conversion ?? ''}|${library ?? ''}|${format ?? ''}`
+    if (stickyFilter.current !== key) {
+      stickyFilter.current = key
       stickyIds.current = new Set()
     }
     return sortTracks(
-      filterWithSticky(tracksView, qualityFilter, stickyIds.current).filter(
-        // The format axis ANDs with the primary bucket and the search.
-        (t) =>
-          matchesSearch(t, deferredSearch) && (!formatFilter || sourceFormat(t) === formatFilter),
+      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter((t) =>
+        matchesSearch(t, deferredSearch),
       ),
       sortBy,
       sortDir,
     )
-  }, [tracksView, qualityFilter, formatFilter, deferredSearch, sortBy, sortDir])
+  }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -693,7 +711,7 @@ export default function App(): React.JSX.Element {
       selectedId,
     )
     if (next) setSelection(next)
-  }, [qualityFilter, formatFilter])
+  }, [filterSelection])
   // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
   // so it disables once every track is matched (or there's nothing to match).
   const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])
@@ -980,12 +998,10 @@ export default function App(): React.JSX.Element {
                   </div>
                   <QualityFilterBar
                     filterRef={qualityFilterRef}
-                    value={qualityFilter}
-                    onChange={setQualityFilter}
+                    value={filterSelection}
+                    onChange={setFilterSelection}
                     tally={qualityTally}
                     formats={formatTally}
-                    formatValue={formatFilter}
-                    onFormatChange={setFormatFilter}
                     trackCount={tracks.length}
                     visibleCount={visibleTracks.length}
                     selectedPosition={selectedPosition}

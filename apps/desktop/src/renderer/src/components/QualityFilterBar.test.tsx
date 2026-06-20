@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { qualityCounts } from '../lib/triage'
+import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
 import '../i18n'
 import { createRef } from 'react'
 import { QualityFilterBar } from './QualityFilterBar'
@@ -21,25 +21,24 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   ...over,
 })
 
+const sel = (over: Partial<FilterSelection> = {}): FilterSelection => ({ ...EMPTY_FILTER, ...over })
+
 function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
   const onChange = vi.fn()
-  const onFormatChange = vi.fn()
   render(
     <QualityFilterBar
       filterRef={createRef()}
-      value="all"
+      value={sel()}
       onChange={onChange}
       tally={tally()}
       formats={[]}
-      formatValue={null}
-      onFormatChange={onFormatChange}
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
       {...over}
     />,
   )
-  return { onChange, onFormatChange }
+  return { onChange }
 }
 
 describe('QualityFilterBar', () => {
@@ -54,30 +53,69 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-unconverted')).toBeInTheDocument()
   })
 
-  it('picks a bucket from the menu and closes', () => {
+  // Each pick toggles one axis and the menu stays open, so a DJ can layer one choice from
+  // each section in a single pass instead of reopening between every pick.
+  it('reports a bucket pick on its axis and leaves the menu open', () => {
     const { onChange } = renderBar({ tally: tally({ unconverted: 459 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
-    expect(onChange).toHaveBeenCalledWith('unconverted')
-    expect(screen.queryByTestId('quality-filter-unconverted')).toBeNull()
+    expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'unconverted' }))
+    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
   })
 
-  // Counts stay the point of the bar — at-a-glance triage — so the trigger carries the
-  // active bucket's count and each menu row its own.
+  // The point of the split: picking a second section's bucket must NOT replace the first —
+  // it layers, so the callback carries both choices.
+  it('stacks a second axis onto an existing selection instead of replacing it', () => {
+    const { onChange } = renderBar({
+      value: sel({ quality: 'good' }),
+      tally: tally({ good: 11, unconverted: 459 }),
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
+    expect(onChange).toHaveBeenCalledWith(sel({ quality: 'good', conversion: 'unconverted' }))
+  })
+
+  // Clicking the already-active bucket in a section clears that axis (back to "any") without
+  // touching the others.
+  it('toggles an active bucket off when picked again', () => {
+    const { onChange } = renderBar({ value: sel({ quality: 'good' }), tally: tally({ good: 11 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-good'))
+    expect(onChange).toHaveBeenCalledWith(sel())
+  })
+
+  // Counts stay the point of the bar — at-a-glance triage — so each menu row carries its own
+  // count, and a single active axis surfaces its count on the trigger.
   it('shows the active bucket count on the trigger and every bucket count in the menu', () => {
-    renderBar({ value: 'all', trackCount: 498, tally: tally({ unconverted: 459 }) })
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('498')
+    renderBar({ value: sel({ conversion: 'unconverted' }), tally: tally({ unconverted: 459 }) })
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('459')
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-unconverted')).toHaveTextContent('459')
   })
 
+  // With nothing filtered the trigger reads "All" over the whole crate.
+  it('shows the full track count on the trigger when nothing is filtered', () => {
+    renderBar({ value: sel(), trackCount: 498 })
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('498')
+  })
+
+  // With several axes active no single per-axis count describes the intersection, so the
+  // trigger collapses to a generic "Filters" badge counting the surviving tracks.
+  it('shows the visible count on the trigger when more than one axis is active', () => {
+    renderBar({
+      value: sel({ quality: 'good', conversion: 'unconverted' }),
+      tally: tally({ good: 11, unconverted: 459 }),
+      visibleCount: 7,
+    })
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('7')
+  })
+
   // The Apple Music buckets stay conditional — only listed once the snapshot has a verdict.
   it('lists the library buckets only when they have something to show', () => {
-    const { onChange } = renderBar()
+    renderBar()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.queryByTestId('quality-filter-notInLibrary')).toBeNull()
     cleanup()
-    onChange.mockClear()
     renderBar({ tally: tally({ notInLibrary: 459, inLibrary: 2 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-notInLibrary')).toBeInTheDocument()
@@ -98,37 +136,35 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveTextContent('12')
   })
 
-  // Format is its own axis: picking it reports through onFormatChange (not onChange) and
-  // closes the menu like a primary pick — the combination still holds via state.
-  it('reports a format pick through the format axis and closes the menu', () => {
-    const { onChange, onFormatChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
+  // Format is its own axis: picking it reports a selection with format set and the menu
+  // stays open like any other bucket so it can be layered with the rest.
+  it('reports a format pick on the format axis and leaves the menu open', () => {
+    const { onChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
-    expect(onFormatChange).toHaveBeenCalledWith('WAV')
-    expect(onChange).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('quality-filter-listbox')).toBeNull()
+    expect(onChange).toHaveBeenCalledWith(sel({ format: 'WAV' }))
+    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
   })
 
   it('toggles the active format off when picked again', () => {
-    const { onFormatChange } = renderBar({
+    const { onChange } = renderBar({
       formats: [{ format: 'WAV', count: 3 }],
-      formatValue: 'WAV',
+      value: sel({ format: 'WAV' }),
     })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
-    expect(onFormatChange).toHaveBeenCalledWith(null)
+    expect(onChange).toHaveBeenCalledWith(sel())
   })
 
-  // The whole point of the combine: a primary bucket and a format can be checked at once,
-  // so "in Apple Music AND only WAV" shows two ticks, not one replacing the other.
+  // The whole point of the combine: a bucket and a format can be checked at once, so
+  // "good AND only WAV" shows two ticks, not one replacing the other.
   it('shows the primary bucket and the format checked together', () => {
     renderBar({
-      value: 'good',
+      value: sel({ quality: 'good', format: 'WAV' }),
       formats: [
         { format: 'FLAC', count: 5 },
         { format: 'WAV', count: 5 },
       ],
-      formatValue: 'WAV',
     })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-good')).toHaveAttribute('aria-selected', 'true')
@@ -136,31 +172,29 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveAttribute('aria-selected', 'false')
   })
 
-  // "All" means "no filter at all", so a live format must visibly clear its tick — otherwise
+  // "All" means "no filter at all", so any live axis must visibly clear its tick — otherwise
   // it reads as "everything AND only WAV", which is a contradiction.
   it('shows All unchecked once a format is selected', () => {
-    renderBar({ value: 'all', formats: [{ format: 'WAV', count: 5 }], formatValue: 'WAV' })
+    renderBar({ value: sel({ format: 'WAV' }), formats: [{ format: 'WAV', count: 5 }] })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-all')).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByTestId('quality-filter-ext:WAV')).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('clears both the primary bucket and the format when All is picked', () => {
-    const { onChange, onFormatChange } = renderBar({
-      value: 'good',
+  it('clears every axis when All is picked', () => {
+    const { onChange } = renderBar({
+      value: sel({ quality: 'good', format: 'WAV' }),
       formats: [{ format: 'WAV', count: 5 }],
-      formatValue: 'WAV',
     })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-all'))
-    expect(onChange).toHaveBeenCalledWith('all')
-    expect(onFormatChange).toHaveBeenCalledWith(null)
+    expect(onChange).toHaveBeenCalledWith(sel())
   })
 
-  // With no primary bucket chosen the trigger surfaces the active format (the pill was
-  // dropped), so a closed menu still shows that WAV is filtering rather than a bare "All".
-  it('surfaces the active format on the trigger when no primary bucket is chosen', () => {
-    renderBar({ value: 'all', formats: [{ format: 'WAV', count: 5 }], formatValue: 'WAV' })
+  // With only a format active the trigger surfaces it (the single-axis case), so a closed
+  // menu still shows that WAV is filtering rather than a bare "All".
+  it('surfaces the active format on the trigger when it is the only axis', () => {
+    renderBar({ value: sel({ format: 'WAV' }), formats: [{ format: 'WAV', count: 5 }] })
     const trigger = screen.getByTestId('quality-filter-trigger')
     expect(trigger).toHaveTextContent('WAV')
     expect(trigger).toHaveTextContent('5')

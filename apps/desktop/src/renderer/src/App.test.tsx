@@ -1265,9 +1265,8 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    // …then layering the WAV format narrows it to just the wav, the primary still applied.
-    // (Picking a format closes the menu on its own.)
-    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    // …then layering the WAV format (the menu stays open across picks) narrows it to just
+    // the wav, the conversion axis still applied.
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
@@ -1277,7 +1276,7 @@ describe('App per-format filter', () => {
   // (unlike the deliberately-sticky Apple Music buckets).
   it('falls back to every format when the filtered format is no longer present', async () => {
     await addMixedCrate()
-    // Narrow to just the MP3 (picking a format closes the menu on its own).
+    // Narrow to just the MP3.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))

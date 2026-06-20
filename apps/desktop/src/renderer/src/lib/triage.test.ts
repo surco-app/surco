@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import {
-  filterByQuality,
+  EMPTY_FILTER,
+  type FilterSelection,
   filterWithSticky,
   formatBuckets,
+  matchesFilter,
   matchesSearch,
   qualityCounts,
   sortTracks,
@@ -12,6 +14,11 @@ import {
   trackQuality,
   tracksToAnalyze,
 } from './triage'
+
+// The list filter is per-axis now; this keeps the cases reading "filter the list by X" the
+// way they did when a single enum drove it, defaulting every other axis to "any".
+const by = (tracks: TrackItem[], sel: Partial<FilterSelection>): TrackItem[] =>
+  tracks.filter((t) => matchesFilter(t, { ...EMPTY_FILTER, ...sel }))
 
 // trackQuality only reads the spectrum, so a thin stand-in keeps the cases readable.
 const withSpectrum = (spectrum?: Partial<SpectrumResult>): TrackItem =>
@@ -80,7 +87,7 @@ describe('tracksToAnalyze', () => {
   })
 })
 
-describe('filterByQuality / qualityCounts', () => {
+describe('matchesFilter / qualityCounts', () => {
   const t = (id: string, cutoffHz?: number | null, status: TrackStatus = 'idle'): TrackItem =>
     ({
       id,
@@ -96,12 +103,12 @@ describe('filterByQuality / qualityCounts', () => {
     t('inconclusive', null),
   ]
 
-  it('returns every track when the filter is "all"', () => {
-    expect(filterByQuality(tracks, 'all')).toHaveLength(5)
+  it('returns every track when no axis is constrained', () => {
+    expect(by(tracks, {})).toHaveLength(5)
   })
 
   it('keeps both warn and bad rips under the suspect filter so the fakes are isolated', () => {
-    expect(filterByQuality(tracks, 'suspect').map((x) => x.id)).toEqual(['bad', 'borderline'])
+    expect(by(tracks, { quality: 'suspect' }).map((x) => x.id)).toEqual(['bad', 'borderline'])
   })
 
   it('keeps reprocessed (enhancer-faked) rips under suspect and counted, not dropped as unanalyzed', () => {
@@ -114,28 +121,38 @@ describe('filterByQuality / qualityCounts', () => {
         spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: true },
       } as TrackItem,
     ]
-    expect(filterByQuality(faked, 'suspect').map((x) => x.id)).toEqual(['faked'])
+    expect(by(faked, { quality: 'suspect' }).map((x) => x.id)).toEqual(['faked'])
     expect(qualityCounts(faked).suspect).toBe(1)
   })
 
   it('keeps only the genuine-lossless rips when filtering for good', () => {
-    expect(filterByQuality(tracks, 'good').map((x) => x.id)).toEqual(['good'])
+    expect(by(tracks, { quality: 'good' }).map((x) => x.id)).toEqual(['good'])
   })
 
   it('treats an inconclusive cutoff as unanalyzed alongside the unmeasured ones', () => {
-    expect(filterByQuality(tracks, 'unanalyzed').map((x) => x.id)).toEqual([
+    expect(by(tracks, { quality: 'unanalyzed' }).map((x) => x.id)).toEqual([
       'fresh',
       'inconclusive',
     ])
   })
 
   it('keeps only the tracks not yet converted regardless of quality verdict', () => {
-    expect(filterByQuality(tracks, 'unconverted').map((x) => x.id)).toEqual([
+    expect(by(tracks, { conversion: 'unconverted' }).map((x) => x.id)).toEqual([
       'bad',
       'borderline',
       'fresh',
       'inconclusive',
     ])
+  })
+
+  // The whole point of the split: each axis is independent, so a DJ can stack one choice
+  // from several sections and get only the tracks that satisfy every one at once.
+  it('ANDs independent axes together, narrowing to their intersection', () => {
+    // unconverted alone keeps four; layering quality 'unanalyzed' drops the two flagged
+    // rips, leaving just the two without a verdict.
+    expect(
+      by(tracks, { conversion: 'unconverted', quality: 'unanalyzed' }).map((x) => x.id),
+    ).toEqual(['fresh', 'inconclusive'])
   })
 
   it('counts suspect (warn + bad), good, unanalyzed and unconverted tracks for the filter badges', () => {
@@ -158,11 +175,11 @@ describe('Apple Music library filter', () => {
   const tracks = [t('owned', true), t('missing', false), t('unknown')]
 
   it('keeps only the tracks confirmed in the library under the in-library filter', () => {
-    expect(filterByQuality(tracks, 'inLibrary').map((x) => x.id)).toEqual(['owned'])
+    expect(by(tracks, { library: 'inLibrary' }).map((x) => x.id)).toEqual(['owned'])
   })
 
   it('keeps only the tracks confirmed absent under the not-in-library filter', () => {
-    expect(filterByQuality(tracks, 'notInLibrary').map((x) => x.id)).toEqual(['missing'])
+    expect(by(tracks, { library: 'notInLibrary' }).map((x) => x.id)).toEqual(['missing'])
   })
 
   it('counts owned and missing separately, leaving the unverified out of both', () => {
@@ -177,6 +194,8 @@ describe('filterWithSticky', () => {
   const am = (id: string, autoMatched?: boolean): TrackItem =>
     ({ id, status: 'idle', autoMatched }) as TrackItem
 
+  const sel = (over: Partial<FilterSelection>): FilterSelection => ({ ...EMPTY_FILTER, ...over })
+
   it('keeps a row pinned under the library filter after a background auto-match flips its verdict', () => {
     // This is the whole point: the user filters to "not in Apple Music", then while they
     // hunt the right match in the second column a background auto-match rewrites a row's
@@ -184,10 +203,16 @@ describe('filterWithSticky', () => {
     // true. Without pinning the row would vanish from under them mid-work.
     const sticky = new Set<string>()
     expect(
-      filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+      filterWithSticky(
+        [t('a', false), t('b', false)],
+        sel({ library: 'notInLibrary' }),
+        sticky,
+      ).map((x) => x.id),
     ).toEqual(['a', 'b'])
     expect(
-      filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+      filterWithSticky([t('a', true), t('b', false)], sel({ library: 'notInLibrary' }), sticky).map(
+        (x) => x.id,
+      ),
     ).toEqual(['a', 'b'])
   })
 
@@ -196,7 +221,9 @@ describe('filterWithSticky', () => {
     // so the now-owned row finally drops and the list reflects the current verdicts.
     const fresh = new Set<string>()
     expect(
-      filterWithSticky([t('a', true), t('b', false)], 'notInLibrary', fresh).map((x) => x.id),
+      filterWithSticky([t('a', true), t('b', false)], sel({ library: 'notInLibrary' }), fresh).map(
+        (x) => x.id,
+      ),
     ).toEqual(['b'])
   })
 
@@ -204,19 +231,54 @@ describe('filterWithSticky', () => {
     // Pinning only adds; a track whose verdict lands as "missing" later must appear, or a
     // slow library lookup would leave real not-in-library tracks hidden.
     const sticky = new Set<string>()
-    filterWithSticky([t('a', false)], 'notInLibrary', sticky)
+    filterWithSticky([t('a', false)], sel({ library: 'notInLibrary' }), sticky)
     expect(
-      filterWithSticky([t('a', false), t('b', false)], 'notInLibrary', sticky).map((x) => x.id),
+      filterWithSticky(
+        [t('a', false), t('b', false)],
+        sel({ library: 'notInLibrary' }),
+        sticky,
+      ).map((x) => x.id),
     ).toEqual(['a', 'b'])
   })
 
-  it('does not pin non-library filters, which drop a row as soon as it stops matching', () => {
+  it('does not pin when no library axis is active, dropping a row as soon as it stops matching', () => {
     // Stickiness is scoped to the library buckets, where a background rewrite silently
     // flips the verdict. The auto-matched bucket only changes by the user's own action,
-    // so it must follow the live verdict like filterByQuality.
+    // so it must follow the live verdict like matchesFilter.
     const sticky = new Set<string>()
-    filterWithSticky([am('x', true)], 'automatched', sticky)
-    expect(filterWithSticky([am('x', false)], 'automatched', sticky)).toEqual([])
+    filterWithSticky([am('x', true)], sel({ conversion: 'automatched' }), sticky)
+    expect(filterWithSticky([am('x', false)], sel({ conversion: 'automatched' }), sticky)).toEqual(
+      [],
+    )
+  })
+
+  it('drops a pinned row that stops matching a co-active non-library axis (only the library flip is defeated)', () => {
+    // A pinned row survives a background library flip, but must still satisfy the other
+    // axes: if a completed analysis moves it out of the co-active quality bucket it should
+    // drop, so stickiness never widens beyond the one verdict it's meant to hold steady.
+    const q = (id: string, cutoffHz: number | null, inAppleMusic: boolean): TrackItem =>
+      ({
+        id,
+        status: 'idle',
+        inAppleMusic,
+        spectrum: { image: '', cutoffHz, sampleRateHz: 44100 },
+      }) as TrackItem
+    const sticky = new Set<string>()
+    // 'a' is unanalyzed (null cutoff) and not in the library, so it's pinned…
+    filterWithSticky(
+      [q('a', null, false)],
+      sel({ library: 'notInLibrary', quality: 'unanalyzed' }),
+      sticky,
+    )
+    // …but once its analysis lands as 'good' it no longer matches the quality axis, so even
+    // though it's still pinned (and still not in the library) it drops out of view.
+    expect(
+      filterWithSticky(
+        [q('a', 21000, false)],
+        sel({ library: 'notInLibrary', quality: 'unanalyzed' }),
+        sticky,
+      ),
+    ).toEqual([])
   })
 })
 
@@ -381,7 +443,7 @@ describe('automatched filter', () => {
   const tracks = [t('filled', true), t('manual'), t('also-filled', true)]
 
   it('keeps only the tracks whose metadata was filled by auto-match', () => {
-    expect(filterByQuality(tracks, 'automatched').map((x) => x.id)).toEqual([
+    expect(by(tracks, { conversion: 'automatched' }).map((x) => x.id)).toEqual([
       'filled',
       'also-filled',
     ])

@@ -8,17 +8,28 @@ import {
   type LucideIcon,
   Plus,
   RefreshCw,
+  SlidersHorizontal,
   Sparkles,
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QualityFilter, qualityCounts } from '../lib/triage'
+import type { FilterSelection, qualityCounts } from '../lib/triage'
+
+// The selectable bucket modes, one row each, grouped by the dimension they belong to.
+type QualityMode = 'unanalyzed' | 'suspect' | 'good'
+type ConversionMode = 'unconverted' | 'automatched'
+type LibraryMode = 'inLibrary' | 'notInLibrary'
+type Mode = QualityMode | ConversionMode | LibraryMode
+
+const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
+const CONVERSION_MODES: ConversionMode[] = ['unconverted', 'automatched']
+const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
-const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
+const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   all: List,
   suspect: TriangleAlert,
   good: CircleCheckBig,
@@ -31,9 +42,17 @@ const FILTER_ICONS: Record<QualityFilter, LucideIcon> = {
 
 type Tally = ReturnType<typeof qualityCounts>
 
+// Which selection axis a bucket row toggles. Lets one handler flip the right field and one
+// check read the right field, so a pick from each section can coexist.
+function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
+  if ((QUALITY_MODES as string[]).includes(mode)) return 'quality'
+  if ((CONVERSION_MODES as string[]).includes(mode)) return 'conversion'
+  return 'library'
+}
+
 // The attention dot draws the eye to buckets that need action: amber for suspect (likely
 // fake rips), accent for the still-to-convert backlog. Null for the rest.
-function attentionDot(mode: QualityFilter, tally: Tally): string | null {
+function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'suspect' && tally.suspect > 0) return 'bg-warn'
   if (mode === 'unconverted' && tally.unconverted > 0) return 'bg-[var(--color-accent)]'
   return null
@@ -42,15 +61,15 @@ function attentionDot(mode: QualityFilter, tally: Tally): string | null {
 interface Props {
   // The sticky filter header, measured by App when paging the scroll position.
   filterRef: React.RefObject<HTMLDivElement | null>
-  value: QualityFilter
-  onChange: (mode: QualityFilter) => void
+  // The combined selection — one choice per axis (quality / conversion / library / format),
+  // all ANDed. The bar toggles a single axis per click and leaves the menu open, so picking
+  // one from each section stacks the filters instead of replacing the previous choice.
+  value: FilterSelection
+  onChange: (next: FilterSelection) => void
   tally: Tally
   // The distinct source formats present, each with its count — only populated for a mixed
-  // crate so a single-format list grows no format section. This is a separate filter axis
-  // (formatValue), ANDed with the primary `value` bucket.
+  // crate so a single-format list grows no format section.
   formats: { format: string; count: number }[]
-  formatValue: string | null
-  onFormatChange: (format: string | null) => void
   trackCount: number
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
@@ -62,19 +81,20 @@ interface Props {
 
 // The sidebar's quality-triage filter: a single dropdown (so a wide crate's many buckets
 // and large counts can never overflow the narrow, resizable sidebar the way a row of
-// chips did), plus the always-visible "x/total" position counter. The buckets — with the
-// provenance and Apple Music ones appearing only once they have something to show — list
-// inside the menu, each with its icon, count and attention dot. Presentational: App owns
-// the filter state, the tallies and the counts and hands them in. Mirrors Select's
-// interaction (focus the active option on open, Escape/backdrop close, arrow keys move).
+// chips did), plus the always-visible "x/total" position counter. Each dimension is an
+// independent axis — picking a bucket toggles only its axis and keeps the menu open, so a
+// DJ can layer one choice from each section ("not in Apple Music" + "good" + "WAV") in one
+// pass. The buckets — with the provenance and Apple Music ones appearing only once they
+// have something to show — list inside the menu, each with its icon, count and attention
+// dot. Presentational: App owns the selection, the tallies and the counts and hands them
+// in. Mirrors Select's interaction (focus the active option on open, Escape/backdrop close,
+// arrow keys move).
 export function QualityFilterBar({
   filterRef,
   value,
   onChange,
   tally,
   formats,
-  formatValue,
-  onFormatChange,
   trackCount,
   visibleCount,
   selectedPosition,
@@ -88,56 +108,53 @@ export function QualityFilterBar({
   // The primary buckets that follow "All" and the format axis, in logical groups rendered
   // with a thin divider between them so the menu reads by dimension. Empty groups drop out,
   // so the dividers only ever separate groups that actually have something to show.
-  const primarySections: QualityFilter[][] = [
+  const primarySections: Mode[][] = [
     // The quality verdict.
-    ['unanalyzed', 'suspect', 'good'],
+    QUALITY_MODES,
     // Conversion status and provenance: the auto-matched bucket joins only once something
     // has been auto-filled, so the menu isn't padded with a permanently-empty filter.
-    ['unconverted', ...(tally.automatched > 0 ? (['automatched'] as const) : [])],
+    CONVERSION_MODES.filter((m) => m !== 'automatched' || tally.automatched > 0),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
-    ...(tally.inLibrary + tally.notInLibrary > 0
-      ? [['notInLibrary', 'inLibrary'] as QualityFilter[]]
-      : []),
+    ...(tally.inLibrary + tally.notInLibrary > 0 ? [LIBRARY_MODES] : []),
   ]
-  const countOf = (mode: QualityFilter): number =>
-    mode === 'all' ? trackCount : tally[mode as keyof Tally]
-  // "All" is the reset, not a primary value alongside a format: it reads as selected only
-  // when nothing is filtered on either axis, so picking a format (or a bucket) visibly
-  // clears its tick.
-  const allActive = value === 'all' && !formatValue
+  const countOf = (mode: Mode): number => tally[mode as keyof Tally]
+  const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
+  // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
+  // or a format visibly clears its tick.
+  const nothingActive = !value.quality && !value.conversion && !value.library && !value.format
 
-  // Focus the active option when the menu opens, so the arrows continue from the current
-  // choice like a native select.
+  // Focus an active option when the menu opens (the first set axis, or "All" when nothing
+  // is), so the arrows continue from the current choice like a native select.
+  const focusMode = value.quality ?? value.conversion ?? value.library ?? 'all'
   useEffect(() => {
     if (!open) return
-    listRef.current?.querySelector<HTMLElement>(`[data-testid="quality-filter-${value}"]`)?.focus()
-  }, [open, value])
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-testid="quality-filter-${focusMode}"]`)
+      ?.focus()
+  }, [open, focusMode])
 
   function close(): void {
     setOpen(false)
     triggerRef.current?.focus()
   }
 
-  function choose(next: QualityFilter): void {
-    onChange(next)
-    close()
+  // Toggle one axis and leave the menu open: the combination is the point, so the user keeps
+  // layering choices (or clearing one) without reopening between each.
+  function toggle(mode: Mode): void {
+    const axis = axisOf(mode)
+    onChange({ ...value, [axis]: isActive(mode) ? null : mode })
   }
 
-  // Toggling a format closes the menu like a primary pick — the combination still holds
-  // (the primary stays selected in state), the user just reopens to layer the other axis.
-  function chooseFormat(format: string | null): void {
-    onFormatChange(format)
-    close()
+  function toggleFormat(format: string): void {
+    onChange({ ...value, format: value.format === format ? null : format })
   }
 
-  // "All" clears both axes at once, so it's a true "show everything" reset rather than only
-  // resetting the primary bucket and leaving a format quietly applied.
+  // "All" clears every axis at once, so it's a true "show everything" reset rather than
+  // only resetting one dimension and leaving the others quietly applied.
   function chooseAll(): void {
-    onChange('all')
-    onFormatChange(null)
-    close()
+    onChange({ quality: null, conversion: null, library: null, format: null })
   }
 
   // The open menu owns its keys: each handled press stops propagating so the window-level
@@ -168,16 +185,49 @@ export function QualityFilterBar({
     items[next].focus()
   }
 
-  // With no primary bucket chosen, surface the active format on the trigger instead of a
-  // bare "All" (which the menu now shows unchecked once a format is on) — so a closed menu
-  // still tells the user what's filtering. A chosen bucket takes the label; format then
-  // only shows inside the menu.
-  const triggerFormat = value === 'all' ? formats.find((f) => f.format === formatValue) : undefined
-  const ActiveIcon = triggerFormat ? FileAudio : FILTER_ICONS[value]
+  // What the closed trigger shows. With nothing active it's a bare "All"; with exactly one
+  // axis it surfaces that bucket (icon, label, count) so the user sees what's filtering
+  // without opening; with several it collapses to a generic "Filters" badge counting the
+  // tracks that survive the combined filter (the per-axis counts are absolute, so none of
+  // them would describe the intersection).
+  const activeChips: { Icon: LucideIcon; label: string; count: number }[] = []
+  if (value.quality)
+    activeChips.push({
+      Icon: FILTER_ICONS[value.quality],
+      label: tr(`sidebar.filter.${value.quality}`),
+      count: countOf(value.quality),
+    })
+  if (value.conversion)
+    activeChips.push({
+      Icon: FILTER_ICONS[value.conversion],
+      label: tr(`sidebar.filter.${value.conversion}`),
+      count: countOf(value.conversion),
+    })
+  if (value.library)
+    activeChips.push({
+      Icon: FILTER_ICONS[value.library],
+      label: tr(`sidebar.filter.${value.library}`),
+      count: countOf(value.library),
+    })
+  if (value.format)
+    activeChips.push({
+      Icon: FileAudio,
+      label: value.format,
+      count: formats.find((f) => f.format === value.format)?.count ?? 0,
+    })
+
+  const trigger =
+    activeChips.length === 0
+      ? { Icon: List, label: tr('sidebar.filter.all'), count: trackCount }
+      : activeChips.length === 1
+        ? activeChips[0]
+        : { Icon: SlidersHorizontal, label: tr('sidebar.filter.multiple'), count: visibleCount }
   // Keep the suspect nudge on the trigger even when another filter is active, so a crate
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
   const triggerDot =
-    attentionDot(value, tally) ?? (value !== 'suspect' && tally.suspect > 0 ? 'bg-warn' : null)
+    (value.conversion === 'unconverted' && tally.unconverted > 0
+      ? 'bg-[var(--color-accent)]'
+      : null) ?? (tally.suspect > 0 ? 'bg-warn' : null)
 
   const rowClass =
     'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]'
@@ -188,12 +238,12 @@ export function QualityFilterBar({
     />
   )
   // A primary bucket row. "All" is the odd one out: it reads as selected only when nothing
-  // is filtered and clears both axes, so it gets allActive/chooseAll instead of the plain
-  // value match.
-  const renderPrimary = (mode: QualityFilter): React.JSX.Element => {
+  // is filtered and clears every axis, so it gets nothingActive/chooseAll instead of the
+  // plain axis match.
+  const renderPrimary = (mode: Mode | 'all'): React.JSX.Element => {
     const Icon = FILTER_ICONS[mode]
-    const dot = attentionDot(mode, tally)
-    const selected = mode === 'all' ? allActive : mode === value
+    const dot = mode === 'all' ? null : attentionDot(mode, tally)
+    const selected = mode === 'all' ? nothingActive : isActive(mode)
     return (
       <button
         key={mode}
@@ -201,7 +251,7 @@ export function QualityFilterBar({
         role="option"
         aria-selected={selected}
         data-testid={`quality-filter-${mode}`}
-        onClick={mode === 'all' ? chooseAll : () => choose(mode)}
+        onClick={mode === 'all' ? chooseAll : () => toggle(mode)}
         className={rowClass}
       >
         <span className="relative">
@@ -209,15 +259,17 @@ export function QualityFilterBar({
           {dot && <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`} />}
         </span>
         <span className="flex-1">{tr(`sidebar.filter.${mode}`)}</span>
-        <span className="tabular-nums text-fg-dim">{countOf(mode)}</span>
+        <span className="tabular-nums text-fg-dim">
+          {mode === 'all' ? trackCount : countOf(mode)}
+        </span>
         <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
       </button>
     )
   }
-  // A format bucket row: an independent toggle that ANDs with the primary bucket. Clicking
-  // the active one clears it.
+  // A format bucket row: an independent toggle that ANDs with the bucket axes. Clicking the
+  // active one clears it.
   const renderFormat = (f: { format: string; count: number }): React.JSX.Element => {
-    const active = formatValue === f.format
+    const active = value.format === f.format
     return (
       <button
         key={f.format}
@@ -225,7 +277,7 @@ export function QualityFilterBar({
         role="option"
         aria-selected={active}
         data-testid={`quality-filter-ext:${f.format}`}
-        onClick={() => chooseFormat(active ? null : f.format)}
+        onClick={() => toggleFormat(f.format)}
         className={rowClass}
       >
         <FileAudio className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -254,15 +306,13 @@ export function QualityFilterBar({
           className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
           <span className="relative">
-            <ActiveIcon className="h-4 w-4" aria-hidden="true" />
+            <trigger.Icon className="h-4 w-4" aria-hidden="true" />
             {triggerDot && (
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span>{triggerFormat ? triggerFormat.format : tr(`sidebar.filter.${value}`)}</span>
-          <span className="tabular-nums opacity-70">
-            {triggerFormat ? triggerFormat.count : countOf(value)}
-          </span>
+          <span>{trigger.label}</span>
+          <span className="tabular-nums opacity-70">{trigger.count}</span>
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
         {open && (

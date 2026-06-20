@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
-import type { QualityFilter, SortDir, TrackSort } from './triage'
+import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort } from './triage'
 
 // A surfaced background failure (a rejected IPC call, an unhandled rejection), stored as a
 // key plus interpolation detail and localized at render so a language switch retranslates it.
@@ -21,10 +21,14 @@ export interface AppState {
   sortBy: TrackSort
   // Direction of the active sort. Ignored for the drop order, which has none.
   sortDir: SortDir
-  // Quality triage view filter: narrows the list to suspect/unanalyzed/etc tracks.
-  qualityFilter: QualityFilter
-  // Source-format filter ('WAV', 'FLAC'…), a separate axis ANDed with qualityFilter so a
-  // DJ can say "in Apple Music AND only WAV". Null means every format.
+  // The list filter, one independent axis per dimension, all ANDed together so a DJ can
+  // stack "not in Apple Music AND good AND WAV AND unconverted" at once. Null = no
+  // constraint on that axis. Quality is the spectrum verdict (suspect/good/unanalyzed),
+  // conversion the processing/provenance bucket, library the Apple Music ownership bucket,
+  // format the source container ('WAV', 'FLAC'…).
+  qualityFilter: QualityFilter | null
+  conversionFilter: ConversionFilter | null
+  libraryFilter: LibraryFilter | null
   formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
@@ -47,7 +51,9 @@ const INITIAL: AppState = {
   search: '',
   sortBy: 'import',
   sortDir: 'asc',
-  qualityFilter: 'all',
+  qualityFilter: null,
+  conversionFilter: null,
+  libraryFilter: null,
   formatFilter: null,
   dragging: false,
   notice: null,

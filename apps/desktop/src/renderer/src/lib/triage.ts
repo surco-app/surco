@@ -21,20 +21,35 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
   return tracks.filter((t) => !t.spectrum && !inFlight.has(t.id))
 }
 
-// The primary list filter: everything, the suspect (likely fake-lossless) rips, the ones
-// that passed as genuine lossless ('good'), the ones still without a verdict, or the ones
-// not yet converted. 'unconverted' is a processing-status filter (status !== 'done'),
-// orthogonal to the quality verdict. Source format is a SEPARATE axis (see formatBuckets /
-// sourceFormat) that combines with this one, so it isn't a value here.
-export type QualityFilter =
-  | 'all'
-  | 'suspect'
-  | 'good'
-  | 'unanalyzed'
-  | 'unconverted'
-  | 'automatched'
-  | 'inLibrary'
-  | 'notInLibrary'
+// The list filter, split into independent dimensions so a DJ can stack one choice from
+// each at once ("not in Apple Music" + "good" + "WAV" + "unconverted") instead of being
+// forced to pick a single bucket. Each axis is nullable — null means "no constraint on
+// this dimension" — and the active axes are ANDed together (see matchesFilter).
+//
+// Quality is the spectrum verdict: the suspect (likely fake-lossless) rips, the ones that
+// passed as genuine lossless ('good'), or the ones still without a verdict ('unanalyzed').
+export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
+// Conversion/provenance: still pending conversion (status !== 'done') or filled by
+// auto-match — a different dimension from the quality verdict, so its own axis.
+export type ConversionFilter = 'unconverted' | 'automatched'
+// The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
+export type LibraryFilter = 'inLibrary' | 'notInLibrary'
+
+// One selection per dimension, all combined with AND. `format` is the source container
+// ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
+export interface FilterSelection {
+  quality: QualityFilter | null
+  conversion: ConversionFilter | null
+  library: LibraryFilter | null
+  format: string | null
+}
+
+export const EMPTY_FILTER: FilterSelection = {
+  quality: null,
+  conversion: null,
+  library: null,
+  format: null,
+}
 
 // The source container read straight off the input path's extension, uppercased (FLAC,
 // MP3, WAV, AIFF). The parsed fileName has already dropped its extension, so the row pill,
@@ -43,48 +58,58 @@ export function sourceFormat(track: TrackItem): string | undefined {
   return /\.([^./]+)$/.exec(track.inputPath)?.[1]?.toUpperCase()
 }
 
-export function filterByQuality(tracks: TrackItem[], filter: QualityFilter): TrackItem[] {
-  if (filter === 'all') return tracks
-  if (filter === 'unconverted') return tracks.filter((t) => t.status !== 'done')
-  if (filter === 'automatched') return tracks.filter((t) => t.autoMatched)
-  // The Apple Music library buckets are a third dimension, gated on a known verdict:
-  // a track whose library status hasn't been resolved yet (undefined) belongs to
-  // neither, so it never shows under both "owned" and "missing".
-  if (filter === 'inLibrary') return tracks.filter((t) => t.inAppleMusic === true)
-  if (filter === 'notInLibrary') return tracks.filter((t) => t.inAppleMusic === false)
-  // 'suspect' is the triage bucket for everything flagged, so it spans the amber
-  // (warn) and both red verdicts — plain low-bitrate (bad) and enhancer-faked
-  // (processed) — so one chip isolates all the dubious rips.
-  if (filter === 'suspect')
-    return tracks.filter((t) => {
-      const q = trackQuality(t)
-      return q === 'warn' || q === 'bad' || q === 'processed'
-    })
-  return tracks.filter((t) => trackQuality(t) === filter)
+// 'suspect' is the triage bucket for everything flagged, so it spans the amber (warn) and
+// both red verdicts — plain low-bitrate (bad) and enhancer-faked (processed) — so one
+// choice isolates all the dubious rips.
+function matchesQuality(track: TrackItem, filter: QualityFilter): boolean {
+  const q = trackQuality(track)
+  if (filter === 'suspect') return q === 'warn' || q === 'bad' || q === 'processed'
+  return q === filter
 }
 
-// The two filters whose verdict can flip under the user without any action of theirs: a
-// background auto-match rewrites a row's tags to the canonical name, which then matches
-// the Apple Music library and moves the row between the "owned" and "missing" buckets.
-const LIBRARY_FILTERS = new Set<QualityFilter>(['inLibrary', 'notInLibrary'])
+function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
+  if (filter === 'unconverted') return track.status !== 'done'
+  return Boolean(track.autoMatched)
+}
 
-// Filters the list, but keeps the library buckets sticky: once a row is shown under
-// inLibrary/notInLibrary it stays in view even after a background auto-match flips its
-// verdict, so the list never drops a row out from under the user while they work the
-// match column. `sticky` carries the pinned IDs across renders and is extended in place
-// with the rows matching now; the caller resets it (a fresh Set) when the filter changes,
-// which is the deliberate "refresh" that recomputes membership from the live verdicts.
-// Non-library filters change only by the user's own edits, so they ignore the set and
-// follow the live verdict exactly like filterByQuality.
+// The library buckets are gated on a known verdict: a track whose library status hasn't
+// been resolved yet (undefined) belongs to neither, so it never shows under both "owned"
+// and "missing".
+function matchesLibrary(track: TrackItem, filter: LibraryFilter): boolean {
+  return filter === 'inLibrary' ? track.inAppleMusic === true : track.inAppleMusic === false
+}
+
+// True when a track satisfies every active axis. Each null axis is skipped, so an empty
+// selection matches everything and adding a constraint only ever narrows the result.
+export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
+  if (sel.quality && !matchesQuality(track, sel.quality)) return false
+  if (sel.conversion && !matchesConversion(track, sel.conversion)) return false
+  if (sel.library && !matchesLibrary(track, sel.library)) return false
+  if (sel.format && sourceFormat(track) !== sel.format) return false
+  return true
+}
+
+// Filters the list, but keeps the library buckets sticky: once a row is shown while a
+// library axis is active it stays in view even after a background auto-match rewrites its
+// tags to the canonical name — which then matches the Apple Music library and would flip
+// it out of the "missing" bucket — so the list never drops a row out from under the user
+// while they work the match column. `sticky` carries the pinned IDs across renders and is
+// extended in place with the rows matching now; the caller resets it (a fresh Set) when
+// the selection changes, the deliberate "refresh" that recomputes membership from the live
+// verdicts. With no library axis, the selection changes only by the user's own edits, so
+// it ignores the set and follows the live verdicts exactly like matchesFilter. A pinned
+// row must still satisfy the other axes — only the library flip is defeated — so a
+// completed background analysis can still drop it from, say, the 'unanalyzed' bucket.
 export function filterWithSticky(
   tracks: TrackItem[],
-  filter: QualityFilter,
+  sel: FilterSelection,
   sticky: Set<string>,
 ): TrackItem[] {
-  const matching = filterByQuality(tracks, filter)
-  if (!LIBRARY_FILTERS.has(filter)) return matching
+  const matching = tracks.filter((t) => matchesFilter(t, sel))
+  if (!sel.library) return matching
   for (const t of matching) sticky.add(t.id)
-  return tracks.filter((t) => sticky.has(t.id))
+  const exceptLibrary: FilterSelection = { ...sel, library: null }
+  return tracks.filter((t) => sticky.has(t.id) && matchesFilter(t, exceptLibrary))
 }
 
 // Free-text list search, applied on top of the quality filter. Matches what the user
