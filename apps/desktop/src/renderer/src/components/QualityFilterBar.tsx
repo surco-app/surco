@@ -302,7 +302,7 @@ export function QualityFilterBar({
       data-testid="quality-filter"
       className="flex items-center gap-1.5 px-1.5 py-2"
     >
-      <div className="relative shrink-0">
+      <div className="relative min-w-0 flex-1">
         <button
           ref={triggerRef}
           type="button"
@@ -311,17 +311,17 @@ export function QualityFilterBar({
           aria-expanded={open}
           aria-label={tr('sidebar.filter.label')}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
+          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
-          <span className="relative">
+          <span className="relative shrink-0">
             <trigger.Icon className="h-4 w-4" aria-hidden="true" />
             {triggerDot && (
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span>{trigger.label}</span>
-          <span className="tabular-nums opacity-70">{trigger.count}</span>
-          <ChevronDown aria-hidden="true" className="size-3.5" />
+          <span className="min-w-0 flex-1 truncate text-left">{trigger.label}</span>
+          <span className="shrink-0 tabular-nums opacity-70">{trigger.count}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
         {open && (
           <>
