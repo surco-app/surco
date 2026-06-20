@@ -27,6 +27,9 @@ export interface ListNavigation {
   jumpSelection: (to: 'first' | 'last') => void
   // PageUp/PageDown — step by a viewport's worth of rows.
   pageSelection: (dir: -1 | 1) => void
+  // Jump straight to a track by id (the command palette), selecting it and paging it
+  // into view. No-op if the id isn't in the current visible list.
+  revealSelection: (id: string) => void
   onTrackEnded: () => void
 }
 
@@ -98,6 +101,15 @@ export function useListNavigation({
     moveSelection(dir * pageSize(viewport, rowStep))
   }
 
+  function revealSelection(id: string): void {
+    const idx = visibleTracks.findIndex((t) => t.id === id)
+    if (idx === -1) return
+    // Page toward the target from wherever the selection sits, so a far jump scrolls the
+    // row into view rather than leaving it off-screen behind the (now-closing) palette.
+    const current = visibleTracks.findIndex((t) => t.id === selectedId)
+    selectIndex(idx, current === -1 ? 1 : idx - current)
+  }
+
   // When a track finishes: in continuous mode advance to the next visible track —
   // the selection-follows-playback effect plays it and moveSelection scrolls it
   // into view. Otherwise, or once the list runs out, close the player.
@@ -110,5 +122,5 @@ export function useListNavigation({
     }
   }
 
-  return { moveSelection, jumpSelection, pageSelection, onTrackEnded }
+  return { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded }
 }

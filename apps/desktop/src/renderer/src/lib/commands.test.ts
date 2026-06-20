@@ -6,8 +6,10 @@ import {
   type Command,
   type CommandDeps,
   filterCommands,
+  filterTrackCommands,
   guideUrl,
   runCommand,
+  trackLabel,
 } from './commands'
 
 function cmd(id: string, title: string): Command {
@@ -114,6 +116,54 @@ describe('filterCommands', () => {
 
   it('returns nothing when no title matches', () => {
     expect(filterCommands(commands, 'zzz')).toEqual([])
+  })
+})
+
+function meta(artist: string, title: string): TrackItem['meta'] {
+  return { artist, title } as TrackItem['meta']
+}
+
+describe('trackLabel', () => {
+  it('joins artist and title when both are present', () => {
+    expect(trackLabel(track({ meta: meta('Daft Punk', 'Da Funk') }))).toBe('Daft Punk — Da Funk')
+  })
+
+  it('falls back to whichever of title, artist or list label exists', () => {
+    expect(trackLabel(track({ meta: meta('', 'Da Funk') }))).toBe('Da Funk')
+    expect(trackLabel(track({ meta: meta('', ''), listLabel: 'rawfile' }))).toBe('rawfile')
+  })
+})
+
+describe('filterTrackCommands', () => {
+  const tracks = [
+    track({ id: 't1', meta: meta('Daft Punk', 'Da Funk') }),
+    track({ id: 't2', meta: meta('Justice', 'Genesis') }),
+    track({ id: 't3', meta: meta('', ''), listLabel: 'untitled-daft-demo' }),
+  ]
+
+  it('returns nothing for an empty query, so ⌘K stays a command launcher until you type', () => {
+    expect(filterTrackCommands(tracks, '  ', () => {})).toEqual([])
+  })
+
+  it('matches case-insensitively across artist, title and the frozen list label', () => {
+    expect(filterTrackCommands(tracks, 'daft', () => {}).map((c) => c.id)).toEqual([
+      'goto:t1',
+      'goto:t3',
+    ])
+    expect(filterTrackCommands(tracks, 'GENESIS', () => {}).map((c) => c.id)).toEqual(['goto:t2'])
+  })
+
+  it('jumps to the track id when its result runs', () => {
+    const goToTrack = vi.fn()
+    filterTrackCommands(tracks, 'justice', goToTrack)[0].run()
+    expect(goToTrack).toHaveBeenCalledWith('t2')
+  })
+
+  it('caps the results so a broad query cannot flood the palette', () => {
+    const many = Array.from({ length: 20 }, (_, i) =>
+      track({ id: `m${i}`, meta: meta('Mix', `Track ${i}`) }),
+    )
+    expect(filterTrackCommands(many, 'mix', () => {}).length).toBe(8)
   })
 })
 

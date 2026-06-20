@@ -1,20 +1,35 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type Command, filterCommands } from '../lib/commands'
+import { type Command, filterCommands, filterTrackCommands } from '../lib/commands'
+import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
 interface Props {
   commands: Command[]
+  // The visible tracks ⌘K can jump to, and the jump itself. Searching by title/artist
+  // turns the palette into a "go to track" launcher on top of the command list. Both are
+  // optional and additive: without them the palette is a plain command launcher.
+  tracks?: TrackItem[]
+  onGoToTrack?: (id: string) => void
   onClose: () => void
 }
 
-export function CommandPalette({ commands, onClose }: Props): React.JSX.Element {
+export function CommandPalette({
+  commands,
+  tracks = [],
+  onGoToTrack = () => {},
+  onClose,
+}: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const results = filterCommands(commands, query)
+  const commandResults = filterCommands(commands, query)
+  const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
+  // One flat list keeps the index-based arrow/Enter navigation untouched; the track group
+  // simply starts at commandResults.length, where the "Tracks" heading is rendered.
+  const results = [...commandResults, ...trackResults]
   const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
 
   useEffect(() => {
@@ -87,23 +102,29 @@ export function CommandPalette({ commands, onClose }: Props): React.JSX.Element 
           <p className="px-3 py-6 text-center text-xs text-fg-dim">{t('palette.empty')}</p>
         )}
         {results.map((c, i) => (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row
-          // biome-ignore lint/a11y/useFocusableInteractive: options use virtual focus via aria-activedescendant, so they are intentionally not tab stops
-          <div
-            key={c.id}
-            role="option"
-            id={`palette-option-${c.id}`}
-            data-testid="palette-item"
-            aria-selected={i === active}
-            aria-disabled={!c.enabled}
-            onClick={() => runAt(i)}
-            onMouseMove={() => setActive(i)}
-            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-              c.enabled ? 'cursor-pointer' : 'opacity-30'
-            } ${i === active ? 'bg-[var(--color-accent-soft)]' : ''}`}
-          >
-            <span>{c.title}</span>
-            {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
+          <div key={c.id}>
+            {i === commandResults.length && trackResults.length > 0 && (
+              <p className="px-3 pt-2 pb-1 text-[0.625rem] font-medium uppercase tracking-wide text-fg-dim">
+                {t('palette.tracks')}
+              </p>
+            )}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row */}
+            {/* biome-ignore lint/a11y/useFocusableInteractive: options use virtual focus via aria-activedescendant, so they are intentionally not tab stops */}
+            <div
+              role="option"
+              id={`palette-option-${c.id}`}
+              data-testid="palette-item"
+              aria-selected={i === active}
+              aria-disabled={!c.enabled}
+              onClick={() => runAt(i)}
+              onMouseMove={() => setActive(i)}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                c.enabled ? 'cursor-pointer' : 'opacity-30'
+              } ${i === active ? 'bg-[var(--color-accent-soft)]' : ''}`}
+            >
+              <span>{c.title}</span>
+              {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
+            </div>
           </div>
         ))}
       </div>

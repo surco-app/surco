@@ -4,12 +4,17 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Command } from '../lib/commands'
+import type { TrackItem } from '../types'
 import { CommandPalette } from './CommandPalette'
 
 afterEach(cleanup)
 
 function cmd(over: Partial<Command> & { id: string }): Command {
   return { title: over.id, enabled: true, run: () => {}, ...over }
+}
+
+function track(id: string, artist: string, title: string): TrackItem {
+  return { id, listLabel: title, meta: { artist, title } } as TrackItem
 }
 
 describe('CommandPalette', () => {
@@ -121,5 +126,40 @@ describe('CommandPalette', () => {
     fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'sett' } })
     expect(screen.getAllByTestId('palette-item')).toHaveLength(1)
     expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  // ⌘K doubles as a jump-to-track launcher: typing a title/artist surfaces matching
+  // tracks under a heading, and picking one jumps to it and dismisses the palette — the
+  // fast keyboard path to a specific track without scrolling the list by hand.
+  it('surfaces matching tracks for a query and jumps to the one picked', () => {
+    const onGoToTrack = vi.fn()
+    const onClose = vi.fn()
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'a', title: 'Add files' })]}
+        tracks={[track('t1', 'Daft Punk', 'Da Funk'), track('t2', 'Justice', 'Genesis')]}
+        onGoToTrack={onGoToTrack}
+        onClose={onClose}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'da funk' } })
+    expect(screen.getByText('Daft Punk — Da Funk')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Daft Punk — Da Funk'))
+    expect(onGoToTrack).toHaveBeenCalledWith('t1')
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  // The empty query keeps ⌘K a pure command launcher — tracks only appear once the user
+  // types — so opening the palette never dumps the whole library into it.
+  it('shows no track results until the query is non-empty', () => {
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'a', title: 'Add files' })]}
+        tracks={[track('t1', 'Daft Punk', 'Da Funk')]}
+        onGoToTrack={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByText('Daft Punk — Da Funk')).not.toBeInTheDocument()
   })
 })

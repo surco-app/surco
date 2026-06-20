@@ -683,7 +683,8 @@ export default function App(): React.JSX.Element {
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
-  const { moveSelection, jumpSelection, pageSelection, onTrackEnded } = useListNavigation({
+  const { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded } =
+    useListNavigation({
     visibleTracks,
     selectedId,
     setSelection,
@@ -1244,6 +1245,11 @@ export default function App(): React.JSX.Element {
         {activeModal?.type === 'palette' && (
           <CommandPalette
             commands={getCommands()}
+            // Searching by title/artist turns ⌘K into a jump-to-track launcher over the
+            // visible list; picking a track selects and scrolls to it, then the palette
+            // closes itself (runAt → onClose) like any other command.
+            tracks={visibleTracks}
+            onGoToTrack={revealSelection}
             // A command's run() may itself open another modal (settings, find & replace,
             // export…). Closing the palette must not clobber that: only dismiss it when the
             // palette is still the active modal, so a command that navigated elsewhere wins.

@@ -491,7 +491,8 @@
     "report": "Report this error"
   },
   "palette": {
-    "placeholder": "Type a command…",
+    "placeholder": "Search tracks or run a command…",
+    "tracks": "Tracks",
     "empty": "No results"
   },
   "onboarding": {

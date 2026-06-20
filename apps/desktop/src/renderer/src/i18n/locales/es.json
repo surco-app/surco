@@ -491,7 +491,8 @@
     "report": "Reportar este error"
   },
   "palette": {
-    "placeholder": "Escribe una acción…",
+    "placeholder": "Busca pistas o ejecuta una acción…",
+    "tracks": "Pistas",
     "empty": "Sin resultados"
   },
   "onboarding": {

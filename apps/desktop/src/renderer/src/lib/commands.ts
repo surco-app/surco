@@ -18,6 +18,43 @@ export function filterCommands(commands: Command[], query: string): Command[] {
   return commands.filter((c) => c.title.toLowerCase().includes(q))
 }
 
+// The label a track shows in the palette: "artist — title" when both are known, else
+// whichever single field exists, falling back to the frozen list label for a raw import.
+export function trackLabel(t: TrackItem): string {
+  const { artist, title } = t.meta
+  if (artist && title) return `${artist} — ${title}`
+  return title || artist || t.listLabel || t.fileName
+}
+
+// How many track jumps the palette offers for one query, so a broad term ("mix") can't
+// bury the commands or turn the palette into the whole library.
+const TRACK_RESULT_LIMIT = 8
+
+// Turns the visible tracks into "jump to this track" palette entries for a non-empty
+// query, matching on artist, title and the frozen list label. Empty query → no tracks,
+// so ⌘K stays a pure command launcher until the user types something to search for.
+export function filterTrackCommands(
+  tracks: TrackItem[],
+  query: string,
+  goToTrack: (id: string) => void,
+): Command[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  const out: Command[] = []
+  for (const t of tracks) {
+    const haystack = `${t.meta.artist ?? ''} ${t.meta.title ?? ''} ${t.listLabel}`.toLowerCase()
+    if (!haystack.includes(q)) continue
+    out.push({
+      id: `goto:${t.id}`,
+      title: trackLabel(t),
+      enabled: true,
+      run: () => goToTrack(t.id),
+    })
+    if (out.length >= TRACK_RESULT_LIMIT) break
+  }
+  return out
+}
+
 // The user guide is published per-language at separate paths, so pick the one
 // that matches the running locale rather than dropping everyone on Spanish.
 export function guideUrl(language: string): string {
