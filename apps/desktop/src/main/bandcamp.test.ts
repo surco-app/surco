@@ -99,7 +99,7 @@ describe('search', () => {
   // A file-derived query carries name noise the autocomplete chokes on (returns nothing),
   // so search must fall back to the cleaned/relaxed candidates — here the title hint — the
   // way Discogs does, instead of giving up on the raw string.
-  it('falls back to a cleaned/hint candidate when the raw query finds nothing', async () => {
+  it('leads with a cleaned bare-title candidate from a messy file-name query', async () => {
     const hit = {
       type: 'a',
       id: 7,
@@ -121,8 +121,10 @@ describe('search', () => {
       title: 'Rock that sound (Original mix)',
     })
     expect(out.map((r) => r.id)).toEqual([7])
-    // It tried the raw query first and only then a relaxed candidate.
-    expect(fn.mock.calls.length).toBeGreaterThan(1)
+    // The first candidate is the cleaned bare title (track-number tail cut, "(Original mix)"
+    // dropped) — so it resolves at once, with the noisy raw query never even tried.
+    const first = JSON.parse(fn.mock.calls[0][1].body as string).search_text as string
+    expect(first).toBe('HH Traxx - Rock that sound')
   })
 
   // The autocomplete fires on every keystroke against an unofficial endpoint; a repeated

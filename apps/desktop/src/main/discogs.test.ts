@@ -110,14 +110,17 @@ describe('search', () => {
 
   // The first candidate keeps the mix name; when it finds nothing the client retries
   // the parenthetical-stripped query, which is what surfaces the release.
-  it('falls back to the parenthetical-stripped query when the fuller one finds nothing', async () => {
+  it('searches the bare title first for an "(Original Mix)" tag, then the full one', async () => {
+    // "(Original Mix)" is the file's name for the default version; searching it returns
+    // noise that blocks the bare fallback, so the bare title now leads and the full one is
+    // only tried when it finds nothing.
     const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 9 }] })])
     const out = await search('Cascade Probe (Original Mix)', 'tok')
     expect(out).toEqual([{ id: 9, provider: 'discogs' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    const second = fetchMock.mock.calls[1][0] as string
-    expect(second).toContain(encodeURIComponent('Cascade Probe'))
-    expect(second).not.toContain(encodeURIComponent('(Original Mix)'))
+    const first = fetchMock.mock.calls[0][0] as string
+    expect(first).toContain(encodeURIComponent('Cascade Probe'))
+    expect(first).not.toContain(encodeURIComponent('(Original Mix)'))
   })
 })
 
