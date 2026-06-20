@@ -127,4 +127,35 @@ describe('buildSearchCandidates', () => {
   it('searches the bare "Artist Title" first for an "(Original Mix)" tag', () => {
     expect(buildSearchCandidates('Alex K Shake it Up (Original Mix)')[0]).toBe('Alex K Shake it Up')
   })
+
+  // The reported case: a "presents"/"pres." alias in the artist ("Brian Cross pres. Fat
+  // Synth") makes the full query return unrelated "Various" compilations; Discogs files the
+  // release under the lead act ("Brian Cross & Fat Synth"). Lead with "<lead artist> <title>"
+  // so that clean candidate is tried before the noisy query, whose non-empty junk would
+  // otherwise break the loop before any fallback.
+  it('leads with the lead artist + title when the artist carries a "presents" alias', () => {
+    expect(
+      buildSearchCandidates('Brian Cross pres. Fat Synth Secret', {
+        artist: 'Brian Cross pres. Fat Synth',
+        title: 'Secret',
+      })[0],
+    ).toBe('Brian Cross Secret')
+  })
+
+  // "presents" spelled out is the same credit and gets the same treatment; an artist with
+  // no such credit adds no extra candidate, so unrelated searches are untouched.
+  it('handles spelled-out "presents" and leaves a credit-free artist alone', () => {
+    expect(
+      buildSearchCandidates('Pasta presents Rigatoni Penne', {
+        artist: 'Pasta presents Rigatoni',
+        title: 'Penne',
+      })[0],
+    ).toBe('Pasta Penne')
+    expect(
+      buildSearchCandidates('Some Artist Some Title', {
+        artist: 'Some Artist',
+        title: 'Some Title',
+      }),
+    ).toEqual(['Some Artist Some Title', 'Some Title', 'Some Title Some Artist'])
+  })
 })

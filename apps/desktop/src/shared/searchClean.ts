@@ -36,6 +36,16 @@ export function stripParentheticals(query: string): string {
   return squeeze(query.replace(/\([^)]*\)/g, ' '))
 }
 
+// A "presents"/"pres." credit names a side-alias ("Brian Cross pres. Fat Synth") that the
+// catalog files under the lead act ("Brian Cross & Fat Synth"); for free-text search the
+// alias is noise that drags the query onto unrelated compilations. Keep only the lead artist
+// before the credit. Operates on an artist string (not the whole query, where the title sits
+// after the alias and would be eaten too); returns the input unchanged with no such credit,
+// and never strips to nothing.
+export function dropPresentsAlias(artist: string): string {
+  return squeeze(artist.replace(/\s+(?:pres\.?|presents)\b.*$/i, '')) || artist
+}
+
 // DJ-pool / batch exports often append a track number and a repeat of the artist–title to
 // the end ("Artist - Title (Original Mix) - 02 Artist - Title (Original Mix)"). The part
 // before that mid-string track number is already a complete query, and the duplication

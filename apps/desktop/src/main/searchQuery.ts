@@ -2,6 +2,7 @@ import type { SearchHints } from '../shared/types'
 import {
   cleanQuery,
   dropOriginalMarker,
+  dropPresentsAlias,
   dropTrackNumberTail,
   stripParentheticals,
 } from '../shared/searchClean'
@@ -25,6 +26,14 @@ export function buildSearchCandidates(query: string, hints: SearchHints = {}): s
   const add = (candidate: string): void => {
     const t = candidate.trim()
     if (t && !out.includes(t)) out.push(t)
+  }
+  // A "presents"/"pres." alias in the artist drags free-text search onto unrelated
+  // compilations; the catalog files the release under the lead act. Lead with the lead
+  // artist + title so this clean candidate is tried before the noisy full query, whose
+  // junk-but-non-empty results would otherwise break the candidate loop first.
+  if (hints.artist && hints.title) {
+    const lead = dropPresentsAlias(hints.artist)
+    if (lead !== hints.artist) add(cleanQuery(`${lead} ${hints.title}`))
   }
   add(dropOriginalMarker(trimmed))
   add(trimmed)
