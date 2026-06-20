@@ -1265,8 +1265,9 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    // …then layering the WAV format (the menu stays open across picks) narrows it to just
-    // the wav, the conversion axis still applied.
+    // …then reopening and layering the WAV format narrows it to just the wav, the conversion
+    // axis still applied (each pick closes the menu, so the second needs a fresh open).
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })

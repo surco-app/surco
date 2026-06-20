@@ -53,18 +53,18 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-unconverted')).toBeInTheDocument()
   })
 
-  // Each pick toggles one axis and the menu stays open, so a DJ can layer one choice from
-  // each section in a single pass instead of reopening between every pick.
-  it('reports a bucket pick on its axis and leaves the menu open', () => {
+  // A pick toggles its axis and closes the menu like a native select — the common
+  // single-filter case shouldn't need a click outside to dismiss the popover.
+  it('reports a bucket pick on its axis and closes the menu', () => {
     const { onChange } = renderBar({ tally: tally({ unconverted: 459 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'unconverted' }))
-    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-listbox')).toBeNull()
   })
 
-  // The point of the split: picking a second section's bucket must NOT replace the first —
-  // it layers, so the callback carries both choices.
+  // The point of the split: picking a second section's bucket (after reopening) must NOT
+  // replace the first — it layers, so the callback carries both choices.
   it('stacks a second axis onto an existing selection instead of replacing it', () => {
     const { onChange } = renderBar({
       value: sel({ quality: 'good' }),
@@ -136,14 +136,14 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveTextContent('12')
   })
 
-  // Format is its own axis: picking it reports a selection with format set and the menu
-  // stays open like any other bucket so it can be layered with the rest.
-  it('reports a format pick on the format axis and leaves the menu open', () => {
+  // Format is its own axis: picking it reports a selection with format set and closes the
+  // menu like any other bucket.
+  it('reports a format pick on the format axis and closes the menu', () => {
     const { onChange } = renderBar({ formats: [{ format: 'WAV', count: 3 }] })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
     expect(onChange).toHaveBeenCalledWith(sel({ format: 'WAV' }))
-    expect(screen.getByTestId('quality-filter-listbox')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-listbox')).toBeNull()
   })
 
   it('toggles the active format off when picked again', () => {
@@ -200,11 +200,33 @@ describe('QualityFilterBar', () => {
     expect(trigger).toHaveTextContent('5')
   })
 
+  // "Unconverted" is the primary call to action (the whole backlog still to convert), so it
+  // sits right under "All", ahead of the format and quality groups, rather than trailing the
+  // menu where it was easy to miss.
+  it('lists the conversion bucket directly under All, before the format and quality groups', () => {
+    renderBar({
+      tally: tally({ good: 3, unconverted: 288 }),
+      formats: [
+        { format: 'FLAC', count: 5 },
+        { format: 'WAV', count: 5 },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const order = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
+    expect(order.slice(0, 2)).toEqual(['quality-filter-all', 'quality-filter-unconverted'])
+    expect(order.indexOf('quality-filter-unconverted')).toBeLessThan(
+      order.indexOf('quality-filter-ext:FLAC'),
+    )
+    expect(order.indexOf('quality-filter-unconverted')).toBeLessThan(
+      order.indexOf('quality-filter-good'),
+    )
+  })
+
   // The buckets span several dimensions (quality, conversion, library, format); a divider
   // between each group keeps the now-long menu scannable instead of one flat run. The
   // dividers track the groups that actually show, so an extra dimension adds exactly one.
   it('separates the bucket groups with a divider, one per gap between shown groups', () => {
-    // Bare crate: All | quality | conversion → three groups, two dividers.
+    // Bare crate: All | conversion | quality → three groups, two dividers.
     renderBar()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(2)

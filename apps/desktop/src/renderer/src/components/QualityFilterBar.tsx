@@ -105,15 +105,19 @@ export function QualityFilterBar({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // The primary buckets that follow "All" and the format axis, in logical groups rendered
-  // with a thin divider between them so the menu reads by dimension. Empty groups drop out,
-  // so the dividers only ever separate groups that actually have something to show.
+  // Conversion status and provenance, surfaced right under "All": "unconverted" is the
+  // primary call to action (the whole backlog to convert), so it leads the buckets instead
+  // of trailing them. The auto-matched bucket joins only once something has been auto-filled,
+  // so the menu isn't padded with a permanently-empty filter.
+  const conversionSection: Mode[] = CONVERSION_MODES.filter(
+    (m) => m !== 'automatched' || tally.automatched > 0,
+  )
+  // The remaining buckets that follow the format axis, in logical groups rendered with a
+  // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
+  // dividers only ever separate groups that actually have something to show.
   const primarySections: Mode[][] = [
     // The quality verdict.
     QUALITY_MODES,
-    // Conversion status and provenance: the auto-matched bucket joins only once something
-    // has been auto-filled, so the menu isn't padded with a permanently-empty filter.
-    CONVERSION_MODES.filter((m) => m !== 'automatched' || tally.automatched > 0),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
@@ -140,21 +144,25 @@ export function QualityFilterBar({
     triggerRef.current?.focus()
   }
 
-  // Toggle one axis and leave the menu open: the combination is the point, so the user keeps
-  // layering choices (or clearing one) without reopening between each.
+  // Toggle one axis and close, like a native select. The axes are still independent — the
+  // reopened menu shows the current ticks — so layering a second axis is one reopen away,
+  // while the common single-filter pick closes the moment it's made.
   function toggle(mode: Mode): void {
     const axis = axisOf(mode)
     onChange({ ...value, [axis]: isActive(mode) ? null : mode })
+    close()
   }
 
   function toggleFormat(format: string): void {
     onChange({ ...value, format: value.format === format ? null : format })
+    close()
   }
 
   // "All" clears every axis at once, so it's a true "show everything" reset rather than
   // only resetting one dimension and leaving the others quietly applied.
   function chooseAll(): void {
     onChange({ quality: null, conversion: null, library: null, format: null })
+    close()
   }
 
   // The open menu owns its keys: each handled press stops propagating so the window-level
@@ -332,11 +340,16 @@ export function QualityFilterBar({
               onKeyDown={onListKeyDown}
               className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
             >
-              {/* "All" leads as the reset. The format axis sits right under it (both narrow
-                  the view's "scope"), then the quality/conversion/library buckets. Fragments
-                  keep every option a direct child of the listbox, with a divider between
-                  sections; empty sections (no formats, no library) drop their divider too. */}
+              {/* "All" leads as the reset, then the conversion buckets right under it (the
+                  primary "what's left to convert" action), then the format axis, then the
+                  quality/library buckets. Fragments keep every option a direct child of the
+                  listbox, with a divider between sections; empty sections (no formats, no
+                  library) drop their divider too. */}
               {renderPrimary('all')}
+              <Fragment key="conversion">
+                {divider}
+                {conversionSection.map(renderPrimary)}
+              </Fragment>
               {formats.length > 0 && (
                 <Fragment key="formats">
                   {divider}
