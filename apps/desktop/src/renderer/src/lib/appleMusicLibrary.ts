@@ -69,9 +69,18 @@ export function isInLibrary(
   const primary = primaryArtist(candidate.artist)
   if (!primary) return false
   const primaryWords = primary.split(' ')
+  // The candidate's lead artist and a library artist are the same act when one's words are
+  // wholly contained in the other's — either direction. The library copy is often the
+  // shorter spelling (the tag adds a "Dr." prefix, an "On A Vinyl" descriptor, a "presents"
+  // credit), while sometimes it carries the extra words (a "& Friends" suffix). Whole-word
+  // both ways, so a partial name ("Mat") still never matches a longer one ("Matador").
+  const candidateSet = new Set(primaryWords)
   const artistMatches = (a: string): boolean => {
-    const have = new Set(a.split(' '))
-    return primaryWords.every((w) => have.has(w))
+    const libraryWords = a.split(' ')
+    const librarySet = new Set(libraryWords)
+    return (
+      primaryWords.every((w) => librarySet.has(w)) || libraryWords.every((w) => candidateSet.has(w))
+    )
   }
   return titleKeys(candidate.title).some((key) => {
     if (!key) return false

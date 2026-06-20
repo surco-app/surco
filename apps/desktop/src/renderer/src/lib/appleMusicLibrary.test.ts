@@ -80,6 +80,22 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Anthem', artist: 'Alfredo Pareja' })).toBe(true)
   })
 
+  // And the other direction: the tag elaborates the act the library files under a shorter
+  // name — a title prefix ("Dr. DJ Cerla" vs "DJ Cerla"), a trailing descriptor ("Three
+  // Drives On A Vinyl" vs "Three Drives") or a "presents" credit ("Ricardo F. present
+  // Chasis" vs "Ricardo F"). Match when one artist's words wholly contain the other's,
+  // either way — still whole-word, so "Mat" never matches "Matador".
+  it('matches when the candidate artist carries extra words around the library name', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Rotterdam', artist: 'DJ Cerla' },
+      { title: 'Greece', artist: 'Three Drives' },
+      { title: 'Destroy', artist: 'Ricardo F' },
+    ])
+    expect(isInLibrary(idx, { title: 'Rotterdam', artist: 'Dr. DJ Cerla' })).toBe(true)
+    expect(isInLibrary(idx, { title: 'Greece', artist: 'Three Drives On A Vinyl' })).toBe(true)
+    expect(isInLibrary(idx, { title: 'Destroy', artist: 'Ricardo F. present Chasis' })).toBe(true)
+  })
+
   // A Discogs disambiguator on the tag ("Aphex Twin (2)") must still match the plain
   // library name.
   it('strips a Discogs (n) disambiguator from the candidate artist', () => {
