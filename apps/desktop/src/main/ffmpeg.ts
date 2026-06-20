@@ -50,13 +50,42 @@ import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { computePeaks, WAVEFORM_SAMPLE_RATE } from './waveform'
+import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
 // path; the canonical definition lives in shared/ so the renderer can use it too.
 export { formatMatchesInput } from '../shared/format'
 
-const run = promisify(execFile)
+const execFileAsync = promisify(execFile)
+
+// Spawns ffmpeg/ffprobe, with one recovery: when a call fails because the demuxer
+// rejected a malformed input (e.g. a WAV carrying a zero-size LIST chunk), repair a
+// temp copy of the offending file and retry once, so a single bad header chunk no
+// longer sinks tags, the spectrogram and every other analysis for that track. The
+// repair is gated on the error message, so healthy files never reach it (a normal
+// non-zero exit just rethrows); repairWav returns null for any arg that isn't a
+// fixable WAV, so flags and output paths are skipped and only the source is copied.
+// The temp copy is deleted after the retry resolves.
+const run = (async (file: string, args: string[], opts?: unknown) => {
+  try {
+    return await execFileAsync(file, args, opts as never)
+  } catch (err) {
+    if (!isMalformedInputError(err)) throw err
+    for (let i = 0; i < args.length; i++) {
+      const repaired = await repairWav(args[i])
+      if (!repaired) continue
+      const retry = [...args]
+      retry[i] = repaired
+      try {
+        return await execFileAsync(file, retry, opts as never)
+      } finally {
+        await unlink(repaired).catch(() => {})
+      }
+    }
+    throw err
+  }
+}) as typeof execFileAsync
 
 interface ProbeTags {
   format?: { tags?: Record<string, unknown> }
