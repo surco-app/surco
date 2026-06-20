@@ -530,6 +530,19 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.20",
+        "date": "June 20, 2026",
+        "title": "Filter your search results by source",
+        "items": [
+          "When you search Discogs and Bandcamp together, a new filter lets you show All, Discogs or Bandcamp — and the results are tidier: Discogs releases rank first and each source is capped so the list stays short and relevant.",
+          "Adding files now shows a live counter and a determinate progress bar as Surco reads each track's metadata, so you can see exactly how far along an import is.",
+          "New opt-in setting to apply your file-name pattern automatically, so converted tracks are named without a manual step.",
+          "Smarter Apple Music library matching: Surco recognises the same track across artist spelling variations — ampersands, dotted acronyms (D.J. vs DJ) and a leading artist before the title — so fewer of your copies look missing.",
+          "Better release matching for tracks tagged “(Original Mix)”: Surco drops that trailing marker so a plain catalog title still scores, and multi-track album matching leaves a file unassigned rather than forcing a wrong cut.",
+          "Sturdier file handling: Surco reads tags from files other apps choke on and repairs malformed WAV headers instead of failing analysis."
+        ]
+      },
+      {
         "version": "0.19",
         "date": "June 19, 2026",
         "title": "Export to Serato and Engine DJ",
