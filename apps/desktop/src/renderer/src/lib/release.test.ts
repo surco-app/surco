@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
+import { cleanMatchTitle } from '../../../shared/searchClean'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -281,6 +282,21 @@ describe('bestMatch', () => {
 
   it('returns undefined when no track shares any signal', () => {
     expect(bestMatch(tracks, { title: 'completely unrelated' })).toBeUndefined()
+  })
+
+  // Real case (Discogs 459785): the file is tagged "Timewarp (Original Mix)" (6:59) but the
+  // release lists the A-side bare as "Timewarp" (6:56). With the "(Original Mix)" marker
+  // dropped from the match title, the near-exact duration carries it well over the
+  // suggestion bar — before, the title penalty for the extra words sank it below it.
+  it('suggests the bare-titled release track for a file tagged "(Original Mix)"', () => {
+    const timewarp: ReleaseTrack[] = [
+      { position: 'A', title: 'Timewarp', duration: '6:56' },
+      { position: 'B2', title: 'Timewarp (Acapella Warp)', duration: '2:17' },
+    ]
+    const target = { title: cleanMatchTitle('Timewarp (Original Mix)'), durationSec: 419 }
+    const match = bestMatch(timewarp, target)
+    expect(match?.track.position).toBe('A')
+    expect(confidenceTier(match?.confidence ?? 0)).not.toBe('low')
   })
 
   it('uses duration to pick the right mix when the titles tie', () => {

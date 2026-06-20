@@ -52,7 +52,17 @@ export function dropTrackNumberTail(query: string): string {
 // artist–title for a single. Take that when present; otherwise clean the whole title. A
 // clean title with no track-number marker is returned (cleaned) unchanged. This is the
 // mirror of the search side, which keeps the part BEFORE the number to identify the release.
+// A trailing "(Original Mix)"/"(Original)" is dropped: it's the file's label for the default
+// version, which catalogs routinely omit (a bare "Timewarp"), so keeping it would penalise
+// the real track ("acid (original mix)" vs a release's "Acid") below the suggestion bar. A
+// release that DOES spell "(Original Mix)" still matches strongly, and meaningful mixes
+// (Extended, Dub, Club, Acapella, Radio…) stay intact so they keep disambiguating versions.
+const ORIGINAL_SUFFIX = /\s*\((?:the\s+)?original(?:\s+(?:mix|version|edit|cut))?\)\s*$/i
+
 export function cleanMatchTitle(title: string): string {
   const afterTrackNumber = title.match(/\s-\s\d{1,3}\s+(.+)$/)
-  return cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title)
+  const cleaned = cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title)
+  const stripped = squeeze(cleaned.replace(ORIGINAL_SUFFIX, ''))
+  // Don't strip a title that is *only* the version marker to nothing.
+  return stripped || cleaned
 }
