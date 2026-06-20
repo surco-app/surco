@@ -34,16 +34,23 @@ function primaryArtist(artist: string): string {
 // A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".
 const VERSION_SUFFIX = /\s*[([][^)\]]*[)\]]\s*$/
 
-// The folded title keys a track is indexed and looked up under: the full title, plus the
-// base title with a trailing version suffix stripped. DJ rips often tag just the base
-// name ("It's Not Over") while the Apple Music copy keeps the release's version
-// ("It's Not Over (Happy House)"); indexing and matching both keys lets the library hint
-// bridge that gap — and stay consistent with the editor's badge, which catches the same
-// song under its canonical Discogs name. The base is only added when it differs.
-function titleKeys(title: string): string[] {
-  const full = foldText(title)
-  const base = foldText(title.replace(VERSION_SUFFIX, ''))
-  return base && base !== full ? [full, base] : [full]
+// The folded title keys a track is indexed and looked up under: the full title, the base
+// title with a trailing version suffix stripped, and — for either — the title with a leading
+// copy of the artist removed. DJ rips often tag just the base name ("It's Not Over") while
+// the Apple Music copy keeps the release's version ("It's Not Over (Happy House)"), or tag
+// the title as "Artist – Title" ("Debby – Maybe…"); keying off all these lets the library
+// hint bridge those gaps and stay consistent with the editor's badge. Variants are kept in a
+// Set so an unchanged one (no suffix, no prefix) isn't duplicated.
+function titleKeys(title: string, artist: string): string[] {
+  const keys = new Set<string>()
+  const folded = foldText(artist)
+  for (const variant of [foldText(title), foldText(title.replace(VERSION_SUFFIX, ''))]) {
+    if (!variant) continue
+    keys.add(variant)
+    // "Artist – Title" tags: key off the bare title so it matches the library's clean one.
+    if (folded && variant.startsWith(`${folded} `)) keys.add(variant.slice(folded.length + 1))
+  }
+  return [...keys]
 }
 
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
@@ -53,7 +60,7 @@ export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMus
     // An empty artist can't identify a song and would later `every`-match nothing
     // meaningfully; skip the row entirely.
     if (!folded) continue
-    for (const key of titleKeys(title)) {
+    for (const key of titleKeys(title, artist)) {
       if (!key) continue
       const list = index.get(key)
       if (list) list.push(folded)
@@ -90,7 +97,7 @@ export function isInLibrary(
       primaryWords.every((w) => librarySet.has(w)) || libraryWords.every((w) => candidateSet.has(w))
     )
   }
-  return titleKeys(candidate.title).some((key) => {
+  return titleKeys(candidate.title, candidate.artist).some((key) => {
     if (!key) return false
     return index.get(key)?.some(artistMatches) ?? false
   })

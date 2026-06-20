@@ -110,6 +110,16 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Xtal', artist: 'Aphex Twin (2)' })).toBe(true)
   })
 
+  // Some rips tag the title field as "Artist – Title" ("Debby – Maybe (Fields Of Love)"),
+  // so the bare title never matches the library copy. With the artist known, strip a leading
+  // copy of it off the title before keying.
+  it('matches when the title field carries the artist as a prefix', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Maybe (Fields Of Love) (Club Vox)', artist: 'Debby' },
+    ])
+    expect(isInLibrary(idx, { title: 'Debby - Maybe (Fields Of Love)', artist: 'Debby' })).toBe(true)
+  })
+
   // The reported case: a rip tagged with just the base title still matches the library
   // copy that keeps the release's version suffix — otherwise the badge says "in library"
   // (it found the canonical Discogs name) while the filter says it's missing.
