@@ -326,6 +326,19 @@ describe('preRankResults', () => {
     expect(ranked.map((x) => x.id)).toEqual([1, 2])
   })
 
+  // Discogs is the canonical catalog for this music and carries the tracklists the
+  // suggestion scores against, so its rows lead — even when a Bandcamp row matches the file
+  // text better — with Bandcamp as the fallback. Relevance still orders within a provider.
+  it('floats every Discogs row above the Bandcamp ones, then ranks by relevance', () => {
+    const bc = (id: number, title: string): SearchResult => ({ provider: 'bandcamp', id, title })
+    const ranked = preRankResults(
+      [bc(1, 'Daft Punk - One More Time'), r(2, 'Various - Comp'), r(3, 'Daft Punk - Discovery')],
+      { title: 'One More Time', artist: 'Daft Punk' },
+    )
+    // Both Discogs rows lead (the artist-naming one first), the better-matching Bandcamp last.
+    expect(ranked.map((x) => x.id)).toEqual([3, 2, 1])
+  })
+
   it('does not mutate the input array', () => {
     const input = [r(1, 'Various - Comp'), r(2, 'Daft Punk - Discovery')]
     preRankResults(input, { title: 'One More Time', artist: 'Daft Punk' })
