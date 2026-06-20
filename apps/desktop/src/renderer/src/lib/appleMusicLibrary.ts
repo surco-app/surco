@@ -41,12 +41,17 @@ const NUMBER_WORDS: Record<string, string> = {
   twenty: '20',
 }
 
+// A leading DJ/Dr./MC handle (folded to a bare word) — noise around the same act. The
+// trailing space in the pattern means a lone "dj"/"mc" artist is never stripped to nothing.
+const HANDLE_PREFIX = /^(?:(?:dj|dr|mc) )+/
+
 // Folds an artist into a canonical word set for matching:
 //  - collapse a run of two or more single letters into one word, so a dotted acronym
 //    ("DJ F.R.A.N.K." → "dj f r a n k") meets its solid spelling ("DJ. Frank" → "dj frank");
 //    a lone trailing initial ("Ricardo F") isn't a run and stays its own word;
 //  - split a letter/digit boundary so a joined "A7" reads as "a 7";
-//  - turn a spelled-out small number into its digit, so "A Seven" matches "A7".
+//  - turn a spelled-out small number into its digit, so "A Seven" matches "A7";
+//  - drop a leading DJ/Dr./MC handle, so "DJ Raúl Soto" meets the library's "Raul Soto".
 // The collapse runs first so the split's "a 7" isn't re-joined back into "a7".
 function foldArtist(artist: string): string {
   return foldText(artist)
@@ -57,6 +62,7 @@ function foldArtist(artist: string): string {
       /\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/g,
       (w) => NUMBER_WORDS[w],
     )
+    .replace(HANDLE_PREFIX, '')
 }
 
 // The lead artist only, folded: keep everything before the first collaborator separator,

@@ -96,6 +96,16 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(back, { title: 'Four To The Floor', artist: 'DJ Four' })).toBe(true)
   })
 
+  // A "DJ"/"Dr."/"MC" handle is noise around the same act: "DJ Raúl Soto & DJ Jaime Gimeno"
+  // (tag) is the "Raul Soto & Jaime Gimeno" the library files. Strip a leading handle so the
+  // lead artist matches.
+  it('strips a leading DJ/Dr./MC handle from the artist', () => {
+    const idx = buildLibraryIndex([{ title: 'Poky Diablo', artist: 'Raul Soto & Jaime Gimeno' }])
+    expect(
+      isInLibrary(idx, { title: 'Poky Diablo', artist: 'DJ Raúl Soto & DJ Jaime Gimeno' }),
+    ).toBe(true)
+  })
+
   // And the other direction: the tag elaborates the act the library files under a shorter
   // name — a title prefix ("Dr. DJ Cerla" vs "DJ Cerla"), a trailing descriptor ("Three
   // Drives On A Vinyl" vs "Three Drives") or a "presents" credit ("Ricardo F. present
