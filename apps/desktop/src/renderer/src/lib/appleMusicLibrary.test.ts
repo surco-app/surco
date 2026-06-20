@@ -87,6 +87,15 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Dinner', artist: 'DJ. Frank' })).toBe(true)
   })
 
+  // A digit and its spelled-out word are the same name ("A7" vs "A Seven"): split the
+  // letter/digit run and read number words as digits so the two forms meet.
+  it('matches a digit artist against its spelled-out number', () => {
+    const idx = buildLibraryIndex([{ title: 'Piece Of Heaven', artist: 'A Seven' }])
+    expect(isInLibrary(idx, { title: 'Piece Of Heaven', artist: 'A7' })).toBe(true)
+    const back = buildLibraryIndex([{ title: 'Four To The Floor', artist: 'DJ4' }])
+    expect(isInLibrary(back, { title: 'Four To The Floor', artist: 'DJ Four' })).toBe(true)
+  })
+
   // And the other direction: the tag elaborates the act the library files under a shorter
   // name — a title prefix ("Dr. DJ Cerla" vs "DJ Cerla"), a trailing descriptor ("Three
   // Drives On A Vinyl" vs "Three Drives") or a "presents" credit ("Ricardo F. present

@@ -16,12 +16,47 @@ export type AppleMusicIndex = Map<string, string[]>
 // requiring every co-artist's words to appear would read the collaboration as not-owned.
 const COLLAB_SEP = /\s*[,&]\s*|\s+(?:feat\.?|featuring|ft\.?)\s+/i
 
-// Folds an artist for matching, then collapses a run of two or more single letters into one
-// word. A dotted acronym ("DJ F.R.A.N.K.") folds to "dj f r a n k", which a solid spelling
-// ("DJ. Frank" → "dj frank") would never match letter-for-word; joining the run bridges the
-// two. A lone trailing initial ("Ricardo F") isn't a run, so it stays its own word.
+// Small spelled-out numbers, for the digit↔word equivalence below ("A7" == "A Seven").
+const NUMBER_WORDS: Record<string, string> = {
+  zero: '0',
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  thirteen: '13',
+  fourteen: '14',
+  fifteen: '15',
+  sixteen: '16',
+  seventeen: '17',
+  eighteen: '18',
+  nineteen: '19',
+  twenty: '20',
+}
+
+// Folds an artist into a canonical word set for matching:
+//  - collapse a run of two or more single letters into one word, so a dotted acronym
+//    ("DJ F.R.A.N.K." → "dj f r a n k") meets its solid spelling ("DJ. Frank" → "dj frank");
+//    a lone trailing initial ("Ricardo F") isn't a run and stays its own word;
+//  - split a letter/digit boundary so a joined "A7" reads as "a 7";
+//  - turn a spelled-out small number into its digit, so "A Seven" matches "A7".
+// The collapse runs first so the split's "a 7" isn't re-joined back into "a7".
 function foldArtist(artist: string): string {
-  return foldText(artist).replace(/\b(?:[a-z0-9] ){1,}[a-z0-9]\b/g, (run) => run.replace(/ /g, ''))
+  return foldText(artist)
+    .replace(/\b(?:[a-z0-9] ){1,}[a-z0-9]\b/g, (run) => run.replace(/ /g, ''))
+    .replace(/([a-z])(\d)/g, '$1 $2')
+    .replace(/(\d)([a-z])/g, '$1 $2')
+    .replace(
+      /\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/g,
+      (w) => NUMBER_WORDS[w],
+    )
 }
 
 // The lead artist only, folded: keep everything before the first collaborator separator,
