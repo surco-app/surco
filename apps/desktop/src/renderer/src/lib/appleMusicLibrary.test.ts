@@ -153,6 +153,19 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'It’s Not Over (Hard House)', artist: '3 Styles' })).toBe(true)
   })
 
+  // Real case: a rip stacks two reissue markers ("Party Forever! (Original) (Remastered)")
+  // while the library files the bare song. Stripping only the last group leaves "(Original)"
+  // glued on and misses it, so all trailing version groups peel off down to the base title.
+  it('matches a base title against a tag with two trailing version groups', () => {
+    const idx = buildLibraryIndex([{ title: 'Party Forever', artist: 'Solar System' }])
+    expect(
+      isInLibrary(idx, {
+        title: 'Party Forever! (Original) (Remastered)',
+        artist: 'Solar System',
+      }),
+    ).toBe(true)
+  })
+
   // The version-suffix tolerance must not blow the title gate open: a different song by
   // the same artist still reads as not-in-library.
   it('still misses a different base title by the same artist', () => {

@@ -73,7 +73,9 @@ function primaryArtist(artist: string): string {
 }
 
 // A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".
-const VERSION_SUFFIX = /\s*[([][^)\]]*[)\]]\s*$/
+// One or more trailing ()/[] version groups — a rip can stack reissue markers
+// ("(Original) (Remastered)"), so peel them all to reach the base title, not just the last.
+const VERSION_SUFFIX = /(?:\s*[([][^)\]]*[)\]]\s*)+$/
 
 // The folded title keys a track is indexed and looked up under: the full title, the base
 // title with a trailing version suffix stripped, and — for either — the title with a leading
