@@ -8,19 +8,19 @@ import { cleanName } from './release'
 // primary-artist word match (see isInLibrary) can run in the renderer.
 export type AppleMusicIndex = Map<string, string[]>
 
-// An inline feature clause and everything after it: tags sometimes spell the featured
-// act in the artist field with no comma to split on ("Ken Laszlo Feat. Jenny"), while
-// Apple Music keeps only the lead artist. Dropping it before the whole-word match mirrors
-// the comma split so a feat. tag still finds the lead-artist library copy.
-const FEAT_CLAUSE = /\s+(?:feat\.?|featuring|ft\.?)\s+.*$/i
+// Collaborator separators, matched on the raw artist string (the split happens before
+// folding, which would turn a comma/ampersand into a space and lose the boundary): a comma
+// or ampersand joining co-artists, or an inline feature clause. Our tags join collaborators
+// ("Alfredo Pareja, Saint Etien", "Head Horny's & DJ Miguel Serna") while Apple Music files
+// the track under just the lead — often spelled shorter ("Head Horny's & Miguel Serna"), so
+// requiring every co-artist's words to appear would read the collaboration as not-owned.
+const COLLAB_SEP = /\s*[,&]\s*|\s+(?:feat\.?|featuring|ft\.?)\s+/i
 
-// The primary artist only, folded: our tags join collaborators ("Alfredo Pareja,
-// Saint Etien") while Apple Music stores just the primary name, so the comma split
-// happens before folding (which would turn the comma into a space and lose the boundary).
-// An inline "feat." clause is dropped for the same reason. cleanName drops a Discogs
-// disambiguator ("Aphex Twin (2)") so it matches the plain library name.
+// The lead artist only, folded: keep everything before the first collaborator separator,
+// then fold. cleanName drops a Discogs disambiguator ("Aphex Twin (2)") so it matches the
+// plain library name.
 function primaryArtist(artist: string): string {
-  return foldText(cleanName(artist.split(',')[0].replace(FEAT_CLAUSE, '')))
+  return foldText(cleanName(artist.split(COLLAB_SEP)[0]))
 }
 
 // A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".

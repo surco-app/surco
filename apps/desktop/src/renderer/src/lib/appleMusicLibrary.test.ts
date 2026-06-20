@@ -19,6 +19,15 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(index, { title: 'Some Other Track', artist: 'deadmau5' })).toBe(false)
   })
 
+  it('matches an "&" collaboration whose library copy spells the co-artists shorter', () => {
+    // Real case: the file tags the full collaboration ("Head Horny's & DJ Miguel Serna")
+    // while Apple Music files it under a shorter spelling ("Head Horny's & Miguel Serna").
+    // Requiring every candidate word ("dj") to appear would read it as not-owned, so we
+    // keep only the lead artist before the "&" — still a subset of the library copy.
+    const lib = buildLibraryIndex([{ title: 'Real', artist: "Head Horny's & Miguel Serna" }])
+    expect(isInLibrary(lib, { title: 'Real', artist: "Head Horny's & DJ Miguel Serna" })).toBe(true)
+  })
+
   it('matches on the first artist only so a feat./multi-artist tag still finds the library copy', () => {
     // Apple Music keeps only the primary artist ("Alfredo Pareja"), while our tags
     // join collaborators ("Alfredo Pareja, Saint Etien"); an exact-artist compare
