@@ -113,7 +113,7 @@ export function DiscogsPanel({
               data-testid="discogs-search"
               onClick={doSearch}
               disabled={busy}
-              className="press inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-3 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+              className="press inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-xs font-medium text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)] disabled:opacity-40"
             >
               {tr('editor.search')}
             </button>
