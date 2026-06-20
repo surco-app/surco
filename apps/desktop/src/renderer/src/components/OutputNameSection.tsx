@@ -10,9 +10,12 @@ interface Props {
   item: TrackItem
   // The format pick, shown as the fixed extension after the editable name.
   format: OutputFormat
-  // Default to the file's own name so converting keeps it; the metadata-derived
-  // name is opt-in via the "Regenerate from metadata" button.
+  // The name shown when the track has no manual outputName: the file's own name, or the
+  // pattern-derived name when auto-apply is on (App computes which).
   defaultOutputName: string
+  // Settings → Naming: when on, the pattern applies automatically, so the manual
+  // "Regenerate from metadata" button is redundant and hidden (the pencil stays).
+  autoApply: boolean
   willEditInPlace: boolean
   open: boolean
   onToggle: () => void
@@ -28,6 +31,7 @@ export function OutputNameSection({
   item,
   format,
   defaultOutputName,
+  autoApply,
   willEditInPlace,
   open,
   onToggle,
@@ -44,16 +48,18 @@ export function OutputNameSection({
         onToggle={onToggle}
         right={
           <span className="flex items-center gap-1.5">
-            <button
-              type="button"
-              data-testid="regenerate-output-name"
-              onClick={onRegenerateName}
-              className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
-            >
-              <RefreshCw className="h-3 w-3" aria-hidden="true" />
-              {tr('editor.regenerate')}
-              <Tooltip label={tr('editor.regenerateHint')} align="end" />
-            </button>
+            {!autoApply && (
+              <button
+                type="button"
+                data-testid="regenerate-output-name"
+                onClick={onRegenerateName}
+                className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+              >
+                <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                {tr('editor.regenerate')}
+                <Tooltip label={tr('editor.regenerateHint')} align="end" />
+              </button>
+            )}
             <button
               type="button"
               data-testid="customize-output-name"

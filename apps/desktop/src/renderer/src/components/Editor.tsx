@@ -24,6 +24,7 @@ import { isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
+import { renderOutputName } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { isLowResCover } from '../lib/quality'
 import { bestMatch, buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
@@ -58,6 +59,10 @@ interface Props {
   // Settings → Artwork: when on, applying a release replaces an existing low-res cover
   // with the release image; off keeps the file's own cover regardless of size.
   replaceLowResCover: boolean
+  // Settings → Naming: when on, the output name is derived from filenameFormat as the
+  // default (instead of the source file name) and the "Regenerate" button is hidden.
+  autoApplyFilename: boolean
+  filenameFormat: string
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
@@ -128,6 +133,8 @@ export const Editor = memo(function Editor({
   addToAppleMusic,
   overwriteOriginal,
   replaceLowResCover,
+  autoApplyFilename,
+  filenameFormat,
   groupingPresets,
   genrePresets,
   visibleFields,
@@ -348,9 +355,11 @@ export const Editor = memo(function Editor({
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
   // pill in the user's casing.
   const genreChips = useMemo(() => buildGenreChips(genrePresets, release), [genrePresets, release])
-  // Default to the file's own name so converting keeps it; the metadata-derived
-  // name is opt-in via the "Regenerate from metadata" button below.
-  const defaultOutputName = item.fileName
+  // Default to the file's own name so converting keeps it; the metadata-derived name is
+  // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
+  // it derives live from the pattern (falling back to the file name for sparse metadata).
+  const defaultOutputName =
+    (autoApplyFilename && renderOutputName(filenameFormat, item.meta)) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
@@ -519,6 +528,7 @@ export const Editor = memo(function Editor({
               item={item}
               format={format}
               defaultOutputName={defaultOutputName}
+              autoApply={autoApplyFilename}
               willEditInPlace={willEditInPlace}
               open={outputOpen}
               onToggle={() => setSectionOpen('output', !outputOpen)}

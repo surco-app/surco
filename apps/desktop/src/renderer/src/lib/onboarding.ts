@@ -6,6 +6,9 @@ export interface OnboardingChoices {
   // The catalogs the editor search queries (Discogs and/or Bandcamp).
   searchProviders: SearchProviderId[]
   outputFormat: OutputFormat
+  // When on, the output name is derived from the naming pattern automatically; off keeps
+  // the source file name until the user presses "Regenerate" per track.
+  autoApplyFilename: boolean
   grouping: string
   genre: string
   showSpectrum: boolean
@@ -34,6 +37,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     discogsToken,
     searchProviders: choices.searchProviders,
     outputFormat: choices.outputFormat,
+    autoApplyFilename: choices.autoApplyFilename,
     groupingPresets: choices.grouping
       .split(',')
       .map((g) => g.trim())

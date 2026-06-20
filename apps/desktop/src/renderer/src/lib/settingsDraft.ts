@@ -11,6 +11,7 @@ export interface SyncedDraft {
   keepOutputCopy: boolean
   overwriteOriginal: boolean
   filenameFormat: string
+  autoApplyFilename: boolean
   grouping: string
   genre: string
   trimWhitespace: boolean
@@ -48,6 +49,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
     filenameFormat: s.filenameFormat,
+    autoApplyFilename: s.autoApplyFilename,
     grouping: s.groupingPresets.join(', '),
     genre: s.genrePresets.join(', '),
     trimWhitespace: s.trimWhitespace,

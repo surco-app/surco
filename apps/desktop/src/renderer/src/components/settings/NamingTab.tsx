@@ -96,6 +96,21 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
       </p>
 
       <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            data-testid="settings-auto-apply-filename"
+            type="checkbox"
+            checked={synced.autoApplyFilename}
+            onChange={(e) => patch('autoApplyFilename', e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+          />
+          <span className="text-sm">
+            {tr('settings.autoApplyFilename')}
+            <span className="mt-0.5 block text-xs text-fg-dim">
+              {tr('settings.autoApplyFilenameHint')}
+            </span>
+          </span>
+        </label>
         <label className="flex cursor-pointer items-center gap-3">
           <input
             data-testid="settings-trim"

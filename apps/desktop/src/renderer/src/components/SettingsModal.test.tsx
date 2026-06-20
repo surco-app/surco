@@ -31,6 +31,7 @@ const settings: Settings = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   filenameFormat: '',
+  autoApplyFilename: false,
   groupingPresets: [],
   genrePresets: [],
   trimWhitespace: true,

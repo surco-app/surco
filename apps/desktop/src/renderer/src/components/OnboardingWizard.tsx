@@ -15,7 +15,16 @@ import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
-const STEPS = ['welcome', 'search', 'format', 'grouping', 'genre', 'fields', 'spectrum'] as const
+const STEPS = [
+  'welcome',
+  'search',
+  'format',
+  'naming',
+  'grouping',
+  'genre',
+  'fields',
+  'spectrum',
+] as const
 // Apple Music exists only on macOS, so the destination choice is offered there alone.
 const isMac = isMacOS()
 
@@ -30,6 +39,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
+  const [autoApplyFilename, setAutoApplyFilename] = useState(settings.autoApplyFilename)
   const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
   const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
@@ -53,6 +63,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         discogsToken: token,
         searchProviders,
         outputFormat,
+        autoApplyFilename,
         grouping,
         genre,
         showSpectrum,
@@ -233,6 +244,34 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     )}
                   </div>
                 )}
+              </>
+            )}
+
+            {STEPS[step] === 'naming' && (
+              <>
+                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                  {tr('onboarding.namingTitle')}
+                </h2>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.namingBody')}</p>
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    data-testid="onboarding-auto-apply-filename"
+                    type="checkbox"
+                    checked={autoApplyFilename}
+                    onChange={(e) => setAutoApplyFilename(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-sm">
+                    {tr('settings.autoApplyFilename')}
+                    <span className="mt-0.5 block text-xs text-fg-dim">
+                      {tr('settings.autoApplyFilenameHint')}
+                    </span>
+                  </span>
+                </label>
+                <p className="mt-4 text-xs text-fg-dim">
+                  {tr('onboarding.namingPattern')}{' '}
+                  <span className="font-mono text-fg-muted">{settings.filenameFormat}</span>
+                </p>
               </>
             )}
 

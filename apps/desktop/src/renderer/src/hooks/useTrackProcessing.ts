@@ -13,6 +13,7 @@ import { coverSourceOf } from '../lib/coverSource'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
+import { renderOutputName } from '../lib/outputName'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
@@ -120,13 +121,17 @@ export function useTrackProcessing({
         zeroPad: settings?.zeroPadTrack ?? true,
       })
       // Default to the source file's own name: users expect "load and convert" to keep
-      // their filename. A metadata-derived name is only used when the editor's
-      // "Regenerate from metadata" button (or a manual edit) set track.outputName.
+      // their filename. A metadata-derived name is used when the editor's "Regenerate from
+      // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
+      // derived live from the pattern when no manual name was set. A manual edit still wins.
       // Overwrite mode pins the name to the original regardless of any stale outputName,
       // so the rewrite lands back on the source file the user means to replace.
+      const autoName = settings?.autoApplyFilename
+        ? renderOutputName(settings.filenameFormat, meta)
+        : ''
       const outputName = settings?.overwriteOriginal
         ? track.fileName
-        : track.outputName?.trim() || track.fileName
+        : track.outputName?.trim() || autoName || track.fileName
       try {
         const result = await window.api.processTrack({
           id: track.id,

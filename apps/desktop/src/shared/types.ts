@@ -70,6 +70,10 @@ export interface Settings {
   // exclusive with Apple Music: the file stays put, nothing is added to the library.
   overwriteOriginal: boolean
   filenameFormat: string
+  // When on, the output name is derived from filenameFormat automatically as metadata
+  // changes, so the user never has to press "Regenerate"; a manual edit still wins. Off
+  // by default: "load and convert" keeps the source file name until the user opts in.
+  autoApplyFilename: boolean
   groupingPresets: string[]
   genrePresets: string[]
   trimWhitespace: boolean

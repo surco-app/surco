@@ -26,6 +26,7 @@ const settings: Settings = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   filenameFormat: '',
+  autoApplyFilename: false,
   groupingPresets: [],
   genrePresets: [],
   trimWhitespace: true,
@@ -77,8 +78,8 @@ describe('OnboardingWizard destination', () => {
     const onFinish = vi.fn()
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
-    // format → grouping → genre → required → spectrum, then finish.
-    for (let i = 0; i < 5; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    // format → naming → grouping → genre → required → spectrum, then finish.
+    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
@@ -105,8 +106,8 @@ describe('OnboardingWizard fields', () => {
         onFinish={() => {}}
       />,
     )
-    // welcome → token → format → grouping → genre → fields
-    for (let i = 0; i < 5; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    // welcome → token → format → naming → grouping → genre → fields
+    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('field-row-title')).toBeInTheDocument()
     expect(screen.getByTestId('field-required-title')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('field-required-artist')).toHaveAttribute('aria-pressed', 'false')
@@ -118,8 +119,8 @@ describe('OnboardingWizard spectrum', () => {
   // can see what the feature is — including the lossy-cutoff line it's there to reveal.
   it('illustrates the spectrum with a preview and a cutoff marker', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    // welcome → token → format → grouping → genre → fields → spectrum
-    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    // welcome → token → format → naming → grouping → genre → fields → spectrum
+    for (let i = 0; i < 7; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('spectrum-preview')).toBeInTheDocument()
     expect(screen.getByText(/cutoff/i)).toBeInTheDocument()
   })

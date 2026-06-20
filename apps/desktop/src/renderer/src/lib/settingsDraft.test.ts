@@ -14,6 +14,7 @@ const settings: Settings = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   filenameFormat: '{artist} - {title}',
+  autoApplyFilename: false,
   groupingPresets: ['House'],
   genrePresets: ['Techno'],
   trimWhitespace: true,
@@ -91,5 +92,13 @@ describe('buildSettingsPatch', () => {
   it('trims the token', () => {
     const draft = pickSynced({ ...settings })
     expect(buildSettingsPatch(draft, { ...local, token: '  tok  ' }).discogsToken).toBe('tok')
+  })
+
+  // The auto-apply toggle decides whether the naming pattern fills the output name on its
+  // own, so it has to survive the draft round-trip unchanged to actually take effect on save.
+  it('round-trips the auto-apply filename toggle', () => {
+    const draft = pickSynced({ ...settings, autoApplyFilename: true })
+    expect(draft.autoApplyFilename).toBe(true)
+    expect(buildSettingsPatch(draft, local).autoApplyFilename).toBe(true)
   })
 })

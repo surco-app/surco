@@ -50,6 +50,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     keepOutputCopy: true,
     overwriteOriginal: false,
     filenameFormat: '{artist} - {title}',
+    autoApplyFilename: false,
     groupingPresets: [],
     genrePresets: [],
     trimWhitespace: true,

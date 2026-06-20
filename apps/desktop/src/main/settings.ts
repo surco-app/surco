@@ -23,6 +23,9 @@ const defaults: Settings = {
   // opts into overwriting it.
   overwriteOriginal: false,
   filenameFormat: '{artist} - {title}',
+  // Off by default: the metadata-derived name stays opt-in (the "Regenerate" button), so a
+  // plain "load and convert" keeps the source file name until the user turns this on.
+  autoApplyFilename: false,
   // No grouping presets by default — they're personal/language-specific, so the user adds
   // their own (the field shows a localized example as a placeholder).
   groupingPresets: [],

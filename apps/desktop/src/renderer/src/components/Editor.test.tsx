@@ -98,6 +98,8 @@ function renderEditor(
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
     replaceLowResCover?: boolean
+    autoApplyFilename?: boolean
+    filenameFormat?: string
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -130,6 +132,8 @@ function renderEditor(
       addToAppleMusic={false}
       overwriteOriginal={props.overwriteOriginal ?? false}
       replaceLowResCover={props.replaceLowResCover ?? false}
+      autoApplyFilename={props.autoApplyFilename ?? false}
+      filenameFormat={props.filenameFormat ?? '{artist} - {title}'}
       groupingPresets={[]}
       genrePresets={props.genrePresets ?? []}
       visibleFields={props.visibleFields ?? []}
@@ -511,6 +515,8 @@ function MultiHarness() {
         libraryIndex={null}
         overwriteOriginal={false}
         replaceLowResCover={false}
+        autoApplyFilename={false}
+        filenameFormat="{artist} - {title}"
         keyNotation="camelot"
         hasToken
         outputFormat="aiff"
@@ -725,6 +731,8 @@ describe('Editor multi-select', () => {
         addToAppleMusic={opts.music ?? false}
         overwriteOriginal={false}
         replaceLowResCover={false}
+        autoApplyFilename={false}
+        filenameFormat="{artist} - {title}"
         keyNotation="camelot"
         groupingPresets={[]}
         genrePresets={[]}

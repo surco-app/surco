@@ -255,6 +255,58 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
+  // With auto-apply on, a track the user never renamed must still export under the pattern,
+  // not the source file name — that's the whole point of the setting (no button press needed).
+  it('derives the export name from the pattern when auto-apply is on and no manual name was set', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/Artist - Title.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: {
+            overwriteOriginal: false,
+            autoApplyFilename: true,
+            filenameFormat: '{artist} - {title}',
+          } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'Artist - Title' }),
+    )
+  })
+
+  // Auto-apply only fills the gap when the user hasn't chosen a name: a manual outputName
+  // (rename/edit) must still win, or the setting would silently overwrite deliberate names.
+  it('keeps a manual output name over the pattern when auto-apply is on', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/custom name.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputName: 'custom name' })],
+          settings: {
+            overwriteOriginal: false,
+            autoApplyFilename: true,
+            filenameFormat: '{artist} - {title}',
+          } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'custom name' }),
+    )
+  })
+
   // The list stays editable while a batch runs, so each track must be read at the
   // moment it converts — not from the snapshot taken when the batch started. An edit
   // made while an earlier track converts has to land in the file that gets written.
