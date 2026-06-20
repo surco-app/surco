@@ -537,11 +537,14 @@
           "When you search Discogs and Bandcamp together, a new filter lets you show All, Discogs or Bandcamp — and the results are tidier: Discogs releases rank first and each source is capped so the list stays short and relevant.",
           "Adding files now shows a live counter and a determinate progress bar as Surco reads each track's metadata, so you can see exactly how far along an import is.",
           "New opt-in setting to apply your file-name pattern automatically, so converted tracks are named without a manual step.",
+          "The player gets a toggle to hide the waveform — handy on a small screen — which also skips the waveform analysis to save the work.",
           "Smarter Apple Music library matching: Surco recognises the same track across more artist and title variations — ampersands, dotted acronyms (D.J. vs DJ), leading DJ/Dr./MC handles, spelled-out numbers vs digits, a leading artist before the title and trailing version markers — so fewer of your copies look missing.",
           "Better release matching for tracks tagged “(Original Mix)”: Surco drops that trailing marker so a plain catalog title still scores, and multi-track album matching leaves a file unassigned rather than forcing a wrong cut.",
+          "Cleaner provider searches: Surco leads with the main artist before a “presents” alias and ignores a bracketed version note that only repeats the title, so the right Discogs or Bandcamp release surfaces more often.",
           "The editor's in-library badge now lights up when a confident Discogs suggestion matches a track you already have in your Apple Music library.",
           "Tidier list filters: each sidebar section is now its own independent filter, the menu closes as soon as you pick, and Unconverted sits under All.",
-          "Sturdier file handling: Surco reads tags from files other apps choke on and repairs malformed WAV headers instead of failing analysis."
+          "Sturdier file handling: Surco reads tags from files other apps choke on and repairs malformed WAV headers instead of failing analysis.",
+          "Stability: starting a track over no longer leaves the player sounding after its card has closed."
         ]
       },
       {
