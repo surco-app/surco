@@ -1720,6 +1720,72 @@ describe('Editor Apple Music library badge', () => {
   })
 })
 
+describe('Editor Apple Music badge via the Discogs suggestion', () => {
+  beforeEach(() => void i18n.changeLanguage('en'))
+
+  // A track number/title tag the file ships with is often messier than the canonical
+  // spelling the user searched for — and the library is keyed by the canonical name. So a
+  // confident suggested release bridges a tag the library can't recognise on its own.
+  const release = {
+    id: 7,
+    title: 'Some Album',
+    artists: [{ name: 'The Artist' }],
+    tracklist: [{ position: 'A1', title: 'Track Two (Remix)' }],
+  }
+
+  function setApi(): void {
+    ;(window as unknown as { api: unknown }).api = {
+      platform: 'darwin',
+      reveal: vi.fn(),
+      properties: vi.fn().mockResolvedValue(null),
+      hasClipboardImage: vi.fn().mockResolvedValue(false),
+      onWindowFocus: vi.fn(() => () => {}),
+      search: vi.fn().mockResolvedValue([{ id: 7, title: 'Some Album', cover_image: 'c.jpg' }]),
+      getRelease: vi.fn().mockResolvedValue(release),
+    }
+  }
+
+  it('flags the track as owned once a confident suggestion matches the library', async () => {
+    setApi()
+    const owned = buildLibraryIndex([{ title: 'Track Two (Remix)', artist: 'The Artist' }])
+    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    // The file's own artist tag isn't in the library, so the badge starts negative.
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
+      'Not in your Apple Music library',
+    )
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    const result = await screen.findByTestId('discogs-result')
+    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
+    await screen.findAllByTestId('discogs-track')
+    // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
+    // even though the file tag never matched on its own.
+    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
+      'Already in your Apple Music library',
+    )
+  })
+
+  // The suggestion must not manufacture a false positive: an owned-looking release whose
+  // canonical name still isn't in the library leaves the badge negative.
+  it('keeps the badge negative when the suggestion is not in the library either', async () => {
+    setApi()
+    const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
+    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    fireEvent.click(screen.getByTestId('discogs-search'))
+    const result = await screen.findByTestId('discogs-result')
+    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
+    await screen.findAllByTestId('discogs-track')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
+      'Not in your Apple Music library',
+    )
+  })
+})
+
 describe('Editor insert from field', () => {
   // The menu exists to compose one field out of the others ("title + year")
   // without retyping; offering the field's own value or empty fields would

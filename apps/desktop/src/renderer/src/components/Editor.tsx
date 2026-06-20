@@ -27,7 +27,13 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { isLowResCover } from '../lib/quality'
-import { bestMatch, buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import {
+  bestMatch,
+  buildReleaseMeta,
+  confidenceTier,
+  joinArtists,
+  type ReleaseMetaPatch,
+} from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
 import { stripParentheticals } from '../lib/textClean'
 import type { TrackItem } from '../types'
@@ -245,17 +251,32 @@ export const Editor = memo(function Editor({
   // unrelated release still badges whichever mix shares an incidental word.
   const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
 
+  // The canonical artist/title of the confidently-suggested release. The file's own tag is
+  // often messier than the spelling the user searched for, and the library is keyed by the
+  // canonical name — so this bridges a tag the library can't recognise on its own. Only a
+  // trusted match (matchedTrack already excludes 'low') feeds it, so an unrelated open
+  // release can't manufacture a false "owned".
+  const suggestedMeta =
+    matchedTrack && release
+      ? {
+          title: matchedTrack.title,
+          artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
+        }
+      : undefined
+
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
-  // re-import it. Read from the same session snapshot, and against the same live tags, the
-  // list and quality filter use (isInLibrary on item.meta), so the badge can never
-  // disagree with the row's in-library state. A track Surco itself added (musicPersistentId)
-  // counts as owned even before the snapshot lands; 'idle' hides the badge off macOS and
-  // until the snapshot arrives.
+  // re-import it. Read from the same session snapshot the list and quality filter use
+  // (isInLibrary on item.meta); the editor additionally accepts a confident Discogs
+  // suggestion, so opening the right release can flip a tag the raw filename couldn't match
+  // (the badge can read 'yes' here while the row still reads not-in-library — intended, the
+  // row has no open release). A track Surco itself added (musicPersistentId) counts as owned
+  // even before the snapshot lands; 'idle' hides the badge off macOS and until it arrives.
   const inLibrary: 'idle' | 'yes' | 'no' = ((): 'idle' | 'yes' | 'no' => {
     if (!isMacOS()) return 'idle'
     if (item.musicPersistentId) return 'yes'
     if (!libraryIndex) return 'idle'
-    return isInLibrary(libraryIndex, item.meta) ? 'yes' : 'no'
+    if (isInLibrary(libraryIndex, item.meta)) return 'yes'
+    return suggestedMeta && isInLibrary(libraryIndex, suggestedMeta) ? 'yes' : 'no'
   })()
 
   function selectTrack(track: ReleaseTrack): void {
