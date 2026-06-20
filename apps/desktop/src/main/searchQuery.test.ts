@@ -60,11 +60,21 @@ describe('buildSearchCandidates', () => {
     expect(buildSearchCandidates('Rank 1 Airwave 320')).toEqual(['Rank 1 Airwave'])
   })
 
-  it('adds a parenthetical-stripped fallback after the cleaned query', () => {
-    // First try keeps "(Original Mix)" (precision for remixes); if that finds nothing
-    // the caller falls back to the bare title, which is what works on Google.
+  it('leads with the bare title for a generic "(Original Mix)", keeping the full one as fallback', () => {
+    // "(Original Mix)" is the file's name for the default version; catalogs omit it and a
+    // free-text search on it returns noise that — by returning *something* — blocks the bare
+    // fallback. So the bare title is tried first; the version is recovered for the
+    // suggestion from the file title regardless.
     expect(buildSearchCandidates('Rank 1 Airwave (Original Mix)')).toEqual([
+      'Rank 1 Airwave',
       'Rank 1 Airwave (Original Mix)',
+    ])
+  })
+
+  it('keeps a meaningful mix name first so a remix resolves to its own release', () => {
+    // Extended/Dub/Club name a distinct version, kept up front; the bare title is the fallback.
+    expect(buildSearchCandidates('Rank 1 Airwave (Extended Mix)')).toEqual([
+      'Rank 1 Airwave (Extended Mix)',
       'Rank 1 Airwave',
     ])
   })
@@ -105,10 +115,16 @@ describe('buildSearchCandidates', () => {
         'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
       ),
     ).toEqual([
+      'Francesco Donadoni - Rock that sound',
+      'Francesco Donadoni - Rock that sound (Original mix)',
       'Francesco Donadoni - Rock that sound (Original mix) - 02 Francesco Donadoni - Rock that sound (Original mix)',
       'Francesco Donadoni - Rock that sound - 02 Francesco Donadoni - Rock that sound',
-      'Francesco Donadoni - Rock that sound (Original mix)',
-      'Francesco Donadoni - Rock that sound',
     ])
+  })
+
+  // The reported case: a file tagged "Artist Title (Original Mix)" must search the bare
+  // "Artist Title" first, or the parenthetical pulls in Bandcamp noise that hides the EP.
+  it('searches the bare "Artist Title" first for an "(Original Mix)" tag', () => {
+    expect(buildSearchCandidates('Alex K Shake it Up (Original Mix)')[0]).toBe('Alex K Shake it Up')
   })
 })

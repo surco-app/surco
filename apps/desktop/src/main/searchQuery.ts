@@ -1,33 +1,36 @@
 import type { SearchHints } from '../shared/types'
-import { cleanQuery, dropTrackNumberTail, stripParentheticals } from '../shared/searchClean'
+import {
+  cleanQuery,
+  dropOriginalMarker,
+  dropTrackNumberTail,
+  stripParentheticals,
+} from '../shared/searchClean'
 
 // Re-exported so existing callers/tests keep importing it from here; the implementation
 // (and the rest of the cleaners) now lives in shared so the renderer's matcher reuses it.
 export { cleanQuery }
 
-// Ordered, de-duped queries to try in turn, most precise to most forgiving:
-//   1. cleaned query (keeps a mix name so a remix still resolves)
-//   2. same without any parenthetical (the bare title that usually works)
-//   3. a duplicated, track-numbered tail cut off — then also without parentheticals
-//   4. catalog number, near-unique on Discogs, when the track carries one
-//   5. title alone, for when the artist string is wrong/junk
-//   6. title + artist swapped, for a file name that had them backwards
-// Hint-based candidates only appear when the caller supplies them. Falls back to the raw
-// query so cleaning can never produce a blank search.
+// Ordered, de-duped queries to try in turn, most useful to most forgiving. The de-duplicated
+// title leads, minus a generic "(Original Mix)" marker — that bare title is what resolves on
+// Discogs, while keeping it drags free-text search (Bandcamp especially) into noise that, by
+// returning *something*, blocks the bare fallback. A real mix name (Extended/Dub/Club…) is
+// kept first, since it helps find the remix's own release; the version is recovered for the
+// suggestion from the file's title regardless. Then come the bare-of-all-parens forms, the
+// un-trimmed query (in case cutting a track-number tail removed something), and the hint
+// candidates. Falls back to the raw query so cleaning can never produce a blank search.
 export function buildSearchCandidates(query: string, hints: SearchHints = {}): string[] {
   const cleaned = cleanQuery(query)
+  const trimmed = dropTrackNumberTail(cleaned)
   const out: string[] = []
   const add = (candidate: string): void => {
-    const trimmed = candidate.trim()
-    if (trimmed && !out.includes(trimmed)) out.push(trimmed)
+    const t = candidate.trim()
+    if (t && !out.includes(t)) out.push(t)
   }
-  add(cleaned)
-  add(stripParentheticals(cleaned))
-  // A duplicated, track-numbered tail cut off — then also without parentheticals. Both
-  // collapse to the candidates above (and are skipped) when there's no such tail.
-  const trimmed = dropTrackNumberTail(cleaned)
+  add(dropOriginalMarker(trimmed))
   add(trimmed)
   add(stripParentheticals(trimmed))
+  add(cleaned)
+  add(stripParentheticals(cleaned))
   if (hints.catalogNumber) add(hints.catalogNumber)
   if (hints.title) add(cleanQuery(hints.title))
   if (hints.artist && hints.title) add(cleanQuery(`${hints.title} ${hints.artist}`))

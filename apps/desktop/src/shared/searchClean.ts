@@ -59,10 +59,16 @@ export function dropTrackNumberTail(query: string): string {
 // (Extended, Dub, Club, Acapella, Radio…) stay intact so they keep disambiguating versions.
 const ORIGINAL_SUFFIX = /\s*\((?:the\s+)?original(?:\s+(?:mix|version|edit|cut))?\)\s*$/i
 
+// Drops a trailing "(Original Mix)"/"(Original)" marker — the file's name for the default
+// version, which catalogs omit. Used both by the matcher (so a bare release track scores)
+// and by the search (so the query that bare title resolves leads). A meaningful mix
+// (Extended, Dub, Club, Acapella, Radio…) is left intact, and a title that is *only* the
+// marker isn't stripped to nothing.
+export function dropOriginalMarker(s: string): string {
+  return squeeze(s.replace(ORIGINAL_SUFFIX, '')) || s
+}
+
 export function cleanMatchTitle(title: string): string {
   const afterTrackNumber = title.match(/\s-\s\d{1,3}\s+(.+)$/)
-  const cleaned = cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title)
-  const stripped = squeeze(cleaned.replace(ORIGINAL_SUFFIX, ''))
-  // Don't strip a title that is *only* the version marker to nothing.
-  return stripped || cleaned
+  return dropOriginalMarker(cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title))
 }
