@@ -1,4 +1,12 @@
-import { Infinity as InfinityIcon, LoaderCircle, Pause, Play, Volume2, X } from 'lucide-react'
+import {
+  AudioLines,
+  Infinity as InfinityIcon,
+  LoaderCircle,
+  Pause,
+  Play,
+  Volume2,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,12 +23,16 @@ export function LivePlayer({
   audioRef,
   continuous,
   onToggleContinuous,
+  showWaveform,
+  onToggleWaveform,
   onClose,
 }: {
   track: TrackItem
   audioRef: React.RefObject<HTMLAudioElement | null>
   continuous: boolean
   onToggleContinuous: () => void
+  showWaveform: boolean
+  onToggleWaveform: () => void
   onClose: () => void
 }): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState(0)
@@ -114,6 +126,8 @@ export function LivePlayer({
       onScrub={onScrub}
       onAdjustVolume={onAdjustVolume}
       onToggleContinuous={onToggleContinuous}
+      showWaveform={showWaveform}
+      onToggleWaveform={onToggleWaveform}
       onClose={onClose}
     />
   )
@@ -132,6 +146,8 @@ interface PlayerProps {
   onScrub: (seconds: number) => void
   onAdjustVolume: (deltaY: number) => void
   onToggleContinuous: () => void
+  showWaveform: boolean
+  onToggleWaveform: () => void
   onClose: () => void
 }
 
@@ -150,6 +166,8 @@ export function Player({
   onScrub,
   onAdjustVolume,
   onToggleContinuous,
+  showWaveform,
+  onToggleWaveform,
   onClose,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -246,6 +264,20 @@ export function Player({
 
           <button
             type="button"
+            data-testid="player-waveform"
+            onClick={onToggleWaveform}
+            aria-label={t('player.waveform')}
+            aria-pressed={showWaveform}
+            className={`relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+              showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
+            }`}
+          >
+            <AudioLines className="h-4 w-4" aria-hidden="true" />
+            <Tooltip label={t('player.waveformHelp')} />
+          </button>
+
+          <button
+            type="button"
             data-testid="player-close"
             onClick={onClose}
             aria-label={t('player.close')}
@@ -259,34 +291,37 @@ export function Player({
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
           corners) so the whole width is scrubbable. The volume and clock float over its
           corners as pills that fade in on hover; pointer-events-none lets a click (or a
-          wheel) underneath still reach the wave. */}
-      <div className="relative mt-2">
-        <Waveform
-          key={track.inputPath}
-          inputPath={track.inputPath}
-          audioRef={audioRef}
-          active
-          audioDurationSec={duration}
-          onScrub={onScrub}
-        />
-        <span
-          data-testid="player-volume"
-          className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-            hovered ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <Volume2 className="h-3 w-3" aria-hidden="true" />
-          {Math.round(volume * 100)}%
-        </span>
-        <span
-          data-testid="player-time"
-          className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-            hovered ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
-      </div>
+          wheel) underneath still reach the wave. Hidden by the toggle, the whole strip is
+          unmounted so its full-file decode never runs — the point of the preference. */}
+      {showWaveform && (
+        <div className="relative mt-2">
+          <Waveform
+            key={track.inputPath}
+            inputPath={track.inputPath}
+            audioRef={audioRef}
+            active
+            audioDurationSec={duration}
+            onScrub={onScrub}
+          />
+          <span
+            data-testid="player-volume"
+            className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+              hovered ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <Volume2 className="h-3 w-3" aria-hidden="true" />
+            {Math.round(volume * 100)}%
+          </span>
+          <span
+            data-testid="player-time"
+            className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+              hovered ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

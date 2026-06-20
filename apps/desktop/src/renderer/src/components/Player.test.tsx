@@ -77,11 +77,13 @@ function props(over = {}) {
     duration: 0,
     audioRef: createRef<HTMLAudioElement>(),
     continuous: false,
+    showWaveform: true,
     volume: 1,
     onToggle: vi.fn(),
     onScrub: vi.fn(),
     onAdjustVolume: vi.fn(),
     onToggleContinuous: vi.fn(),
+    onToggleWaveform: vi.fn(),
     onClose: vi.fn(),
     ...over,
   }
@@ -158,6 +160,32 @@ describe('Player', () => {
     expect(screen.getByTestId('player-continuous')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  // The waveform is the player's heaviest work (a full-file decode that reloads per track on
+  // a network drive). Hiding it must remove the strip entirely — not just visually — so the
+  // <Waveform> never mounts and never kicks off that decode.
+  it('omits the waveform entirely when hidden so nothing is computed', () => {
+    renderUI(<Player {...props({ showWaveform: false })} />)
+    expect(screen.queryByTestId('waveform')).toBeNull()
+  })
+
+  it('renders the waveform when shown', async () => {
+    renderUI(<Player {...props({ showWaveform: true })} />)
+    expect(await screen.findByTestId('waveform')).toBeInTheDocument()
+  })
+
+  // The on-player toggle is the only affordance for the preference, so it announces whether
+  // the wave is shown (aria-pressed) and reports the click so App can persist the choice.
+  it('toggles the waveform and reflects its state to screen readers', () => {
+    const onToggleWaveform = vi.fn()
+    const { rerender } = renderUI(<Player {...props({ showWaveform: true, onToggleWaveform })} />)
+    const toggle = screen.getByTestId('player-waveform')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(toggle)
+    expect(onToggleWaveform).toHaveBeenCalledOnce()
+    rerender(<Player {...props({ showWaveform: false, onToggleWaveform })} />)
+    expect(screen.getByTestId('player-waveform')).toHaveAttribute('aria-pressed', 'false')
+  })
+
   // Volume has no on-screen control by design; scrolling over the card drives it.
   it('routes a wheel over the card to the volume handler', () => {
     const onAdjustVolume = vi.fn()
@@ -211,6 +239,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -228,6 +258,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -246,6 +278,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -269,6 +303,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -285,6 +321,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -302,6 +340,8 @@ describe('LivePlayer', () => {
         audioRef={ref}
         continuous={false}
         onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
         onClose={vi.fn()}
       />,
     )

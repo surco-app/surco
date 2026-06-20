@@ -88,6 +88,9 @@ export interface Settings {
   replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
+  // When on, the bottom player shows its waveform strip; off collapses it and skips the
+  // full-file decode entirely. Persisted so the choice sticks across tracks and restarts.
+  showWaveform: boolean
   // When on, dropping files runs a Discogs search per track and auto-applies the
   // metadata of any high-confidence release match, without waiting for a click.
   // Off by default since it spends the token's rate limit across the whole crate.

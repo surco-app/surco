@@ -61,6 +61,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     coverSquare: false,
     replaceLowResCover: false,
     showSpectrum: true,
+    showWaveform: true,
     showLoudness: false,
     autoMatch: false,
     continuousPlayback: false,

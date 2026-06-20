@@ -39,6 +39,7 @@ const defaults: Settings = {
   replaceLowResCover: false,
   showSpectrum: true,
   showLoudness: true,
+  showWaveform: true,
   autoMatch: false,
   continuousPlayback: false,
   keyNotation: 'camelot',

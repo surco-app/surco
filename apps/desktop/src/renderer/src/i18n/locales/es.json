@@ -100,6 +100,8 @@
     "pause": "Pausar",
     "continuous": "Reproducción continua",
     "continuousHelp": "Reproducción continua: al terminar una pista, suena automáticamente la siguiente de la lista.",
+    "waveform": "Forma de onda",
+    "waveformHelp": "Mostrar la forma de onda. Ocultarla evita su análisis, útil para archivos grandes o discos de red.",
     "close": "Cerrar reproductor"
   },
   "commands": {

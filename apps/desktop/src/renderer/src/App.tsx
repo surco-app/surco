@@ -276,6 +276,8 @@ export default function App(): React.JSX.Element {
   // while still reading the latest spectrum/token settings on each hover.
   const showSpectrumRef = useRef(true)
   showSpectrumRef.current = settings?.showSpectrum ?? true
+  const showWaveformRef = useRef(true)
+  showWaveformRef.current = settings?.showWaveform ?? true
   const hasTokenRef = useRef(false)
   hasTokenRef.current = !!settings?.discogsToken
   // Live providers for the background sweep, read at probe time (Settings → Search).
@@ -429,9 +431,13 @@ export default function App(): React.JSX.Element {
       hoverTimer.current = setTimeout(() => {
         const track = tracksRef.current.find((t) => t.id === id)
         if (!track) return
-        // The waveform is always shown the moment playback opens the player, and it is
-        // the heaviest decode (whole file), so warm it for every rested hover.
-        void queryClient.prefetchQuery(waveformOptions(track.inputPath))
+        // The player shows the waveform the moment playback opens it, and it is the heaviest
+        // decode (whole file), so warm it for every rested hover — unless the user collapsed
+        // the strip, in which case the player won't show it and warming would waste the very
+        // decode the toggle exists to avoid.
+        if (showWaveformRef.current) {
+          void queryClient.prefetchQuery(waveformOptions(track.inputPath))
+        }
         // Skip the spectrogram when the quality section is folded away: warming it would
         // run the heavy ffmpeg decode the user folded the section to avoid, and the
         // editor wouldn't show it anyway. Reopening the section runs the analysis then.
@@ -1081,6 +1087,10 @@ export default function App(): React.JSX.Element {
               continuous={settings?.continuousPlayback ?? false}
               onToggleContinuous={() =>
                 saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
+              }
+              showWaveform={settings?.showWaveform ?? true}
+              onToggleWaveform={() =>
+                saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
               }
               onClose={closePlayer}
             />
