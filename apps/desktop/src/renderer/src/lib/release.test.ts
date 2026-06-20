@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Release, SearchResult, ReleaseTrack, TrackMetadata } from '../../../shared/types'
+import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -8,6 +8,7 @@ import {
   coverOf,
   joinArtists,
   preRankResults,
+  providerBuckets,
   releaseKey,
   resultFromRelease,
   scoreTrack,
@@ -329,6 +330,32 @@ describe('preRankResults', () => {
     const input = [r(1, 'Various - Comp'), r(2, 'Daft Punk - Discovery')]
     preRankResults(input, { title: 'One More Time', artist: 'Daft Punk' })
     expect(input.map((x) => x.id)).toEqual([1, 2])
+  })
+})
+
+describe('providerBuckets', () => {
+  const r = (provider: SearchResult['provider'], id: number): SearchResult => ({
+    provider,
+    id,
+    title: 'x',
+  })
+
+  // The provider filter only earns its place when results come from more than one
+  // catalog — a single-source result set has nothing to filter, so the control hides.
+  it('returns nothing when every result shares one provider', () => {
+    expect(providerBuckets([r('discogs', 1), r('discogs', 2)])).toEqual([])
+  })
+
+  it('counts results per provider in first-seen (rank) order', () => {
+    const buckets = providerBuckets([r('bandcamp', 1), r('discogs', 2), r('bandcamp', 3)])
+    expect(buckets).toEqual([
+      { provider: 'bandcamp', count: 2 },
+      { provider: 'discogs', count: 1 },
+    ])
+  })
+
+  it('returns nothing for an empty result set', () => {
+    expect(providerBuckets([])).toEqual([])
   })
 })
 

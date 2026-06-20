@@ -9,6 +9,7 @@ import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
+import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -54,6 +55,9 @@ export function DiscogsPanel({
     setQuery,
     doSearch,
     results,
+    providerCounts,
+    providerFilter,
+    setProviderFilter,
     release,
     openKey,
     loading,
@@ -105,6 +109,26 @@ export function DiscogsPanel({
               {tr('editor.search')}
             </button>
           </div>
+          {providerCounts.length > 0 && (
+            <div className="mt-2 flex">
+              <Select
+                testid="provider-filter"
+                label={tr('editor.providerFilter')}
+                value={providerFilter}
+                onChange={(v) => setProviderFilter(v as typeof providerFilter)}
+                options={[
+                  {
+                    value: 'all',
+                    label: `${tr('editor.providerFilterAll')} (${providerCounts.reduce((n, p) => n + p.count, 0)})`,
+                  },
+                  ...providerCounts.map((p) => ({
+                    value: p.provider,
+                    label: `${tr(`settings.provider.${p.provider}`)} (${p.count})`,
+                  })),
+                ]}
+              />
+            </div>
+          )}
           {!hasToken && (
             <p className="mt-2 text-xs text-fg-muted">
               <Trans

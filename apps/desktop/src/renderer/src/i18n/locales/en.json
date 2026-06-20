@@ -167,6 +167,8 @@
     "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "formatFilter": "Showing only: {{formats}}",
+    "providerFilter": "Filter results by source",
+    "providerFilterAll": "All",
     "resultHint": "Click to see the tracks, then pick one to apply",
     "fitHint": "Double-click to fit the width to the results",
     "coverDrop": "Drag or click to add artwork",

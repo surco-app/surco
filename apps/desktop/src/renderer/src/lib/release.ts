@@ -1,4 +1,10 @@
-import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
+import type {
+  Release,
+  ReleaseTrack,
+  SearchProviderId,
+  SearchResult,
+  TrackMetadata,
+} from '../../../shared/types'
 import { parseDuration } from './duration'
 import { foldText } from './normalizeText'
 import { splitPosition } from './position'
@@ -226,6 +232,18 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     .map((result, index) => ({ result, index, score: relevance(result) }))
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .map((x) => x.result)
+}
+
+// Tallies the providers present in a result set, in first-seen (rank) order, for the
+// Discogs column's source filter. Mirrors triage's formatBuckets: a set drawn from a
+// single catalog returns nothing so the filter hides — it only filters a mixed list.
+export function providerBuckets(
+  results: SearchResult[],
+): { provider: SearchProviderId; count: number }[] {
+  const counts = new Map<SearchProviderId, number>()
+  for (const r of results) counts.set(r.provider, (counts.get(r.provider) ?? 0) + 1)
+  if (counts.size < 2) return []
+  return [...counts.entries()].map(([provider, count]) => ({ provider, count }))
 }
 
 export interface ReleaseMetaPatch {

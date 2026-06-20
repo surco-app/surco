@@ -167,6 +167,8 @@
     "matchSuggested": "Sugerida",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
     "formatFilter": "Mostrando solo: {{formats}}",
+    "providerFilter": "Filtrar resultados por fuente",
+    "providerFilterAll": "Todos",
     "resultHint": "Un clic para ver las pistas; luego elige una para aplicar",
     "fitHint": "Doble clic para ajustar el ancho a los resultados",
     "coverDrop": "Arrastra o haz clic para la carátula",

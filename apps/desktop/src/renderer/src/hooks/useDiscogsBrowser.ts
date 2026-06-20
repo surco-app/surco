@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
-import { preRankResults, releaseKey, resultFromRelease } from '../lib/release'
+import { preRankResults, providerBuckets, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
 
@@ -16,7 +16,14 @@ export interface DiscogsBrowser {
   query: string
   setQuery: (q: string) => void
   doSearch: () => void
+  // Results after the source filter, ready to render.
   results: SearchResult[]
+  // Providers present in the unfiltered results, with counts, for the source filter —
+  // empty when results come from a single catalog, so the filter hides.
+  providerCounts: { provider: SearchProviderId; count: number }[]
+  // The active source filter: a provider id, or 'all' for the full result set.
+  providerFilter: SearchProviderId | 'all'
+  setProviderFilter: (filter: SearchProviderId | 'all') => void
   // The release whose tracklist is open, or null when none is expanded (or still loading).
   release: Release | null
   // The expanded row's key (`provider:id`), or null when none is expanded. Rows are keyed
@@ -59,6 +66,9 @@ export function useDiscogsBrowser(
   // a single source of truth that auto-open, preview and reopen all set.
   const [openResult, setOpenResult] = useState<SearchResult | null>(null)
   const [autoProbing, setAutoProbing] = useState(false)
+  // Which catalog's results to show, a renderer-side view over the merged list — distinct
+  // from `providers`, which decides what gets searched. Resets per search below.
+  const [providerFilter, setProviderFilter] = useState<SearchProviderId | 'all'>('all')
 
   const loadRelease = useCallback(
     (result: SearchResult) =>
@@ -118,7 +128,17 @@ export function useDiscogsBrowser(
     },
     enabled: searchTerm.trim() !== '',
   })
-  const results = searchQuery.data?.results ?? []
+  const allResults = searchQuery.data?.results ?? []
+  const providerCounts = useMemo(() => providerBuckets(allResults), [allResults])
+  // Only filter a genuinely mixed list: with one provider, providerCounts is empty and a
+  // stale filter (left over from a previous, two-source search) must not blank the results.
+  const results = useMemo(
+    () =>
+      providerFilter !== 'all' && providerCounts.length > 0
+        ? allResults.filter((r) => r.provider === providerFilter)
+        : allResults,
+    [allResults, providerFilter, providerCounts.length],
+  )
 
   const { refetch: refetchSearch } = searchQuery
   const doSearch = useCallback(() => {
@@ -133,8 +153,11 @@ export function useDiscogsBrowser(
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: searchTerm is the deliberate trigger — resetting the open release on each new search is the point.
-  useEffect(() => setOpenResult(null), [searchTerm])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: searchTerm is the deliberate trigger — resetting the open release and source filter on each new search is the point.
+  useEffect(() => {
+    setOpenResult(null)
+    setProviderFilter('all')
+  }, [searchTerm])
 
   // Once results arrive, open the first that confidently holds the file's track (or
   // the directly-loaded release), so the user lands on the right album. A newer search
@@ -201,6 +224,9 @@ export function useDiscogsBrowser(
     setQuery,
     doSearch,
     results,
+    providerCounts,
+    providerFilter,
+    setProviderFilter,
     release,
     openKey,
     loading,

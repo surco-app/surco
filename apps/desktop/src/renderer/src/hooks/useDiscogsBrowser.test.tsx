@@ -84,6 +84,73 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.results.map((r) => r.provider).sort()).toEqual(['bandcamp', 'discogs'])
   })
 
+  // The source filter narrows the merged list to one catalog without re-searching, and
+  // counts every source so the user can see (and pick) where results came from.
+  it('filters the merged results to a single provider', async () => {
+    const bcResult = {
+      provider: 'bandcamp' as const,
+      id: 9,
+      title: 'BC Album',
+      releaseUrl: 'https://x.bc/a',
+    }
+    setApi({
+      search: vi.fn(async (_q: string, provider?: string) =>
+        provider === 'bandcamp' ? [bcResult] : [searchResult],
+      ),
+    })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.providerCounts).toEqual([
+      { provider: 'discogs', count: 1 },
+      { provider: 'bandcamp', count: 1 },
+    ])
+
+    act(() => result.current.setProviderFilter('bandcamp'))
+    expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp'])
+  })
+
+  // A filter left active from a two-source search must not blank a later single-source
+  // one; the control hides (no counts) and the filter falls back to showing everything.
+  it('drops the filter when a new search returns a single provider', async () => {
+    const bcResult = {
+      provider: 'bandcamp' as const,
+      id: 9,
+      title: 'BC Album',
+      releaseUrl: 'https://x.bc/a',
+    }
+    let mixed = true
+    setApi({
+      search: vi.fn(async (_q: string, provider?: string) =>
+        mixed && provider === 'bandcamp'
+          ? [bcResult]
+          : provider === 'bandcamp'
+            ? []
+            : [searchResult],
+      ),
+    })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    act(() => result.current.setProviderFilter('bandcamp'))
+    expect(result.current.results).toHaveLength(1)
+
+    mixed = false
+    act(() => result.current.setQuery('other album'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(result.current.results[0].provider).toBe('discogs')
+    expect(result.current.providerCounts).toEqual([])
+  })
+
   // The search box's whole job: commit the query and surface the matching releases.
   it('returns the search results once a search is run', async () => {
     setApi()
