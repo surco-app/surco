@@ -537,8 +537,10 @@
           "Cuando buscas a la vez en Discogs y Bandcamp, un nuevo filtro te deja mostrar Todos, Discogs o Bandcamp — y los resultados quedan más limpios: las ediciones de Discogs aparecen primero y cada fuente se limita para que la lista sea corta y relevante.",
           "Al añadir archivos ahora ves un contador en vivo y una barra de progreso determinada mientras Surco lee los metadatos de cada pista, así sabes exactamente cuánto queda de la importación.",
           "Nuevo ajuste opcional para aplicar tu patrón de nombre de archivo automáticamente, de modo que las pistas convertidas se nombran sin un paso manual.",
-          "Emparejado más inteligente con tu biblioteca de Apple Music: Surco reconoce la misma pista entre variantes de escritura del artista — ampersands, siglas con puntos (D.J. frente a DJ) y un artista al principio del título — para que falten menos de tus copias.",
+          "Emparejado más inteligente con tu biblioteca de Apple Music: Surco reconoce la misma pista entre más variantes de artista y título — ampersands, siglas con puntos (D.J. frente a DJ), prefijos como DJ/Dr./MC, números escritos frente a cifras, un artista al principio del título y coletillas de versión finales — para que falten menos de tus copias.",
           "Mejor emparejado de ediciones en pistas etiquetadas como «(Original Mix)»: Surco descarta esa coletilla final para que un título de catálogo a secas siga puntuando, y el emparejado de álbum en multipista deja un archivo sin asignar en vez de forzar un corte equivocado.",
+          "El distintivo de «en tu biblioteca» del editor ahora se enciende cuando una sugerencia fiable de Discogs coincide con una pista que ya tienes en tu biblioteca de Apple Music.",
+          "Filtros de lista más ordenados: cada sección de la barra lateral es ahora un filtro independiente, el menú se cierra en cuanto eliges y «Sin convertir» queda bajo «Todos».",
           "Manejo de archivos más robusto: Surco lee las etiquetas de archivos que otras apps no abren y repara cabeceras WAV malformadas en vez de fallar el análisis."
         ]
       },
