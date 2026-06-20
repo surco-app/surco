@@ -1,6 +1,7 @@
 import {
   Activity,
   ChartColumn,
+  Loader2,
   Search,
   Settings as SettingsIcon,
   Sparkles,
@@ -109,12 +110,22 @@ export const Toolbar = memo(function Toolbar({
           </span>
         )}
         {importing && (
+          // A live pill matching the auto-match/analyze sweeps (accent ring, spinning
+          // glyph, done/total), so a big drop reads as active work rather than a static line.
           <span
             data-testid="import-progress"
             role="status"
-            className="text-sm tabular-nums text-fg-muted"
+            aria-label={tr('header.importingCount', {
+              done: importing.done,
+              total: importing.total,
+            })}
+            className="group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)]"
           >
-            {tr('header.importingCount', { done: importing.done, total: importing.total })}
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {importing.done}/{importing.total}
+            <Tooltip
+              label={tr('header.importingCount', { done: importing.done, total: importing.total })}
+            />
           </span>
         )}
         <button
