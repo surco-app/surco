@@ -34,6 +34,13 @@ export interface Player {
 export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playerVisible, setPlayerVisible] = useState(false)
+  // A synchronous mirror of playerVisible. The selection-follow effect reads it instead of
+  // the state so a close that happens earlier in the same commit (Start over rebuilds the
+  // playing track, firing the close effect, while the selection swaps to the new row in the
+  // same render) is seen before React repaints — otherwise the follow effect re-arms
+  // playback on the rebuilt row after its card has already closed.
+  const playerVisibleRef = useRef(false)
+  playerVisibleRef.current = playerVisible
   const [playingId, setPlayingId] = useState<string | null>(null)
   const playingIdRef = useRef<string | null>(null)
   playingIdRef.current = playingId
@@ -61,6 +68,7 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     // Removing src alone doesn't release the media resource — the spec'd teardown
     // needs load(), or the closed track's stream stays attached until the next play.
     audio?.load()
+    playerVisibleRef.current = false
     setPlayerVisible(false)
     setPlayingId(null)
   }, [])
@@ -119,7 +127,8 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // track. Guarded against re-playing the one already loaded.
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger; `selected` is read fresh, and depending on it would re-fire every render.
   useEffect(() => {
-    if (playerVisible && selected && selected.id !== playingIdRef.current) startPlayback(selected)
+    if (playerVisibleRef.current && selected && selected.id !== playingIdRef.current)
+      startPlayback(selected)
   }, [selectedId, playerVisible, startPlayback])
 
   // Double-clicking a row toggles it: play the track (opening the player) unless it's

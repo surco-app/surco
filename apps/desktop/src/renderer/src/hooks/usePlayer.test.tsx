@@ -54,6 +54,28 @@ describe('usePlayer', () => {
     rerender(<Harness tracks={[track('a', '/m/a-renamed.aiff')]} />)
     expect(audio.src).toContain('a-renamed.aiff')
   })
+
+  // Right-click "Start over" rebuilds the playing track under a fresh id (same file) and
+  // moves the selection onto it. The player must stop with the track it was sounding —
+  // not silently re-arm playback on the rebuilt row after its card has already closed,
+  // which left the audio playing with no visible player to pause it.
+  it('stops playback when Start over rebuilds the playing track under a new id', () => {
+    const { rerender } = render(<Harness tracks={[track('a', '/m/a.wav')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+
+    fireEvent.click(screen.getByTestId('toggle'))
+    expect(audio.play).toHaveBeenCalledTimes(1)
+    expect(audio.src).toContain('a.wav')
+
+    rerender(<Harness tracks={[track('a2', '/m/a.wav')]} />)
+
+    expect(audio.pause).toHaveBeenCalled()
+    expect(audio.play).toHaveBeenCalledTimes(1)
+    expect(audio.getAttribute('src')).toBeNull()
+  })
 })
 
 describe('usePlayer playback prewarm', () => {
