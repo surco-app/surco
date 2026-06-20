@@ -80,6 +80,13 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Anthem', artist: 'Alfredo Pareja' })).toBe(true)
   })
 
+  // A dotted acronym ("DJ F.R.A.N.K.") folds to single letters; the tag often keeps it
+  // solid ("DJ. Frank"). Collapsing a run of single letters makes the two spellings agree.
+  it('matches a dotted-acronym library artist against its solid-spelled tag', () => {
+    const idx = buildLibraryIndex([{ title: 'Dinner', artist: 'DJ F.R.A.N.K.' }])
+    expect(isInLibrary(idx, { title: 'Dinner', artist: 'DJ. Frank' })).toBe(true)
+  })
+
   // And the other direction: the tag elaborates the act the library files under a shorter
   // name — a title prefix ("Dr. DJ Cerla" vs "DJ Cerla"), a trailing descriptor ("Three
   // Drives On A Vinyl" vs "Three Drives") or a "presents" credit ("Ricardo F. present

@@ -16,11 +16,19 @@ export type AppleMusicIndex = Map<string, string[]>
 // requiring every co-artist's words to appear would read the collaboration as not-owned.
 const COLLAB_SEP = /\s*[,&]\s*|\s+(?:feat\.?|featuring|ft\.?)\s+/i
 
+// Folds an artist for matching, then collapses a run of two or more single letters into one
+// word. A dotted acronym ("DJ F.R.A.N.K.") folds to "dj f r a n k", which a solid spelling
+// ("DJ. Frank" → "dj frank") would never match letter-for-word; joining the run bridges the
+// two. A lone trailing initial ("Ricardo F") isn't a run, so it stays its own word.
+function foldArtist(artist: string): string {
+  return foldText(artist).replace(/\b(?:[a-z0-9] ){1,}[a-z0-9]\b/g, (run) => run.replace(/ /g, ''))
+}
+
 // The lead artist only, folded: keep everything before the first collaborator separator,
 // then fold. cleanName drops a Discogs disambiguator ("Aphex Twin (2)") so it matches the
 // plain library name.
 function primaryArtist(artist: string): string {
-  return foldText(cleanName(artist.split(COLLAB_SEP)[0]))
+  return foldArtist(cleanName(artist.split(COLLAB_SEP)[0]))
 }
 
 // A trailing parenthesised or bracketed version suffix — "(Happy House)", "[Radio Edit]".
@@ -41,7 +49,7 @@ function titleKeys(title: string): string[] {
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
   for (const { title, artist } of tracks) {
-    const folded = foldText(artist)
+    const folded = foldArtist(artist)
     // An empty artist can't identify a song and would later `every`-match nothing
     // meaningfully; skip the row entirely.
     if (!folded) continue
