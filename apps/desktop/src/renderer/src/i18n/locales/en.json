@@ -102,6 +102,7 @@
     "continuousHelp": "Continuous playback: when a track ends, the next one in the list plays automatically.",
     "waveform": "Waveform",
     "waveformHelp": "Show the waveform. Hiding it skips the waveform analysis — useful for large files or network drives.",
+    "seek": "Seek",
     "close": "Close player"
   },
   "commands": {

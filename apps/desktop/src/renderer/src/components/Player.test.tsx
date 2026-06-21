@@ -168,6 +168,28 @@ describe('Player', () => {
     expect(screen.queryByTestId('waveform')).toBeNull()
   })
 
+  // Hiding the waveform must not hide the transport facts: the volume and the elapsed/total
+  // time the overlay used to carry stay on a slim row, so the player still tells you where
+  // you are.
+  it('keeps the volume and time on a compact row when the waveform is hidden', () => {
+    renderUI(
+      <Player {...props({ showWaveform: false, volume: 0.5, currentTime: 65, duration: 754 })} />,
+    )
+    expect(screen.queryByTestId('waveform')).toBeNull()
+    expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
+    expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
+  })
+
+  // That row keeps the track scrubbable without the waveform: a click seeks proportionally.
+  it('seeks from the compact progress bar when the waveform is hidden', () => {
+    const onScrub = vi.fn()
+    renderUI(<Player {...props({ showWaveform: false, duration: 100, onScrub })} />)
+    const bar = screen.getByTestId('player-seek')
+    bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
+    fireEvent.click(bar, { clientX: 100 })
+    expect(onScrub).toHaveBeenCalledWith(50)
+  })
+
   it('renders the waveform when shown', async () => {
     renderUI(<Player {...props({ showWaveform: true })} />)
     expect(await screen.findByTestId('waveform')).toBeInTheDocument()

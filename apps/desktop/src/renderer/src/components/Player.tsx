@@ -293,7 +293,7 @@ export function Player({
           corners as pills that fade in on hover; pointer-events-none lets a click (or a
           wheel) underneath still reach the wave. Hidden by the toggle, the whole strip is
           unmounted so its full-file decode never runs — the point of the preference. */}
-      {showWaveform && (
+      {showWaveform ? (
         <div className="relative mt-2">
           <Waveform
             key={track.inputPath}
@@ -318,6 +318,34 @@ export function Player({
               hovered ? 'opacity-100' : 'opacity-0'
             }`}
           >
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
+      ) : (
+        // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
+        // the clock — the info the waveform overlay carried — and its bottom padding balances
+        // the card so the row above isn't left hugging the edge.
+        <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5 text-[10px] text-fg-dim tabular-nums">
+          <span data-testid="player-volume" className="flex shrink-0 items-center gap-1">
+            <Volume2 className="h-3 w-3" aria-hidden="true" />
+            {Math.round(volume * 100)}%
+          </span>
+          <button
+            type="button"
+            data-testid="player-seek"
+            aria-label={t('player.seek')}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
+            }}
+            className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--color-panel)]"
+          >
+            <span
+              className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+            />
+          </button>
+          <span data-testid="player-time" className="shrink-0">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
         </div>
