@@ -1,4 +1,12 @@
-import { Music, Sparkles, X } from 'lucide-react'
+import {
+  CircleCheck,
+  type LucideIcon,
+  Music,
+  OctagonAlert,
+  Sparkles,
+  TriangleAlert,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -47,11 +55,15 @@ const statusColor: Record<TrackStatus, string> = {
   error: 'bg-danger',
 }
 
-const qualityDot: Record<Verdict, string> = {
-  good: 'bg-good ring-good/20',
-  warn: 'bg-warn ring-warn/20',
-  bad: 'bg-danger ring-danger/20',
-  processed: 'bg-danger ring-danger/20',
+// The quality verdict reads as a distinct severity glyph, not a second colored dot, so it
+// can't be mistaken for the round conversion-status light on the cover corner (both share the
+// green/amber/red palette). good stays a quiet check — positive confirmation without
+// shouting — while warn/bad escalate by both shape and color.
+const qualityIcon: Record<Verdict, { Icon: LucideIcon; className: string }> = {
+  good: { Icon: CircleCheck, className: 'text-good/70' },
+  warn: { Icon: TriangleAlert, className: 'text-warn' },
+  bad: { Icon: OctagonAlert, className: 'text-danger' },
+  processed: { Icon: OctagonAlert, className: 'text-danger' },
 }
 
 const qualityLabel: Record<Verdict, string> = {
@@ -59,6 +71,16 @@ const qualityLabel: Record<Verdict, string> = {
   warn: 'editor.qualitySuspect',
   bad: 'editor.qualityBad',
   processed: 'editor.qualityProcessed',
+}
+
+function QualityMark({ verdict, label }: { verdict: Verdict; label: string }): React.JSX.Element {
+  const { Icon, className } = qualityIcon[verdict]
+  return (
+    <span data-testid="track-quality" data-quality={verdict} className="group/dot relative flex">
+      <Icon aria-hidden className={`h-3 w-3 ${className}`} />
+      <Tooltip label={label} align="end" scope="dot" />
+    </span>
+  )
 }
 
 // Appends the match's confidence ("· 96%") to the tooltip so hovering the row surfaces how
@@ -290,13 +312,7 @@ const TrackRow = memo(function TrackRow({
               </span>
               <span className="flex w-3 shrink-0 justify-center">
                 {quality !== 'unanalyzed' ? (
-                  <span
-                    data-testid="track-quality"
-                    data-quality={quality}
-                    className={`group/dot relative h-2 w-2 rounded-full ring-2 ${qualityDot[quality]}`}
-                  >
-                    <Tooltip label={tr(qualityLabel[quality])} align="end" scope="dot" />
-                  </span>
+                  <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
                 ) : (
                   t.analyzing && (
                     <span
