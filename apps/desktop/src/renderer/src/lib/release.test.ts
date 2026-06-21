@@ -360,6 +360,27 @@ describe('preRankResults', () => {
     preRankResults(input, { title: 'One More Time', artist: 'Daft Punk' })
     expect(input.map((x) => x.id)).toEqual([1, 2])
   })
+
+  // Compilations and various-artist sets are the main noise: their titles often carry the
+  // artist/title words, so on pure text overlap they tie (or beat) the artist's own release
+  // and bury it. Discogs tags them in `format`, so demote them below an equally-relevant
+  // non-compilation — without hiding them, since a track may only exist on a compilation.
+  it('demotes a compilation below an equally-relevant non-compilation', () => {
+    const rf = (id: number, title: string, format: string[]): SearchResult => ({
+      provider: 'discogs',
+      id,
+      title,
+      format,
+    })
+    const ranked = preRankResults(
+      [
+        rf(1, 'Daft Punk - Discovery', ['CD', 'Compilation']),
+        rf(2, 'Daft Punk - Discovery', ['Vinyl', 'LP', 'Album']),
+      ],
+      { title: 'One More Time', artist: 'Daft Punk' },
+    )
+    expect(ranked[0].id).toBe(2)
+  })
 })
 
 describe('providerCountsOf', () => {

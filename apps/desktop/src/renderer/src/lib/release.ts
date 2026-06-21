@@ -221,6 +221,15 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 // the final tie-break and equally-relevant rows keep their place.
 const PROVIDER_RANK: Record<SearchProviderId, number> = { discogs: 0, bandcamp: 1 }
 
+const COMPILATION_PENALTY = 1
+
+// A various-artist set / compilation, tagged by Discogs in the result's `format`. These are
+// the dominant noise: their titles often carry the searched artist/title words, so on pure
+// text overlap they tie or beat the artist's own release and bury it.
+function isCompilation(result: SearchResult): boolean {
+  return (result.format ?? []).some((f) => f.toLowerCase() === 'compilation')
+}
+
 export function preRankResults(results: SearchResult[], target: TrackMatchTarget): SearchResult[] {
   const relevance = (result: SearchResult): number => {
     const hay = normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
@@ -230,8 +239,11 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
       return words.filter((w) => hay.includes(w)).length / words.length
     }
     // Artist is the reliable signal — a full artist match all but names the release — so
-    // it outweighs the title, which often isn't in the "Artist - Album" row at all.
-    return 2 * fraction(target.artist) + fraction(target.title)
+    // it outweighs the title, which often isn't in the "Artist - Album" row at all. A
+    // compilation is then docked so an equally-relevant proper release outranks it, without
+    // dropping it (a track may only exist on a compilation, and the probe still scores it).
+    const score = 2 * fraction(target.artist) + fraction(target.title)
+    return score - (isCompilation(result) ? COMPILATION_PENALTY : 0)
   }
   return results
     .map((result, index) => ({ result, index, score: relevance(result) }))
