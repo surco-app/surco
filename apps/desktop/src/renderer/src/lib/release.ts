@@ -245,12 +245,17 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     const score = 2 * fraction(target.artist) + fraction(target.title)
     return score - (isCompilation(result) ? COMPILATION_PENALTY : 0)
   }
+  // Community ownership ("have") breaks ties between equally-relevant rows so the canonical
+  // pressing — the one most people own — floats above the obscure repress. Only a tie-break:
+  // it never overrides relevance, and Bandcamp/sparse rows (no stats) just score 0.
+  const have = (result: SearchResult): number => result.community?.have ?? 0
   return results
     .map((result, index) => ({ result, index, score: relevance(result) }))
     .sort(
       (a, b) =>
         PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         b.score - a.score ||
+        have(b.result) - have(a.result) ||
         a.index - b.index,
     )
     .map((x) => x.result)

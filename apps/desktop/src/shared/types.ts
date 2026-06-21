@@ -172,6 +172,10 @@ export interface SearchResult {
   // Bandcamp releases are fetched by their page URL, not a numeric id; unset for
   // Discogs, which loads by `id`.
   releaseUrl?: string
+  // Discogs' community stats (how many users have/want the release) — already in the
+  // search JSON, used only as a ranking tie-break so the canonical pressing floats up
+  // among equally-relevant rows. Absent for Bandcamp and sparse releases.
+  community?: { have?: number; want?: number }
 }
 
 export interface ReleaseTrack {

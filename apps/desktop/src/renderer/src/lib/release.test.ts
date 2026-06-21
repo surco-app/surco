@@ -355,6 +355,22 @@ describe('preRankResults', () => {
     expect(ranked.map((x) => x.id)).toEqual([3, 2, 1])
   })
 
+  // Between two equally-relevant pressings, the one more of the community owns is the
+  // canonical edition, so it leads — a tie-break only, never overriding text relevance.
+  it('breaks a relevance tie by community ownership (have)', () => {
+    const rc = (id: number, have: number): SearchResult => ({
+      provider: 'discogs',
+      id,
+      title: 'Daft Punk - Discovery',
+      community: { have },
+    })
+    const ranked = preRankResults([rc(1, 12), rc(2, 9000)], {
+      title: 'One More Time',
+      artist: 'Daft Punk',
+    })
+    expect(ranked[0].id).toBe(2)
+  })
+
   it('does not mutate the input array', () => {
     const input = [r(1, 'Various - Comp'), r(2, 'Daft Punk - Discovery')]
     preRankResults(input, { title: 'One More Time', artist: 'Daft Punk' })
