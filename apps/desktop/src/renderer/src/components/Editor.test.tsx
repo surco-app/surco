@@ -1269,6 +1269,17 @@ describe('Editor Discogs apply', () => {
     expect(onChange).toHaveBeenCalled()
   })
 
+  // Applying a release is the cue to verify the tags, so focus jumps to the first field —
+  // the keyboard flow continues ⌘2 → pick → Enter → edit without a manual ⌘3.
+  it('moves focus to the first field after a track is applied', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['title'] })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(screen.getByTestId('field-title')).toHaveFocus()
+  })
+
   // Clicking the already-open album closes it again, so the row acts as a toggle
   // rather than only ever expanding.
   it('collapses the album when its open row is clicked again', async () => {
