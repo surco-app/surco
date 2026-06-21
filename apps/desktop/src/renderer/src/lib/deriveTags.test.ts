@@ -56,11 +56,22 @@ describe('smartDeriveTags', () => {
     })
   })
 
-  it('handles a space-separated track number too', () => {
-    expect(smartDeriveTags('104 kumara - snap.flac')).toEqual({
-      trackNumber: '104',
+  it('reads a zero-padded space-separated track number', () => {
+    expect(smartDeriveTags('04 kumara - snap.flac')).toEqual({
+      trackNumber: '04',
       artist: 'kumara',
       title: 'snap',
+    })
+  })
+
+  // A bare-space leading number is ambiguous: "04 Artist" is a padded track number, but
+  // "4 Strings" / "808 State" / "50 Cent" are numeric artist names. Only the zero-padded
+  // form (no artist starts with a leading zero) is read as a track number; an unpadded one
+  // stays part of the artist so the Discogs query keeps the real act.
+  it('keeps an unpadded leading number as part of a numeric artist name', () => {
+    expect(smartDeriveTags('4 Strings - Day Time (String Remix).flac')).toEqual({
+      artist: '4 Strings',
+      title: 'Day Time (String Remix)',
     })
   })
 

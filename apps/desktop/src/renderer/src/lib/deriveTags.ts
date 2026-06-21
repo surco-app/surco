@@ -48,7 +48,7 @@ export function deriveTags(fileName: string, pattern: string): Partial<TrackMeta
 }
 
 // Patterns are tried most-specific first, so a leading track number is read when present
-// ("104. Artist - Title", "104 Artist - Title") and a plain "Artist - Title" still works.
+// ("104. Artist - Title", "07 - Artist - Title") and a plain "Artist - Title" still works.
 // The digit-only track number means the numbered patterns simply don't match an unnumbered
 // name, letting it fall through to the plain one.
 const SMART_PATTERNS = [
@@ -57,6 +57,14 @@ const SMART_PATTERNS = [
   '{trackNumber} {artist} - {title}',
   '{artist} - {title}',
 ]
+
+// The bare-space numbered shape ("04 Artist - Title") is the one that collides with a numeric
+// artist name ("4 Strings", "808 State", "50 Cent"): both are a number, a space, then a word.
+// A real track number in this form is zero-padded, and no artist name starts with a leading
+// zero — so only a padded number is read as the track number here. The dot/dash forms stay
+// unambiguous (no act is written "4. Strings" or "4 - Strings - …") and need no such guard.
+const BARE_SPACE_NUMBERED = '{trackNumber} {artist} - {title}'
+const ZERO_PADDED = /^0\d+$/
 
 // Maps the separator styles real downloads use onto the " - " the patterns expect,
 // without touching the ambiguous ones. "_-_" (and en/em dashes) are unmistakably the
@@ -76,7 +84,10 @@ export function smartDeriveTags(fileName: string): Partial<TrackMetadata> {
   const normalized = normalizeSeparators(fileName)
   for (const pattern of SMART_PATTERNS) {
     const tags = deriveTags(normalized, pattern)
-    if (Object.keys(tags).length > 0) return tags
+    if (Object.keys(tags).length === 0) continue
+    if (pattern === BARE_SPACE_NUMBERED && tags.trackNumber && !ZERO_PADDED.test(tags.trackNumber))
+      continue
+    return tags
   }
   return {}
 }

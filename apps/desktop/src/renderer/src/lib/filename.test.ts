@@ -41,6 +41,15 @@ describe('parseFileName', () => {
     expect(r.title).toBe('Title')
   })
 
+  // A numeric-prefixed act ("4 Strings") must not be read as a track number + "Strings", or
+  // the Discogs query loses the real artist and returns unrelated releases.
+  it('keeps a numeric artist prefix out of the track number so the query stays accurate', () => {
+    const r = parseFileName('/m/4 Strings - Day Time (String Remix).flac')
+    expect(r.artist).toBe('4 Strings')
+    expect(r.title).toBe('Day Time (String Remix)')
+    expect(r.query).toBe('4 Strings Day Time (String Remix)')
+  })
+
   it('strips the extension and directory from the file name', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
