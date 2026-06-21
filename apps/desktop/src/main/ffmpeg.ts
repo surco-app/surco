@@ -387,11 +387,16 @@ function pcmCodec(probe: ProbeResult, endian: 'be' | 'le'): string {
 // software reads; everything else gets the ID3 names. Fields with no id3 name (rating)
 // are written by the TagLib pass instead, so they're skipped here, as are empty values.
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
+  // ffmpeg copies the source's global metadata into the re-encoded file by default,
+  // so every managed field is written even when blank: an empty `-metadata name=`
+  // clears the value the user emptied in the editor, which would otherwise resurface
+  // from the source. Unmanaged frames (anything outside TAG_FIELDS) are still carried
+  // over untouched. rating has no `id3`, so it stays preserve-on-empty (TagLib pass).
   return TAG_FIELDS.flatMap((field) => {
     if (!field.id3) return []
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
-    const value = meta[field.key] ?? ''
-    return value.trim() ? ['-metadata', `${name}=${value}`] : []
+    const value = (meta[field.key] ?? '').trim()
+    return ['-metadata', `${name}=${value}`]
   })
 }
 

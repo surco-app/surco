@@ -155,9 +155,15 @@ describe('convertArgs', () => {
     ).toBe(false)
   })
 
-  it('omits an advanced tag when it is blank', () => {
-    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', meta)
-    expect(args.some((a) => a.startsWith('TBPM'))).toBe(false)
+  it('writes a blank managed field as an empty tag so a re-encode clears the source value instead of inheriting it', () => {
+    // ffmpeg copies the source's global metadata into the re-encoded file by
+    // default (no -map_metadata needed), so a field the user emptied in the
+    // editor must be overridden with an empty tag — otherwise the original
+    // comment/BPM/etc. resurfaces. Covers both a generic key (comment) and a
+    // raw frame name (TBPM), which clear the carried-over value alike.
+    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', { ...meta, comment: '', bpm: '' })
+    expect(args).toContain('comment=')
+    expect(args).toContain('TBPM=')
   })
 
   it('sets the audio bitrate right after the codec when one is given', () => {
