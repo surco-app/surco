@@ -2,7 +2,11 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
-import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../shared/defaults'
+import {
+  DEFAULT_DISCOGS_MAX_RESULTS,
+  DEFAULT_FIELDS,
+  DEFAULT_REQUIRED_FIELDS,
+} from '../shared/defaults'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -12,6 +16,7 @@ const defaults: Settings = {
   discogsToken: '',
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
+  discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   // Search Discogs only by default; Bandcamp is opt-in (Settings → Search).
   searchProviders: ['discogs'],
   outputDir: join(app.getPath('music'), 'Surco'),

@@ -32,6 +32,7 @@ import type {
   Settings,
   TrackMetadata,
 } from '../../shared/types'
+import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../shared/defaults'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -1148,6 +1149,7 @@ export default function App(): React.JSX.Element {
                 visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
                 requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
                 discogsFormats={settings?.discogsFormats ?? EMPTY_FORMATS}
+                discogsMaxResults={settings?.discogsMaxResults ?? DEFAULT_DISCOGS_MAX_RESULTS}
                 searchProviders={settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS}
                 showSpectrum={settings?.showSpectrum ?? true}
                 showLoudness={settings?.showLoudness ?? true}

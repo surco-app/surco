@@ -1,10 +1,11 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../../../shared/autoMatch'
-import { DISCOGS_FORMATS } from '../../../../shared/defaults'
+import { DISCOGS_FORMATS, DISCOGS_MAX_RESULTS_OPTIONS } from '../../../../shared/defaults'
 import type { Settings } from '../../../../shared/types'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
+import { Select } from '../Select'
 
 // The catalog sources offered as search-provider checkboxes (Settings → Search).
 const SEARCH_PROVIDERS: Settings['searchProviders'] = ['discogs', 'bandcamp']
@@ -78,6 +79,18 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
               ? tr('settings.autoMatchHint')
               : tr('settings.autoMatchNeedsToken')}
         </p>
+      </div>
+
+      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+        <p className="mb-1.5 text-sm font-medium text-fg-muted">{tr('settings.maxResults')}</p>
+        <p className="mb-3 text-xs text-fg-dim">{tr('settings.maxResultsHint')}</p>
+        <Select
+          testid="settings-max-results"
+          label={tr('settings.maxResults')}
+          value={String(synced.discogsMaxResults)}
+          onChange={(v) => patch('discogsMaxResults', Number(v))}
+          options={DISCOGS_MAX_RESULTS_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+        />
       </div>
 
       <div className="mt-6 border-t border-[var(--color-line)] pt-5">

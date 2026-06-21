@@ -423,6 +423,8 @@
     "autoMatchNeedsSource": "Enable at least one search source to auto-match.",
     "discogsFormats": "Show only these formats",
     "discogsFormatsHint": "Limit Discogs results to these formats.",
+    "maxResults": "Maximum results",
+    "maxResultsHint": "How many search results to show. Fewer keeps the right release on screen instead of a long tail of compilations and reissues.",
     "searchProviders": "Search sources",
     "searchProvidersHint": "Catalogs the editor searches. Discogs is curated; Bandcamp adds self-released material.",
     "provider": {

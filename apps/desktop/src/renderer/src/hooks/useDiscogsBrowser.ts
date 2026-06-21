@@ -38,13 +38,6 @@ export interface DiscogsBrowser {
   previewRelease: (result: SearchResult) => void
 }
 
-// Cap on the rows shown per provider view: a broad query can return dozens, which is a
-// wall of noise to scan. The list is relevance-ranked (Discogs first), so the right release
-// sits near the top — and the auto-suggest probes the full result set independently (top 8),
-// so trimming the *displayed* list never costs a suggestion. Comfortably above that probe
-// window, with margin for a noisy tag whose match didn't rank #1.
-const MAX_RESULTS = 25
-
 function errorMessage(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback
 }
@@ -64,6 +57,10 @@ export function useDiscogsBrowser(
   // order is irrelevant. Defaults to Discogs so callers that don't pass it (tests) behave
   // as before.
   providers: SearchProviderId[] = ['discogs'],
+  // How many ranked results to show, from Settings. The auto-match probe scans the full
+  // set independently, so trimming the displayed list never costs a suggestion. Defaults
+  // high so callers that don't pass it (tests) keep their old behaviour.
+  maxResults = 25,
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
@@ -146,8 +143,8 @@ export function useDiscogsBrowser(
       (providerFilter === 'all'
         ? allResults
         : allResults.filter((r) => r.provider === providerFilter)
-      ).slice(0, MAX_RESULTS),
-    [allResults, providerFilter],
+      ).slice(0, maxResults),
+    [allResults, providerFilter, maxResults],
   )
 
   const { refetch: refetchSearch } = searchQuery

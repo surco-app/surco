@@ -27,6 +27,7 @@ export interface SyncedDraft {
   normalize: Settings['normalize']
   shortcutOverrides: Settings['shortcutOverrides']
   discogsFormats: string[]
+  discogsMaxResults: number
   searchProviders: Settings['searchProviders']
 }
 
@@ -44,6 +45,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     language: s.language,
     outputFormat: s.outputFormat,
     discogsFormats: s.discogsFormats,
+    discogsMaxResults: s.discogsMaxResults,
     searchProviders: s.searchProviders,
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,

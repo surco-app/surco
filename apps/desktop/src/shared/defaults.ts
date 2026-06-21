@@ -26,3 +26,10 @@ export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
 // need no translation table to compare against. ('File' is Discogs' name for digital.)
 export const DISCOGS_FORMATS = ['Vinyl', 'CD', 'File', 'Cassette'] as const
 export type DiscogsFormat = (typeof DISCOGS_FORMATS)[number]
+
+// How many search results the editor's results column shows by default, and the presets
+// offered in Settings → Search. Kept low so the relevant releases sit on screen instead of
+// a long noise tail of compilations/reissues; the auto-match probe scans the full set
+// independently, so trimming the displayed list never costs a suggestion.
+export const DEFAULT_DISCOGS_MAX_RESULTS = 10
+export const DISCOGS_MAX_RESULTS_OPTIONS = [5, 10, 15, 25, 50] as const

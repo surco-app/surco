@@ -102,6 +102,25 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
   })
 
+  // The cap is the user's Settings → Search "Maximum results" choice, threaded in so a DJ
+  // who wants a tighter list (less compilation/reissue noise) gets exactly that.
+  it('caps the displayed list to the configured maximum', async () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      provider: 'discogs' as const,
+      id: i + 1,
+      title: `Some Album ${i}`,
+    }))
+    setApi({ search: vi.fn().mockResolvedValue(many) })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs'], 10),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
+    expect(result.current.results).toHaveLength(10)
+    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
+  })
+
   // The source filter narrows the merged list to one catalog without re-searching, and
   // counts every source so the user can see (and pick) where results came from.
   it('filters the merged results to a single provider', async () => {
