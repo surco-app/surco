@@ -1,0 +1,103 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
+import { type Id3v2Tag, File as TagFile, TagTypes } from 'node-taglib-sharp'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({ app: { isPackaged: false } }))
+
+import type { TrackMetadata } from '../shared/types'
+import { convertAudio } from './ffmpeg'
+
+const FF = ffmpegStatic as unknown as string
+const dir = mkdtempSync(join(tmpdir(), 'surco-cues-'))
+const src = join(dir, 'in.aiff')
+
+const meta: TrackMetadata = {
+  title: 'Till I Come',
+  artist: 'ATB',
+  album: 'Movin Melodies',
+  albumArtist: 'ATB',
+  year: '1999',
+  genre: 'Trance',
+  grouping: '',
+  comment: '',
+  trackNumber: '2',
+  discNumber: '',
+  bpm: '138',
+  key: '9A',
+  publisher: 'Kontor',
+  catalogNumber: 'KON-123',
+  remixArtist: '',
+}
+
+// A raw ID3v2.3 tag carrying a single GEOB "TRAKTOR4" frame — exactly how Traktor
+// stores its cue points/beatgrid on disk. Written as raw bytes (not via TagLib's
+// UnknownFrame API, whose frames don't round-trip cleanly) so copyCueFrames clones
+// the real on-disk shape a converted file would actually carry.
+function id3WithCue(): Buffer {
+  const frame = (id: string, data: Buffer) => {
+    const head = Buffer.alloc(10)
+    head.write(id, 0, 'latin1')
+    head.writeUInt32BE(data.length, 4)
+    return Buffer.concat([head, data])
+  }
+  const geob = frame(
+    'GEOB',
+    Buffer.concat([
+      Buffer.from([0]),
+      Buffer.from('application/octet-stream', 'latin1'),
+      Buffer.from([0, 0]),
+      Buffer.from('TRAKTOR4', 'latin1'),
+      Buffer.from([0]),
+      Buffer.from('TRAKTORCUEBLOB', 'latin1'),
+    ]),
+  )
+  const syncsafe = (n: number) =>
+    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+  return Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(geob.length), geob])
+}
+
+// Appends an AIFF 'ID3 ' chunk holding the raw cue tag, fixing up the FORM size.
+function injectAiffCue(path: string): void {
+  const base = readFileSync(path)
+  const id3 = id3WithCue()
+  const body = id3.length % 2 ? Buffer.concat([id3, Buffer.from([0])]) : id3
+  const size = Buffer.alloc(4)
+  size.writeUInt32BE(id3.length)
+  const out = Buffer.concat([base, Buffer.from('ID3 '), size, body])
+  out.writeUInt32BE(out.length - 8, 4)
+  writeFileSync(path, out)
+}
+
+function hasCue(file: string): boolean {
+  const f = TagFile.createFromPath(file)
+  try {
+    const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (tag?.frames ?? []).some((fr) => fr.frameId.toString() === 'GEOB')
+  } finally {
+    f.dispose()
+  }
+}
+
+beforeAll(() => {
+  // A real, decodable integer-PCM AIFF so convertAudio's probe/re-encode runs for
+  // real, with a raw Traktor GEOB cue frame written into its ID3 chunk.
+  execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', src])
+  injectAiffCue(src)
+})
+
+describe('convertAudio cue preservation', () => {
+  // The reported bug: converting a cued track to another format is a plain
+  // re-encode (no loudness pass), and ffmpeg rebuilds the tag dropping Traktor's
+  // GEOB cue/beatgrid frame. The frame was only restored on the normalize path,
+  // so a straight format change silently lost every cue.
+  it('keeps the source GEOB cue frame when re-encoding to an ID3 target without normalizing', async () => {
+    expect(hasCue(src)).toBe(true)
+    const out = join(dir, 'out.mp3')
+    await convertAudio(src, out, 'mp3', meta)
+    expect(hasCue(out)).toBe(true)
+  })
+})

@@ -575,10 +575,13 @@ export async function convertAudio(
         // avoid a second tag pass on every conversion.
         await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
       }
-      // Normalizing forces this re-encode, which drops Traktor's GEOB cue/beatgrid
-      // frame. A constant gain never moves the cues in time, so carry the frame over
-      // from the source — but only for the ID3 containers it round-trips through.
-      if (normalizing && preservesCuesInPlace(ext))
+      // Any re-encode through ffmpeg drops Traktor's GEOB cue/beatgrid frame — a
+      // plain format change just as much as a normalizing gain pass. Neither moves
+      // the cues in time (a constant gain doesn't, and the decoded sample timeline
+      // is preserved across formats), so carry the frame over from the source for
+      // the ID3 containers it round-trips through, restoring cues on every encode
+      // rather than only when normalizing.
+      if (preservesCuesInPlace(ext))
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp })
     }
     await rename(tmp, output)
