@@ -650,11 +650,12 @@ export async function generateSpectrogram(input: string): Promise<string> {
         '-i',
         input,
         '-lavfi',
-        // cividis: a deep-navy → blue → yellow ramp. Its dark blue base sits naturally on
-        // the app's dark UI (and reads fine framed in the light theme), while the yellow
-        // peaks keep loud content legible. Bump the cache namespace when this changes so
-        // images cached under the old palette regenerate instead of showing stale colors.
-        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2',
+        // Emit a grayscale intensity map (loud = bright) and let the renderer recolor it
+        // with theme tokens, so the same image follows both the light and dark Tokyo Night
+        // palettes. cividis grays to a monotonic ramp, so its luminance still tracks
+        // amplitude cleanly. Bump the cache namespace when this changes so images cached
+        // under the old palette regenerate instead of showing stale colors.
+        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2,format=gray',
         out,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS },

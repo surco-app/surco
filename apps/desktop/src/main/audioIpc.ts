@@ -60,10 +60,10 @@ export function registerAudioIpc(): void {
       } = await cachedAnalysis(
         // Namespace carries the palette and the cutoff-algorithm generation, so
         // changing either invalidates entries cached under the previous one — they
-        // regenerate on next open instead of serving stale colors or verdicts. v6
-        // adds the flat-HF-shelf signal (software-regenerated highs), so older
-        // entries regenerate.
-        'spectrogram-cividis-v6',
+        // regenerate on next open instead of serving stale colors or verdicts. v7
+        // switches the image to a grayscale intensity map (recolored per theme in the
+        // renderer), so older colored entries regenerate.
+        'spectrogram-mono-v7',
         inputPath,
         () =>
           analysisLimiter.run(
