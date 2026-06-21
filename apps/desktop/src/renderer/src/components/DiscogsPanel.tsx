@@ -87,11 +87,13 @@ export function DiscogsPanel({
   const providerTotal = providerCounts.reduce((n, p) => n + p.count, 0)
   const showProviderFilter = providerCounts.length > 1 && providerTotal > 0
 
-  // Arrow-key navigation through the results, so picking a release is keyboard-only once
-  // ⌘2 lands focus here: ↑/↓ rove the result rows and the expanded release's tracks (in DOM
-  // order, so a track sits right after the release it belongs to), while Enter/Space on the
-  // focused button natively expands a release or applies a track. ↑ off the top row returns
-  // to the search box; the box's ↓ dives back into the first result.
+  // Keyboard navigation through the results, so picking a release is keyboard-only once
+  // ⌘2 lands focus here: ↑/↓ (and the j/k vim aliases, matching the track list) rove the
+  // result rows and the expanded release's tracks (in DOM order, so a track sits right after
+  // the release it belongs to), while Enter/Space on the focused button natively expands a
+  // release or applies a track. ↑/k off the top row returns to the search box; the box's ↓
+  // dives back into the first result. Handling j/k here (and preventing default) stops them
+  // leaking to the global handler, which would otherwise move the track list behind this column.
   const resultsRef = useRef<HTMLDivElement>(null)
   const moveResultFocus = useCallback(
     (to: -1 | 1 | 'first' | 'last'): void => {
@@ -119,7 +121,7 @@ export function DiscogsPanel({
     [searchInputRef],
   )
   function onResultsKeyDown(e: React.KeyboardEvent): void {
-    const map = { ArrowDown: 1, ArrowUp: -1, Home: 'first', End: 'last' } as const
+    const map = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1, Home: 'first', End: 'last' } as const
     const to = map[e.key as keyof typeof map]
     if (to === undefined) return
     e.preventDefault()

@@ -616,6 +616,23 @@ describe('Editor Discogs loading skeleton', () => {
     fireEvent.keyDown(results[0], { key: 'ArrowUp' })
     expect(search).toHaveFocus()
   })
+
+  // j/k mirror ↑/↓ inside this column (matching the track list's vim aliases) instead of
+  // leaking to the global handler and moving the list behind the column being browsed.
+  it('roves the results with the j/k vim keys too', async () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.search = vi.fn(async () => [
+      { provider: 'discogs', id: 1, title: 'First Release' },
+      { provider: 'discogs', id: 2, title: 'Second Release' },
+    ])
+    renderEditor({ id: 'a', query: 'artist song' })
+    const results = await screen.findAllByTestId('discogs-result')
+
+    results[0].focus()
+    fireEvent.keyDown(results[0], { key: 'j' })
+    expect(results[1]).toHaveFocus()
+    fireEvent.keyDown(results[1], { key: 'k' })
+    expect(results[0]).toHaveFocus()
+  })
 })
 
 describe('Editor embedded cover size', () => {
