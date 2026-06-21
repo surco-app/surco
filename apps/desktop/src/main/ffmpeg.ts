@@ -524,11 +524,16 @@ export async function convertAudio(
   // filter only ever rides the encode path — planConversion is told to skip the
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
+  // The loudnorm sampleRate read and planConversion's PCM-width read probe the same
+  // file, so share one probe between them instead of spawning ffprobe twice per
+  // normalized AIFF/WAV conversion.
+  let probed: Promise<ProbeResult> | undefined
+  const probeOnce = (file: string): Promise<ProbeResult> => (probed ??= probeAudio(file))
   // loudnorm emits 192 kHz; pass the source rate so the filter can resample back.
   // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
   const sampleRate =
     normalize?.mode === 'loudness'
-      ? Number((await probeAudio(input)).sampleRate) || undefined
+      ? Number((await probeOnce(input)).sampleRate) || undefined
       : undefined
   const audioFilter = normalizing
     ? ((await normalizeFilter(input, normalize, sampleRate)) ?? undefined)
@@ -537,7 +542,7 @@ export async function convertAudio(
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
   const normalizeSkipped = normalizing && audioFilter === undefined
-  const { codec, bitrate, ext } = await planConversion(input, format, probeAudio, normalizing)
+  const { codec, bitrate, ext } = await planConversion(input, format, probeOnce, normalizing)
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
   try {
