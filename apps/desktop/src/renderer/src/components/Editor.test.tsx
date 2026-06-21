@@ -589,6 +589,33 @@ describe('Editor Discogs loading skeleton', () => {
     settle([])
     await waitFor(() => expect(screen.queryByTestId('discogs-skeleton')).toBeNull())
   })
+
+  // After ⌘2 lands focus in this column, choosing a release must be keyboard-only: ↓ from
+  // the search box dives into the results, ↑/↓ rove between them, and ↑ off the top row
+  // returns to the search box. (Enter/Space activation stays the buttons' own native job.)
+  it('roves the search results with the arrow keys for a keyboard-only pick', async () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.search = vi.fn(async () => [
+      { provider: 'discogs', id: 1, title: 'First Release' },
+      { provider: 'discogs', id: 2, title: 'Second Release' },
+    ])
+    renderEditor({ id: 'a', query: 'artist song' })
+    const results = await screen.findAllByTestId('discogs-result')
+    expect(results).toHaveLength(2)
+
+    const search = screen.getByTestId('discogs-query')
+    search.focus()
+    fireEvent.keyDown(search, { key: 'ArrowDown' })
+    expect(results[0]).toHaveFocus()
+
+    fireEvent.keyDown(results[0], { key: 'ArrowDown' })
+    expect(results[1]).toHaveFocus()
+
+    fireEvent.keyDown(results[1], { key: 'ArrowUp' })
+    expect(results[0]).toHaveFocus()
+
+    fireEvent.keyDown(results[0], { key: 'ArrowUp' })
+    expect(search).toHaveFocus()
+  })
 })
 
 describe('Editor embedded cover size', () => {

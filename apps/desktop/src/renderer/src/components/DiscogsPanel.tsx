@@ -87,6 +87,45 @@ export function DiscogsPanel({
   const providerTotal = providerCounts.reduce((n, p) => n + p.count, 0)
   const showProviderFilter = providerCounts.length > 1 && providerTotal > 0
 
+  // Arrow-key navigation through the results, so picking a release is keyboard-only once
+  // ⌘2 lands focus here: ↑/↓ rove the result rows and the expanded release's tracks (in DOM
+  // order, so a track sits right after the release it belongs to), while Enter/Space on the
+  // focused button natively expands a release or applies a track. ↑ off the top row returns
+  // to the search box; the box's ↓ dives back into the first result.
+  const resultsRef = useRef<HTMLDivElement>(null)
+  const moveResultFocus = useCallback(
+    (to: -1 | 1 | 'first' | 'last'): void => {
+      const items = Array.from(
+        resultsRef.current?.querySelectorAll<HTMLElement>(
+          '[data-testid="discogs-result"], [data-testid="discogs-track"]',
+        ) ?? [],
+      )
+      if (items.length === 0) return
+      if (to === 'first') {
+        items[0].focus()
+        return
+      }
+      if (to === 'last') {
+        items[items.length - 1].focus()
+        return
+      }
+      const current = items.indexOf(document.activeElement as HTMLElement)
+      if (to === -1 && current <= 0) {
+        searchInputRef.current?.focus()
+        return
+      }
+      items[current < 0 ? 0 : Math.min(items.length - 1, current + to)]?.focus()
+    },
+    [searchInputRef],
+  )
+  function onResultsKeyDown(e: React.KeyboardEvent): void {
+    const map = { ArrowDown: 1, ArrowUp: -1, Home: 'first', End: 'last' } as const
+    const to = map[e.key as keyof typeof map]
+    if (to === undefined) return
+    e.preventDefault()
+    moveResultFocus(to)
+  }
+
   return (
     <>
       <div
@@ -103,7 +142,15 @@ export function DiscogsPanel({
               data-testid="discogs-query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') doSearch()
+                // ↓ from the search box dives into the results, so search → pick is one
+                // continuous keyboard motion.
+                else if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  moveResultFocus('first')
+                }
+              }}
               aria-label={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
               className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-xs outline-none focus:border-[var(--color-accent)]"
@@ -168,7 +215,12 @@ export function DiscogsPanel({
           )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard roving for the result/track buttons inside; they keep their own native Enter/Space activation and Tab order */}
+        <div
+          ref={resultsRef}
+          onKeyDown={onResultsKeyDown}
+          className="min-h-0 flex-1 overflow-y-auto"
+        >
           {busy && results.length === 0 ? (
             // Searching with nothing to show yet: skeleton rows mirror the result-row
             // shape so the list doesn't pop into an area that looked idle.
