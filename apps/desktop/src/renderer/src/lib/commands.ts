@@ -286,13 +286,17 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.processCurrent'),
       hint: hintFor('process-current'),
       enabled: canProcessSelected,
-      run: () =>
-        selected &&
+      run: () => {
+        if (!selected) return
         processOne(
           selected.id,
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
-        ),
+        )
+        // Convert-and-advance: the conversion runs in the background, so move straight to
+        // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
+        moveSelection(1)
+      },
     },
     {
       id: 'process-all',

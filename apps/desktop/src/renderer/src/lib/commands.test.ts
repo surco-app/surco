@@ -196,6 +196,22 @@ describe('runCommand', () => {
   })
 })
 
+describe('buildCommands convert-and-advance', () => {
+  // ⌘⏎ kicks off the current track's conversion (which runs in the background) and moves
+  // to the next track, so the shortcut works through the crate without a manual step.
+  it('processes the selected track then advances the selection', () => {
+    const processOne = vi.fn()
+    const moveSelection = vi.fn()
+    const cmd = commandById(
+      makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
+      'process-current',
+    )
+    cmd.run()
+    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined)
+    expect(moveSelection).toHaveBeenCalledWith(1)
+  })
+})
+
 describe('buildCommands platform-gated entries', () => {
   // The "add to Apple Music" command is the only one whose enabled state turns on the
   // host OS: the Music AppleScript bridge is macOS-only. These pin that gate so a future
