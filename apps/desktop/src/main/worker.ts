@@ -1,8 +1,22 @@
+import os from 'node:os'
 import type { TransferListItem } from 'node:worker_threads'
-import { createWorkerClient, type WorkerClient } from './workerClient'
+import { createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
 let clientPromise: Promise<WorkerClient | null> | null = null
+
+// How many DSP worker threads run in parallel. A quarter of the logical cores (min
+// one): the analysis ffmpeg decodes already claim up to half the cores through
+// analysisLimiter, and DSP runs right after each decode, so a quarter leaves the
+// machine room for ffmpeg, the audio element and the UI rather than oversubscribing
+// every core. Derived per machine from the core count — a 4-core laptop gets 1 (the
+// pre-pool single worker), a 16-core desktop gets 4. SURCO_DSP_WORKERS overrides it
+// for diagnosing a specific machine without a settings knob the user can't reason about.
+function poolSize(): number {
+  const override = Number(process.env.SURCO_DSP_WORKERS)
+  if (Number.isInteger(override) && override >= 1) return override
+  return Math.max(1, Math.floor(os.cpus().length / 4))
+}
 
 // The ?nodeWorker import is dynamic so plain Node tooling (vitest) never has to
 // apply the electron-vite-only module transform; the bundler still sees a literal
@@ -11,7 +25,9 @@ let clientPromise: Promise<WorkerClient | null> | null = null
 // which is exactly the pre-worker behavior the integration tests exercise.
 function getClient(): Promise<WorkerClient | null> {
   clientPromise ??= import('./analysisWorker?nodeWorker').then((mod) =>
-    typeof mod.default === 'function' ? createWorkerClient(() => mod.default({})) : null,
+    typeof mod.default === 'function'
+      ? createWorkerPool(() => mod.default({}), poolSize())
+      : null,
   )
   return clientPromise
 }

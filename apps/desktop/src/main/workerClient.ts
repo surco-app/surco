@@ -85,3 +85,48 @@ export function createWorkerClient(spawn: () => Worker): WorkerClient {
     },
   }
 }
+
+// A fixed set of single-worker clients sharing one newest-first queue: the DSP a
+// folder sweep stacks up (bpm/key/shelf per track) ran serially through one worker
+// while every other core sat idle, so a hundred tracks crunched one at a time. The
+// pool dispatches each waiting job to whichever worker is free, running up to `size`
+// in parallel. Each slot reuses createWorkerClient untouched — its lazy spawn (no
+// thread until a job lands), reuse and respawn-on-death — and because a slot is only
+// handed a job while idle, the client's own queue never holds more than its one
+// in-flight job; the LIFO ordering lives here at the pool level instead. size <= 1
+// returns the bare client so a small machine sees the exact pre-pool behavior.
+export function createWorkerPool(spawn: () => Worker, size: number): WorkerClient {
+  if (size <= 1) return createWorkerClient(spawn)
+  const slots = Array.from({ length: size }, () => ({
+    client: createWorkerClient(spawn),
+    busy: false,
+  }))
+  const queue: Queued[] = []
+
+  function dispatch(): void {
+    if (queue.length === 0) return
+    const slot = slots.find((s) => !s.busy)
+    if (!slot) return
+    // LIFO: the most recent submission is what the user is looking at right now.
+    const next = queue.pop() as Queued
+    slot.busy = true
+    slot.client
+      .run(next.job, next.transfer)
+      .then(next.resolve, next.reject)
+      // Free the slot whether the job resolved or the worker died, then pull the
+      // next waiter — one crashed decode must never strand its worker as busy.
+      .finally(() => {
+        slot.busy = false
+        dispatch()
+      })
+  }
+
+  return {
+    run(job, transfer) {
+      return new Promise((resolve, reject) => {
+        queue.push({ job, transfer, resolve, reject })
+        dispatch()
+      })
+    },
+  }
+}
