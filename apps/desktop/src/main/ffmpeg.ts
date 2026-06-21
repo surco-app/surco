@@ -87,6 +87,17 @@ const run = (async (file: string, args: string[], opts?: unknown) => {
   }
 }) as typeof execFileAsync
 
+// A stalled network mount (an SMB share that stops responding mid-read) makes an
+// ffmpeg/ffprobe decode block forever. Without a bound, the analysisLimiter slot — and
+// the renderer's quality-sweep slot awaiting it — never frees, so the whole "Analizar
+// calidad" sweep freezes mid-run while CPU falls to idle. execFile's own timeout kills
+// the child (SIGTERM) and rejects, so the hung file is dropped and the sweep moves on.
+// Generous on purpose: a working decode of a long track over a slow-but-alive drive
+// still finishes well under this, while a true stall is effectively infinite. Only the
+// analysis reads carry it — conversions can legitimately run for minutes, so they keep
+// their unbounded behavior.
+const ANALYSIS_TIMEOUT_MS = 120_000
+
 interface ProbeTags {
   format?: { tags?: Record<string, unknown> }
   streams?: { codec_type?: string; tags?: Record<string, unknown> }[]
@@ -127,15 +138,11 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
 // (which runs this alongside readTags/readCover).
 export async function probeDuration(input: string): Promise<number | null> {
   try {
-    const { stdout } = await run(ffprobePath, [
-      '-v',
-      'error',
-      '-show_entries',
-      'format=duration',
-      '-of',
-      'json',
-      input,
-    ])
+    const { stdout } = await run(
+      ffprobePath,
+      ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', input],
+      { timeout: ANALYSIS_TIMEOUT_MS },
+    )
     const seconds = Number(JSON.parse(stdout).format?.duration)
     return Number.isFinite(seconds) ? seconds : null
   } catch {
@@ -144,15 +151,19 @@ export async function probeDuration(input: string): Promise<number | null> {
 }
 
 export async function readTags(input: string): Promise<TrackMetadata> {
-  const { stdout } = await run(ffprobePath, [
-    '-v',
-    'error',
-    '-show_entries',
-    'format_tags:stream_tags:stream=codec_type',
-    '-of',
-    'json',
-    input,
-  ])
+  const { stdout } = await run(
+    ffprobePath,
+    [
+      '-v',
+      'error',
+      '-show_entries',
+      'format_tags:stream_tags:stream=codec_type',
+      '-of',
+      'json',
+      input,
+    ],
+    { timeout: ANALYSIS_TIMEOUT_MS },
+  )
   return tagsFromProbe(JSON.parse(stdout))
 }
 
@@ -261,17 +272,21 @@ interface ProbeResult {
 }
 
 export async function probeAudio(input: string): Promise<ProbeResult> {
-  const { stdout } = await run(ffprobePath, [
-    '-v',
-    'error',
-    '-select_streams',
-    'a:0',
-    '-show_entries',
-    'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
-    '-of',
-    'json',
-    input,
-  ])
+  const { stdout } = await run(
+    ffprobePath,
+    [
+      '-v',
+      'error',
+      '-select_streams',
+      'a:0',
+      '-show_entries',
+      'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
+      '-of',
+      'json',
+      input,
+    ],
+    { timeout: ANALYSIS_TIMEOUT_MS },
+  )
   const stream = JSON.parse(stdout).streams?.[0] ?? {}
   return {
     sampleFmt: stream.sample_fmt ?? 's16',
@@ -326,17 +341,21 @@ export function propertiesFromProbe(
 }
 
 export async function probeProperties(input: string): Promise<TrackProperties> {
-  const { stdout } = await run(ffprobePath, [
-    '-v',
-    'error',
-    '-select_streams',
-    'a:0',
-    '-show_entries',
-    'stream=codec_name,bits_per_raw_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
-    '-of',
-    'json',
-    input,
-  ])
+  const { stdout } = await run(
+    ffprobePath,
+    [
+      '-v',
+      'error',
+      '-select_streams',
+      'a:0',
+      '-show_entries',
+      'stream=codec_name,bits_per_raw_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
+      '-of',
+      'json',
+      input,
+    ],
+    { timeout: ANALYSIS_TIMEOUT_MS },
+  )
   const [s, tagFormats] = await Promise.all([stat(input), readTagFormats(input).catch(() => [])])
   return propertiesFromProbe(
     JSON.parse(stdout),
@@ -616,21 +635,25 @@ export async function stripFlacPicture(input: string, output: string): Promise<v
 export async function generateSpectrogram(input: string): Promise<string> {
   const out = join(tmpdir(), tmpName('spec', 'png'))
   try {
-    await run(ffmpegPath, [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-y',
-      '-i',
-      input,
-      '-lavfi',
-      // cividis: a deep-navy → blue → yellow ramp. Its dark blue base sits naturally on
-      // the app's dark UI (and reads fine framed in the light theme), while the yellow
-      // peaks keep loud content legible. Bump the cache namespace when this changes so
-      // images cached under the old palette regenerate instead of showing stale colors.
-      'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2',
-      out,
-    ])
+    await run(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-y',
+        '-i',
+        input,
+        '-lavfi',
+        // cividis: a deep-navy → blue → yellow ramp. Its dark blue base sits naturally on
+        // the app's dark UI (and reads fine framed in the light theme), while the yellow
+        // peaks keep loud content legible. Bump the cache namespace when this changes so
+        // images cached under the old palette regenerate instead of showing stale colors.
+        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2',
+        out,
+      ],
+      { timeout: ANALYSIS_TIMEOUT_MS },
+    )
     const buf = await readFile(out)
     return `data:image/png;base64,${buf.toString('base64')}`
   } finally {
@@ -755,7 +778,7 @@ export async function analyzeCutoff(
       'null',
       '-',
     ],
-    { maxBuffer: 1024 * 1024 * 16 },
+    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS },
   )
   const rms = parseBands(stdout)
   const bands = freqs.map((freqHz) => ({
@@ -879,7 +902,7 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
       'null',
       '-',
     ],
-    { maxBuffer: 1024 * 1024 * 16 },
+    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS },
   )
   const loud = parseLoudness(stderr)
   if (!loud) return null
@@ -908,6 +931,7 @@ async function decodePcm(
   const { stdout } = await run(ffmpegPath, args, {
     encoding: 'buffer',
     maxBuffer: 1024 * 1024 * opts.maxBufferMb,
+    timeout: ANALYSIS_TIMEOUT_MS,
   })
   const bytes = stdout.length - (stdout.length % 4)
   const pcm = new Uint8Array(bytes)
