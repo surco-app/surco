@@ -33,31 +33,33 @@ function isHidden(name: string): boolean {
 // silently discards, so here we replace each directory with the audio files it
 // contains (recursing into subfolders) and pass plain files through untouched.
 // The renderer still runs its own extension/dedupe filter on the result.
+// Walk the dropped paths concurrently rather than one after another: the renderer awaits
+// this whole walk before the first track row appears, and on a deep or network (SMB)
+// folder a serial walk adds up every directory's round-trip latency, leaving the list
+// empty for seconds. Promise.all resolves in input order, so the result order is
+// identical to a serial walk — only the wall-clock collapses. Fan-out is bounded by the
+// tree's directory count, which is modest for a music library.
 export async function expandPaths(paths: string[]): Promise<string[]> {
-  const out: string[] = []
-  for (const p of paths) {
-    const info = await stat(p).catch(() => null)
-    if (!info) continue
-    if (info.isDirectory()) {
-      out.push(...(await collectAudio(p)))
-    } else if (!isHidden(basename(p))) {
-      out.push(p)
-    }
-  }
-  return out
+  const expanded = await Promise.all(
+    paths.map(async (p) => {
+      const info = await stat(p).catch(() => null)
+      if (!info) return []
+      if (info.isDirectory()) return collectAudio(p)
+      return isHidden(basename(p)) ? [] : [p]
+    }),
+  )
+  return expanded.flat()
 }
 
 async function collectAudio(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const out: string[] = []
-  for (const entry of entries) {
-    if (isHidden(entry.name)) continue
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      out.push(...(await collectAudio(full)))
-    } else if (AUDIO_EXTS.has(extname(entry.name).toLowerCase())) {
-      out.push(full)
-    }
-  }
-  return out
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      if (isHidden(entry.name)) return []
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) return collectAudio(full)
+      return AUDIO_EXTS.has(extname(entry.name).toLowerCase()) ? [full] : []
+    }),
+  )
+  return nested.flat()
 }
