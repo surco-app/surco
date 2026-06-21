@@ -384,7 +384,8 @@
       "unbound": "Unassigned",
       "reset": "Reset to default",
       "resetAll": "Reset all",
-      "conflict": "Two commands share a shortcut. Resolve it to save."
+      "conflict": "Two commands share a shortcut. Resolve it to save.",
+      "fixedNav": "Always on (not rebindable): ↑↓ or j / k move through the track list and the Discogs results, Home / End jump to the ends, and Page Up / Down move a page at a time."
     },
     "stats": {
       "count": "conversions",

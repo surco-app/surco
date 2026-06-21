@@ -113,6 +113,12 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           )
         })}
       </div>
+      {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
+          Up/Down), so they don't get an editable row above — name them here so they're still
+          discoverable rather than hidden. */}
+      <p data-testid="shortcuts-fixed-nav" className="mt-3 text-xs text-fg-dim">
+        {tr('settings.shortcuts.fixedNav')}
+      </p>
       {conflictIds.size > 0 && (
         <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
           {tr('settings.shortcuts.conflict')}
