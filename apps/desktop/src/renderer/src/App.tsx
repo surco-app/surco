@@ -830,6 +830,20 @@ export default function App(): React.JSX.Element {
   // O(N) per evaluation, so computed once per tracksView instead of inline in JSX.
   const allAnalyzed = useMemo(() => tracksView.every((t) => Boolean(t.spectrum)), [tracksView])
 
+  // Move keyboard focus between the three columns. The targets are found by their stable
+  // data-testid (the same approach the Discogs panel already uses for autofit) rather than
+  // threading a ref down through Editor → DiscogsPanel/MetadataForm: list = the roving tab
+  // stop, matches = the first Discogs result (or its search box), editor = the title field.
+  const focusList = (): void =>
+    document.querySelector<HTMLElement>('[data-testid="track-row"][tabindex="0"]')?.focus()
+  const focusMatches = (): void =>
+    (
+      document.querySelector<HTMLElement>('[data-testid="discogs-result"]') ??
+      document.querySelector<HTMLElement>('[data-testid="discogs-query"]')
+    )?.focus()
+  const focusEditor = (): void =>
+    document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
+
   // The command registry is data, rebuilt from the current state each time it's read.
   // Built lazily through a stable getter (rather than every render) because its only
   // readers are rare: a fired menu/keyboard command, and the palette while it's open.
@@ -861,6 +875,9 @@ export default function App(): React.JSX.Element {
       moveSelection,
       jumpSelection,
       pageSelection,
+      focusList,
+      focusMatches,
+      focusEditor,
       togglePlay,
       processOne: convertSelected,
       askConvertAll,

@@ -107,6 +107,16 @@ describe('keyToCommandId', () => {
     expect(press(key('PageDown'), true)).toBeNull()
   })
 
+  // ⌘1/⌘2/⌘3 (Ctrl on Windows) jump focus between the three columns — list, Discogs
+  // matches, editor. They're mod-combos, so they fire even while a field is focused (you
+  // jump out of the editor with the same key you jump in).
+  it('jumps between columns with mod+1/2/3, even while typing', () => {
+    expect(press(key('1', { metaKey: true }), false)).toBe('focus-list')
+    expect(press(key('2', { metaKey: true }), false)).toBe('focus-matches')
+    expect(press(key('3', { metaKey: true }), false)).toBe('focus-editor')
+    expect(press(key('3', { metaKey: true }), true)).toBe('focus-editor')
+  })
+
   it('removes the track on ⌘⌫ only when not typing, so editing a field is safe', () => {
     expect(press(key('Backspace', { metaKey: true }), false)).toBe('remove')
     expect(press(key('Backspace', { metaKey: true }), true)).toBeNull()

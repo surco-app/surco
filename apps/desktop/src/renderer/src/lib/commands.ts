@@ -99,6 +99,10 @@ export interface CommandDeps {
   moveSelection: (delta: number) => void
   jumpSelection: (to: 'first' | 'last') => void
   pageSelection: (dir: -1 | 1) => void
+  // Move keyboard focus between the three columns (list / Discogs matches / editor).
+  focusList: () => void
+  focusMatches: () => void
+  focusEditor: () => void
   togglePlay: () => void
   processOne: (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => unknown
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
@@ -145,6 +149,9 @@ export function buildCommands(deps: CommandDeps): Command[] {
     moveSelection,
     jumpSelection,
     pageSelection,
+    focusList,
+    focusMatches,
+    focusEditor,
     togglePlay,
     processOne,
     askConvertAll,
@@ -249,6 +256,30 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('search'),
       enabled: !!selected,
       run: () => searchInputRef.current?.focus(),
+    },
+    {
+      // Jump focus to the track list (the selected row).
+      id: 'focus-list',
+      title: tr('commands.focusList'),
+      hint: hintFor('focus-list'),
+      enabled: visibleTracks.length > 0,
+      run: focusList,
+    },
+    {
+      // Jump focus to the Discogs matches column (first result, else the search box).
+      id: 'focus-matches',
+      title: tr('commands.focusMatches'),
+      hint: hintFor('focus-matches'),
+      enabled: !!selected,
+      run: focusMatches,
+    },
+    {
+      // Jump focus to the editor column (the first metadata field).
+      id: 'focus-editor',
+      title: tr('commands.focusEditor'),
+      hint: hintFor('focus-editor'),
+      enabled: !!selected,
+      run: focusEditor,
     },
     {
       id: 'process-current',
