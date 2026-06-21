@@ -146,7 +146,7 @@ export function Select({
   )
 
   return (
-    <div className={`relative ${fullWidth ? 'w-full' : 'shrink-0'}`}>
+    <div className={`relative min-w-0 ${fullWidth ? 'w-full' : ''}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -155,12 +155,10 @@ export function Select({
         aria-expanded={open}
         aria-label={label}
         onClick={toggle}
-        className={`flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${fullWidth ? 'w-full' : ''}`}
+        className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
-        <span className={fullWidth ? 'min-w-0 flex-1 truncate text-left' : ''}>
-          {selected?.label}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-left">{selected?.label}</span>
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
       </button>
       {open && (
