@@ -1,4 +1,5 @@
 import {
+  Check,
   CircleCheck,
   type LucideIcon,
   Music,
@@ -48,11 +49,35 @@ interface Props {
 
 type MenuState = { track: TrackItem; x: number; y: number }
 
+// Only the live/problem states reach this map now: idle renders nothing and done gets its
+// own check badge below. Kept exhaustive so the lookup stays total over TrackStatus.
 const statusColor: Record<TrackStatus, string> = {
   idle: 'bg-fg-faint',
   processing: 'bg-warn animate-pulse',
   done: 'bg-good',
   error: 'bg-danger',
+}
+
+const badgeBase =
+  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)]'
+
+function StatusBadge({ track }: { track: TrackItem }): React.JSX.Element | null {
+  // Stale wins over done: a converted track edited afterwards shows steady amber (unlike the
+  // processing pulse) so pending Updates stay visible and can be batched for later.
+  if (isStale(track)) return <span className={`${badgeBase} bg-warn`} />
+  // done lands as a check on a Tokyo Night accent coin — an unmistakable "converted" mark,
+  // set apart from the round transient/problem dots by its shape. The check uses the ink token
+  // so it keeps contrast on the accent in both the light and dark themes.
+  if (track.status === 'done')
+    return (
+      <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-panel)]">
+        <Check aria-hidden className="h-2.5 w-2.5 text-[var(--color-ink)]" strokeWidth={3} />
+      </span>
+    )
+  // idle is the default for nearly every imported row, so a constant grey dot says nothing; a
+  // clean corner now reads as "not converted yet" and lets the live states stand out.
+  if (track.status === 'idle') return null
+  return <span className={`${badgeBase} ${statusColor[track.status]}`} />
 }
 
 // The quality verdict reads as a distinct severity glyph, not a second colored dot, so it
@@ -228,13 +253,7 @@ const TrackRow = memo(function TrackRow({
               <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
             </span>
           )}
-          {/* A done track edited afterwards shows amber (steady, unlike the processing
-              pulse) so pending Updates stay visible and can safely be batched for later. */}
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)] ${
-              isStale(t) ? 'bg-warn' : statusColor[t.status]
-            }`}
-          />
+          <StatusBadge track={t} />
           <Tooltip
             label={tr(isStale(t) ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
             align="start"
