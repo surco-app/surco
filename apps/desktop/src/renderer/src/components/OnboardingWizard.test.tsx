@@ -19,6 +19,7 @@ const settings: Settings = {
   language: 'system',
   discogsToken: '',
   discogsFormats: [],
+  discogsMaxResults: 10,
   searchProviders: ['discogs'],
   outputDir: '/out',
   outputFormat: 'aiff',

@@ -43,6 +43,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     language: 'system',
     discogsToken: '',
     discogsFormats: [],
+    discogsMaxResults: 10,
     searchProviders: ['discogs'],
     outputDir: '',
     outputFormat: 'aiff',
