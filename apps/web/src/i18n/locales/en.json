@@ -530,6 +530,18 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.22",
+        "date": "June 21, 2026",
+        "title": "Convert without losing your cues or your tags",
+        "items": [
+          "Converting to any format now keeps Traktor's cue points and beatgrid, not just when normalizing the volume.",
+          "Conversion now respects metadata fields you've cleared: delete a comment or other value and the original no longer comes back.",
+          "New track-row indicators: the quality verdict shows as a severity icon, and already-converted tracks get a blue check badge.",
+          "Tracks show up sooner when you drop large or networked folders, and a stalled network file no longer freezes the quality analysis.",
+          "More accurate Discogs lookups when a track's name starts with a number."
+        ]
+      },
+      {
         "version": "0.21",
         "date": "June 21, 2026",
         "title": "Run the whole flow from the keyboard",
