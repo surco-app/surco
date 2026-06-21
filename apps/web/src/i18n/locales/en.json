@@ -530,6 +530,17 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.21",
+        "date": "June 21, 2026",
+        "title": "Run the whole flow from the keyboard",
+        "items": [
+          "The whole workflow is now keyboard-driven: jump between the track list, the search results and the editor, move and page through the list, pick a Discogs or Bandcamp release with the arrow keys, and convert-and-move-on to the next track — all without the mouse.",
+          "The command palette now jumps straight to any track — start typing its title or artist to find it.",
+          "Tidier search results: a configurable maximum, with compilations pushed down and the most-owned pressing floated up, so the right release is easier to spot.",
+          "Hiding the player's waveform now keeps the volume, the elapsed and total time, and a seek bar — so you never lose your place."
+        ]
+      },
+      {
         "version": "0.20",
         "date": "June 20, 2026",
         "title": "Filter your search results by source",
