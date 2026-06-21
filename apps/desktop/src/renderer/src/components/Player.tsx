@@ -8,7 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
@@ -172,6 +172,8 @@ export function Player({
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
   const cardRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const sectionHeightRef = useRef<number | undefined>(undefined)
   // The volume and time pills only surface while the pointer is over the card, then
   // fade back out, so the resting player stays just cover + name + controls + wave.
   const [hovered, setHovered] = useState(false)
@@ -189,6 +191,31 @@ export function Player({
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [onAdjustVolume])
+
+  // The tall waveform strip and the slim transport row are different heights, so flipping
+  // the preference would jump the card. Tween the section's height from its last measured
+  // value to the new content height; the .player-section class carries the transition so
+  // prefers-reduced-motion (index.css) can neutralise it. Clearing height before measuring
+  // keeps the target correct when the toggle is spammed mid-animation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the body reads only refs; showWaveform is the trigger — the height must re-tween exactly when the layout swaps, not on every clock re-render.
+  useLayoutEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    el.style.height = ''
+    const next = el.scrollHeight
+    const prev = sectionHeightRef.current
+    sectionHeightRef.current = next
+    if (prev === undefined || prev === next) return
+    el.style.height = `${prev}px`
+    void el.scrollHeight
+    el.style.height = `${next}px`
+    const settle = (): void => {
+      el.style.height = ''
+      el.removeEventListener('transitionend', settle)
+    }
+    el.addEventListener('transitionend', settle)
+    return () => el.removeEventListener('transitionend', settle)
+  }, [showWaveform])
 
   return (
     <div
@@ -292,64 +319,67 @@ export function Player({
           corners) so the whole width is scrubbable. The volume and clock float over its
           corners as pills that fade in on hover; pointer-events-none lets a click (or a
           wheel) underneath still reach the wave. Hidden by the toggle, the whole strip is
-          unmounted so its full-file decode never runs — the point of the preference. */}
-      {showWaveform ? (
-        <div className="relative mt-2">
-          <Waveform
-            key={track.inputPath}
-            inputPath={track.inputPath}
-            audioRef={audioRef}
-            active
-            audioDurationSec={duration}
-            onScrub={onScrub}
-          />
-          <span
-            data-testid="player-volume"
-            className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-              hovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <Volume2 className="h-3 w-3" aria-hidden="true" />
-            {Math.round(volume * 100)}%
-          </span>
-          <span
-            data-testid="player-time"
-            className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-              hovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-        </div>
-      ) : (
-        // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
-        // the clock — the info the waveform overlay carried — and its bottom padding balances
-        // the card so the row above isn't left hugging the edge.
-        <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5 text-[10px] text-fg-dim tabular-nums">
-          <span data-testid="player-volume" className="flex shrink-0 items-center gap-1">
-            <Volume2 className="h-3 w-3" aria-hidden="true" />
-            {Math.round(volume * 100)}%
-          </span>
-          <button
-            type="button"
-            data-testid="player-seek"
-            aria-label={t('player.seek')}
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
-            }}
-            className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--color-panel)]"
-          >
-            <span
-              className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
-              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+          unmounted so its full-file decode never runs — the point of the preference. The
+          wrapper clips and animates the height as the two layouts swap (see useLayoutEffect). */}
+      <div ref={sectionRef} className="player-section overflow-hidden">
+        {showWaveform ? (
+          <div className="relative mt-2">
+            <Waveform
+              key={track.inputPath}
+              inputPath={track.inputPath}
+              audioRef={audioRef}
+              active
+              audioDurationSec={duration}
+              onScrub={onScrub}
             />
-          </button>
-          <span data-testid="player-time" className="shrink-0">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-        </div>
-      )}
+            <span
+              data-testid="player-volume"
+              className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+                hovered ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <Volume2 className="h-3 w-3" aria-hidden="true" />
+              {Math.round(volume * 100)}%
+            </span>
+            <span
+              data-testid="player-time"
+              className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+                hovered ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
+        ) : (
+          // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
+          // the clock — the info the waveform overlay carried — and its bottom padding balances
+          // the card so the row above isn't left hugging the edge.
+          <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5 text-[10px] text-fg-dim tabular-nums">
+            <span data-testid="player-volume" className="flex shrink-0 items-center gap-1">
+              <Volume2 className="h-3 w-3" aria-hidden="true" />
+              {Math.round(volume * 100)}%
+            </span>
+            <button
+              type="button"
+              data-testid="player-seek"
+              aria-label={t('player.seek')}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
+              }}
+              className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--color-panel)]"
+            >
+              <span
+                className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+              />
+            </button>
+            <span data-testid="player-time" className="shrink-0">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
