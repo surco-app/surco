@@ -67,16 +67,19 @@ export function registerAudioIpc(): void {
         'spectrogram-mono-v8',
         inputPath,
         () =>
-          analysisLimiter.run(
-            () =>
-              buildSpectrum(inputPath, {
-                probe: probeAudio,
-                spectrogram: generateSpectrogram,
-                cutoff: analyzeCutoff,
-                shelf: analyzeShelf,
-              }),
-            'low',
-          ),
+          // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
+          // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
+          // quality sweep then put ~3× the intended decodes on the cores. Instead each
+          // pass takes its own slot, so the limiter counts them honestly and caps the
+          // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
+          // overlap when slots are free (no single-track latency hit) and none waits on a
+          // slot it's also holding (no deadlock).
+          buildSpectrum(inputPath, {
+            probe: probeAudio,
+            spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), 'low'),
+            cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), 'low'),
+            shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), 'low'),
+          }),
         (b) => b.cutoffError === undefined,
       )
       // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
