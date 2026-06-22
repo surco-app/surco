@@ -980,26 +980,35 @@ async function decodePcm(
 // pins a steady DJ tempo (and the prevailing key) while bounding the buffer (~10 MB)
 // regardless of file length; mono because both are properties of the mix, not of either
 // channel.
+// Selecting a track fires audio:bpm and audio:key together, and both decode the exact
+// same 11025/240s PCM — two ffmpeg passes where one will do. Single-flight the decode:
+// concurrent callers for the same file share the in-flight promise, and the entry is
+// dropped on settle so a later re-decode (e.g. after the file changes) isn't pinned.
+const inFlightAnalysisPcm = new Map<string, Promise<Float32Array>>()
 function decodeAnalysisPcm(input: string): Promise<Float32Array> {
-  return decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, seconds: 240, maxBufferMb: 16 })
+  const pending = inFlightAnalysisPcm.get(input)
+  if (pending) return pending
+  const decode = decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, seconds: 240, maxBufferMb: 16 })
+  inFlightAnalysisPcm.set(input, decode)
+  const clear = (): void => {
+    inFlightAnalysisPcm.delete(input)
+  }
+  decode.then(clear, clear)
+  return decode
 }
 
 // The detectors crunch hundreds of FFTs in tight JS loops — run on the main process
 // they freeze IPC, the menu and the surco:// audio stream for the whole analysis, so
-// both ship their PCM to the worker thread. The buffer is transferred, not copied:
-// decodeAnalysisPcm mints a fresh one per call, so nothing else holds it.
+// both ship their PCM to the worker thread. The buffer is structure-cloned by postMessage
+// (not transferred), so the shared single-flight decode stays valid for the other detector.
 export async function measureBpm(input: string): Promise<BpmResult | null> {
   const pcm = await decodeAnalysisPcm(input)
-  return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE }, [
-    pcm.buffer as ArrayBuffer,
-  ])
+  return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {
   const pcm = await decodeAnalysisPcm(input)
-  return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE }, [
-    pcm.buffer as ArrayBuffer,
-  ])
+  return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
 // Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's
