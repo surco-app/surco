@@ -62,8 +62,9 @@ export function registerAudioIpc(): void {
         // changing either invalidates entries cached under the previous one — they
         // regenerate on next open instead of serving stale colors or verdicts. v7
         // switches the image to a grayscale intensity map (recolored per theme in the
-        // renderer), so older colored entries regenerate.
-        'spectrogram-mono-v7',
+        // renderer), so older colored entries regenerate. v8 adds the FFT-band knee
+        // (catches codec walls the biquad pass smears below its threshold).
+        'spectrogram-mono-v8',
         inputPath,
         () =>
           analysisLimiter.run(

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { bandEnergiesDb, BAND_START_HZ, BAND_WIDTH_HZ, detectFlatShelf } from './hfShelf'
+import {
+  BAND_START_HZ,
+  BAND_WIDTH_HZ,
+  bandEnergiesDb,
+  detectFftKnee,
+  detectFlatShelf,
+} from './hfShelf'
 
 // Real whole-track (4 min) band energies measured with the same Blackman-Harris
 // Welch FFT the analyzer runs, in dBFS per 1 kHz band from 8 kHz to 21 kHz
@@ -92,5 +98,44 @@ describe('bandEnergiesDb', () => {
     const bands = bandEnergiesDb(tone(9500, 6), SR)
     const peak = bands.indexOf(Math.max(...bands))
     expect(BAND_START_HZ + peak * BAND_WIDTH_HZ).toBe(9000)
+  })
+})
+
+describe('detectFftKnee', () => {
+  // Johann Gielen - Dreamchild: a ~128–160 kbps MP3 re-wrapped as FLAC, brick-walled
+  // at ~16.5 kHz. The biquad-bandpass cutoff pass smears the wall to a 5.4 dB step —
+  // under its 6 dB knee — so it reads "knee-free" and the verdict grades it "Good".
+  // On the flat FFT bands the same wall is a single-band cliff: 58.6 → 48.2 dB
+  // (10.4 dB) at 15→16 kHz that never recovers. This is the false negative the FFT
+  // knee exists to catch. Measured whole-track, same Welch FFT as the others above.
+  const DREAMCHILD = [
+    70.4, 70.8, 68.9, 67.4, 65.6, 63.1, 60.4, 58.6, 48.2, 48.6, 44.2, 41.5, 36.6, 30.0,
+  ]
+
+  it('catches a codec wall the biquad pass smears below its knee threshold', () => {
+    // The cutoff is the last full band before the cliff (the biquad pass reports the
+    // same way) — enough for the verdict to grade it "Bad" instead of "Good".
+    expect(detectFftKnee(DREAMCHILD, BAND_START_HZ, BAND_WIDTH_HZ)).toBe(15000)
+  })
+
+  it('leaves genuine masters alone — no single-band cliff to mistake for a wall', () => {
+    // The real-file negatives the flat-shelf detector also spares: their steepest FFT
+    // step is 2.7–4.8 dB (MISJAH, a dark master, is the worst at 4.8), well under the
+    // 8 dB the knee demands. Flagging any of these is the false positive to avoid.
+    for (const genuine of [CHECK_CHECK, LAZZARD, MISJAH, YULBOX]) {
+      expect(detectFftKnee(genuine, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
+    }
+  })
+
+  it('does not read the natural roll-off into Nyquist as a wall', () => {
+    // A smooth taper whose only steep step is the final band (a real spectrum falling
+    // toward Nyquist) has no collapsed plateau above it, so it is not a codec wall.
+    const taper = [70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 36]
+    expect(detectFftKnee(taper, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
+  })
+
+  it('ignores a sharp drop that recovers — a notch, not a sustained codec wall', () => {
+    const notch = [70, 69, 68, 67, 66, 65, 64, 52, 63, 62, 61, 60, 59, 58]
+    expect(detectFftKnee(notch, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
   })
 })

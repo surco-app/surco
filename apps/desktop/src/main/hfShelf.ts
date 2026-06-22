@@ -98,6 +98,47 @@ export function bandEnergiesDb(pcm: Float32Array, sampleRate: number): number[] 
   return Array.from(power, (p) => 10 * Math.log10(p + 1e-30))
 }
 
+// A codec lowpass read off the flat FFT bands instead of the biquad-bandpass RMS the
+// cutoff pass uses. The biquad's wide skirts smear a sharp wall: loud energy below the
+// cut leaks up through them, so a ~16 kHz brick wall (a 128–160 kbps MP3 re-encoded as
+// FLAC) reads as a gentle ~5 dB taper that slips under cutoff.ts's 6 dB knee and grades
+// "Good". The FFT has no skirts, so the same wall shows as a single-band cliff (10.4 dB
+// at 15→16 kHz on the reference file). We claim a knee only on that unmistakable shape —
+// a drop this steep is a codec ceiling, never the few-dB-per-band slope of a real taper.
+const KNEE_DROP_DB = 8
+// A codec wall never recovers: everything above stays collapsed. Allowing this much
+// rebound past measurement jitter tells a wall from a resonant notch that bounces back.
+const KNEE_RECOVERY_DB = 2
+// The collapsed plateau above the wall must span at least this many bands, so the
+// natural roll-off into Nyquist (a steep final step with nothing above it) is never
+// read as a wall.
+const KNEE_MIN_BANDS_ABOVE = 2
+
+// The source's real ceiling (Hz) when the FFT bands carry a codec lowpass the biquad
+// pass missed, or null for a natural spectrum. Returns the last full band before the
+// cliff — the same convention as cutoff.ts's knee — so the verdict grades the file on
+// where its real bandwidth ends. Non-finite bands (a parse hiccup) are skipped rather
+// than compared, matching the flat-shelf pass.
+export function detectFftKnee(
+  bandsDb: number[],
+  startHz: number,
+  bandWidthHz: number,
+): number | null {
+  let kneeIndex = -1
+  let maxDrop = KNEE_DROP_DB
+  for (let i = 0; i < bandsDb.length - 1; i++) {
+    if (!Number.isFinite(bandsDb[i]) || !Number.isFinite(bandsDb[i + 1])) continue
+    if (bandsDb.length - 1 - (i + 1) < KNEE_MIN_BANDS_ABOVE) continue
+    const drop = bandsDb[i] - bandsDb[i + 1]
+    if (drop < maxDrop) continue
+    const ceiling = bandsDb[i + 1] + KNEE_RECOVERY_DB
+    if (bandsDb.slice(i + 2).some((b) => b > ceiling)) continue
+    maxDrop = drop
+    kneeIndex = i
+  }
+  return kneeIndex === -1 ? null : startHz + kneeIndex * bandWidthHz
+}
+
 // Returns the real ceiling (Hz) when the top octave is a flat, detached synthetic
 // shelf, or null for a natural spectrum. The cutoff points at the elbow where the
 // genuine roll-off meets the shelf — the source's true bandwidth under the fill —

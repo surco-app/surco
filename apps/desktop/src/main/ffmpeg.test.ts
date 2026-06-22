@@ -799,7 +799,7 @@ describe('buildSpectrum', () => {
       hasKnee: true,
       upsampled: false,
     })),
-    shelf: vi.fn(async () => null),
+    shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: null })),
     ...over,
   })
 
@@ -844,7 +844,7 @@ describe('buildSpectrum', () => {
           hasKnee: false,
           upsampled: false,
         })),
-        shelf: vi.fn(async () => 16000),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: null })),
       }),
     )
     expect(res.processed).toBe(true)
@@ -861,11 +861,52 @@ describe('buildSpectrum', () => {
           hasKnee: false,
           upsampled: false,
         })),
-        shelf: vi.fn(async () => 16000),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: null })),
       }),
     )
     expect(res.processed).toBe(true)
     expect(res.cutoffHz).toBe(15000)
+  })
+
+  it('flags a codec wall the biquad pass smeared below its knee, via the FFT knee', async () => {
+    // The biquad pass reads the smeared wall as a knee-free taper extending to 18 kHz
+    // (graded "Good"); the FFT knee catches the real wall and must turn hasKnee on and
+    // pull the cutoff down to it, so the verdict grades the file "Bad".
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 18000,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+        })),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: 15000 })),
+      }),
+    )
+    expect(res.processed).toBe(false)
+    expect(res.hasKnee).toBe(true)
+    expect(res.cutoffHz).toBe(15000)
+  })
+
+  it('ignores the FFT knee once a shelf already marked the file reprocessed', async () => {
+    // A flat shelf is its own verdict (reprocessed); the FFT knee must not override the
+    // shelf elbow or flip the file off the processed path.
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 22050,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+        })),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: 15000 })),
+      }),
+    )
+    expect(res.processed).toBe(true)
+    expect(res.hasKnee).toBe(false)
+    expect(res.cutoffHz).toBe(16000)
   })
 
   it('still returns the image and codec verdict when the shelf probe fails', async () => {

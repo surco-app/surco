@@ -29,6 +29,7 @@ import {
   UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
 import {
+  detectFftKnee,
   detectFlatShelf,
   BAND_START_HZ as SHELF_BAND_START_HZ,
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
@@ -989,26 +990,42 @@ function decodeShelfPcm(input: string): Promise<Float32Array> {
   return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64 })
 }
 
-// Detects software-regenerated highs the codec-lowpass pass is blind to: a flat HF
-// shelf held to Nyquist (see hfShelf.ts), returning the source's real ceiling in Hz
-// or null. Scoped to native 44.1 kHz — where the thresholds were calibrated and the
-// band layout reaches Nyquist. Higher rates are the upsample probe's job, and
-// resampling a lower rate up to 44.1 would forge its own 22 kHz wall. The heavy FFT
-// runs in the worker so it never freezes IPC; the buffer is transferred, not copied.
-export async function analyzeShelf(input: string, sampleRateHz: number): Promise<number | null> {
-  if (sampleRateHz !== SHELF_SAMPLE_RATE) return null
+// Two signals the biquad codec-lowpass pass is blind to, both read off the same flat
+// FFT bands (see hfShelf.ts): a flat HF shelf held to Nyquist (software-regenerated
+// highs), and a codec knee whose sharp wall the biquad's wide skirts smear below its
+// threshold. Each is the source's real ceiling in Hz, or null. Scoped to native 44.1 kHz
+// — where the thresholds were calibrated and the band layout reaches Nyquist. Higher
+// rates are the upsample probe's job, and resampling a lower rate up to 44.1 would forge
+// its own 22 kHz wall. The heavy FFT runs in the worker so it never freezes IPC; the
+// buffer is transferred, not copied.
+export async function analyzeShelf(
+  input: string,
+  sampleRateHz: number,
+): Promise<{ shelfCutoffHz: number | null; kneeCutoffHz: number | null }> {
+  if (sampleRateHz !== SHELF_SAMPLE_RATE) return { shelfCutoffHz: null, kneeCutoffHz: null }
   const pcm = await decodeShelfPcm(input)
   const bands = await runInWorker<number[]>({ type: 'shelf', pcm, sampleRate: SHELF_SAMPLE_RATE }, [
     pcm.buffer as ArrayBuffer,
   ])
-  return detectFlatShelf(bands, SHELF_BAND_START_HZ, SHELF_BAND_WIDTH_HZ, sampleRateHz / 2)
+  return {
+    shelfCutoffHz: detectFlatShelf(
+      bands,
+      SHELF_BAND_START_HZ,
+      SHELF_BAND_WIDTH_HZ,
+      sampleRateHz / 2,
+    ),
+    kneeCutoffHz: detectFftKnee(bands, SHELF_BAND_START_HZ, SHELF_BAND_WIDTH_HZ),
+  }
 }
 
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
   spectrogram: (input: string) => Promise<string>
   cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult & { upsampled: boolean }>
-  shelf: (input: string, sampleRateHz: number) => Promise<number | null>
+  shelf: (
+    input: string,
+    sampleRateHz: number,
+  ) => Promise<{ shelfCutoffHz: number | null; kneeCutoffHz: number | null }>
 }
 
 interface SpectrumBuild {
@@ -1040,22 +1057,30 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   const cutoff = cutoffR.status === 'fulfilled' ? cutoffR.value : null
   // The flat-shelf probe is best-effort and independent of the image, so a failure
   // is logged (below) but neither discards the image nor blocks caching the rest.
-  const shelfCutoffHz = shelfR.status === 'fulfilled' ? shelfR.value : null
+  const shelf = shelfR.status === 'fulfilled' ? shelfR.value : null
+  const shelfCutoffHz = shelf?.shelfCutoffHz ?? null
+  // A flat shelf is reprocessed (its own verdict), so the FFT knee only adds a signal
+  // when nothing else already explains the spectrum: a real codec wall the biquad pass
+  // smeared below its knee threshold.
+  const processed = (cutoff?.processed ?? false) || shelfCutoffHz !== null
+  const kneeCutoffHz = !processed ? (shelf?.kneeCutoffHz ?? null) : null
   return {
     image: imageR.value,
     // Prefer the codec pass's own cutoff when it found manipulation; otherwise fall
     // back to the shelf elbow, since the codec pass reads a flat shelf as reaching
-    // Nyquist and would draw the line there. Null only when the codec pass failed
-    // and no shelf was found.
+    // Nyquist and would draw the line there, then to the FFT knee (the real wall the
+    // biquad smeared past). Null only when the codec pass failed and nothing else fired.
     cutoffHz:
       cutoff?.processed === true
         ? cutoff.cutoffHz
         : shelfCutoffHz !== null
           ? shelfCutoffHz
-          : (cutoff?.cutoffHz ?? null),
+          : kneeCutoffHz !== null
+            ? Math.min(kneeCutoffHz, cutoff?.cutoffHz ?? kneeCutoffHz)
+            : (cutoff?.cutoffHz ?? null),
     sampleRateHz,
-    processed: (cutoff?.processed ?? false) || shelfCutoffHz !== null,
-    hasKnee: cutoff?.hasKnee ?? false,
+    processed,
+    hasKnee: (cutoff?.hasKnee ?? false) || kneeCutoffHz !== null,
     upsampled: cutoff?.upsampled ?? false,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
     shelfError: shelfR.status === 'rejected' ? shelfR.reason : undefined,
