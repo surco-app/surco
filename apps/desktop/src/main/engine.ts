@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
+import type { Database, SqlJsStatic } from 'sql.js'
 
 // Writes a Denon Engine DJ library database (Engine Library "Database2" m.db) from scratch:
 // the loaded tracks plus a single playlist. The schema is the Engine Library 2.18.0 baseline
@@ -134,6 +134,9 @@ async function loadSqlJs(): Promise<SqlJsStatic> {
   const buf = await readFile(require.resolve('sql.js/dist/sql-wasm.wasm'))
   // Hand a tight ArrayBuffer (not the Buffer's shared pool) to the loader.
   const wasmBinary = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  // Imported lazily (not at module load) so the sql.js emscripten glue stays off the
+  // startup path — only an Engine DJ export, which most sessions never run, pays for it.
+  const initSqlJs = (await import('sql.js')).default
   sqlJs = await initSqlJs({ wasmBinary })
   return sqlJs
 }
