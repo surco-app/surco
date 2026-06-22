@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag } from '../shared/rating'
@@ -60,6 +60,28 @@ export { formatMatchesInput } from '../shared/format'
 
 const execFileAsync = promisify(execFile)
 
+// Analysis decodes are CPU background work: a "Analizar calidad" sweep can put a dozen
+// ffmpeg processes on the cores at once (each spectrum spawns three), and at normal OS
+// priority they time-slice against the renderer and the surco:// audio stream, so the
+// UI stutters and playback crackles while the spectrum builds. Spawning each child
+// below-normal lets the scheduler preempt it for the UI the moment they compete; with
+// no contention (machine otherwise idle) it still runs full speed, so sweep throughput
+// is unchanged. Best-effort: setPriority can lose a race with a child that exits
+// immediately, and Windows may deny it — a normal-priority decode is a fine fallback.
+const niceDecode = (file: string, args: string[], opts?: unknown) => {
+  const pending = execFileAsync(file, args, opts as never)
+  const pid = pending.child?.pid
+  if (pid !== undefined) {
+    try {
+      setPriority(pid, osConstants.priority.PRIORITY_BELOW_NORMAL)
+    } catch {
+      // Lowering priority is an optimization, never a requirement: if the child has
+      // already exited or the OS denies it, the decode just runs at normal priority.
+    }
+  }
+  return pending
+}
+
 // Spawns ffmpeg/ffprobe, with one recovery: when a call fails because the demuxer
 // rejected a malformed input (e.g. a WAV carrying a zero-size LIST chunk), repair a
 // temp copy of the offending file and retry once, so a single bad header chunk no
@@ -70,7 +92,7 @@ const execFileAsync = promisify(execFile)
 // The temp copy is deleted after the retry resolves.
 const run = (async (file: string, args: string[], opts?: unknown) => {
   try {
-    return await execFileAsync(file, args, opts as never)
+    return await niceDecode(file, args, opts)
   } catch (err) {
     if (!isMalformedInputError(err)) throw err
     for (let i = 0; i < args.length; i++) {
@@ -79,7 +101,7 @@ const run = (async (file: string, args: string[], opts?: unknown) => {
       const retry = [...args]
       retry[i] = repaired
       try {
-        return await execFileAsync(file, retry, opts as never)
+        return await niceDecode(file, retry, opts)
       } finally {
         await unlink(repaired).catch(() => {})
       }
