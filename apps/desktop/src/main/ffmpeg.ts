@@ -9,6 +9,7 @@ import type {
   CoverRead,
   KeyResult,
   LoudnessResult,
+  MetaRead,
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
@@ -273,17 +274,64 @@ export async function extractCoverDataUrl(input: string): Promise<string | null>
   }
 }
 
-export async function extractCover(input: string): Promise<CoverRead | null> {
+export async function extractCover(
+  input: string,
+  // readMeta already probed the dims from its combined ffprobe, so it passes them in to
+  // skip the extra probeCoverDims spawn; the standalone audio:cover handler omits them.
+  knownDims?: { width: number; height: number },
+): Promise<CoverRead | null> {
   const out = join(tmpdir(), tmpName('cover', 'jpg'))
   try {
     await run(ffmpegPath, coverArgs(input, out, COVER_THUMB_PX))
     const buf = await readFile(out)
-    const dims = await probeCoverDims(input)
+    const dims = knownDims ?? (await probeCoverDims(input))
     return { thumbUrl: `data:image/jpeg;base64,${buf.toString('base64')}`, ...dims }
   } catch {
     return null
   } finally {
     await unlink(out).catch(() => {})
+  }
+}
+
+// Reads tags, duration and the cover thumbnail in one go for the import path. A single
+// ffprobe pulls tags + duration + the art's pixel size, then one ffmpeg extracts the
+// thumbnail — two processes instead of the four the separate readTags/probeDuration/
+// extractCover calls spawned (each re-probing the same file).
+export async function readMeta(input: string): Promise<MetaRead> {
+  try {
+    const { stdout } = await run(
+      ffprobePath,
+      [
+        '-v',
+        'error',
+        '-show_entries',
+        'format=duration:format_tags:stream_tags:stream=codec_type,width,height',
+        '-of',
+        'json',
+        input,
+      ],
+      { timeout: ANALYSIS_TIMEOUT_MS },
+    )
+    const data = JSON.parse(stdout)
+    const seconds = Number(data.format?.duration)
+    const video = (data.streams ?? []).find(
+      (s: { codec_type?: string }) => s.codec_type === 'video',
+    )
+    const width = Number(video?.width)
+    const height = Number(video?.height)
+    const dims =
+      Number.isFinite(width) && Number.isFinite(height)
+        ? { width, height }
+        : { width: 0, height: 0 }
+    return {
+      tags: tagsFromProbe(data),
+      duration: Number.isFinite(seconds) ? seconds : null,
+      cover: await extractCover(input, dims),
+    }
+  } catch {
+    // A probe failure leaves an editable row with no tags/duration/cover — the same
+    // degraded state the three granular reads reached when each failed on its own.
+    return { tags: {} as TrackMetadata, duration: null, cover: null }
   }
 }
 

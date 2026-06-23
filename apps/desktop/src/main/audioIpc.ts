@@ -8,6 +8,7 @@ import {
   buildSpectrum,
   extractCover,
   extractCoverDataUrl,
+  readMeta,
   generateSpectrogram,
   measureBpm,
   measureKey,
@@ -40,6 +41,11 @@ export function registerAudioIpc(): void {
   })
 
   ipcMain.handle('audio:duration', (_e, inputPath: string) => probeDuration(inputPath))
+
+  // Import reads tags, duration and cover together so a big drop spawns two processes
+  // per track (one ffprobe + one ffmpeg) instead of four across three separate calls.
+  // readMeta swallows a probe failure into an empty result, so it never rejects.
+  ipcMain.handle('audio:meta', (_e, inputPath: string) => readMeta(inputPath))
 
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
   ipcMain.handle('audio:coverFull', (_e, inputPath: string) => extractCoverDataUrl(inputPath))

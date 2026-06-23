@@ -142,11 +142,7 @@ export function useTrackLibrary({
   async function loadTrackMeta(base: TrackItem): Promise<void> {
     const path = base.inputPath
     try {
-      const [tags, duration, cover] = await Promise.all([
-        window.api.readTags(path),
-        window.api.readDuration(path),
-        window.api.readCover(path),
-      ])
+      const { tags, duration, cover } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
       const readMeta: TrackMetadata = {
         ...base.meta,

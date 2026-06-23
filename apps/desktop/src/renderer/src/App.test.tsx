@@ -127,6 +127,18 @@ function setApi(over: Record<string, unknown> = {}): void {
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
     readCover: vi.fn().mockResolvedValue(null),
+    // Mirrors the real readMeta (one round-trip for all three) by delegating to the
+    // individual mocks at call time, so a test overriding readTags/readDuration/readCover
+    // still drives the import without having to know they were collapsed into one call.
+    readMeta: vi.fn(async (path: string) => {
+      const api = (window as unknown as { api: Record<string, (p: string) => unknown> }).api
+      const [tags, duration, cover] = await Promise.all([
+        api.readTags(path),
+        api.readDuration(path),
+        api.readCover(path),
+      ])
+      return { tags, duration, cover }
+    }),
     properties: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
     search: vi.fn().mockResolvedValue([]),

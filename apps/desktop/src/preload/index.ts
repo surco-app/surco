@@ -81,6 +81,7 @@ const api: Api = {
     ipcRenderer.invoke('audio:waveform', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
+  readMeta: (path: string) => ipcRenderer.invoke('audio:meta', path),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
   readCoverFull: (path: string) => ipcRenderer.invoke('audio:coverFull', path),
   onMenuCommand: (cb: (id: string) => void) => {

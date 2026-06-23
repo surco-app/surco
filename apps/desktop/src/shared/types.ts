@@ -214,6 +214,15 @@ export interface CoverRead {
   height: number
 }
 
+// One import-time read of a file's tags, duration and cover together: the three used to
+// be separate IPC calls that each re-probed the same file, so a big drop spawned four
+// processes per track where two now suffice.
+export interface MetaRead {
+  tags: TrackMetadata
+  duration: number | null
+  cover: CoverRead | null
+}
+
 export interface ProcessJob {
   id: string
   inputPath: string
