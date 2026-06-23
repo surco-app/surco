@@ -538,7 +538,9 @@
           "Conversion now respects metadata fields you've cleared: delete a comment or other value and the original no longer comes back.",
           "New track-row indicators: the quality verdict shows as a severity icon, and already-converted tracks get a blue check badge.",
           "Tracks show up sooner when you drop large or networked folders, and a stalled network file no longer freezes the quality analysis.",
-          "More accurate Discogs lookups when a track's name starts with a number."
+          "More accurate Discogs lookups when a track's name starts with a number.",
+          "The interface stays smooth while you analyze the quality of many tracks at once — the analysis no longer competes with the screen or playback.",
+          "The quality verdict is better at spotting tracks with a frequency ceiling the codec smeared over."
         ]
       },
       {

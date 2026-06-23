@@ -538,7 +538,9 @@
           "La conversión ahora respeta los campos de metadatos que hayas vaciado: si borras un comentario u otro dato, deja de reaparecer el valor original.",
           "Nuevos indicadores en la fila de pista: el veredicto de calidad se muestra como icono de severidad y las pistas ya convertidas lucen una marca azul.",
           "Las pistas aparecen antes al soltar carpetas grandes o en red, y un archivo de red que se cuelga ya no congela el análisis de calidad.",
-          "Mejor precisión al buscar en Discogs cuando el nombre de la pista empieza por un número."
+          "Mejor precisión al buscar en Discogs cuando el nombre de la pista empieza por un número.",
+          "La interfaz se mantiene fluida mientras analizas la calidad de muchas pistas a la vez: el análisis ya no compite con la pantalla ni con la reproducción.",
+          "El veredicto de calidad detecta mejor las pistas con un techo de frecuencia que el códec dejó difuminado."
         ]
       },
       {
