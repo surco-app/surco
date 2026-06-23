@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import Icon, { type GlyphName } from './Icon'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 
 // One glyph per step: drop the files, pick the release, export.
@@ -13,7 +14,7 @@ export default function HowItWorks() {
   return (
     <section id="como" className="scroll-mt-24 pb-24">
       <Reveal>
-        <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('how.kicker')}</p>
+        <Kicker>{t('how.kicker')}</Kicker>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('how.title')}</h2>
       </Reveal>
 

@@ -14,12 +14,13 @@ import HeroTour from './components/HeroTour'
 import InstallSection from './components/InstallSection'
 import Faq from './components/Faq'
 import Band from './components/Band'
+import Kicker from './components/Kicker'
 import WaveBackdrop from './components/WaveBackdrop'
 import GrooveArcs from './components/GrooveArcs'
 import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
-  'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/5'
+  'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/10'
 
 // One glyph per feature card, in the order of the `features.groups` i18n list
 // (convert, tag, analyze quality, organize & export).
@@ -129,7 +130,7 @@ export default function App() {
             <h1 className="mx-auto mt-7 max-w-4xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
               {t('hero.h1a')}
               <br />
-              <span className="text-grad">{t('hero.h1b')}</span>
+              <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
             </h1>
           </Reveal>
           <Reveal eager delay={160}>
@@ -161,7 +162,7 @@ export default function App() {
         <Band tone="deep">
         <section id="analisis" className="scroll-mt-24 py-24">
           <Reveal>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('analysis.kicker')}</p>
+            <Kicker>{t('analysis.kicker')}</Kicker>
             <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
               {t('analysis.title')}
             </h2>
@@ -228,7 +229,7 @@ export default function App() {
         <Band tone="raised">
         <section id="funciones" className="scroll-mt-24 py-24">
           <Reveal>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('features.kicker')}</p>
+            <Kicker>{t('features.kicker')}</Kicker>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
               {t('features.title')}
             </h2>
@@ -236,8 +237,8 @@ export default function App() {
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {featureGroups.map((g, i) => (
               <Reveal key={g.title} delay={(i % 2) * 100}>
-                <div className="h-full">
-                  <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue">
+                <div className="group h-full">
+                  <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue transition duration-200 group-hover:-translate-y-0.5 group-hover:border-blue/60 group-hover:bg-blue/20 group-hover:shadow-lg group-hover:shadow-blue/15">
                     <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
                   </div>
                   <div className="font-mono text-xs text-blue">{g.kick}</div>
@@ -262,7 +263,7 @@ export default function App() {
           <Reveal>
             <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
               <div>
-                <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('shortcuts.kicker')}</p>
+                <Kicker>{t('shortcuts.kicker')}</Kicker>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
                   {t('shortcuts.title')}
                 </h2>

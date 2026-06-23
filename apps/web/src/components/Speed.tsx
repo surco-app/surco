@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 
 const TIMES = ['~45 s', '~45 s', '~60 s', '~90 s', '~30 s']
@@ -11,7 +12,7 @@ export default function Speed() {
   return (
     <section id="velocidad" className="scroll-mt-24 pt-24 pb-24">
       <Reveal>
-        <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('speed.kicker')}</p>
+        <Kicker>{t('speed.kicker')}</Kicker>
         <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
           {t('speed.title')}
         </h2>

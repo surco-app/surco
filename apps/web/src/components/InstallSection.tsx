@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Reveal from './Reveal'
 import DownloadButton from './DownloadButton'
+import Kicker from './Kicker'
+import Reveal from './Reveal'
 
 const COMMAND = 'brew install --cask vigosan/surco/surco'
 
@@ -21,7 +22,7 @@ export default function InstallSection() {
   return (
     <section id="instalar" className="scroll-mt-24 pb-24">
       <Reveal>
-        <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('install.kicker')}</p>
+        <Kicker>{t('install.kicker')}</Kicker>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('install.title')}</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('install.lede')}</p>
         <DownloadButton showMeta={false} />

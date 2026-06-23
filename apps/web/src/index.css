@@ -184,6 +184,15 @@ button:not(:disabled) {
   color: transparent;
 }
 
+/* Hero-only variant: a faint cyan bloom under the clipped gradient glyphs so the
+   headline reads as luminous on the OLED-dark background. text-shadow can't show
+   through `color: transparent`, so the glow is a drop-shadow filter on the glyph
+   shapes themselves. Kept subtle (low alpha, tight radius) to stay on the
+   minimalist side. */
+.text-grad-glow {
+  filter: drop-shadow(0 0 24px rgba(125, 207, 255, 0.25));
+}
+
 /* premium grain overlay */
 .grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

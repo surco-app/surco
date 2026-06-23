@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 
 // Native <details> so the answers are open to crawlers and keyboard users with no
@@ -10,7 +11,7 @@ export default function Faq() {
   return (
     <section id="faq" className="scroll-mt-24 pb-24">
       <Reveal>
-        <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('faq.kicker')}</p>
+        <Kicker>{t('faq.kicker')}</Kicker>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{t('faq.title')}</h2>
       </Reveal>
       <div className="mt-10 max-w-2xl border-t border-line/60">
