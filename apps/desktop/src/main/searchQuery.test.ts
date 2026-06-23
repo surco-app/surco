@@ -52,6 +52,14 @@ describe('cleanQuery', () => {
   it('leaves an already-clean query untouched', () => {
     expect(cleanQuery('Rank 1 Airwave')).toBe('Rank 1 Airwave')
   })
+
+  it('drops a leading label/catalog code that would poison the specific candidates', () => {
+    // A DJ-rip prefixed with its catalog code ("BL2-045 Artist - Title") returns nothing for
+    // the exact candidate and then matches the bare code against random catalogs.
+    expect(cleanQuery('BL2-045 Tito Dj & Solá Brothers Love Again (Extended)')).toBe(
+      'Tito Dj & Solá Brothers Love Again (Extended)',
+    )
+  })
 })
 
 describe('buildSearchCandidates', () => {
@@ -99,6 +107,27 @@ describe('buildSearchCandidates', () => {
         catalogNumber: 'ANJ001',
       }),
     ).toEqual(['Some Artist Some Title', 'ANJ001', 'Some Title', 'Some Title Some Artist'])
+  })
+
+  it('omits the catalog-number candidate when includeCatalog is false', () => {
+    // Bandcamp has no catalog index: a code like "ANJ001" matches dozens of unrelated
+    // releases, and since the loop keeps the first candidate that returns *anything*, that
+    // noise would mask the real release. Discogs (default) still gets the candidate.
+    expect(
+      buildSearchCandidates(
+        'Some Artist Some Title',
+        { artist: 'Some Artist', title: 'Some Title', catalogNumber: 'ANJ001' },
+        { includeCatalog: false },
+      ),
+    ).toEqual(['Some Artist Some Title', 'Some Title', 'Some Title Some Artist'])
+  })
+
+  // The reported case end-to-end: a file whose name leads with its catalog code must search
+  // the clean "Artist Title" first, not the code-poisoned candidate that returns nothing.
+  it('leads with the catalog-free query for a code-prefixed file name', () => {
+    expect(
+      buildSearchCandidates('BL2-045 Tito Dj & Solá Brothers Love Again (Extended)')[0],
+    ).toBe('Tito Dj & Solá Brothers Love Again (Extended)')
   })
 
   it('ignores absent hints and de-dupes ones that repeat the cleaned query', () => {

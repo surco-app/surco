@@ -20,7 +20,11 @@ export { cleanQuery }
 // suggestion from the file's title regardless. Then come the bare-of-all-parens forms, the
 // un-trimmed query (in case cutting a track-number tail removed something), and the hint
 // candidates. Falls back to the raw query so cleaning can never produce a blank search.
-export function buildSearchCandidates(query: string, hints: SearchHints = {}): string[] {
+export function buildSearchCandidates(
+  query: string,
+  hints: SearchHints = {},
+  opts: { includeCatalog?: boolean } = {},
+): string[] {
   const cleaned = cleanQuery(query)
   const trimmed = dropTrackNumberTail(cleaned)
   const out: string[] = []
@@ -43,7 +47,10 @@ export function buildSearchCandidates(query: string, hints: SearchHints = {}): s
   add(stripParentheticals(trimmed))
   add(cleaned)
   add(stripParentheticals(cleaned))
-  if (hints.catalogNumber) add(hints.catalogNumber)
+  // Bandcamp has no catalog index, so the code matches dozens of unrelated releases and —
+  // since the search loop keeps the first candidate that returns *anything* — would mask the
+  // real release; callers searching it pass includeCatalog: false. Discogs (default) keeps it.
+  if (opts.includeCatalog !== false && hints.catalogNumber) add(hints.catalogNumber)
   if (hints.title) add(cleanQuery(hints.title))
   if (hints.artist && hints.title) add(cleanQuery(`${hints.title} ${hints.artist}`))
   if (out.length === 0) add(query)

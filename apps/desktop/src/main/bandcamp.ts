@@ -81,7 +81,7 @@ export async function search(
   hints: SearchHints = {},
 ): Promise<SearchResult[]> {
   let results: SearchResult[] = []
-  for (const candidate of buildSearchCandidates(query, hints)) {
+  for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
     results = await searchOnce(candidate, priority)
     if (results.length) break
   }

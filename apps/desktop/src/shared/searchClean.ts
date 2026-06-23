@@ -26,10 +26,23 @@ export function squeeze(s: string): string {
     .trim()
 }
 
+// DJ-pool / label rips often prefix the file name with a catalog/label code ("BL2-045
+// Artist - Title", "SRC001 Artist - Title") that, folded into the free-text query, breaks
+// search: the specific candidate returns nothing and the bare code then matches dozens of
+// unrelated catalogs (Bandcamp's autocomplete especially). Drop a LEADING code — 2-4 letters,
+// an optional inner digit, an optional hyphen, then 2+ digits — only when more text follows
+// (so the standalone catalog candidate keeps it). The shape is tight on purpose so it can't
+// eat a numeric act name: "U2"/"M83" (one letter), "808 State" (digit-led), "Blink-182"/
+// "Apollo 440" (5+ letters), "Sum 41" (space before the digits) all fall outside it.
+const LEADING_CATALOG = /^[A-Za-z]{2,4}\d{0,2}-?\d{2,}\s+/
+export function dropLeadingCatalog(query: string): string {
+  return squeeze(query.replace(LEADING_CATALOG, '')) || query
+}
+
 export function cleanQuery(query: string): string {
   let out = query
   for (const re of NOISE) out = out.replace(re, ' ')
-  return squeeze(out)
+  return dropLeadingCatalog(squeeze(out))
 }
 
 export function stripParentheticals(query: string): string {
