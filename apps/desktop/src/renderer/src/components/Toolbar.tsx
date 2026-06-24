@@ -302,7 +302,8 @@ export const Toolbar = memo(function Toolbar({
         <button
           type="button"
           data-testid="open-settings"
-          onClick={onSettings}
+          // Call with no args so React's click event can't reach the opener as its tab.
+          onClick={() => onSettings()}
           className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.settings')}
         >

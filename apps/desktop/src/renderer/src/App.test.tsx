@@ -1073,6 +1073,19 @@ describe('App command palette', () => {
   })
 })
 
+describe('App settings button', () => {
+  // The header button wires onClick straight to the opener, so React hands it the click
+  // event. The opener used to read that event as its tab argument, leaving the modal on a
+  // bogus tab with no panel selected and an empty body. Opening must always land on General.
+  it('opens the settings modal on the General tab', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByTestId('open-settings'))
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-tab-general')).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+})
+
 describe('App landmarks', () => {
   // A screen reader user lands in an app with no document outline; a single top-level
   // heading names the window so they know where they are.
