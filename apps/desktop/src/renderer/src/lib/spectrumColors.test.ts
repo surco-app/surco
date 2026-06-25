@@ -64,17 +64,24 @@ describe('spectrumRampTable', () => {
     expect(lastG(ramp.r)).toBeCloseTo(WARN[0] / 255, 3)
   })
 
-  // The whole reason this exists: a faint pixel just above silence must read MUCH closer to
-  // the panel than the plain linear ramp would put it, so codec-wall noise sinks into the
-  // background instead of glowing accent-blue. Without the low-end fade the same input lands
-  // a third of the way to accent already.
-  it('pulls a near-floor value toward the panel instead of the accent', () => {
+  // sample() reads the table row nearest a gray input in [0,1].
+  const sample = (ramp: Ramp, gray: number): number => at(ramp.b, Math.round(gray * (64 - 1)))
+
+  // The whole reason this exists: the regenerated haze above a codec cut sits at ~0.14 gray,
+  // barely below the genuine HF transients at ~0.23. The cubic floor must collapse the haze
+  // almost all the way to the panel — well past the linear-fade midpoint — so it reads as dead
+  // background, not accent-blue. (A linear fade would leave 0.14 two-thirds toward accent.)
+  it('sinks the dead-band haze nearly to the panel', () => {
     const ramp = spectrumRampTable([PANEL, ACCENT, WARN])
-    // sample ~8% up the range (well inside the floor fraction)
-    const i = Math.round(0.08 * (64 - 1))
-    const fadedBlue = at(ramp.b, i) * 255
-    const linearBlue = PANEL[2] + (ACCENT[2] - PANEL[2]) * (0.08 / 0.5)
-    expect(fadedBlue).toBeLessThan(linearBlue)
-    expect(fadedBlue).toBeLessThan((PANEL[2] + ACCENT[2]) / 2)
+    const hazeBlue = sample(ramp, 0.14) * 255
+    // within a quarter of the way from panel toward accent
+    expect(hazeBlue).toBeLessThan(PANEL[2] + (ACCENT[2] - PANEL[2]) * 0.25)
+  })
+
+  // ...but a real HF transient just above the haze (~0.23 gray) must keep clearly more color,
+  // so the spikes Spek shows reaching ~22 kHz stay visible instead of vanishing with the haze.
+  it('keeps a real HF transient visibly above the haze', () => {
+    const ramp = spectrumRampTable([PANEL, ACCENT, WARN])
+    expect(sample(ramp, 0.23) * 255).toBeGreaterThan(sample(ramp, 0.14) * 255 + 8)
   })
 })
