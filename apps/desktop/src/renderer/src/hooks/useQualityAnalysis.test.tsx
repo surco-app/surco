@@ -78,4 +78,44 @@ describe('useQualityAnalysis', () => {
 
     expect(spectrogram).toHaveBeenCalledTimes(1)
   })
+
+  // A file ffmpeg can't read is swallowed so it doesn't abort the sweep, but the user must
+  // still learn it went unmeasured rather than have it pass as a silently-skipped track that
+  // looks the same as one never measured. The run reports how many files failed, once at the
+  // end — never per file, which would bury the list under toasts on a bad folder.
+  it('reports how many files failed to analyze, once when the sweep ends', async () => {
+    const spectrogram = vi.fn(async (path: string) => {
+      if (path === '/music/b.wav') throw new Error('unreadable')
+      return spectrum
+    })
+    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    const tracksViewRef = { current: [track('a'), track('b'), track('c')] }
+    const onErrors = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef, onErrors }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(onErrors).toHaveBeenCalledTimes(1)
+    expect(onErrors).toHaveBeenCalledWith(1)
+  })
+
+  // A clean sweep (every file measured) leaves the user undisturbed — the error report fires
+  // only when something actually failed, so a good folder shows no "0 failed" noise.
+  it('does not report errors when every file analyzes cleanly', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    const tracksViewRef = { current: [track('a'), track('b')] }
+    const onErrors = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef, onErrors }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(onErrors).not.toHaveBeenCalled()
+  })
 })

@@ -459,7 +459,10 @@ export default function App(): React.JSX.Element {
 
   // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
   // wires the start/cancel actions into the toolbar and commands.
-  const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({ tracksViewRef })
+  const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({
+    tracksViewRef,
+    onErrors: (count) => setNotice(tr('notices.qualityErrors', { count })),
+  })
 
   // The Discogs auto-match sweep: queue, visibility gating, pump and progress live in
   // the hook; App only wires enqueue/cancel into the import flow, toolbar and commands.

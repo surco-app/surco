@@ -88,7 +88,8 @@
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
-    "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar."
+    "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
+    "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir."
   },
   "update": {
     "ready": "La versión {{version}} está lista",
