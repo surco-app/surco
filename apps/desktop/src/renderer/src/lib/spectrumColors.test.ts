@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseColor, rampTableValues, spectrumRampTable } from './spectrumColors'
+import { type Ramp, parseColor, rampTableValues, spectrumRampTable } from './spectrumColors'
 
 describe('parseColor', () => {
   it('reads a 6-digit hex token into 8-bit channels', () => {
