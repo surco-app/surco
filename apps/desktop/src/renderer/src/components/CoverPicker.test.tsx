@@ -283,6 +283,36 @@ describe('CoverPicker drag and counter', () => {
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
   })
 
+  // Discogs often returns the same image under several entries (a primary plus secondaries
+  // that point at the same resource). Pushing each entry as its own choice left the stepper
+  // cycling through identical-looking slots, so the user clicked next and the cover didn't
+  // change. The choices are deduped by uri, so each distinct cover is one slot.
+  it('does not repeat a release image that appears more than once', () => {
+    const dupRelease = {
+      id: 2,
+      title: 'Album',
+      images: [
+        { uri: 'http://a/1.jpg' },
+        { uri: 'http://a/1.jpg' },
+        { uri: 'http://a/2.jpg' },
+      ],
+    } as unknown as React.ComponentProps<typeof CoverPicker>['release']
+    render(
+      <CoverPicker
+        item={item({ coverUrl: undefined })}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={dupRelease}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={vi.fn()}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    // Three image entries, two distinct covers — the duplicate collapses to one slot.
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
+  })
+
   // The workflow the user relies on after applying a release: it keeps the file's own
   // cover rather than forcing the release art over it, and the arrows step from that
   // cover into the release's images — forward and back — so the release art is always one

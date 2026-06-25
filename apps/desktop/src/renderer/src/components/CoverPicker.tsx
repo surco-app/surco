@@ -299,9 +299,19 @@ export function CoverPicker({
   // alternatives are one step away — and reachable again after stepping off.
   const coverChoices = useMemo(() => {
     const choices: { uri: string; path?: string }[] = []
-    if (originalCover.url) choices.push({ uri: originalCover.url, path: originalCover.path })
+    // Track every uri already added so a release image that repeats (Discogs returns the
+    // same art under a primary and its secondaries) — or that matches the file's own cover —
+    // becomes one slot, not a run of identical-looking ones the stepper cycles through.
+    const seen = new Set<string>()
+    if (originalCover.url) {
+      choices.push({ uri: originalCover.url, path: originalCover.path })
+      seen.add(originalCover.url)
+    }
     for (const im of release?.images ?? [])
-      if (im.uri !== originalCover.url) choices.push({ uri: im.uri })
+      if (!seen.has(im.uri)) {
+        choices.push({ uri: im.uri })
+        seen.add(im.uri)
+      }
     return choices
   }, [release, originalCover])
 
