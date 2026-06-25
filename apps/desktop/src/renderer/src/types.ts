@@ -62,6 +62,14 @@ export interface TrackItem {
   // can filter "already owned" vs "missing". Undefined until the snapshot loads, off
   // macOS, or before any candidate is filled — those rows sit in neither library bucket.
   inAppleMusic?: boolean
+  // A persisted "owned" verdict the raw tags alone couldn't reach: the editor and the
+  // auto-match sweep both re-check the library against the confident Discogs match's
+  // canonical title/artist, and when that matches they pin it here. The list merge ORs
+  // this into inAppleMusic so the filter agrees with the editor's badge — otherwise a
+  // file whose messy filename doesn't key-match the library would keep reading not-owned
+  // in the list even after the editor flipped it to owned. Set once, never cleared back
+  // to false (a clear-meta drops it so a retag re-resolves).
+  inAppleMusicResolved?: boolean
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage

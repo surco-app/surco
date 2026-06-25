@@ -358,6 +358,8 @@ describe('Editor clear metadata', () => {
       matched: false,
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.
       matchReview: false,
+      // ...and the Discogs-proven "owned" verdict, so it re-resolves against the retag.
+      inAppleMusicResolved: false,
     })
   })
 })
@@ -1305,6 +1307,44 @@ describe('Editor Discogs apply', () => {
     expect(screen.getByTestId('discogs-result')).toHaveAttribute('aria-expanded', 'true')
   })
 
+  // The fix for the badge/filter disagreement: a file whose own tags the Apple Music
+  // library can't recognise ('Bootleg Rip') but whose confidently-matched release resolves
+  // to the canonical artist the library knows ('The Artist') must persist the owned verdict
+  // (inAppleMusicResolved) — not just flip the badge — so the list and its filter agree with
+  // the badge instead of still counting the track as not owned.
+  it('persists the owned verdict when a confident release proves the track is in the library', async () => {
+    const { getRelease } = withDiscogs()
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    // The library knows the canonical 'Track One' / 'The Artist'; the raw tags don't match it.
+    const libraryIndex = buildLibraryIndex([{ title: 'Track One', artist: 'The Artist' }])
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track One', artist: 'Bootleg Rip' } },
+      'wav',
+      { libraryIndex },
+    )
+    await search()
+    // The matching release auto-opens, so the editor's second library check (on the canonical
+    // suggestion) runs without the user picking anything; that resolves owned and persists it.
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ inAppleMusicResolved: true }))
+    expect(getRelease).toHaveBeenCalled()
+  })
+
+  // The mirror: when the confident match isn't in the library either, the editor must not
+  // pin anything — the list already recomputes that not-owned verdict from the raw tags.
+  it('does not persist an owned verdict when the match is not in the library', async () => {
+    withDiscogs()
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([{ title: 'Other Song', artist: 'Someone' }])
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track One', artist: 'Bootleg Rip' } },
+      'wav',
+      { libraryIndex },
+    )
+    await search()
+    await screen.findAllByTestId('discogs-track')
+    expect(onChange).not.toHaveBeenCalledWith({ inAppleMusicResolved: true })
+  })
+
   // The probe is a guess that must never mutate the song — only opening the album
   // does. With no title there is nothing to match, so it doesn't even fetch.
   it('does not probe releases when the file has no title', async () => {
@@ -1806,9 +1846,13 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
   it('flags the track as owned once a confident suggestion matches the library', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Track Two (Remix)', artist: 'The Artist' }])
-    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } }, 'wav', {
-      libraryIndex: owned,
-    })
+    renderEditor(
+      { id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } },
+      'wav',
+      {
+        libraryIndex: owned,
+      },
+    )
     // The file's own artist tag isn't in the library, so the badge starts negative.
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
       'Not in your Apple Music library',
@@ -1830,9 +1874,13 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
   it('keeps the badge negative when the suggestion is not in the library either', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
-    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } }, 'wav', {
-      libraryIndex: owned,
-    })
+    renderEditor(
+      { id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } },
+      'wav',
+      {
+        libraryIndex: owned,
+      },
+    )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.click(screen.getByTestId('discogs-search'))
     const result = await screen.findByTestId('discogs-result')

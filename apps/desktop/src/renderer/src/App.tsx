@@ -65,6 +65,7 @@ import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
+import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
@@ -284,6 +285,9 @@ export default function App(): React.JSX.Element {
   // Live providers for the background sweep, read at probe time (Settings → Search).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
+  // Live view of the Apple Music library snapshot for the sweep, kept current below once
+  // useTracksView has computed it (the sweep reads it at apply time, not at render).
+  const libraryIndexRef = useRef<AppleMusicIndex | null>(null)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const queryClient = useQueryClient()
   // The latest spectrum-merged view of the tracks, so the hover-prefetch and analyze
@@ -474,7 +478,7 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
-  } = useAutoMatch({ tracksRef, updateTrack, searchProvidersRef })
+  } = useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef })
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its
@@ -652,6 +656,9 @@ export default function App(): React.JSX.Element {
   // via viewCache), driving the quality triage, the list and the editor's library badge.
   const { tracksView, libraryIndex } = useTracksView(tracks, viewCache)
   tracksViewRef.current = tracksView
+  // Feed the snapshot to the background sweep so it can re-check ownership against each
+  // match's canonical metadata (the sweep reads .current at apply time, not at render).
+  libraryIndexRef.current = libraryIndex
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])

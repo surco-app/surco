@@ -1,10 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import type { SearchHints, SearchPriority, SearchProviderId } from '../../../shared/types'
+import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import {
   autoMatchRelease,
-  type SearchApi,
   matchTargetOf,
+  type SearchApi,
   tracksToAutoMatch,
 } from '../lib/autoMatch'
 import { mapWithConcurrency } from '../lib/concurrency'
@@ -23,6 +24,11 @@ interface Params {
   // track must be read at the moment it's probed/applied, not from a closure snapshot.
   tracksRef: { readonly current: TrackItem[] }
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  // Live view of the Apple Music library snapshot (null until it lands / off macOS). Read at
+  // apply time so the sweep can re-check ownership against the match's canonical title/artist —
+  // the same second attempt the editor makes — and pin the verdict so the list/filter agree
+  // without the user having to open each row.
+  libraryIndexRef: { readonly current: AppleMusicIndex | null }
   // Live view of the enabled search providers (Settings). Read at probe time so toggling
   // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
@@ -51,6 +57,7 @@ export interface AutoMatchSweep {
 export function useAutoMatch({
   tracksRef,
   updateTrack,
+  libraryIndexRef,
   searchProvidersRef,
 }: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
@@ -111,6 +118,16 @@ export function useAutoMatch({
         return
       }
       const patch = buildReleaseMeta(live.meta, m.release, m.track, keepCoverArg(live))
+      // Re-check ownership against the release's canonical title/artist — the editor's second
+      // attempt, run here for the whole crate so the filter agrees without opening each row.
+      // Only pin a positive (the list recomputes the negative from the raw tags itself); the
+      // library index may not have loaded yet, in which case this round just skips it.
+      const index = libraryIndexRef.current
+      const resolvedOwned =
+        !live.musicPersistentId &&
+        !!index &&
+        !isInLibrary(index, live.meta) &&
+        isInLibrary(index, patch.meta)
       updateTrack(t.id, {
         meta: patch.meta,
         coverUrl: patch.coverUrl,
@@ -118,9 +135,10 @@ export function useAutoMatch({
         autoMatched: true,
         matched: true,
         matchConfidence: m.confidence,
+        ...(resolvedOwned ? { inAppleMusicResolved: true } : {}),
       })
     },
-    [searchApiAt, updateTrack, tracksRef],
+    [searchApiAt, updateTrack, tracksRef, libraryIndexRef],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an

@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId, TrackMetadata } from '../../../shared/types'
+import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import type { TrackItem } from '../types'
 import { useAutoMatch } from './useAutoMatch'
 
@@ -38,15 +39,21 @@ function track(id: string): TrackItem {
   }
 }
 
-function setup(tracks: TrackItem[]): {
+function setup(
+  tracks: TrackItem[],
+  libraryIndex: AppleMusicIndex | null = null,
+): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
   tracksRef: { current: TrackItem[] }
 } {
   const updateTrack = vi.fn()
   const tracksRef = { current: tracks }
+  const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
-  const { result } = renderHook(() => useAutoMatch({ tracksRef, updateTrack, searchProvidersRef }))
+  const { result } = renderHook(() =>
+    useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef }),
+  )
   return { result, updateTrack, tracksRef }
 }
 
@@ -191,6 +198,44 @@ describe('useAutoMatch', () => {
 
     await waitFor(() => expect(calls).toHaveLength(2))
     expect(calls[0]).toBe('query b')
+  })
+
+  // The whole point of the sweep re-checking the library: a file whose own messy tags don't
+  // match the library ('Unknown DJ') but whose confident Discogs match resolves to the
+  // canonical artist the library knows ('Artist') must be pinned owned, so the list/filter
+  // agree with the editor's badge without the user opening the row.
+  it('pins inAppleMusicResolved when the canonical match proves the track is owned', async () => {
+    setApi()
+    const t = track('a')
+    // Raw tags the library can't recognise; the Discogs match canonicalises the artist.
+    t.meta = { title: 'My Song', artist: 'Unknown DJ' } as TrackMetadata
+    const index = buildLibraryIndex([{ title: 'My Song', artist: 'Artist' }])
+    const { result, updateTrack } = setup([t], index)
+
+    act(() => result.current.enqueueAutoMatch([t], false))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalled())
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ autoMatched: true, inAppleMusicResolved: true }),
+    )
+  })
+
+  // The list already recomputes the not-owned verdict from the raw tags, so the sweep must
+  // not pin a verdict when the canonical match isn't in the library — pinning false would be
+  // redundant and would fight a snapshot that lands later.
+  it('does not pin inAppleMusicResolved when the match is not in the library', async () => {
+    setApi()
+    const t = track('a')
+    const index = buildLibraryIndex([{ title: 'Something Else', artist: 'Other' }])
+    const { result, updateTrack } = setup([t], index)
+
+    act(() => result.current.enqueueAutoMatch([t], false))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalled())
+    const patch = updateTrack.mock.calls[0][1]
+    expect(patch.autoMatched).toBe(true)
+    expect(patch.inAppleMusicResolved).toBeUndefined()
   })
 
   // The track the user is looking at must resolve now, not wait behind the rest of the

@@ -56,11 +56,15 @@ export function useTracksView(
     () =>
       tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
-        const inAppleMusic = t.musicPersistentId
-          ? true
-          : libraryIndex
-            ? isInLibrary(libraryIndex, t.meta)
-            : undefined
+        // inAppleMusicResolved is the verdict the editor/sweep already confirmed against
+        // the canonical Discogs match — the raw tags can't reach it here, so OR it in so
+        // the list and filter agree with the editor's badge instead of reading not-owned.
+        const inAppleMusic =
+          t.musicPersistentId || t.inAppleMusicResolved
+            ? true
+            : libraryIndex
+              ? isInLibrary(libraryIndex, t.meta)
+              : undefined
         if (!spectrum && fetching)
           return inAppleMusic === undefined
             ? { ...t, analyzing: true }

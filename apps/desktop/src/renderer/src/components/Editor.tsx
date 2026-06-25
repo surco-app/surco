@@ -273,20 +273,40 @@ export const Editor = memo(function Editor({
         }
       : undefined
 
+  // Whether the confident Discogs suggestion is what proves this track is owned — the raw
+  // tags didn't key-match the library but the release's canonical title/artist does. This is
+  // the one verdict the list can't recompute on its own (it has no open release), so it gets
+  // persisted below so the filter agrees with this badge.
+  const resolvedViaDiscogs =
+    !!libraryIndex &&
+    !item.musicPersistentId &&
+    !isInLibrary(libraryIndex, item.meta) &&
+    !!suggestedMeta &&
+    isInLibrary(libraryIndex, suggestedMeta)
+
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
   // re-import it. Read from the same session snapshot the list and quality filter use
   // (isInLibrary on item.meta); the editor additionally accepts a confident Discogs
-  // suggestion, so opening the right release can flip a tag the raw filename couldn't match
-  // (the badge can read 'yes' here while the row still reads not-in-library — intended, the
-  // row has no open release). A track Surco itself added (musicPersistentId) counts as owned
-  // even before the snapshot lands; 'idle' hides the badge off macOS and until it arrives.
+  // suggestion, so opening the right release can flip a tag the raw filename couldn't match.
+  // That Discogs-proven verdict is persisted (resolvedViaDiscogs, below) so the row and
+  // filter agree with this badge. A track Surco itself added (musicPersistentId) counts as
+  // owned even before the snapshot lands; 'idle' hides the badge off macOS and until it arrives.
   const inLibrary: 'idle' | 'yes' | 'no' = ((): 'idle' | 'yes' | 'no' => {
     if (!isMacOS()) return 'idle'
-    if (item.musicPersistentId) return 'yes'
+    if (item.musicPersistentId || item.inAppleMusicResolved) return 'yes'
     if (!libraryIndex) return 'idle'
     if (isInLibrary(libraryIndex, item.meta)) return 'yes'
-    return suggestedMeta && isInLibrary(libraryIndex, suggestedMeta) ? 'yes' : 'no'
+    return resolvedViaDiscogs ? 'yes' : 'no'
   })()
+
+  // Pin a Discogs-proven "owned" verdict onto the track so the list and filter read it too,
+  // not just this badge. Only when it's newly proven and not already pinned, so the effect
+  // settles in one write. onChange is App's updateTrack (a shallow merge), so this adds the
+  // flag without disturbing the open edits.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onChange is identity-stable (App's useStableCallback); excluding it keeps this effect from re-firing on unrelated App renders.
+  useEffect(() => {
+    if (resolvedViaDiscogs && !item.inAppleMusicResolved) onChange({ inAppleMusicResolved: true })
+  }, [resolvedViaDiscogs, item.inAppleMusicResolved])
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
@@ -357,8 +377,9 @@ export const Editor = memo(function Editor({
     const blank = emptyMetadata()
     if (isMulti) onChangeAllMeta?.(blank)
     // Clearing the tags un-matches the track, so the sweep may fill it again — including
-    // dropping any pending review flag so a retag is probed afresh.
-    else onChange({ meta: blank, matched: false, matchReview: false })
+    // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven
+    // owned verdict so it re-resolves against whatever the retag matches.
+    else onChange({ meta: blank, matched: false, matchReview: false, inAppleMusicResolved: false })
   }
 
   const stale = isStale(item)
