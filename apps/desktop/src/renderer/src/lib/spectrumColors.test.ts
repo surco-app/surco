@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseColor, rampTableValues } from './spectrumColors'
+import { parseColor, rampTableValues, spectrumRampTable } from './spectrumColors'
 
 describe('parseColor', () => {
   it('reads a 6-digit hex token into 8-bit channels', () => {
@@ -46,5 +46,35 @@ describe('rampTableValues', () => {
     expect(ramp.r.split(' ')).toHaveLength(3)
     expect(ramp.g.split(' ')).toHaveLength(3)
     expect(ramp.b.split(' ')).toHaveLength(3)
+  })
+})
+
+describe('spectrumRampTable', () => {
+  const PANEL: [number, number, number] = [26, 27, 38]
+  const ACCENT: [number, number, number] = [122, 162, 247]
+  const WARN: [number, number, number] = [224, 175, 104]
+  const at = (table: string, i: number): number => Number(table.split(' ')[i])
+
+  // Silence and full-loud must still anchor the ends, like the plain ramp, so quiet content
+  // reads as the panel floor and the loudest content as the warn peak.
+  it('anchors the floor at panel and the top at warn', () => {
+    const ramp = spectrumRampTable([PANEL, ACCENT, WARN])
+    expect(at(ramp.b, 0)).toBeCloseTo(PANEL[2] / 255, 3)
+    const lastG = (s: string): number => Number(s.split(' ').at(-1))
+    expect(lastG(ramp.r)).toBeCloseTo(WARN[0] / 255, 3)
+  })
+
+  // The whole reason this exists: a faint pixel just above silence must read MUCH closer to
+  // the panel than the plain linear ramp would put it, so codec-wall noise sinks into the
+  // background instead of glowing accent-blue. Without the low-end fade the same input lands
+  // a third of the way to accent already.
+  it('pulls a near-floor value toward the panel instead of the accent', () => {
+    const ramp = spectrumRampTable([PANEL, ACCENT, WARN])
+    // sample ~8% up the range (well inside the floor fraction)
+    const i = Math.round(0.08 * (64 - 1))
+    const fadedBlue = at(ramp.b, i) * 255
+    const linearBlue = PANEL[2] + (ACCENT[2] - PANEL[2]) * (0.08 / 0.5)
+    expect(fadedBlue).toBeLessThan(linearBlue)
+    expect(fadedBlue).toBeLessThan((PANEL[2] + ACCENT[2]) / 2)
   })
 })

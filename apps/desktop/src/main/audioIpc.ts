@@ -69,10 +69,11 @@ export function registerAudioIpc(): void {
         // regenerate on next open instead of serving stale colors or verdicts. v7
         // switches the image to a grayscale intensity map (recolored per theme in the
         // renderer), so older colored entries regenerate. v8 adds the FFT-band knee
-        // (catches codec walls the biquad pass smears below its threshold). v9 drops the
-        // 2× intensity gain and clamps the dynamic range to 60 dB so dead bands above a
-        // codec wall render dark like Spek instead of full-band blue.
-        'spectrogram-mono-v9',
+        // (catches codec walls the biquad pass smears below its threshold). v9 dropped the
+        // 2× intensity gain. v10 restores the full 120 dB range (v9's 60 dB clip hid the
+        // HF transients Spek shows reaching ~22 kHz) and moves the "dead = background" job
+        // to the recolor ramp's Spek-style low-end fade.
+        'spectrogram-mono-v10',
         inputPath,
         () =>
           // buildSpectrum fans its three decodes out in parallel, so wrapping the whole

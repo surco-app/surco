@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { parseColor, type Ramp, rampTableValues } from '../lib/spectrumColors'
+import { parseColor, type Ramp, spectrumRampTable } from '../lib/spectrumColors'
 
 // Silence → mid → loud. The panel token lets a quiet/black pixel blend into the surrounding
 // panel, the accent carries the Tokyo Night blue through the mids, and warn lifts loud
 // content to the signature yellow. Both flip with the theme, so the light theme gets a
-// light floor with dark blue/amber peaks instead of a navy slab.
+// light floor with dark blue/amber peaks instead of a navy slab. spectrumRampTable folds in
+// Spek's low-end correction so quiet noise sinks into the panel instead of reading as a
+// colored haze above a codec wall.
 const STOP_VARS = ['--color-panel', '--color-accent', '--color-warn'] as const
 
 function readRamp(): Ramp {
   const cs = getComputedStyle(document.documentElement)
-  return rampTableValues(STOP_VARS.map((v) => parseColor(cs.getPropertyValue(v))))
+  return spectrumRampTable(STOP_VARS.map((v) => parseColor(cs.getPropertyValue(v))))
 }
 
 // The theme is written one-way to <html data-theme>; there is no React store for it, so we

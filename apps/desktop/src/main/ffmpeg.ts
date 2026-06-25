@@ -735,18 +735,16 @@ export async function generateSpectrogram(input: string): Promise<string> {
         // amplitude cleanly. Bump the cache namespace when this changes so images cached
         // under the old palette regenerate instead of showing stale colors.
         //
-        // gain=1 (not 2) with drange=60 matches what Spek shows: gain=2 doubled the
-        // intensity, lifting the MP3's quantization noise above a hard codec wall (~16 kHz
-        // on a fake 320) from black up into the renderer's mid-blue ramp, so a wall the
-        // file does not pass read as full band to ~20 kHz. The default 120 dB range stayed
-        // bright that far down for the same reason. Holding gain at 1 and clamping the
-        // range to 60 dB sinks anything below the wall into the panel floor — the dead
-        // zone goes dark and only the real spikes show — while a genuine taper to 20 kHz
-        // still fills the band (verified against synthesized wall / full-band / dark-master
-        // references). Spek's own range is ~120 dB but it maps an absolute black floor;
-        // our ramp's silence stop is panel-colored, so a tighter range is what reaches the
-        // same "dead = background" result.
-        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=1:drange=60,format=gray',
+        // gain=1 (not 2) with the default 120 dB range, mirroring Spek's own −120…0 dBFS
+        // map (spek-fft.cc emits 10·log10(power); spek-spectrogram.cc spans LRANGE=−120 to
+        // URANGE=0). gain=2 doubled the intensity, lifting the quantization noise above a
+        // codec wall (~16 kHz on a fake 320) from black into the renderer's mid-blue ramp,
+        // so a wall the file does not pass read as full band. But narrowing the range to
+        // hide that noise (an earlier 60 dB attempt) also clipped the genuine −60…−90 dB HF
+        // transients Spek shows reaching ~22 kHz. The honest fix keeps the full range here
+        // and fades the bottom of the recolor ramp to the panel instead (see
+        // spectrumColors.ts), exactly how Spek's palette sinks its low end to black.
+        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=1,format=gray',
         out,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS },
