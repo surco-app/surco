@@ -530,6 +530,18 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.23",
+        "date": "June 26, 2026",
+        "title": "Catch more fakes and sharpen your Apple Music library",
+        "items": [
+          "The quality verdict catches a new kind of fake 320: tracks with a frequency wall hidden behind a few high-frequency spikes that used to pass as good.",
+          "Apple Music \"already in my library\" detection is more accurate: it matches on title, artist and duration, remembers the Discogs-proven verdict, and shows a checking state while it resolves — so the list, the filter and the editor always agree.",
+          "Search spreads results across providers, so a Discogs-heavy query no longer buries the Bandcamp ones.",
+          "The cover picker no longer shows the same image more than once.",
+          "A new settings button empties the analysis cache to recompute spectrograms and verdicts from scratch."
+        ]
+      },
+      {
         "version": "0.22",
         "date": "June 21, 2026",
         "title": "Convert without losing your cues or your tags",
