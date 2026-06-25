@@ -534,6 +534,10 @@
         "date": "June 21, 2026",
         "title": "Convert without losing your cues or your tags",
         "items": [
+          "The spectrogram is bigger and truer to Spek: a codec cut reads as dead air and the highs reach up to 22 kHz.",
+          "The file picker now accepts folders and expands them just like dropping them in.",
+          "Find and replace has a match-case toggle.",
+          "Exporting to Apple Music warns you if a track isn't converted yet.",
           "Converting to any format now keeps Traktor's cue points and beatgrid, not just when normalizing the volume.",
           "Conversion now respects metadata fields you've cleared: delete a comment or other value and the original no longer comes back.",
           "New track-row indicators: the quality verdict shows as a severity icon, and already-converted tracks get a blue check badge.",

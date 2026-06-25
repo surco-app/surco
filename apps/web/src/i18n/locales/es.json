@@ -534,6 +534,10 @@
         "date": "21 de junio de 2026",
         "title": "Convierte sin perder tus cues ni tus metadatos",
         "items": [
+          "El espectrograma se ve más grande y fiel a Spek: un corte del códec se lee como aire muerto y los agudos llegan hasta los 22 kHz.",
+          "El selector de archivos ya admite carpetas y las despliega igual que al arrastrarlas.",
+          "Buscar y reemplazar incluye un interruptor para distinguir mayúsculas y minúsculas.",
+          "Al exportar a Apple Music se avisa si alguna pista aún no está convertida.",
           "Al convertir a cualquier formato se conservan los cue points y el beatgrid de Traktor, no solo al normalizar el volumen.",
           "La conversión ahora respeta los campos de metadatos que hayas vaciado: si borras un comentario u otro dato, deja de reaparecer el valor original.",
           "Nuevos indicadores en la fila de pista: el veredicto de calidad se muestra como icono de severidad y las pistas ya convertidas lucen una marca azul.",
