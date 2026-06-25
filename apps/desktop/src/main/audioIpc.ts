@@ -72,8 +72,9 @@ export function registerAudioIpc(): void {
         // (catches codec walls the biquad pass smears below its threshold). v9 dropped the
         // 2× intensity gain. v10 restores the full 120 dB range (v9's 60 dB clip hid the
         // HF transients Spek shows reaching ~22 kHz) and moves the "dead = background" job
-        // to the recolor ramp's Spek-style low-end fade.
-        'spectrogram-mono-v10',
+        // to the recolor ramp's Spek-style low-end fade. v11 renders the image 320 px tall
+        // (was 280) to match the taller panel so it is not upscaled.
+        'spectrogram-mono-v11',
         inputPath,
         () =>
           // buildSpectrum fans its three decodes out in parallel, so wrapping the whole

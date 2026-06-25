@@ -32,7 +32,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
         src={spectrum.image || undefined}
         alt={tr('editor.spectrumAlt')}
         style={{ filter: `url(#${FILTER_ID})` }}
-        className="block h-60 w-full object-fill"
+        className="block h-80 w-full object-fill"
       />
       {nyquist > 0 &&
         FREQ_MARKS.filter((f) => f <= nyquist).map((f) => (

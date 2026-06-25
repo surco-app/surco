@@ -744,7 +744,7 @@ export async function generateSpectrogram(input: string): Promise<string> {
         // transients Spek shows reaching ~22 kHz. The honest fix keeps the full range here
         // and fades the bottom of the recolor ramp to the panel instead (see
         // spectrumColors.ts), exactly how Spek's palette sinks its low end to black.
-        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=1,format=gray',
+        'showspectrumpic=s=1000x320:legend=0:color=cividis:gain=1,format=gray',
         out,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS },
