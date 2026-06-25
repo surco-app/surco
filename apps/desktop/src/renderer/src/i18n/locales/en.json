@@ -556,6 +556,7 @@
     "title": "Find & Replace",
     "find": "Find",
     "replace": "Replace with",
+    "caseSensitive": "Match case",
     "regex": "Regex",
     "hint": "Type something to find across all tracks’ tags.",
     "invalidRegex": "Invalid regular expression",

@@ -556,6 +556,7 @@
     "title": "Buscar y reemplazar",
     "find": "Buscar",
     "replace": "Reemplazar por",
+    "caseSensitive": "Distinguir mayúsculas",
     "regex": "Regex",
     "hint": "Escribe algo para buscar en los tags de todas las pistas.",
     "invalidRegex": "Expresión regular no válida",

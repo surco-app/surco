@@ -23,6 +23,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   const [find, setFind] = useState('')
   const [replace, setReplace] = useState('')
   const [regex, setRegex] = useState(false)
+  const [caseSensitive, setCaseSensitive] = useState(false)
   const findInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -37,10 +38,13 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
     () =>
       find && !badRegex
         ? tracks
-            .map((t) => ({ id: t.id, meta: findReplaceTrack(t.meta, find, replace, { regex }) }))
+            .map((t) => ({
+              id: t.id,
+              meta: findReplaceTrack(t.meta, find, replace, { regex, caseSensitive }),
+            }))
             .filter((p) => Object.keys(p.meta).length > 0)
         : [],
-    [tracks, find, replace, regex, badRegex],
+    [tracks, find, replace, regex, caseSensitive, badRegex],
   )
   const changedFields = patches.reduce((n, p) => n + Object.keys(p.meta).length, 0)
   const examples = useMemo(() => {
@@ -75,15 +79,26 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
         <h2 id="find-replace-title" className="text-base font-semibold">
           {tr('findReplace.title')}
         </h2>
-        <label className="flex items-center gap-2 text-xs text-fg-dim">
-          <input
-            type="checkbox"
-            data-testid="find-replace-regex"
-            checked={regex}
-            onChange={(e) => setRegex(e.target.checked)}
-          />
-          {tr('findReplace.regex')}
-        </label>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-fg-dim">
+            <input
+              type="checkbox"
+              data-testid="find-replace-case"
+              checked={caseSensitive}
+              onChange={(e) => setCaseSensitive(e.target.checked)}
+            />
+            {tr('findReplace.caseSensitive')}
+          </label>
+          <label className="flex items-center gap-2 text-xs text-fg-dim">
+            <input
+              type="checkbox"
+              data-testid="find-replace-regex"
+              checked={regex}
+              onChange={(e) => setRegex(e.target.checked)}
+            />
+            {tr('findReplace.regex')}
+          </label>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

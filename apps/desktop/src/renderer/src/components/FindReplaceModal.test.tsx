@@ -108,4 +108,26 @@ describe('FindReplaceModal', () => {
     type('find-replace-replace', 'x')
     expect(screen.getByTestId('find-replace-preview')).toHaveTextContent('2')
   })
+
+  // Case-insensitive by default, so a find for "mix" cleans up "Mix", "MIX" and "mix" alike —
+  // the common rip-tidying case where casing is inconsistent.
+  it('matches regardless of case by default', () => {
+    const { onApply } = renderModal([track('a', { title: 'snap (ORIGINAL mix)' })])
+    type('find-replace-find', 'original Mix')
+    type('find-replace-replace', 'Radio Edit')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'snap (Radio Edit)' } }])
+  })
+
+  // The case-sensitive toggle is for the times casing matters — fixing "dj" to "DJ" without
+  // also rewriting an already-correct "DJ" or an unrelated "Dj". With it on, only the exact
+  // casing matches.
+  it('matches only the exact casing when case-sensitive is on', () => {
+    const { onApply } = renderModal([track('a', { artist: 'dj rush meets DJ Hell' })])
+    fireEvent.click(screen.getByTestId('find-replace-case'))
+    type('find-replace-find', 'dj')
+    type('find-replace-replace', 'DJ')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { artist: 'DJ rush meets DJ Hell' } }])
+  })
 })
