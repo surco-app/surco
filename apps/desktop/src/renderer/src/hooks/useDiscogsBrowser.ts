@@ -34,6 +34,12 @@ export interface DiscogsBrowser {
   // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
   loading: boolean
   busy: boolean
+  // Whether a search the editor auto-runs on open could still produce a verdict: a typed
+  // query whose search hasn't settled — the debounce is still pending or a request is in
+  // flight. The Apple Music badge reads this to show "checking" instead of flashing a
+  // premature "not in library" before Discogs has had its say. Distinct from `busy`, which
+  // only covers an in-flight request (and gates the Search button), not the debounce window.
+  resolving: boolean
   error: string
   previewRelease: (result: SearchResult) => void
 }
@@ -220,6 +226,10 @@ export function useDiscogsBrowser(
   const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
   const loading = releaseQuery.isFetching
   const busy = searchQuery.isFetching || autoProbing || releaseQuery.isFetching
+  // A typed query whose search hasn't settled yet, including the debounce window before the
+  // request even starts (query committed-to-be ≠ the term that's actually running). Not while
+  // a search has errored — there's no verdict coming, so the badge must commit, not spin.
+  const resolving = query.trim() !== '' && !searchQuery.isError && (busy || searchTerm !== query)
   const error = searchQuery.isError
     ? errorMessage(searchQuery.error, tr('editor.searchError'))
     : releaseQuery.isError
@@ -238,6 +248,7 @@ export function useDiscogsBrowser(
     openKey,
     loading,
     busy,
+    resolving,
     error,
     previewRelease,
   }

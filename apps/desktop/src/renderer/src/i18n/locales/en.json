@@ -308,6 +308,7 @@
     "reportError": "Report",
     "inLibrary": "Already in your Apple Music library",
     "notInLibrary": "Not in your Apple Music library",
+    "checkingLibrary": "Checking…",
     "convertAll": "Convert ({{count}}) · {{format}}",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",

@@ -185,7 +185,7 @@ export const Editor = memo(function Editor({
     searchProviders,
     discogsMaxResults,
   )
-  const { release } = browser
+  const { release, resolving: discogsResolving } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding
   // a section away persists as the user browses the crate instead of resetting on every
   // track switch — and the gated analyses below stay quiet until the section is reopened.
@@ -291,12 +291,17 @@ export const Editor = memo(function Editor({
   // That Discogs-proven verdict is persisted (resolvedViaDiscogs, below) so the row and
   // filter agree with this badge. A track Surco itself added (musicPersistentId) counts as
   // owned even before the snapshot lands; 'idle' hides the badge off macOS and until it arrives.
-  const inLibrary: 'idle' | 'yes' | 'no' = ((): 'idle' | 'yes' | 'no' => {
+  // 'checking' covers the gap that used to flicker "not in library": the raw tags don't match
+  // but Discogs is still resolving (the auto-search's debounce, request or release load), so
+  // its match could still flip this to 'yes' — only once that work settles without a match do
+  // we commit to 'no'.
+  const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = ((): 'idle' | 'yes' | 'no' | 'checking' => {
     if (!isMacOS()) return 'idle'
     if (item.musicPersistentId || item.inAppleMusicResolved) return 'yes'
     if (!libraryIndex) return 'idle'
     if (isInLibrary(libraryIndex, item.meta)) return 'yes'
-    return resolvedViaDiscogs ? 'yes' : 'no'
+    if (resolvedViaDiscogs) return 'yes'
+    return discogsResolving ? 'checking' : 'no'
   })()
 
   // Pin a Discogs-proven "owned" verdict onto the track so the list and filter read it too,
@@ -536,6 +541,18 @@ export const Editor = memo(function Editor({
                   >
                     <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
                     {tr('editor.notInLibrary')}
+                  </span>
+                )}
+                {/* The in-between state: Discogs is still searching, so its match could yet
+                    prove the track owned — show "Checking…" rather than flashing not-in-library
+                    and then correcting it a second later. */}
+                {!isMulti && inLibrary === 'checking' && (
+                  <span
+                    data-testid="apple-music-status"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-fg/10 px-2.5 py-1 text-xs font-medium text-fg-dim"
+                  >
+                    <Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    {tr('editor.checkingLibrary')}
                   </span>
                 )}
                 {!isMulti && copyFilenameButton}
