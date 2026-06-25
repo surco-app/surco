@@ -734,7 +734,19 @@ export async function generateSpectrogram(input: string): Promise<string> {
         // palettes. cividis grays to a monotonic ramp, so its luminance still tracks
         // amplitude cleanly. Bump the cache namespace when this changes so images cached
         // under the old palette regenerate instead of showing stale colors.
-        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=2,format=gray',
+        //
+        // gain=1 (not 2) with drange=60 matches what Spek shows: gain=2 doubled the
+        // intensity, lifting the MP3's quantization noise above a hard codec wall (~16 kHz
+        // on a fake 320) from black up into the renderer's mid-blue ramp, so a wall the
+        // file does not pass read as full band to ~20 kHz. The default 120 dB range stayed
+        // bright that far down for the same reason. Holding gain at 1 and clamping the
+        // range to 60 dB sinks anything below the wall into the panel floor — the dead
+        // zone goes dark and only the real spikes show — while a genuine taper to 20 kHz
+        // still fills the band (verified against synthesized wall / full-band / dark-master
+        // references). Spek's own range is ~120 dB but it maps an absolute black floor;
+        // our ramp's silence stop is panel-colored, so a tighter range is what reaches the
+        // same "dead = background" result.
+        'showspectrumpic=s=1000x280:legend=0:color=cividis:gain=1:drange=60,format=gray',
         out,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS },
