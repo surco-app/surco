@@ -2,26 +2,13 @@ import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguagePref, ThemePref } from '../../../../shared/types'
+import { formatFileSize } from '../../lib/properties'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es']
-
-// Bytes as the rounded KB/MB/GB the cache hint shows — one decimal under 10 of a
-// unit (so "8.4 MB" reads, "128 MB" stays clean), plain bytes below 1 KB.
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  const units = ['KB', 'MB', 'GB']
-  let value = bytes / 1024
-  let unit = 0
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024
-    unit++
-  }
-  return `${value.toFixed(value < 10 ? 1 : 0)} ${units[unit]}`
-}
 
 interface Props {
   synced: SyncedDraft
@@ -122,7 +109,7 @@ export function GeneralTab({
           data-testid="settings-cache-stats"
           value={
             cacheStats
-              ? `${cacheStats.files} · ${formatBytes(cacheStats.bytes)}`
+              ? `${cacheStats.files} · ${formatFileSize(cacheStats.bytes)}`
               : tr('settings.configDirDefault')
           }
           readOnly
@@ -140,7 +127,7 @@ export function GeneralTab({
       </div>
       <p className="mt-1.5 mb-5 text-xs text-fg-dim">
         {cacheStats && cacheStats.files > 0
-          ? tr('settings.cacheHint', { count: cacheStats.files, size: formatBytes(cacheStats.bytes) })
+          ? tr('settings.cacheHint', { count: cacheStats.files, size: formatFileSize(cacheStats.bytes) })
           : tr('settings.cacheHintEmpty')}
       </p>
     </>
