@@ -113,6 +113,14 @@ const KNEE_RECOVERY_DB = 2
 // natural roll-off into Nyquist (a steep final step with nothing above it) is never
 // read as a wall.
 const KNEE_MIN_BANDS_ABOVE = 2
+// ...unless the drop is catastrophic. A fake whose real content walls off mid-band but
+// is sprayed with sparse HF transient spikes (Harold Heath - Can You Feel) reads as a
+// gentle creep through the spiked bands, then collapses 26→34 dB into the floor only at
+// the very top edge — where <2 bands sit above. A drop this deep is never a natural
+// taper (dark masters shed ≤14 dB across their last bands), so it trips the knee with a
+// single band above. The 20 dB line sits ~6 dB clear of both the worst genuine edge drop
+// and the shallowest collapse we must catch.
+const KNEE_CATASTROPHIC_DROP_DB = 20
 
 // The source's real ceiling (Hz) when the FFT bands carry a codec lowpass the biquad
 // pass missed, or null for a natural spectrum. Returns the last full band before the
@@ -128,8 +136,9 @@ export function detectFftKnee(
   let maxDrop = KNEE_DROP_DB
   for (let i = 0; i < bandsDb.length - 1; i++) {
     if (!Number.isFinite(bandsDb[i]) || !Number.isFinite(bandsDb[i + 1])) continue
-    if (bandsDb.length - 1 - (i + 1) < KNEE_MIN_BANDS_ABOVE) continue
     const drop = bandsDb[i] - bandsDb[i + 1]
+    const minBandsAbove = drop >= KNEE_CATASTROPHIC_DROP_DB ? 1 : KNEE_MIN_BANDS_ABOVE
+    if (bandsDb.length - 1 - (i + 1) < minBandsAbove) continue
     if (drop < maxDrop) continue
     const ceiling = bandsDb[i + 1] + KNEE_RECOVERY_DB
     if (bandsDb.slice(i + 2).some((b) => b > ceiling)) continue

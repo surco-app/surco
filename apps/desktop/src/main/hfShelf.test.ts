@@ -112,10 +112,29 @@ describe('detectFftKnee', () => {
     70.4, 70.8, 68.9, 67.4, 65.6, 63.1, 60.4, 58.6, 48.2, 48.6, 44.2, 41.5, 36.6, 30.0,
   ]
 
+  // Harold Heath - Can You Feel (Grant Dell & Bob Rosa Remix): a fake 320 whose real
+  // content walls off ~16 kHz, but sparse HF transient spikes punch up to 19 kHz and
+  // inflate the 17–19 kHz whole-file averages, so the wall reads as a gentle creep
+  // (6/1.4/6.8 dB steps) rather than a single cliff. The energy only collapses into
+  // the floor at the very top: 19→20 kHz = 25.9 dB, 20→21 kHz = 33.8 dB. Those two
+  // cliffs are catastrophic — far steeper than any natural roll-off into Nyquist
+  // (measured ≤14 dB on dark masters) — but they sit at the top edge with <2 bands
+  // above, so the natural-roll-off guard used to spare them and the file graded "Good".
+  const HAROLD = [
+    70.6, 70.8, 68.4, 68.0, 66.7, 65.8, 62.7, 60.1, 57.4, 51.5, 50.0, 43.2, 17.3, -16.5,
+  ]
+
   it('catches a codec wall the biquad pass smears below its knee threshold', () => {
     // The cutoff is the last full band before the cliff (the biquad pass reports the
     // same way) — enough for the verdict to grade it "Bad" instead of "Good".
     expect(detectFftKnee(DREAMCHILD, BAND_START_HZ, BAND_WIDTH_HZ)).toBe(15000)
+  })
+
+  it('catches a top-edge collapse spikes papered into a creep — a fake 320', () => {
+    // The natural-roll-off guard needs ≥2 bands above a cliff so a steep final step
+    // toward Nyquist is not read as a wall. But a 26+ dB collapse into the floor is
+    // never a taper, so a catastrophic drop trips the knee even at the top edge.
+    expect(detectFftKnee(HAROLD, BAND_START_HZ, BAND_WIDTH_HZ)).not.toBeNull()
   })
 
   it('leaves genuine masters alone — no single-band cliff to mistake for a wall', () => {
@@ -132,6 +151,14 @@ describe('detectFftKnee', () => {
     // toward Nyquist) has no collapsed plateau above it, so it is not a codec wall.
     const taper = [70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 36]
     expect(detectFftKnee(taper, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
+  })
+
+  it('does not read a steep but genuine dark roll-off at the top edge as a wall', () => {
+    // A dark master can shed 12–14 dB across its last two bands as it falls into
+    // Nyquist. That is a real taper, not a codec collapse — the top-edge exception
+    // only fires on a catastrophic (≥20 dB) drop, so this stays clean.
+    const darkTaper = [72, 70, 68, 66, 64, 61, 58, 54, 50, 46, 42, 38, 29, 17]
+    expect(detectFftKnee(darkTaper, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
   })
 
   it('ignores a sharp drop that recovers — a notch, not a sustained codec wall', () => {
