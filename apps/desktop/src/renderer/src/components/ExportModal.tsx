@@ -20,6 +20,10 @@ interface Props {
 export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [error, setError] = useState('')
+  // A track with no converted copy exports its original source path, so the saved collection
+  // would point at the un-renamed, un-normalized file. Warn (don't block) so the user can
+  // choose to convert first or export the originals on purpose.
+  const unconverted = tracks.filter((t) => !t.outputPath).length
 
   const targets = [
     {
@@ -63,6 +67,11 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
         {tr('export.title')}
       </h2>
       <p className="mt-1 text-sm text-fg-dim">{tr('export.subtitle')}</p>
+      {unconverted > 0 && (
+        <p data-testid="export-unconverted" className="mt-3 text-xs text-warn">
+          {tr('export.unconverted', { count: unconverted })}
+        </p>
+      )}
       <div className="mt-4 flex flex-col gap-2">
         {targets.map((t) => (
           <button

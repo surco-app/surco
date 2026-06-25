@@ -17,6 +17,7 @@
     "traktorHint": "In Traktor: File → Import Collection → pick this file.",
     "seratoHint": "In Serato: drop the saved file into your _Serato_/Subcrates folder, then restart Serato — your tracks show up in the sidebar.",
     "engineHint": "For Engine DJ: pick a folder (e.g. a USB drive) — Surco writes an Engine Library there. Point Engine DJ at that drive to import. Keep your tracks on the same drive as the folder.",
+    "unconverted": "{{count}} track(s) aren’t converted yet — they’ll be exported as their original files.",
     "failed": "Export failed: {{error}}"
   },
   "header": {

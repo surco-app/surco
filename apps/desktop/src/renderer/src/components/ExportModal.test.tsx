@@ -115,4 +115,21 @@ describe('ExportModal', () => {
     fireEvent.click(screen.getByTestId('export-rekordbox'))
     await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
+
+  // An unconverted track exports its original source path (the builders fall back to
+  // inputPath), so the DJ's library would point at the un-renamed, un-normalized file. The
+  // export still works, but the user must be warned they're exporting originals, not copies.
+  it('warns when some tracks have not been converted', () => {
+    render(
+      <ExportModal tracks={[track(), { ...track(), outputPath: '/out/b.aiff' }]} onClose={vi.fn()} />,
+    )
+    expect(screen.getByTestId('export-unconverted')).toHaveTextContent('1')
+  })
+
+  // Every track converted: the export points at the good copies, so there's nothing to warn
+  // about and the notice stays out of the way.
+  it('shows no warning when every track has been converted', () => {
+    render(<ExportModal tracks={[{ ...track(), outputPath: '/out/a.aiff' }]} onClose={vi.fn()} />)
+    expect(screen.queryByTestId('export-unconverted')).toBeNull()
+  })
 })

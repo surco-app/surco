@@ -17,6 +17,7 @@
     "traktorHint": "En Traktor: File → Import Collection → elige este fichero.",
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "engineHint": "Para Engine DJ: elige una carpeta (p. ej. un USB) — Surco crea ahí una biblioteca Engine. Apunta Engine DJ a esa unidad para importar. Mantén tus pistas en la misma unidad que la carpeta.",
+    "unconverted": "{{count}} pista(s) aún sin convertir — se exportarán como sus archivos originales.",
     "failed": "Error al exportar: {{error}}"
   },
   "header": {
