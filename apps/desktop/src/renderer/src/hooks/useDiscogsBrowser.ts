@@ -144,14 +144,22 @@ export function useDiscogsBrowser(
     () => providerCountsOf(allResults, providers),
     [allResults, providers],
   )
-  const results = useMemo(
-    () =>
-      (providerFilter === 'all'
-        ? allResults
-        : allResults.filter((r) => r.provider === providerFilter)
-      ).slice(0, maxResults),
-    [allResults, providerFilter, maxResults],
-  )
+  const results = useMemo(() => {
+    if (providerFilter !== 'all')
+      return allResults.filter((r) => r.provider === providerFilter).slice(0, maxResults)
+    // Cap per provider, not over the merged list: Discogs is ranked ahead of Bandcamp, so a
+    // single slice would let a wall of Discogs hits push every Bandcamp row past the cap while
+    // the source chip still advertised "Bandcamp (n)". Keep each provider's first maxResults in
+    // place, leaving the global ranked order untouched — a provider just stops contributing
+    // once it has filled its quota.
+    const perProvider = new Map<SearchProviderId, number>()
+    return allResults.filter((r) => {
+      const seen = perProvider.get(r.provider) ?? 0
+      if (seen >= maxResults) return false
+      perProvider.set(r.provider, seen + 1)
+      return true
+    })
+  }, [allResults, providerFilter, maxResults])
 
   const { refetch: refetchSearch } = searchQuery
   const doSearch = useCallback(() => {

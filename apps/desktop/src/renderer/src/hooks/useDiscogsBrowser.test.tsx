@@ -102,6 +102,39 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
   })
 
+  // The cap must apply per provider, not to the merged list: Discogs is ranked ahead of
+  // Bandcamp, so a single slice over the merge would let a wall of Discogs hits push every
+  // Bandcamp row past the cap — and the source chip would advertise "Bandcamp (n)" for rows
+  // the "all" view never shows. Each provider keeps up to the cap, so Bandcamp stays visible.
+  it('caps each provider so a Discogs-heavy result set never buries Bandcamp', async () => {
+    const discogsMany = Array.from({ length: 40 }, (_, i) => ({
+      provider: 'discogs' as const,
+      id: i + 1,
+      title: `Some Album ${i}`,
+    }))
+    const bcResult = {
+      provider: 'bandcamp' as const,
+      id: 999,
+      title: 'Some Album BC',
+      releaseUrl: 'https://x.bc/a',
+    }
+    setApi({
+      search: vi.fn(async (_q: string, provider?: string) =>
+        provider === 'bandcamp' ? [bcResult] : discogsMany,
+      ),
+    })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
+    // Discogs capped to 25, Bandcamp's lone row still present — not slid off the end.
+    expect(result.current.results.filter((r) => r.provider === 'discogs')).toHaveLength(25)
+    expect(result.current.results.some((r) => r.provider === 'bandcamp')).toBe(true)
+  })
+
   // The cap is the user's Settings → Search "Maximum results" choice, threaded in so a DJ
   // who wants a tighter list (less compilation/reissue noise) gets exactly that.
   it('caps the displayed list to the configured maximum', async () => {
