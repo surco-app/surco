@@ -73,10 +73,12 @@ export function useTrackProcessing({
   const tracksRef = useRef(tracks)
   tracksRef.current = tracks
 
-  // The batch summary is a transient confirmation, not a persistent banner — it
-  // clears itself a few seconds after a run so it never lingers over later work.
+  // The batch summary is a transient confirmation, not a persistent banner — it clears
+  // itself a few seconds after a run so it never lingers over later work. A run that had
+  // failures is the exception: its "N failed" count is worth reading after the fact, so it
+  // stays until the next run replaces it rather than vanishing on the timer.
   useEffect(() => {
-    if (!batchSummary) return
+    if (!batchSummary || batchSummary.failed > 0) return
     const id = setTimeout(() => setBatchSummary(null), 6000)
     return () => clearTimeout(id)
   }, [batchSummary])

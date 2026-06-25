@@ -434,6 +434,55 @@ describe('useTrackProcessing', () => {
     expect(result.current.batchSummary).toBeNull()
   })
 
+  // A clean run's "N converted" banner is a transient confirmation, so it auto-dismisses a
+  // few seconds later rather than lingering over the next bit of work.
+  it('auto-dismisses a summary with no failures after a few seconds', async () => {
+    vi.useFakeTimers()
+    try {
+      setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+      const tracks = [track({ id: 'a' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 0, failed: 0 })
+      await act(async () => {
+        vi.advanceTimersByTime(6000)
+      })
+      expect(result.current.batchSummary).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // Failures are the one outcome worth reading after the fact: the failed rows stay flagged
+  // in the list, but the aggregate "N failed" count must not vanish on the auto-dismiss timer
+  // before the user has had a chance to take it in. A run with any failure keeps its summary.
+  it('keeps a summary that reports failures past the auto-dismiss delay', async () => {
+    vi.useFakeTimers()
+    try {
+      setApi({ processTrack: vi.fn().mockRejectedValue(new Error('boom')) })
+      const tracks = [track({ id: 'a' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      expect(result.current.batchSummary).toEqual({ converted: 0, skipped: 0, failed: 1 })
+      await act(async () => {
+        vi.advanceTimersByTime(6000)
+      })
+      expect(result.current.batchSummary).toEqual({ converted: 0, skipped: 0, failed: 1 })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('hands the stored persistent ID to the conversion, so the automatic Apple Music step syncs the existing library copy instead of importing a duplicate', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
     setApi({ processTrack })
