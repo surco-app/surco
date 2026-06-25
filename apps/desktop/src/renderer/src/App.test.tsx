@@ -444,6 +444,22 @@ describe('App track list label', () => {
 })
 
 describe('App import skeleton', () => {
+  // "Add files" used to pass the picker's result straight to the list, so a folder picked
+  // there (macOS lets the dialog select folders) imported nothing while the same folder
+  // dropped in worked. Routing the picked paths through the same expand the drop uses makes
+  // the button and the drop behave alike — a picked folder walks to its audio files.
+  it('expands a folder chosen from the file picker into its audio files', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/crate']),
+      expandPaths: vi.fn(async () => ['/music/crate/a.wav', '/music/crate/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/crate'])
+  })
+
   // Reading tags/duration/cover up front used to block the whole drop behind the slowest
   // file: a cloud or network folder showed an empty list for seconds and looked broken
   // even though the import was running. The rows must appear the instant they're dropped,

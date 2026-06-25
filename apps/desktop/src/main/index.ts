@@ -419,9 +419,16 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('dialog:pickFiles', async () => {
+    // macOS lets one dialog select both files and folders; Windows and Linux force a
+    // directory-only picker the moment 'openDirectory' is present, so only mac gets it.
+    // The renderer expands whatever comes back, so a picked folder imports like a dropped one.
+    const properties: Array<'openFile' | 'openDirectory' | 'multiSelections'> =
+      process.platform === 'darwin'
+        ? ['openFile', 'openDirectory', 'multiSelections']
+        : ['openFile', 'multiSelections']
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Selecciona pistas',
-      properties: ['openFile', 'multiSelections'],
+      properties,
       filters: [
         {
           name: 'Audio',

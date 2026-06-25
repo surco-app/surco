@@ -210,7 +210,9 @@ export function useTrackLibrary({
   }, [])
 
   async function pickFiles(): Promise<void> {
-    addPaths(await window.api.pickFiles())
+    // Expand the picker's result the same way a drop does: a folder picked on macOS walks
+    // to its audio files, and ._ AppleDouble and hidden entries are filtered out either way.
+    addPaths(await window.api.expandPaths(await window.api.pickFiles()))
   }
 
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
