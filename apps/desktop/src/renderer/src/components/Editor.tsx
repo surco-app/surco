@@ -277,10 +277,17 @@ export const Editor = memo(function Editor({
   // tags didn't key-match the library but the release's canonical title/artist does. This is
   // the one verdict the list can't recompute on its own (it has no open release), so it gets
   // persisted below so the filter agrees with this badge.
+  // The file's own tags plus its probed length — the library matcher uses the duration to
+  // tell two versions of one title apart, so pass it alongside title/artist.
+  const ownTags = {
+    title: item.meta.title,
+    artist: item.meta.artist,
+    durationSec: item.duration,
+  }
   const resolvedViaDiscogs =
     !!libraryIndex &&
     !item.musicPersistentId &&
-    !isInLibrary(libraryIndex, item.meta) &&
+    !isInLibrary(libraryIndex, ownTags) &&
     !!suggestedMeta &&
     isInLibrary(libraryIndex, suggestedMeta)
 
@@ -299,7 +306,7 @@ export const Editor = memo(function Editor({
     if (!isMacOS()) return 'idle'
     if (item.musicPersistentId || item.inAppleMusicResolved) return 'yes'
     if (!libraryIndex) return 'idle'
-    if (isInLibrary(libraryIndex, item.meta)) return 'yes'
+    if (isInLibrary(libraryIndex, ownTags)) return 'yes'
     if (resolvedViaDiscogs) return 'yes'
     return discogsResolving ? 'checking' : 'no'
   })()

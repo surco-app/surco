@@ -63,7 +63,11 @@ export function useTracksView(
           t.musicPersistentId || t.inAppleMusicResolved
             ? true
             : libraryIndex
-              ? isInLibrary(libraryIndex, t.meta)
+              ? isInLibrary(libraryIndex, {
+                  title: t.meta.title,
+                  artist: t.meta.artist,
+                  durationSec: t.duration,
+                })
               : undefined
         if (!spectrum && fetching)
           return inAppleMusic === undefined

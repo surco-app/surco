@@ -133,10 +133,10 @@ describe('buildLibraryIndex / isInLibrary', () => {
   // so the bare title never matches the library copy. With the artist known, strip a leading
   // copy of it off the title before keying.
   it('matches when the title field carries the artist as a prefix', () => {
-    const idx = buildLibraryIndex([
-      { title: 'Maybe (Fields Of Love) (Club Vox)', artist: 'Debby' },
-    ])
-    expect(isInLibrary(idx, { title: 'Debby - Maybe (Fields Of Love)', artist: 'Debby' })).toBe(true)
+    const idx = buildLibraryIndex([{ title: 'Maybe (Fields Of Love) (Club Vox)', artist: 'Debby' }])
+    expect(isInLibrary(idx, { title: 'Debby - Maybe (Fields Of Love)', artist: 'Debby' })).toBe(
+      true,
+    )
   })
 
   // The reported case: a rip tagged with just the base title still matches the library
@@ -177,5 +177,75 @@ describe('buildLibraryIndex / isInLibrary', () => {
   it('does not match a base title when the artist differs', () => {
     const idx = buildLibraryIndex([{ title: 'It’s Not Over (Happy House)', artist: '3 Styles' }])
     expect(isInLibrary(idx, { title: 'It’s Not Over', artist: 'Someone Else' })).toBe(false)
+  })
+})
+
+describe('isInLibrary — version-aware scoring with duration', () => {
+  // The reported case: the file is "Funky Feelings (Klubb Mix)" (6:07) but the library
+  // holds a DIFFERENT version, "Funky Feelings (Klubb'ed Mix)" (8:06). Same base title and
+  // artist, but distinct version suffixes AND far-apart durations — it's a different cut,
+  // so the user must NOT be told they already own it. The version decides, not the base.
+  it('does not match two different versions of one title when both name a distinct version', () => {
+    const idx = buildLibraryIndex([
+      { title: "Funky Feelings (Klubb'ed Mix)", artist: "Head Horny's", durationSec: 486 },
+    ])
+    expect(
+      isInLibrary(idx, {
+        title: 'Funky Feelings (Klubb Mix)',
+        artist: 'Head Horny´s, Carlos Perez, K-Style',
+        durationSec: 367,
+      }),
+    ).toBe(false)
+  })
+
+  // The same exact version (identical suffix) is owned even when the probed length differs
+  // by a few seconds — a gap, fade or encoder rounding shifts the duration without it being
+  // a different cut. Identical full title wins; duration only ever separates differing ones.
+  it('matches the same version when only the duration drifts by a few seconds', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Funky Feelings (Klubb Mix)', artist: "Head Horny's", durationSec: 367 },
+    ])
+    expect(
+      isInLibrary(idx, {
+        title: 'Funky Feelings (Klubb Mix)',
+        artist: 'Head Horny´s, Carlos Perez, K-Style',
+        durationSec: 372,
+      }),
+    ).toBe(true)
+  })
+
+  // The library title is just "Funky Feelings" while the file's title field carries the whole
+  // release path "… - 04 Funky Feelings (Klubb Mix)". The library title is a trailing
+  // word-run of the candidate, with the artist matching, so it's still found.
+  it('matches when the library title is the tail of a full-filename title field', () => {
+    const idx = buildLibraryIndex([{ title: 'Funky Feelings', artist: "Head Horny's" }])
+    expect(
+      isInLibrary(idx, {
+        title: 'Funky Feelings 2026 - Alegria & Fuego - 04 Funky Feelings (Klubb Mix)',
+        artist: 'Head Horny´s, Carlos Perez, K-Style',
+      }),
+    ).toBe(true)
+  })
+
+  // Duration is only a separator, never a gate: when one side has no duration (a library row
+  // Music reported none for, or a Discogs-suggested candidate that carries none), an exact
+  // title+artist still matches — the duration weight simply drops out.
+  it('matches on title and artist alone when a duration is missing on either side', () => {
+    const idx = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5' }])
+    expect(isInLibrary(idx, { title: 'Strobe', artist: 'deadmau5', durationSec: 634 })).toBe(true)
+    const withDur = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5', durationSec: 634 }])
+    expect(isInLibrary(withDur, { title: 'Strobe', artist: 'deadmau5' })).toBe(true)
+  })
+
+  // Even with durations present and far apart, an identical full title (same version) stays
+  // owned — encodes the rule that title identity outranks duration, which only separates
+  // genuinely different version suffixes.
+  it('keeps an identical-version match owned despite a large duration gap', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Strobe (Club Mix)', artist: 'deadmau5', durationSec: 600 },
+    ])
+    expect(
+      isInLibrary(idx, { title: 'Strobe (Club Mix)', artist: 'deadmau5', durationSec: 300 }),
+    ).toBe(true)
   })
 })

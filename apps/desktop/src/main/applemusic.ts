@@ -169,41 +169,59 @@ export function isAppleMusicOnly(
   return shouldAddToAppleMusic(addToAppleMusic, platform, format) && !keepOutputCopy && !inPlace
 }
 
-// Dumps the whole library's name+artist in one osascript so the renderer can match
-// the crate against it locally — checking 282 tracks one lookup at a time
-// would be 282 osascript spawns, each scanning the entire library. The names and
-// artists are read as two lists (fast) and zipped into "name<tab>artist" lines via a
-// list built with `set end of` (O(n)); concatenating a string in the loop would be
-// O(n²) and stall on a multi-thousand-track library. Coercing the list to text with a
-// linefeed delimiter gives one row per track.
+// Dumps the whole library's name+artist+duration in one osascript so the renderer can
+// match the crate against it locally — checking 282 tracks one lookup at a time
+// would be 282 osascript spawns, each scanning the entire library. The names, artists
+// and durations are read as three lists (fast) and zipped into "name<tab>artist<tab>dur"
+// lines via a list built with `set end of` (O(n)); concatenating a string in the loop
+// would be O(n²) and stall on a multi-thousand-track library. Coercing the list to text
+// with a linefeed delimiter gives one row per track. Duration feeds the version-aware
+// matcher (a 6-minute mix vs an 8-minute one) and reads instantly even on a big library.
 export function buildLibraryDumpScript(): string {
   return [
     'tell application "Music"',
     '  set theNames to name of every track of library playlist 1',
     '  set theArtists to artist of every track of library playlist 1',
+    '  set theDurations to duration of every track of library playlist 1',
     'end tell',
     'set out to {}',
     'repeat with i from 1 to count of theNames',
-    '  set end of out to (item i of theNames) & tab & (item i of theArtists)',
+    '  set end of out to (item i of theNames) & tab & (item i of theArtists) & tab & (item i of theDurations)',
     'end repeat',
     "set AppleScript's text item delimiters to linefeed",
     'return out as text',
   ].join('\n')
 }
 
-// Parses the dump back into pairs. Splits each row on the first tab only, so an artist
-// that itself holds a tab survives intact, and drops rows missing either side — a
-// trailing newline or an empty field would otherwise become a pair that matches the
-// whole crate.
+// A trailing numeric field — the duration AppleScript appends as seconds, which an
+// es-locale serialises with a comma decimal ("486,55"). Anchored to the end so it only
+// ever peels a real number off the last tab, never a tab the artist itself contains.
+const TRAILING_DURATION = /\t(\d+(?:[.,]\d+)?)$/
+
+// Parses the dump back into candidates. The title is everything up to the first tab; the
+// duration, when the row ends in a number, is peeled off the last tab and the artist is
+// what's left between — so an artist that itself holds a tab survives intact (its trailing
+// field isn't a number, so nothing is peeled) and never gains a bogus duration. Rows
+// missing a title or artist are dropped — a trailing newline or empty field would
+// otherwise become a pair that matches the whole crate; a missing/unparseable duration
+// just leaves the row a plain title/artist pair, never dropped.
 export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
   const pairs: AppleMusicLookupCandidate[] = []
   for (const line of stdout.split('\n')) {
     const tab = line.indexOf('\t')
     if (tab === -1) continue
     const title = line.slice(0, tab).trim()
-    const artist = line.slice(tab + 1).trim()
+    let rest = line.slice(tab + 1)
+    let durationSec: number | undefined
+    const dur = rest.match(TRAILING_DURATION)
+    if (dur) {
+      const sec = Math.round(Number(dur[1].replace(',', '.')))
+      if (Number.isFinite(sec) && sec > 0) durationSec = sec
+      rest = rest.slice(0, dur.index)
+    }
+    const artist = rest.trim()
     if (!title || !artist) continue
-    pairs.push({ title, artist })
+    pairs.push(durationSec !== undefined ? { title, artist, durationSec } : { title, artist })
   }
   return pairs
 }

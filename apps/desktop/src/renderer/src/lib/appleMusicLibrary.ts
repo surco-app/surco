@@ -1,12 +1,33 @@
 import type { AppleMusicLookupCandidate } from '../../../shared/types'
 import { foldText } from './normalizeText'
-import { cleanName } from './release'
+import { cleanName, durationProximitySec } from './release'
+
+// One library track, narrowed to what the matcher scores against. The artist is pre-folded
+// at index time (foldArtist) so each lookup is a cheap word-set compare; parts is the raw
+// title's base+version-suffix split for version-aware scoring; durationSec is its length when
+// Music reported one, used to tell two versions of a title apart.
+interface LibraryEntry {
+  artist: string
+  durationSec?: number
+  parts: { base: string; suffix: string }
+}
 
 // A snapshot of the user's Apple Music library, keyed by canonical title so a track's
-// "do I already own this?" check is a Map lookup instead of an osascript spawn. Each
-// title maps to the folded artist strings of every library track under it, so the
-// primary-artist word match (see isInLibrary) can run in the renderer.
-export type AppleMusicIndex = Map<string, string[]>
+// "do I already own this?" check scores only the handful of entries sharing a title key
+// instead of scanning the whole library (or spawning an osascript per track).
+export type AppleMusicIndex = Map<string, LibraryEntry[]>
+
+// How close a candidate must score to a library entry to count as already owned. Tuned so
+// an exact title+artist clears it comfortably, a wrong artist or a different base title
+// falls well short, and two different versions of one title (same base, distinct suffixes,
+// far-apart durations) land just under it. See libraryMatchScore.
+export const LIBRARY_MATCH_THRESHOLD = 0.7
+
+// Weights for the three library signals, renormalised over whichever are present (duration
+// is absent when either side lacks one). Artist is a near-gate: a wrong artist alone can't
+// clear the threshold. Title carries the most; duration is only a separator between
+// otherwise-equal versions, so it gets the smallest share.
+const LIBRARY_WEIGHTS = { title: 0.45, artist: 0.4, duration: 0.15 }
 
 // Collaborator separators, matched on the raw artist string (the split happens before
 // folding, which would turn a comma/ampersand into a space and lose the boundary): a comma
@@ -81,9 +102,9 @@ const VERSION_SUFFIX = /(?:\s*[([][^)\]]*[)\]]\s*)+$/
 // title with a trailing version suffix stripped, and — for either — the title with a leading
 // copy of the artist removed. DJ rips often tag just the base name ("It's Not Over") while
 // the Apple Music copy keeps the release's version ("It's Not Over (Happy House)"), or tag
-// the title as "Artist – Title" ("Debby – Maybe…"); keying off all these lets the library
-// hint bridge those gaps and stay consistent with the editor's badge. Variants are kept in a
-// Set so an unchanged one (no suffix, no prefix) isn't duplicated.
+// the title as "Artist – Title" ("Debby – Maybe…"); keying off all these lets the lookup
+// gather the right entries to score and stay consistent with the editor's badge. Variants
+// are kept in a Set so an unchanged one (no suffix, no prefix) isn't duplicated.
 function titleKeys(title: string, artist: string): string[] {
   const keys = new Set<string>()
   const folded = foldText(artist)
@@ -96,52 +117,141 @@ function titleKeys(title: string, artist: string): string[] {
   return [...keys]
 }
 
+// The buckets a track is filed and looked up under: its title keys, plus the last word of its
+// base title. The last-word bucket is what lets a library row stored under a short title
+// ("funky feelings") meet a candidate whose title field is the whole release path
+// ("… - 04 Funky Feelings (Klubb Mix)") — they share the final word, so the entry is gathered
+// and the scorer's whole-word tail check (baseTitlesMatch) confirms or rejects it. A common
+// last word over-gathers a little, but the score (artist + version) throws out false hits.
+function bucketKeys(title: string, artist: string): string[] {
+  const keys = new Set(titleKeys(title, artist))
+  const base = titleParts(title, artist).base
+  const lastWord = base.split(' ').at(-1)
+  if (lastWord) keys.add(lastWord)
+  return [...keys]
+}
+
+// A title split for version-aware scoring: the folded base (suffix stripped, and a leading
+// copy of the artist removed for "Artist – Title" tags) and the folded version suffix on its
+// own ('' when the title carried none). Two titles are the same cut when their bases match
+// and they don't name two *different* versions.
+function titleParts(title: string, artist: string): { base: string; suffix: string } {
+  const folded = foldText(artist)
+  let base = foldText(title.replace(VERSION_SUFFIX, ''))
+  if (folded && base.startsWith(`${folded} `)) base = base.slice(folded.length + 1)
+  const suffixRaw = title.match(VERSION_SUFFIX)?.[0] ?? ''
+  return { base, suffix: foldText(suffixRaw) }
+}
+
+// Whether one folded base title is the same song as another: equal, or one is a trailing
+// whole-word run of the other ("funky feelings" is the tail of "… 04 funky feelings", the
+// full-filename title field). Whole words via space-padding, so "feelings" never matches
+// inside "feelingsx".
+function baseTitlesMatch(a: string, b: string): boolean {
+  if (!a || !b) return false
+  if (a === b) return true
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a]
+  return long === short || long.endsWith(` ${short}`)
+}
+
+// The title signal, 0..1. 0 when the bases are different songs. 1 when the bases match and
+// the versions agree — including when either side names no version (a base-only tag vs a
+// versioned library copy is the same cut). 0.6 when the bases match but each names a
+// *different* version: not enough to own on title alone, so the duration separator and the
+// threshold decide (two distinct remixes with far-apart lengths fall through; the same remix
+// with a drifted length is rescued by the duration score).
+function titleScore(
+  candidate: { base: string; suffix: string },
+  entry: { base: string; suffix: string },
+): number {
+  if (!baseTitlesMatch(candidate.base, entry.base)) return 0
+  if (candidate.suffix && entry.suffix && candidate.suffix !== entry.suffix) return 0.6
+  return 1
+}
+
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
-  for (const { title, artist } of tracks) {
+  for (const { title, artist, durationSec } of tracks) {
     const folded = foldArtist(artist)
-    // An empty artist can't identify a song and would later `every`-match nothing
+    // An empty artist can't identify a song and would later word-match nothing
     // meaningfully; skip the row entirely.
     if (!folded) continue
-    for (const key of titleKeys(title, artist)) {
+    // One shared entry filed under each of its title keys, so a candidate keyed any of the
+    // ways still gathers this exact row (deduped by reference at lookup). parts holds the
+    // raw-title base+suffix split for version-aware scoring (the folded keys have lost the
+    // parens, so the suffix must be captured here from the original title).
+    const entry: LibraryEntry = { artist: folded, durationSec, parts: titleParts(title, artist) }
+    for (const key of bucketKeys(title, artist)) {
       if (!key) continue
       const list = index.get(key)
-      if (list) list.push(folded)
-      else index.set(key, [folded])
+      if (list) list.push(entry)
+      else index.set(key, [entry])
     }
   }
   return index
 }
 
-// Whether the candidate (a track's live tags) is already in the library: a title key must
-// match (the full folded title or its version-stripped base) and every word of the
-// candidate's primary artist must appear as a whole word in some library artist under that
-// title. Matching on whole words rather than a raw substring stops a primary artist from
-// matching an unrelated longer name it merely sits inside ("Mat" vs "Matador"), while
-// still allowing the library's extra words (a "& Friends" suffix, a featured act). It's a
+// Whether the candidate's primary artist and a (pre-folded) library artist are the same act:
+// one's words wholly contained in the other's, either direction. The library copy is often
+// the shorter spelling (the tag adds a "Dr." prefix, an "On A Vinyl" descriptor, a "presents"
+// credit), while sometimes it carries the extra words (a "& Friends" suffix). Whole-word both
+// ways, so a partial name ("Mat") never matches a longer one ("Matador").
+function artistMatch(candidatePrimaryWords: string[], entryFoldedArtist: string): boolean {
+  const candidateSet = new Set(candidatePrimaryWords)
+  const libraryWords = entryFoldedArtist.split(' ')
+  const librarySet = new Set(libraryWords)
+  return (
+    candidatePrimaryWords.every((w) => librarySet.has(w)) ||
+    libraryWords.every((w) => candidateSet.has(w))
+  )
+}
+
+// Scores how strongly a library entry is the same track as the candidate, 0..1: title
+// (version-aware), artist (a near-gate, binary), and — when both sides carry a length —
+// duration proximity to separate same-base different-version cuts. Weights renormalise over
+// the signals present, so a missing duration just leaves title+artist deciding.
+function libraryMatchScore(
+  entry: LibraryEntry,
+  candidate: {
+    parts: { base: string; suffix: string }
+    primaryWords: string[]
+    durationSec?: number
+  },
+): number {
+  const title = titleScore(candidate.parts, entry.parts)
+  if (title === 0) return 0
+  const artist = artistMatch(candidate.primaryWords, entry.artist) ? 1 : 0
+  let weighted = LIBRARY_WEIGHTS.title * title + LIBRARY_WEIGHTS.artist * artist
+  let total = LIBRARY_WEIGHTS.title + LIBRARY_WEIGHTS.artist
+  if (candidate.durationSec !== undefined && entry.durationSec !== undefined) {
+    weighted +=
+      LIBRARY_WEIGHTS.duration * durationProximitySec(candidate.durationSec, entry.durationSec)
+    total += LIBRARY_WEIGHTS.duration
+  }
+  return weighted / total
+}
+
+// Whether the candidate (a track's live tags) is already in the library: it scores at least
+// LIBRARY_MATCH_THRESHOLD against some library entry sharing a title key. Bucketed by title
+// key so only the handful of plausible entries are scored, never the whole library. It's a
 // hint, not a guarantee.
 export function isInLibrary(
   index: AppleMusicIndex,
-  candidate: { title: string; artist: string },
+  candidate: { title: string; artist: string; durationSec?: number },
 ): boolean {
   const primary = primaryArtist(candidate.artist)
   if (!primary) return false
-  const primaryWords = primary.split(' ')
-  // The candidate's lead artist and a library artist are the same act when one's words are
-  // wholly contained in the other's — either direction. The library copy is often the
-  // shorter spelling (the tag adds a "Dr." prefix, an "On A Vinyl" descriptor, a "presents"
-  // credit), while sometimes it carries the extra words (a "& Friends" suffix). Whole-word
-  // both ways, so a partial name ("Mat") still never matches a longer one ("Matador").
-  const candidateSet = new Set(primaryWords)
-  const artistMatches = (a: string): boolean => {
-    const libraryWords = a.split(' ')
-    const librarySet = new Set(libraryWords)
-    return (
-      primaryWords.every((w) => librarySet.has(w)) || libraryWords.every((w) => candidateSet.has(w))
-    )
+  const parts = titleParts(candidate.title, candidate.artist)
+  if (!parts.base) return false
+  const cand = { parts, primaryWords: primary.split(' '), durationSec: candidate.durationSec }
+  // Gather the entries filed under any of the candidate's title keys, deduped by reference
+  // (one row is filed under several keys), then score each.
+  const seen = new Set<LibraryEntry>()
+  for (const key of bucketKeys(candidate.title, candidate.artist)) {
+    for (const entry of index.get(key) ?? []) seen.add(entry)
   }
-  return titleKeys(candidate.title, candidate.artist).some((key) => {
-    if (!key) return false
-    return index.get(key)?.some(artistMatches) ?? false
-  })
+  for (const entry of seen) {
+    if (libraryMatchScore(entry, cand) >= LIBRARY_MATCH_THRESHOLD) return true
+  }
+  return false
 }

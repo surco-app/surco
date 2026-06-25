@@ -129,16 +129,23 @@ export function titleSimilarity(target: string, candidate: string): number {
   return shared ? 0.6 * (shared / targetWords.length) : 0
 }
 
+// How close two lengths are, 1 (within DURATION_EXACT_SEC) fading linearly to 0 (past
+// DURATION_MISS_SEC). Shared by the Discogs scorer (which parses an "m:ss" string first)
+// and the Apple Music library matcher (which compares two probed second counts).
+export function durationProximitySec(aSec: number, bSec: number): number {
+  const delta = Math.abs(aSec - bSec)
+  if (delta <= DURATION_EXACT_SEC) return 1
+  if (delta >= DURATION_MISS_SEC) return 0
+  return (DURATION_MISS_SEC - delta) / (DURATION_MISS_SEC - DURATION_EXACT_SEC)
+}
+
 function durationProximity(
   localSec: number,
   trackDuration: string | undefined,
 ): number | undefined {
   const trackSec = parseDuration(trackDuration)
   if (trackSec === undefined) return undefined
-  const delta = Math.abs(localSec - trackSec)
-  if (delta <= DURATION_EXACT_SEC) return 1
-  if (delta >= DURATION_MISS_SEC) return 0
-  return (DURATION_MISS_SEC - delta) / (DURATION_MISS_SEC - DURATION_EXACT_SEC)
+  return durationProximitySec(localSec, trackSec)
 }
 
 function positionMatch(trackNumber: string, position: string): number | undefined {

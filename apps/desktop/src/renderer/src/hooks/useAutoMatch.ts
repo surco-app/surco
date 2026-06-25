@@ -126,8 +126,12 @@ export function useAutoMatch({
       const resolvedOwned =
         !live.musicPersistentId &&
         !!index &&
-        !isInLibrary(index, live.meta) &&
-        isInLibrary(index, patch.meta)
+        !isInLibrary(index, {
+          title: live.meta.title,
+          artist: live.meta.artist,
+          durationSec: live.duration,
+        }) &&
+        isInLibrary(index, { title: patch.meta.title, artist: patch.meta.artist })
       updateTrack(t.id, {
         meta: patch.meta,
         coverUrl: patch.coverUrl,

@@ -158,6 +158,11 @@ describe('buildLibraryDumpScript', () => {
     expect(script).toContain('artist of every track of library playlist 1')
   })
 
+  it('also reads each track duration as a list so the matcher can tell two versions of one title apart by length', () => {
+    const script = buildLibraryDumpScript()
+    expect(script).toContain('duration of every track of library playlist 1')
+  })
+
   it('joins each name and artist with a tab and the rows with linefeeds so the renderer can split the snapshot back into pairs', () => {
     const script = buildLibraryDumpScript()
     // Building a list with `set end of` then coercing once is O(n); string concat in
@@ -169,20 +174,37 @@ describe('buildLibraryDumpScript', () => {
 })
 
 describe('parseLibraryDump', () => {
-  it('splits the tab-and-linefeed snapshot into title/artist pairs', () => {
-    expect(parseLibraryDump('Strobe\tdeadmau5\nSorrow Town\tAlfredo Pareja\n')).toEqual([
-      { title: 'Strobe', artist: 'deadmau5' },
-      { title: 'Sorrow Town', artist: 'Alfredo Pareja' },
+  it('splits a title/artist/duration row into a candidate with its length in seconds', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5\t634\nSorrow Town\tAlfredo Pareja\t245\n')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5', durationSec: 634 },
+      { title: 'Sorrow Town', artist: 'Alfredo Pareja', durationSec: 245 },
     ])
   })
 
-  it('keeps the rest of the line as the artist so an artist that itself contains a tab is not truncated', () => {
+  it('parses a comma-decimal duration (an es-locale AppleScript serialises 486.55 as "486,55") and rounds to whole seconds', () => {
+    expect(parseLibraryDump('Funky Feelings\tHead Horny\t486,555999755859')).toEqual([
+      { title: 'Funky Feelings', artist: 'Head Horny', durationSec: 487 },
+    ])
+  })
+
+  it('parses a dot-decimal duration and rounds to whole seconds', () => {
+    expect(parseLibraryDump('Track\tArtist\t367.2')).toEqual([
+      { title: 'Track', artist: 'Artist', durationSec: 367 },
+    ])
+  })
+
+  it('peels the duration off the last tab only when it is a number, so an artist that itself contains a tab is not truncated and gains no bogus duration', () => {
+    // The trailing field "C" is not numeric, so the whole remainder stays the artist.
     expect(parseLibraryDump('Title\tA, B\tC')).toEqual([{ title: 'Title', artist: 'A, B\tC' }])
   })
 
+  it('keeps a row whose duration is missing or unparseable as a plain title/artist pair rather than dropping it', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5')).toEqual([{ title: 'Strobe', artist: 'deadmau5' }])
+  })
+
   it('skips blank and malformed rows (a trailing newline, or a line without a tab) rather than emitting empty pairs that would match everything', () => {
-    expect(parseLibraryDump('Strobe\tdeadmau5\n\nNoTabLine\n')).toEqual([
-      { title: 'Strobe', artist: 'deadmau5' },
+    expect(parseLibraryDump('Strobe\tdeadmau5\t634\n\nNoTabLine\n')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5', durationSec: 634 },
     ])
   })
 })

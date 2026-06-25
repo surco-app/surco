@@ -290,6 +290,10 @@ export interface AppleMusicUpdateJob {
 export interface AppleMusicLookupCandidate {
   artist: string
   title: string
+  // Length in seconds, when known. The library matcher uses it to tell different
+  // versions of one title apart (a 6-minute mix vs an 8-minute one); absent on a row
+  // Music reported no duration for, or on a Discogs-suggested candidate that carries none.
+  durationSec?: number
 }
 
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
