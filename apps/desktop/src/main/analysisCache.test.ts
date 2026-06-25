@@ -15,7 +15,12 @@ import { utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
+import {
+  analysisCacheStats,
+  cachedAnalysis,
+  clearAnalysisCache,
+  pruneAnalysisCache,
+} from './analysisCache'
 
 const work = mkdtempSync(join(tmpdir(), 'surco-analysis-src-'))
 afterAll(() => {
@@ -112,6 +117,53 @@ describe('cachedAnalysis', () => {
     await cachedAnalysis<{ ok: boolean }>('demo', file, compute, (r) => r.ok)
     // First (ok:false) not cached → recomputed; second (ok:true) cached → third served.
     expect(compute).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('clearAnalysisCache', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  // The settings "empty cache" button: every analysis must be gone so the next open
+  // recomputes from scratch (the whole point of the manual clear).
+  it('deletes every cached entry so each file recomputes', async () => {
+    const files = await Promise.all([makeFile(), makeFile()])
+    for (const f of files) await cachedAnalysis('demo', f, vi.fn().mockResolvedValue({ v: 1 }))
+
+    await clearAnalysisCache()
+
+    const recompute = vi.fn().mockResolvedValue({ v: 2 })
+    for (const f of files) await cachedAnalysis('demo', f, recompute)
+    expect(recompute).toHaveBeenCalledTimes(files.length)
+  })
+
+  // Clearing a cache that was never written (fresh install, no analysis yet) is a
+  // no-op, not an error — the button must work before any track is opened.
+  it('is a no-op when the cache directory does not exist', async () => {
+    await expect(clearAnalysisCache()).resolves.toBeUndefined()
+  })
+})
+
+describe('analysisCacheStats', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  // The settings hint shows how much is cached; an empty/absent cache reads as zero
+  // rather than throwing, so the row renders on a fresh install.
+  it('reports zero for an absent cache', async () => {
+    expect(await analysisCacheStats()).toEqual({ files: 0, bytes: 0 })
+  })
+
+  // Counts every entry and sums their sizes so the hint reflects real disk use.
+  it('counts entries and sums their bytes', async () => {
+    const files = await Promise.all([makeFile(), makeFile(), makeFile()])
+    for (const f of files) await cachedAnalysis('demo', f, vi.fn().mockResolvedValue({ v: 1 }))
+
+    const stats = await analysisCacheStats()
+    expect(stats.files).toBe(files.length)
+    expect(stats.bytes).toBeGreaterThan(0)
   })
 })
 

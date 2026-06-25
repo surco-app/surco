@@ -28,7 +28,7 @@ import type {
   ProcessJob,
   Settings,
 } from '../shared/types'
-import { pruneAnalysisCache } from './analysisCache'
+import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, updateInAppleMusic } from './applemusic'
 import { registerAudioIpc } from './audioIpc'
@@ -409,6 +409,9 @@ function registerIpc(): void {
   // Switching the settings folder takes effect immediately (no Save step): it moves
   // where settings.json lives, returning the settings now in effect from that folder.
   ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) => setConfigDir(dir))
+
+  ipcMain.handle('cache:stats', () => analysisCacheStats())
+  ipcMain.handle('cache:clear', () => clearAnalysisCache())
 
   ipcMain.handle('dialog:pickConfigDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

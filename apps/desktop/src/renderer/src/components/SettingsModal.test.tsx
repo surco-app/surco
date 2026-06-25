@@ -10,6 +10,8 @@ vi.hoisted(() => {
     platform: 'darwin',
     getConfigDir: async () => null,
     defaultConfigDir: async () => '/Users/test/Library/Application Support/Surco',
+    cacheStats: async () => ({ files: 0, bytes: 0 }),
+    clearCache: async () => {},
   }
 })
 
@@ -615,5 +617,49 @@ describe('SettingsModal settings folder', () => {
     expect(api.setConfigDir).toHaveBeenCalledWith(null)
     expect(await screen.findByTestId('settings-config-dir')).not.toHaveValue('/iCloud/Surco')
     expect(screen.queryByTestId('settings-config-dir-reset')).not.toBeInTheDocument()
+  })
+})
+
+describe('SettingsModal analysis cache', () => {
+  // The clear button must actually wipe the cache and then show the now-empty size,
+  // so the user sees their click took effect rather than a stale figure.
+  it('empties the cache and refreshes the shown size', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const clearCache = vi.fn(async () => {})
+    api.clearCache = clearCache
+    api.cacheStats = vi
+      .fn()
+      .mockResolvedValueOnce({ files: 12, bytes: 3_400_000 })
+      .mockResolvedValue({ files: 0, bytes: 0 })
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(await screen.findByDisplayValue('12 · 3.2 MB')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-cache-clear'))
+    expect(clearCache).toHaveBeenCalledTimes(1)
+    expect(await screen.findByDisplayValue('0 · 0 B')).toBeInTheDocument()
+  })
+
+  // An empty cache has nothing to clear, so the button is disabled — clicking it
+  // would be a no-op that misleads the user into thinking something happened.
+  it('disables the clear button when nothing is cached', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.cacheStats = vi.fn(async () => ({ files: 0, bytes: 0 }))
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(await screen.findByTestId('settings-cache-clear')).toBeDisabled()
   })
 })
