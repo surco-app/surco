@@ -73,8 +73,10 @@ export function registerAudioIpc(): void {
         // 2× intensity gain. v10 restores the full 120 dB range (v9's 60 dB clip hid the
         // HF transients Spek shows reaching ~22 kHz) and moves the "dead = background" job
         // to the recolor ramp's Spek-style low-end fade. v11 renders the image 320 px tall
-        // (was 280) to match the taller panel so it is not upscaled.
-        'spectrogram-mono-v11',
+        // (was 280) to match the taller panel so it is not upscaled. v12 catches a fake 320
+        // whose HF spikes hide its wall behind the top-edge knee guard — the cached verdict
+        // changed (Good→Bad), so old entries must regenerate to pick it up.
+        'spectrogram-mono-v12',
         inputPath,
         () =>
           // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
