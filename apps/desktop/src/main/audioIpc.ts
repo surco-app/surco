@@ -1,5 +1,7 @@
+import { basename } from 'node:path'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { activity } from './activity'
 import { cachedAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import {
@@ -8,7 +10,6 @@ import {
   buildSpectrum,
   extractCover,
   extractCoverDataUrl,
-  readMeta,
   generateSpectrogram,
   measureBpm,
   measureKey,
@@ -17,9 +18,22 @@ import {
   probeAudio,
   probeDuration,
   probeProperties,
+  readMeta,
   readTags,
   tagsFromProbe,
 } from './ffmpeg'
+
+// Reports one quality probe to the activity log, grouped under its track so a sweep's
+// six probes per file fold onto a single "Analizando «file»" row rather than flooding
+// the feed. Wrapped around the cache-miss work only (passed as cachedAnalysis' producer),
+// so a cache hit — which does no ffmpeg — emits nothing. The file's base name titles the
+// group: these handlers only have the path, not the parsed artist/title.
+function probe<T>(label: string, inputPath: string, fn: () => Promise<T>): Promise<T> {
+  return activity.track('analyze', label, fn, {
+    group: inputPath,
+    groupLabel: basename(inputPath),
+  })
+}
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
 // (spectrogram, loudness, properties, bpm, key, waveform). Self-contained — these handlers
@@ -81,19 +95,21 @@ export function registerAudioIpc(): void {
         'spectrogram-mono-v13',
         inputPath,
         () =>
-          // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
-          // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
-          // quality sweep then put ~3× the intended decodes on the cores. Instead each
-          // pass takes its own slot, so the limiter counts them honestly and caps the
-          // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
-          // overlap when slots are free (no single-track latency hit) and none waits on a
-          // slot it's also holding (no deadlock).
-          buildSpectrum(inputPath, {
-            probe: probeAudio,
-            spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), 'low'),
-            cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), 'low'),
-            shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), 'low'),
-          }),
+          probe('Espectrograma', inputPath, () =>
+            // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
+            // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
+            // quality sweep then put ~3× the intended decodes on the cores. Instead each
+            // pass takes its own slot, so the limiter counts them honestly and caps the
+            // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
+            // overlap when slots are free (no single-track latency hit) and none waits on a
+            // slot it's also holding (no deadlock).
+            buildSpectrum(inputPath, {
+              probe: probeAudio,
+              spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), 'low'),
+              cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), 'low'),
+              shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), 'low'),
+            }),
+          ),
         (b) => b.cutoffError === undefined,
       )
       // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
@@ -113,7 +129,9 @@ export function registerAudioIpc(): void {
   ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
     try {
       return await cachedAnalysis('loudness', inputPath, () =>
-        analysisLimiter.run(() => measureLoudness(inputPath), 'low'),
+        probe('Loudness', inputPath, () =>
+          analysisLimiter.run(() => measureLoudness(inputPath), 'low'),
+        ),
       )
     } catch (err) {
       log.error('audio:loudness failed', err)
@@ -123,7 +141,9 @@ export function registerAudioIpc(): void {
 
   ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis('properties', inputPath, () => probeProperties(inputPath))
+      return await cachedAnalysis('properties', inputPath, () =>
+        probe('Propiedades', inputPath, () => probeProperties(inputPath)),
+      )
     } catch (err) {
       log.error('audio:properties failed', err)
       return null
@@ -138,7 +158,8 @@ export function registerAudioIpc(): void {
       return await cachedAnalysis(
         'bpm',
         inputPath,
-        () => analysisLimiter.run(() => measureBpm(inputPath), 'low'),
+        () =>
+          probe('BPM', inputPath, () => analysisLimiter.run(() => measureBpm(inputPath), 'low')),
         () => true,
       )
     } catch (err) {
@@ -154,7 +175,10 @@ export function registerAudioIpc(): void {
       return await cachedAnalysis(
         'key',
         inputPath,
-        () => analysisLimiter.run(() => measureKey(inputPath), 'low'),
+        () =>
+          probe('Tonalidad', inputPath, () =>
+            analysisLimiter.run(() => measureKey(inputPath), 'low'),
+          ),
         () => true,
       )
     } catch (err) {
@@ -171,7 +195,9 @@ export function registerAudioIpc(): void {
       // 'high': the waveform is the one decode a user is actively waiting on (they
       // just hit play), so it jumps ahead of the editor's background passes.
       return await cachedAnalysis('waveform', inputPath, () =>
-        analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
+        probe('Forma de onda', inputPath, () =>
+          analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
+        ),
       )
     } catch (err) {
       log.error('audio:waveform failed', err)

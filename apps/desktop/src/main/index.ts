@@ -243,6 +243,8 @@ function buildAppMenu(win: BrowserWindow): void {
           click: keymapMenuClick(run, 'next'),
         },
         { type: 'separator' },
+        { label: t('activity'), click: () => run('activity') },
+        { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
     },

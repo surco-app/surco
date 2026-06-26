@@ -196,6 +196,11 @@ export async function getRelease(
       releaseCache.set(id, release)
       return release
     },
-    { detail: `${BASE}/releases/${id}`, summary: (r) => r.title },
+    {
+      detail: `${BASE}/releases/${id}`,
+      summary: (r) => r.title,
+      // The human release page (not the API endpoint in detail), for the row's open link.
+      url: `https://www.discogs.com/release/${id}`,
+    },
   )
 }

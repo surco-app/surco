@@ -306,7 +306,7 @@ export interface ProcessProgress {
 // The kinds of background work the activity log surfaces. Each maps to a
 // human-readable verb in the panel ("Buscando en Discogs", "Convirtiendo"…);
 // kept as a closed union so the renderer can localize and icon them.
-export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert'
+export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert' | 'analyze'
 
 // One step of background work, streamed main → renderer as it starts and ends.
 // `id` correlates the start with its done/error so the panel updates the same
@@ -314,6 +314,12 @@ export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert'
 // human-readable summary; `detail` is the optional technical line revealed when
 // the row is expanded (request URL, ffmpeg note, raw error). `ms` is the
 // elapsed time, set on done/error.
+//
+// `group` collapses many noisy steps onto one row: an analyze sweep fires six
+// probes per track (spectrum, loudness, properties, bpm, key, waveform), which
+// as flat rows would bury everything else. Steps sharing a `group` (the track's
+// file path) fold into a single "Analizando «…»" row whose `groupLabel` titles
+// it, with the individual probes as its expandable breakdown.
 export interface ActivityEvent {
   id: string
   kind: ActivityKind
@@ -321,6 +327,11 @@ export interface ActivityEvent {
   label: string
   detail?: string
   ms?: number
+  group?: string
+  groupLabel?: string
+  // A web page this step points at (a Discogs/Bandcamp release), so the panel can
+  // offer an "open in browser" affordance on the row. Set for release loads.
+  url?: string
 }
 
 export interface ProcessResult {

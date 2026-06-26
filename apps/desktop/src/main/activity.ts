@@ -34,6 +34,14 @@ export interface Activity {
 interface TrackOpts<T> {
   detail?: string
   summary?: (value: T) => string
+  // Fold this step under a shared row in the panel (e.g. a track's analyze probes).
+  // `group` is the collapse key; `groupLabel` titles the folded row. Stamped onto
+  // every emitted event so the renderer can group start and done alike.
+  group?: string
+  groupLabel?: string
+  // A web page this step points at (a release page), surfaced as an open-in-browser
+  // affordance on the row.
+  url?: string
 }
 
 export function createActivity(): Activity {
@@ -55,10 +63,13 @@ export function createActivity(): Activity {
     async track(kind, label, task, opts) {
       const id = `act-${nextId++}`
       const detail = opts?.detail
+      const group = opts?.group
+      const groupLabel = opts?.groupLabel
+      const url = opts?.url
       // performance.now() is the one clock available in this environment; it's a
       // monotonic relative timer, exactly what an elapsed-ms measure wants.
       const startedAt = performance.now()
-      emit({ id, kind, phase: 'start', label, detail })
+      emit({ id, kind, phase: 'start', label, detail, group, groupLabel, url })
       try {
         const value = await task()
         const doneDetail = opts?.summary ? opts.summary(value) : detail
@@ -69,6 +80,9 @@ export function createActivity(): Activity {
           label,
           detail: doneDetail,
           ms: Math.round(performance.now() - startedAt),
+          group,
+          groupLabel,
+          url,
         })
         return value
       } catch (err) {
@@ -80,6 +94,9 @@ export function createActivity(): Activity {
           label,
           detail: detail ? `${detail}\n${message}` : message,
           ms: Math.round(performance.now() - startedAt),
+          group,
+          groupLabel,
+          url,
         })
         throw err
       }

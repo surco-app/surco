@@ -36,6 +36,25 @@ describe('createActivity', () => {
     expect(done?.detail).toBe('3 resultados')
   })
 
+  it('carries group and groupLabel onto every emitted event so the panel can fold them', async () => {
+    // The grouping (analyze sweeps) lives in the renderer reducer, but it can only fold
+    // probes that arrive tagged — so the wrapper must stamp group on start AND done.
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+
+    await activity.track('analyze', 'Espectrograma', async () => 0, {
+      group: '/music/kerala.wav',
+      groupLabel: 'kerala.wav',
+    })
+
+    expect(events).toHaveLength(2)
+    for (const e of events) {
+      expect(e.group).toBe('/music/kerala.wav')
+      expect(e.groupLabel).toBe('kerala.wav')
+    }
+  })
+
   it('emits start then error with the raw message when the task throws, and rethrows', async () => {
     // A failed step must stay a failed step for the caller — instrumentation can't
     // swallow the rejection — and the panel's technical detail must carry the raw

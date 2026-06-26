@@ -200,6 +200,6 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
       releaseCache.set(url, release)
       return release
     },
-    { detail: url, summary: (r) => r.title },
+    { detail: url, summary: (r) => r.title, url },
   )
 }

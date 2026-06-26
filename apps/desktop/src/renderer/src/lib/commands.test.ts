@@ -73,6 +73,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openFindReplace: () => {},
     openExport: () => {},
     openRename: () => {},
+    openActivity: () => {},
     openHelp: () => {},
     toggleLanguage: () => {},
     ...overrides,

@@ -7,7 +7,6 @@ import {
   CaseSensitive,
   Clock,
   FileAudio,
-  Radio,
   Search,
   User,
   X,
@@ -25,6 +24,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
+import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../shared/defaults'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
@@ -33,12 +33,11 @@ import type {
   Settings,
   TrackMetadata,
 } from '../../shared/types'
-import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../shared/defaults'
+import { ActivityPanel } from './components/ActivityPanel'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
-import { ActivityPanel } from './components/ActivityPanel'
 import { NoticeToast } from './components/NoticeToast'
 import { LivePlayer } from './components/Player'
 import { QualityFilterBar } from './components/QualityFilterBar'
@@ -703,17 +702,17 @@ export default function App(): React.JSX.Element {
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded } =
     useListNavigation({
-    visibleTracks,
-    selectedId,
-    setSelection,
-    continuousPlayback: settings?.continuousPlayback ?? false,
-    playerVisible,
-    playerTrack,
-    closePlayer,
-    rowEls,
-    listScrollRef,
-    qualityFilterRef,
-  })
+      visibleTracks,
+      selectedId,
+      setSelection,
+      continuousPlayback: settings?.continuousPlayback ?? false,
+      playerVisible,
+      playerTrack,
+      closePlayer,
+      rowEls,
+      listScrollRef,
+      qualityFilterRef,
+    })
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
   // is selected (or the selection was filtered out of view).
@@ -911,6 +910,7 @@ export default function App(): React.JSX.Element {
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,
       openRename: overlays.openRename,
+      openActivity: () => setActivityOpen(true),
       openHelp: overlays.openHelp,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
     }),
@@ -995,6 +995,8 @@ export default function App(): React.JSX.Element {
           onClearAll={onClearAll}
           onPalette={onOpenPalette}
           onStats={onOpenStats}
+          onActivity={() => setActivityOpen((v) => !v)}
+          activityRunning={activityRows.some((r) => r.status === 'running')}
           onSettings={onOpenSettings}
         />
       </div>
@@ -1309,18 +1311,6 @@ export default function App(): React.JSX.Element {
           onClose={() => setActivityOpen(false)}
         />
       )}
-      <button
-        type="button"
-        data-testid="activity-toggle"
-        aria-label="Actividad"
-        onClick={() => setActivityOpen((v) => !v)}
-        className="press fixed bottom-5 right-5 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel)] text-fg-muted shadow-lg hover:text-fg"
-      >
-        <Radio className="h-4 w-4" aria-hidden="true" />
-        {activityRows.some((r) => r.status === 'running') && (
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-400" />
-        )}
-      </button>
     </div>
   )
 }

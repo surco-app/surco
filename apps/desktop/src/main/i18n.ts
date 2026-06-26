@@ -21,6 +21,7 @@ interface MenuStrings {
   processAll: string
   view: string
   palette: string
+  activity: string
   search: string
   play: string
   prev: string
@@ -56,6 +57,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     processAll: 'Procesar todo',
     view: 'Ver',
     palette: 'Paleta de comandos',
+    activity: 'Actividad',
     search: 'Buscar metadatos',
     play: 'Reproducir / pausar',
     prev: 'Pista anterior',
@@ -89,6 +91,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     processAll: 'Process all',
     view: 'View',
     palette: 'Command palette',
+    activity: 'Activity',
     search: 'Search metadata',
     play: 'Play / pause',
     prev: 'Previous track',

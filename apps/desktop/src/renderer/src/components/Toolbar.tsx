@@ -2,6 +2,7 @@ import {
   Activity,
   ChartColumn,
   Loader2,
+  Radio,
   Search,
   Settings as SettingsIcon,
   Sparkles,
@@ -49,6 +50,10 @@ interface Props {
   onClearAll: () => void
   onPalette: () => void
   onStats: () => void
+  onActivity: () => void
+  // True while any background work (search, cover download, conversion) is in flight,
+  // for the dot on the activity button — the same signal the panel's rows show.
+  activityRunning: boolean
   onSettings: () => void
 }
 
@@ -84,6 +89,8 @@ export const Toolbar = memo(function Toolbar({
   onClearAll,
   onPalette,
   onStats,
+  onActivity,
+  activityRunning,
   onSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -298,6 +305,19 @@ export const Toolbar = memo(function Toolbar({
           aria-label={tr('header.stats')}
         >
           <ChartColumn className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-testid="open-activity"
+          onClick={onActivity}
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          aria-label={tr('header.activity')}
+        >
+          <Radio className="h-4 w-4" aria-hidden="true" />
+          {activityRunning && (
+            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          )}
+          <Tooltip label={tr('header.activity')} align="end" />
         </button>
         <button
           type="button"

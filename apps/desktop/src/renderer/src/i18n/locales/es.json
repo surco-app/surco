@@ -30,6 +30,7 @@
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
     "stats": "Estadísticas",
+    "activity": "Actividad",
     "selectAll": "Seleccionar todo",
     "fillFromName": "Rellenar todo desde el nombre",
     "importingCount": "Leyendo {{done}}/{{total}}",
@@ -140,6 +141,7 @@
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
     "export": "Exportar a software DJ",
     "stats": "Estadísticas",
+    "activity": "Ver actividad",
     "toggleLanguage": "Cambiar idioma (español / inglés)"
   },
   "trackList": {

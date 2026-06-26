@@ -120,6 +120,7 @@ export interface CommandDeps {
   openFindReplace: () => void
   openExport: () => void
   openRename: () => void
+  openActivity: () => void
   openHelp: () => void
   toggleLanguage: () => void
 }
@@ -167,6 +168,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openFindReplace,
     openExport,
     openRename,
+    openActivity,
     openHelp,
     toggleLanguage,
   } = deps
@@ -399,6 +401,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('stats'),
       enabled: true,
       run: () => openSettings('stats'),
+    },
+    {
+      id: 'activity',
+      title: tr('commands.activity'),
+      hint: hintFor('activity'),
+      enabled: true,
+      run: openActivity,
     },
     {
       // Flips the UI between the two shipped locales. Not persisted on purpose: the app
