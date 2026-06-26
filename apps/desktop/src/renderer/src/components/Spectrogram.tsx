@@ -1,8 +1,10 @@
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SpectrumResult } from '../../../shared/types'
 import { useSpectrumDuotone } from '../hooks/useSpectrumDuotone'
 import { formatKHz } from '../lib/quality'
+import { freqAtFraction } from '../lib/spectrumAxis'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
 const FILTER_ID = 'spectrum-duotone'
@@ -11,8 +13,23 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
   const { t: tr } = useTranslation()
   const ramp = useSpectrumDuotone()
   const nyquist = spectrum.sampleRateHz / 2
+  // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
+  // that row maps to. Null while the cursor is outside, so the line shows only when reading.
+  const [hover, setHover] = useState<{ topPct: number; hz: number } | null>(null)
+  const onMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const fraction = (e.clientY - rect.top) / rect.height
+    const hz = freqAtFraction(fraction, spectrum.sampleRateHz)
+    if (hz === null) return
+    setHover({ topPct: Math.min(100, Math.max(0, fraction * 100)), hz })
+  }
   return (
-    <div className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]">
+    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only crosshair that reads the frequency under the cursor on a decorative spectrogram — there is no keyboard analogue and it carries no semantics, the value is informational for the eye following the mouse
+    <div
+      className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]"
+      onMouseMove={onMove}
+      onMouseLeave={() => setHover(null)}
+    >
       {/* sRGB interpolation keeps the table values mapping straight to the token colors;
           the default linearRGB would darken the mid-blue and wash the ramp. */}
       <svg aria-hidden className="absolute h-0 w-0">
@@ -59,6 +76,17 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
                 : 'editor.spectrumCutoff',
               { cutoff: formatKHz(spectrum.cutoffHz) },
             )}
+          </span>
+        </div>
+      )}
+      {hover && (
+        <div
+          data-testid="spectrum-crosshair"
+          style={{ top: `${hover.topPct}%` }}
+          className="pointer-events-none absolute inset-x-0 border-t border-[var(--color-fg)]/40"
+        >
+          <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-[10px] font-medium tabular-nums text-[var(--color-fg)]">
+            {formatKHz(hover.hz)}
           </span>
         </div>
       )}
