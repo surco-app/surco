@@ -122,6 +122,25 @@ describe('QualitySection verdict caption', () => {
     },
   )
 
+  // For sound engineers the caption is a data readout, not coaching: it states what was
+  // measured and stops. The spectrogram above it already invites a listen, so an advice
+  // clause ("give it a listen before you play it") is noise that pads the line. Guard both
+  // locales so a future reword can't quietly bring the coaching back.
+  const CAPTION_KEYS = [
+    'editor.qualityCaptionGood',
+    'editor.qualityCaptionWarn',
+    'editor.qualityCaptionBad',
+    'editor.qualityCaptionProcessed',
+    'editor.qualityCaptionGenuine',
+    'editor.qualityCaptionTranscode',
+  ]
+  it.each(CAPTION_KEYS)('keeps %s a fact, with no listen-before-you-play advice', (key) => {
+    for (const lng of ['en', 'es']) {
+      const text = i18n.getFixedT(lng)(key, { cutoff: '19.0 kHz' })
+      expect(text).not.toMatch(/listen|escúcha|antes de pinchar|before you play/i)
+    }
+  })
+
   it('explains a good verdict as a full lossless spectrum', async () => {
     renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
     expect(
