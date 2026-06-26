@@ -1,4 +1,4 @@
-import type { ActivityEvent, ActivityKind } from '../shared/types'
+import type { ActivityEvent, ActivityKind, ActivityParams } from '../shared/types'
 
 // The activity log's main-process hub. Background work (Discogs/Bandcamp calls,
 // cover downloads, conversions) reports through a single `track()` wrapper so the
@@ -20,23 +20,37 @@ export interface Activity {
   // Wrap a unit of background work: emits `start` before it runs and `done`
   // (with elapsed ms) or `error` (with the raw message) after, then returns the
   // task's value or rethrows untouched, so a call site behaves exactly as before.
-  // `opts.detail` is a fixed technical line known up front (e.g. the request URL);
-  // `opts.summary` computes the done detail from the resolved value (e.g. result
-  // count), which only exists once the task finishes.
+  // `labelKey` is an i18n key the panel translates (with `opts.labelParams`); the
+  // main process never produces finished UI text. `opts.detail` is a fixed *raw*
+  // line known up front (a request URL); `opts.summary` computes the done detail
+  // from the resolved value — returning a key+params (translated) or a raw string
+  // (a release title) — which only exists once the task finishes.
   track<T>(
     kind: ActivityKind,
-    label: string,
+    labelKey: string,
     task: () => Promise<T>,
     opts?: TrackOpts<T>,
   ): Promise<T>
 }
 
-interface TrackOpts<T> {
+// What a summary contributes to the done event's detail: either a translatable
+// key (+params) or a raw string for untranslatable data (a title). Mutually
+// exclusive in practice; the emitter prefers the key when both are somehow set.
+interface SummaryDetail {
   detail?: string
-  summary?: (value: T) => string
+  detailKey?: string
+  detailParams?: ActivityParams
+}
+
+interface TrackOpts<T> {
+  labelParams?: ActivityParams
+  detail?: string
+  detailKey?: string
+  detailParams?: ActivityParams
+  summary?: (value: T) => SummaryDetail
   // Fold this step under a shared row in the panel (e.g. a track's analyze probes).
-  // `group` is the collapse key; `groupLabel` titles the folded row. Stamped onto
-  // every emitted event so the renderer can group start and done alike.
+  // `group` is the collapse key; `groupLabel` titles the folded row (a raw file
+  // name). Stamped onto every emitted event so the renderer can group start and done.
   group?: string
   groupLabel?: string
   // A web page this step points at (a release page), surfaced as an open-in-browser
@@ -60,43 +74,36 @@ export function createActivity(): Activity {
       return () => listeners.delete(listener)
     },
     emit,
-    async track(kind, label, task, opts) {
+    async track(kind, labelKey, task, opts) {
       const id = `act-${nextId++}`
-      const detail = opts?.detail
-      const group = opts?.group
-      const groupLabel = opts?.groupLabel
-      const url = opts?.url
+      const { labelParams, detail, detailKey, detailParams, group, groupLabel, url } = opts ?? {}
       // performance.now() is the one clock available in this environment; it's a
       // monotonic relative timer, exactly what an elapsed-ms measure wants.
       const startedAt = performance.now()
-      emit({ id, kind, phase: 'start', label, detail, group, groupLabel, url })
+      const base = { id, kind, labelKey, labelParams, group, groupLabel, url }
+      emit({ ...base, phase: 'start', detail, detailKey, detailParams })
       try {
         const value = await task()
-        const doneDetail = opts?.summary ? opts.summary(value) : detail
+        // A summary's key/params win over the up-front detail; absent a summary the
+        // fixed detail (a URL) carries through to done unchanged.
+        const summary = opts?.summary?.(value)
         emit({
-          id,
-          kind,
+          ...base,
           phase: 'done',
-          label,
-          detail: doneDetail,
+          detail: summary?.detail ?? detail,
+          detailKey: summary?.detailKey ?? detailKey,
+          detailParams: summary?.detailParams ?? detailParams,
           ms: Math.round(performance.now() - startedAt),
-          group,
-          groupLabel,
-          url,
         })
         return value
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         emit({
-          id,
-          kind,
+          ...base,
           phase: 'error',
-          label,
+          // The raw error appends to any fixed raw detail (a URL); it is never keyed.
           detail: detail ? `${detail}\n${message}` : message,
           ms: Math.round(performance.now() - startedAt),
-          group,
-          groupLabel,
-          url,
         })
         throw err
       }

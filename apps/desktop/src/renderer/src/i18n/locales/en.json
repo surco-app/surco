@@ -604,5 +604,30 @@
     "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",
     "convertInPlaceMessage_other": "Overwrite original is on: this rewrites {{count}} source files in place. The originals are replaced and cannot be recovered.",
     "convertInPlaceConfirm": "Overwrite and convert"
+  },
+  "activity": {
+    "title": "Activity",
+    "empty": "No activity yet",
+    "clear": "Clear",
+    "openInBrowser": "Open in browser",
+    "searchDiscogs": "Searching Discogs: {{query}}",
+    "loadDiscogsRelease": "Loading Discogs release #{{id}}",
+    "searchBandcamp": "Searching Bandcamp: {{query}}",
+    "loadBandcampRelease": "Loading Bandcamp release",
+    "downloadCover": "Downloading cover",
+    "convert": "Converting {{track}}",
+    "probeSpectrogram": "Spectrogram",
+    "probeLoudness": "Loudness",
+    "probeProperties": "Properties",
+    "probeBpm": "BPM",
+    "probeKey": "Key",
+    "probeWaveform": "Waveform",
+    "appleMusicLibrary": "Loading Apple Music library",
+    "appleMusicAdd": "Adding to Apple Music: {{track}}",
+    "appleMusicUpdate": "Updating in Apple Music: {{track}}",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks"
   }
 }

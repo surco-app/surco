@@ -83,7 +83,7 @@ export async function search(
 ): Promise<SearchResult[]> {
   return activity.track(
     'bandcamp',
-    `Buscando en Bandcamp: ${query}`,
+    'activity.searchBandcamp',
     async () => {
       let results: SearchResult[] = []
       for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
@@ -92,7 +92,10 @@ export async function search(
       }
       return results
     },
-    { summary: (r) => `${r.length} resultados` },
+    {
+      labelParams: { query },
+      summary: (r) => ({ detailKey: 'activity.resultCount', detailParams: { count: r.length } }),
+    },
   )
 }
 
@@ -188,7 +191,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
   if (cached) return cached
   return activity.track(
     'bandcamp',
-    'Cargando release de Bandcamp',
+    'activity.loadBandcampRelease',
     async () => {
       await bandcampLimiter.acquire(priority)
       const res = await fetch(url, {
@@ -200,6 +203,6 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
       releaseCache.set(url, release)
       return release
     },
-    { detail: url, summary: (r) => r.title, url },
+    { detail: url, summary: (r) => ({ detail: r.title }), url },
   )
 }

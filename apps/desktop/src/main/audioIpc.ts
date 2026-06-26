@@ -28,8 +28,8 @@ import {
 // the feed. Wrapped around the cache-miss work only (passed as cachedAnalysis' producer),
 // so a cache hit — which does no ffmpeg — emits nothing. The file's base name titles the
 // group: these handlers only have the path, not the parsed artist/title.
-function probe<T>(label: string, inputPath: string, fn: () => Promise<T>): Promise<T> {
-  return activity.track('analyze', label, fn, {
+function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Promise<T> {
+  return activity.track('analyze', labelKey, fn, {
     group: inputPath,
     groupLabel: basename(inputPath),
   })
@@ -95,7 +95,7 @@ export function registerAudioIpc(): void {
         'spectrogram-mono-v13',
         inputPath,
         () =>
-          probe('Espectrograma', inputPath, () =>
+          probe('activity.probeSpectrogram', inputPath, () =>
             // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
             // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
             // quality sweep then put ~3× the intended decodes on the cores. Instead each
@@ -129,7 +129,7 @@ export function registerAudioIpc(): void {
   ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
     try {
       return await cachedAnalysis('loudness', inputPath, () =>
-        probe('Loudness', inputPath, () =>
+        probe('activity.probeLoudness', inputPath, () =>
           analysisLimiter.run(() => measureLoudness(inputPath), 'low'),
         ),
       )
@@ -142,7 +142,7 @@ export function registerAudioIpc(): void {
   ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
     try {
       return await cachedAnalysis('properties', inputPath, () =>
-        probe('Propiedades', inputPath, () => probeProperties(inputPath)),
+        probe('activity.probeProperties', inputPath, () => probeProperties(inputPath)),
       )
     } catch (err) {
       log.error('audio:properties failed', err)
@@ -159,7 +159,9 @@ export function registerAudioIpc(): void {
         'bpm',
         inputPath,
         () =>
-          probe('BPM', inputPath, () => analysisLimiter.run(() => measureBpm(inputPath), 'low')),
+          probe('activity.probeBpm', inputPath, () =>
+            analysisLimiter.run(() => measureBpm(inputPath), 'low'),
+          ),
         () => true,
       )
     } catch (err) {
@@ -176,7 +178,7 @@ export function registerAudioIpc(): void {
         'key',
         inputPath,
         () =>
-          probe('Tonalidad', inputPath, () =>
+          probe('activity.probeKey', inputPath, () =>
             analysisLimiter.run(() => measureKey(inputPath), 'low'),
           ),
         () => true,
@@ -195,7 +197,7 @@ export function registerAudioIpc(): void {
       // 'high': the waveform is the one decode a user is actively waiting on (they
       // just hit play), so it jumps ahead of the editor's background passes.
       return await cachedAnalysis('waveform', inputPath, () =>
-        probe('Forma de onda', inputPath, () =>
+        probe('activity.probeWaveform', inputPath, () =>
           analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
         ),
       )

@@ -2,26 +2,31 @@ import { describe, expect, it } from 'vitest'
 import type { ActivityEvent } from '../../../shared/types'
 import { type ActivityRow, applyActivity, MAX_ROWS } from './activityLog'
 
-const start = (id: string, label = 'x'): ActivityEvent => ({
+const start = (id: string, labelKey = 'activity.searchDiscogs'): ActivityEvent => ({
   id,
   kind: 'discogs',
   phase: 'start',
-  label,
+  labelKey,
 })
-const done = (id: string, detail?: string): ActivityEvent => ({
+const done = (id: string, extra: Partial<ActivityEvent> = {}): ActivityEvent => ({
   id,
   kind: 'discogs',
   phase: 'done',
-  label: 'x',
-  detail,
+  labelKey: 'activity.searchDiscogs',
   ms: 12,
+  ...extra,
 })
 
 describe('applyActivity', () => {
-  it('prepends a started step as a running row so the newest work is on top', () => {
-    const rows = applyActivity([], start('a', 'Buscando: bonobo'))
+  it('prepends a started step as a running row carrying its key and params', () => {
+    const rows = applyActivity([], { ...start('a'), labelParams: { query: 'bonobo' } })
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ id: 'a', status: 'running', label: 'Buscando: bonobo' })
+    expect(rows[0]).toMatchObject({
+      id: 'a',
+      status: 'running',
+      labelKey: 'activity.searchDiscogs',
+      labelParams: { query: 'bonobo' },
+    })
   })
 
   it('resolves the matching row in place on done, keeping its position', () => {
@@ -29,11 +34,19 @@ describe('applyActivity', () => {
     // second one — otherwise a search would show as two lines (pending + finished).
     let rows = applyActivity([], start('a'))
     rows = applyActivity(rows, start('b'))
-    rows = applyActivity(rows, done('a', '12 resultados'))
+    rows = applyActivity(
+      rows,
+      done('a', { detailKey: 'activity.resultCount', detailParams: { count: 12 } }),
+    )
 
     const a = rows.find((r) => r.id === 'a')
     expect(rows).toHaveLength(2)
-    expect(a).toMatchObject({ status: 'done', detail: '12 resultados', ms: 12 })
+    expect(a).toMatchObject({
+      status: 'done',
+      detailKey: 'activity.resultCount',
+      detailParams: { count: 12 },
+      ms: 12,
+    })
   })
 
   it('marks the row errored and carries the raw message into detail', () => {
@@ -42,11 +55,30 @@ describe('applyActivity', () => {
       id: 'a',
       kind: 'discogs',
       phase: 'error',
-      label: 'x',
+      labelKey: 'activity.searchDiscogs',
       detail: 'Discogs devolvió 429',
       ms: 5,
     })
     expect(rows[0]).toMatchObject({ status: 'error', detail: 'Discogs devolvió 429' })
+  })
+
+  it('keeps the running row url through its done so the open link survives completion', () => {
+    // Regression: a release row's "open in browser" link must not vanish when the load
+    // finishes and the title replaces the detail.
+    let rows = applyActivity([], {
+      ...start('a', 'activity.loadBandcampRelease'),
+      url: 'https://x.bandcamp.com/album/y',
+    })
+    rows = applyActivity(rows, {
+      id: 'a',
+      kind: 'bandcamp',
+      phase: 'done',
+      labelKey: 'activity.loadBandcampRelease',
+      url: 'https://x.bandcamp.com/album/y',
+      detail: 'Funky Feelings',
+      ms: 9,
+    })
+    expect(rows[0].url).toBe('https://x.bandcamp.com/album/y')
   })
 
   it('drops a terminal event whose start was already evicted, leaving no orphan row', () => {
@@ -67,38 +99,41 @@ describe('applyActivity', () => {
 const analyze = (
   id: string,
   phase: ActivityEvent['phase'],
-  label: string,
+  labelKey: string,
   extra: Partial<ActivityEvent> = {},
 ): ActivityEvent => ({
   id,
   kind: 'analyze',
   phase,
-  label,
+  labelKey,
   group: '/music/kerala.wav',
-  groupLabel: 'Bonobo — Kerala',
+  groupLabel: 'kerala.wav',
   ...extra,
 })
 
 describe('applyActivity grouping', () => {
   it('folds many probes of one track into a single group row titled by groupLabel', () => {
     // An analyze sweep fires six probes per track; as flat rows they'd bury the feed.
-    // They must collapse onto one "Analizando «Bonobo — Kerala»" row instead.
-    let rows = applyActivity([], analyze('p1', 'start', 'Espectrograma'))
-    rows = applyActivity(rows, analyze('p2', 'start', 'Loudness'))
+    // They must collapse onto one row titled by the raw file name instead.
+    let rows = applyActivity([], analyze('p1', 'start', 'activity.probeSpectrogram'))
+    rows = applyActivity(rows, analyze('p2', 'start', 'activity.probeLoudness'))
 
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ id: 'group:/music/kerala.wav', label: 'Bonobo — Kerala' })
+    expect(rows[0]).toMatchObject({ id: 'group:/music/kerala.wav', label: 'kerala.wav' })
     expect(rows[0].children).toHaveLength(2)
-    expect(rows[0].children?.map((c) => c.label)).toEqual(['Espectrograma', 'Loudness'])
+    expect(rows[0].children?.map((c) => c.labelKey)).toEqual([
+      'activity.probeSpectrogram',
+      'activity.probeLoudness',
+    ])
   })
 
   it('keeps the group running until every probe finishes, then marks it done', () => {
-    let rows = applyActivity([], analyze('p1', 'start', 'Espectrograma'))
-    rows = applyActivity(rows, analyze('p2', 'start', 'Loudness'))
-    rows = applyActivity(rows, analyze('p1', 'done', 'Espectrograma', { ms: 1200 }))
+    let rows = applyActivity([], analyze('p1', 'start', 'activity.probeSpectrogram'))
+    rows = applyActivity(rows, analyze('p2', 'start', 'activity.probeLoudness'))
+    rows = applyActivity(rows, analyze('p1', 'done', 'activity.probeSpectrogram', { ms: 1200 }))
     expect(rows[0].status).toBe('running')
 
-    rows = applyActivity(rows, analyze('p2', 'done', 'Loudness', { ms: 400 }))
+    rows = applyActivity(rows, analyze('p2', 'done', 'activity.probeLoudness', { ms: 400 }))
     expect(rows[0].status).toBe('done')
     // The child carries its own timing for the expanded breakdown.
     expect(rows[0].children?.find((c) => c.id === 'p1')).toMatchObject({ status: 'done', ms: 1200 })
@@ -107,22 +142,22 @@ describe('applyActivity grouping', () => {
   it('marks the group errored when any probe fails, even if others succeed', () => {
     // One failed probe (an unreadable file) must surface on the group, not hide behind
     // the successful ones — that's the whole point of seeing what went wrong.
-    let rows = applyActivity([], analyze('p1', 'start', 'Espectrograma'))
-    rows = applyActivity(rows, analyze('p2', 'start', 'BPM'))
-    rows = applyActivity(rows, analyze('p1', 'done', 'Espectrograma', { ms: 900 }))
+    let rows = applyActivity([], analyze('p1', 'start', 'activity.probeSpectrogram'))
+    rows = applyActivity(rows, analyze('p2', 'start', 'activity.probeBpm'))
+    rows = applyActivity(rows, analyze('p1', 'done', 'activity.probeSpectrogram', { ms: 900 }))
     rows = applyActivity(
       rows,
-      analyze('p2', 'error', 'BPM', { detail: 'ffmpeg: invalid data', ms: 5 }),
+      analyze('p2', 'error', 'activity.probeBpm', { detail: 'ffmpeg: invalid data', ms: 5 }),
     )
 
     expect(rows[0].status).toBe('error')
   })
 
   it('separates tracks into their own group rows by path', () => {
-    let rows = applyActivity([], analyze('p1', 'start', 'Espectrograma'))
+    let rows = applyActivity([], analyze('p1', 'start', 'activity.probeSpectrogram'))
     rows = applyActivity(
       rows,
-      analyze('q1', 'start', 'Espectrograma', { group: '/music/other.wav' }),
+      analyze('q1', 'start', 'activity.probeSpectrogram', { group: '/music/other.wav' }),
     )
     expect(rows).toHaveLength(2)
   })

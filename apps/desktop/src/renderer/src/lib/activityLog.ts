@@ -1,24 +1,46 @@
-import type { ActivityEvent } from '../../../shared/types'
+import type { ActivityEvent, ActivityParams } from '../../../shared/types'
 
 // One row in the activity panel: a single unit of background work, folding its
 // start and its later done/error into one entry the user watches resolve in
-// place. `status` drives the row's spinner/checkmark/error mark; `detail` holds
-// the technical line (URL, result count, raw error) shown when expanded.
+// place. `status` drives the row's spinner/checkmark/error mark.
 //
-// A grouped row (analyze sweep) carries `children`: the per-probe steps, each a
-// plain row, with the parent's `status` derived from them — running while any
-// child runs, error if any failed, done once all finished. Its `label` is the
-// track title; `children` is undefined on a plain (ungrouped) row.
+// Text is held untranslated: `labelKey`/`labelParams` and `detailKey`/`detailParams`
+// are i18n keys the panel resolves at render (so a language switch retranslates the
+// whole feed); `label` and `detail` are raw strings for data that must not be keyed —
+// a group's file name, a release title, a URL, a raw error. The panel prefers the key
+// when present and falls back to the raw value.
+//
+// A grouped row (analyze sweep) carries `children`: the per-probe steps, each a plain
+// row, with the parent's `status` derived from them — running while any child runs,
+// error if any failed, done once all finished. `children` is undefined on a plain row.
 export interface ActivityRow {
   id: string
   kind: ActivityEvent['kind']
-  label: string
+  labelKey?: string
+  labelParams?: ActivityParams
+  label?: string
   status: 'running' | 'done' | 'error'
   detail?: string
+  detailKey?: string
+  detailParams?: ActivityParams
   ms?: number
   children?: ActivityRow[]
   // A web page the row links to (a release page), shown as an open-in-browser button.
   url?: string
+}
+
+// The label/detail fields shared by a row and its events, lifted into a helper so the
+// start/done builders stay in sync as the i18n shape grows.
+function textOf(
+  event: ActivityEvent,
+): Pick<ActivityRow, 'labelKey' | 'labelParams' | 'detail' | 'detailKey' | 'detailParams'> {
+  return {
+    labelKey: event.labelKey,
+    labelParams: event.labelParams,
+    detail: event.detail,
+    detailKey: event.detailKey,
+    detailParams: event.detailParams,
+  }
 }
 
 // Newest-first, and capped: the panel is a live tail, not a full history, and an
@@ -52,10 +74,9 @@ export function applyActivity(rows: ActivityRow[], event: ActivityEvent): Activi
     const row: ActivityRow = {
       id: event.id,
       kind: event.kind,
-      label: event.label,
       status: 'running',
-      detail: event.detail,
       url: event.url,
+      ...textOf(event),
     }
     return [row, ...rows].slice(0, MAX_ROWS)
   }
@@ -64,7 +85,9 @@ export function applyActivity(rows: ActivityRow[], event: ActivityEvent): Activi
   const next = rows.map((row) => {
     if (row.id !== event.id) return row
     matched = true
-    return { ...row, status, detail: event.detail ?? row.detail, ms: event.ms }
+    // The done/error event carries the resolved detail (a result count, a title, the
+    // error), so its text replaces the start's; ms stamps the elapsed time.
+    return { ...row, status, ms: event.ms, ...textOf(event) }
   })
   return matched ? next : rows
 }
@@ -74,10 +97,9 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
   const child: ActivityRow = {
     id: event.id,
     kind: event.kind,
-    label: event.label,
     status: statusOf(event.phase),
-    detail: event.detail,
     ms: event.ms,
+    ...textOf(event),
   }
   const existing = rows.find((r) => r.id === groupId)
 
@@ -87,7 +109,8 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
     const group: ActivityRow = {
       id: groupId,
       kind: event.kind,
-      label: event.groupLabel ?? event.group ?? event.label,
+      // The group's title is the raw file name, not a key.
+      label: event.groupLabel ?? event.group,
       status: 'running',
       children: [child],
     }
@@ -98,9 +121,7 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
     event.phase === 'start'
       ? [...(existing.children ?? []), child]
       : (existing.children ?? []).map((c) =>
-          c.id === event.id
-            ? { ...c, status: child.status, detail: event.detail ?? c.detail, ms: event.ms }
-            : c,
+          c.id === event.id ? { ...c, status: child.status, ms: event.ms, ...textOf(event) } : c,
         )
   const updated: ActivityRow = { ...existing, children, status: groupStatus(children) }
   return rows.map((r) => (r.id === groupId ? updated : r))

@@ -306,32 +306,36 @@ export interface ProcessProgress {
 // The kinds of background work the activity log surfaces. Each maps to a
 // human-readable verb in the panel ("Buscando en Discogs", "Convirtiendo"…);
 // kept as a closed union so the renderer can localize and icon them.
-export type ActivityKind =
-  | 'discogs'
-  | 'bandcamp'
-  | 'cover'
-  | 'convert'
-  | 'analyze'
-  | 'applemusic'
+export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert' | 'analyze' | 'applemusic'
+
+// Interpolation values for an activity i18n key (query text, a count, a title).
+export type ActivityParams = Record<string, string | number>
 
 // One step of background work, streamed main → renderer as it starts and ends.
 // `id` correlates the start with its done/error so the panel updates the same
-// row in place (same pattern as ProcessProgress' id). `label` is the
-// human-readable summary; `detail` is the optional technical line revealed when
-// the row is expanded (request URL, ffmpeg note, raw error). `ms` is the
-// elapsed time, set on done/error.
+// row in place (same pattern as ProcessProgress' id).
+//
+// Text crosses the IPC boundary as i18n *keys*, not finished strings: the work
+// originates in the main process, which has no renderer i18n, and the panel
+// translates at render so the feed follows a language switch like the rest of the
+// UI. `labelKey` titles the row (with `labelParams`); `detailKey`/`detailParams`
+// is the translatable technical line ("12 resultados"); `detail` is a *raw* line
+// for data that must not be translated — a request URL, a release title, a raw
+// ffmpeg error. `ms` is the elapsed time, set on done/error.
 //
 // `group` collapses many noisy steps onto one row: an analyze sweep fires six
-// probes per track (spectrum, loudness, properties, bpm, key, waveform), which
-// as flat rows would bury everything else. Steps sharing a `group` (the track's
-// file path) fold into a single "Analizando «…»" row whose `groupLabel` titles
-// it, with the individual probes as its expandable breakdown.
+// probes per track, which as flat rows would bury everything else. Steps sharing
+// a `group` (the track's file path) fold into a single row titled by `groupLabel`
+// (a raw file name), with the individual probes as its expandable breakdown.
 export interface ActivityEvent {
   id: string
   kind: ActivityKind
   phase: 'start' | 'done' | 'error'
-  label: string
+  labelKey: string
+  labelParams?: ActivityParams
   detail?: string
+  detailKey?: string
+  detailParams?: ActivityParams
   ms?: number
   group?: string
   groupLabel?: string

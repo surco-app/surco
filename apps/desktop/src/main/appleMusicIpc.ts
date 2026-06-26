@@ -27,8 +27,11 @@ export function registerAppleMusicIpc(): void {
   // tracks are already owned; empty off macOS, where there is no library to read.
   ipcMain.handle('applemusic:library', () =>
     process.platform === 'darwin'
-      ? activity.track('applemusic', 'Cargando biblioteca de Apple Music', dumpAppleMusicLibrary, {
-          summary: (lib) => `${lib.length} pistas`,
+      ? activity.track('applemusic', 'activity.appleMusicLibrary', dumpAppleMusicLibrary, {
+          summary: (lib) => ({
+            detailKey: 'activity.trackCount',
+            detailParams: { count: lib.length },
+          }),
         })
       : [],
   )
@@ -40,21 +43,26 @@ export function registerAppleMusicIpc(): void {
   // up. macOS-only; the renderer never offers it elsewhere.
   ipcMain.handle('applemusic:add', async (_e, job: AppleMusicAddJob) => {
     if (process.platform !== 'darwin') return
-    return activity.track('applemusic', `Añadiendo a Apple Music: ${trackLabel(job.meta)}`, async () => {
-      const settings = getSettings()
-      let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
-      try {
-        if (hasCoverSource(job)) {
-          prepared = await prepareProcessedCover(job, {
-            maxSize: settings.coverMaxSize,
-            square: settings.coverSquare,
-          })
+    return activity.track(
+      'applemusic',
+      'activity.appleMusicAdd',
+      async () => {
+        const settings = getSettings()
+        let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+        try {
+          if (hasCoverSource(job)) {
+            prepared = await prepareProcessedCover(job, {
+              maxSize: settings.coverMaxSize,
+              square: settings.coverSquare,
+            })
+          }
+          return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+        } finally {
+          if (prepared) await prepared.cleanup()
         }
-        return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
-      } finally {
-        if (prepared) await prepared.cleanup()
-      }
-    })
+      },
+      { labelParams: { track: trackLabel(job.meta) } },
+    )
   })
 
   // Syncs the editor's metadata onto the library copy a previous add created — the
@@ -66,7 +74,7 @@ export function registerAppleMusicIpc(): void {
     if (process.platform !== 'darwin') return
     return activity.track(
       'applemusic',
-      `Actualizando en Apple Music: ${trackLabel(job.meta)}`,
+      'activity.appleMusicUpdate',
       async () => {
         const settings = getSettings()
         let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
@@ -88,6 +96,7 @@ export function registerAppleMusicIpc(): void {
           if (prepared) await prepared.cleanup()
         }
       },
+      { labelParams: { track: trackLabel(job.meta) } },
     )
   })
 

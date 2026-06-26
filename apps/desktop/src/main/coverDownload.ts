@@ -36,7 +36,7 @@ export async function downloadCover(url: string): Promise<string> {
   if (isBlockedFetchUrl(url)) throw new Error('La URL de la carátula no está permitida')
   return activity.track(
     'cover',
-    'Descargando carátula',
+    'activity.downloadCover',
     async () => {
       const res = await fetch(url, {
         headers: { 'User-Agent': USER_AGENT },

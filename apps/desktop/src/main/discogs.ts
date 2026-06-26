@@ -153,7 +153,7 @@ export async function search(
 ): Promise<SearchResult[]> {
   return activity.track(
     'discogs',
-    `Buscando en Discogs: ${query}`,
+    'activity.searchDiscogs',
     async () => {
       const serverFormat = formats.length === 1 ? formats[0] : undefined
       const perPage = formats.length > 1 ? 50 : 20
@@ -169,7 +169,10 @@ export async function search(
       }
       return results
     },
-    { summary: (r) => `${r.length} resultados` },
+    {
+      labelParams: { query },
+      summary: (r) => ({ detailKey: 'activity.resultCount', detailParams: { count: r.length } }),
+    },
   )
 }
 
@@ -188,7 +191,7 @@ export async function getRelease(
   if (cached) return cached
   return activity.track(
     'discogs',
-    `Cargando release de Discogs #${id}`,
+    'activity.loadDiscogsRelease',
     async () => {
       await discogsLimiter.acquire(priority)
       const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
@@ -197,8 +200,10 @@ export async function getRelease(
       return release
     },
     {
+      labelParams: { id },
       detail: `${BASE}/releases/${id}`,
-      summary: (r) => r.title,
+      // The release title is data, not UI text, so it passes through raw.
+      summary: (r) => ({ detail: r.title }),
       // The human release page (not the API endpoint in detail), for the row's open link.
       url: `https://www.discogs.com/release/${id}`,
     },

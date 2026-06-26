@@ -12,28 +12,50 @@ describe('createActivity', () => {
     const events: ActivityEvent[] = []
     activity.subscribe((e) => events.push(e))
 
-    const result = await activity.track('discogs', 'Buscando: bonobo', async () => 42)
+    const result = await activity.track('discogs', 'activity.searchDiscogs', async () => 42, {
+      labelParams: { query: 'bonobo' },
+    })
 
     expect(result).toBe(42)
     expect(events.map((e) => e.phase)).toEqual(['start', 'done'])
-    expect(events[0]).toMatchObject({ kind: 'discogs', label: 'Buscando: bonobo' })
+    expect(events[0]).toMatchObject({
+      kind: 'discogs',
+      labelKey: 'activity.searchDiscogs',
+      labelParams: { query: 'bonobo' },
+    })
     expect(events[0].id).toBe(events[1].id)
   })
 
-  it('derives the done detail from the result when a summary is given', async () => {
-    // The interesting outcome of a search is its result count ("12 resultados"),
-    // which only exists once the task resolves — so the done detail is computed
-    // from the value, not fixed up front like the start label.
+  it('derives the done detail key from the result when a summary is given', async () => {
+    // The interesting outcome of a search is its result count ("12 resultados"), which
+    // only exists once the task resolves — so the done detail is computed from the value.
+    // It crosses as a key+params, not finished text, so the panel can translate it.
     const activity = createActivity()
     const events: ActivityEvent[] = []
     activity.subscribe((e) => events.push(e))
 
-    await activity.track('discogs', 'Buscando: bonobo', async () => [1, 2, 3], {
-      summary: (r) => `${r.length} resultados`,
+    await activity.track('discogs', 'activity.searchDiscogs', async () => [1, 2, 3], {
+      summary: (r) => ({ detailKey: 'activity.resultCount', detailParams: { count: r.length } }),
     })
 
     const done = events.find((e) => e.phase === 'done')
-    expect(done?.detail).toBe('3 resultados')
+    expect(done).toMatchObject({
+      detailKey: 'activity.resultCount',
+      detailParams: { count: 3 },
+    })
+  })
+
+  it('lets a summary return a raw detail for untranslatable data like a title', async () => {
+    // A release title is data, not UI text — it must pass through verbatim, never keyed.
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+
+    await activity.track('discogs', 'activity.loadDiscogsRelease', async () => 'Migration', {
+      summary: (title) => ({ detail: title }),
+    })
+
+    expect(events.find((e) => e.phase === 'done')?.detail).toBe('Migration')
   })
 
   it('carries group and groupLabel onto every emitted event so the panel can fold them', async () => {
@@ -43,7 +65,7 @@ describe('createActivity', () => {
     const events: ActivityEvent[] = []
     activity.subscribe((e) => events.push(e))
 
-    await activity.track('analyze', 'Espectrograma', async () => 0, {
+    await activity.track('analyze', 'activity.probeSpectrogram', async () => 0, {
       group: '/music/kerala.wav',
       groupLabel: 'kerala.wav',
     })
@@ -64,7 +86,7 @@ describe('createActivity', () => {
     activity.subscribe((e) => events.push(e))
 
     await expect(
-      activity.track('discogs', 'Buscando: bonobo', async () => {
+      activity.track('discogs', 'activity.searchDiscogs', async () => {
         throw new Error('Discogs devolvió 429')
       }),
     ).rejects.toThrow('Discogs devolvió 429')
@@ -94,7 +116,7 @@ describe('createActivity', () => {
     const cb = vi.fn()
     const off = activity.subscribe(cb)
     off()
-    await activity.track('cover', 'Descargando portada', async () => 0)
+    await activity.track('cover', 'activity.downloadCover', async () => 0)
     expect(cb).not.toHaveBeenCalled()
   })
 })

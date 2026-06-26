@@ -589,9 +589,12 @@ function registerIpc(): void {
       hasCoverSource,
       prepareProcessedCover,
       convertAudio: (input, output, format, meta, coverPath, normalize, removeCover) => {
-        const label = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
-        return activity.track('convert', `Convirtiendo ${label}`, () =>
-          convertAudio(input, output, format, meta, coverPath, normalize, removeCover),
+        const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        return activity.track(
+          'convert',
+          'activity.convert',
+          () => convertAudio(input, output, format, meta, coverPath, normalize, removeCover),
+          { labelParams: { track } },
         )
       },
       recordConversion,

@@ -604,5 +604,30 @@
     "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
     "convertInPlaceMessage_other": "Sobrescribir el original está activado: esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
     "convertInPlaceConfirm": "Sobrescribir y convertir"
+  },
+  "activity": {
+    "title": "Actividad",
+    "empty": "Sin actividad todavía",
+    "clear": "Vaciar",
+    "openInBrowser": "Abrir en el navegador",
+    "searchDiscogs": "Buscando en Discogs: {{query}}",
+    "loadDiscogsRelease": "Cargando release de Discogs #{{id}}",
+    "searchBandcamp": "Buscando en Bandcamp: {{query}}",
+    "loadBandcampRelease": "Cargando release de Bandcamp",
+    "downloadCover": "Descargando carátula",
+    "convert": "Convirtiendo {{track}}",
+    "probeSpectrogram": "Espectrograma",
+    "probeLoudness": "Loudness",
+    "probeProperties": "Propiedades",
+    "probeBpm": "BPM",
+    "probeKey": "Tonalidad",
+    "probeWaveform": "Forma de onda",
+    "appleMusicLibrary": "Cargando biblioteca de Apple Music",
+    "appleMusicAdd": "Añadiendo a Apple Music: {{track}}",
+    "appleMusicUpdate": "Actualizando en Apple Music: {{track}}",
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
+    "trackCount_one": "{{count}} pista",
+    "trackCount_other": "{{count}} pistas"
   }
 }

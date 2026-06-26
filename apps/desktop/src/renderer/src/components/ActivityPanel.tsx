@@ -15,8 +15,22 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import type { ActivityRow } from '../lib/activityLog'
+
+type Translate = ReturnType<typeof useTranslation>['t']
+
+// Resolves a row's translatable text: a key wins (translated with its params), else
+// the raw fallback (a file name, release title, URL, error) passes through verbatim.
+function rowLabel(tr: Translate, row: ActivityRow): string {
+  if (row.labelKey) return tr(row.labelKey, row.labelParams)
+  return row.label ?? ''
+}
+function rowDetail(tr: Translate, row: ActivityRow): string | undefined {
+  if (row.detailKey) return tr(row.detailKey, row.detailParams)
+  return row.detail
+}
 
 interface Props {
   rows: ActivityRow[]
@@ -86,8 +100,10 @@ function DetailText({ text }: { text: string }): React.JSX.Element {
 // A leaf step inside an expanded group: its own status, label, timing and (when it
 // failed or carries one) its technical detail line.
 function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
-  const expandable = Boolean(row.detail)
+  const detail = rowDetail(tr, row)
+  const expandable = Boolean(detail)
   return (
     <li>
       <button
@@ -98,14 +114,16 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
         className="flex w-full items-center gap-2 py-1 pr-3 pl-9 text-left enabled:hover:bg-[var(--color-panel-2)] disabled:cursor-default"
       >
         <StatusIcon status={row.status} />
-        <span className="min-w-0 flex-1 truncate text-[11px] text-fg-muted">{row.label}</span>
+        <span className="min-w-0 flex-1 truncate text-[11px] text-fg-muted">
+          {rowLabel(tr, row)}
+        </span>
         {row.ms !== undefined && (
           <span className="shrink-0 font-mono text-[10px] text-fg-muted">{row.ms} ms</span>
         )}
       </button>
-      {open && row.detail && (
+      {open && detail && (
         <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-[10px] text-fg-muted">
-          <DetailText text={row.detail} />
+          <DetailText text={detail} />
         </pre>
       )}
     </li>
@@ -113,10 +131,12 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
 }
 
 function Row({ row }: { row: ActivityRow }): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const Icon = KIND_ICON[row.kind] ?? Radio
   const grouped = Boolean(row.children?.length)
-  const expandable = grouped || Boolean(row.detail)
+  const detail = rowDetail(tr, row)
+  const expandable = grouped || Boolean(detail)
   return (
     <li className="border-b border-[var(--color-line)] last:border-0">
       <div className="group flex items-center hover:bg-[var(--color-panel-2)]">
@@ -129,7 +149,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
         >
           <StatusIcon status={row.status} />
           <Icon className="h-3.5 w-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-xs text-fg">{row.label}</span>
+          <span className="min-w-0 flex-1 truncate text-xs text-fg">{rowLabel(tr, row)}</span>
           {grouped && (
             <span className="shrink-0 text-[10px] text-fg-muted">
               {row.children?.filter((c) => c.status !== 'running').length}/{row.children?.length}
@@ -149,7 +169,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           <button
             type="button"
             data-testid="activity-open-url"
-            aria-label="Abrir en el navegador"
+            aria-label={tr('activity.openInBrowser')}
             onClick={() => row.url && openUrl(row.url)}
             className="press mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-muted opacity-0 hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:opacity-100"
           >
@@ -164,12 +184,12 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           ))}
         </ul>
       )}
-      {open && !grouped && row.detail && (
+      {open && !grouped && detail && (
         <pre
           data-testid="activity-row-detail"
           className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-9 font-mono text-[10px] text-fg-muted"
         >
-          <DetailText text={row.detail} />
+          <DetailText text={detail} />
         </pre>
       )}
     </li>
@@ -187,6 +207,7 @@ const MIN_WIDTH = 260
 const MIN_HEIGHT = 160
 
 export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const [pos, setPos] = useState({ x: 24, y: 80 })
   const [size, setSize] = useState({ width: 320, height: 360 })
   const drag = useRef<{ dx: number; dy: number } | null>(null)
@@ -265,11 +286,13 @@ export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Elem
         className="flex shrink-0 cursor-grab items-center gap-2 border-b border-[var(--color-line)] px-3 py-2 active:cursor-grabbing"
       >
         <Radio className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
-        <span className="flex-1 select-none text-xs font-medium text-fg">Actividad</span>
+        <span className="flex-1 select-none text-xs font-medium text-fg">
+          {tr('activity.title')}
+        </span>
         <button
           type="button"
           data-testid="activity-clear"
-          aria-label="Vaciar"
+          aria-label={tr('activity.clear')}
           onClick={onClear}
           className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
         >
@@ -278,7 +301,7 @@ export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Elem
         <button
           type="button"
           data-testid="activity-close"
-          aria-label="Cerrar"
+          aria-label={tr('common.close')}
           onClick={onClose}
           className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
         >
@@ -286,7 +309,7 @@ export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Elem
         </button>
       </header>
       {rows.length === 0 ? (
-        <p className="flex-1 px-3 py-6 text-center text-xs text-fg-muted">Sin actividad todavía</p>
+        <p className="flex-1 px-3 py-6 text-center text-xs text-fg-muted">{tr('activity.empty')}</p>
       ) : (
         <ul className="min-h-0 flex-1 overflow-auto">
           {rows.map((row) => (
