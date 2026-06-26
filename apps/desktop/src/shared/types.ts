@@ -306,7 +306,13 @@ export interface ProcessProgress {
 // The kinds of background work the activity log surfaces. Each maps to a
 // human-readable verb in the panel ("Buscando en Discogs", "Convirtiendo"…);
 // kept as a closed union so the renderer can localize and icon them.
-export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert' | 'analyze'
+export type ActivityKind =
+  | 'discogs'
+  | 'bandcamp'
+  | 'cover'
+  | 'convert'
+  | 'analyze'
+  | 'applemusic'
 
 // One step of background work, streamed main → renderer as it starts and ends.
 // `id` correlates the start with its done/error so the panel updates the same

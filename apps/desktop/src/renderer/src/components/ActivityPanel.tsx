@@ -6,6 +6,7 @@ import {
   Disc3,
   ExternalLink,
   Image as ImageIcon,
+  Library,
   Loader2,
   Music,
   Radio,
@@ -32,6 +33,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   cover: ImageIcon,
   convert: Disc3,
   analyze: ActivityIcon,
+  applemusic: Library,
 }
 
 function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.Element {
