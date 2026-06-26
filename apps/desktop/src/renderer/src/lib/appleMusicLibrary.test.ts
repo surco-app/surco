@@ -131,6 +131,24 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Destroy', artist: 'Ricardo F. present Chasis' })).toBe(true)
   })
 
+  // A "presents" credit joining two real acts ("Head Horny's presents Miguel Serna") names
+  // the same collaboration the library files with an "&" ("Head Horny's & Miguel Serna").
+  // The lone "presents" word sits between the two names, so neither side is a whole-word
+  // subset of the other; treat "presents"/"pres." as a collaborator separator and keep the
+  // lead, so the lead artist matches.
+  it('matches a "presents" collaboration against the library "&" spelling', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Keep It Together', artist: "Head Horny's & Miguel Serna", durationSec: 375 },
+    ])
+    expect(
+      isInLibrary(idx, {
+        title: 'Keep It Together',
+        artist: "Head Horny's presents Miguel Serna",
+        durationSec: 377,
+      }),
+    ).toBe(true)
+  })
+
   // A Discogs disambiguator on the tag ("Aphex Twin (2)") must still match the plain
   // library name.
   it('strips a Discogs (n) disambiguator from the candidate artist', () => {

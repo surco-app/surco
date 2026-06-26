@@ -31,11 +31,14 @@ const LIBRARY_WEIGHTS = { title: 0.45, artist: 0.4, duration: 0.15 }
 
 // Collaborator separators, matched on the raw artist string (the split happens before
 // folding, which would turn a comma/ampersand into a space and lose the boundary): a comma
-// or ampersand joining co-artists, or an inline feature clause. Our tags join collaborators
-// ("Alfredo Pareja, Saint Etien", "Head Horny's & DJ Miguel Serna") while Apple Music files
-// the track under just the lead — often spelled shorter ("Head Horny's & Miguel Serna"), so
-// requiring every co-artist's words to appear would read the collaboration as not-owned.
-const COLLAB_SEP = /\s*[,&]\s*|\s+(?:feat\.?|featuring|ft\.?)\s+/i
+// or ampersand joining co-artists, an inline feature clause, or a "presents"/"pres." credit.
+// Our tags join collaborators ("Alfredo Pareja, Saint Etien", "Head Horny's & DJ Miguel
+// Serna", "Head Horny's presents Miguel Serna") while Apple Music files the track under just
+// the lead — often spelled shorter ("Head Horny's & Miguel Serna"), so requiring every
+// co-artist's word to appear would read the collaboration as not-owned. "presents" is a
+// separator and not just trailing noise because the lone word sits between two real names,
+// so neither side is a subset of the other unless we cut on it.
+const COLLAB_SEP = /\s*[,&]\s*|\s+(?:feat\.?|featuring|ft\.?|presents|pres\.?)\s+/i
 
 // Small spelled-out numbers, for the digit↔word equivalence below ("A7" == "A Seven").
 const NUMBER_WORDS: Record<string, string> = {
