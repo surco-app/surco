@@ -201,6 +201,26 @@ describe('detectCutoff', () => {
     })
   })
 
+  // The bands only ever reach ~22 kHz (BAND_MAX_HZ), so on a 96 kHz file (Nyquist 48 kHz)
+  // the detector never looked above 22 kHz. Reporting Nyquist there printed an absurd
+  // "energy reaches ~48 kHz" that contradicted the "at the ~20 kHz line" caption and claimed
+  // a reach Surco never measured. Full-band audio must read as the top of the PROBED range,
+  // not Nyquist — honest about how far we actually looked. A native 44.1 kHz file is
+  // unchanged: its Nyquist sits at the probed ceiling, so it still reads ~22 kHz.
+  it('caps full-band high-rate audio at the probed ceiling, not Nyquist', () => {
+    const r = detectCutoff(FULL_BAND, 48000)
+    expect(r.hasKnee).toBe(false)
+    expect(r.processed).toBe(false)
+    // The energy reaches the last probed band, so the reading is the probed ceiling
+    // (~22 kHz), never the file's 48 kHz Nyquist.
+    expect(r.cutoffHz).toBeLessThanOrEqual(22050)
+    expect(r.cutoffHz).toBeGreaterThanOrEqual(21000)
+  })
+
+  it('still reports a 44.1 kHz full-band track at its own Nyquist', () => {
+    expect(detectCutoff(FULL_BAND, NYQUIST).cutoffHz).toBe(NYQUIST)
+  })
+
   it('reports Nyquist when there are too few bands to compare', () => {
     expect(detectCutoff([], NYQUIST)).toEqual({
       cutoffHz: NYQUIST,

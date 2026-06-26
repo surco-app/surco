@@ -31,6 +31,11 @@ const BAND_START_HZ = 9000
 // Lossy encoders never place their lowpass above ~22 kHz; probing higher only
 // risks reading the natural taper near Nyquist as a wall.
 const BAND_MAX_HZ = 22000
+// The highest frequency the bands meaningfully cover (the 44.1 kHz Nyquist). Full-band
+// audio reports its reach as min(Nyquist, this): on a 44.1 kHz file that is Nyquist itself,
+// but on a 96 kHz file (Nyquist 48 kHz) the bands never looked past ~22 kHz, so reporting
+// Nyquist would claim a 48 kHz reach we never measured — and contradict the ~20 kHz caption.
+const PROBED_CEILING_HZ = 22050
 // A natural HF taper loses a few dB per band step (~3 dB/kHz at its steepest
 // for full-band pink noise, under 5 dB on measured real tracks); a codec
 // lowpass drops 7 dB or more in a single step even when its transition band is
@@ -188,16 +193,20 @@ export function detectCutoff(
   const ceiling = roughnessCeiling(fineBands)
   if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true, hasKnee: false }
 
+  // Full-band audio (energy reaching the last probed band) reports the probed ceiling, not
+  // the file's Nyquist — capped so a high-rate file never claims a reach above where the
+  // bands actually looked. A taper that stops earlier reports the band it reached.
+  const fullBand = Math.min(nyquistHz, PROBED_CEILING_HZ)
   const floor = plateau - EXTENT_DROP_DB
   for (let i = bands.length - 1; i >= 0; i--) {
     if (bands[i].rmsDb < floor) continue
     return {
-      cutoffHz: i === bands.length - 1 ? nyquistHz : bands[i].freqHz,
+      cutoffHz: i === bands.length - 1 ? fullBand : bands[i].freqHz,
       processed: false,
       hasKnee: false,
     }
   }
-  return { cutoffHz: nyquistHz, processed: false, hasKnee: false }
+  return { cutoffHz: fullBand, processed: false, hasKnee: false }
 }
 
 // True when the spectrum walls off at the 22.05 kHz 44.1 Nyquist on a higher-rate

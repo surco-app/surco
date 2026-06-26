@@ -75,8 +75,10 @@ export function registerAudioIpc(): void {
         // to the recolor ramp's Spek-style low-end fade. v11 renders the image 320 px tall
         // (was 280) to match the taller panel so it is not upscaled. v12 catches a fake 320
         // whose HF spikes hide its wall behind the top-edge knee guard — the cached verdict
-        // changed (Good→Bad), so old entries must regenerate to pick it up.
-        'spectrogram-mono-v12',
+        // changed (Good→Bad), so old entries must regenerate to pick it up. v13 reports
+        // full-band high-rate audio (96 kHz) at the ~22 kHz probed ceiling instead of the
+        // 48 kHz Nyquist, so cutoffHz changed for those files and old entries must regenerate.
+        'spectrogram-mono-v13',
         inputPath,
         () =>
           // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
