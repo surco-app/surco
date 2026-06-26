@@ -31,6 +31,10 @@ export interface DiscogsBrowser {
   // by provider+id because ids can collide across providers and a Bandcamp release is tied
   // to its result row (its page URL), not to a numeric id.
   openKey: string | null
+  // The key (`provider:id`) of the result the probe confirmed holds the file's track, or
+  // null when no probe matched. The panel badges that row "Suggested" in place — kept apart
+  // from openKey so the badge stays on the probe's pick after the user opens another row.
+  suggestedKey: string | null
   // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
   loading: boolean
   busy: boolean
@@ -77,6 +81,10 @@ export function useDiscogsBrowser(
   // a single source of truth that auto-open, preview and reopen all set.
   const [openResult, setOpenResult] = useState<SearchResult | null>(null)
   const [autoProbing, setAutoProbing] = useState(false)
+  // The result the probe confirmed holds the file's track, kept apart from openResult: the
+  // panel badges this row "Suggested", and that flag must stay on the probe's pick even after
+  // the user clicks a different result open. Null until a probe matches, reset per search.
+  const [suggested, setSuggested] = useState<SearchResult | null>(null)
   // Which catalog's results to show, a renderer-side view over the merged list — distinct
   // from `providers`, which decides what gets searched. Resets per search below.
   const [providerFilter, setProviderFilter] = useState<SearchProviderId | 'all'>('all')
@@ -177,6 +185,7 @@ export function useDiscogsBrowser(
   // biome-ignore lint/correctness/useExhaustiveDependencies: searchTerm is the deliberate trigger — resetting the open release and source filter on each new search is the point.
   useEffect(() => {
     setOpenResult(null)
+    setSuggested(null)
     setProviderFilter('all')
   }, [searchTerm])
 
@@ -203,7 +212,10 @@ export function useDiscogsBrowser(
         // the user's own click, it never writes anything.
         { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },
       )
-      if (!cancelled && m) setOpenResult(m.result)
+      if (!cancelled && m) {
+        setOpenResult(m.result)
+        setSuggested(m.result)
+      }
     })().finally(() => {
       if (!cancelled) setAutoProbing(false)
     })
@@ -232,6 +244,7 @@ export function useDiscogsBrowser(
   }, [])
 
   const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
+  const suggestedKey = suggested ? `${suggested.provider}:${suggested.id}` : null
   const loading = releaseQuery.isFetching
   const busy = searchQuery.isFetching || autoProbing || releaseQuery.isFetching
   // A typed query whose search hasn't settled yet, including the debounce window before the
@@ -254,6 +267,7 @@ export function useDiscogsBrowser(
     setProviderFilter,
     release,
     openKey,
+    suggestedKey,
     loading,
     busy,
     resolving,

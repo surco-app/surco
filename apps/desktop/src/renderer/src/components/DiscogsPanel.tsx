@@ -60,6 +60,7 @@ export function DiscogsPanel({
     setProviderFilter,
     release,
     openKey,
+    suggestedKey,
     loading,
     busy,
     error,
@@ -246,6 +247,7 @@ export function DiscogsPanel({
             results.map((r) => {
               const rk = `${r.provider}:${r.id}`
               const expanded = openKey === rk
+              const suggested = suggestedKey === rk
               const loaded = expanded && !!release && !loading
               return (
                 <div key={rk} className="border-b border-[var(--color-line)]/60">
@@ -280,6 +282,14 @@ export function DiscogsPanel({
                         >
                           {tr(`settings.provider.${r.provider}`)}
                         </span>
+                        {suggested && (
+                          <span
+                            data-testid="result-suggested"
+                            className="shrink-0 rounded-full bg-good/15 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-good"
+                          >
+                            {tr('editor.matchSuggested')}
+                          </span>
+                        )}
                         <span className="truncate text-xs text-fg-dim">
                           {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
                         </span>

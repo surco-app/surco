@@ -264,6 +264,50 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.release?.id).toBe(1))
   })
 
+  // The probe walks results in order, so the one holding the file's track can sit second.
+  // Reordering it to the top would make the list jump when the (async) probe lands, so the
+  // result stays put and is flagged instead: the hook reports which result the probe matched
+  // so the panel can badge that row "Suggested". The badge must track the probe's pick, not
+  // whatever the user later clicks open, so it survives a manual preview of another result.
+  it('flags the probe-matched result as suggested even when it is not the first', async () => {
+    const first = { ...searchResult, id: 1 }
+    const second = { ...searchResult, id: 2 }
+    setApi({
+      search: vi.fn().mockResolvedValue([first, second]),
+      // Only the second release holds the file's track, so the probe must land on id 2.
+      getRelease: vi.fn((id: number) =>
+        id === 2
+          ? Promise.resolve({ ...release, id: 2 })
+          : Promise.resolve({
+              id: 1,
+              title: 'Other',
+              tracklist: [{ position: 'A1', title: 'Nope' }],
+            }),
+      ),
+    })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'some album', title: 'Track One' }), tr),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:2'))
+    // Clicking another result open must not move the suggestion off the probe's pick.
+    act(() => result.current.previewRelease(first))
+    expect(result.current.suggestedKey).toBe('discogs:2')
+  })
+
+  // A pasted release id loads a release directly with no probe, so nothing is "suggested" —
+  // the badge would be a lie about a match Surco never scored.
+  it('marks no result as suggested when none was probe-matched', async () => {
+    setApi()
+    const { result } = renderHook(() => useDiscogsBrowser(item({ query: 'some album' }), tr), {
+      wrapper: wrapper(),
+    })
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(result.current.suggestedKey).toBeNull()
+  })
+
   // The probe walks the results in order; one structurally broken release (no
   // tracklist) must be skipped like a failed load, not thrown out of the probe —
   // which would leave busy latched and surface an unhandled rejection.

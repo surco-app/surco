@@ -637,6 +637,29 @@ describe('Editor Discogs loading skeleton', () => {
     fireEvent.keyDown(results[1], { key: 'k' })
     expect(results[0]).toHaveFocus()
   })
+
+  // The probe can find the file's track in a result that is not the first. Rather than
+  // reorder the list under the user (it would jump when the async probe lands), the matched
+  // row is badged "Suggested" in place — here the track lives only in the second release, so
+  // the badge must sit on the second row, not the first.
+  it('badges the probe-matched result as suggested without reordering the list', async () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.search = vi.fn(async () => [
+      { provider: 'discogs', id: 1, title: 'First Release' },
+      { provider: 'discogs', id: 2, title: 'Second Release' },
+    ])
+    // fetchRelease passes the release id (not the result object) to the bridge.
+    api.getRelease = vi.fn(async (id: number) =>
+      id === 2
+        ? { id: 2, title: 'Second Release', tracklist: [{ position: 'A1', title: 'My Song' }] }
+        : { id: 1, title: 'First Release', tracklist: [{ position: 'A1', title: 'Other' }] },
+    )
+    renderEditor({ id: 'a', query: 'artist song', meta: { title: 'My Song' } })
+    const results = await screen.findAllByTestId('discogs-result')
+    const badge = await screen.findByTestId('result-suggested')
+    expect(results[1]).toContainElement(badge)
+    expect(results[0]).not.toContainElement(badge)
+  })
 })
 
 describe('Editor embedded cover size', () => {
