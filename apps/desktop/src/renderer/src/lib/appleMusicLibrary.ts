@@ -195,14 +195,18 @@ export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMus
 // one's words wholly contained in the other's, either direction. The library copy is often
 // the shorter spelling (the tag adds a "Dr." prefix, an "On A Vinyl" descriptor, a "presents"
 // credit), while sometimes it carries the extra words (a "& Friends" suffix). Whole-word both
-// ways, so a partial name ("Mat") never matches a longer one ("Matador").
+// ways, so a partial name ("Mat") never matches a longer one ("Matador"). As a fallback, the
+// same name spelled with and without internal spaces ("DSigual" vs "D Sigual") is one act —
+// a rip glued a leading initial onto the next word; compare with all spaces removed. That only
+// erases word boundaries, never letters, so it still can't fuse "Mat" with "Matador".
 function artistMatch(candidatePrimaryWords: string[], entryFoldedArtist: string): boolean {
   const candidateSet = new Set(candidatePrimaryWords)
   const libraryWords = entryFoldedArtist.split(' ')
   const librarySet = new Set(libraryWords)
   return (
     candidatePrimaryWords.every((w) => librarySet.has(w)) ||
-    libraryWords.every((w) => candidateSet.has(w))
+    libraryWords.every((w) => candidateSet.has(w)) ||
+    candidatePrimaryWords.join('') === libraryWords.join('')
   )
 }
 

@@ -96,6 +96,15 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(back, { title: 'Four To The Floor', artist: 'DJ Four' })).toBe(true)
   })
 
+  // The same name spelled with and without a space after a leading initial ("DSigual" tag
+  // vs "D Sigual" library) is one artist — a rip glued the initial onto the next word. Spaces
+  // are the only difference, so compare with all of them removed; still whole-letters, so it
+  // can't fuse two genuinely different names.
+  it('matches an artist whose only difference is a space after a leading initial', () => {
+    const idx = buildLibraryIndex([{ title: 'Technobox', artist: 'D Sigual', durationSec: 375 }])
+    expect(isInLibrary(idx, { title: 'Technobox', artist: 'DSigual', durationSec: 375 })).toBe(true)
+  })
+
   // A "DJ"/"Dr."/"MC" handle is noise around the same act: "DJ Raúl Soto & DJ Jaime Gimeno"
   // (tag) is the "Raul Soto & Jaime Gimeno" the library files. Strip a leading handle so the
   // lead artist matches.
