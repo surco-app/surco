@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { activity } from './activity'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { isBlockedFetchUrl } from './navigation'
 import { tmpName } from './tmp'
@@ -33,18 +34,25 @@ export async function downloadCover(url: string): Promise<string> {
   // The renderer names this URL, so refuse the SSRF-shaped ones (loopback, cloud
   // metadata, private ranges) before the trusted main process ever connects.
   if (isBlockedFetchUrl(url)) throw new Error('La URL de la carátula no está permitida')
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  })
-  if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
-  const buf = Buffer.from(await res.arrayBuffer())
-  // Trust the bytes, not the extension: a URL that resolves to an HTML page (the common
-  // outcome of a link dragged from a browser) would otherwise be saved as .jpg and only
-  // blow up later inside ffmpeg with an inscrutable "No JPEG data found".
-  const ext = imageExt(buf)
-  if (!ext) throw new Error('La URL no apunta a una imagen')
-  const path = join(tmpdir(), tmpName('cover', ext))
-  await writeFile(path, buf)
-  return path
+  return activity.track(
+    'cover',
+    'Descargando carátula',
+    async () => {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      })
+      if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
+      const buf = Buffer.from(await res.arrayBuffer())
+      // Trust the bytes, not the extension: a URL that resolves to an HTML page (the common
+      // outcome of a link dragged from a browser) would otherwise be saved as .jpg and only
+      // blow up later inside ffmpeg with an inscrutable "No JPEG data found".
+      const ext = imageExt(buf)
+      if (!ext) throw new Error('La URL no apunta a una imagen')
+      const path = join(tmpdir(), tmpName('cover', ext))
+      await writeFile(path, buf)
+      return path
+    },
+    { detail: url },
+  )
 }

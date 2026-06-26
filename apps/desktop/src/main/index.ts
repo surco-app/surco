@@ -28,6 +28,7 @@ import type {
   ProcessJob,
   Settings,
 } from '../shared/types'
+import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, updateInAppleMusic } from './applemusic'
@@ -280,6 +281,13 @@ function createWindow(): BrowserWindow {
   })
 
   win.on('ready-to-show', () => win.show())
+  // Stream background-work events (Discogs/Bandcamp searches, cover downloads,
+  // conversions) to the renderer's activity panel. Detach on close so the emitter
+  // never sends into a destroyed webContents.
+  const offActivity = activity.subscribe((event) => {
+    if (!win.isDestroyed()) win.webContents.send('activity:event', event)
+  })
+  win.on('closed', offActivity)
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))
@@ -578,7 +586,12 @@ function registerIpc(): void {
       sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
       hasCoverSource,
       prepareProcessedCover,
-      convertAudio,
+      convertAudio: (input, output, format, meta, coverPath, normalize, removeCover) => {
+        const label = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        return activity.track('convert', `Convirtiendo ${label}`, () =>
+          convertAudio(input, output, format, meta, coverPath, normalize, removeCover),
+        )
+      },
       recordConversion,
       removeRenamedOriginal,
       addToAppleMusic,

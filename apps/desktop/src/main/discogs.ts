@@ -1,4 +1,5 @@
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
+import { activity } from './activity'
 import { discogsLimiter } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { buildSearchCandidates } from './searchQuery'
@@ -150,17 +151,26 @@ export async function search(
   hints?: SearchHints,
   formats: string[] = [],
 ): Promise<SearchResult[]> {
-  const serverFormat = formats.length === 1 ? formats[0] : undefined
-  const perPage = formats.length > 1 ? 50 : 20
-  let results: SearchResult[] = []
-  for (const candidate of buildSearchCandidates(query, hints)) {
-    const opts: SearchOpts = { format: serverFormat, perPage }
-    if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
-    const raw = await searchOnce(candidate, token, opts, priority)
-    results = dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)
-    if (results.length) break
-  }
-  return results
+  return activity.track(
+    'discogs',
+    `Buscando en Discogs: ${query}`,
+    async () => {
+      const serverFormat = formats.length === 1 ? formats[0] : undefined
+      const perPage = formats.length > 1 ? 50 : 20
+      let results: SearchResult[] = []
+      for (const candidate of buildSearchCandidates(query, hints)) {
+        const opts: SearchOpts = { format: serverFormat, perPage }
+        if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
+        const raw = await searchOnce(candidate, token, opts, priority)
+        results = dedupeResults(
+          formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw,
+        )
+        if (results.length) break
+      }
+      return results
+    },
+    { summary: (r) => `${r.length} resultados` },
+  )
 }
 
 const releaseCache = new Map<number, Release>()
@@ -176,9 +186,16 @@ export async function getRelease(
 ): Promise<Release> {
   const cached = releaseCache.get(id)
   if (cached) return cached
-  await discogsLimiter.acquire(priority)
-  const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
-  const release: Release = { ...raw, provider: 'discogs' }
-  releaseCache.set(id, release)
-  return release
+  return activity.track(
+    'discogs',
+    `Cargando release de Discogs #${id}`,
+    async () => {
+      await discogsLimiter.acquire(priority)
+      const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
+      const release: Release = { ...raw, provider: 'discogs' }
+      releaseCache.set(id, release)
+      return release
+    },
+    { detail: `${BASE}/releases/${id}`, summary: (r) => r.title },
+  )
 }

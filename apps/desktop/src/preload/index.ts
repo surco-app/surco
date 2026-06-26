@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
+  ActivityEvent,
   AppleMusicLookupCandidate,
   BpmResult,
   DockIconFrames,
@@ -95,6 +96,11 @@ const api: Api = {
     const listener = (_e: unknown, progress: ProcessProgress): void => cb(progress)
     ipcRenderer.on('process:progress', listener)
     return () => ipcRenderer.removeListener('process:progress', listener)
+  },
+  onActivity: (cb: (event: ActivityEvent) => void) => {
+    const listener = (_e: unknown, event: ActivityEvent): void => cb(event)
+    ipcRenderer.on('activity:event', listener)
+    return () => ipcRenderer.removeListener('activity:event', listener)
   },
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdateDownloaded: (cb: (version: string) => void) => {

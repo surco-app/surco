@@ -3,25 +3,26 @@
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type {
+  ActivityEvent,
   AppleMusicAddJob,
   AppleMusicLookupCandidate,
   AppleMusicUpdateJob,
   BpmResult,
   CoverExportJob,
   CoverRead,
-  EngineExportTrack,
-  Release,
-  SearchResult,
   DockIconFrames,
+  EngineExportTrack,
   KeyResult,
   LoudnessResult,
   MetaRead,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
+  Release,
   SearchHints,
   SearchPriority,
   SearchProviderId,
+  SearchResult,
   Settings,
   SpectrumResult,
   TrackMetadata,
@@ -110,6 +111,9 @@ export interface Api {
   readCoverFull: (path: string) => Promise<string | null>
   onMenuCommand: (cb: (id: string) => void) => () => void
   onProcessProgress: (cb: (progress: ProcessProgress) => void) => () => void
+  // Background-work feed for the activity panel: each Discogs/Bandcamp search,
+  // cover download and conversion reports start/done/error as it happens.
+  onActivity: (cb: (event: ActivityEvent) => void) => () => void
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void

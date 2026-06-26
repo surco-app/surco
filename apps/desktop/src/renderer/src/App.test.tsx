@@ -118,6 +118,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     clearCache: vi.fn().mockResolvedValue(undefined),
     onMenuCommand: () => () => {},
     onProcessProgress: () => () => {},
+    onActivity: () => () => {},
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
     onOpenFiles: () => () => {},

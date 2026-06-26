@@ -303,6 +303,26 @@ export interface ProcessProgress {
   stage: ProcessStage
 }
 
+// The kinds of background work the activity log surfaces. Each maps to a
+// human-readable verb in the panel ("Buscando en Discogs", "Convirtiendo"…);
+// kept as a closed union so the renderer can localize and icon them.
+export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert'
+
+// One step of background work, streamed main → renderer as it starts and ends.
+// `id` correlates the start with its done/error so the panel updates the same
+// row in place (same pattern as ProcessProgress' id). `label` is the
+// human-readable summary; `detail` is the optional technical line revealed when
+// the row is expanded (request URL, ffmpeg note, raw error). `ms` is the
+// elapsed time, set on done/error.
+export interface ActivityEvent {
+  id: string
+  kind: ActivityKind
+  phase: 'start' | 'done' | 'error'
+  label: string
+  detail?: string
+  ms?: number
+}
+
 export interface ProcessResult {
   outputPath: string
   // True when the export matched the source format and rewrote the original file

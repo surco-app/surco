@@ -7,6 +7,7 @@ import {
   CaseSensitive,
   Clock,
   FileAudio,
+  Radio,
   Search,
   User,
   X,
@@ -37,6 +38,7 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
+import { ActivityPanel } from './components/ActivityPanel'
 import { NoticeToast } from './components/NoticeToast'
 import { LivePlayer } from './components/Player'
 import { QualityFilterBar } from './components/QualityFilterBar'
@@ -47,6 +49,7 @@ import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
 import { TrackList } from './components/TrackList'
 import { UpdateToast } from './components/UpdateToast'
+import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
@@ -180,6 +183,10 @@ export default function App(): React.JSX.Element {
   const setAppError = useCallback((e: AppError | null) => store.setState({ appError: e }), [store])
   const notice = useAppStore(store, (s) => s.notice)
   const setNotice = useCallback((n: string | null) => store.setState({ notice: n }), [store])
+  // The activity log: always-accumulating feed of background work, shown in a
+  // movable floating panel the user toggles.
+  const { rows: activityRows, clear: clearActivity } = useActivityLog()
+  const [activityOpen, setActivityOpen] = useState(false)
   useEffect(() => {
     if (!notice) return
     const id = setTimeout(() => setNotice(null), 4000)
@@ -1295,6 +1302,25 @@ export default function App(): React.JSX.Element {
       )}
       {notice && !appError && <NoticeToast message={notice} onDismiss={() => setNotice(null)} />}
       <UpdateToast />
+      {activityOpen && (
+        <ActivityPanel
+          rows={activityRows}
+          onClear={clearActivity}
+          onClose={() => setActivityOpen(false)}
+        />
+      )}
+      <button
+        type="button"
+        data-testid="activity-toggle"
+        aria-label="Actividad"
+        onClick={() => setActivityOpen((v) => !v)}
+        className="press fixed bottom-5 right-5 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel)] text-fg-muted shadow-lg hover:text-fg"
+      >
+        <Radio className="h-4 w-4" aria-hidden="true" />
+        {activityRows.some((r) => r.status === 'running') && (
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-400" />
+        )}
+      </button>
     </div>
   )
 }

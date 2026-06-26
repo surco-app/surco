@@ -1,4 +1,5 @@
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
+import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
 import { buildSearchCandidates } from './searchQuery'
 
@@ -80,12 +81,19 @@ export async function search(
   priority?: SearchPriority,
   hints: SearchHints = {},
 ): Promise<SearchResult[]> {
-  let results: SearchResult[] = []
-  for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
-    results = await searchOnce(candidate, priority)
-    if (results.length) break
-  }
-  return results
+  return activity.track(
+    'bandcamp',
+    `Buscando en Bandcamp: ${query}`,
+    async () => {
+      let results: SearchResult[] = []
+      for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
+        results = await searchOnce(candidate, priority)
+        if (results.length) break
+      }
+      return results
+    },
+    { summary: (r) => `${r.length} resultados` },
+  )
 }
 
 // Reverses the HTML-attribute escaping Bandcamp applies to the embedded JSON. `&amp;`
@@ -178,13 +186,20 @@ const releaseCache = new Map<string, Release>()
 export async function getRelease(url: string, priority?: SearchPriority): Promise<Release> {
   const cached = releaseCache.get(url)
   if (cached) return cached
-  await bandcampLimiter.acquire(priority)
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  })
-  if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
-  const release = parseRelease(await res.text(), url)
-  releaseCache.set(url, release)
-  return release
+  return activity.track(
+    'bandcamp',
+    'Cargando release de Bandcamp',
+    async () => {
+      await bandcampLimiter.acquire(priority)
+      const res = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      })
+      if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
+      const release = parseRelease(await res.text(), url)
+      releaseCache.set(url, release)
+      return release
+    },
+    { detail: url, summary: (r) => r.title },
+  )
 }
