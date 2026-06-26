@@ -230,7 +230,7 @@
     "qualityTranscode": "Lossless falso",
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",
-    "qualityCaptionGood": "La energía llega a ~{{cutoff}} — en la línea de ~20 kHz que mantiene un 320 kbps completo o un audio sin pérdidas genuino.",
+    "qualityCaptionGood": "La energía llega a ~{{cutoff}}, en la línea de ~20 kHz de plena calidad — el espectro de un audio sin pérdidas genuino.",
     "qualityCaptionWarn": "La energía llega a ~{{cutoff}}, por debajo de la línea de ~20 kHz de calidad completa. Puede venir de una fuente con pérdidas o ser un máster con agudos discretos — escúchala antes de pincharla.",
     "qualityCaptionBad": "Techo en ~{{cutoff}}. Un techo tan bajo corresponde a una fuente de bajo bitrate, diga lo que diga el formato del fichero.",
     "qualityCaptionProcessed": "Los agudos suben donde un espectro natural solo baja: parecen regenerados por un enhancer sobre una fuente con techo real en ~{{cutoff}}.",

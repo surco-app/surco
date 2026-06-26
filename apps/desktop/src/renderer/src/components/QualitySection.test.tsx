@@ -111,10 +111,16 @@ describe('QualitySection verdict caption', () => {
   // Surco measures where the spectrum stops, not the source bitrate — the two only
   // correlate. A YouTube 128 upscaled to 320 leaves sparse highs that push the measured
   // line up, so a confident "~192 kbps" guess reads as wrong to anyone who knows the file.
-  // The warn caption must describe the observation and prompt a listen, never name a bitrate.
-  it('does not pin a specific source bitrate in the warn caption', () => {
-    expect(i18n.t('editor.qualityCaptionWarn', { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
-  })
+  // The captions for the inconclusive verdicts (good = reaches the line, warn = short of it)
+  // must describe the observation, never name a bitrate — a guess an expert spots instantly.
+  // The bad/transcode captions are exempt: a detected knee IS a lossy signature, so naming
+  // it is a measurement, not a guess.
+  it.each(['editor.qualityCaptionGood', 'editor.qualityCaptionWarn'])(
+    'does not pin a specific source bitrate in %s',
+    (key) => {
+      expect(i18n.t(key, { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
+    },
+  )
 
   it('explains a good verdict as a full lossless spectrum', async () => {
     renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
