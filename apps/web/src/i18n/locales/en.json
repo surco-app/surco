@@ -530,6 +530,16 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.24",
+        "date": "June 26, 2026",
+        "title": "Follow background work in the Activity panel",
+        "items": [
+          "A new movable, resizable Activity panel shows background work as it happens: track analysis, Apple Music library checks and links to the published releases. Open it from the toolbar.",
+          "The spectrogram gains a crosshair that reads the exact frequency under your cursor as you move across it.",
+          "The quality verdict reports the real ceiling of high-rate audio instead of stopping at Nyquist, and sharpens Apple Music library matching further."
+        ]
+      },
+      {
         "version": "0.23",
         "date": "June 26, 2026",
         "title": "Catch more fakes and sharpen your Apple Music library",
