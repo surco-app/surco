@@ -105,6 +105,16 @@ describe('buildLibraryIndex / isInLibrary', () => {
     expect(isInLibrary(idx, { title: 'Technobox', artist: 'DSigual', durationSec: 375 })).toBe(true)
   })
 
+  // A leading "The" is an article, noise around the same act: the tag spells "The Untidy DJs"
+  // while the library files "Untidy DJ's". Dropping it (and the apostrophe-split "DJ's" folding
+  // to "dj s", reconciled by the spaces-removed compare) lets the two meet.
+  it('strips a leading "The" article from the artist', () => {
+    const idx = buildLibraryIndex([{ title: 'Green', artist: "Untidy DJ's", durationSec: 385 }])
+    expect(isInLibrary(idx, { title: 'Green', artist: 'The Untidy DJs', durationSec: 385 })).toBe(
+      true,
+    )
+  })
+
   // A "DJ"/"Dr."/"MC" handle is noise around the same act: "DJ Raúl Soto & DJ Jaime Gimeno"
   // (tag) is the "Raul Soto & Jaime Gimeno" the library files. Strip a leading handle so the
   // lead artist matches.
