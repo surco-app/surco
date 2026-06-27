@@ -17,6 +17,7 @@ import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { useStableCallback } from '../hooks/useStableCallback'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
 import { smartDeriveTags } from '../lib/deriveTags'
@@ -284,12 +285,26 @@ export const Editor = memo(function Editor({
     artist: item.meta.artist,
     durationSec: item.duration,
   }
-  const resolvedViaDiscogs =
-    !!libraryIndex &&
-    !item.musicPersistentId &&
-    !isInLibrary(libraryIndex, ownTags) &&
-    !!suggestedMeta &&
-    isInLibrary(libraryIndex, suggestedMeta)
+  // isInLibrary normalizes and scans the Apple Music index, so memoize the verdict on
+  // the exact tags it reads — a keystroke in an unrelated field must not re-run the
+  // library lookup two or three times over.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
+  const resolvedViaDiscogs = useMemo(
+    () =>
+      !!libraryIndex &&
+      !item.musicPersistentId &&
+      !isInLibrary(libraryIndex, ownTags) &&
+      !!suggestedMeta &&
+      isInLibrary(libraryIndex, suggestedMeta),
+    [
+      libraryIndex,
+      item.musicPersistentId,
+      item.meta.title,
+      item.meta.artist,
+      item.duration,
+      suggestedMeta,
+    ],
+  )
 
   // Hint of whether the song is already in the Apple Music library, so the user doesn't
   // re-import it. Read from the same session snapshot the list and quality filter use
@@ -302,14 +317,28 @@ export const Editor = memo(function Editor({
   // but Discogs is still resolving (the auto-search's debounce, request or release load), so
   // its match could still flip this to 'yes' — only once that work settles without a match do
   // we commit to 'no'.
-  const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = ((): 'idle' | 'yes' | 'no' | 'checking' => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
+  const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = useMemo(():
+    | 'idle'
+    | 'yes'
+    | 'no'
+    | 'checking' => {
     if (!isMacOS()) return 'idle'
     if (item.musicPersistentId || item.inAppleMusicResolved) return 'yes'
     if (!libraryIndex) return 'idle'
     if (isInLibrary(libraryIndex, ownTags)) return 'yes'
     if (resolvedViaDiscogs) return 'yes'
     return discogsResolving ? 'checking' : 'no'
-  })()
+  }, [
+    item.musicPersistentId,
+    item.inAppleMusicResolved,
+    item.meta.title,
+    item.meta.artist,
+    item.duration,
+    libraryIndex,
+    resolvedViaDiscogs,
+    discogsResolving,
+  ])
 
   // Pin a Discogs-proven "owned" verdict onto the track so the list and filter read it too,
   // not just this badge. Only when it's newly proven and not already pinned, so the effect
@@ -348,18 +377,26 @@ export const Editor = memo(function Editor({
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
   }
 
-  function setField(key: keyof TrackItem['meta'], value: string): void {
+  // Stable identity so the field specs below can memoize: the body still reads the
+  // current item.meta on every call (useStableCallback mirrors the latest closure),
+  // so a memoized Field keeps one onChange reference across keystrokes in other fields.
+  const setField = useStableCallback((key: keyof TrackItem['meta'], value: string): void => {
     onChange({ meta: { ...item.meta, [key]: value } })
-  }
+  })
 
   // What the per-field insert menu can offer: every visible text field of THIS
   // track. Bulk edits hold no single per-field value to insert, and compilation
-  // is a '1' flag rather than text, so both stay out.
-  const insertSources: InsertSource[] = isMulti
-    ? []
-    : FIELD_DEFS.filter((d) => visibleFields.includes(d.key) && d.key !== 'compilation').map(
-        (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
-      )
+  // is a '1' flag rather than text, so both stay out. Memoized so an unrelated
+  // keystroke (changing item.meta) doesn't rebuild the spec tree below from scratch.
+  const insertSources: InsertSource[] = useMemo(
+    () =>
+      isMulti
+        ? []
+        : FIELD_DEFS.filter((d) => visibleFields.includes(d.key) && d.key !== 'compilation').map(
+            (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
+          ),
+    [isMulti, visibleFields, item.meta, tr],
+  )
 
   // "Without version" proposal for the album menu: strip the mix/label parenthetical
   // from the album, or from the title when the album is still empty (the common case
@@ -437,23 +474,47 @@ export const Editor = memo(function Editor({
   const lossyOverwrite =
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
-  const fieldSpecs = buildFieldSpecs({
-    isMulti,
-    selectedTracks,
-    visibleFields,
-    requiredFields,
-    item,
-    genreChips,
-    groupingPresets,
-    detectedBpm,
-    detectedKey,
-    keyNotation,
-    insertSources,
-    albumCleanResult,
-    tr,
-    setField,
-    onChangeAllMeta,
-  })
+  // Built once per real input change. setField and tr are identity-stable, so a
+  // keystroke only rebuilds the specs because item.meta changed — and the form's
+  // memoized fields re-render just for the keys whose value actually moved.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: item.meta is the read surface buildFieldSpecs uses, not item's identity; the rest are listed explicitly so an unrelated item field doesn't rebuild the tree.
+  const fieldSpecs = useMemo(
+    () =>
+      buildFieldSpecs({
+        isMulti,
+        selectedTracks,
+        visibleFields,
+        requiredFields,
+        item,
+        genreChips,
+        groupingPresets,
+        detectedBpm,
+        detectedKey,
+        keyNotation,
+        insertSources,
+        albumCleanResult,
+        tr,
+        setField,
+        onChangeAllMeta,
+      }),
+    [
+      isMulti,
+      selectedTracks,
+      visibleFields,
+      requiredFields,
+      item.meta,
+      genreChips,
+      groupingPresets,
+      detectedBpm,
+      detectedKey,
+      keyNotation,
+      insertSources,
+      albumCleanResult,
+      tr,
+      setField,
+      onChangeAllMeta,
+    ],
+  )
 
   // One-click "empty every tag", next to the fill button so set-and-clear read as a
   // pair. Icon-only (like the output-name pencil) because the Apple Music badge

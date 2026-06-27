@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 
@@ -17,7 +17,10 @@ interface FieldProps {
   cleanResult?: string
 }
 
-export function Field({
+// Memoized so a keystroke in one field doesn't re-render every other visible field:
+// the editor hands each Field a stable onChange (setField is identity-stable) and a
+// primitive value, so only the field whose value changed re-renders.
+export const Field = memo(function Field({
   name,
   label,
   value,
@@ -101,4 +104,4 @@ export function Field({
       )}
     </label>
   )
-}
+})
