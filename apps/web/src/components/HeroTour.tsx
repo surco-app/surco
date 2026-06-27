@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Lightbox from './Lightbox'
@@ -141,15 +142,26 @@ export default function HeroTour() {
         </button>
 
         {/* Explainer card, anchored just below (or above) the active marker so it
-            reads as attached to that section. Clamped horizontally to stay in frame. */}
+            reads as attached to that section. On narrow screens the card is nearly as
+            wide as the frame, so anchoring its x to the marker would push a clamped-but
+            -still-centred box off either edge (the parent clips overflow) — there it
+            spans the frame with a side gutter (left-3/right-3) and only the vertical
+            offset tracks the marker. From `sm` up the card is far narrower than the
+            frame, so it re-anchors horizontally to the marker, its centre clamped to
+            [18%,82%] so the box stays in view. */}
         <div
-          style={{
-            top: `${region.dot.top}%`,
-            left: `${Math.min(Math.max(region.dot.left, 18), 82)}%`,
-            transform: `translate(-50%, ${below ? '26px' : 'calc(-100% - 26px)'})`,
-            opacity: active ? 1 : 0,
-          }}
-          className={`absolute z-20 w-[min(20rem,78vw)] ${EASE} ${active ? '' : 'pointer-events-none'}`}
+          style={
+            {
+              top: `${region.dot.top}%`,
+              opacity: active ? 1 : 0,
+              '--card-x': `${Math.min(Math.max(region.dot.left, 18), 82)}%`,
+            } as React.CSSProperties
+          }
+          className={`absolute z-20 ${
+            below ? 'translate-y-[26px]' : '-translate-y-[calc(100%+26px)]'
+          } right-3 left-3 sm:right-auto sm:left-[var(--card-x)] sm:w-80 sm:-translate-x-1/2 ${EASE} ${
+            active ? '' : 'pointer-events-none'
+          }`}
         >
           <div className="rounded-xl border border-line bg-bg/90 p-4 shadow-xl backdrop-blur">
             <div className="flex items-center gap-2">
