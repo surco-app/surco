@@ -722,7 +722,7 @@ export default function App(): React.JSX.Element {
     return i < 0 ? null : i + 1
   }, [visibleTracks, selectedId])
   // A filter change (quality bucket or format axis) can hide the selected track; left alone
-  // its editor lingers out of view and the position pill reads "–/N". Drop to the first
+  // its editor lingers out of view and the position pill reads "‒/N". Drop to the first
   // track the new filter shows (or clear when it shows none) so the editor and count always
   // reflect what's on screen. Must react to BOTH filter axes — the format filter hiding the
   // selection used to leave the list with no visible row selected. Scoped to the filters —

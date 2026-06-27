@@ -377,7 +377,7 @@ export function QualityFilterBar({
           }
           className="ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
         >
-          {selectedPosition !== null ? `${selectedPosition}/${visibleCount}` : `–/${visibleCount}`}
+          {selectedPosition !== null ? `${selectedPosition}/${visibleCount}` : `‒/${visibleCount}`}
         </span>
       )}
     </div>

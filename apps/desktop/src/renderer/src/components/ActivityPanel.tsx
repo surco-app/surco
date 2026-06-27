@@ -151,7 +151,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           <Icon className="h-3.5 w-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate text-xs text-fg">{rowLabel(tr, row)}</span>
           {grouped && (
-            <span className="shrink-0 text-[10px] text-fg-muted">
+            <span className="shrink-0 text-[10px] text-fg-muted tabular-nums">
               {row.children?.filter((c) => c.status !== 'running').length}/{row.children?.length}
             </span>
           )}

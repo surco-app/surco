@@ -773,15 +773,15 @@ describe('App track position', () => {
   })
 
   // Narrowing the view (a filter or, here, a search) can drop the selected track out of
-  // sight, which used to hide the counter entirely. It must stay visible as "–/total" so
+  // sight, which used to hide the counter entirely. It must stay visible as "‒/total" so
   // the DJ still sees how many tracks the current view holds to go through.
-  it('keeps the counter visible as –/total when the selection is filtered out of the view', async () => {
+  it('keeps the counter visible as ‒/total when the selection is filtered out of the view', async () => {
     await renderApp()
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     expect(screen.getByTestId('track-position')).toHaveTextContent('1/2')
     fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'b' } })
-    await waitFor(() => expect(screen.getByTestId('track-position')).toHaveTextContent('–/1'))
+    await waitFor(() => expect(screen.getByTestId('track-position')).toHaveTextContent('‒/1'))
   })
 })
 

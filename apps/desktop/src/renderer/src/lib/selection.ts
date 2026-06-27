@@ -56,7 +56,7 @@ export function deselect(state: Selection, id: string): Selection {
 }
 
 // After the view narrows (a quality-filter change hides rows), the anchor may no longer
-// be on screen — its editor would linger out of view and the position pill read "–/N".
+// be on screen — its editor would linger out of view and the position pill read "‒/N".
 // Returns the selection to fall back to: the first still-visible track, or an empty
 // selection when the view is empty. Returns null when the anchor is still visible (or
 // there is none), meaning keep the current selection untouched. Pure so the effect that

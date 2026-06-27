@@ -88,7 +88,7 @@ describe('deselect', () => {
 
 describe('reanchorToVisible', () => {
   // The whole point: a filter that hides the selected track used to leave the editor on a
-  // row no longer in the list and the position pill reading "–/N". Fall to the first
+  // row no longer in the list and the position pill reading "‒/N". Fall to the first
   // visible track so both point at something on screen.
   it('falls to the first visible track when the anchor was filtered out', () => {
     expect(reanchorToVisible(['c', 'd'], 'a')).toEqual({ ids: ['c'], anchor: 'c' })
