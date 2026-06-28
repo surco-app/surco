@@ -49,11 +49,14 @@ function ToastCard({
   }, [toast.id, toast.duration, onExpire])
 
   const danger = toast.tone === 'danger'
+  // Single-line toasts read best vertically centred; only a long, scrollable error message
+  // (no action, danger tone) pins to the top so its ✕ stays reachable as the body grows.
+  const align = danger && !toast.action ? 'items-start' : 'items-center'
   return (
     <div
       role={danger ? 'alert' : 'status'}
       data-testid={toast.testid}
-      className="animate-pop flex max-w-md items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg"
+      className={`animate-pop flex max-w-md ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
