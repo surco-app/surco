@@ -71,14 +71,31 @@ describe('FolderWatcher', () => {
     watcher.close()
   })
 
+  it('re-scans on a poll interval so tracks fs.watch misses still surface', async () => {
+    // fs.watch is unreliable on network volumes and for apps that write oddly (Soulseek
+    // renames a temp file into place deep in a per-user subfolder); a periodic sweep is the
+    // safety net. A static folder fires the OS watch 0–1 times, so seeing onChange more than
+    // once over two intervals proves the poll, not the watcher, is driving it.
+    await writeFile(join(dir, 'a.wav'), '')
+    const onChange = vi.fn()
+    const watcher = new FolderWatcher(onChange, 50, 60)
+    watcher.watch([dir])
+
+    await vi.waitFor(() => expect(onChange.mock.calls.length).toBeGreaterThanOrEqual(2), {
+      timeout: 2000,
+    })
+    expect((onChange.mock.calls.at(-1) as [string, string[]])[1]).toEqual([join(dir, 'a.wav')])
+    watcher.close()
+  })
+
   it('stops reporting after close so a torn-down crate goes quiet', async () => {
     const onChange = vi.fn()
-    const watcher = new FolderWatcher(onChange, 50)
+    const watcher = new FolderWatcher(onChange, 50, 60)
     watcher.watch([dir])
     watcher.close()
 
     await writeFile(join(dir, 'late.wav'), '')
-    await new Promise((r) => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 200))
     expect(onChange).not.toHaveBeenCalled()
   })
 })

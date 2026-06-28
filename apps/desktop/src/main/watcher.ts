@@ -25,13 +25,20 @@ export async function dirRoots(paths: string[]): Promise<string[]> {
 // the two platforms we ship, so a single watch covers nested album subfolders. Editors and
 // USB/network copies fire a burst of events per file written, so a per-root debounce
 // collapses each burst into one rescan instead of stat-walking the tree dozens of times.
+//
+// The OS watch is fast but not exhaustive: it drops events on network volumes and for apps
+// that write through a temp file renamed deep in a subfolder (Soulseek). A low-frequency
+// poll re-scans every watched root on an interval as a safety net — the renderer diffs each
+// report, so a sweep that finds nothing new is a silent no-op.
 export class FolderWatcher {
   private watches = new Map<string, FSWatcher>()
   private timers = new Map<string, ReturnType<typeof setTimeout>>()
+  private poll: ReturnType<typeof setInterval> | null = null
 
   constructor(
     private onChange: (root: string, files: string[]) => void,
     private debounceMs = 500,
+    private pollMs = 60_000,
   ) {}
 
   watch(roots: string[]): void {
@@ -47,6 +54,21 @@ export class FolderWatcher {
         // watch() throws synchronously if the path is already gone — ignore it.
       }
     }
+    this.startPoll()
+  }
+
+  private startPoll(): void {
+    if (this.poll || this.watches.size === 0) return
+    this.poll = setInterval(() => {
+      for (const root of this.watches.keys()) {
+        void collectAudio(root)
+          .then((files) => this.onChange(root, files))
+          .catch(() => {})
+      }
+    }, this.pollMs)
+    // The interval must not keep the process alive on its own; the window's lifetime decides
+    // when watching ends (unref is a no-op in the renderer-less test harness).
+    this.poll.unref?.()
   }
 
   private schedule(root: string): void {
@@ -74,6 +96,8 @@ export class FolderWatcher {
   close(): void {
     for (const w of this.watches.values()) w.close()
     for (const t of this.timers.values()) clearTimeout(t)
+    if (this.poll) clearInterval(this.poll)
+    this.poll = null
     this.watches.clear()
     this.timers.clear()
   }
