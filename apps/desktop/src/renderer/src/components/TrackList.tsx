@@ -261,8 +261,9 @@ const TrackRow = memo(function TrackRow({
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span data-fit title={t.listLabel} className="block truncate text-sm font-medium text-fg">
+          <span data-fit className="block truncate text-sm font-medium text-fg">
             {t.listLabel}
+            <Tooltip label={t.listLabel} />
           </span>
           {t.loadingMeta ? (
             <span
