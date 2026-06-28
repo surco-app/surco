@@ -530,6 +530,17 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.25",
+        "date": "June 28, 2026",
+        "title": "Load new downloads without dragging the folder again",
+        "items": [
+          "Surco watches the folders you've already loaded: when new tracks show up (a download finishing, say), it offers to load just the new ones in a click — no need to drag the whole folder in again.",
+          "The player gains a real volume slider, more precise than scrolling the wheel over the card.",
+          "Notifications are unified into one tidy stack in the bottom-right, with a discreet bar showing how long until each one clears.",
+          "Each track's full title now shows in a themed tooltip when you hover its name."
+        ]
+      },
+      {
         "version": "0.24",
         "date": "June 26, 2026",
         "title": "Follow background work in the Activity panel",
