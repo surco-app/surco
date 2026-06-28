@@ -224,6 +224,22 @@ textarea {
   animation: top-progress 1.1s ease-in-out infinite;
 }
 
+/* The discreet countdown bar under an auto-dismissing toast: drains left-to-right over the
+   toast's own duration (set inline as animation-duration) so the time left is visible. */
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.animate-toast-countdown {
+  transform-origin: left;
+  animation: toast-countdown linear forwards;
+}
+
 .press {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }

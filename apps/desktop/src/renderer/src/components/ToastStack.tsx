@@ -56,7 +56,7 @@ function ToastCard({
     <div
       role={danger ? 'alert' : 'status'}
       data-testid={toast.testid}
-      className={`animate-pop flex max-w-md ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg`}
+      className={`animate-pop relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
@@ -85,6 +85,14 @@ function ToastCard({
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>
+      {toast.duration && (
+        <span
+          aria-hidden="true"
+          data-testid={toast.testid ? `${toast.testid}-countdown` : undefined}
+          className="animate-toast-countdown absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-accent)]/60"
+          style={{ animationDuration: `${toast.duration}ms` }}
+        />
+      )}
     </div>
   )
 }

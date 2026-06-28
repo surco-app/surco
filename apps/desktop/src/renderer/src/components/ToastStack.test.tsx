@@ -47,6 +47,28 @@ describe('ToastStack', () => {
     expect(onAction).toHaveBeenCalledTimes(1)
   })
 
+  it('shows a countdown bar only on a toast that auto-dismisses', () => {
+    // The bar visualises the remaining time before a transient notice clears itself; a
+    // persistent prompt (no duration) has nothing to count down, so it must not show one.
+    const { rerender } = render(
+      <ToastStack
+        toasts={[toast({ testid: 'app-notice', duration: 4000 })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('app-notice-countdown')).toBeInTheDocument()
+
+    rerender(
+      <ToastStack
+        toasts={[toast({ testid: 'new-tracks', action: { label: 'Load', onAction: vi.fn() } })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('new-tracks-countdown')).toBeNull()
+  })
+
   it('the ✕ routes through onClose so the toast’s own cleanup runs, not a bare removal', () => {
     // onClose carries side effects (clearing the pending-new set); the timer must not, which
     // is why the two paths are separate. The ✕ must take the onClose path.
