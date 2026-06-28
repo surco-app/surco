@@ -1,0 +1,9 @@
+{
+  "name": "run-desktop-driver",
+  "private": true,
+  "type": "module",
+  "description": "Isolated harness deps for driving the Surco Electron app — kept out of the app manifest on purpose.",
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
