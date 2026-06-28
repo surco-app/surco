@@ -37,9 +37,6 @@ import { ActivityPanel } from './components/ActivityPanel'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { ErrorToast } from './components/ErrorToast'
-import { NewTracksToast } from './components/NewTracksToast'
-import { NoticeToast } from './components/NoticeToast'
 import { LivePlayer } from './components/Player'
 import { QualityFilterBar } from './components/QualityFilterBar'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
@@ -47,8 +44,8 @@ import { Select } from './components/Select'
 import { Toolbar } from './components/Toolbar'
 import { Tooltip } from './components/Tooltip'
 import { TopProgressBar } from './components/TopProgressBar'
+import { ToastStack } from './components/ToastStack'
 import { TrackList } from './components/TrackList'
-import { UpdateToast } from './components/UpdateToast'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
@@ -84,6 +81,7 @@ import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
+import { dismissToast, dismissToastByUser, pushToast } from './lib/toastQueue'
 import {
   type FilterSelection,
   filterWithSticky,
@@ -179,19 +177,32 @@ export default function App(): React.JSX.Element {
   const storeRef = useRef<AppStore | null>(null)
   if (storeRef.current === null) storeRef.current = createAppStore()
   const store = storeRef.current
-  const appError = useAppStore(store, (s) => s.appError)
-  const setAppError = useCallback((e: AppError | null) => store.setState({ appError: e }), [store])
-  const notice = useAppStore(store, (s) => s.notice)
-  const setNotice = useCallback((n: string | null) => store.setState({ notice: n }), [store])
+  const toasts = useAppStore(store, (s) => s.toasts)
+  const expireToast = useCallback((id: string) => dismissToast(store, id), [store])
+  const closeToast = useCallback((id: string) => dismissToastByUser(store, id), [store])
+  // A transient neutral status line (e.g. "skipped N already-added files") that clears itself
+  // on a 4s timer so it never lingers after the user has moved on.
+  const setNotice = useCallback(
+    (message: string) =>
+      pushToast(store, { tone: 'neutral', message, duration: 4000, testid: 'app-notice' }),
+    [store],
+  )
+  // A surfaced background failure: red, keyed so a repeat collapses onto one card, and
+  // persistent (no duration) since the user should see it before it goes.
+  const setAppError = useCallback(
+    (e: AppError) =>
+      pushToast(store, {
+        key: 'app-error',
+        tone: 'danger',
+        message: tr(`errors.${e.kind}`, { detail: e.detail ?? '' }),
+        testid: 'app-error',
+      }),
+    [store, tr],
+  )
   // The activity log: always-accumulating feed of background work, shown in a
   // movable floating panel the user toggles.
   const { rows: activityRows, clear: clearActivity } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
-  useEffect(() => {
-    if (!notice) return
-    const id = setTimeout(() => setNotice(null), 4000)
-    return () => clearTimeout(id)
-  }, [notice, setNotice])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
@@ -423,6 +434,54 @@ export default function App(): React.JSX.Element {
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
     [setTracks],
+  )
+
+  // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
+  // second copy-in updates the count in place, persistent so it waits for an answer, and with
+  // a Load action that adds the tracks. Re-pushed whenever the pending set changes; dismissed
+  // when it clears (the user accepted, or the crate was emptied).
+  useEffect(() => {
+    if (!pendingNew) return
+    const folder = pendingNew.root.split('/').pop() || pendingNew.root
+    const id = pushToast(store, {
+      key: 'new-tracks',
+      tone: 'neutral',
+      testid: 'new-tracks',
+      message: tr('newTracks.prompt', { count: pendingNew.paths.length, folder }),
+      action: { label: tr('newTracks.load'), onAction: loadPending },
+      onDismiss: dismissPending,
+    })
+    return () => dismissToast(store, id)
+  }, [pendingNew, loadPending, dismissPending, store, tr])
+
+  // The auto-updater reports a downloaded version (or a download failure) over IPC; surface
+  // each as a toast instead of a bespoke component. The ready prompt offers Restart (applies
+  // it immediately); a failure is a plain danger toast. Keyed so a retry supersedes the stale
+  // one rather than stacking.
+  useEffect(
+    () =>
+      window.api.onUpdateDownloaded((version) =>
+        pushToast(store, {
+          key: 'update',
+          tone: 'neutral',
+          testid: 'update',
+          message: tr('update.ready', { version }),
+          action: { label: tr('update.restart'), onAction: () => window.api.installUpdate() },
+        }),
+      ),
+    [store, tr],
+  )
+  useEffect(
+    () =>
+      window.api.onUpdateError((error) =>
+        pushToast(store, {
+          key: 'update',
+          tone: 'danger',
+          testid: 'update-error',
+          message: tr('update.failed', { error }),
+        }),
+      ),
+    [store, tr],
   )
 
   const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
@@ -1300,15 +1359,7 @@ export default function App(): React.JSX.Element {
         )}
       </Suspense>
 
-      {appError && (
-        <ErrorToast
-          message={tr(`errors.${appError.kind}`, { detail: appError.detail })}
-          onDismiss={() => setAppError(null)}
-        />
-      )}
-      {notice && !appError && <NoticeToast message={notice} onDismiss={() => setNotice(null)} />}
-      <NewTracksToast pending={pendingNew} onLoad={loadPending} onDismiss={dismissPending} />
-      <UpdateToast />
+      <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
       {activityOpen && (
         <ActivityPanel
           rows={activityRows}

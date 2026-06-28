@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
+import type { Toast } from './toastQueue'
 import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort } from './triage'
 
 // A surfaced background failure (a rejected IPC call, an unhandled rejection), stored as a
@@ -32,10 +33,10 @@ export interface AppState {
   formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
-  // A transient, non-blocking status line (e.g. "skipped N already-added files"); cleared
-  // on a timer so it never lingers after the user has moved on.
-  notice: string | null
-  appError: AppError | null
+  // The unified notification queue: notices, failures, update prompts and new-track prompts
+  // all live here as a stack so several can show at once instead of one corner clobbering
+  // another. Each toast carries its own tone, optional action and auto-dismiss duration.
+  toasts: Toast[]
   // Metadata copied from one track's context menu, to stamp onto another. Null until the
   // user copies, which is what gates the paste item in the row menu.
   copiedMeta: TrackMetadata | null
@@ -56,8 +57,7 @@ const INITIAL: AppState = {
   libraryFilter: null,
   formatFilter: null,
   dragging: false,
-  notice: null,
-  appError: null,
+  toasts: [],
   copiedMeta: null,
 }
 
