@@ -38,6 +38,7 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ErrorToast } from './components/ErrorToast'
+import { NewTracksToast } from './components/NewTracksToast'
 import { NoticeToast } from './components/NoticeToast'
 import { LivePlayer } from './components/Player'
 import { QualityFilterBar } from './components/QualityFilterBar'
@@ -361,6 +362,9 @@ export default function App(): React.JSX.Element {
   // scroll past rather than firing every file at the rate limit.
   const {
     tracks,
+    pendingNew,
+    loadPending,
+    dismissPending,
     importProgress,
     setTracks,
     tracksRef,
@@ -1303,6 +1307,7 @@ export default function App(): React.JSX.Element {
         />
       )}
       {notice && !appError && <NoticeToast message={notice} onDismiss={() => setNotice(null)} />}
+      <NewTracksToast pending={pendingNew} onLoad={loadPending} onDismiss={dismissPending} />
       <UpdateToast />
       {activityOpen && (
         <ActivityPanel

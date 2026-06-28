@@ -122,6 +122,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
     onOpenFiles: () => () => {},
+    onFoldersChanged: () => () => {},
+    unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onWindowFocus: () => () => {},

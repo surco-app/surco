@@ -93,6 +93,12 @@
     "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir."
   },
+  "newTracks": {
+    "prompt_one": "{{count}} pista nueva en «{{folder}}»",
+    "prompt_other": "{{count}} pistas nuevas en «{{folder}}»",
+    "load": "Cargar",
+    "dismiss": "Descartar"
+  },
   "update": {
     "ready": "La versión {{version}} está lista",
     "restart": "Reiniciar para actualizar",

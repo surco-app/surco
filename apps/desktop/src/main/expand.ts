@@ -51,7 +51,7 @@ export async function expandPaths(paths: string[]): Promise<string[]> {
   return expanded.flat()
 }
 
-async function collectAudio(dir: string): Promise<string[]> {
+export async function collectAudio(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   const nested = await Promise.all(
     entries.map(async (entry) => {

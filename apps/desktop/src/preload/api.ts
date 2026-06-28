@@ -37,6 +37,8 @@ export interface Api {
   expandPaths: (paths: string[]) => Promise<string[]>
   takePendingFiles: () => Promise<string[]>
   onOpenFiles: (cb: (paths: string[]) => void) => () => void
+  onFoldersChanged: (cb: (root: string, files: string[]) => void) => () => void
+  unwatchFolders: () => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   getConfigDir: () => Promise<string | null>

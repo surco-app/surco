@@ -93,6 +93,12 @@
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
     "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured."
   },
+  "newTracks": {
+    "prompt_one": "{{count}} new track in “{{folder}}”",
+    "prompt_other": "{{count}} new tracks in “{{folder}}”",
+    "load": "Load",
+    "dismiss": "Dismiss"
+  },
   "update": {
     "ready": "Version {{version}} is ready",
     "restart": "Restart to update",

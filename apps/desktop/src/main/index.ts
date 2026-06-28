@@ -38,6 +38,7 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { buildEngineDatabase, type EngineTrack } from './engine'
 import { expandPaths } from './expand'
+import { dirRoots, FolderWatcher } from './watcher'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { removeRenamedOriginal } from './inplace'
@@ -328,6 +329,24 @@ function createWindow(): BrowserWindow {
   return win
 }
 
+// One folder watcher per window: it re-scans the folders a crate was loaded from and tells
+// that window's renderer the folder's current audio list, which the renderer diffs to
+// surface "N new tracks". Lazily created on the first folder load and torn down with the
+// window so a closed crate stops holding OS watches.
+const folderWatchers = new WeakMap<BrowserWindow, FolderWatcher>()
+
+function watcherFor(win: BrowserWindow): FolderWatcher {
+  let watcher = folderWatchers.get(win)
+  if (!watcher) {
+    watcher = new FolderWatcher((root, files) => {
+      if (!win.isDestroyed()) win.webContents.send('folders:changed', root, files)
+    })
+    folderWatchers.set(win, watcher)
+    win.on('closed', () => watcher?.close())
+  }
+  return watcher
+}
+
 // Dock playing animation (macOS): the renderer rasterizes the icon frames — main
 // has no DOM to render the SVG — and reports the <audio> element's play/pause.
 let dockFrames: NativeImage[] = []
@@ -466,10 +485,24 @@ function registerIpc(): void {
     return filePaths
   })
 
-  ipcMain.handle('files:expand', async (_e, paths: string[]) => {
+  ipcMain.handle('files:expand', async (e, paths: string[]) => {
     const expanded = await expandPaths(paths)
     mediaAccess.allowAll(expanded)
+    // Watch the folders the user dropped or picked so tracks copied in later surface as
+    // "N new tracks"; a single dropped file has no folder to grow, so dirRoots drops it.
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) {
+      const roots = await dirRoots(paths)
+      if (roots.length) watcherFor(win).watch(roots)
+    }
     return expanded
+  })
+
+  // The renderer calls this when the crate is cleared so a torn-down library stops
+  // auto-detecting; the watcher is rebuilt on the next folder load.
+  ipcMain.handle('folders:unwatch', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) folderWatchers.get(win)?.close()
   })
 
   // Drains the cold-launch open-file buffer; the renderer calls this once on mount so

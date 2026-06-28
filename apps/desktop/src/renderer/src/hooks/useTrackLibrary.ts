@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { parseFileName } from '../lib/filename'
+import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
@@ -61,8 +62,19 @@ interface Params {
   onDuplicatesSkipped: (count: number) => void
 }
 
+// Tracks that appeared in a watched folder after it was loaded, waiting on the user to
+// confirm. root is the folder they live under (its basename labels the prompt); paths are
+// the not-yet-loaded audio files. null when there is nothing to offer.
+export interface PendingNew {
+  root: string
+  paths: string[]
+}
+
 export interface TrackLibrary {
   tracks: TrackItem[]
+  pendingNew: PendingNew | null
+  loadPending: () => void
+  dismissPending: () => void
   // Cumulative metadata-read progress across overlapping drops (null when idle), so the top
   // bar can fill determinately and the toolbar can show a "212/319" counter instead of an
   // opaque animation while a big crate's tags load.
@@ -99,6 +111,8 @@ export function useTrackLibrary({
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
+  // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
+  const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   const importDone = useRef(0)
   const importTotal = useRef(0)
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
@@ -209,6 +223,36 @@ export function useTrackLibrary({
     return window.api.onOpenFiles(open)
   }, [])
 
+  // The main process watches the folders a crate was loaded from and reports each one's
+  // current audio list when it changes. Diff against the live crate (tracksRef, not a render
+  // snapshot, since a watch can fire long after mount) and park anything genuinely new for
+  // the user to accept. A folder that fires with nothing new clears any stale prompt.
+  useEffect(() => {
+    return window.api.onFoldersChanged((root, files) => {
+      const fresh = newTrackPaths(
+        files,
+        tracksRef.current.map((t) => t.inputPath),
+      )
+      setPendingNew((prev) => {
+        if (fresh.length === 0) return prev?.root === root ? null : prev
+        // Union with an outstanding prompt for the same folder so a second copy-in adds to
+        // the count instead of replacing it; a different folder takes over the prompt.
+        const merged =
+          prev?.root === root ? Array.from(new Set([...prev.paths, ...fresh])) : fresh
+        return { root, paths: merged }
+      })
+    })
+  }, [])
+
+  const loadPending = useCallback((): void => {
+    setPendingNew((p) => {
+      if (p) void addPathsRef.current(p.paths)
+      return null
+    })
+  }, [])
+
+  const dismissPending = useCallback((): void => setPendingNew(null), [])
+
   async function pickFiles(): Promise<void> {
     // Expand the picker's result the same way a drop does: a folder picked on macOS walks
     // to its audio files, and ._ AppleDouble and hidden entries are filtered out either way.
@@ -262,11 +306,17 @@ export function useTrackLibrary({
     const cleared = tracksRef.current
     setTracks([])
     setSelection({ ids: [], anchor: null })
+    setPendingNew(null)
+    // Stop watching the emptied crate's folders; the next folder load rebuilds the watcher.
+    void window.api.unwatchFolders()
     onClear(cleared)
   }
 
   return {
     tracks,
+    pendingNew,
+    loadPending,
+    dismissPending,
     importProgress,
     setTracks,
     tracksRef,

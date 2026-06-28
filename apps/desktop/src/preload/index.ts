@@ -28,6 +28,12 @@ const api: Api = {
     ipcRenderer.on('open-files', listener)
     return () => ipcRenderer.removeListener('open-files', listener)
   },
+  onFoldersChanged: (cb: (root: string, files: string[]) => void) => {
+    const listener = (_e: unknown, root: string, files: string[]): void => cb(root, files)
+    ipcRenderer.on('folders:changed', listener)
+    return () => ipcRenderer.removeListener('folders:changed', listener)
+  },
+  unwatchFolders: (): Promise<void> => ipcRenderer.invoke('folders:unwatch'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
