@@ -39,8 +39,8 @@ export function LivePlayer({
   const [duration, setDuration] = useState(0)
   const [paused, setPaused] = useState(false)
   const [loading, setLoading] = useState(false)
-  // Volume is adjusted by scrolling over the card (no on-screen control, to keep the
-  // player minimal); the value rides the volume pill that fades in on hover.
+  // Volume rides a slider on the volume pill (which fades in on hover); a slider rather
+  // than wheel-over-the-card so adjusting it never collides with scrolling the track list.
   const [volume, setVolume] = useState(1)
 
   useEffect(() => {
@@ -99,13 +99,13 @@ export function LivePlayer({
     }
   }
 
-  // A wheel notch nudges the volume 5%. Scroll up raises it; the level is mirrored on
-  // the element, which persists it across tracks, and shown live on the volume pill.
-  const onAdjustVolume = useCallback(
-    (deltaY: number): void => {
+  // The slider reports an absolute level; mirror it onto the element, which persists it
+  // across tracks, and reflect it live on the pill.
+  const onSetVolume = useCallback(
+    (value: number): void => {
       const audio = audioRef.current
       if (!audio) return
-      const next = Math.min(1, Math.max(0, audio.volume - Math.sign(deltaY) * 0.05))
+      const next = Math.min(1, Math.max(0, value))
       audio.volume = next
       setVolume(next)
     },
@@ -124,7 +124,7 @@ export function LivePlayer({
       volume={volume}
       onToggle={onToggle}
       onScrub={onScrub}
-      onAdjustVolume={onAdjustVolume}
+      onSetVolume={onSetVolume}
       onToggleContinuous={onToggleContinuous}
       showWaveform={showWaveform}
       onToggleWaveform={onToggleWaveform}
@@ -144,7 +144,7 @@ interface PlayerProps {
   volume: number
   onToggle: () => void
   onScrub: (seconds: number) => void
-  onAdjustVolume: (deltaY: number) => void
+  onSetVolume: (value: number) => void
   onToggleContinuous: () => void
   showWaveform: boolean
   onToggleWaveform: () => void
@@ -164,33 +164,18 @@ export function Player({
   volume,
   onToggle,
   onScrub,
-  onAdjustVolume,
+  onSetVolume,
   onToggleContinuous,
   showWaveform,
   onToggleWaveform,
   onClose,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
-  const cardRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const sectionHeightRef = useRef<number | undefined>(undefined)
   // The volume and time pills only surface while the pointer is over the card, then
   // fade back out, so the resting player stays just cover + name + controls + wave.
   const [hovered, setHovered] = useState(false)
-
-  // Wheel-to-volume, attached natively so the handler can preventDefault and stop the
-  // track list behind the floating card from scrolling at the same time (React's
-  // onWheel is passive and can't).
-  useEffect(() => {
-    const el = cardRef.current
-    if (!el) return
-    const onWheel = (e: WheelEvent): void => {
-      e.preventDefault()
-      onAdjustVolume(e.deltaY)
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [onAdjustVolume])
 
   // The tall waveform strip and the slim transport row are different heights, so flipping
   // the preference would jump the card. Tween the section's height from its last measured
@@ -219,7 +204,6 @@ export function Player({
 
   return (
     <div
-      ref={cardRef}
       data-testid="player"
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
@@ -316,11 +300,12 @@ export function Player({
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
-          corners) so the whole width is scrubbable. The volume and clock float over its
-          corners as pills that fade in on hover; pointer-events-none lets a click (or a
-          wheel) underneath still reach the wave. Hidden by the toggle, the whole strip is
-          unmounted so its full-file decode never runs — the point of the preference. The
-          wrapper clips and animates the height as the two layouts swap (see useLayoutEffect). */}
+          corners) so the whole width is scrubbable. The clock and the volume slider float
+          over its corners as pills that fade in on hover; the clock is pointer-events-none so
+          a click underneath still reaches the wave, while the volume pill takes pointer events
+          for its slider. Hidden by the toggle, the whole strip is unmounted so its full-file
+          decode never runs — the point of the preference. The wrapper clips and animates the
+          height as the two layouts swap (see useLayoutEffect). */}
       <div ref={sectionRef} className="player-section overflow-hidden">
         {showWaveform ? (
           <div className="relative mt-2">
@@ -332,15 +317,14 @@ export function Player({
               audioDurationSec={duration}
               onScrub={onScrub}
             />
-            <span
-              data-testid="player-volume"
-              className={`pointer-events-none absolute top-1 left-1 flex items-center gap-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
+            <VolumePill
+              volume={volume}
+              onSetVolume={onSetVolume}
+              label={t('player.volume')}
+              className={`absolute top-1 left-1 bg-[var(--color-panel-2)]/85 px-1.5 py-px shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
-            >
-              <Volume2 className="h-3 w-3" aria-hidden="true" />
-              {Math.round(volume * 100)}%
-            </span>
+            />
             <span
               data-testid="player-time"
               className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
@@ -355,10 +339,12 @@ export function Player({
           // the clock — the info the waveform overlay carried — and its bottom padding balances
           // the card so the row above isn't left hugging the edge.
           <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5 text-[10px] text-fg-dim tabular-nums">
-            <span data-testid="player-volume" className="flex shrink-0 items-center gap-1">
-              <Volume2 className="h-3 w-3" aria-hidden="true" />
-              {Math.round(volume * 100)}%
-            </span>
+            <VolumePill
+              volume={volume}
+              onSetVolume={onSetVolume}
+              label={t('player.volume')}
+              className="shrink-0"
+            />
             <button
               type="button"
               data-testid="player-seek"
@@ -381,5 +367,44 @@ export function Player({
         )}
       </div>
     </div>
+  )
+}
+
+// The volume pill: a speaker icon, a draggable range and the live percentage. Shared by the
+// waveform overlay and the slim transport row so both drive the volume the same way. A real
+// slider (rather than wheel-over-the-card) means adjusting volume never hijacks a scroll meant
+// for the track list. The number stays tabular so the pill width doesn't twitch as digits change.
+function VolumePill({
+  volume,
+  onSetVolume,
+  label,
+  className,
+}: {
+  volume: number
+  onSetVolume: (value: number) => void
+  label: string
+  className: string
+}): React.JSX.Element {
+  return (
+    <span
+      data-testid="player-volume-pill"
+      className={`flex items-center gap-1 rounded-full text-[10px] text-fg-dim leading-none tabular-nums ${className}`}
+    >
+      <Volume2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+      <input
+        type="range"
+        data-testid="player-volume-slider"
+        aria-label={label}
+        min={0}
+        max={1}
+        step={0.01}
+        value={volume}
+        onChange={(e) => onSetVolume(Number(e.target.value))}
+        className="player-volume-range h-1 w-16 cursor-pointer"
+      />
+      <span data-testid="player-volume" className="w-7 shrink-0 text-right">
+        {Math.round(volume * 100)}%
+      </span>
+    </span>
   )
 }

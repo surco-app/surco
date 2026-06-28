@@ -106,6 +106,7 @@
     "waveform": "Waveform",
     "waveformHelp": "Show the waveform. Hiding it skips the waveform analysis — useful for large files or network drives.",
     "seek": "Seek",
+    "volume": "Volume",
     "close": "Close player"
   },
   "commands": {

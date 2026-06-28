@@ -81,7 +81,7 @@ function props(over = {}) {
     volume: 1,
     onToggle: vi.fn(),
     onScrub: vi.fn(),
-    onAdjustVolume: vi.fn(),
+    onSetVolume: vi.fn(),
     onToggleContinuous: vi.fn(),
     onToggleWaveform: vi.fn(),
     onClose: vi.fn(),
@@ -208,12 +208,19 @@ describe('Player', () => {
     expect(screen.getByTestId('player-waveform')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  // Volume has no on-screen control by design; scrolling over the card drives it.
-  it('routes a wheel over the card to the volume handler', () => {
-    const onAdjustVolume = vi.fn()
-    renderUI(<Player {...props({ onAdjustVolume })} />)
-    fireEvent.wheel(screen.getByTestId('player'), { deltaY: -120 })
-    expect(onAdjustVolume).toHaveBeenCalled()
+  // Volume rides a real slider so it never collides with scrolling the track list:
+  // dragging the range reports the new level to set the element volume.
+  it('reports a new volume when the slider is dragged', () => {
+    const onSetVolume = vi.fn()
+    renderUI(<Player {...props({ volume: 1, onSetVolume })} />)
+    fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.3' } })
+    expect(onSetVolume).toHaveBeenCalledWith(0.3)
+  })
+
+  // The slider mirrors the live level so the control reflects the current volume.
+  it('reflects the current volume on the slider', () => {
+    renderUI(<Player {...props({ volume: 0.4 })} />)
+    expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.4')
   })
 
   // Volume rides its own pill (left of the clock), so the level is visible without any
@@ -227,10 +234,10 @@ describe('Player', () => {
   it('reveals the pills on hover and hides them otherwise', () => {
     renderUI(<Player {...props()} />)
     const card = screen.getByTestId('player')
-    expect(screen.getByTestId('player-volume')).toHaveClass('opacity-0')
+    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-0')
     expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
     fireEvent.pointerEnter(card)
-    expect(screen.getByTestId('player-volume')).toHaveClass('opacity-100')
+    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-100')
     expect(screen.getByTestId('player-time')).toHaveClass('opacity-100')
     fireEvent.pointerLeave(card)
     expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
@@ -269,9 +276,9 @@ describe('LivePlayer', () => {
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 
-  it('lowers the element volume when the card is scrolled down', () => {
+  it('mirrors the slider onto the element volume when dragged', () => {
     const audio = audioEl()
-    Object.defineProperty(audio, 'volume', { value: 0.5, writable: true })
+    Object.defineProperty(audio, 'volume', { value: 1, writable: true })
     const ref = createRef<HTMLAudioElement>()
     ;(ref as { current: HTMLAudioElement }).current = audio
     renderUI(
@@ -285,8 +292,7 @@ describe('LivePlayer', () => {
         onClose={vi.fn()}
       />,
     )
-    // Scroll down = quieter, by one 5% notch.
-    fireEvent.wheel(screen.getByTestId('player'), { deltaY: 100 })
+    fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.45' } })
     expect(audio.volume).toBeCloseTo(0.45, 5)
   })
 
