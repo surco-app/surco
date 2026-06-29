@@ -185,7 +185,7 @@
   },
   "editor": {
     "searchPlaceholder": "Search Discogs or paste a release id…",
-    "search": "Search",
+    "searchClear": "Clear search",
     "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "chooseTrack": "Choose the track to apply",
     "matchSuggested": "Suggested",

@@ -9,6 +9,7 @@ import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { ResizeHandle, useResizableWidth } from './ResizeHandle'
+import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
@@ -137,14 +138,17 @@ export function DiscogsPanel({
       >
         <div className="border-b border-[var(--color-line)] pb-2">
           {/* Mirrors the track list's header (its search row + filter/sort row) so the two
-              columns read as one toolbar side by side: same paddings, control heights and
-              field chrome, differing only in this column's explicit Search button. */}
+              columns read as one toolbar side by side: same shared SearchInput chrome.
+              Enter searches; the magnifier turns into a spinner while a search is in flight. */}
           <div className="flex items-center gap-1.5 px-1.5 pt-2">
-            <input
-              ref={searchInputRef}
-              data-testid="discogs-query"
+            <SearchInput
+              className="min-w-0 flex-1"
+              testid="discogs-query"
+              inputRef={searchInputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={setQuery}
+              onClear={() => setQuery('')}
+              busy={busy}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') doSearch()
                 // ↓ from the search box dives into the results, so search → pick is one
@@ -154,19 +158,10 @@ export function DiscogsPanel({
                   moveResultFocus('first')
                 }
               }}
-              aria-label={tr('editor.searchPlaceholder')}
+              ariaLabel={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
-              className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-xs outline-none focus:border-[var(--color-accent)]"
+              clearLabel={tr('editor.searchClear')}
             />
-            <button
-              type="button"
-              data-testid="discogs-search"
-              onClick={doSearch}
-              disabled={busy}
-              className="press inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-3 text-xs font-medium text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)] disabled:opacity-40"
-            >
-              {tr('editor.search')}
-            </button>
           </div>
           {!hasToken && (
             <p className="px-1.5 pt-2 text-xs text-fg-muted">

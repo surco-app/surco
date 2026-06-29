@@ -1251,7 +1251,7 @@ describe('Editor Discogs apply', () => {
 
   async function search(): Promise<void> {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
   }
 
@@ -1532,7 +1532,7 @@ describe('Editor track preselection', () => {
 
   async function loadTracklist(): Promise<HTMLElement[]> {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     // A confident match auto-opens its tracklist; a low-confidence one doesn't, so open it
     // by hand only when it isn't already expanded — clicking an open row would collapse it.
     const result = await screen.findByTestId('discogs-result')
@@ -1881,7 +1881,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       'Not in your Apple Music library',
     )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
@@ -1905,7 +1905,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       },
     )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
@@ -1934,7 +1934,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       },
     )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     // The search is in flight: the raw tags don't match, but the verdict isn't "no" yet.
     await waitFor(() =>
       expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Checking…'),
@@ -1975,7 +1975,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       },
     )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.click(screen.getByTestId('discogs-search'))
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
     await waitFor(() =>
       expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
