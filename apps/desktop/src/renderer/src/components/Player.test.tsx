@@ -101,6 +101,20 @@ describe('Player', () => {
     expect(screen.getByTestId('player-title')).toHaveTextContent('t1.wav')
   })
 
+  // The player shows the track being played — the file's own art — so dropping a new
+  // cover into the editor form never repaints the player. It reads embeddedCover (frozen
+  // at import), not the live/edited coverUrl the form writes.
+  it('shows the embedded cover, not the edited one from the form', () => {
+    renderUI(
+      <Player
+        {...props({
+          track: track({ embeddedCover: 'file:///original.jpg', coverUrl: 'blob:edited' }),
+        })}
+      />,
+    )
+    expect(screen.getByTestId('player-cover')).toHaveAttribute('src', 'file:///original.jpg')
+  })
+
   it('toggles playback from the transport button', () => {
     const onToggle = vi.fn()
     renderUI(<Player {...props({ onToggle })} />)

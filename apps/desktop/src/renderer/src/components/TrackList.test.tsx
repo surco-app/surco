@@ -155,7 +155,7 @@ describe('TrackList', () => {
     // draggable element is the row wrapper, not the button: Chromium won't start a native
     // drag from a <button>, so dragging it must lift the whole row. The cover rides
     // along so the OS drag thumbnail is the track's art, not a generic icon.
-    renderList([track({ id: 'a', coverUrl: 'data:image/jpeg;base64,AAA' })])
+    renderList([track({ id: 'a', embeddedCover: 'data:image/jpeg;base64,AAA' })])
     const li = screen.getByTestId('track-row').closest('[draggable]')
     expect(li).toHaveAttribute('draggable', 'true')
     expect(screen.getByTestId('track-row')).not.toHaveAttribute('draggable')
@@ -182,13 +182,32 @@ describe('TrackList', () => {
   })
 
   it('shows the album art so a crate can be scanned by cover, not just by name', () => {
-    renderList([track({ id: 'a', coverUrl: 'file:///cover.jpg' })])
+    renderList([track({ id: 'a', embeddedCover: 'file:///cover.jpg' })])
     expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'file:///cover.jpg')
     expect(screen.queryByTestId('track-cover-placeholder')).toBeNull()
   })
 
   it('falls back to a placeholder thumbnail when the track has no cover', () => {
     renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-cover')).toBeNull()
+    expect(screen.getByTestId('track-cover-placeholder')).toBeInTheDocument()
+  })
+
+  // The row is a view of the file on disk, so it shows the cover embedded in the file —
+  // never the one the user dropped into the editor form. coverUrl is the live/edited
+  // field (the form and a release match write it); the row reads embeddedCover, the art
+  // captured once at import and never overwritten, so editing the artwork can't repaint
+  // the crate behind the user's back.
+  it('shows the embedded cover, not the edited one the form wrote', () => {
+    renderList([track({ id: 'a', embeddedCover: 'file:///original.jpg', coverUrl: 'blob:edited' })])
+    expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'file:///original.jpg')
+  })
+
+  // A file with no embedded art shows the placeholder even after the user drops a cover
+  // in the form — the row must not borrow the edited coverUrl to fill the gap, or the
+  // form would leak into the crate for exactly those tracks.
+  it('keeps the placeholder when the file has no embedded art, ignoring an edited cover', () => {
+    renderList([track({ id: 'a', coverUrl: 'blob:edited' })])
     expect(screen.queryByTestId('track-cover')).toBeNull()
     expect(screen.getByTestId('track-cover-placeholder')).toBeInTheDocument()
   })

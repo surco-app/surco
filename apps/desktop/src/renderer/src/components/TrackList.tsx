@@ -238,10 +238,10 @@ const TrackRow = memo(function TrackRow({
             than by its name — so the leading slot shows the artwork with the processing
             status demoted to a small ringed dot on its corner. */}
         <span data-testid="track-status" className="group/dot relative shrink-0">
-          {t.coverUrl ? (
+          {t.embeddedCover ? (
             <img
               data-testid="track-cover"
-              src={t.coverUrl}
+              src={t.embeddedCover}
               alt=""
               className="h-9 w-9 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
             />
@@ -412,7 +412,9 @@ export function TrackList({
     const paths = selectedIds.has(track.id)
       ? tracks.filter((t) => selectedIds.has(t.id)).map((t) => t.inputPath)
       : [track.inputPath]
-    window.api.startTrackDrag(paths, track.coverUrl)
+    // The OS drag thumbnail is the file's own art, matching the row — never the cover
+    // the user dropped into the editor form, which lives on the live coverUrl.
+    window.api.startTrackDrag(paths, track.embeddedCover)
   }, [])
   // One IntersectionObserver for the whole list instead of one per row — 500 rows
   // used to mean 500 observer instances doing identical work against the same root.

@@ -213,9 +213,10 @@ export function Player({
           one cluster on the right. The clock lives down on the waveform, so the name
           keeps the whole middle. */}
       <div className="flex items-center gap-2.5 px-2.5 pt-2.5">
-        {track.coverUrl ? (
+        {track.embeddedCover ? (
           <img
-            src={track.coverUrl}
+            data-testid="player-cover"
+            src={track.embeddedCover}
             alt=""
             className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
