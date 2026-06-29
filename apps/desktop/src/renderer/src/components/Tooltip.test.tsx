@@ -32,6 +32,20 @@ describe('Tooltip', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
+  // On an editable trigger (a metadata input), surfacing the value-tooltip the instant the
+  // field is focused covers the text the user is about to type. hoverOnly opts that trigger
+  // out of the focus reveal so the tooltip stays a pure hover hint, never popping mid-edit.
+  it('does not appear on focus when hoverOnly is set', () => {
+    render(
+      <span data-testid="trigger">
+        <input />
+        <Tooltip label="Helpful hint" hoverOnly />
+      </span>,
+    )
+    fireEvent.focusIn(screen.getByTestId('trigger'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
   // A hover tooltip that pops up the instant the pointer crosses a control feels cheap
   // and clutters quick passes; like a native help tag it should wait out a short pause.
   // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the listener with a

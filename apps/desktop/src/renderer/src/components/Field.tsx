@@ -73,7 +73,7 @@ export const Field = memo(function Field({
             (the Tooltip anchors to its parentElement): hovering the field still reveals the
             full value when it's clipped, now in the app's own tooltip rather than the
             OS-native one. An empty field gets none — there's nothing to reveal. */}
-        {value && <Tooltip label={value} />}
+        {value && <Tooltip label={value} hoverOnly />}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}

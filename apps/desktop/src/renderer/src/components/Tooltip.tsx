@@ -17,10 +17,15 @@ const HOVER_DELAY = 400
 
 export function Tooltip({
   label,
+  hoverOnly = false,
 }: {
   label: string
   align?: 'center' | 'start' | 'end'
   scope?: 'default' | 'cover' | 'dot'
+  // For an editable trigger (a metadata input): the focus reveal would pop the value
+  // tooltip over the text the user is about to type, so opt out of it and stay a pure
+  // hover hint. Hover (and Escape-to-dismiss) still work as usual.
+  hoverOnly?: boolean
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
@@ -86,19 +91,23 @@ export function Tooltip({
     trigger.addEventListener('pointermove', onMove)
     trigger.addEventListener('pointerleave', onLeave)
     trigger.addEventListener('pointerdown', onLeave)
-    trigger.addEventListener('focusin', onFocus)
-    trigger.addEventListener('focusout', onLeave)
     trigger.addEventListener('keydown', onKeyDown)
+    // An editable trigger opts out of the focus reveal (it would cover the text being
+    // typed); the pointer listeners above still give it a normal hover hint.
+    if (!hoverOnly) {
+      trigger.addEventListener('focusin', onFocus)
+      trigger.addEventListener('focusout', onLeave)
+    }
     return () => {
       trigger.removeEventListener('pointermove', onMove)
       trigger.removeEventListener('pointerleave', onLeave)
       trigger.removeEventListener('pointerdown', onLeave)
+      trigger.removeEventListener('keydown', onKeyDown)
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
-      trigger.removeEventListener('keydown', onKeyDown)
       clearTimer()
     }
-  }, [])
+  }, [hoverOnly])
 
   return (
     <span ref={markerRef} className="hidden" aria-hidden="true">
