@@ -286,12 +286,9 @@ const TrackRow = memo(function TrackRow({
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <span
-                data-fit
-                title={t.meta.artist || tr('trackList.noArtist')}
-                className="min-w-0 flex-1 truncate text-xs text-fg-dim"
-              >
+              <span data-fit className="min-w-0 flex-1 truncate text-xs text-fg-dim">
                 {t.meta.artist || tr('trackList.noArtist')}
+                <Tooltip label={t.meta.artist || tr('trackList.noArtist')} />
               </span>
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
                   badge and duration line up in the same column down every row instead of

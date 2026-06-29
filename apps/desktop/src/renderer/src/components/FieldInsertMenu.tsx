@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
 import { titleCase } from '../lib/textCase'
+import { Tooltip } from './Tooltip'
 
 // Re-exported so Field.tsx keeps importing the shape from here while the definition
 // lives in lib alongside the buildFieldSpecs that produces it.
@@ -140,7 +141,6 @@ export function FieldInsertMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={tr('editor.fieldActions')}
-        title={tr('editor.fieldActions')}
         onMouseDown={() => {
           fromMouseRef.current = true
           captureCaret()
@@ -155,6 +155,9 @@ export function FieldInsertMenu({
         }`}
       >
         <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
+        {/* Only when closed: once the menu is open the tooltip would hover over its own
+            items. */}
+        {!open && <Tooltip label={tr('editor.fieldActions')} />}
       </button>
       {open && (
         <>

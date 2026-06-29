@@ -16,6 +16,7 @@ import type React from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FilterSelection, qualityCounts } from '../lib/triage'
+import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
 type QualityMode = 'unanalyzed' | 'suspect' | 'good'
@@ -370,14 +371,14 @@ export function QualityFilterBar({
       {visibleCount > 0 && (
         <span
           data-testid="track-position"
-          title={
-            selectedPosition !== null
-              ? tr('sidebar.position', { current: selectedPosition, total: visibleCount })
-              : undefined
-          }
-          className="ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
+          className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
         >
           {selectedPosition !== null ? `${selectedPosition}/${visibleCount}` : `‒/${visibleCount}`}
+          {selectedPosition !== null && (
+            <Tooltip
+              label={tr('sidebar.position', { current: selectedPosition, total: visibleCount })}
+            />
+          )}
         </span>
       )}
     </div>

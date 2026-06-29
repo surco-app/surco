@@ -5,6 +5,7 @@ import type { TrackProperties } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
+import { Tooltip } from './Tooltip'
 
 interface Props {
   properties: TrackProperties
@@ -114,14 +115,17 @@ export function PropertiesReadout({
                       data-testid="property-reveal"
                       onClick={() => window.api.reveal(inputPath)}
                       aria-label={`${tr('commands.reveal')}: ${r.value}`}
-                      title={r.full}
                       className="press inline-flex max-w-full items-center gap-1.5 align-middle text-[var(--color-accent)] hover:underline"
                     >
                       <Folder className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       <span className="truncate">{r.value}</span>
+                      <Tooltip label={r.full} />
                     </button>
                   ) : (
-                    <span title={r.full}>{r.value}</span>
+                    <span className="relative">
+                      {r.value}
+                      <Tooltip label={r.full} />
+                    </span>
                   )}
                 </dd>
               </div>

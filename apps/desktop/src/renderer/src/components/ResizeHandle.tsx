@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextWidth } from '../lib/resize'
+import { Tooltip } from './Tooltip'
 
 export function useResizableWidth(
   initial: number,
@@ -82,10 +83,10 @@ export function ResizeHandle({
       aria-orientation="vertical"
       onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}
-      title={title}
       className="relative z-10 w-px shrink-0 cursor-col-resize bg-[var(--color-line)] transition-colors hover:bg-[var(--color-accent)]"
     >
       <div className="absolute inset-y-0 -left-1 -right-1" />
+      {title && <Tooltip label={title} />}
     </div>
   )
 }

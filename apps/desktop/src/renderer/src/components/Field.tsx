@@ -2,6 +2,7 @@ import type React from 'react'
 import { memo, useRef } from 'react'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
+import { Tooltip } from './Tooltip'
 
 interface FieldProps {
   name: string
@@ -61,7 +62,6 @@ export const Field = memo(function Field({
           ref={inputRef}
           data-testid={`field-${name}`}
           aria-invalid={invalid}
-          title={value}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
@@ -69,6 +69,11 @@ export const Field = memo(function Field({
             hasMenu ? 'pr-8' : ''
           }`}
         />
+        {/* The input can't host the themed Tooltip as a child, so it lives on this wrapper
+            (the Tooltip anchors to its parentElement): hovering the field still reveals the
+            full value when it's clipped, now in the app's own tooltip rather than the
+            OS-native one. An empty field gets none — there's nothing to reveal. */}
+        {value && <Tooltip label={value} />}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}

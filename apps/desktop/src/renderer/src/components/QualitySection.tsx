@@ -16,6 +16,7 @@ import { LoudnessReadout } from './LoudnessReadout'
 import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
 import { SpectrumLoading } from './SpectrumLoading'
+import { Tooltip } from './Tooltip'
 
 const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
@@ -131,11 +132,11 @@ export function QualitySection({
             ) : analyzeFailed ? (
               <div
                 data-testid="quality-error"
-                title={analyzeErrorDetail}
-                className="flex h-28 flex-col items-center justify-center gap-2 text-xs text-fg-dim"
+                className="relative flex h-28 flex-col items-center justify-center gap-2 text-xs text-fg-dim"
               >
                 <TriangleAlert className="h-5 w-5 text-fg-faint" aria-hidden="true" />
                 {tr('editor.analyzeError')}
+                {analyzeErrorDetail && <Tooltip label={analyzeErrorDetail} />}
               </div>
             ) : spectrum ? (
               <>

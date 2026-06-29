@@ -323,15 +323,12 @@ export function DiscogsPanel({
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.position}
                               </span>
-                              {/* Long titles truncate in this narrow column; the native
+                              {/* Long titles truncate in this narrow column; the themed
                                   tooltip reveals the full name on hover, like the track
                                   list's own rows. */}
-                              <span
-                                data-fit
-                                title={t.title}
-                                className="min-w-0 flex-1 truncate text-sm"
-                              >
+                              <span data-fit className="min-w-0 flex-1 truncate text-sm">
                                 {t.title}
+                                <Tooltip label={t.title} />
                               </span>
                               {t === matchedTrack && matchTier && (
                                 // A text label, not a tick: a check icon reads as

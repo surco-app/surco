@@ -1275,15 +1275,22 @@ describe('Editor Discogs apply', () => {
   })
 
   // Long titles ("Clear Blue Water (Ferry Cor…") truncate in the narrow Discogs
-  // column with no way to read the rest; the native title tooltip reveals the full
-  // name on hover without adding any chrome to the row.
-  it('reveals the full track title on hover via the native tooltip', async () => {
+  // column with no way to read the rest; the themed tooltip reveals the full name on
+  // hover without adding any chrome to the row — and matches the rest of the UI instead
+  // of popping the OS-native help tag.
+  it('reveals the full track title on hover via the themed tooltip', async () => {
     withDiscogs()
     renderEditor({ id: 'a' })
     await search()
     fireEvent.click(screen.getByTestId('discogs-result'))
     const rows = await screen.findAllByTestId('discogs-track')
-    expect(rows[0].querySelector('[data-fit]')).toHaveAttribute('title', 'Track One')
+    const titleSpan = rows[0].querySelector('[data-fit]') as HTMLElement
+    expect(titleSpan).not.toHaveAttribute('title')
+    // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the Tooltip's
+    // listener with a real MouseEvent dispatched as a pointermove, then wait out its
+    // hover delay.
+    titleSpan.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Track One')
   })
 
   // The discoverable, explicit path: expand the album, then pick the track. That
