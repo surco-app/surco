@@ -79,7 +79,8 @@ const api: Api = {
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
   trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
-  spectrogram: (path: string) => ipcRenderer.invoke('audio:spectrogram', path),
+  spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
+    ipcRenderer.invoke('audio:spectrogram', path, priority),
   loudness: (path: string): Promise<LoudnessResult | null> =>
     ipcRenderer.invoke('audio:loudness', path),
   properties: (path: string): Promise<TrackProperties | null> =>

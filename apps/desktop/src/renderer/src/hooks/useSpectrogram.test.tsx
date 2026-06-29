@@ -34,7 +34,9 @@ describe('useSpectrogram', () => {
       wrapper: wrapper(),
     })
     await waitFor(() => expect(result.current.data).toEqual(sample))
-    expect(analyse).toHaveBeenCalledWith('/music/a.wav')
+    // The editor's selected track is the one the user waits on, so it decodes at 'high' to
+    // jump ahead of a background sweep's 'low' floods in the analysis limiter.
+    expect(analyse).toHaveBeenCalledWith('/music/a.wav', 'high')
   })
 
   // The Quality section is an opt-in Settings toggle; with it off the ffmpeg pass must

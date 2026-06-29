@@ -86,6 +86,32 @@ describe('QualitySection analysis gating', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(spectrogram).not.toHaveBeenCalled()
   })
+
+  // The editor only mounts this for the selected track — the one the user is waiting on.
+  // During an auto-match sweep the background floods the analysis limiter with 'low'
+  // decodes, so the selected track's spectrum must ask for 'high' to jump the queue,
+  // otherwise it stalls on "Analyzing spectrum…" behind the whole crate.
+  it('requests the selected track spectrum at high priority', async () => {
+    const spectrogram = vi
+      .fn()
+      .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
+    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    await vi.waitFor(() => expect(spectrogram).toHaveBeenCalled())
+    expect(spectrogram).toHaveBeenCalledWith('/music/a.flac', 'high')
+  })
 })
 
 // The caption under the spectrogram is the only place that explains the verdict, so
@@ -115,12 +141,12 @@ describe('QualitySection verdict caption', () => {
   // must describe the observation, never name a bitrate — a guess an expert spots instantly.
   // The bad/transcode captions are exempt: a detected knee IS a lossy signature, so naming
   // it is a measurement, not a guess.
-  it.each(['editor.qualityCaptionGood', 'editor.qualityCaptionWarn'])(
-    'does not pin a specific source bitrate in %s',
-    (key) => {
-      expect(i18n.t(key, { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
-    },
-  )
+  it.each([
+    'editor.qualityCaptionGood',
+    'editor.qualityCaptionWarn',
+  ])('does not pin a specific source bitrate in %s', (key) => {
+    expect(i18n.t(key, { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
+  })
 
   // For sound engineers the caption is a data readout, not coaching: it states what was
   // measured and stops. The spectrogram above it already invites a listen, so an advice

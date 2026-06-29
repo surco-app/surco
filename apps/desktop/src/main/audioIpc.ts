@@ -64,67 +64,70 @@ export function registerAudioIpc(): void {
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
   ipcMain.handle('audio:coverFull', (_e, inputPath: string) => extractCoverDataUrl(inputPath))
 
-  ipcMain.handle('audio:spectrogram', async (_e, inputPath: string) => {
-    try {
-      // Cache only a clean run: a cutoff failure yields a valid image but a null
-      // cutoff, and we'd rather retry that next open than pin it for the file's life.
-      const {
-        image,
-        cutoffHz,
-        sampleRateHz,
-        processed,
-        hasKnee,
-        upsampled,
-        cutoffError,
-        shelfError,
-      } = await cachedAnalysis(
-        // Namespace carries the palette and the cutoff-algorithm generation, so
-        // changing either invalidates entries cached under the previous one — they
-        // regenerate on next open instead of serving stale colors or verdicts. v7
-        // switches the image to a grayscale intensity map (recolored per theme in the
-        // renderer), so older colored entries regenerate. v8 adds the FFT-band knee
-        // (catches codec walls the biquad pass smears below its threshold). v9 dropped the
-        // 2× intensity gain. v10 restores the full 120 dB range (v9's 60 dB clip hid the
-        // HF transients Spek shows reaching ~22 kHz) and moves the "dead = background" job
-        // to the recolor ramp's Spek-style low-end fade. v11 renders the image 320 px tall
-        // (was 280) to match the taller panel so it is not upscaled. v12 catches a fake 320
-        // whose HF spikes hide its wall behind the top-edge knee guard — the cached verdict
-        // changed (Good→Bad), so old entries must regenerate to pick it up. v13 reports
-        // full-band high-rate audio (96 kHz) at the ~22 kHz probed ceiling instead of the
-        // 48 kHz Nyquist, so cutoffHz changed for those files and old entries must regenerate.
-        'spectrogram-mono-v13',
-        inputPath,
-        () =>
-          probe('activity.probeSpectrogram', inputPath, () =>
-            // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
-            // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
-            // quality sweep then put ~3× the intended decodes on the cores. Instead each
-            // pass takes its own slot, so the limiter counts them honestly and caps the
-            // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
-            // overlap when slots are free (no single-track latency hit) and none waits on a
-            // slot it's also holding (no deadlock).
-            buildSpectrum(inputPath, {
-              probe: probeAudio,
-              spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), 'low'),
-              cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), 'low'),
-              shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), 'low'),
-            }),
-          ),
-        (b) => b.cutoffError === undefined,
-      )
-      // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
-      // stderr) rather than reject — this is the only trace when it breaks on a
-      // machine we can't reach, e.g. Windows.
-      if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
-      // The shelf probe is a best-effort secondary signal: a failure just means no
-      // shelf verdict, so log it but (unlike cutoff) don't refuse to cache the rest.
-      if (shelfError) log.error('audio:spectrogram shelf analysis failed', shelfError)
-      return { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled }
-    } catch (err) {
-      log.error('audio:spectrogram failed', err)
-      throw err
-    }
-  })
+  ipcMain.handle(
+    'audio:spectrogram',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+      try {
+        // Cache only a clean run: a cutoff failure yields a valid image but a null
+        // cutoff, and we'd rather retry that next open than pin it for the file's life.
+        const {
+          image,
+          cutoffHz,
+          sampleRateHz,
+          processed,
+          hasKnee,
+          upsampled,
+          cutoffError,
+          shelfError,
+        } = await cachedAnalysis(
+          // Namespace carries the palette and the cutoff-algorithm generation, so
+          // changing either invalidates entries cached under the previous one — they
+          // regenerate on next open instead of serving stale colors or verdicts. v7
+          // switches the image to a grayscale intensity map (recolored per theme in the
+          // renderer), so older colored entries regenerate. v8 adds the FFT-band knee
+          // (catches codec walls the biquad pass smears below its threshold). v9 dropped the
+          // 2× intensity gain. v10 restores the full 120 dB range (v9's 60 dB clip hid the
+          // HF transients Spek shows reaching ~22 kHz) and moves the "dead = background" job
+          // to the recolor ramp's Spek-style low-end fade. v11 renders the image 320 px tall
+          // (was 280) to match the taller panel so it is not upscaled. v12 catches a fake 320
+          // whose HF spikes hide its wall behind the top-edge knee guard — the cached verdict
+          // changed (Good→Bad), so old entries must regenerate to pick it up. v13 reports
+          // full-band high-rate audio (96 kHz) at the ~22 kHz probed ceiling instead of the
+          // 48 kHz Nyquist, so cutoffHz changed for those files and old entries must regenerate.
+          'spectrogram-mono-v13',
+          inputPath,
+          () =>
+            probe('activity.probeSpectrogram', inputPath, () =>
+              // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
+              // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
+              // quality sweep then put ~3× the intended decodes on the cores. Instead each
+              // pass takes its own slot, so the limiter counts them honestly and caps the
+              // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
+              // overlap when slots are free (no single-track latency hit) and none waits on a
+              // slot it's also holding (no deadlock).
+              buildSpectrum(inputPath, {
+                probe: probeAudio,
+                spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), priority),
+                cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), priority),
+                shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), priority),
+              }),
+            ),
+          (b) => b.cutoffError === undefined,
+        )
+        // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
+        // stderr) rather than reject — this is the only trace when it breaks on a
+        // machine we can't reach, e.g. Windows.
+        if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
+        // The shelf probe is a best-effort secondary signal: a failure just means no
+        // shelf verdict, so log it but (unlike cutoff) don't refuse to cache the rest.
+        if (shelfError) log.error('audio:spectrogram shelf analysis failed', shelfError)
+        return { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled }
+      } catch (err) {
+        log.error('audio:spectrogram failed', err)
+        throw err
+      }
+    },
+  )
 
   ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
     try {

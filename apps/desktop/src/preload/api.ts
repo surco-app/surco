@@ -98,7 +98,7 @@ export interface Api {
   openFile: (path: string) => Promise<string>
   trashFile: (path: string) => Promise<void>
   copyText: (text: string) => Promise<void>
-  spectrogram: (path: string) => Promise<SpectrumResult>
+  spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
   loudness: (path: string) => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string) => Promise<BpmResult | null>
