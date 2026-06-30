@@ -618,14 +618,19 @@ export default function App(): React.JSX.Element {
   )
 
   function selectAll(): void {
-    if (tracks.length === 0) return
-    // Toggle: with everything already selected, a second press clears the selection rather
-    // than re-selecting the same set — so the one control both selects all and deselects all.
-    if (selectedIds.length === tracks.length) {
+    // Acts on the visible (filtered) rows, not the whole crate: a DJ who filters to MP3 and
+    // hits Select All expects only those — sweeping in the hidden FLAC/WAV rows would then
+    // convert tracks they never saw. Read through the ref so this stays the latest filtered
+    // set without threading visibleTracks (declared below) into the function's closure.
+    const visible = visibleTracksRef.current
+    if (visible.length === 0) return
+    // Toggle: with every visible row already selected, a second press clears the selection
+    // rather than re-selecting the same set — one control both selects all and deselects all.
+    if (selectedIds.length === visible.length && visible.every((t) => selectedIds.includes(t.id))) {
       setSelection({ ids: [], anchor: null })
       return
     }
-    setSelection({ ids: tracks.map((t) => t.id), anchor: tracks[0].id })
+    setSelection({ ids: visible.map((t) => t.id), anchor: visible[0].id })
   }
 
   const {

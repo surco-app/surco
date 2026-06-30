@@ -1262,6 +1262,37 @@ describe('App select all', () => {
     expect(rows[0]).toHaveAttribute('aria-selected', 'false')
     expect(rows[1]).toHaveAttribute('aria-selected', 'false')
   })
+
+  // The bug a DJ hit: filter to one format (MP3), press Select All expecting only those, then
+  // convert — and the hidden FLAC/WAV rows convert too. Select All must honour the active
+  // filter and select only the visible rows, never the ones the filter is hiding. Two MP3s so
+  // Select All has more than the one already-selected row to grab (and isn't a clear-toggle).
+  it('selects only the visible rows when a format filter is active', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3', '/music/c.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    // Narrow to MP3 — only the two mp3 rows show.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('select-all'))
+    // Both visible mp3 rows are selected; the hidden wav is not swept in.
+    let rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    // Clearing the filter reveals all three: exactly the two mp3s stay selected. Had Select
+    // All grabbed the hidden wav too, all three would read selected here.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-all'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    rows = screen.getAllByTestId('track-row')
+    const selected = rows.filter((r) => r.getAttribute('aria-selected') === 'true')
+    expect(selected).toHaveLength(2)
+  })
 })
 
 describe('App donate nudge', () => {

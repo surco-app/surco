@@ -305,9 +305,11 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
       enabled: canProcessAll,
+      // Convert the VISIBLE rows, not the whole crate: with a format filter on (e.g. MP3),
+      // "convert all" must touch only what's shown, never the hidden FLAC/WAV rows.
       run: () =>
         askConvertAll(
-          tracks,
+          visibleTracks,
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
         ),
