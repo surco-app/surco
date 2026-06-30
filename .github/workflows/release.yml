@@ -16,14 +16,23 @@ jobs:
   # download button disabled itself and mac auto-update lost latest-mac.yml.
   # Creating the tag AND the release once, before any builder starts, removes the
   # race: every job finds the release already there and only uploads.
+  #
+  # The release is created as a DRAFT and only published (publish job, after verify)
+  # once every asset — including the merged latest-mac.yml — is in place. A draft is
+  # invisible to /releases/latest and to electron-updater's feed, so the slowest arch
+  # (Intel) can keep building without users seeing v0.27.0 and hitting a 404 on a
+  # latest-mac.yml that the merge job hasn't uploaded yet. electron-builder still
+  # reuses the existing release across the matrix jobs: its publisher returns any
+  # draft it finds for the tag (`if (release.draft) return release`), so the
+  # anti-race guarantee above holds — a draft bound to the tag is reused, not
+  # duplicated.
   prepare:
     runs-on: ubuntu-latest
     steps:
-      # GitHub rejects creating a *published* release whose tag doesn't already
-      # exist in surco-releases (422 "must have a valid tag") — the git tag lives
-      # in this source repo, not there. Create the tag first, pointing at the
-      # releases repo's default branch HEAD.
-      - name: Create the tag and the release in the releases repo
+      # The git tag lives in this source repo, not in surco-releases. Create the tag
+      # there first, pointing at the releases repo's default branch HEAD, so the
+      # release has a valid tag to bind to.
+      - name: Create the tag and the draft release in the releases repo
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
@@ -34,7 +43,7 @@ jobs:
             || echo "tag already exists in the releases repo"
           gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases >/dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
-                 --title "${GITHUB_REF_NAME#v}" --notes ""
+                 --draft --title "${GITHUB_REF_NAME#v}" --notes ""
 
   release:
     needs: prepare
@@ -193,13 +202,26 @@ jobs:
           done
           exit $status
 
+  # Flip the draft to a published release ONLY after verify confirms the full asset
+  # set is present. This is the moment the release becomes visible to
+  # /releases/latest and to electron-updater — so by construction no user can see
+  # v0.27.0 before latest-mac.yml (and every installer) is already there.
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo vigosan/surco-releases --draft=false
+
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they
   # self-update via electron-updater (the cask is auto_updates true), so this only
   # matters for first-time installs, hence it's a best-effort tail job. It waits
-  # for verify so a broken release never reaches the cask.
+  # for publish so the cask only ever points at a live, fully-uploaded release.
   update-tap:
-    needs: [release, merge-mac-feed, verify]
+    needs: [release, merge-mac-feed, verify, publish]
     runs-on: ubuntu-latest
     steps:
       # GitHub computes a sha256 for every release asset, so read those instead of
