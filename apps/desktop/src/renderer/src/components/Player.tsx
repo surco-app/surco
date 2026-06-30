@@ -2,6 +2,7 @@ import {
   AudioLines,
   Infinity as InfinityIcon,
   LoaderCircle,
+  Music,
   Pause,
   Play,
   Volume2,
@@ -221,7 +222,12 @@ export function Player({
             className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (
-          <div className="h-9 w-9 shrink-0 rounded-md bg-[var(--color-panel)]" />
+          <span
+            data-testid="player-cover-placeholder"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
+          >
+            <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
+          </span>
         )}
 
         <span className="min-w-0 flex-1">
@@ -403,9 +409,13 @@ function VolumePill({
         onChange={(e) => onSetVolume(Number(e.target.value))}
         className="player-volume-range h-1 w-16 cursor-pointer"
       />
-      <span data-testid="player-volume" className="w-7 shrink-0 text-right">
-        {Math.round(volume * 100)}%
-      </span>
+      {/* Full volume is the silent default, so the readout only appears once the user has
+          turned it down — where the exact figure is worth its space. */}
+      {volume < 1 && (
+        <span data-testid="player-volume" className="w-7 shrink-0 text-right">
+          {Math.round(volume * 100)}%
+        </span>
+      )}
     </span>
   )
 }

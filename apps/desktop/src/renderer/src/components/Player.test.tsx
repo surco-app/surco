@@ -115,6 +115,26 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover')).toHaveAttribute('src', 'file:///original.jpg')
   })
 
+  // A file with no embedded art shows a music-note placeholder, not an empty black square
+  // that reads as a broken image — matching the track list's own rows.
+  it('shows a music-note placeholder when the track has no embedded cover', () => {
+    renderUI(<Player {...props({ track: track({ embeddedCover: undefined }) })} />)
+    expect(screen.queryByTestId('player-cover')).toBeNull()
+    expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
+  })
+
+  // The default full volume is the silent norm, so the slider stands alone; the readout
+  // only earns its space once the user has turned it down, where the exact figure helps.
+  it('hides the volume readout at full volume', () => {
+    renderUI(<Player {...props({ volume: 1 })} />)
+    expect(screen.queryByTestId('player-volume')).toBeNull()
+  })
+
+  it('shows the volume readout once it is turned down', () => {
+    renderUI(<Player {...props({ volume: 0.5 })} />)
+    expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
+  })
+
   it('toggles playback from the transport button', () => {
     const onToggle = vi.fn()
     renderUI(<Player {...props({ onToggle })} />)
