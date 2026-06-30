@@ -232,7 +232,7 @@ export function Player({
           </span>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col">
           <span data-testid="player-title" className="min-w-0">
             <MarqueeText className="font-semibold text-[15px] leading-tight">
               {track.meta.title || track.fileName}
@@ -240,8 +240,9 @@ export function Player({
           </span>
 
           {/* Artist and the controls share the second line: the name takes the slack, the
-              cluster sits flush right. */}
-          <div className="flex items-center gap-2">
+              cluster sits flush right. The -mt pulls the artist up snug under the title, since
+              the h-7 control row is taller than the text and would otherwise float it down. */}
+          <div className="-mt-0.5 flex items-center gap-2">
             <span className="min-w-0 flex-1 truncate text-fg-dim text-xs leading-tight">
               {track.meta.artist}
             </span>
