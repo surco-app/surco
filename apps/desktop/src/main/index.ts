@@ -38,7 +38,6 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { buildEngineDatabase, type EngineTrack } from './engine'
 import { expandPaths } from './expand'
-import { dirRoots, FolderWatcher } from './watcher'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { removeRenamedOriginal } from './inplace'
@@ -56,6 +55,8 @@ import {
   saveSettings,
   setConfigDir,
 } from './settings'
+import { onWatchedFilesChanged } from './watchedFiles'
+import { dirRoots, FolderWatcher } from './watcher'
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -339,7 +340,15 @@ function watcherFor(win: BrowserWindow): FolderWatcher {
   let watcher = folderWatchers.get(win)
   if (!watcher) {
     watcher = new FolderWatcher((root, files) => {
-      if (!win.isDestroyed()) win.webContents.send('folders:changed', root, files)
+      if (win.isDestroyed()) return
+      // Grant the new tracks media access before announcing them, or the surco:// handler
+      // would 403 a play on a watched track — it'd appear in the list and player but stay mute.
+      onWatchedFilesChanged(
+        mediaAccess,
+        (r, f) => win.webContents.send('folders:changed', r, f),
+        root,
+        files,
+      )
     })
     folderWatchers.set(win, watcher)
     win.on('closed', () => watcher?.close())
