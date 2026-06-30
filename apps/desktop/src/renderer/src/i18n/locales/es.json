@@ -24,6 +24,7 @@
     "add": "Añadir archivos",
     "convert": "Convertir",
     "convertSelectedHint": "Convierte las pistas seleccionadas",
+    "convertSelectedEmptyHint": "Selecciona pistas en la lista para convertirlas",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",

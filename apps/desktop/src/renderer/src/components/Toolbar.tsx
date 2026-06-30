@@ -245,24 +245,40 @@ export const Toolbar = memo(function Toolbar({
             {/* One button, two states: while the batch runs it morphs into the cancel
                 action (like the analyze and auto-match buttons above) instead of a
                 second button popping in next to it and shifting the toolbar. */}
-            <button
-              type="button"
-              data-testid="convert-selected"
-              onClick={batching ? onCancelConvert : onConvertSelected}
-              disabled={!batching && selectedEligibleCount === 0}
-              className={`press group relative flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
-                batching
-                  ? 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)]'
-                  : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
-              }`}
-            >
-              {batching
-                ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
-                : `${tr('header.convert')} (${selectedEligibleCount})`}
+            {/* A disabled button fires no pointer events, so the wrapper carries the hover —
+                letting the "select tracks" hint appear over the greyed-out button when there's
+                nothing eligible. */}
+            <div className="group relative flex">
+              <button
+                type="button"
+                data-testid="convert-selected"
+                onClick={batching ? onCancelConvert : onConvertSelected}
+                disabled={!batching && selectedEligibleCount === 0}
+                className={`press flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
+                  batching
+                    ? 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)]'
+                    : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40'
+                }`}
+              >
+                {batching
+                  ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
+                  : `${tr('header.convert')} (${selectedEligibleCount})`}
+              </button>
               {/* Names what this converts — the selected tracks, batch-style — so it reads
-                  apart from the editor's own convert button for the open track below. */}
-              {!batching && <Tooltip label={tr('header.convertSelectedHint')} align="end" />}
-            </button>
+                  apart from the editor's own convert button for the open track below. With
+                  nothing eligible the button is greyed, so the hint turns into the missing
+                  step (select tracks) rather than restating an action you can't take. */}
+              {!batching && (
+                <Tooltip
+                  label={
+                    selectedEligibleCount === 0
+                      ? tr('header.convertSelectedEmptyHint')
+                      : tr('header.convertSelectedHint')
+                  }
+                  align="end"
+                />
+              )}
+            </div>
             <button
               type="button"
               data-testid="export-open"

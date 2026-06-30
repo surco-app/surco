@@ -24,6 +24,7 @@
     "add": "Add files",
     "convert": "Convert",
     "convertSelectedHint": "Convert the selected tracks",
+    "convertSelectedEmptyHint": "Select tracks in the list to convert them",
     "batchConverted": "{{count}} converted",
     "batchSkipped": "{{count}} skipped",
     "batchFailed": "{{count}} failed",
