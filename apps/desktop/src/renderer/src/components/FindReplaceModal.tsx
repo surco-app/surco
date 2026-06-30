@@ -106,19 +106,46 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
           <span className="mb-1 block text-xs font-medium text-fg-dim">
             {tr('findReplace.find')}
           </span>
-          <input
-            ref={findInputRef}
-            data-testid="find-replace-find"
-            value={find}
-            onChange={(e) => setFind(e.target.value)}
-            aria-invalid={badRegex}
-            spellCheck={false}
-            className={`w-full rounded-lg border bg-[var(--color-field)] px-3 py-2 text-sm outline-none ${
+          {/* In regex mode the delimiter slashes frame the field as chrome, not text the user
+              types — so /Shake/ never gets searched literally (it wouldn't match) and it's
+              obvious the field is a pattern. The slashes are pointer-events-none and live
+              outside the value, so the bare pattern is what compiles. */}
+          <div
+            className={`flex items-center rounded-lg border bg-[var(--color-field)] ${
               badRegex
-                ? 'border-danger focus:border-danger'
-                : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
-            } ${regex ? 'font-mono' : ''}`}
-          />
+                ? 'border-danger focus-within:border-danger'
+                : 'border-[var(--color-line)] focus-within:border-[var(--color-accent)]'
+            }`}
+          >
+            {regex && (
+              <span
+                data-testid="find-replace-regex-slashes"
+                aria-hidden="true"
+                className="pointer-events-none select-none pl-3 font-mono text-fg-faint text-sm"
+              >
+                /
+              </span>
+            )}
+            <input
+              ref={findInputRef}
+              data-testid="find-replace-find"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              aria-invalid={badRegex}
+              spellCheck={false}
+              className={`min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none ${
+                regex ? 'pr-1 pl-1.5 font-mono' : ''
+              }`}
+            />
+            {regex && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none select-none pr-3 font-mono text-fg-faint text-sm"
+              >
+                /
+              </span>
+            )}
+          </div>
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-fg-dim">

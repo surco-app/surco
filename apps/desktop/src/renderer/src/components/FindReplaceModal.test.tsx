@@ -92,6 +92,25 @@ describe('FindReplaceModal', () => {
     expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'snap (kumara)' } }])
   })
 
+  // The delimiter slashes are part of the field's chrome in regex mode (so the user writes
+  // the pattern alone and never wonders whether to type /.../), and gone in plain mode —
+  // they aren't part of the value, so the pattern still matches the bare text.
+  it('frames the find field with regex delimiter slashes only in regex mode', () => {
+    renderModal([track('a', { title: 'anything' })])
+    expect(screen.queryByTestId('find-replace-regex-slashes')).toBeNull()
+    fireEvent.click(screen.getByTestId('find-replace-regex'))
+    expect(screen.getByTestId('find-replace-regex-slashes')).toBeInTheDocument()
+  })
+
+  it('matches the bare pattern in regex mode, with the slashes only visual', () => {
+    const { onApply } = renderModal([track('a', { title: 'Shake it' })])
+    fireEvent.click(screen.getByTestId('find-replace-regex'))
+    type('find-replace-find', 'Shake')
+    type('find-replace-replace', 'Move')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'Move it' } }])
+  })
+
   // A typo in the pattern must not let the user fire a no-op (or a throw); the button stays
   // off and the field is flagged until the regex compiles.
   it('disables apply and flags an invalid regex', () => {
