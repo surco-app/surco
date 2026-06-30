@@ -530,6 +530,18 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.26",
+        "date": "June 30, 2026",
+        "title": "A redesigned player and cleaner everywhere",
+        "items": [
+          "The playing track's card has been rebuilt: the title now gets its own line so it stops getting cut off, the artwork and controls sit balanced beside it, and the buttons are grouped by what they do — play, loop and waveform, close.",
+          "The track list and the player now always show the file's own cover, never a different image you're trying out in the editor — and applying a Discogs release only swaps your artwork when you've asked it to.",
+          "The Discogs search box gains a magnifier and a one-click clear, matching the track filter.",
+          "Tooltips across the app now match Surco's dark theme instead of the plain system ones, and the toolbar reads calmer with lighter icon buttons.",
+          "The audio quality spectrum for the track you've selected now draws right away, even while a whole-crate match is running in the background."
+        ]
+      },
+      {
         "version": "0.25",
         "date": "June 28, 2026",
         "title": "Load new downloads without dragging the folder again",
