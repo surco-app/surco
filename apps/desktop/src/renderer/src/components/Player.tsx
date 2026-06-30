@@ -411,9 +411,10 @@ function VolumeButton({
         className={`h-3.5 w-3.5 transition-colors ${volume < 1 ? 'text-fg-faint' : 'text-fg-dim'}`}
         aria-hidden="true"
       />
-      {/* The slider lives in the layout (so it reserves no width when idle) and reveals on
-          hover/focus-within; pointer-events gate it so it can't be grabbed while invisible. */}
-      <span className="pointer-events-none ml-1 w-0 overflow-hidden opacity-0 transition-[width,opacity] duration-200 group-hover/vol:pointer-events-auto group-hover/vol:w-16 group-hover/vol:opacity-100 group-focus-within/vol:pointer-events-auto group-focus-within/vol:w-16 group-focus-within/vol:opacity-100">
+      {/* The slider floats in a popover anchored above the icon — out of the flow, so it
+          never shoves the progress bar sideways as it appears. The icon holds a fixed spot;
+          the panel reveals on hover/focus-within and pointer-events gate it while hidden. */}
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 rounded-md border border-[var(--color-line)] bg-[var(--color-panel-2)] px-2 py-1.5 opacity-0 shadow-md transition-opacity duration-150 group-hover/vol:pointer-events-auto group-hover/vol:opacity-100 group-focus-within/vol:pointer-events-auto group-focus-within/vol:opacity-100">
         <input
           type="range"
           data-testid="player-volume-slider"
@@ -423,7 +424,7 @@ function VolumeButton({
           step={0.01}
           value={volume}
           onChange={(e) => onSetVolume(Number(e.target.value))}
-          className="player-volume-range h-1 w-16 cursor-pointer align-middle"
+          className="player-volume-range block h-1 w-20 cursor-pointer"
         />
       </span>
     </span>
