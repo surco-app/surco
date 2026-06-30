@@ -185,9 +185,9 @@ export const Toolbar = memo(function Toolbar({
               onClick={matching ? onCancelAutoMatch : onAutoMatch}
               disabled={!matching && (!hasToken || autoMatchable === 0)}
               aria-label={tr('header.autoMatch')}
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
-                  ? 'min-w-[3.25rem] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
                   : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
@@ -217,9 +217,9 @@ export const Toolbar = memo(function Toolbar({
               onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
               disabled={!analysis && allAnalyzed}
               aria-label={tr('header.analyzeQuality')}
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 analysis
-                  ? 'min-w-[3.25rem] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
                   : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
