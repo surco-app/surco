@@ -211,7 +211,9 @@ describe('Player', () => {
     )
     expect(screen.queryByTestId('waveform')).toBeNull()
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
-    expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
+    // The volume collapses to a button whose slider pops on hover, so the whole row width
+    // goes to the progress bar — the slider is still present and reflects the level.
+    expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.5')
   })
 
   // That row keeps the track scrubbable without the waveform: a click seeks proportionally.

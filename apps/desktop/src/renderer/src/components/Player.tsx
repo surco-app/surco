@@ -353,48 +353,80 @@ export function Player({
             </span>
           </div>
         ) : (
-          // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
-          // the clock — the info the waveform overlay carried — and its bottom padding balances
-          // the card so the row above isn't left hugging the edge.
-          // No waveform: the progress bar gets the full width on its own line (like the
-          // waveform does) with the clock beside it, and the volume sits on a slim line
-          // below — sharing one row left the bar a cramped middle slice.
-          <div className="flex flex-col gap-1.5 px-3 pt-2 pb-3 text-[10px] text-fg-dim tabular-nums">
-            <div className="flex items-center gap-2.5">
-              {/* The visible track is 4px, but the button is taller with a centered bar
-                  inside, so the clickable target clears the 40px-ish comfort zone — a thin
-                  6px bar was fiddly to hit mid-set. */}
-              <button
-                type="button"
-                data-testid="player-seek"
-                aria-label={t('player.seek')}
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
-                }}
-                className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
-              >
-                <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
-                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-                  />
-                </span>
-              </button>
-              <span data-testid="player-time" className="shrink-0">
-                {formatTime(currentTime)} / {formatTime(duration)}
+          // No waveform: one compact line — a volume button that pops its slider on hover, the
+          // progress bar taking the whole middle, and the clock at the end. No second row and
+          // no empty space where the waveform used to be, so the player shrinks to a tidy
+          // transport bar instead of holding the wave's height with thin controls.
+          <div className="flex items-center gap-2.5 px-3 pt-1.5 pb-2.5 text-[10px] text-fg-dim tabular-nums">
+            <VolumeButton volume={volume} onSetVolume={onSetVolume} label={t('player.volume')} />
+            {/* The visible track is 4px, but the button is taller with a centered bar inside,
+                so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
+                fiddly to hit mid-set. */}
+            <button
+              type="button"
+              data-testid="player-seek"
+              aria-label={t('player.seek')}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
+              }}
+              className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
+            >
+              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
+                <span
+                  className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+                  style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                />
               </span>
-            </div>
-            <VolumePill
-              volume={volume}
-              onSetVolume={onSetVolume}
-              label={t('player.volume')}
-              className="shrink-0"
-            />
+            </button>
+            <span data-testid="player-time" className="shrink-0">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+// The no-waveform line's volume control: just a speaker glyph until hovered, then a slider
+// pops out beside it. Keeping it collapsed hands the whole row width to the progress bar —
+// the wheel-free slider still means volume never hijacks a scroll meant for the track list,
+// and a turned-down level shows as a dimmer icon so the collapsed state isn't a black box.
+function VolumeButton({
+  volume,
+  onSetVolume,
+  label,
+}: {
+  volume: number
+  onSetVolume: (value: number) => void
+  label: string
+}): React.JSX.Element {
+  return (
+    <span
+      data-testid="player-volume-pill"
+      className="group/vol relative flex shrink-0 items-center"
+    >
+      <Volume2
+        className={`h-3.5 w-3.5 transition-colors ${volume < 1 ? 'text-fg-faint' : 'text-fg-dim'}`}
+        aria-hidden="true"
+      />
+      {/* The slider lives in the layout (so it reserves no width when idle) and reveals on
+          hover/focus-within; pointer-events gate it so it can't be grabbed while invisible. */}
+      <span className="pointer-events-none ml-1 w-0 overflow-hidden opacity-0 transition-[width,opacity] duration-200 group-hover/vol:pointer-events-auto group-hover/vol:w-16 group-hover/vol:opacity-100 group-focus-within/vol:pointer-events-auto group-focus-within/vol:w-16 group-focus-within/vol:opacity-100">
+        <input
+          type="range"
+          data-testid="player-volume-slider"
+          aria-label={label}
+          min={0}
+          max={1}
+          step={0.01}
+          value={volume}
+          onChange={(e) => onSetVolume(Number(e.target.value))}
+          className="player-volume-range h-1 w-16 cursor-pointer align-middle"
+        />
+      </span>
+    </span>
   )
 }
 
