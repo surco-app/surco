@@ -129,10 +129,10 @@ export const Toolbar = memo(function Toolbar({
             className="group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)]"
           >
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {importing.done}/{importing.total}
-            <Tooltip
-              label={tr('header.importingCount', { done: importing.done, total: importing.total })}
-            />
+            {/* The spinner alone doesn't say which sweep this is (the sparkles/activity
+                buttons identify themselves by icon, but a generic loader can't), so the import
+                pill names its phase inline rather than hiding it in a hover tooltip. */}
+            {tr('header.importingCount', { done: importing.done, total: importing.total })}
           </span>
         )}
         <button
