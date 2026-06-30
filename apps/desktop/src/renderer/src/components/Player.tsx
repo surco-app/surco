@@ -221,14 +221,14 @@ export function Player({
             data-testid="player-cover"
             src={track.embeddedCover}
             alt=""
-            className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            className="h-11 w-11 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (
           <span
             data-testid="player-cover-placeholder"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
           >
-            <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
+            <Music className="h-5 w-5 text-fg-faint" aria-hidden="true" />
           </span>
         )}
 
