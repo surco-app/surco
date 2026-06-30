@@ -311,6 +311,16 @@ describe('dedupeResults', () => {
     expect(out.map((r) => r.id)).toEqual([1, 2, 3])
   })
 
+  // The catalogue number is now shown and is the surest way to tell two pressings apart, so
+  // editions that differ only by catno are distinct rows, not duplicates to collapse.
+  it('keeps pressings that differ only by catalogue number', () => {
+    const out = dedupeResults([
+      result({ id: 1, title: 'Discovery', year: '2001', label: ['Virgin'], catno: 'V-1' }),
+      result({ id: 2, title: 'Discovery', year: '2001', label: ['Virgin'], catno: 'V-2' }),
+    ])
+    expect(out.map((r) => r.id)).toEqual([1, 2])
+  })
+
   it('search collapses duplicate editions from the response', async () => {
     mockFetch([
       { id: 1, title: 'Dup', year: '2001', label: ['L'], format: ['Vinyl'] },

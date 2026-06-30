@@ -123,9 +123,13 @@ export function dedupeResults(results: SearchResult[]): SearchResult[] {
   const seen = new Set<string>()
   const out: SearchResult[] = []
   for (const r of results) {
-    const key = [r.title, r.year ?? '', (r.label ?? []).join(','), (r.format ?? []).join(',')].join(
-      ' ',
-    )
+    const key = [
+      r.title,
+      r.year ?? '',
+      (r.label ?? []).join(','),
+      (r.format ?? []).join(','),
+      r.catno ?? '',
+    ].join(' ')
     if (seen.has(key)) continue
     seen.add(key)
     out.push(r)

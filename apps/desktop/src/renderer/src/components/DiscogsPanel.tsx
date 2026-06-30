@@ -257,14 +257,20 @@ export function DiscogsPanel({
               const suggested = suggestedKey === rk
               const loaded = expanded && !!release && !loading
               return (
-                <div key={rk} className="border-b border-[var(--color-line)]/60">
+                <div key={rk} className="px-1.5 pt-1.5">
+                  {/* Result as a card, matching the track list's rows so both columns read as the
+                      same component. The wide column earns the title a full two lines instead of a
+                      hard cut, and the release line shows year · label · catalogue no · format in
+                      full — the catalogue number being the surest way to tell pressings apart. */}
                   <button
                     type="button"
                     data-testid="discogs-result"
                     aria-expanded={expanded}
                     onClick={() => previewRelease(r)}
-                    className={`group relative flex w-full items-center gap-3 p-2.5 text-left hover:bg-[var(--color-panel-2)] ${
-                      expanded ? 'bg-[var(--color-accent-soft)]' : ''
+                    className={`press group relative flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+                      expanded
+                        ? 'bg-[var(--color-accent-soft)]/85'
+                        : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
                     }`}
                   >
                     {r.thumb ? (
@@ -278,10 +284,10 @@ export function DiscogsPanel({
                       <div className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span data-fit className="block truncate text-sm">
+                      <span data-fit className="block text-sm leading-snug">
                         {r.title}
                       </span>
-                      <span className="mt-0.5 flex items-center gap-1.5">
+                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
                         <span
                           data-testid="result-provider"
                           data-provider={r.provider}
@@ -297,14 +303,16 @@ export function DiscogsPanel({
                             {tr('editor.matchSuggested')}
                           </span>
                         )}
-                        <span className="truncate text-xs text-fg-dim">
-                          {[r.year, r.label?.[0], r.format?.join(', ')].filter(Boolean).join(' · ')}
-                        </span>
+                      </span>
+                      <span className="mt-1 block text-xs text-fg-dim leading-snug">
+                        {[r.year, r.label?.join(' · '), r.catno, r.format?.join(', ')]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </span>
                     </span>
                     <ChevronRight
                       aria-hidden="true"
-                      className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
+                      className={`mt-0.5 h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
                     />
                     <Tooltip label={tr('editor.resultHint')} align="start" />
                   </button>

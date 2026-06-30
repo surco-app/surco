@@ -169,6 +169,9 @@ export interface SearchResult {
   cover_image?: string
   format?: string[]
   label?: string[]
+  // The release's catalogue number (e.g. "DNA-2034"), the surest way to tell two pressings
+  // apart in the results. Discogs returns it in the search JSON; absent for Bandcamp.
+  catno?: string
   // Bandcamp releases are fetched by their page URL, not a numeric id; unset for
   // Discogs, which loads by `id`.
   releaseUrl?: string
