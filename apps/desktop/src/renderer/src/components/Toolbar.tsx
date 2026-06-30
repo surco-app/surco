@@ -151,7 +151,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="select-all"
               onClick={onSelectAll}
               aria-label={tr('header.selectAll')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             >
               <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} align="end" />
@@ -161,7 +161,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="fill-all"
               onClick={onFillAll}
               aria-label={tr('header.fillFromName')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             >
               <Tag className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.fillFromName')} align="end" />
@@ -171,7 +171,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="open-find-replace"
               onClick={onFindReplace}
               aria-label={tr('commands.findReplace')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             >
               <Search className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('commands.findReplace')} align="end" />
@@ -188,7 +188,7 @@ export const Toolbar = memo(function Toolbar({
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
                   ? 'min-w-[3.25rem] border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+                  : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
               <Sparkles
@@ -220,7 +220,7 @@ export const Toolbar = memo(function Toolbar({
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 analysis
                   ? 'min-w-[3.25rem] border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'w-8 border-[var(--color-line)] text-fg-muted hover:text-fg'
+                  : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
               <Activity
@@ -284,7 +284,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="export-open"
               onClick={onExport}
               aria-label={tr('header.export')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             >
               <Upload className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.export')} align="end" />
@@ -295,7 +295,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="clear-all"
               onClick={onClearAll}
               aria-label={tr('header.clearAll')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
+              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.clearAll')} align="end" />
@@ -307,7 +307,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-palette"
           onClick={onPalette}
-          className="press flex h-8 items-center gap-1 rounded-lg border border-[var(--color-line)] px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.palette')}
         >
           <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
@@ -317,7 +317,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-stats"
           onClick={onStats}
-          className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.stats')}
         >
           <ChartColumn className="h-4 w-4" aria-hidden="true" />
@@ -326,7 +326,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-activity"
           onClick={onActivity}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.activity')}
         >
           <Radio className="h-4 w-4" aria-hidden="true" />
@@ -340,7 +340,7 @@ export const Toolbar = memo(function Toolbar({
           data-testid="open-settings"
           // Call with no args so React's click event can't reach the opener as its tab.
           onClick={() => onSettings()}
-          className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.settings')}
         >
           <SettingsIcon className="h-4 w-4" aria-hidden="true" />
