@@ -284,7 +284,7 @@ export function DiscogsPanel({
                       <div className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span data-fit className="block text-sm leading-snug">
+                      <span data-fit className="block truncate text-sm leading-snug">
                         {r.title}
                       </span>
                       <span className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -304,8 +304,12 @@ export function DiscogsPanel({
                           </span>
                         )}
                       </span>
-                      <span className="mt-1 block text-xs text-fg-dim leading-snug">
-                        {[r.year, r.label?.join(' · '), r.catno, r.format?.join(', ')]
+                      {/* Curated, not raw: the first label only (Discogs' label[] also lists
+                          publishers, distributors and studios — a wall of noise), and just the
+                          base format (medium + size, e.g. "Vinyl, 12\"") dropping RPM/Single/
+                          Stereo. Truncates so one long row can't blow up the card's height. */}
+                      <span className="mt-1 block truncate text-xs text-fg-dim leading-snug">
+                        {[r.year, r.label?.[0], r.catno, r.format?.slice(0, 2).join(', ')]
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
