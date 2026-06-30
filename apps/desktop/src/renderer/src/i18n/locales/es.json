@@ -590,6 +590,8 @@
     "fillTitle": "¿Rellenar tags desde el nombre?",
     "fillMessage_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en 1 pista. El resto de tags no se toca.",
     "fillMessage_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de tags no se toca.",
+    "fillMessageSelected_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en 1 pista seleccionada. El resto de tags no se toca.",
+    "fillMessageSelected_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas seleccionadas. El resto de tags no se toca.",
     "fillNone": "Ningún nombre encaja con un patrón conocido, así que no hay nada que rellenar.",
     "fillConfirm": "Rellenar tags",
     "clearTitle": "¿Vaciar la lista?",

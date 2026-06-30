@@ -590,6 +590,8 @@
     "fillTitle": "Fill tags from file names?",
     "fillMessage_one": "This reads the title, artist and track number from the file’s name and overwrites those fields in 1 track. Other tags are left untouched.",
     "fillMessage_other": "This reads the title, artist and track number from each file’s name and overwrites those fields in {{count}} tracks. Other tags are left untouched.",
+    "fillMessageSelected_one": "This reads the title, artist and track number from the file’s name and overwrites those fields in 1 selected track. Other tags are left untouched.",
+    "fillMessageSelected_other": "This reads the title, artist and track number from each file’s name and overwrites those fields in {{count}} selected tracks. Other tags are left untouched.",
     "fillNone": "None of the file names match a known pattern, so there is nothing to fill.",
     "fillConfirm": "Fill tags",
     "clearTitle": "Clear the list?",

@@ -821,7 +821,12 @@ export default function App(): React.JSX.Element {
   // call — so an inline-style body can still read current state.
   const onAdd = useStableCallback(() => void pickFiles())
   const onSelectAllTracks = useStableCallback(selectAll)
-  const onFillAll = useStableCallback(askFillAll)
+  // Fill from filename targets the selection when there is one, else the whole list — the
+  // same "selected, or all" rule the convert action uses, so a click never silently rewrites
+  // tracks the user wasn't looking at.
+  const onFillAll = useStableCallback(() =>
+    selectedTracks.length > 0 ? askFillAll(selectedTracks, 'selected') : askFillAll(tracks, 'all'),
+  )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
@@ -954,7 +959,7 @@ export default function App(): React.JSX.Element {
       searchInputRef,
       pickFiles: () => void pickFiles(),
       selectAll,
-      askFillAll,
+      askFillAll: onFillAll,
       moveSelection,
       jumpSelection,
       pageSelection,

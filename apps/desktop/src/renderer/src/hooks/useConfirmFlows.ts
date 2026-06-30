@@ -27,7 +27,7 @@ interface Params {
 export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
-  askFillAll: () => void
+  askFillAll: (targets: TrackItem[], scope: 'selected' | 'all') => void
   askClearAll: () => void
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
 }
@@ -101,25 +101,33 @@ export function useConfirmFlows({
     })
   }
 
-  // Fills every loaded track's tags from its own file name — the mouse-driven counterpart
-  // of the editor's per-track "Fill from filename", for cleaning a whole import at once.
-  function deriveAll(): void {
-    const patches = tracks
+  // Fills the given tracks' tags from their own file names — the mouse-driven counterpart
+  // of the editor's per-track "Fill from filename", for cleaning a whole import (or just the
+  // selected rows) at once.
+  function deriveFrom(targets: TrackItem[]): void {
+    const patches = targets
       .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
       .filter((p) => Object.keys(p.meta).length > 0)
     if (patches.length) deriveTracks(patches)
   }
 
-  // Fill-all and Clear-all both overwrite/discard work across the whole list, so they ask
-  // first rather than firing on the click; the dialog spells out exactly what changes.
-  function askFillAll(): void {
-    const count = tracks.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
+  // Fill-all and Clear-all both overwrite/discard work, so they ask first rather than firing
+  // on the click; the dialog spells out exactly what changes. Targets is the selection when
+  // the user has one, else the whole list — App decides which, so the copy reads "selected"
+  // vs "all" accordingly.
+  function askFillAll(targets: TrackItem[], scope: 'selected' | 'all'): void {
+    const count = targets.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
     openConfirm({
       title: tr('confirm.fillTitle'),
-      message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
+      message:
+        count > 0
+          ? tr(scope === 'selected' ? 'confirm.fillMessageSelected' : 'confirm.fillMessage', {
+              count,
+            })
+          : tr('confirm.fillNone'),
       confirmLabel: tr('confirm.fillConfirm'),
       confirmDisabled: count === 0,
-      onConfirm: deriveAll,
+      onConfirm: () => deriveFrom(targets),
     })
   }
 
