@@ -3,12 +3,8 @@ import {
   ChartColumn,
   Loader2,
   Radio,
-  Search,
   Settings as SettingsIcon,
   Sparkles,
-  SquareCheckBig,
-  Tag,
-  Trash2,
   Upload,
 } from 'lucide-react'
 import type React from 'react'
@@ -37,9 +33,6 @@ interface Props {
   autoMatchable: number
   selectedEligibleCount: number
   onAdd: () => void
-  onSelectAll: () => void
-  onFillAll: () => void
-  onFindReplace: () => void
   onAnalyzeAll: () => void
   onCancelAnalyze: () => void
   onAutoMatch: () => void
@@ -47,7 +40,6 @@ interface Props {
   onConvertSelected: () => void
   onCancelConvert: () => void
   onExport: () => void
-  onClearAll: () => void
   onPalette: () => void
   onStats: () => void
   onActivity: () => void
@@ -76,9 +68,6 @@ export const Toolbar = memo(function Toolbar({
   autoMatchable,
   selectedEligibleCount,
   onAdd,
-  onSelectAll,
-  onFillAll,
-  onFindReplace,
   onAnalyzeAll,
   onCancelAnalyze,
   onAutoMatch,
@@ -86,7 +75,6 @@ export const Toolbar = memo(function Toolbar({
   onConvertSelected,
   onCancelConvert,
   onExport,
-  onClearAll,
   onPalette,
   onStats,
   onActivity,
@@ -145,39 +133,9 @@ export const Toolbar = memo(function Toolbar({
         </button>
         {trackCount > 0 && (
           <>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            <button
-              type="button"
-              data-testid="select-all"
-              onClick={onSelectAll}
-              aria-label={tr('header.selectAll')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-            >
-              <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('header.selectAll')} align="end" />
-            </button>
-            <button
-              type="button"
-              data-testid="fill-all"
-              onClick={onFillAll}
-              aria-label={tr('header.fillFromName')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-            >
-              <Tag className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('header.fillFromName')} align="end" />
-            </button>
-            <button
-              type="button"
-              data-testid="open-find-replace"
-              onClick={onFindReplace}
-              aria-label={tr('commands.findReplace')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-            >
-              <Search className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('commands.findReplace')} align="end" />
-            </button>
-            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps, so they
-                share a group, set apart from the per-tag edit tools before them. */}
+            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps. The
+                per-list edit tools (select/fill/find/clear) now live in the list's own header,
+                next to the sort, so the toolbar keeps only crate-wide and global actions. */}
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             <button
               type="button"
@@ -288,17 +246,6 @@ export const Toolbar = memo(function Toolbar({
             >
               <Upload className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.export')} align="end" />
-            </button>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            <button
-              type="button"
-              data-testid="clear-all"
-              onClick={onClearAll}
-              aria-label={tr('header.clearAll')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-danger"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('header.clearAll')} align="end" />
             </button>
           </>
         )}

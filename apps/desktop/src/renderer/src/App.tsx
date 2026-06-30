@@ -7,6 +7,10 @@ import {
   CaseSensitive,
   Clock,
   FileAudio,
+  Search,
+  SquareCheckBig,
+  Tag,
+  Trash2,
   User,
 } from 'lucide-react'
 import type React from 'react'
@@ -1044,9 +1048,6 @@ export default function App(): React.JSX.Element {
           autoMatchable={autoMatchable}
           selectedEligibleCount={selectedEligibleCount}
           onAdd={onAdd}
-          onSelectAll={onSelectAllTracks}
-          onFillAll={onFillAll}
-          onFindReplace={onFindReplace}
           onAnalyzeAll={onAnalyzeAll}
           onCancelAnalyze={cancelAnalysis}
           onAutoMatch={onAutoMatchAll}
@@ -1054,7 +1055,6 @@ export default function App(): React.JSX.Element {
           onConvertSelected={onConvertSelected}
           onCancelConvert={onCancelConvert}
           onExport={onOpenExport}
-          onClearAll={onClearAll}
           onPalette={onOpenPalette}
           onStats={onOpenStats}
           onActivity={() => setActivityOpen((v) => !v)}
@@ -1136,6 +1136,57 @@ export default function App(): React.JSX.Element {
                           )}
                         />
                       </button>
+                    )}
+                    {/* List actions live in the list's own header, beside the sort, since they
+                        all operate on these rows — not in the global toolbar where it wasn't
+                        clear which column they touched. A hairline sets them off from the sort. */}
+                    {tracks.length > 0 && (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+                        />
+                        <button
+                          type="button"
+                          data-testid="select-all"
+                          onClick={onSelectAllTracks}
+                          aria-label={tr('header.selectAll')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.selectAll')} />
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="fill-all"
+                          onClick={onFillAll}
+                          aria-label={tr('header.fillFromName')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <Tag className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.fillFromName')} />
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="open-find-replace"
+                          onClick={onFindReplace}
+                          aria-label={tr('commands.findReplace')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <Search className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('commands.findReplace')} />
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="clear-all"
+                          onClick={onClearAll}
+                          aria-label={tr('header.clearAll')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.clearAll')} />
+                        </button>
+                      </>
                     )}
                   </QualityFilterBar>
                 </div>
