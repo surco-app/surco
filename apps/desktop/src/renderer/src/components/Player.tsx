@@ -211,46 +211,47 @@ export function Player({
       onPointerLeave={() => setHovered(false)}
       className="group/player absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
     >
-      {/* Identity row: cover and the full track name, with every control grouped in
-          one cluster on the right. The clock lives down on the waveform, so the name
-          keeps the whole middle. */}
-      <div className="flex items-center gap-3 px-3 pt-3">
+      {/* Identity row: the track is the headline. A small cover, the title big and the
+          artist under it carry the weight; the controls shrink to bare ghost glyphs on the
+          right so they never out-shout what's playing. An active toggle (loop/waveform)
+          shows as a coloured icon, not a boxed chip. */}
+      <div className="flex items-center gap-2.5 px-3 pt-2.5">
         {track.embeddedCover ? (
           <img
             data-testid="player-cover"
             src={track.embeddedCover}
             alt=""
-            className="h-10 w-10 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            className="h-8 w-8 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (
           <span
             data-testid="player-cover-placeholder"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
           >
-            <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
+            <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
           </span>
         )}
 
         <span data-testid="player-title" className="min-w-0 flex-1">
-          <MarqueeText className="font-medium text-sm leading-snug">
+          <MarqueeText className="font-semibold text-[15px] leading-tight">
             {track.meta.title || track.fileName}
           </MarqueeText>
-          <span className="block truncate text-fg-dim text-xs leading-snug">
+          <span className="block truncate text-fg-dim text-xs leading-tight">
             {track.meta.artist}
           </span>
         </span>
 
-        {/* The play/pause is the one action the user is looking for, so it carries a tinted
-            chip; the rest stay quiet ghost icons that only fill on hover. Each control is a
-            36px target with a 40px hit area extended via the pseudo-element below. */}
-        <div className="-mr-0.5 flex shrink-0 items-center gap-0.5">
+        {/* Bare ghost glyphs: no chip, no box. The play is the same weight as the rest —
+            the title is what should draw the eye. Hover gives a faint background; an active
+            loop/waveform tints just the glyph. */}
+        <div className="-mr-1 flex shrink-0 items-center">
           <button
             type="button"
             data-testid="player-toggle"
             onClick={onToggle}
             aria-label={paused ? t('player.play') : t('player.pause')}
             aria-busy={!paused && loading}
-            className="press relative flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/25"
+            className="press flex h-8 w-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
           >
             {paused ? (
               // The play triangle is optically left-heavy, so nudge it right to sit centered.
@@ -279,8 +280,8 @@ export function Player({
             onClick={onToggleContinuous}
             aria-label={t('player.continuous')}
             aria-pressed={continuous}
-            className={`press relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-line-strong)] ${
-              continuous ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
+            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+              continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
             }`}
           >
             <InfinityIcon className="h-4 w-4" aria-hidden="true" />
@@ -293,8 +294,8 @@ export function Player({
             onClick={onToggleWaveform}
             aria-label={t('player.waveform')}
             aria-pressed={showWaveform}
-            className={`press relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-line-strong)] ${
-              showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
+            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+              showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
             }`}
           >
             <AudioLines className="h-4 w-4" aria-hidden="true" />
@@ -306,7 +307,7 @@ export function Player({
             data-testid="player-close"
             onClick={onClose}
             aria-label={t('player.close')}
-            className="press flex h-9 w-9 items-center justify-center rounded-lg text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+            className="press flex h-8 w-8 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
