@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, ListFilter } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -200,14 +200,26 @@ export function DiscogsPanel({
                 />
               )}
               {formatFilter.length > 0 && (
-                <p
+                // A format filter is a Settings preference, not something to repeat as a
+                // line of text on every search — a discreet funnel flags it's on (so a thin
+                // result list reads as the filter, not a broken search), names the formats on
+                // hover, and clicking jumps to where it's changed.
+                <button
+                  type="button"
                   data-testid="discogs-format-filter"
-                  className="min-w-0 truncate text-xs text-fg-dim"
-                >
-                  {tr('editor.formatFilter', {
+                  onClick={() => onOpenSettings('search')}
+                  aria-label={tr('editor.formatFilter', {
                     formats: formatFilter.map((f) => tr(`settings.format.${f}`)).join(', '),
                   })}
-                </p>
+                  className="press relative ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded text-[var(--color-accent)] transition-colors hover:bg-[var(--color-line-strong)]"
+                >
+                  <ListFilter className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Tooltip
+                    label={tr('editor.formatFilter', {
+                      formats: formatFilter.map((f) => tr(`settings.format.${f}`)).join(', '),
+                    })}
+                  />
+                </button>
               )}
             </div>
           )}

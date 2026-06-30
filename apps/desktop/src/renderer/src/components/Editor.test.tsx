@@ -2074,16 +2074,29 @@ describe('Editor insert from field', () => {
 })
 
 describe('Editor Discogs format filter hint', () => {
-  // When a format filter is active (Settings → Search), the Discogs column says so, so a
-  // thinned or empty result list reads as the filter at work rather than a broken search.
-  it('shows which formats results are limited to when a filter is set', () => {
+  // When a format filter is active (Settings → Search), the Discogs column flags it with a
+  // discreet funnel icon, so a thinned or empty result list reads as the filter at work
+  // rather than a broken search — without a line of text repeating a setting the user chose.
+  it('flags an active format filter with the funnel control, naming the formats on hover', async () => {
     renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl', 'CD'] })
-    const hint = screen.getByTestId('discogs-format-filter')
-    expect(hint).toHaveTextContent('Vinyl')
-    expect(hint).toHaveTextContent('CD')
+    const filter = screen.getByTestId('discogs-format-filter')
+    expect(filter).toBeInTheDocument()
+    // The formats live in the themed tooltip, surfaced on hover, not as always-on text.
+    filter.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }))
+    const tip = await screen.findByRole('tooltip')
+    expect(tip).toHaveTextContent('Vinyl')
+    expect(tip).toHaveTextContent('CD')
   })
 
-  it('shows no format hint when no filter is set', () => {
+  // The filter is a Settings preference, so the control takes the user to where it's
+  // changed rather than clearing it from under them.
+  it('opens Settings → Search when the filter control is clicked', () => {
+    const { onOpenSettings } = renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl'] })
+    fireEvent.click(screen.getByTestId('discogs-format-filter'))
+    expect(onOpenSettings).toHaveBeenCalledWith('search')
+  })
+
+  it('shows no format control when no filter is set', () => {
     renderEditor({ id: 'a' }, 'wav', { discogsFormats: [] })
     expect(screen.queryByTestId('discogs-format-filter')).toBeNull()
   })
