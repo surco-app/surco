@@ -1289,7 +1289,9 @@ describe('Editor Discogs apply', () => {
     // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the Tooltip's
     // listener with a real MouseEvent dispatched as a pointermove, then wait out its
     // hover delay.
-    titleSpan.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }))
+    titleSpan.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
+    )
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Track One')
   })
 
@@ -1408,7 +1410,11 @@ describe('Editor Discogs apply', () => {
   // a track keeps it and ignores the release's image.
   it('keeps an existing cover when applying a release', async () => {
     withImages()
-    const { onChange } = renderEditor({ id: 'a', coverUrl: 'embedded.jpg' })
+    const { onChange } = renderEditor({
+      id: 'a',
+      coverUrl: 'embedded.jpg',
+      embeddedCover: 'embedded.jpg',
+    })
     await search()
     fireEvent.click(screen.getByTestId('discogs-result'))
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
@@ -1421,7 +1427,7 @@ describe('Editor Discogs apply', () => {
   // flagged, never auto-replaced, unless the user opts in (see next test).
   it('keeps a low-res cover by default when applying a release', async () => {
     withImages()
-    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg' })
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg', embeddedCover: 'tiny.jpg' })
     const img = screen.getByTestId('cover-preview')
     Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
     Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })
@@ -1436,13 +1442,46 @@ describe('Editor Discogs apply', () => {
   // release image so the track ends up with sharper art.
   it('replaces a low-res cover with the release image when the setting is on', async () => {
     withImages()
-    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg' }, 'wav', {
-      replaceLowResCover: true,
-    })
+    const { onChange } = renderEditor(
+      { id: 'a', coverUrl: 'tiny.jpg', embeddedCover: 'tiny.jpg' },
+      'wav',
+      {
+        replaceLowResCover: true,
+      },
+    )
     const img = screen.getByTestId('cover-preview')
     Object.defineProperty(img, 'naturalWidth', { value: 200, configurable: true })
     Object.defineProperty(img, 'naturalHeight', { value: 200, configurable: true })
     fireEvent.load(img)
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
+  })
+
+  // The user's nuance: once a release image has replaced the original (coverUrl no longer
+  // equals embeddedCover), there's none of the user's own art left to protect — so picking
+  // ANOTHER release swaps the cover again, even with the replace-low-res setting off. The
+  // flag guards only the file's ORIGINAL embedded cover, not a prior release image.
+  it('replaces an already-applied release cover on the next pick, setting off', async () => {
+    withImages()
+    const { onChange } = renderEditor({
+      id: 'a',
+      coverUrl: 'prev-release.jpg',
+      embeddedCover: 'embedded.jpg',
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
+  })
+
+  // A file that never had embedded art has nothing original to protect, so applying a
+  // release fills the cover from the release image (coverUrl !== embeddedCover because
+  // embeddedCover is undefined).
+  it('fills the cover from the release when the file had no embedded art', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'prev-release.jpg' })
     await search()
     fireEvent.click(screen.getByTestId('discogs-result'))
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])

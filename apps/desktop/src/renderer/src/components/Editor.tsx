@@ -351,16 +351,19 @@ export const Editor = memo(function Editor({
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
-    // Keep the file's own cover. Only when the user opts into replacing low-res art
-    // (Settings → Artwork) does a present-but-small cover get filled from the release;
-    // otherwise the file's cover always wins so a correct sleeve isn't swapped for the
-    // release's larger-but-generic image. A missing cover is always filled either way.
+    // The cover flag protects only the file's ORIGINAL embedded art. While the shown
+    // cover is still that original (coverUrl === embeddedCover), keep it — unless the user
+    // opted into replacing low-res art and this original is small, in which case the
+    // release's larger image wins. Once a previous release (or the absence of any embedded
+    // art) means the shown cover isn't the original, there's nothing of the user's to
+    // protect, so a pick always takes the release image.
+    const coverIsOriginal = !!item.coverUrl && item.coverUrl === item.embeddedCover
     onChange({
       ...buildReleaseMeta(item.meta, release, track, {
         url: item.coverUrl,
         path: item.coverPath,
         keep:
-          !!item.coverUrl &&
+          coverIsOriginal &&
           !(
             replaceLowResCover &&
             effectiveCoverDims &&
