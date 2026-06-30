@@ -13,6 +13,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
 import type { TrackItem } from '../types'
+import { MarqueeText } from './MarqueeText'
 import { Tooltip } from './Tooltip'
 import { Waveform } from './Waveform'
 
@@ -208,7 +209,7 @@ export function Player({
       data-testid="player"
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
-      className="absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
+      className="group/player absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
     >
       {/* Identity row: cover and the full track name, with every control grouped in
           one cluster on the right. The clock lives down on the waveform, so the name
@@ -230,13 +231,10 @@ export function Player({
           </span>
         )}
 
-        <span className="min-w-0 flex-1">
-          <span
-            data-testid="player-title"
-            className="block truncate font-medium text-sm leading-snug"
-          >
+        <span data-testid="player-title" className="min-w-0 flex-1">
+          <MarqueeText className="font-medium text-sm leading-snug">
             {track.meta.title || track.fileName}
-          </span>
+          </MarqueeText>
           <span className="block truncate text-fg-dim text-xs leading-snug">
             {track.meta.artist}
           </span>
