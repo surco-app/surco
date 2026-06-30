@@ -214,8 +214,10 @@ export function Player({
       {/* Cover on the left; to its right a two-line stack: the title gets a whole line of its
           own (so it rarely truncates, marquees on hover when it must), and below it the artist
           shares a line with the small control cluster. The controls are compact ghost glyphs in
-          three zones — transport (play) · hairline · the two toggles · close held apart. */}
-      <div className="flex items-center gap-2.5 px-3 pt-2.5">
+          three zones — transport (play) · hairline · the two toggles · close held apart.
+          items-start aligns the cover's top with the title (the visual anchor): the bold title
+          carries the weight up top, so centring the square cover read as if it had sagged. */}
+      <div className="flex items-start gap-2.5 px-3 pt-2.5">
         {track.embeddedCover ? (
           <img
             data-testid="player-cover"
