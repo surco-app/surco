@@ -211,10 +211,11 @@ export function Player({
       onPointerLeave={() => setHovered(false)}
       className="group/player absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
     >
-      {/* Identity row gets the whole width: cover, then the title big with the artist under
-          it. Giving the name its own line (rather than sharing it with the controls) is what
-          finally lets a long title breathe — it only marquees on hover when it truly can't
-          fit, and close lives down with the transport, not crowding the name. */}
+      {/* One compact row: cover and the headline title/artist on the left, the controls on
+          the right grouped into three zones — transport (play), the two player toggles
+          (continuous + waveform) set off by a hairline, then close held a little apart as an
+          exit, not a peer control. The title still owns the middle (marquees on hover when it
+          can't fit); the controls stay bare ghost glyphs so they never out-shout the track. */}
       <div className="flex items-center gap-2.5 px-3 pt-2.5">
         {track.embeddedCover ? (
           <img
@@ -240,86 +241,80 @@ export function Player({
             {track.meta.artist}
           </span>
         </span>
-      </div>
 
-      {/* Controls on their own row, in three semantic zones: transport (play), then the two
-          player toggles (continuous + waveform) set off by a hairline, then close pushed to
-          the far edge by the spacer — so a primary action, two settings and an exit never
-          read as peers. All bare ghost glyphs; an active toggle tints just its icon. */}
-      <div className="flex items-center gap-1 px-3 pt-2">
-        <button
-          type="button"
-          data-testid="player-toggle"
-          onClick={onToggle}
-          aria-label={paused ? t('player.play') : t('player.pause')}
-          aria-busy={!paused && loading}
-          className="press flex h-8 w-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
-        >
-          {paused ? (
-            // The play triangle is optically left-heavy, so nudge it right to sit centered.
-            <Play
-              className="h-4 w-4 translate-x-px"
-              fill="currentColor"
-              strokeWidth={0}
-              aria-hidden="true"
-            />
-          ) : loading ? (
-            // Streaming from a network drive can take seconds to deliver the first
-            // bytes; the spinner shows the click registered and the file is coming.
-            <LoaderCircle
-              data-testid="player-loading"
-              className="h-4 w-4 animate-spin"
-              aria-hidden="true"
-            />
-          ) : (
-            <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
-          )}
-        </button>
+        <div className="-mr-1 flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            data-testid="player-toggle"
+            onClick={onToggle}
+            aria-label={paused ? t('player.play') : t('player.pause')}
+            aria-busy={!paused && loading}
+            className="press flex h-8 w-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
+          >
+            {paused ? (
+              // The play triangle is optically left-heavy, so nudge it right to sit centered.
+              <Play
+                className="h-4 w-4 translate-x-px"
+                fill="currentColor"
+                strokeWidth={0}
+                aria-hidden="true"
+              />
+            ) : loading ? (
+              // Streaming from a network drive can take seconds to deliver the first
+              // bytes; the spinner shows the click registered and the file is coming.
+              <LoaderCircle
+                data-testid="player-loading"
+                className="h-4 w-4 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+            )}
+          </button>
 
-        {/* Hairline marking off the transport from the two settings toggles. */}
-        <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-[var(--color-line)]" />
+          {/* Hairline marking off the transport from the two settings toggles. */}
+          <span aria-hidden="true" className="mx-1 h-4 w-px bg-[var(--color-line)]" />
 
-        <button
-          type="button"
-          data-testid="player-continuous"
-          onClick={onToggleContinuous}
-          aria-label={t('player.continuous')}
-          aria-pressed={continuous}
-          className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-            continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
-          }`}
-        >
-          <InfinityIcon className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={t('player.continuousHelp')} />
-        </button>
+          <button
+            type="button"
+            data-testid="player-continuous"
+            onClick={onToggleContinuous}
+            aria-label={t('player.continuous')}
+            aria-pressed={continuous}
+            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+              continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+            }`}
+          >
+            <InfinityIcon className="h-4 w-4" aria-hidden="true" />
+            <Tooltip label={t('player.continuousHelp')} />
+          </button>
 
-        <button
-          type="button"
-          data-testid="player-waveform"
-          onClick={onToggleWaveform}
-          aria-label={t('player.waveform')}
-          aria-pressed={showWaveform}
-          className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-            showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
-          }`}
-        >
-          <AudioLines className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={t('player.waveformHelp')} />
-        </button>
+          <button
+            type="button"
+            data-testid="player-waveform"
+            onClick={onToggleWaveform}
+            aria-label={t('player.waveform')}
+            aria-pressed={showWaveform}
+            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+              showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+            }`}
+          >
+            <AudioLines className="h-4 w-4" aria-hidden="true" />
+            <Tooltip label={t('player.waveformHelp')} />
+          </button>
 
-        {/* The spacer pushes close to the far edge — an exit, not a control, so it sits apart
-            from the cluster and is never fat-fingered in place of a toggle. */}
-        <span className="flex-1" />
-
-        <button
-          type="button"
-          data-testid="player-close"
-          onClick={onClose}
-          aria-label={t('player.close')}
-          className="press -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-        >
-          <X className="h-4 w-4" aria-hidden="true" />
-        </button>
+          {/* Close held a touch apart — an exit, not a control, so a stray click doesn't kill
+              the player in place of a toggle. */}
+          <button
+            type="button"
+            data-testid="player-close"
+            onClick={onClose}
+            aria-label={t('player.close')}
+            className="press ml-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
@@ -361,36 +356,41 @@ export function Player({
           // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
           // the clock — the info the waveform overlay carried — and its bottom padding balances
           // the card so the row above isn't left hugging the edge.
-          <div className="flex items-center gap-3 px-3 pt-2 pb-3 text-[10px] text-fg-dim tabular-nums">
+          // No waveform: the progress bar gets the full width on its own line (like the
+          // waveform does) with the clock beside it, and the volume sits on a slim line
+          // below — sharing one row left the bar a cramped middle slice.
+          <div className="flex flex-col gap-1.5 px-3 pt-2 pb-3 text-[10px] text-fg-dim tabular-nums">
+            <div className="flex items-center gap-2.5">
+              {/* The visible track is 4px, but the button is taller with a centered bar
+                  inside, so the clickable target clears the 40px-ish comfort zone — a thin
+                  6px bar was fiddly to hit mid-set. */}
+              <button
+                type="button"
+                data-testid="player-seek"
+                aria-label={t('player.seek')}
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
+                }}
+                className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
+              >
+                <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  />
+                </span>
+              </button>
+              <span data-testid="player-time" className="shrink-0">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
             <VolumePill
               volume={volume}
               onSetVolume={onSetVolume}
               label={t('player.volume')}
               className="shrink-0"
             />
-            {/* The visible track is 4px, but the button is taller with a centered bar inside,
-                so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
-                fiddly to hit mid-set. */}
-            <button
-              type="button"
-              data-testid="player-seek"
-              aria-label={t('player.seek')}
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
-              }}
-              className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
-            >
-              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
-                <span
-                  className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
-                  style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-                />
-              </span>
-            </button>
-            <span data-testid="player-time" className="shrink-0">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
           </div>
         )}
       </div>
