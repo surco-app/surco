@@ -955,119 +955,6 @@ describe('App multi-select convert', () => {
   })
 })
 
-describe('App header convert button', () => {
-  // The header button must act on the current selection, not the whole crate: the same reason
-  // as the editor — a user picks the few tracks they've finished and expects only those to run.
-  // The label carries the selection count so it never promises to convert more than it will.
-  it('converts only the selected tracks and labels the selection count', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
-    setApi({
-      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-      processTrack,
-    })
-    await renderApp()
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    const rows = screen.getAllByTestId('track-row')
-    fireEvent.click(rows[0])
-    fireEvent.click(rows[1], { metaKey: true })
-    const button = screen.getByTestId('convert-selected')
-    expect(button).toHaveTextContent('Convert (2)')
-    fireEvent.click(button)
-    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
-    const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
-    expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
-  })
-
-  // A sighted user sees the "2 converted" summary appear; a screen reader only learns
-  // the batch finished if that summary is a live status region.
-  it('announces the batch result through a live status region', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
-    setApi({
-      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-      processTrack,
-    })
-    await renderApp()
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    const rows = screen.getAllByTestId('track-row')
-    fireEvent.click(rows[0])
-    fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(screen.getByTestId('convert-selected'))
-    const summary = await screen.findByTestId('batch-summary')
-    expect(summary).toHaveAttribute('role', 'status')
-    expect(summary).toHaveTextContent('2 converted')
-  })
-
-  // Overwrite mode rewrites the sources in place — and irreversibly replaces lossless
-  // masters when the target is lossy. The editor shows a per-track warning, but a batch
-  // click touches N originals at once, so it must ask once up front before any write.
-  it('asks for confirmation before a batch convert that overwrites originals', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.wav', inPlace: true })
-    setApi({
-      getSettings: vi.fn().mockResolvedValue(settings({ overwriteOriginal: true })),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-      processTrack,
-    })
-    await renderApp()
-    const rows = await addTwoTracks()
-    fireEvent.click(rows[0])
-    fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(screen.getByTestId('convert-selected'))
-    expect(processTrack).not.toHaveBeenCalled()
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
-    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
-  })
-
-  // Outside overwrite mode a conversion writes new files next to the originals, so the
-  // batch keeps its one-click flow — the prompt exists only where data is at risk.
-  it('converts without a prompt when overwrite mode is off', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
-    setApi({
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-      processTrack,
-    })
-    await renderApp()
-    const rows = await addTwoTracks()
-    fireEvent.click(rows[0])
-    fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(screen.getByTestId('convert-selected'))
-    expect(screen.queryByTestId('confirm-ok')).toBeNull()
-    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
-  })
-
-  // While the batch runs, the convert button itself becomes the cancel action — one
-  // button changing state, not a second button popping in next to it and shifting
-  // the toolbar around.
-  it('turns the convert button into cancel while the batch runs', async () => {
-    let finishFirst: (r: { outputPath: string; inPlace: boolean }) => void = () => {}
-    const processTrack = vi.fn().mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          finishFirst = resolve
-        }),
-    )
-    setApi({
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-      processTrack,
-    })
-    await renderApp()
-    const rows = await addTwoTracks()
-    fireEvent.click(rows[0])
-    fireEvent.click(rows[1], { metaKey: true })
-    const button = screen.getByTestId('convert-selected')
-    fireEvent.click(button)
-    await waitFor(() => expect(button).toHaveTextContent('Cancel'))
-    expect(screen.queryByTestId('cancel-convert-all')).toBeNull()
-    fireEvent.click(button)
-    finishFirst({ outputPath: '/out/x.aiff', inPlace: false })
-    await waitFor(() => expect(button).toHaveTextContent('Convert ('))
-    expect(processTrack).toHaveBeenCalledTimes(1)
-  })
-})
-
 describe('App keyboard shortcuts', () => {
   // ⌘K (Ctrl+K off macOS) opens the command palette from anywhere, and Escape closes
   // it — the two keys the global handler special-cases before any track command.
@@ -1406,7 +1293,8 @@ describe('App donate nudge', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(screen.getByTestId('convert-selected'))
+    // Convert from the editor footer (the toolbar's convert button was removed as a duplicate).
+    fireEvent.click(await screen.findByTestId('process-btn'))
   }
 
   // The nudge moved off app launch onto the moment of value: opening Surco is when the

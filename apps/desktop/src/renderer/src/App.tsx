@@ -7,7 +7,8 @@ import {
   CaseSensitive,
   Clock,
   FileAudio,
-  Search,
+  FilePlus,
+  Replace,
   SquareCheckBig,
   Tag,
   Trash2,
@@ -635,7 +636,6 @@ export default function App(): React.JSX.Element {
     batching,
     batchProgress,
     batchSummary,
-    cancelBatch,
   } = useTrackProcessing({
     tracks,
     settings,
@@ -717,11 +717,6 @@ export default function App(): React.JSX.Element {
   const eligibleCount = useMemo(
     () => eligibleForBatch(tracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
     [tracks, settings?.requiredFields],
-  )
-  const selectedEligibleCount = useMemo(
-    () =>
-      eligibleForBatch(selectedTracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
-    [selectedTracks, settings?.requiredFields],
   )
 
   // Merges each track's cached spectrum and Apple Music verdict onto it (identity-stable
@@ -830,8 +825,6 @@ export default function App(): React.JSX.Element {
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
-  const onConvertSelected = useStableCallback(() => askConvertAll(selectedTracks))
-  const onCancelConvert = useStableCallback(cancelBatch)
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(askClearAll)
   const onOpenPalette = useStableCallback(overlays.openPalette)
@@ -1045,20 +1038,15 @@ export default function App(): React.JSX.Element {
           importing={importProgress}
           batchSummary={batchSummary}
           batching={batching}
-          batchProgress={batchProgress}
           analysis={analysis}
           allAnalyzed={allAnalyzed}
           matching={matching}
           hasToken={!!settings?.discogsToken}
           autoMatchable={autoMatchable}
-          selectedEligibleCount={selectedEligibleCount}
-          onAdd={onAdd}
           onAnalyzeAll={onAnalyzeAll}
           onCancelAnalyze={cancelAnalysis}
           onAutoMatch={onAutoMatchAll}
           onCancelAutoMatch={cancelAutoMatch}
-          onConvertSelected={onConvertSelected}
-          onCancelConvert={onCancelConvert}
           onExport={onOpenExport}
           onPalette={onOpenPalette}
           onStats={onOpenStats}
@@ -1078,7 +1066,19 @@ export default function App(): React.JSX.Element {
             className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}
           >
             {tracks.length === 0 ? (
-              <p className="p-6 text-center text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
+              // Empty list: the drop hint plus the Add files button, so the action that fills
+              // this column is reachable here even before there's a header to host it.
+              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
+                <button
+                  type="button"
+                  data-testid="add-files"
+                  onClick={onAdd}
+                  className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+                >
+                  {tr('header.add')}
+                </button>
+              </div>
             ) : (
               <>
                 <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
@@ -1147,52 +1147,70 @@ export default function App(): React.JSX.Element {
                       it — crammed beside the filter they pushed the "All" quality dropdown out
                       of sight. They operate on these rows, so they live in the list header (not
                       the global toolbar where it wasn't clear which column they touched). */}
-                  {tracks.length > 0 && (
-                    <div className="flex items-center gap-0.5 px-1.5 pb-2">
-                      <button
-                        type="button"
-                        data-testid="select-all"
-                        onClick={onSelectAllTracks}
-                        aria-label={tr('header.selectAll')}
-                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                      >
-                        <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
-                        <Tooltip label={tr('header.selectAll')} />
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="fill-all"
-                        onClick={onFillAll}
-                        aria-label={tr('header.fillFromName')}
-                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                      >
-                        <Tag className="h-4 w-4" aria-hidden="true" />
-                        <Tooltip label={tr('header.fillFromName')} />
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="open-find-replace"
-                        onClick={onFindReplace}
-                        aria-label={tr('commands.findReplace')}
-                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                      >
-                        <Search className="h-4 w-4" aria-hidden="true" />
-                        <Tooltip label={tr('commands.findReplace')} />
-                      </button>
-                      {/* Clear is destructive, so it sits apart at the far end. */}
-                      <span className="flex-1" />
-                      <button
-                        type="button"
-                        data-testid="clear-all"
-                        onClick={onClearAll}
-                        aria-label={tr('header.clearAll')}
-                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        <Tooltip label={tr('header.clearAll')} />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-0.5 px-1.5 pb-2">
+                    {/* Add files leads the list's own action row: it's what fills this column,
+                        so it belongs with the list rather than the global toolbar. */}
+                    <button
+                      type="button"
+                      data-testid="add-files"
+                      onClick={onAdd}
+                      aria-label={tr('header.add')}
+                      className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                    >
+                      <FilePlus className="h-4 w-4" aria-hidden="true" />
+                      <Tooltip label={tr('header.add')} />
+                    </button>
+                    {tracks.length > 0 && (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+                        />
+                        <button
+                          type="button"
+                          data-testid="select-all"
+                          onClick={onSelectAllTracks}
+                          aria-label={tr('header.selectAll')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.selectAll')} />
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="fill-all"
+                          onClick={onFillAll}
+                          aria-label={tr('header.fillFromName')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <Tag className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.fillFromName')} />
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="open-find-replace"
+                          onClick={onFindReplace}
+                          aria-label={tr('commands.findReplace')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                        >
+                          <Replace className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('commands.findReplace')} />
+                        </button>
+                        {/* Clear is destructive, so it sits apart at the far end. */}
+                        <span className="flex-1" />
+                        <button
+                          type="button"
+                          data-testid="clear-all"
+                          onClick={onClearAll}
+                          aria-label={tr('header.clearAll')}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          <Tooltip label={tr('header.clearAll')} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 {visibleTracks.length === 0 ? (
                   <p className="p-6 text-center text-xs text-fg-faint">

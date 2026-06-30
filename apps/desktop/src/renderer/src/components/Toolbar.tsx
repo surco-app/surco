@@ -21,7 +21,6 @@ interface Props {
   importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
   batching: boolean
-  batchProgress: { done: number; total: number }
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number } | null
@@ -31,14 +30,10 @@ interface Props {
   matching: { done: number; total: number } | null
   hasToken: boolean
   autoMatchable: number
-  selectedEligibleCount: number
-  onAdd: () => void
   onAnalyzeAll: () => void
   onCancelAnalyze: () => void
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
-  onConvertSelected: () => void
-  onCancelConvert: () => void
   onExport: () => void
   onPalette: () => void
   onStats: () => void
@@ -60,20 +55,15 @@ export const Toolbar = memo(function Toolbar({
   importing,
   batchSummary,
   batching,
-  batchProgress,
   analysis,
   allAnalyzed,
   matching,
   hasToken,
   autoMatchable,
-  selectedEligibleCount,
-  onAdd,
   onAnalyzeAll,
   onCancelAnalyze,
   onAutoMatch,
   onCancelAutoMatch,
-  onConvertSelected,
-  onCancelConvert,
   onExport,
   onPalette,
   onStats,
@@ -123,20 +113,11 @@ export const Toolbar = memo(function Toolbar({
             {tr('header.importingCount', { done: importing.done, total: importing.total })}
           </span>
         )}
-        <button
-          type="button"
-          data-testid="add-files"
-          onClick={onAdd}
-          className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-        >
-          {tr('header.add')}
-        </button>
         {trackCount > 0 && (
           <>
-            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps. The
-                per-list edit tools (select/fill/find/clear) now live in the list's own header,
-                next to the sort, so the toolbar keeps only crate-wide and global actions. */}
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps. Add files
+                and the per-list edit tools (select/fill/find/clear) now live in the list's own
+                header, so the toolbar keeps only crate-wide sweeps and global actions. */}
             <button
               type="button"
               data-testid="auto-match"
@@ -200,43 +181,8 @@ export const Toolbar = memo(function Toolbar({
               />
             </button>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            {/* One button, two states: while the batch runs it morphs into the cancel
-                action (like the analyze and auto-match buttons above) instead of a
-                second button popping in next to it and shifting the toolbar. */}
-            {/* A disabled button fires no pointer events, so the wrapper carries the hover —
-                letting the "select tracks" hint appear over the greyed-out button when there's
-                nothing eligible. */}
-            <div className="group relative flex">
-              <button
-                type="button"
-                data-testid="convert-selected"
-                onClick={batching ? onCancelConvert : onConvertSelected}
-                disabled={!batching && selectedEligibleCount === 0}
-                className={`press flex h-8 items-center rounded-lg px-3.5 text-sm font-medium ${
-                  batching
-                    ? 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)]'
-                    : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40'
-                }`}
-              >
-                {batching
-                  ? `${tr('common.cancel')} (${batchProgress.done}/${batchProgress.total})`
-                  : `${tr('header.convert')} (${selectedEligibleCount})`}
-              </button>
-              {/* Names what this converts — the selected tracks, batch-style — so it reads
-                  apart from the editor's own convert button for the open track below. With
-                  nothing eligible the button is greyed, so the hint turns into the missing
-                  step (select tracks) rather than restating an action you can't take. */}
-              {!batching && (
-                <Tooltip
-                  label={
-                    selectedEligibleCount === 0
-                      ? tr('header.convertSelectedEmptyHint')
-                      : tr('header.convertSelectedHint')
-                  }
-                  align="end"
-                />
-              )}
-            </div>
+            {/* Convert lives only in the editor footer now — the toolbar button duplicated it
+                (both convert the selection), so the crate-wide sweeps lead straight to export. */}
             <button
               type="button"
               data-testid="export-open"
