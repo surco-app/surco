@@ -211,24 +211,24 @@ export function Player({
       onPointerLeave={() => setHovered(false)}
       className="group/player absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
     >
-      {/* Identity row: the track is the headline. A small cover, the title big and the
-          artist under it carry the weight; the controls shrink to bare ghost glyphs on the
-          right so they never out-shout what's playing. An active toggle (loop/waveform)
-          shows as a coloured icon, not a boxed chip. */}
+      {/* Identity row gets the whole width: cover, then the title big with the artist under
+          it. Giving the name its own line (rather than sharing it with the controls) is what
+          finally lets a long title breathe — it only marquees on hover when it truly can't
+          fit, and close lives down with the transport, not crowding the name. */}
       <div className="flex items-center gap-2.5 px-3 pt-2.5">
         {track.embeddedCover ? (
           <img
             data-testid="player-cover"
             src={track.embeddedCover}
             alt=""
-            className="h-8 w-8 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (
           <span
             data-testid="player-cover-placeholder"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
           >
-            <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
+            <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
           </span>
         )}
 
@@ -240,78 +240,86 @@ export function Player({
             {track.meta.artist}
           </span>
         </span>
+      </div>
 
-        {/* Bare ghost glyphs: no chip, no box. The play is the same weight as the rest —
-            the title is what should draw the eye. Hover gives a faint background; an active
-            loop/waveform tints just the glyph. */}
-        <div className="-mr-1 flex shrink-0 items-center">
-          <button
-            type="button"
-            data-testid="player-toggle"
-            onClick={onToggle}
-            aria-label={paused ? t('player.play') : t('player.pause')}
-            aria-busy={!paused && loading}
-            className="press flex h-8 w-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
-          >
-            {paused ? (
-              // The play triangle is optically left-heavy, so nudge it right to sit centered.
-              <Play
-                className="h-4 w-4 translate-x-px"
-                fill="currentColor"
-                strokeWidth={0}
-                aria-hidden="true"
-              />
-            ) : loading ? (
-              // Streaming from a network drive can take seconds to deliver the first
-              // bytes; the spinner shows the click registered and the file is coming.
-              <LoaderCircle
-                data-testid="player-loading"
-                className="h-4 w-4 animate-spin"
-                aria-hidden="true"
-              />
-            ) : (
-              <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
-            )}
-          </button>
+      {/* Controls on their own row, in three semantic zones: transport (play), then the two
+          player toggles (continuous + waveform) set off by a hairline, then close pushed to
+          the far edge by the spacer — so a primary action, two settings and an exit never
+          read as peers. All bare ghost glyphs; an active toggle tints just its icon. */}
+      <div className="flex items-center gap-1 px-3 pt-2">
+        <button
+          type="button"
+          data-testid="player-toggle"
+          onClick={onToggle}
+          aria-label={paused ? t('player.play') : t('player.pause')}
+          aria-busy={!paused && loading}
+          className="press flex h-8 w-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
+        >
+          {paused ? (
+            // The play triangle is optically left-heavy, so nudge it right to sit centered.
+            <Play
+              className="h-4 w-4 translate-x-px"
+              fill="currentColor"
+              strokeWidth={0}
+              aria-hidden="true"
+            />
+          ) : loading ? (
+            // Streaming from a network drive can take seconds to deliver the first
+            // bytes; the spinner shows the click registered and the file is coming.
+            <LoaderCircle
+              data-testid="player-loading"
+              className="h-4 w-4 animate-spin"
+              aria-hidden="true"
+            />
+          ) : (
+            <Pause className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+          )}
+        </button>
 
-          <button
-            type="button"
-            data-testid="player-continuous"
-            onClick={onToggleContinuous}
-            aria-label={t('player.continuous')}
-            aria-pressed={continuous}
-            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-              continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
-            }`}
-          >
-            <InfinityIcon className="h-4 w-4" aria-hidden="true" />
-            <Tooltip label={t('player.continuousHelp')} />
-          </button>
+        {/* Hairline marking off the transport from the two settings toggles. */}
+        <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-[var(--color-line)]" />
 
-          <button
-            type="button"
-            data-testid="player-waveform"
-            onClick={onToggleWaveform}
-            aria-label={t('player.waveform')}
-            aria-pressed={showWaveform}
-            className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-              showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
-            }`}
-          >
-            <AudioLines className="h-4 w-4" aria-hidden="true" />
-            <Tooltip label={t('player.waveformHelp')} />
-          </button>
+        <button
+          type="button"
+          data-testid="player-continuous"
+          onClick={onToggleContinuous}
+          aria-label={t('player.continuous')}
+          aria-pressed={continuous}
+          className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+            continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+          }`}
+        >
+          <InfinityIcon className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={t('player.continuousHelp')} />
+        </button>
 
-          <button
-            type="button"
-            data-testid="player-close"
-            onClick={onClose}
-            aria-label={t('player.close')}
-            className="press flex h-8 w-8 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
+        <button
+          type="button"
+          data-testid="player-waveform"
+          onClick={onToggleWaveform}
+          aria-label={t('player.waveform')}
+          aria-pressed={showWaveform}
+          className={`press relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+            showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+          }`}
+        >
+          <AudioLines className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={t('player.waveformHelp')} />
+        </button>
+
+        {/* The spacer pushes close to the far edge — an exit, not a control, so it sits apart
+            from the cluster and is never fat-fingered in place of a toggle. */}
+        <span className="flex-1" />
+
+        <button
+          type="button"
+          data-testid="player-close"
+          onClick={onClose}
+          aria-label={t('player.close')}
+          className="press -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
