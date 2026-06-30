@@ -213,18 +213,18 @@ export function Player({
       {/* Identity row: cover and the full track name, with every control grouped in
           one cluster on the right. The clock lives down on the waveform, so the name
           keeps the whole middle. */}
-      <div className="flex items-center gap-2.5 px-2.5 pt-2.5">
+      <div className="flex items-center gap-3 px-3 pt-3">
         {track.embeddedCover ? (
           <img
             data-testid="player-cover"
             src={track.embeddedCover}
             alt=""
-            className="h-9 w-9 shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            className="h-10 w-10 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (
           <span
             data-testid="player-cover-placeholder"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
           >
             <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
           </span>
@@ -233,26 +233,35 @@ export function Player({
         <span className="min-w-0 flex-1">
           <span
             data-testid="player-title"
-            className="block truncate font-medium text-sm leading-tight"
+            className="block truncate font-medium text-sm leading-snug"
           >
             {track.meta.title || track.fileName}
           </span>
-          <span className="block truncate text-fg-dim text-xs leading-tight">
+          <span className="block truncate text-fg-dim text-xs leading-snug">
             {track.meta.artist}
           </span>
         </span>
 
-        <div className="-mr-1 flex shrink-0 items-center gap-0.5">
+        {/* The play/pause is the one action the user is looking for, so it carries a tinted
+            chip; the rest stay quiet ghost icons that only fill on hover. Each control is a
+            36px target with a 40px hit area extended via the pseudo-element below. */}
+        <div className="-mr-0.5 flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             data-testid="player-toggle"
             onClick={onToggle}
             aria-label={paused ? t('player.play') : t('player.pause')}
             aria-busy={!paused && loading}
-            className="press flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-accent)] transition-colors hover:bg-[var(--color-line-strong)]"
+            className="press relative flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/25"
           >
             {paused ? (
-              <Play className="h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+              // The play triangle is optically left-heavy, so nudge it right to sit centered.
+              <Play
+                className="h-4 w-4 translate-x-px"
+                fill="currentColor"
+                strokeWidth={0}
+                aria-hidden="true"
+              />
             ) : loading ? (
               // Streaming from a network drive can take seconds to deliver the first
               // bytes; the spinner shows the click registered and the file is coming.
@@ -272,7 +281,7 @@ export function Player({
             onClick={onToggleContinuous}
             aria-label={t('player.continuous')}
             aria-pressed={continuous}
-            className={`relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+            className={`press relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-line-strong)] ${
               continuous ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
             }`}
           >
@@ -286,7 +295,7 @@ export function Player({
             onClick={onToggleWaveform}
             aria-label={t('player.waveform')}
             aria-pressed={showWaveform}
-            className={`relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
+            className={`press relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-line-strong)] ${
               showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-dim hover:text-fg'
             }`}
           >
@@ -299,7 +308,7 @@ export function Player({
             data-testid="player-close"
             onClick={onClose}
             aria-label={t('player.close')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+            className="press flex h-9 w-9 items-center justify-center rounded-lg text-fg-dim transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -345,13 +354,16 @@ export function Player({
           // No waveform: a slim transport row keeps the volume, a scrubbable progress bar and
           // the clock — the info the waveform overlay carried — and its bottom padding balances
           // the card so the row above isn't left hugging the edge.
-          <div className="flex items-center gap-2.5 px-2.5 pt-2 pb-2.5 text-[10px] text-fg-dim tabular-nums">
+          <div className="flex items-center gap-3 px-3 pt-2 pb-3 text-[10px] text-fg-dim tabular-nums">
             <VolumePill
               volume={volume}
               onSetVolume={onSetVolume}
               label={t('player.volume')}
               className="shrink-0"
             />
+            {/* The visible track is 4px, but the button is taller with a centered bar inside,
+                so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
+                fiddly to hit mid-set. */}
             <button
               type="button"
               data-testid="player-seek"
@@ -360,12 +372,14 @@ export function Player({
                 const rect = e.currentTarget.getBoundingClientRect()
                 if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
               }}
-              className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--color-panel)]"
+              className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
             >
-              <span
-                className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
-                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-              />
+              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
+                <span
+                  className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+                  style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                />
+              </span>
             </button>
             <span data-testid="player-time" className="shrink-0">
               {formatTime(currentTime)} / {formatTime(duration)}
