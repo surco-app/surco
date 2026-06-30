@@ -530,6 +530,19 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.27",
+        "date": "June 30, 2026",
+        "title": "Tidier toolbar, richer Discogs results",
+        "items": [
+          "The actions that work on your track list — add files, select all, fill tags, find & replace, clear — now live in the list's own header instead of the top toolbar, so it's clear what each one touches. The toolbar keeps only the crate-wide tools.",
+          "Discogs results are now cards that match your track rows, and each shows more of the release: year, label, catalogue number and format — so it's easier to pick the exact pressing among many.",
+          "Filtering the list and then converting now only touches the tracks you can see: filter to MP3 and hit convert, and your FLACs stay untouched.",
+          "Select All and Fill tags from filename now act on the visible or selected tracks, never silently on the whole crate.",
+          "Find & Replace shows the / / around the field in regex mode, so a pattern like Shake just works instead of being searched literally.",
+          "Tracks that Surco auto-loads from a watched folder now play straight away."
+        ]
+      },
+      {
         "version": "0.26",
         "date": "June 30, 2026",
         "title": "A redesigned player and cleaner everywhere",
