@@ -353,12 +353,27 @@ export function Player({
             </span>
           </div>
         ) : (
-          // No waveform: one compact line — a volume button that pops its slider on hover, the
-          // progress bar taking the whole middle, and the clock at the end. No second row and
-          // no empty space where the waveform used to be, so the player shrinks to a tidy
+          // No waveform: one compact line — a small always-visible volume slider on the left,
+          // the progress bar taking the whole middle, and the clock at the end. No second row
+          // and no empty space where the waveform used to be, so the player shrinks to a tidy
           // transport bar instead of holding the wave's height with thin controls.
           <div className="flex items-center gap-2.5 px-3 pt-1.5 pb-2.5 text-[10px] text-fg-dim tabular-nums">
-            <VolumeButton volume={volume} onSetVolume={onSetVolume} label={t('player.volume')} />
+            {/* Volume: a fixed-width slider that's always there — no pop-out — so the row reads
+                as one calm transport bar and the bar to its right never shifts. */}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <Volume2 className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
+              <input
+                type="range"
+                data-testid="player-volume-slider"
+                aria-label={t('player.volume')}
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => onSetVolume(Number(e.target.value))}
+                className="player-volume-range h-1 w-14 cursor-pointer"
+              />
+            </span>
             {/* The visible track is 4px, but the button is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
                 fiddly to hit mid-set. */}
@@ -386,48 +401,6 @@ export function Player({
         )}
       </div>
     </div>
-  )
-}
-
-// The no-waveform line's volume control: just a speaker glyph until hovered, then a slider
-// pops out beside it. Keeping it collapsed hands the whole row width to the progress bar —
-// the wheel-free slider still means volume never hijacks a scroll meant for the track list,
-// and a turned-down level shows as a dimmer icon so the collapsed state isn't a black box.
-function VolumeButton({
-  volume,
-  onSetVolume,
-  label,
-}: {
-  volume: number
-  onSetVolume: (value: number) => void
-  label: string
-}): React.JSX.Element {
-  return (
-    <span
-      data-testid="player-volume-pill"
-      className="group/vol relative flex shrink-0 items-center"
-    >
-      <Volume2
-        className={`h-3.5 w-3.5 transition-colors ${volume < 1 ? 'text-fg-faint' : 'text-fg-dim'}`}
-        aria-hidden="true"
-      />
-      {/* The slider floats in a popover anchored above the icon — out of the flow, so it
-          never shoves the progress bar sideways as it appears. The icon holds a fixed spot;
-          the panel reveals on hover/focus-within and pointer-events gate it while hidden. */}
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 rounded-md border border-[var(--color-line)] bg-[var(--color-panel-2)] px-2 py-1.5 opacity-0 shadow-md transition-opacity duration-150 group-hover/vol:pointer-events-auto group-hover/vol:opacity-100 group-focus-within/vol:pointer-events-auto group-focus-within/vol:opacity-100">
-        <input
-          type="range"
-          data-testid="player-volume-slider"
-          aria-label={label}
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => onSetVolume(Number(e.target.value))}
-          className="player-volume-range block h-1 w-20 cursor-pointer"
-        />
-      </span>
-    </span>
   )
 }
 
