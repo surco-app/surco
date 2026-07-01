@@ -28,15 +28,18 @@ import {
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
 import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../shared/defaults'
+import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
   Settings,
+  ThemePref,
   TrackMetadata,
 } from '../../shared/types'
 import { ActivityPanel } from './components/ActivityPanel'
+import { Confetti } from './components/Confetti'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -75,6 +78,7 @@ import { tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
+import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { shouldShowOnboarding } from './lib/onboarding'
@@ -937,10 +941,44 @@ export default function App(): React.JSX.Element {
     const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
     if (name) void window.api.copyText(name.split('/').pop() ?? name)
   })
+  // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
+  // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also
+  // un-matches and re-probes); deriveTags mirrors deriveFromNames over the selection.
+  const clearMeta = useStableCallback(() => {
+    if (!selected) return
+    if (selectedTracks.length > 1) updateTracksMeta(selectedIds, emptyMetadata())
+    else
+      updateTrack(selected.id, {
+        meta: emptyMetadata(),
+        matched: false,
+        matchReview: false,
+        inAppleMusicResolved: false,
+      })
+  })
+  const deriveTags = useStableCallback(() => {
+    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const patches = targets
+      .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
+      .filter((p) => Object.keys(p.meta).length > 0)
+    if (patches.length) deriveTracks(patches)
+  })
+  // Rotates system → light → dark and persists it, the palette twin of the Settings control.
+  const toggleTheme = useStableCallback(() => {
+    const order: ThemePref[] = ['system', 'light', 'dark']
+    const current = settings?.theme ?? 'system'
+    saveSettings({ theme: order[(order.indexOf(current) + 1) % order.length] })
+  })
+  // A remount-keyed confetti burst: bumping the key mounts a fresh <Confetti>, so the ⌘K
+  // command can fire it again and again. The burst tears itself down once it settles.
+  const [confettiBurst, setConfettiBurst] = useState(0)
+  const fireConfetti = useStableCallback(() => setConfettiBurst((n) => n + 1))
   // Gates the Analyze button: the sweep works on the visible rows, so it's "done" (disabled)
   // once every visible row is measured — not the hidden ones. Change the filter to reveal
   // unanalysed tracks and the button re-enables. O(N), memoised over the visible set.
-  const allAnalyzed = useMemo(() => visibleTracks.every((t) => Boolean(t.spectrum)), [visibleTracks])
+  const allAnalyzed = useMemo(
+    () => visibleTracks.every((t) => Boolean(t.spectrum)),
+    [visibleTracks],
+  )
 
   // Move keyboard focus between the three columns. The targets are found by their stable
   // data-testid (the same approach the Discogs panel already uses for autofit) rather than
@@ -1007,6 +1045,10 @@ export default function App(): React.JSX.Element {
       openActivity: () => setActivityOpen(true),
       openHelp: overlays.openHelp,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
+      toggleTheme,
+      clearMeta,
+      deriveTags,
+      fireConfetti,
     }),
   )
 
@@ -1458,6 +1500,7 @@ export default function App(): React.JSX.Element {
           onClose={() => setActivityOpen(false)}
         />
       )}
+      {confettiBurst > 0 && <Confetti key={confettiBurst} />}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/ty
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
+import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
 
 export interface Command {
@@ -121,6 +122,14 @@ export interface CommandDeps {
   openActivity: () => void
   openHelp: () => void
   toggleLanguage: () => void
+  // Rotates the UI theme through system → light → dark; global chrome, so it's always live.
+  toggleTheme: () => void
+  // Empties every metadata field on the current selection (the Editor's clear button).
+  clearMeta: () => void
+  // Fills tags on the current selection by parsing each file name (the Editor's derive button).
+  deriveTags: () => void
+  // Fires the celebration confetti — the same burst the donate nudge shows, on demand.
+  fireConfetti: () => void
 }
 
 export function buildCommands(deps: CommandDeps): Command[] {
@@ -168,6 +177,10 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openActivity,
     openHelp,
     toggleLanguage,
+    toggleTheme,
+    clearMeta,
+    deriveTags,
+    fireConfetti,
   } = deps
   return [
     {
@@ -197,6 +210,22 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('fill-all'),
       enabled: tracks.length > 0,
       run: askFillAll,
+    },
+    {
+      // Fills tags from the file name for the current selection — the Editor's Tag button.
+      id: 'derive-tags',
+      title: tr('commands.deriveTags'),
+      hint: hintFor('derive-tags'),
+      enabled: !!selected,
+      run: deriveTags,
+    },
+    {
+      // Empties every metadata field on the current selection — the Editor's Eraser button.
+      id: 'clear-meta',
+      title: tr('commands.clearMeta'),
+      hint: hintFor('clear-meta'),
+      enabled: !!selected,
+      run: clearMeta,
     },
     {
       id: 'prev',
@@ -421,6 +450,15 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: toggleLanguage,
     },
     {
+      // Rotates system → light → dark. Persisted, unlike the language toggle: the theme is
+      // a real preference, and this is the palette twin of the Settings segmented control.
+      id: 'toggle-theme',
+      title: tr('commands.toggleTheme'),
+      hint: hintFor('toggle-theme'),
+      enabled: true,
+      run: toggleTheme,
+    },
+    {
       id: 'help',
       title: tr('commands.help'),
       enabled: true,
@@ -439,10 +477,23 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: () => window.open(guideUrl(i18n.language)),
     },
     {
+      id: 'donate',
+      title: tr('commands.donate'),
+      enabled: true,
+      run: () => window.open(DONATE_URL),
+    },
+    {
       id: 'website',
       title: tr('commands.website'),
       enabled: true,
       run: () => window.open('https://getsurco.app/'),
+    },
+    {
+      // A little joy on demand: the same corner-to-centre burst the donate nudge fires.
+      id: 'confetti',
+      title: tr('commands.confetti'),
+      enabled: true,
+      run: fireConfetti,
     },
   ]
 }

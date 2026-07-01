@@ -11,6 +11,7 @@ import {
   runCommand,
   trackLabel,
 } from './commands'
+import { DONATE_URL } from './donate'
 
 function cmd(id: string, title: string): Command {
   return { id, title, enabled: true, run: () => {} }
@@ -75,6 +76,10 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openActivity: () => {},
     openHelp: () => {},
     toggleLanguage: () => {},
+    toggleTheme: () => {},
+    clearMeta: () => {},
+    deriveTags: () => {},
+    fireConfetti: () => {},
     ...overrides,
   }
 }
@@ -242,5 +247,60 @@ describe('buildCommands platform-gated entries', () => {
       'reveal',
     )
     expect(noOutput.enabled).toBe(false)
+  })
+
+  // The donate command is a launcher for the PayPal page and is always available, so
+  // support reaches it from ⌘K without needing a track loaded. Pinning the URL guards
+  // against it drifting away from the single DONATE_URL the Stats tab and nudge share.
+  it('always offers the donate command and opens the shared donate URL', () => {
+    const open = vi.fn()
+    vi.stubGlobal('window', { open })
+    const donate = commandById(makeDeps(), 'donate')
+    expect(donate.enabled).toBe(true)
+    donate.run()
+    expect(open).toHaveBeenCalledWith(DONATE_URL)
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('buildCommands editor + theme entries', () => {
+  // Theme is global chrome like the language toggle, so it's always reachable from ⌘K —
+  // no track needed — and simply rotates through the three preferences.
+  it('always offers toggle-theme and runs it', () => {
+    const toggleTheme = vi.fn()
+    const cmd = commandById(makeDeps({ toggleTheme }), 'toggle-theme')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(toggleTheme).toHaveBeenCalledOnce()
+  })
+
+  // Clear-metadata and derive-from-filename act on the current selection, so both must be
+  // gated on a track being selected — firing them with nothing selected would be a no-op
+  // the user can't see, so the palette greys them out instead.
+  it('gates clear-meta and derive-tags on a selected track and runs them', () => {
+    const clearMeta = vi.fn()
+    const deriveTags = vi.fn()
+    const none = makeDeps({ clearMeta, deriveTags, selected: null })
+    expect(commandById(none, 'clear-meta').enabled).toBe(false)
+    expect(commandById(none, 'derive-tags').enabled).toBe(false)
+
+    const withSel = makeDeps({ clearMeta, deriveTags, selected: track() })
+    const clear = commandById(withSel, 'clear-meta')
+    const derive = commandById(withSel, 'derive-tags')
+    expect(clear.enabled).toBe(true)
+    expect(derive.enabled).toBe(true)
+    clear.run()
+    derive.run()
+    expect(clearMeta).toHaveBeenCalledOnce()
+    expect(deriveTags).toHaveBeenCalledOnce()
+  })
+
+  // The confetti command is pure fun, always available, and just fires the burst.
+  it('always offers confetti and fires it', () => {
+    const fireConfetti = vi.fn()
+    const cmd = commandById(makeDeps({ fireConfetti }), 'confetti')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(fireConfetti).toHaveBeenCalledOnce()
   })
 })
