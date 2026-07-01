@@ -782,10 +782,10 @@ describe('App multi-select removal', () => {
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
   })
 
-  // A deliberate multi-selection scopes the toolbar's Empty just like Convert: it drops the
-  // selected rows and leaves the rest of the list. (A lone auto-selected anchor doesn't count
-  // — that case empties the whole visible list, covered under the per-format filter suite.)
-  it('empties only the selected rows when several are selected', async () => {
+  // The toolbar trash mirrors what's on screen, not the selection: with no filter every row is
+  // visible, so it empties the whole list even when only some rows are multi-selected. Removing
+  // just a few rows is the right-click "Remove from list"; this button is not selection-scoped.
+  it('empties every visible row from the toolbar trash, ignoring the selection', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -798,8 +798,8 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.click(screen.getByTestId('clear-all'))
     fireEvent.click(await screen.findByTestId('confirm-ok'))
-    // Two selected went; the third (unselected) row stays.
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    // The two-row selection doesn't narrow it: all three visible rows go.
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
   })
 })
 
@@ -1117,6 +1117,34 @@ describe('App command palette list-wide actions', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+
+  // The palette's "Clear the list" is the deliberate start-over: unlike the toolbar trash
+  // (which mirrors the filter), it wipes every track including the ones an active format
+  // filter is hiding — so a filtered view can't leave stragglers behind after a clear.
+  it('clears the whole list from the palette even with a format filter active', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // Narrow to MP3 — the wav is hidden.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Clear the list' },
+    })
+    fireEvent.click(screen.getByTestId('palette-item'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    // Both the visible mp3 and the hidden wav are gone: the whole list is empty, and with no
+    // rows left the sidebar (filter and all) collapses to the drop zone. Had the clear honoured
+    // the MP3 filter, the hidden wav would have survived and a row would remain.
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    expect(screen.queryByTestId('quality-filter-trigger')).toBeNull()
   })
 })
 

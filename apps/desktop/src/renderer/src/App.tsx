@@ -654,11 +654,11 @@ export default function App(): React.JSX.Element {
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
   })
 
-  // Emptying the whole list (no filter, no selection) starts over — clearTracks also drops
-  // the folder watcher. Any subset (a selection, or the filtered-visible rows) just removes
-  // those rows and keeps watching, so the hidden FLAC/WAV tracks survive the click.
-  const emptyTracks = useStableCallback((targets: TrackItem[], scope: 'selected' | 'all') => {
-    if (scope === 'all' && targets.length === tracksRef.current.length) clearTracks()
+  // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
+  // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV
+  // tracks survive the click.
+  const emptyTracks = useStableCallback((targets: TrackItem[]) => {
+    if (targets.length === tracksRef.current.length) clearTracks()
     else removeTracks(targets.map((t) => t.id))
   })
 
@@ -842,28 +842,20 @@ export default function App(): React.JSX.Element {
   // call — so an inline-style body can still read current state.
   const onAdd = useStableCallback(() => void pickFiles())
   const onSelectAllTracks = useStableCallback(selectAll)
-  // What a toolbar bulk action (fill, empty) operates on: a deliberate multi-selection when
-  // there is one, else the visible (filtered) rows — never the whole list behind an active
-  // filter, so a click can't touch rows the user filtered out of view. A single auto-selected
-  // anchor doesn't count as a selection (imports auto-select the first row), matching the
-  // right-click menu's own selectedIds.length > 1 rule; without this, "empty" could never
-  // clear the list because one row is always anchored.
-  const bulkActionTarget = (): { targets: TrackItem[]; scope: 'selected' | 'all' } =>
-    selectedTracks.length > 1
-      ? { targets: selectedTracks, scope: 'selected' }
-      : { targets: visibleTracksRef.current, scope: 'all' }
-  const onFillAll = useStableCallback(() => {
-    const { targets, scope } = bulkActionTarget()
-    askFillAll(targets, scope)
-  })
+  // The toolbar bulk actions (fill, empty) act on the visible (filtered) rows — never the
+  // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
+  // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
+  // a few rows is the right-click menu's "Remove from list"; wiping the entire list regardless
+  // of filter is the palette's "Clear the list".
+  const onFillAll = useStableCallback(() => askFillAll(visibleTracksRef.current))
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(visibleTracks, false))
   const onOpenExport = useStableCallback(overlays.openExport)
-  const onClearAll = useStableCallback(() => {
-    const { targets, scope } = bulkActionTarget()
-    askClearAll(targets, scope)
-  })
+  const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
+  // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
+  // including the ones an active format filter is hiding, unlike the toolbar trash button.
+  const onClearEverything = useStableCallback(() => askClearAll(tracksRef.current))
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
@@ -1007,7 +999,7 @@ export default function App(): React.JSX.Element {
       addTrackToAppleMusic,
       removeTrack,
       reveal: window.api.reveal,
-      askClearAll: onClearAll,
+      askClearAll: onClearEverything,
       openSettings,
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,

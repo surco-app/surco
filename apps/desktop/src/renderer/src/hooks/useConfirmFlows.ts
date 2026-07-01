@@ -10,10 +10,10 @@ interface Params {
   settings: Settings | null
   removeTrack: (id: string) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
-  // Empties the given rows: App routes the whole-list case to clearTracks (start over,
-  // drops the folder watch) and any subset to removeTracks, so a format filter or a
-  // selection never sweeps in the hidden rows.
-  emptyTracks: (targets: TrackItem[], scope: 'selected' | 'all') => void
+  // Empties the given rows: App routes the whole-list case to clearTracks (start over, drops
+  // the folder watch) and the filtered-visible subset to removeTracks, so a format filter never
+  // sweeps in the hidden rows.
+  emptyTracks: (targets: TrackItem[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   processAll: (
     targets: TrackItem[],
@@ -29,8 +29,8 @@ interface Params {
 export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
-  askFillAll: (targets: TrackItem[], scope: 'selected' | 'all') => void
-  askClearAll: (targets: TrackItem[], scope: 'selected' | 'all') => void
+  askFillAll: (targets: TrackItem[]) => void
+  askClearAll: (targets: TrackItem[]) => void
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
 }
 
@@ -103,8 +103,7 @@ export function useConfirmFlows({
   }
 
   // Fills the given tracks' tags from their own file names — the mouse-driven counterpart
-  // of the editor's per-track "Fill from filename", for cleaning a whole import (or just the
-  // selected rows) at once.
+  // of the editor's per-track "Fill from filename", for cleaning a whole import at once.
   function deriveFrom(targets: TrackItem[]): void {
     const patches = targets
       .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
@@ -113,38 +112,30 @@ export function useConfirmFlows({
   }
 
   // Fill-all and Clear-all both overwrite/discard work, so they ask first rather than firing
-  // on the click; the dialog spells out exactly what changes. Targets is the selection when
-  // the user has one, else the whole list — App decides which, so the copy reads "selected"
-  // vs "all" accordingly.
-  function askFillAll(targets: TrackItem[], scope: 'selected' | 'all'): void {
+  // on the click; the dialog spells out exactly what changes. Targets is the visible (filtered)
+  // set for the toolbar buttons, or the whole list for the palette's "Clear the list" — either
+  // way the count in the copy matches what actually changes.
+  function askFillAll(targets: TrackItem[]): void {
     const count = targets.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
     openConfirm({
       title: tr('confirm.fillTitle'),
-      message:
-        count > 0
-          ? tr(scope === 'selected' ? 'confirm.fillMessageSelected' : 'confirm.fillMessage', {
-              count,
-            })
-          : tr('confirm.fillNone'),
+      message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
       confirmLabel: tr('confirm.fillConfirm'),
       confirmDisabled: count === 0,
       onConfirm: () => deriveFrom(targets),
     })
   }
 
-  // Empties the list, but only the tracks in scope: the selection when the user has one,
-  // else the visible (filtered) rows — App passes 'selected' vs 'all' so the copy and the
-  // count match what actually gets removed. Emptying a MP3-filtered view must not discard
-  // the hidden FLAC/WAV rows, and a selection must not take out the rest of the list.
-  function askClearAll(targets: TrackItem[], scope: 'selected' | 'all'): void {
+  // Empties the given rows: the visible (filtered) set from the toolbar trash button, or the
+  // whole list from the palette's "Clear the list". Emptying an MP3-filtered view via the
+  // toolbar must not discard the hidden FLAC/WAV rows — the count in the copy says how many go.
+  function askClearAll(targets: TrackItem[]): void {
     openConfirm({
       title: tr('confirm.clearTitle'),
-      message: tr(scope === 'selected' ? 'confirm.clearMessageSelected' : 'confirm.clearMessage', {
-        count: targets.length,
-      }),
+      message: tr('confirm.clearMessage', { count: targets.length }),
       confirmLabel: tr('confirm.clearConfirm'),
       destructive: true,
-      onConfirm: () => emptyTracks(targets, scope),
+      onConfirm: () => emptyTracks(targets),
     })
   }
 
