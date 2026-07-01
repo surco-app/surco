@@ -8,9 +8,10 @@ import { spectrogramOptions } from './useSpectrogram'
 import { useWindowFocus } from './useWindowFocus'
 
 interface Params {
-  // Live spectrum-merged view of the tracks, so the sweep targets what the list
-  // actually shows at the moment it starts.
-  tracksViewRef: { readonly current: TrackItem[] }
+  // The rows the sweep targets — App passes the visible (filtered) set, so a filter or
+  // selection narrows the analysis to what the list actually shows at the moment it starts.
+  // Read through a ref so analyzeAllQuality keeps a stable identity for the command registry.
+  targetsRef: { readonly current: TrackItem[] }
   // Fired once when a sweep ends having had files ffmpeg couldn't read, with how many.
   // A failed file is swallowed so it doesn't abort the run, but it must not pass as a
   // silently-skipped track that looks identical to one never measured.
@@ -26,7 +27,7 @@ export interface QualityAnalysis {
 
 // Batch quality triage: measures every not-yet-analyzed track's spectrum so a whole
 // dropped folder is checked for fake-lossless rips without opening each row.
-export function useQualityAnalysis({ tracksViewRef, onErrors }: Params): QualityAnalysis {
+export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAnalysis {
   const queryClient = useQueryClient()
   // Bridged through a ref so analyzeAllQuality keeps a stable identity (the command
   // registry depends on it) while App's callback is recreated every render.
@@ -51,7 +52,7 @@ export function useQualityAnalysis({ tracksViewRef, onErrors }: Params): Quality
   // (each is an ffmpeg pass) and cancellable; fetchQuery fills the shared cache the
   // list reads its verdicts from, and dedups with a concurrent hover for the same file.
   const analyzeAllQuality = useCallback((): void => {
-    const targets = tracksToAnalyze(tracksViewRef.current, new Set())
+    const targets = tracksToAnalyze(targetsRef.current, new Set())
     if (runningRef.current || targets.length === 0) return
     runningRef.current = true
     analyzeCancel.current = false
@@ -79,7 +80,7 @@ export function useQualityAnalysis({ tracksViewRef, onErrors }: Params): Quality
       setAnalysis(null)
       if (failed > 0) onErrorsRef.current?.(failed)
     })
-  }, [queryClient, tracksViewRef])
+  }, [queryClient, targetsRef])
 
   const cancelAnalysis = useCallback((): void => {
     analyzeCancel.current = true

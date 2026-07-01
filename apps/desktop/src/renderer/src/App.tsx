@@ -429,9 +429,10 @@ export default function App(): React.JSX.Element {
       }
     },
     onMetaLoaded: (t) => {
-      // Enqueue the whole crate (not visible-only): with auto-match on, every imported
-      // track gets matched, the sweep just probes the on-screen rows first.
-      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], false)
+      // Enqueue visible-only: with auto-match on, an imported track is probed once its row
+      // is actually on screen, so an active filter holds back the rows it hides. Change the
+      // filter and the newly-shown rows get matched; already-matched ones are never re-probed.
+      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
   })
@@ -538,7 +539,10 @@ export default function App(): React.JSX.Element {
   // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
   // wires the start/cancel actions into the toolbar and commands.
   const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({
-    tracksViewRef,
+    // The visible (filtered) rows, so the sweep analyses what's shown — change the filter and
+    // the next run reaches the newly-visible tracks. Already-measured ones are skipped, so
+    // widening the filter never re-analyses what a narrower one already did.
+    targetsRef: visibleTracksRef,
     onErrors: (count) => setNotice(tr('notices.qualityErrors', { count })),
   })
 
@@ -773,6 +777,14 @@ export default function App(): React.JSX.Element {
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
+  // Find & Replace overwrites text tags across many rows, so it obeys the same rule as the
+  // other bulk actions: a deliberate multi-selection when there is one, else the visible
+  // (filtered) rows — never the tracks the active filter is hiding. Reactive (not the ref
+  // bulkActionTarget uses) because the open modal re-previews live as the set changes.
+  const findReplaceTargets = useMemo(
+    () => (selectedTracks.length > 1 ? selectedTracks : visibleTracks),
+    [selectedTracks, visibleTracks],
+  )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded } =
     useListNavigation({
@@ -810,9 +822,10 @@ export default function App(): React.JSX.Element {
     )
     if (next) setSelection(next)
   }, [filterSelection])
-  // Drives the toolbar auto-match button: how many loaded tracks are still worth a probe,
-  // so it disables once every track is matched (or there's nothing to match).
-  const autoMatchable = useMemo(() => tracksToAutoMatch(tracksView).length, [tracksView])
+  // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
+  // it disables once every shown track is matched, and changing the filter to reveal unmatched
+  // rows re-enables it. Scoped to the visible set because the sweep matches only those.
+  const autoMatchable = useMemo(() => tracksToAutoMatch(visibleTracks).length, [visibleTracks])
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -845,7 +858,7 @@ export default function App(): React.JSX.Element {
   })
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
-  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
+  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(visibleTracks, false))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => {
     const { targets, scope } = bulkActionTarget()
@@ -932,8 +945,10 @@ export default function App(): React.JSX.Element {
     const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
     if (name) void window.api.copyText(name.split('/').pop() ?? name)
   })
-  // O(N) per evaluation, so computed once per tracksView instead of inline in JSX.
-  const allAnalyzed = useMemo(() => tracksView.every((t) => Boolean(t.spectrum)), [tracksView])
+  // Gates the Analyze button: the sweep works on the visible rows, so it's "done" (disabled)
+  // once every visible row is measured — not the hidden ones. Change the filter to reveal
+  // unanalysed tracks and the button re-enables. O(N), memoised over the visible set.
+  const allAnalyzed = useMemo(() => visibleTracks.every((t) => Boolean(t.spectrum)), [visibleTracks])
 
   // Move keyboard focus between the three columns. The targets are found by their stable
   // data-testid (the same approach the Discogs panel already uses for autofit) rather than
@@ -961,7 +976,6 @@ export default function App(): React.JSX.Element {
       hintFor,
       platform: window.api.platform,
       tracks,
-      tracksView,
       visibleTracks,
       selected,
       selectedTracksCount: selectedTracks.length,
@@ -1400,7 +1414,11 @@ export default function App(): React.JSX.Element {
         {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}
         {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
         {activeModal?.type === 'findReplace' && (
-          <FindReplaceModal tracks={tracks} onApply={deriveTracks} onClose={overlays.close} />
+          <FindReplaceModal
+            tracks={findReplaceTargets}
+            onApply={deriveTracks}
+            onClose={overlays.close}
+          />
         )}
         {activeModal?.type === 'rename' && selected && (
           <RenameModal

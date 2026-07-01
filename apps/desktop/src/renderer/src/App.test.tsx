@@ -107,6 +107,18 @@ class MockIntersectionObserver {
   }
 }
 
+// Reports every currently-observed row as on screen, driving the visible-gated auto-match the
+// way a real scroll would — the mock reports nothing visible by default, so import-enqueued
+// matches only fire once a test opts a row into view.
+function showAllRows(): void {
+  for (const o of observers) {
+    const entries = [...o.els].map(
+      (target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry,
+    )
+    if (entries.length) o.cb(entries, {} as IntersectionObserver)
+  }
+}
+
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
@@ -319,6 +331,35 @@ describe('App auto-match', () => {
     expect(search).toHaveBeenCalled()
   })
 
+  // The toolbar sweep honours the active format filter: filter to MP3 and only the visible mp3
+  // rows are probed, never the hidden wav. Otherwise a DJ narrowing to one format would still
+  // fire Discogs calls (and write matches) for the tracks the filter is hiding.
+  it('auto-matches only the visible rows when a format filter is active', async () => {
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search,
+      getRelease: vi.fn().mockResolvedValue(release),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // Narrow to MP3 — only the mp3 row shows.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('auto-match'))
+    // Only the single visible mp3 gets matched; the hidden wav is never swept in.
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-all'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.getAllByTestId('track-automatched')).toHaveLength(1)
+  })
+
   it('leaves the button disabled without a Discogs token to search', async () => {
     setApi({ readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }) })
     await renderApp()
@@ -326,10 +367,10 @@ describe('App auto-match', () => {
     expect(screen.getByTestId('auto-match')).toBeDisabled()
   })
 
-  // With auto-match on, a dropped crate gets matched in full — not just the rows the user
-  // happens to scroll into view. The on-screen rows are merely probed first (the rate
-  // limiter in main paces the calls so the whole crate can't trip a 429).
-  it('matches the whole imported crate, not only the rows scrolled into view', async () => {
+  // Auto-match on import follows what's shown: a row is probed once it's actually on screen,
+  // so an active filter never auto-matches the rows it hides. Here nothing is visible yet, so
+  // no row matches until the test scrolls them into view — then both do.
+  it('auto-matches an imported track only once its row is on screen', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
@@ -341,7 +382,13 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
 
-    // Neither row is scrolled into view, yet both still get matched.
+    // Nothing is on screen (the observer reports nothing visible), so the import's auto-match
+    // stays queued and no row is matched.
+    await waitFor(() => expect(search).not.toHaveBeenCalled())
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+
+    // Scrolling both rows into view releases the gate: both get matched.
+    act(() => showAllRows())
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
   })
 
@@ -1259,6 +1306,22 @@ describe('App per-format filter', () => {
     // cleared the whole list, no row would remain.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getByTestId('track-row')).toHaveTextContent('WAV')
+  })
+
+  // Find & Replace overwrites tags, so it too must honour the filter: with MP3 shown, the
+  // preview (and the apply) covers only the visible mp3, not the hidden wav — otherwise a
+  // cleanup pass would silently rewrite rows the user filtered out of view.
+  it('scopes Find & Replace to the visible rows when a format filter is active', async () => {
+    await addMixedCrate()
+    // Both rows share artist 'A'; unscoped, a replace on 'A' would hit both.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('open-find-replace'))
+    fireEvent.change(await screen.findByTestId('find-replace-find'), { target: { value: 'A' } })
+    fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Z' } })
+    // The preview counts one track — the visible mp3 — not the two-track crate.
+    expect(screen.getByTestId('find-replace-apply')).toHaveTextContent('1')
   })
 })
 

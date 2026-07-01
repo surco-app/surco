@@ -15,9 +15,10 @@ interface Props {
 
 const PREVIEW_LIMIT = 6
 
-// Bulk find/replace across every loaded track's text tags — the cleanup pass for messy rips.
-// Plain or regex (with $1 capture groups); a live preview shows how many fields would change
-// and a few before→after examples, so the user commits only once it looks right.
+// Bulk find/replace across the given tracks' text tags — the cleanup pass for messy rips.
+// App scopes `tracks` to the selection-or-visible set, so an active filter never rewrites
+// hidden rows. Plain or regex (with $1 capture groups); a live preview shows how many fields
+// would change and a few before→after examples, so the user commits only once it looks right.
 export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [find, setFind] = useState('')

@@ -36,7 +36,6 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     hintFor: () => '',
     platform: 'darwin',
     tracks: [],
-    tracksView: [],
     visibleTracks: [],
     selected: null,
     selectedTracksCount: 0,

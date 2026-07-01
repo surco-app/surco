@@ -36,14 +36,14 @@ describe('useQualityAnalysis', () => {
   it('analyzes only the not-yet-measured tracks and ends idle', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
     ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
-    const tracksViewRef = {
+    const targetsRef = {
       current: [
         track('a'),
         track('b', { spectrum }), // already measured — skipped
         track('c'),
       ],
     }
-    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef }), {
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
     })
 
@@ -62,8 +62,8 @@ describe('useQualityAnalysis', () => {
     })
     const spectrogram = vi.fn().mockReturnValue(gate)
     ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
-    const tracksViewRef = { current: [track('a')] }
-    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef }), {
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
     })
 
@@ -89,9 +89,9 @@ describe('useQualityAnalysis', () => {
       return spectrum
     })
     ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
-    const tracksViewRef = { current: [track('a'), track('b'), track('c')] }
+    const targetsRef = { current: [track('a'), track('b'), track('c')] }
     const onErrors = vi.fn()
-    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef, onErrors }), {
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
       wrapper: wrapper(),
     })
 
@@ -107,9 +107,9 @@ describe('useQualityAnalysis', () => {
   it('does not report errors when every file analyzes cleanly', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
     ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
-    const tracksViewRef = { current: [track('a'), track('b')] }
+    const targetsRef = { current: [track('a'), track('b')] }
     const onErrors = vi.fn()
-    const { result } = renderHook(() => useQualityAnalysis({ tracksViewRef, onErrors }), {
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
       wrapper: wrapper(),
     })
 

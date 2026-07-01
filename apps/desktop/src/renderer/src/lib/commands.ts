@@ -77,9 +77,7 @@ export interface CommandDeps {
   // macOS-only and reads it through this instead of reaching for window.api.
   platform: string
   tracks: TrackItem[]
-  // The triage view (spectrum-merged) the sweeps run over, and its filtered/sorted
-  // counterpart the prev/next navigation steps through.
-  tracksView: TrackItem[]
+  // The filtered/sorted rows the prev/next navigation steps through and the sweeps now run over.
   visibleTracks: TrackItem[]
   selected: TrackItem | null
   selectedTracksCount: number
@@ -131,7 +129,6 @@ export function buildCommands(deps: CommandDeps): Command[] {
     hintFor,
     platform,
     tracks,
-    tracksView,
     visibleTracks,
     selected,
     selectedTracksCount,
@@ -316,26 +313,28 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       // Toggles the quality sweep: starts it, or cancels a running one — the same button
-      // the toolbar shows. Disabled once every loaded track is already analyzed.
+      // the toolbar shows. The sweep works on the visible rows, so it's disabled once every
+      // visible track is analyzed; changing the filter to reveal unanalysed rows re-enables it.
       id: 'analyze-quality',
       title: tr('commands.analyzeQuality'),
       hint: hintFor('analyze-quality'),
-      enabled: analysis ? true : !tracksView.every((t) => Boolean(t.spectrum)),
+      enabled: analysis ? true : !visibleTracks.every((t) => Boolean(t.spectrum)),
       run: () => {
         if (analysis) cancelAnalysis()
         else analyzeAllQuality()
       },
     },
     {
-      // Toggles the Discogs auto-match sweep. Needs a user token and at least one
-      // unmatched track, mirroring the toolbar button's disabled rule.
+      // Toggles the Discogs auto-match sweep. Needs a user token and at least one unmatched
+      // visible track, mirroring the toolbar button's disabled rule. Matches the visible rows
+      // so an active filter narrows the sweep to what's shown.
       id: 'auto-match',
       title: tr('commands.autoMatch'),
       hint: hintFor('auto-match'),
       enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
       run: () => {
         if (matching) cancelAutoMatch()
-        else enqueueAutoMatch(tracksView, false)
+        else enqueueAutoMatch(visibleTracks, false)
       },
     },
     {
