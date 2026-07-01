@@ -530,6 +530,15 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.29",
+        "date": "July 1, 2026",
+        "title": "Parallel conversion and more from ⌘K",
+        "items": [
+          "\"Convert all\" now processes several tracks at once instead of one after another, so a big batch finishes far sooner; the Apple Music step still runs one at a time, the way Music imports them.",
+          "The command palette (⌘K) gains new shortcuts: switch the theme, fill metadata from the file name, clear the selection's metadata, and a direct link to donate (with a little confetti)."
+        ]
+      },
+      {
         "version": "0.28",
         "date": "July 1, 2026",
         "title": "Faster engine, filters that stick",
