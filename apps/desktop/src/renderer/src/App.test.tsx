@@ -734,6 +734,26 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
   })
+
+  // A deliberate multi-selection scopes the toolbar's Empty just like Convert: it drops the
+  // selected rows and leaves the rest of the list. (A lone auto-selected anchor doesn't count
+  // — that case empties the whole visible list, covered under the per-format filter suite.)
+  it('empties only the selected rows when several are selected', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('clear-all'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    // Two selected went; the third (unselected) row stays.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
 })
 
 describe('App row playback', () => {
@@ -1221,6 +1241,24 @@ describe('App per-format filter', () => {
     // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
     // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // The bug a DJ hit: filter to one format (MP3), press "Empty" expecting only those gone,
+  // and the hidden WAV/FLAC rows vanish too. Empty must honour the active filter and drop
+  // only the visible rows, leaving the ones the filter is hiding on disk-and-in-list.
+  it('empties only the visible rows when a format filter is active', async () => {
+    await addMixedCrate()
+    // Narrow to MP3 — only the mp3 row shows.
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('clear-all'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    // The mp3 is gone. The format axis, now MP3-less, falls back to every format, so the wav
+    // that was hidden behind the filter shows — proof Empty didn't sweep it in. Had Empty
+    // cleared the whole list, no row would remain.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-row')).toHaveTextContent('WAV')
   })
 })
 

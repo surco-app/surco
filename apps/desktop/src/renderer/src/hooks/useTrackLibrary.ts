@@ -91,6 +91,7 @@ export interface TrackLibrary {
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   startOverTrack: (track: TrackItem) => void
   removeTrack: (id: string) => void
+  removeTracks: (ids: string[]) => void
   clearTracks: () => void
 }
 
@@ -302,6 +303,24 @@ export function useTrackLibrary({
     [setSelection],
   )
 
+  // Drops a subset of rows from the list (the selection, or the filtered-visible set) —
+  // the "empty" action when a format filter or selection is active, so the hidden
+  // FLAC/WAV rows survive. Unlike clearTracks this keeps the folder watcher: tracks
+  // remain, so a later added file should still show up.
+  const removeTracks = useCallback(
+    (ids: string[]): void => {
+      const drop = new Set(ids)
+      const removed = tracksRef.current.filter((t) => drop.has(t.id))
+      setTracks((prev) => prev.filter((t) => !drop.has(t.id)))
+      setSelection((s) => ({
+        ids: s.ids.filter((id) => !drop.has(id)),
+        anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
+      }))
+      for (const track of removed) onRemoveRef.current(track)
+    },
+    [setSelection],
+  )
+
   function clearTracks(): void {
     const cleared = tracksRef.current
     setTracks([])
@@ -328,6 +347,7 @@ export function useTrackLibrary({
     deriveTracks,
     startOverTrack,
     removeTrack,
+    removeTracks,
     clearTracks,
   }
 }

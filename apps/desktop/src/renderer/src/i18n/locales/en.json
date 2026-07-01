@@ -597,6 +597,8 @@
     "clearTitle": "Clear the list?",
     "clearMessage_one": "This removes the only track from the list. The file on disk is not deleted.",
     "clearMessage_other": "This removes all {{count}} tracks from the list. The files on disk are not deleted.",
+    "clearMessageSelected_one": "This removes the selected track from the list. The file on disk is not deleted.",
+    "clearMessageSelected_other": "This removes the {{count}} selected tracks from the list. The files on disk are not deleted.",
     "clearConfirm": "Clear",
     "trashTitle_one": "Move file to Trash?",
     "trashTitle_other": "Move {{count}} files to Trash?",

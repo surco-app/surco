@@ -597,6 +597,8 @@
     "clearTitle": "¿Vaciar la lista?",
     "clearMessage_one": "Quita la única pista de la lista. El archivo en disco no se borra.",
     "clearMessage_other": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",
+    "clearMessageSelected_one": "Quita la pista seleccionada de la lista. El archivo en disco no se borra.",
+    "clearMessageSelected_other": "Quita las {{count}} pistas seleccionadas de la lista. Los archivos en disco no se borran.",
     "clearConfirm": "Vaciar",
     "trashTitle_one": "¿Mover el archivo a la papelera?",
     "trashTitle_other": "¿Mover {{count}} archivos a la papelera?",

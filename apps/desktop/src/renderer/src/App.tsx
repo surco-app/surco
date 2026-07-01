@@ -391,6 +391,7 @@ export default function App(): React.JSX.Element {
     deriveTracks,
     startOverTrack,
     removeTrack,
+    removeTracks,
     clearTracks,
   } = useTrackLibrary({
     setSelection,
@@ -649,14 +650,21 @@ export default function App(): React.JSX.Element {
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
   })
 
+  // Emptying the whole list (no filter, no selection) starts over — clearTracks also drops
+  // the folder watcher. Any subset (a selection, or the filtered-visible rows) just removes
+  // those rows and keeps watching, so the hidden FLAC/WAV tracks survive the click.
+  const emptyTracks = useStableCallback((targets: TrackItem[], scope: 'selected' | 'all') => {
+    if (scope === 'all' && targets.length === tracksRef.current.length) clearTracks()
+    else removeTracks(targets.map((t) => t.id))
+  })
+
   // The confirm-before-firing actions (trash, delete original, fill-all, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const { askTrash, askDeleteOriginal, askFillAll, askClearAll, askConvertAll } = useConfirmFlows({
     settings,
-    tracks,
     removeTrack,
     updateTrack,
-    clearTracks,
+    emptyTracks,
     deriveTracks,
     processAll,
     openConfirm: overlays.openConfirm,
@@ -821,17 +829,28 @@ export default function App(): React.JSX.Element {
   // call — so an inline-style body can still read current state.
   const onAdd = useStableCallback(() => void pickFiles())
   const onSelectAllTracks = useStableCallback(selectAll)
-  // Fill from filename targets the selection when there is one, else the whole list — the
-  // same "selected, or all" rule the convert action uses, so a click never silently rewrites
-  // tracks the user wasn't looking at.
-  const onFillAll = useStableCallback(() =>
-    selectedTracks.length > 0 ? askFillAll(selectedTracks, 'selected') : askFillAll(tracks, 'all'),
-  )
+  // What a toolbar bulk action (fill, empty) operates on: a deliberate multi-selection when
+  // there is one, else the visible (filtered) rows — never the whole list behind an active
+  // filter, so a click can't touch rows the user filtered out of view. A single auto-selected
+  // anchor doesn't count as a selection (imports auto-select the first row), matching the
+  // right-click menu's own selectedIds.length > 1 rule; without this, "empty" could never
+  // clear the list because one row is always anchored.
+  const bulkActionTarget = (): { targets: TrackItem[]; scope: 'selected' | 'all' } =>
+    selectedTracks.length > 1
+      ? { targets: selectedTracks, scope: 'selected' }
+      : { targets: visibleTracksRef.current, scope: 'all' }
+  const onFillAll = useStableCallback(() => {
+    const { targets, scope } = bulkActionTarget()
+    askFillAll(targets, scope)
+  })
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(tracksView, false))
   const onOpenExport = useStableCallback(overlays.openExport)
-  const onClearAll = useStableCallback(askClearAll)
+  const onClearAll = useStableCallback(() => {
+    const { targets, scope } = bulkActionTarget()
+    askClearAll(targets, scope)
+  })
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
@@ -974,7 +993,7 @@ export default function App(): React.JSX.Element {
       addTrackToAppleMusic,
       removeTrack,
       reveal: window.api.reveal,
-      askClearAll,
+      askClearAll: onClearAll,
       openSettings,
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,
