@@ -178,6 +178,47 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // The whole point of the bulk run: several conversions must be in flight at once,
+  // not one-at-a-time. A convert that never resolves on its own lets us observe how many
+  // processTrack calls overlap — a sequential loop would only ever reach 1.
+  it('runs conversions concurrently, not strictly one after another', async () => {
+    let inFlight = 0
+    let peak = 0
+    const releases: Array<() => void> = []
+    const processTrack = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          inFlight++
+          peak = Math.max(peak, inFlight)
+          releases.push(() => {
+            inFlight--
+            resolve({ outputPath: '/out/x.aiff' })
+          })
+        }),
+    )
+    setApi({ processTrack })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' }), track({ id: 'd' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn(), concurrency: 4 }),
+      { wrapper: withClient() },
+    )
+    let done: Promise<void>
+    await act(async () => {
+      done = result.current.processAll(tracks)
+      // Let the pool spin up its workers before anything resolves.
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(peak).toBeGreaterThan(1)
+    await act(async () => {
+      for (const release of releases) release()
+      // Draining the queue may enqueue more once slots free; release those too.
+      await new Promise((r) => setTimeout(r, 0))
+      for (const release of releases) release()
+      await done
+    })
+  })
+
   // The donate nudge rides the moment of value, and a convert-all is one moment no
   // matter how many tracks it spans — firing per track would ask for support thirty
   // times in a thirty-track run, the exact nagware the nudge is built to avoid.
@@ -323,9 +364,17 @@ describe('useTrackProcessing', () => {
       .mockResolvedValue({ outputPath: '/out/b.aiff' })
     setApi({ processTrack })
     const initial = [track({ id: 'a' }), track({ id: 'b' })]
+    // concurrency: 1 so 'b' is still queued (not yet started) while 'a' converts — the
+    // live-state guarantee is about a track picked up from current state when its turn
+    // comes, which is exactly the not-yet-started case a concurrent run still honors.
     const { result, rerender } = renderHook(
       (props: { tracks: TrackItem[] }) =>
-        useTrackProcessing({ tracks: props.tracks, settings: null, updateTrack: vi.fn() }),
+        useTrackProcessing({
+          tracks: props.tracks,
+          settings: null,
+          updateTrack: vi.fn(),
+          concurrency: 1,
+        }),
       { initialProps: { tracks: initial }, wrapper: withClient() },
     )
     let run: Promise<void> = Promise.resolve()
@@ -356,9 +405,16 @@ describe('useTrackProcessing', () => {
     )
     setApi({ processTrack })
     const initial = [track({ id: 'a' }), track({ id: 'b' })]
+    // concurrency: 1 so 'b' hasn't started when it's removed — the removal must turn it
+    // into a skip rather than a conversion of a track the user has taken off the list.
     const { result, rerender } = renderHook(
       (props: { tracks: TrackItem[] }) =>
-        useTrackProcessing({ tracks: props.tracks, settings: null, updateTrack: vi.fn() }),
+        useTrackProcessing({
+          tracks: props.tracks,
+          settings: null,
+          updateTrack: vi.fn(),
+          concurrency: 1,
+        }),
       { initialProps: { tracks: initial }, wrapper: withClient() },
     )
     let run: Promise<void> = Promise.resolve()

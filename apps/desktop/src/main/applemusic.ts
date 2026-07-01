@@ -1,8 +1,16 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../shared/types'
+import { createConcurrencyLimiter } from './analysisLimiter'
 
 const run = promisify(execFile)
+
+// Apple Music imports one file at a time internally, and each add's osascript sits in a
+// retry loop (up to 60s) waiting for that import to settle. Bulk conversions now run their
+// ffmpeg in parallel, so several could reach the add at once and pile concurrent osascripts
+// on Music — no faster (Music serializes them anyway) and prone to contention. This gate
+// keeps the adds strictly one-at-a-time while the CPU-bound conversion work overlaps freely.
+export const appleMusicLimiter = createConcurrencyLimiter(1)
 
 function textFields(meta: TrackMetadata): [string, string][] {
   return [

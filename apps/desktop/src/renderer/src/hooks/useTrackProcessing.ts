@@ -9,6 +9,7 @@ import {
   eligibleForBatch,
   summarizeBatch,
 } from '../lib/batch'
+import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
@@ -16,6 +17,13 @@ import { sanitizeMeta } from '../lib/hygiene'
 import { renderOutputName } from '../lib/outputName'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
+
+// How many tracks convert at once in a bulk run. Half the logical cores (min 2), the same
+// budget the analysis sweep uses (analysisLimiter): ffmpeg is CPU-bound, so this overlaps
+// conversions while leaving headroom for the UI and audio. Chosen automatically rather than
+// exposed as a setting — the real ceiling on a bulk run is Apple Music's serialized import,
+// not the ffmpeg count, so a knob here would suggest more control than it delivers.
+const CONVERT_CONCURRENCY = Math.max(2, Math.floor((navigator.hardwareConcurrency || 4) / 2))
 
 interface Params {
   tracks: TrackItem[]
@@ -28,6 +36,9 @@ interface Params {
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
   onConversion?: () => void
+  // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (half the
+  // cores); only overridden in tests, which pin it to make the concurrency deterministic.
+  concurrency?: number
 }
 
 export interface TrackProcessing {
@@ -59,6 +70,7 @@ export function useTrackProcessing({
   updateTrack,
   onNormalizeSkipped,
   onConversion,
+  concurrency = CONVERT_CONCURRENCY,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -271,15 +283,22 @@ export function useTrackProcessing({
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
-      const results: BatchOutcome[] = []
+      let done = 0
+      let results: BatchOutcome[] = []
       try {
-        for (const id of ids) {
-          // Cancel stops the loop before the next track; the one already converting
-          // in the main process can't be aborted, so it finishes and is counted.
-          if (cancelBatchRef.current) break
-          results.push(await processOne(id, formatOverride, normalizeOverride))
-          setBatchProgress({ done: results.length, total: ids.length })
-        }
+        // Convert several tracks at once instead of one-at-a-time: ffmpeg spawns an
+        // independent child per track, so a bulk run overlaps them up to CONVERT_CONCURRENCY.
+        // The Apple Music add stays serialized in the main process (Music imports one file at
+        // a time anyway), so this speeds up the ffmpeg-bound work without piling osascripts on
+        // Music. Cancel is checked per task rather than breaking a loop: an already-running
+        // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
+        results = await mapWithConcurrency(ids, concurrency, async (id) => {
+          if (cancelBatchRef.current) return 'skipped'
+          const outcome = await processOne(id, formatOverride, normalizeOverride)
+          done += 1
+          setBatchProgress({ done, total: ids.length })
+          return outcome
+        })
       } finally {
         setBatching(false)
         setBatchSummary(summarizeBatch(results))

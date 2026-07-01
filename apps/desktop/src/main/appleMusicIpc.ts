@@ -3,6 +3,7 @@ import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../sh
 import { activity } from './activity'
 import {
   addToAppleMusic,
+  appleMusicLimiter,
   dumpAppleMusicLibrary,
   revealInAppleMusic,
   updateInAppleMusic,
@@ -43,25 +44,29 @@ export function registerAppleMusicIpc(): void {
   // up. macOS-only; the renderer never offers it elsewhere.
   ipcMain.handle('applemusic:add', async (_e, job: AppleMusicAddJob) => {
     if (process.platform !== 'darwin') return
-    return activity.track(
-      'applemusic',
-      'activity.appleMusicAdd',
-      async () => {
-        const settings = getSettings()
-        let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
-        try {
-          if (hasCoverSource(job)) {
-            prepared = await prepareProcessedCover(job, {
-              maxSize: settings.coverMaxSize,
-              square: settings.coverSquare,
-            })
+    // Same one-at-a-time gate the conversion path uses, so a manual add can't race an
+    // automatic one onto Music. The queue wait stays outside the timed activity.track.
+    return appleMusicLimiter.run(() =>
+      activity.track(
+        'applemusic',
+        'activity.appleMusicAdd',
+        async () => {
+          const settings = getSettings()
+          let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+          try {
+            if (hasCoverSource(job)) {
+              prepared = await prepareProcessedCover(job, {
+                maxSize: settings.coverMaxSize,
+                square: settings.coverSquare,
+              })
+            }
+            return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+          } finally {
+            if (prepared) await prepared.cleanup()
           }
-          return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
-        } finally {
-          if (prepared) await prepared.cleanup()
-        }
-      },
-      { labelParams: { track: trackLabel(job.meta) } },
+        },
+        { labelParams: { track: trackLabel(job.meta) } },
+      ),
     )
   })
 
@@ -72,31 +77,33 @@ export function registerAppleMusicIpc(): void {
   // file left to import, so the missing copy is surfaced as an error instead.
   ipcMain.handle('applemusic:update', async (_e, job: AppleMusicUpdateJob) => {
     if (process.platform !== 'darwin') return
-    return activity.track(
-      'applemusic',
-      'activity.appleMusicUpdate',
-      async () => {
-        const settings = getSettings()
-        let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
-        try {
-          if (hasCoverSource(job)) {
-            prepared = await prepareProcessedCover(job, {
-              maxSize: settings.coverMaxSize,
-              square: settings.coverSquare,
-            })
+    return appleMusicLimiter.run(() =>
+      activity.track(
+        'applemusic',
+        'activity.appleMusicUpdate',
+        async () => {
+          const settings = getSettings()
+          let prepared: Awaited<ReturnType<typeof prepareProcessedCover>>
+          try {
+            if (hasCoverSource(job)) {
+              prepared = await prepareProcessedCover(job, {
+                maxSize: settings.coverMaxSize,
+                square: settings.coverSquare,
+              })
+            }
+            const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
+            if (updated) return updated
+            if (!job.outputPath) {
+              const t = createMenuT(app.getLocale())
+              throw new Error(t('appleMusicGone'))
+            }
+            return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+          } finally {
+            if (prepared) await prepared.cleanup()
           }
-          const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
-          if (updated) return updated
-          if (!job.outputPath) {
-            const t = createMenuT(app.getLocale())
-            throw new Error(t('appleMusicGone'))
-          }
-          return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
-        } finally {
-          if (prepared) await prepared.cleanup()
-        }
-      },
-      { labelParams: { track: trackLabel(job.meta) } },
+        },
+        { labelParams: { track: trackLabel(job.meta) } },
+      ),
     )
   })
 

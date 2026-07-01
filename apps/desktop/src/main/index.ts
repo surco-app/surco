@@ -31,7 +31,7 @@ import type {
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
-import { addToAppleMusic, updateInAppleMusic } from './applemusic'
+import { addToAppleMusic, appleMusicLimiter, updateInAppleMusic } from './applemusic'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
@@ -641,8 +641,36 @@ function registerIpc(): void {
       },
       recordConversion,
       removeRenamedOriginal,
-      addToAppleMusic,
-      updateInAppleMusic,
+      // Wrap the Apple Music add/update the same way convertAudio is wrapped above, so the
+      // activity panel times them too. The osascript add waits out Music's import (up to
+      // 60s on a big library), so this is the step users watch drag — surfacing its ms lets
+      // them see whether it really is growing. labelParams.track mirrors the manual add row.
+      //
+      // appleMusicLimiter (concurrency 1) serializes the adds so parallel conversions don't
+      // pile osascripts on Music; it wraps activity.track so the queue wait stays out of the
+      // measured ms — the row times the real import work, not how long it waited for a slot.
+      addToAppleMusic: (target, meta, coverPath) => {
+        const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        return appleMusicLimiter.run(() =>
+          activity.track(
+            'applemusic',
+            'activity.appleMusicAdd',
+            () => addToAppleMusic(target, meta, coverPath),
+            { labelParams: { track } },
+          ),
+        )
+      },
+      updateInAppleMusic: (persistentId, meta, coverPath) => {
+        const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        return appleMusicLimiter.run(() =>
+          activity.track(
+            'applemusic',
+            'activity.appleMusicUpdate',
+            () => updateInAppleMusic(persistentId, meta, coverPath),
+            { labelParams: { track } },
+          ),
+        )
+      },
       allowMedia: (path) => mediaAccess.allow(path),
       existsSync,
       mkdir,
