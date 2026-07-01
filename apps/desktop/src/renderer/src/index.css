@@ -237,6 +237,34 @@ textarea {
   animation: overlay-in 0.16s ease;
 }
 
+/* The donate nudge is a celebration moment, so it arrives more gently than the app's
+   utility dialogs: a longer rise from further down with a soft overshoot, instead of the
+   brisk pop-in every other modal shares. Overrides .animate-pop's animation (same box,
+   later rule wins). Reduced-motion drops the movement and just fades it in. */
+@keyframes donate-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  70% {
+    transform: translateY(-3px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.donate-pop {
+  animation: donate-pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donate-pop {
+    animation: overlay-in 0.2s ease;
+  }
+}
+
 @keyframes top-progress {
   0% {
     transform: translateX(-100%);

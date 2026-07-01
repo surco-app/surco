@@ -1,10 +1,21 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { DONATE_URL } from '../lib/donate'
 import { DonateNudgeModal } from './DonateNudgeModal'
+
+// The nudge now mounts a confetti canvas; jsdom throws on getContext and never runs the
+// media query, so stub both so these tests stay about the dialog, not the celebration.
+beforeEach(() => {
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }) as unknown as typeof window.matchMedia
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
+})
 
 afterEach(cleanup)
 
