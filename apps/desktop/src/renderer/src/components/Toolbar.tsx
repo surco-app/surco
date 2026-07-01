@@ -210,10 +210,11 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-stats"
           onClick={onStats}
-          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.stats')}
         >
           <ChartColumn className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.stats')} align="end" />
         </button>
         <button
           type="button"
@@ -233,10 +234,11 @@ export const Toolbar = memo(function Toolbar({
           data-testid="open-settings"
           // Call with no args so React's click event can't reach the opener as its tab.
           onClick={() => onSettings()}
-          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.settings')}
         >
           <SettingsIcon className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.settings')} align="end" />
         </button>
       </div>
     </header>
