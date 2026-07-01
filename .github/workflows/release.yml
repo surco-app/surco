@@ -65,7 +65,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       # npm's optionalDependencies bug (npm/cli#4828) makes a lockfile-pinned
@@ -84,6 +84,13 @@ jobs:
             sleep 15
           done
           exit 1
+
+      # Electron 42+ no longer downloads its binary during npm install (the postinstall was
+      # dropped), so fetch it explicitly before electron-builder packages the app — otherwise
+      # the pack step finds no Electron binary to bundle.
+      - name: Fetch Electron binary
+        shell: bash
+        run: node node_modules/electron/install.js
 
       # The App Store Connect API key arrives base64-encoded as a secret; notarize
       # needs it as a file on disk.
@@ -143,7 +150,7 @@ jobs:
           path: feeds
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Merge the two feeds into one
         run: |
           npm init -y >/dev/null 2>&1
