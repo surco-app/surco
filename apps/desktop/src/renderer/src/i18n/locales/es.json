@@ -505,7 +505,10 @@
     "showLoudnessHint": "Mide el loudness integrado, el pico real y el rango de loudness (EBU R128) al editar una pista. Si lo desactivas, la medición se omite por completo.",
     "keyNotation": "Notación de la tonalidad",
     "keyNotationHint": "Cómo se muestra la sugerencia de tonalidad detectada bajo el campo Key. Camelot es la que usan los programas de DJ para ordenar.",
-    "keyNotations": { "camelot": "Camelot (8A)", "musical": "Musical (Am)" },
+    "keyNotations": {
+      "camelot": "Camelot (8A)",
+      "musical": "Musical (Am)"
+    },
     "shown": "Mostrados",
     "hidden": "Ocultos",
     "hide": "Ocultar",
@@ -513,7 +516,9 @@
     "moveUp": "Subir",
     "moveDown": "Bajar",
     "allVisible": "Todos los campos están visibles.",
-    "required": "Obligatorio"
+    "required": "Obligatorio",
+    "autoOrganize": "Auto-organizar",
+    "autoOrganizeHint": "Reordena los campos mostrados por grupo"
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",
@@ -642,5 +647,11 @@
     "resultCount_other": "{{count}} resultados",
     "trackCount_one": "{{count}} pista",
     "trackCount_other": "{{count}} pistas"
+  },
+  "fieldGroups": {
+    "identity": "Identidad",
+    "catalog": "Catálogo",
+    "dj": "DJ",
+    "order": "Orden"
   }
 }

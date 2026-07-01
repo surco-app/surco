@@ -60,6 +60,20 @@ describe('FieldsEditor', () => {
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'album'])
   })
 
+  // The auto-organize button reorders the shown fields into group order in one click,
+  // so a user who enabled fields ad hoc gets a tidy identity → catalog → dj → order
+  // layout without dragging each one. It only reorders — nothing is shown or hidden.
+  it('auto-organizes the visible fields into group order', () => {
+    const { onChangeVisible, onChangeRequired } = setup({
+      visibleFields: ['bpm', 'title', 'catalogNumber', 'artist'],
+      requiredFields: ['title'],
+    })
+    fireEvent.click(screen.getByTestId('auto-organize-fields'))
+    expect(onChangeVisible).toHaveBeenCalledWith(['title', 'artist', 'catalogNumber', 'bpm'])
+    // Reorder only: it must not touch which fields are required.
+    expect(onChangeRequired).not.toHaveBeenCalled()
+  })
+
   // Unlike the visible list — whose order the user curates because it IS the
   // editor's order — the hidden list has no meaningful order of its own, so it
   // sorts alphabetically by the translated label to be scannable.

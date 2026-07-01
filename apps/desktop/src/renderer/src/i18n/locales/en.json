@@ -505,7 +505,10 @@
     "showLoudnessHint": "Measures integrated loudness, true peak and loudness range (EBU R128) while editing a track. When off, the measurement is skipped entirely.",
     "keyNotation": "Key notation",
     "keyNotationHint": "How the detected key suggestion is shown under the Key field. Camelot is what DJ software sorts by.",
-    "keyNotations": { "camelot": "Camelot (8A)", "musical": "Musical (Am)" },
+    "keyNotations": {
+      "camelot": "Camelot (8A)",
+      "musical": "Musical (Am)"
+    },
     "shown": "Shown",
     "hidden": "Hidden",
     "hide": "Hide",
@@ -513,7 +516,9 @@
     "moveUp": "Move up",
     "moveDown": "Move down",
     "allVisible": "All fields are visible.",
-    "required": "Required"
+    "required": "Required",
+    "autoOrganize": "Auto-organize",
+    "autoOrganizeHint": "Reorder shown fields by group"
   },
   "errorBoundary": {
     "title": "Something failed to render",
@@ -642,5 +647,11 @@
     "resultCount_other": "{{count}} results",
     "trackCount_one": "{{count}} track",
     "trackCount_other": "{{count}} tracks"
+  },
+  "fieldGroups": {
+    "identity": "Identity",
+    "catalog": "Catalog",
+    "dj": "DJ",
+    "order": "Order"
   }
 }

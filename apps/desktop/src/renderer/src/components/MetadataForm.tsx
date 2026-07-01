@@ -1,7 +1,9 @@
 import type React from 'react'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
+import { groupHeaderBefore } from '../lib/fields'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
@@ -61,39 +63,59 @@ export function MetadataForm({
         />
 
         <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
-          {fields.map((f) =>
-            f.key === 'compilation' ? (
-              // Compilation is a yes/no fact, not free text: a checkbox writes the
-              // exact '1' the TCMP/COMPILATION tag needs. In a mixed selection
-              // (value '') it shows unticked, and ticking it stamps '1' onto every
-              // selected track.
-              <label key={f.key} className="flex items-center gap-2 self-end pb-2">
-                <input
-                  type="checkbox"
-                  data-testid="field-compilation"
-                  checked={f.value === '1'}
-                  onChange={(e) => f.onChange(e.target.checked ? '1' : '')}
-                  className="h-4 w-4 accent-[var(--color-accent)]"
+          {fields.map((f, i) => {
+            // A group header spans the full row and forces the field after it back to
+            // column 1, so the two-column grid never straddles a section boundary.
+            const header = groupHeaderBefore(
+              fields.map((s) => s.key),
+              i,
+            )
+            const field =
+              f.key === 'compilation' ? (
+                // Compilation is a yes/no fact, not free text: a checkbox writes the
+                // exact '1' the TCMP/COMPILATION tag needs. In a mixed selection
+                // (value '') it shows unticked, and ticking it stamps '1' onto every
+                // selected track.
+                <label key={f.key} className="flex items-center gap-2 self-end pb-2">
+                  <input
+                    type="checkbox"
+                    data-testid="field-compilation"
+                    checked={f.value === '1'}
+                    onChange={(e) => f.onChange(e.target.checked ? '1' : '')}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-xs font-medium text-fg-dim">{f.label}</span>
+                </label>
+              ) : (
+                <Field
+                  key={f.key}
+                  name={f.key}
+                  label={f.label}
+                  value={f.value}
+                  placeholder={f.placeholder}
+                  onChange={f.onChange}
+                  insertSources={f.insertSources}
+                  cleanResult={f.cleanResult}
+                  wide={f.wide}
+                  invalid={f.invalid}
+                  suggestions={f.suggestions}
+                  multiSuggestions={f.multiSuggestions}
                 />
-                <span className="text-xs font-medium text-fg-dim">{f.label}</span>
-              </label>
-            ) : (
-              <Field
-                key={f.key}
-                name={f.key}
-                label={f.label}
-                value={f.value}
-                placeholder={f.placeholder}
-                onChange={f.onChange}
-                insertSources={f.insertSources}
-                cleanResult={f.cleanResult}
-                wide={f.wide}
-                invalid={f.invalid}
-                suggestions={f.suggestions}
-                multiSuggestions={f.multiSuggestions}
-              />
-            ),
-          )}
+              )
+            return (
+              <Fragment key={f.key}>
+                {header && (
+                  <h3
+                    data-testid={`field-group-${header}`}
+                    className="col-span-1 mt-2 mb-1 text-xs font-semibold uppercase tracking-wide text-fg-faint first:mt-0 @[26rem]:col-span-2"
+                  >
+                    {tr(`fieldGroups.${header}`)}
+                  </h3>
+                )}
+                {field}
+              </Fragment>
+            )
+          })}
         </div>
       </div>
     </div>

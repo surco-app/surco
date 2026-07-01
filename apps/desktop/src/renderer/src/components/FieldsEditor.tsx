@@ -1,7 +1,7 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { FIELD_DEFS, moveItem } from '../lib/fields'
+import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
 
 interface Props {
   visibleFields: string[]
@@ -23,9 +23,21 @@ export function FieldsEditor({
   return (
     <div className="max-h-[340px] space-y-4 overflow-y-auto">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-          {tr('settings.shown')}
-        </p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-fg-dim">
+            {tr('settings.shown')}
+          </p>
+          <button
+            type="button"
+            data-testid="auto-organize-fields"
+            title={tr('settings.autoOrganizeHint')}
+            onClick={() => onChangeVisible(sortFieldsByGroup(visibleFields))}
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          >
+            <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
+            {tr('settings.autoOrganize')}
+          </button>
+        </div>
         <div className="space-y-1.5">
           {visibleFields.map((key, i) => (
             <div
