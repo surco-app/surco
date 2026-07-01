@@ -127,6 +127,35 @@ describe('filterCommands', () => {
   it('returns nothing when no title matches', () => {
     expect(filterCommands(commands, 'zzz')).toEqual([])
   })
+
+  // Frecency: among the commands that match the query, the ones the user runs most
+  // rise to the top. "Clear the list" beats "Clear metadata" when it's used more, even
+  // though it's declared later — so the habitual choice lands under the cursor.
+  it('orders matches by usage count so the most-used command leads', () => {
+    const cmds = [cmd('clear-meta', 'Clear metadata'), cmd('clear-list', 'Clear the list')]
+    const ordered = filterCommands(cmds, 'clear', { 'clear-list': 5, 'clear-meta': 1 })
+    expect(ordered.map((c) => c.id)).toEqual(['clear-list', 'clear-meta'])
+  })
+
+  // A tie (or two never-used commands) keeps the declarative order, so the list stays
+  // predictable instead of shuffling arbitrarily.
+  it('falls back to declarative order when usage is equal', () => {
+    const cmds = [cmd('clear-meta', 'Clear metadata'), cmd('clear-list', 'Clear the list')]
+    expect(filterCommands(cmds, 'clear', {}).map((c) => c.id)).toEqual(['clear-meta', 'clear-list'])
+    expect(
+      filterCommands(cmds, 'clear', { 'clear-meta': 3, 'clear-list': 3 }).map((c) => c.id),
+    ).toEqual(['clear-meta', 'clear-list'])
+  })
+
+  // An empty query stays in declarative order regardless of usage: the browsable menu
+  // the user has memorized must not reshuffle just because some commands are used more.
+  it('keeps declarative order for an empty query even with usage data', () => {
+    expect(filterCommands(commands, '', { all: 99 }).map((c) => c.id)).toEqual([
+      'add',
+      'settings',
+      'all',
+    ])
+  })
 })
 
 function meta(artist: string, title: string): TrackItem['meta'] {

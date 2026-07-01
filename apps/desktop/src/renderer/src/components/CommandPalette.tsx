@@ -12,6 +12,10 @@ interface Props {
   // optional and additive: without them the palette is a plain command launcher.
   tracks?: TrackItem[]
   onGoToTrack?: (id: string) => void
+  // Per-command run counts (command id → count) that float a filtered list's most-used
+  // entries to the top, and a callback to record one more run so the counts keep learning.
+  usage?: Record<string, number>
+  onRunCommand?: (id: string) => void
   onClose: () => void
 }
 
@@ -19,13 +23,15 @@ export function CommandPalette({
   commands,
   tracks = [],
   onGoToTrack = () => {},
+  usage = {},
+  onRunCommand = () => {},
   onClose,
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const commandResults = filterCommands(commands, query)
+  const commandResults = filterCommands(commands, query, usage)
   const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
   // One flat list keeps the index-based arrow/Enter navigation untouched; the track group
   // simply starts at commandResults.length, where the "Tracks" heading is rendered.
@@ -46,6 +52,9 @@ export function CommandPalette({
   function runAt(i: number): void {
     const c = results[i]
     if (c?.enabled) {
+      // Only real commands count toward frecency; a track jump ("goto:<id>") is a one-off
+      // navigation, not a command whose ranking should stick.
+      if (!c.id.startsWith('goto:')) onRunCommand(c.id)
       c.run()
       onClose()
     }

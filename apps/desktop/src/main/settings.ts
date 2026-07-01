@@ -53,6 +53,7 @@ const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
+  commandUsage: {},
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
 }
@@ -67,6 +68,7 @@ const LOCAL_KEYS = [
   'outputDir',
   'hasSeenOnboarding',
   'conversionCount',
+  'commandUsage',
 ] as const satisfies readonly (keyof Settings)[]
 
 function localFile(): string {

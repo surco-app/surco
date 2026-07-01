@@ -13,10 +13,23 @@ export interface Command {
   run: () => void
 }
 
-export function filterCommands(commands: Command[], query: string): Command[] {
+// Filters commands by a case-insensitive substring of the title. With a non-empty query,
+// matches are ordered by how often the user has run each (frecency), so a habitual choice
+// like "Clear the list" leads over an earlier-declared "Clear metadata". Ties keep the
+// declarative order (stable sort), and an empty query is left untouched so the browsable
+// menu the user has memorized never reshuffles.
+export function filterCommands(
+  commands: Command[],
+  query: string,
+  usage: Record<string, number> = {},
+): Command[] {
   const q = query.trim().toLowerCase()
   if (!q) return commands
-  return commands.filter((c) => c.title.toLowerCase().includes(q))
+  const matches = commands.filter((c) => c.title.toLowerCase().includes(q))
+  return matches
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (usage[b.c.id] ?? 0) - (usage[a.c.id] ?? 0) || a.i - b.i)
+    .map((e) => e.c)
 }
 
 // The label a track shows in the palette: "artist — title" when both are known, else

@@ -124,6 +124,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
+    saveSettings: vi.fn().mockResolvedValue(settings()),
     getConfigDir: vi.fn().mockResolvedValue(null),
     defaultConfigDir: vi.fn().mockResolvedValue('/Users/test/Library/Application Support/Surco'),
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),

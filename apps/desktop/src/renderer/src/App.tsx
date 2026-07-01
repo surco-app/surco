@@ -1484,6 +1484,16 @@ export default function App(): React.JSX.Element {
             // closes itself (runAt → onClose) like any other command.
             tracks={visibleTracks}
             onGoToTrack={revealSelection}
+            usage={settings?.commandUsage ?? {}}
+            // Learn from each run so the next filtered list floats the user's habits up.
+            onRunCommand={(id) =>
+              saveSettings({
+                commandUsage: {
+                  ...(settings?.commandUsage ?? {}),
+                  [id]: (settings?.commandUsage?.[id] ?? 0) + 1,
+                },
+              })
+            }
             // A command's run() may itself open another modal (settings, find & replace,
             // export…). Closing the palette must not clobber that: only dismiss it when the
             // palette is still the active modal, so a command that navigated elsewhere wins.

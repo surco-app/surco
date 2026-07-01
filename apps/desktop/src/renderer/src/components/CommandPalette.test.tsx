@@ -56,6 +56,56 @@ describe('CommandPalette', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  // Frecency end-to-end: a filtered list floats the most-used matching command first, so
+  // the habitual choice sits under the cursor when the user types.
+  it('orders filtered results by usage so the most-used command leads', () => {
+    render(
+      <CommandPalette
+        commands={[
+          cmd({ id: 'clear-meta', title: 'Clear metadata' }),
+          cmd({ id: 'clear-list', title: 'Clear the list' }),
+        ]}
+        usage={{ 'clear-list': 4, 'clear-meta': 1 }}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'clear' } })
+    const items = screen.getAllByTestId('palette-item')
+    expect(items[0]).toHaveTextContent('Clear the list')
+  })
+
+  // Running a command records one more use so the ranking keeps learning.
+  it('records a command run for frecency', () => {
+    const onRunCommand = vi.fn()
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'clear-list', title: 'Clear the list' })]}
+        onRunCommand={onRunCommand}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('palette-item'))
+    expect(onRunCommand).toHaveBeenCalledWith('clear-list')
+  })
+
+  // A track jump is one-off navigation, not a command whose ranking should stick, so it
+  // must not feed the frecency counter.
+  it('does not record a track jump for frecency', () => {
+    const onRunCommand = vi.fn()
+    render(
+      <CommandPalette
+        commands={[]}
+        tracks={[track('t1', 'Nifra', 'Everglow')]}
+        onGoToTrack={vi.fn()}
+        onRunCommand={onRunCommand}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'nifra' } })
+    fireEvent.click(screen.getByTestId('palette-item'))
+    expect(onRunCommand).not.toHaveBeenCalled()
+  })
+
   // The palette is a combobox over a listbox: the input keeps DOM focus and points at
   // the active option via aria-activedescendant, so a screen reader announces the
   // highlighted command as the arrows move it.
