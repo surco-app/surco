@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
@@ -72,6 +72,23 @@ describe('FieldsEditor', () => {
     expect(onChangeVisible).toHaveBeenCalledWith(['title', 'artist', 'catalogNumber', 'bpm'])
     // Reorder only: it must not touch which fields are required.
     expect(onChangeRequired).not.toHaveBeenCalled()
+  })
+
+  // Reordering a list that scrolls (and may already be tidy) gives no visible sign it ran,
+  // so the button confirms in place: it flips to a done label, then reverts on its own.
+  it('confirms in the button after auto-organizing, then reverts', () => {
+    vi.useFakeTimers()
+    try {
+      setup({ visibleFields: ['bpm', 'title'], requiredFields: [] })
+      const btn = screen.getByTestId('auto-organize-fields')
+      expect(btn).toHaveTextContent('Auto-organize')
+      fireEvent.click(btn)
+      expect(btn).toHaveTextContent('Organized')
+      act(() => vi.advanceTimersByTime(1600))
+      expect(btn).toHaveTextContent('Auto-organize')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // Unlike the visible list — whose order the user curates because it IS the

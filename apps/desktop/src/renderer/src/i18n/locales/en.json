@@ -518,7 +518,8 @@
     "allVisible": "All fields are visible.",
     "required": "Required",
     "autoOrganize": "Auto-organize",
-    "autoOrganizeHint": "Reorder shown fields by group"
+    "autoOrganizeHint": "Reorder shown fields by group",
+    "autoOrganized": "Organized"
   },
   "errorBoundary": {
     "title": "Something failed to render",

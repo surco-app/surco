@@ -1,7 +1,11 @@
-import { ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
 import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
+
+// How long the auto-organize button holds its "done" confirmation before reverting.
+const ORGANIZED_FEEDBACK_MS = 1500
 
 interface Props {
   visibleFields: string[]
@@ -20,8 +24,20 @@ export function FieldsEditor({
   onChangeRequired,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // Reordering a scrolling (and possibly already-tidy) list gives no visible sign it ran,
+  // so the button confirms in place, then reverts. The timer is cleared on unmount so a
+  // late revert can't fire after the modal closes.
+  const [organized, setOrganized] = useState(false)
+  const organizedTimer = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => () => clearTimeout(organizedTimer.current), [])
+  function autoOrganize(): void {
+    onChangeVisible(sortFieldsByGroup(visibleFields))
+    setOrganized(true)
+    clearTimeout(organizedTimer.current)
+    organizedTimer.current = setTimeout(() => setOrganized(false), ORGANIZED_FEEDBACK_MS)
+  }
   return (
-    <div className="max-h-[340px] space-y-4 overflow-y-auto">
+    <div className="max-h-[340px] space-y-4 overflow-y-auto pr-1">
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wide text-fg-dim">
@@ -31,11 +47,19 @@ export function FieldsEditor({
             type="button"
             data-testid="auto-organize-fields"
             title={tr('settings.autoOrganizeHint')}
-            onClick={() => onChangeVisible(sortFieldsByGroup(visibleFields))}
-            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            onClick={autoOrganize}
+            className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
+              organized
+                ? 'text-[var(--color-accent)]'
+                : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
+            }`}
           >
-            <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
-            {tr('settings.autoOrganize')}
+            {organized ? (
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
           </button>
         </div>
         <div className="space-y-1.5">

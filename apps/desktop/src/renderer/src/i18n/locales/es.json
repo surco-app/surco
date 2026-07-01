@@ -518,7 +518,8 @@
     "allVisible": "Todos los campos están visibles.",
     "required": "Obligatorio",
     "autoOrganize": "Auto-organizar",
-    "autoOrganizeHint": "Reordena los campos mostrados por grupo"
+    "autoOrganizeHint": "Reordena los campos mostrados por grupo",
+    "autoOrganized": "Organizado"
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",
