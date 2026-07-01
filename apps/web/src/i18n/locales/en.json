@@ -530,6 +530,15 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.28",
+        "date": "July 1, 2026",
+        "title": "Faster engine, filters that stick",
+        "items": [
+          "Surco now runs on a newer engine (Electron 42, Chromium 148) — snappier rendering for the waveform and spectrum, and the latest security fixes under the hood.",
+          "Every action that works across your track list now respects what you've filtered to or selected: Find & Replace, Auto-Match, Analyze quality, Fill tags and Empty all act on the visible or chosen tracks, never the ones a filter is hiding."
+        ]
+      },
+      {
         "version": "0.27",
         "date": "June 30, 2026",
         "title": "Tidier toolbar, richer Discogs results",
