@@ -535,7 +535,7 @@
         "title": "Faster engine, filters that stick",
         "items": [
           "Surco now runs on a newer engine (Electron 42, Chromium 148) — snappier rendering for the waveform and spectrum, and the latest security fixes under the hood.",
-          "Every action that works across your track list now respects what you've filtered to or selected: Find & Replace, Auto-Match, Analyze quality, Fill tags and Empty all act on the visible or chosen tracks, never the ones a filter is hiding."
+          "The track list's toolbar actions — Find & Replace, Auto-Match, Analyze quality, Fill tags and Empty — act on the visible tracks, never the ones a filter is hiding; while \"Clear the list\" from ⌘K still wipes everything for a clean start."
         ]
       },
       {

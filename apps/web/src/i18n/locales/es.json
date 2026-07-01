@@ -535,7 +535,7 @@
         "title": "Motor más rápido, filtros que se respetan",
         "items": [
           "Surco funciona ahora sobre un motor más reciente (Electron 42, Chromium 148): renderizado más ágil de la onda y el espectro, y las últimas correcciones de seguridad por debajo.",
-          "Todas las acciones sobre la lista de pistas respetan lo que has filtrado o seleccionado: buscar y reemplazar, auto-match, analizar calidad, rellenar tags y vaciar actúan sobre las pistas visibles o elegidas, nunca sobre las que un filtro está ocultando."
+          "Las acciones de la barra de la lista —buscar y reemplazar, auto-match, analizar calidad, rellenar tags y vaciar— actúan sobre las pistas visibles, nunca sobre las que un filtro está ocultando; y «Vaciar la lista» desde ⌘K sigue borrándolo todo para empezar de cero."
         ]
       },
       {
