@@ -108,6 +108,50 @@ describe('search', () => {
     expect(url).not.toContain('token=')
   })
 
+  // Free-text q= drags in noise and misses when the tag text doesn't read like the
+  // release ("Tripped Out" vs a real "Tripped Up"): the structured artist/title fields
+  // let Discogs match on the catalog's own fields. When artist+title hints are present
+  // that precise query goes first, before any free-text candidate.
+  it('queries the structured artist/title fields first when both hints are present', async () => {
+    const fetchMock = mockFetch([{ id: 11 }])
+    await search('supreme tripped out', 'tok', undefined, {
+      artist: 'Supreme',
+      title: 'Tripped Out',
+    })
+    const first = fetchMock.mock.calls[0][0] as string
+    expect(first).toContain(`artist=${encodeURIComponent('Supreme')}`)
+    expect(first).toContain(`release_title=${encodeURIComponent('Tripped Out')}`)
+    expect(first).not.toContain('&q=')
+  })
+
+  // The structured query is precise but brittle — a mistyped artist in the tag returns
+  // nothing. When it comes up empty the client must still fall through to the free-text
+  // candidates so a rough tag can still find the release.
+  it('falls back to free-text candidates when the structured query finds nothing', async () => {
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 12 }] })])
+    // Distinct artist/title from the other structured test: the module-level search cache
+    // persists across tests, so reusing the same pair would serve the cached hit.
+    const out = await search('nifra everglow', 'tok', undefined, {
+      artist: 'Nifra',
+      title: 'Everglow',
+    })
+    expect(out).toEqual([{ id: 12, provider: 'discogs' }])
+    const first = fetchMock.mock.calls[0][0] as string
+    const second = fetchMock.mock.calls[1][0] as string
+    expect(first).toContain('release_title=')
+    expect(second).toContain('&q=')
+  })
+
+  // No hints (a raw filename search) means there's nothing to fill the structured
+  // fields, so it must go straight to free-text as before — no wasted extra call.
+  it('skips the structured query and uses free-text when hints are missing', async () => {
+    const fetchMock = mockFetch([{ id: 13 }])
+    await search('some raw filename', 'tok')
+    const first = fetchMock.mock.calls[0][0] as string
+    expect(first).toContain('&q=')
+    expect(first).not.toContain('release_title=')
+  })
+
   // The first candidate keeps the mix name; when it finds nothing the client retries
   // the parenthetical-stripped query, which is what surfaces the release.
   it('searches the bare title first for an "(Original Mix)" tag, then the full one', async () => {

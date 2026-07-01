@@ -89,21 +89,26 @@ export function hasCachedSearch(query: string, opts: SearchOpts = {}): boolean {
   return searchCache.has(searchKey(query, opts.format, opts.perPage ?? 20))
 }
 
-async function searchOnce(
-  query: string,
+// Runs one /database/search request and normalizes it, sharing the cache and provider
+// stamping across the two query shapes (free-text q= and the structured artist/title
+// fields). `queryParams` is the shape-specific slice of the URL; `cacheId` is its cache
+// identity, kept distinct from a free-text query so the two shapes never collide.
+async function runSearch(
+  queryParams: string,
+  cacheId: string,
   token: string,
-  opts: SearchOpts = {},
+  opts: SearchOpts,
   priority?: SearchPriority,
 ): Promise<SearchResult[]> {
   const perPage = opts.perPage ?? 20
-  const key = searchKey(query, opts.format, perPage)
+  const key = searchKey(cacheId, opts.format, perPage)
   const cached = searchCache.get(key)
   if (cached) return cached
   // The API's `format` param filters server-side, so the whole page comes back in the
   // wanted format instead of a mix we'd thin out afterwards.
   const formatParam = opts.format ? `&format=${encodeURIComponent(opts.format)}` : ''
   const data = await api<{ results: Omit<SearchResult, 'provider'>[] }>(
-    `/database/search?type=release&q=${encodeURIComponent(query)}&per_page=${perPage}${formatParam}`,
+    `/database/search?type=release&${queryParams}&per_page=${perPage}${formatParam}`,
     token,
     priority,
   )
@@ -112,6 +117,29 @@ async function searchOnce(
   const results: SearchResult[] = (data.results ?? []).map((r) => ({ ...r, provider: 'discogs' }))
   searchCache.set(key, results)
   return results
+}
+
+async function searchOnce(
+  query: string,
+  token: string,
+  opts: SearchOpts = {},
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
+  return runSearch(`q=${encodeURIComponent(query)}`, query, token, opts, priority)
+}
+
+// The precise query: match on the catalog's own artist and release-title fields rather
+// than a free-text blob. Its cache id is tagged so it can never share a slot with a
+// free-text search of the same words.
+async function searchStructured(
+  artist: string,
+  title: string,
+  token: string,
+  opts: SearchOpts = {},
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
+  const params = `artist=${encodeURIComponent(artist)}&release_title=${encodeURIComponent(title)}`
+  return runSearch(params, `structured ${artist} ${title}`, token, opts, priority)
 }
 
 // Collapses results that would render identically in the list — same title, year, label
@@ -161,14 +189,24 @@ export async function search(
     async () => {
       const serverFormat = formats.length === 1 ? formats[0] : undefined
       const perPage = formats.length > 1 ? 50 : 20
+      const opts: SearchOpts = { format: serverFormat, perPage }
+      const keep = (raw: SearchResult[]): SearchResult[] =>
+        dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)
+      // Precise first: when the tag gives both an artist and a title, match on the
+      // catalog's own fields before the noisier free-text candidates. It's brittle (a
+      // mistyped tag returns nothing), so an empty result falls through to free-text.
+      if (hints?.artist?.trim() && hints?.title?.trim()) {
+        await discogsLimiter.acquire(priority)
+        const structured = keep(
+          await searchStructured(hints.artist.trim(), hints.title.trim(), token, opts, priority),
+        )
+        if (structured.length) return structured
+      }
       let results: SearchResult[] = []
       for (const candidate of buildSearchCandidates(query, hints)) {
-        const opts: SearchOpts = { format: serverFormat, perPage }
         if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
         const raw = await searchOnce(candidate, token, opts, priority)
-        results = dedupeResults(
-          formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw,
-        )
+        results = keep(raw)
         if (results.length) break
       }
       return results
