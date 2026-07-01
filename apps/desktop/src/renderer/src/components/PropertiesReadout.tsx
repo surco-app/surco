@@ -119,12 +119,12 @@ export function PropertiesReadout({
                     >
                       <Folder className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       <span className="truncate">{r.value}</span>
-                      <Tooltip label={r.full} />
+                      {r.full && <Tooltip label={r.full} />}
                     </button>
                   ) : (
                     <span className="relative">
                       {r.value}
-                      <Tooltip label={r.full} />
+                      {r.full && <Tooltip label={r.full} />}
                     </span>
                   )}
                 </dd>

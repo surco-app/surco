@@ -43,7 +43,9 @@ export function MarqueeText({
         className={`inline-block max-w-full truncate align-bottom ${
           overflowPx > 0 ? 'player-marquee' : ''
         }`}
-        style={overflowPx > 0 ? { '--marquee-px': `${overflowPx}px` } : undefined}
+        style={
+          overflowPx > 0 ? ({ '--marquee-px': `${overflowPx}px` } as React.CSSProperties) : undefined
+        }
       >
         {children}
       </span>
