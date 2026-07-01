@@ -530,6 +530,16 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.30",
+        "date": "July 1, 2026",
+        "title": "A sectioned editor and a palette that learns",
+        "items": [
+          "The editor groups fields into sections (Identity, Catalog, DJ and Order) so you stay oriented when many are on; in Settings → Fields, an \"Auto-organize\" button sorts them into sections in one click.",
+          "The command palette (⌘K) learns from you: as you type, the commands you use most rise to the top of the list, so your usual one lands under the cursor.",
+          "Discogs search matches more precisely: when a track carries an artist and title, it queries those fields separately instead of one loose string, finding the right release with less noise."
+        ]
+      },
+      {
         "version": "0.29",
         "date": "July 1, 2026",
         "title": "Parallel conversion and more from ⌘K",

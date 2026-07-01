@@ -530,6 +530,16 @@
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos.",
     "releases": [
       {
+        "version": "0.30",
+        "date": "1 de julio de 2026",
+        "title": "Editor por secciones y una paleta que aprende",
+        "items": [
+          "El editor agrupa los campos en secciones (Identidad, Catálogo, DJ y Orden) para no perderte cuando tienes muchos activados; en Ajustes → Campos, un botón «Auto-organizar» los ordena por secciones de un clic.",
+          "La paleta de comandos (⌘K) aprende de ti: al escribir, los comandos que más usas suben al principio de la lista, así el de siempre queda bajo el cursor.",
+          "La búsqueda en Discogs afina el emparejado: cuando la pista trae artista y título, consulta esos campos por separado en vez de un texto suelto, así encuentra el lanzamiento correcto con menos ruido."
+        ]
+      },
+      {
         "version": "0.29",
         "date": "1 de julio de 2026",
         "title": "Conversión en paralelo y más acciones a un ⌘K",
