@@ -149,6 +149,25 @@ describe('TrackList', () => {
     expect(screen.getByText('No artist')).toBeInTheDocument()
   })
 
+  // Title and artist truncate in the narrow column, but they shared the row through two
+  // separate tooltips that could both show as the pointer crossed between the stacked
+  // lines. One tooltip for the whole text block reveals both — the frozen label and the
+  // artist — with no chance of a double pop.
+  it('reveals the label and artist through a single row tooltip', () => {
+    renderList([
+      track({
+        id: 'a',
+        listLabel: 'Frozen Name',
+        meta: { title: 'Edited Title', artist: 'Boards of Canada' },
+      }),
+    ])
+    const textBlock = screen.getByText('Frozen Name').closest('[data-fit]') as HTMLElement
+    fireEvent.focusIn(textBlock)
+    const tips = screen.getAllByRole('tooltip')
+    expect(tips).toHaveLength(1)
+    expect(tips[0]).toHaveTextContent('Frozen Name — Boards of Canada')
+  })
+
   it('drags a row out to external apps using its source file and cover', () => {
     // DJs drop a track straight onto Spek to eyeball its spectrum without exporting
     // first, so the row hands the OS the untouched source path on dragstart. The

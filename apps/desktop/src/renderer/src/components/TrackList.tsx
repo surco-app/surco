@@ -114,6 +114,14 @@ function matchTooltip(label: string, confidence: number | undefined): string {
   return confidence === undefined ? label : `${label} · ${Math.round(confidence * 100)}%`
 }
 
+// The single row tooltip: the frozen list label and the artist, joined only when both read.
+// Uses listLabel (not meta.title) so it matches the row, and falls back to the "no artist"
+// placeholder the row itself shows.
+function rowTooltip(t: TrackItem, tr: (key: string) => string): string {
+  const artist = t.meta.artist || tr('trackList.noArtist')
+  return `${t.listLabel} — ${artist}`
+}
+
 interface RowProps {
   track: TrackItem
   selected: boolean
@@ -260,11 +268,13 @@ const TrackRow = memo(function TrackRow({
             scope="dot"
           />
         </span>
-        <span className="min-w-0 flex-1">
-          <span data-fit className="block truncate text-sm font-medium text-fg">
-            {t.listLabel}
-            <Tooltip label={t.listLabel} />
-          </span>
+        {/* One tooltip for the whole text block (title + artist): two nested tooltips could
+            both show as the pointer crossed between the stacked lines. It reveals the row's
+            own label and artist — the frozen listLabel, not the editable meta.title, so it
+            matches what the row shows. */}
+        <span data-fit className="relative min-w-0 flex-1">
+          <Tooltip label={rowTooltip(t, tr)} />
+          <span className="block truncate text-sm font-medium text-fg">{t.listLabel}</span>
           {t.loadingMeta ? (
             <span
               data-testid="track-loading"
@@ -286,9 +296,8 @@ const TrackRow = memo(function TrackRow({
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <span data-fit className="min-w-0 flex-1 truncate text-xs text-fg-dim">
+              <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
                 {t.meta.artist || tr('trackList.noArtist')}
-                <Tooltip label={t.meta.artist || tr('trackList.noArtist')} />
               </span>
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
                   badge and duration line up in the same column down every row instead of

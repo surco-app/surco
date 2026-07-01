@@ -284,13 +284,8 @@ export function DiscogsPanel({
                       <div className="h-11 w-11 shrink-0 rounded-md bg-[var(--color-panel-2)]" />
                     )}
                     <span className="min-w-0 flex-1">
-                      {/* The release title truncates in this narrow column; its own themed
-                          tooltip reveals the full name on hover, like the tracklist rows.
-                          stopPropagation keeps the pointer move off the button's generic
-                          hint, so over the title the full name takes over right here. */}
-                      <span data-fit className="relative block truncate text-sm leading-snug">
+                      <span data-fit className="block truncate text-sm leading-snug">
                         {r.title}
-                        <Tooltip label={r.title} stopPropagation />
                       </span>
                       <span className="mt-1 flex flex-wrap items-center gap-1.5">
                         <span
@@ -323,7 +318,11 @@ export function DiscogsPanel({
                       aria-hidden="true"
                       className={`mt-0.5 h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
                     />
-                    <Tooltip label={tr('editor.resultHint')} align="start" />
+                    {/* One tooltip for the whole row: the full release title, which truncates in
+                        this narrow column. It replaces a separate generic "click to see" hint —
+                        two tooltips on the same row (title + hint) could show at once — while the
+                        chevron already signals the row expands. */}
+                    <Tooltip label={r.title} align="start" />
                   </button>
                   <CollapsibleTracks open={expanded}>
                     <div className="pb-1">
