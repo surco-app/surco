@@ -357,7 +357,7 @@
         ],
         "points": [
           "Bajo BPM y tonalidad aparece el valor que Surco detecta del propio audio — en notación Camelot o musical, según Ajustes — listo para aplicar de un clic.",
-          "Solo se muestran los campos que tú decidas en Ajustes → Campos.",
+          "Solo se muestran los campos que tú decidas en Ajustes → Campos, agrupados en secciones (Identidad, Catálogo, DJ y Orden) para no perderte cuando activas muchos.",
           "Los campos obligatorios se marcan en rojo si los dejas vacíos.",
           "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida."
         ],
@@ -512,7 +512,7 @@
         "points": [
           "General, Conversión, Nombres, Editor, Campos, Carátula y Atajos.",
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
-          "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto.",
+          "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto o pulsa «Auto-organizar» para ordenarlos por secciones de un clic.",
           "Apunta la carpeta de configuración a iCloud Drive o Dropbox y comparte tus preferencias entre Macs; el token de Discogs nunca sale de tu máquina."
         ],
         "shot": "ajustes-es.png",

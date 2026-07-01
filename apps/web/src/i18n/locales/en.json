@@ -357,7 +357,7 @@
         ],
         "points": [
           "Under BPM and key you'll see the value Surco detects from the audio itself — in Camelot or musical notation, per Settings — one click from applied.",
-          "Only the fields you choose in Settings → Fields are shown.",
+          "Only the fields you choose in Settings → Fields are shown, grouped into sections (Identity, Catalog, DJ and Order) so you stay oriented when many are on.",
           "Required fields turn red if you leave them empty.",
           "The cover shows its real pixel dimensions so you can judge sharpness."
         ],
@@ -512,7 +512,7 @@
         "points": [
           "General, Conversion, Filenames, Editor, Fields, Artwork and Shortcuts.",
           "Define recurring genres and groupings so they show up as suggestions.",
-          "Choose which fields to show and which to require, and reorder them to taste.",
+          "Choose which fields to show and which to require, and reorder them to taste or hit “Auto-organize” to sort them into sections in one click.",
           "Point the settings folder at iCloud Drive or Dropbox to share your preferences across Macs; the Discogs token never leaves your machine."
         ],
         "shot": "ajustes-en.png",
