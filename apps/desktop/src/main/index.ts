@@ -274,6 +274,10 @@ function createWindow(): BrowserWindow {
     minHeight: 620,
     show: false,
     titleBarStyle: 'hiddenInset',
+    // Centre the macOS traffic lights in the 48px (h-12) toolbar: the default inset sits them
+    // near the top of a standard-height title bar, so on the taller toolbar they float high.
+    // y = (toolbar height − dot height) / 2; x keeps the platform's standard left inset.
+    trafficLightPosition: { x: 19, y: 18 },
     backgroundColor: '#09090d',
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
