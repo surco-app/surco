@@ -18,6 +18,7 @@ const HOVER_DELAY = 400
 export function Tooltip({
   label,
   hoverOnly = false,
+  stopPropagation = false,
 }: {
   label: string
   align?: 'center' | 'start' | 'end'
@@ -26,6 +27,11 @@ export function Tooltip({
   // tooltip over the text the user is about to type, so opt out of it and stay a pure
   // hover hint. Hover (and Escape-to-dismiss) still work as usual.
   hoverOnly?: boolean
+  // For a tooltip nested inside another tooltip's trigger (e.g. a title inside a button
+  // that has its own hint): stop the pointer move from bubbling to the outer trigger so
+  // only this tooltip arms while the pointer is over the inner element, letting it take
+  // over from the outer hint right there.
+  stopPropagation?: boolean
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
@@ -57,6 +63,9 @@ export function Tooltip({
       }
     }
     const onMove = (e: PointerEvent): void => {
+      // Keep the move from reaching an outer trigger that has its own tooltip, so a
+      // nested tooltip supersedes the outer hint instead of both arming together.
+      if (stopPropagation) e.stopPropagation()
       last.x = e.clientX
       last.y = e.clientY
       if (shown) {
@@ -107,7 +116,7 @@ export function Tooltip({
       trigger.removeEventListener('focusout', onLeave)
       clearTimer()
     }
-  }, [hoverOnly])
+  }, [hoverOnly, stopPropagation])
 
   return (
     <span ref={markerRef} className="hidden" aria-hidden="true">

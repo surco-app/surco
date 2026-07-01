@@ -1295,6 +1295,25 @@ describe('Editor Discogs apply', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Track One')
   })
 
+  // The release title truncates in the narrow column just like the tracklist rows do,
+  // but it lived under only the generic "click to see the tracks" hint — so a long
+  // release name had no way to be read. Hovering the title now reveals the full name,
+  // taking over from the row hint right where the text is clipped.
+  it('reveals the full release title on hover instead of the generic row hint', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a' })
+    await search()
+    const titleSpan = screen
+      .getByTestId('discogs-result')
+      .querySelector('[data-fit]') as HTMLElement
+    titleSpan.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
+    )
+    const tip = await screen.findByRole('tooltip')
+    expect(tip).toHaveTextContent('Some Album')
+    expect(tip).not.toHaveTextContent('Click to see the tracks')
+  })
+
   // The discoverable, explicit path: expand the album, then pick the track. That
   // single click is what applies the metadata.
   it('applies a track when it is picked from the expanded album', async () => {
