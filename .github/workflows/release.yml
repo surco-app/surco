@@ -85,9 +85,28 @@ jobs:
           done
           exit 1
 
+      # Read the pinned Electron version so the cache key invalidates on a bump.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # Cache the downloaded Electron binary (~100 MB per platform) so the fetch below is a
+      # no-op on a hit — the version is in the key, so a bump misses and re-downloads. Keyed by
+      # OS + arch because the binary differs per platform. GitHub stores this automatically; no
+      # manual upload. On a miss it just downloads as before.
+      - name: Cache Electron binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/.cache/electron
+            ~/AppData/Local/electron/Cache
+          key: electron-${{ runner.os }}-${{ runner.arch }}-${{ steps.electron.outputs.version }}
+
       # Electron 42+ no longer downloads its binary during npm install (the postinstall was
       # dropped), so fetch it explicitly before electron-builder packages the app — otherwise
-      # the pack step finds no Electron binary to bundle.
+      # the pack step finds no Electron binary to bundle. A cache hit above makes this instant.
       - name: Fetch Electron binary
         shell: bash
         run: node node_modules/electron/install.js
