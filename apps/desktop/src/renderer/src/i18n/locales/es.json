@@ -434,6 +434,12 @@
       "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página."
     },
     "stats": {
+      "listTitle": "Lista actual — {{count}} pistas",
+      "listAnalyzed": "Analizadas",
+      "listSuspect": "Sospechosas",
+      "listConverted": "Convertidas",
+      "listDuplicates": "Duplicadas",
+      "listFormats": "Formatos",
       "count": "conversiones",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",

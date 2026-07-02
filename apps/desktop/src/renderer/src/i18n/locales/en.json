@@ -434,6 +434,12 @@
       "fixedNav": "Always on (not rebindable): ↑↓ or j / k move through the track list and the Discogs results, Home / End jump to the ends, and Page Up / Down move a page at a time."
     },
     "stats": {
+      "listTitle": "Current list — {{count}} tracks",
+      "listAnalyzed": "Analyzed",
+      "listSuspect": "Suspect",
+      "listConverted": "Converted",
+      "listDuplicates": "Duplicates",
+      "listFormats": "Formats",
       "count": "conversions",
       "timeSaved": "You've saved around {{time}}",
       "perTrack": "≈ {{minutes}} min of manual work per track",
