@@ -92,6 +92,7 @@ import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from '
 import { formatShortcut } from './lib/shortcuts'
 import { dismissToast, dismissToastByUser, pushToast } from './lib/toastQueue'
 import {
+  EMPTY_FILTER,
   type FilterSelection,
   filterWithSticky,
   formatBuckets,
@@ -253,6 +254,11 @@ export default function App(): React.JSX.Element {
     }),
     [qualityFilter, conversionFilter, libraryFilter, formatFilter],
   )
+  const filterActive =
+    qualityFilter !== null ||
+    conversionFilter !== null ||
+    libraryFilter !== null ||
+    formatFilter !== null
   const setFilterSelection = useCallback(
     (next: FilterSelection) =>
       store.setState({
@@ -1320,9 +1326,22 @@ export default function App(): React.JSX.Element {
                   </div>
                 </div>
                 {visibleTracks.length === 0 ? (
-                  <p className="p-6 text-center text-xs text-fg-faint">
-                    {tr('sidebar.search.empty')}
-                  </p>
+                  <div className="flex flex-col items-center gap-3 p-6 text-center">
+                    <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
+                    {(search || filterActive) && (
+                      <button
+                        type="button"
+                        data-testid="reset-view"
+                        onClick={() => {
+                          setSearch('')
+                          setFilterSelection(EMPTY_FILTER)
+                        }}
+                        className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                      >
+                        {tr('sidebar.search.reset')}
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <TrackList
                     tracks={visibleTracks}

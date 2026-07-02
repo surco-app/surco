@@ -62,7 +62,8 @@
     "search": {
       "placeholder": "Buscar pistas",
       "clear": "Borrar búsqueda",
-      "empty": "Ninguna pista coincide."
+      "empty": "Ninguna pista coincide.",
+      "reset": "Borrar búsqueda y filtros"
     },
     "sort": {
       "label": "Ordenar pistas",

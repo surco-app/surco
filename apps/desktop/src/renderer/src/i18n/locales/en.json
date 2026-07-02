@@ -62,7 +62,8 @@
     "search": {
       "placeholder": "Search tracks",
       "clear": "Clear search",
-      "empty": "No tracks match."
+      "empty": "No tracks match.",
+      "reset": "Clear search and filters"
     },
     "sort": {
       "label": "Sort tracks",
