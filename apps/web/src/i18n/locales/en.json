@@ -7,10 +7,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), edit tags and metadata from Discogs and send to Apple Music in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), edit tags and metadata from Discogs and send to Apple Music or your Engine DJ (Denon) library in seconds — and catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco — Get your DJ tracks ready in seconds",
     "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV or FLAC, tag from Discogs, send to Apple Music and analyze the spectrum to detect re-encoded MP3s."
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV or FLAC, tag from Discogs, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -37,7 +37,7 @@
   "hero": {
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
-    "ledeShort": "Convert, tag, check the quality and file into Apple Music: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
+    "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
   "analysis": {
     "kicker": "Anti-fake analysis",
@@ -87,7 +87,7 @@
           "Draws the spectrum and catches fake-lossless MP3s",
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Detects BPM and key from the audio itself",
-          "Warns if a track is already in your Apple Music — and filters your tracks to the ones you're missing"
+          "Warns if a track is already in your Apple Music or Engine DJ — and filters your tracks to the ones you're missing"
         ]
       },
       {
@@ -96,9 +96,9 @@
         "replaces": "instead of your library manager",
         "items": [
           "Send to Apple Music with tags and cover, even WAV",
-          "Export the queue to rekordbox or Traktor",
-          "Name with {artist} - {title} templates",
-          "Import whole folders; preview before converting"
+          "Straight into your Engine DJ (Denon) library: cover, rating and playlist",
+          "Export the queue to rekordbox, Traktor or Serato",
+          "Name with {artist} - {title} templates"
         ]
       }
     ]
@@ -124,6 +124,7 @@
     "ID3v2.3",
     "Discogs",
     "Bandcamp",
+    "Engine DJ",
     "Apple Silicon"
   ],
   "speed": {
@@ -184,7 +185,7 @@
       },
       {
         "title": "Export and you're done",
-        "body": "Convert to AIFF, WAV, FLAC or MP3, check the spectrum and send the track to Apple Music."
+        "body": "Convert to AIFF, WAV, FLAC or MP3, check the spectrum and send the track to Apple Music or Engine DJ."
       }
     ]
   },
@@ -201,7 +202,7 @@
     "tour": {
       "tracks": {
         "title": "Track list",
-        "desc": "Your tracks, with a filter for what's already in your Apple Music library."
+        "desc": "Your tracks, with a filter for what's already in your Apple Music or Engine DJ library."
       },
       "discogs": {
         "title": "Discogs & Bandcamp match",
@@ -217,7 +218,7 @@
       },
       "convert": {
         "title": "Convert & file",
-        "desc": "To AIFF, WAV, FLAC or MP3 and straight into your Apple Music library, in one click."
+        "desc": "To AIFF, WAV, FLAC or MP3 and straight into your Apple Music or Engine DJ library, in one click."
       }
     }
   },
@@ -270,6 +271,10 @@
       {
         "q": "Does it keep cue points and beatgrids?",
         "a": "Yes. Surco re-exports without touching your Traktor cue points or beatgrid."
+      },
+      {
+        "q": "Does it work with Denon gear (Engine DJ)?",
+        "a": "Yes. Pick Engine DJ as the destination and every converted track is registered straight into your Engine DJ library — with its cover, rating and a configurable playlist — ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
       {
         "q": "Windows says \"Windows protected your PC\". Is it safe?",
@@ -447,7 +452,7 @@
         "title": "Convert the track",
         "body": [
           "The button at the bottom of the editor converts the selected track. The dropdown next to it picks the format: AIFF, WAV or FLAC lossless, or MP3 at 320 kbps. If the track is already in that format, Surco copies it as-is instantly, without re-encoding.",
-          "In Settings → Conversion you choose the destination: an output folder, your Apple Music library, both, or overwrite the original in place. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+          "In Settings → Conversion you choose the destination: an output folder, your Apple Music library, your Engine DJ (Denon) library, or overwrite the original in place. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
         ],
         "points": [
           "Formats: AIFF, WAV, FLAC (lossless) and MP3 320 kbps.",
@@ -475,7 +480,7 @@
         "id": "exportar",
         "title": "Take it to your decks",
         "body": [
-          "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) as you convert, or exports the whole queue as a rekordbox (.xml) or Traktor (.nml) collection from the export modal (⌘⇧E).",
+          "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) or your Engine DJ (Denon) library as you convert, or exports the whole queue as a rekordbox (.xml), Traktor (.nml) or Serato collection from the export modal (⌘⇧E).",
           "Tags and cover art travel inside the file, so your DJ software reads them with no extra steps."
         ],
         "points": [

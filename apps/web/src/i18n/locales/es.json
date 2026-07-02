@@ -7,10 +7,10 @@
     "ogLocale": "es_ES",
     "inLanguage": "es",
     "title": "Surco — Prepara tus pistas de DJ en segundos",
-    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs y manda a Apple Music en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
+    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs y manda a Apple Music o a tu biblioteca de Engine DJ (Denon) en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
     "ogTitle": "Surco — Prepara tus pistas de DJ en segundos",
     "ogDescription": "Menos preparar, más pinchar: convierte a AIFF, WAV o FLAC lossless (o a un MP3 más ligero), etiqueta desde Discogs y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
-    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV o FLAC lossless, etiqueta desde Discogs, manda a Apple Music y analiza el espectro para detectar MP3 recomprimidos."
+    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV o FLAC lossless, etiqueta desde Discogs, manda a Apple Music o Engine DJ (Denon) y analiza el espectro para detectar MP3 recomprimidos."
   },
   "nav": {
     "velocidad": "Velocidad",
@@ -37,7 +37,7 @@
   "hero": {
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
-    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
+    "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
   },
   "analysis": {
     "kicker": "Análisis anti-fake",
@@ -87,7 +87,7 @@
           "Dibuja el espectro y caza MP3 falsos antes de cabina",
           "Lectura por colores: LUFS, pico, dinámica y ruido",
           "Detecta BPM y tonalidad del propio audio",
-          "Avisa si la pista ya está en tu Apple Music y filtra las que te faltan"
+          "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
         ]
       },
       {
@@ -96,9 +96,9 @@
         "replaces": "en vez de tu gestor de biblioteca",
         "items": [
           "Envía a Apple Music con tags y carátula, hasta en WAV",
-          "Exporta la cola a rekordbox o Traktor",
-          "Nombra con plantillas {artist} - {title}",
-          "Importa carpetas enteras y escucha antes de convertir"
+          "Directo a tu biblioteca de Engine DJ (Denon): carátula, rating y playlist",
+          "Exporta la cola a rekordbox, Traktor o Serato",
+          "Nombra con plantillas {artist} - {title}"
         ]
       }
     ]
@@ -124,6 +124,7 @@
     "ID3v2.3",
     "Discogs",
     "Bandcamp",
+    "Engine DJ",
     "Apple Silicon"
   ],
   "speed": {
@@ -184,7 +185,7 @@
       },
       {
         "title": "Exporta y listo",
-        "body": "Convierte a AIFF, WAV, FLAC o MP3, revisa el espectro y manda la pista a Apple Music."
+        "body": "Convierte a AIFF, WAV, FLAC o MP3, revisa el espectro y manda la pista a Apple Music o a Engine DJ."
       }
     ]
   },
@@ -201,7 +202,7 @@
     "tour": {
       "tracks": {
         "title": "Lista de pistas",
-        "desc": "Tus pistas y el filtro de lo que ya está en tu biblioteca de Apple Music."
+        "desc": "Tus pistas y el filtro de lo que ya está en tu biblioteca de Apple Music o Engine DJ."
       },
       "discogs": {
         "title": "Match de Discogs y Bandcamp",
@@ -217,7 +218,7 @@
       },
       "convert": {
         "title": "Convierte y archiva",
-        "desc": "A AIFF, WAV, FLAC o MP3 y directo a tu biblioteca de Apple Music, en un clic."
+        "desc": "A AIFF, WAV, FLAC o MP3 y directo a tu biblioteca de Apple Music o Engine DJ, en un clic."
       }
     }
   },
@@ -270,6 +271,10 @@
       {
         "q": "¿Conserva los cue points y el beatgrid?",
         "a": "Sí. Surco reexporta sin tocar los cue points ni el beatgrid de Traktor."
+      },
+      {
+        "q": "¿Funciona con equipos Denon (Engine DJ)?",
+        "a": "Sí. Elige Engine DJ como destino y cada pista convertida se registra directamente en tu biblioteca de Engine DJ — con carátula, rating y una playlist configurable — lista para sincronizar a tus players. También exporta colecciones a rekordbox, Traktor y Serato."
       },
       {
         "q": "Windows dice «Windows protegió tu PC». ¿Es seguro?",
@@ -447,7 +452,7 @@
         "title": "Convierte la pista",
         "body": [
           "El botón de abajo del editor convierte la pista seleccionada. El desplegable de su derecha elige el formato: AIFF, WAV o FLAC sin pérdida, o MP3 a 320 kbps. Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar.",
-          "En Ajustes → Conversión decides el destino: una carpeta de salida, tu biblioteca de Apple Music, ambas, o sobrescribir el original en su sitio. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+          "En Ajustes → Conversión decides el destino: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), o sobrescribir el original en su sitio. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC (lossless) y MP3 320 kbps.",
@@ -475,7 +480,7 @@
         "id": "exportar",
         "title": "Llévala a tus platos",
         "body": [
-          "Surco no se queda en convertir: manda las pistas directas a tu biblioteca de Apple Music (en macOS) mientras las conviertes, o exporta la cola entera como colección de rekordbox (.xml) o Traktor (.nml) desde el modal de exportación (⌘⇧E).",
+          "Surco no se queda en convertir: manda las pistas directas a tu biblioteca de Apple Music (en macOS) o de Engine DJ (Denon) mientras las conviertes, o exporta la cola entera como colección de rekordbox (.xml), Traktor (.nml) o Serato desde el modal de exportación (⌘⇧E).",
           "Los tags y la carátula viajan dentro del archivo, así que tu software de DJ los lee sin pasos extra."
         ],
         "points": [
