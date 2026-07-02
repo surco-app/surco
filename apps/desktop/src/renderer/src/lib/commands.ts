@@ -104,7 +104,8 @@ export interface CommandDeps {
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: OutputFormat | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
-  searchInputRef: { readonly current: HTMLInputElement | null }
+  // The sidebar's track-filter field — the `/` shortcut focuses this.
+  trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
   selectAll: () => void
   askFillAll: () => void
@@ -162,7 +163,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canProcessAll,
     editorFormatRef,
     editorNormalizeRef,
-    searchInputRef,
+    trackSearchRef,
     pickFiles,
     selectAll,
     askFillAll,
@@ -295,8 +296,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
       id: 'search',
       title: tr('commands.search'),
       hint: hintFor('search'),
-      enabled: !!selected,
-      run: () => searchInputRef.current?.focus(),
+      enabled: tracks.length > 0,
+      run: () => trackSearchRef.current?.focus(),
     },
     {
       // Jump focus to the track list (the selected row).

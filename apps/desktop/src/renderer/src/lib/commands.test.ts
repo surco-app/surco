@@ -48,7 +48,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canProcessAll: false,
     editorFormatRef: { current: null },
     editorNormalizeRef: { current: null },
-    searchInputRef: { current: null },
+    trackSearchRef: { current: null },
     pickFiles: () => {},
     selectAll: () => {},
     askFillAll: () => {},

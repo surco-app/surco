@@ -292,6 +292,10 @@ export default function App(): React.JSX.Element {
     [store],
   )
   const searchInputRef = useRef<HTMLInputElement>(null)
+  // The sidebar's track-filter field, focused by the `/` shortcut. Separate from
+  // searchInputRef (the editor's Discogs box) so `/` filters the list rather than
+  // jumping focus into the editor.
+  const trackSearchRef = useRef<HTMLInputElement>(null)
   // The scrolling track-list pane, handed to the rows as their IntersectionObserver root so
   // "on screen" means within this pane, not the whole window.
   const listScrollRef = useRef<HTMLDivElement>(null)
@@ -1024,7 +1028,7 @@ export default function App(): React.JSX.Element {
       canProcessAll,
       editorFormatRef,
       editorNormalizeRef,
-      searchInputRef,
+      trackSearchRef,
       pickFiles: () => void pickFiles(),
       selectAll,
       askFillAll: onFillAll,
@@ -1165,6 +1169,7 @@ export default function App(): React.JSX.Element {
                     <SearchInput
                       className="flex-1"
                       testid="track-search"
+                      inputRef={trackSearchRef}
                       value={search}
                       onChange={setSearch}
                       onClear={() => setSearch('')}
