@@ -127,7 +127,9 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
           {rowLabel(tr, row)}
         </span>
         {row.ms !== undefined && (
-          <span className="shrink-0 font-mono text-[10px] text-fg-muted">{row.ms} ms</span>
+          <span className="shrink-0 font-mono text-[10px] text-fg-muted">
+            {tr('activity.elapsedMs', { ms: row.ms })}
+          </span>
         )}
       </button>
       {open && detail && (
@@ -165,7 +167,9 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
             </span>
           )}
           {row.ms !== undefined && (
-            <span className="shrink-0 font-mono text-[10px] text-fg-muted">{row.ms} ms</span>
+            <span className="shrink-0 font-mono text-[10px] text-fg-muted">
+            {tr('activity.elapsedMs', { ms: row.ms })}
+          </span>
           )}
           {expandable && (
             <ChevronRight

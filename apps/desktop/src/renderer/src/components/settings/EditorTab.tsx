@@ -34,7 +34,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
         data-testid="settings-genre"
         value={synced.genre}
         onChange={(e) => patch('genre', e.target.value)}
-        placeholder="Hard Dance, Techno"
+        placeholder={tr('settings.genrePlaceholder')}
         className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
       />
       <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
