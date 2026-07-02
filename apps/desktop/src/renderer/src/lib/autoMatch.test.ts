@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
+import { acceptReviewPatch, autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
 import { confidenceTier } from './release'
 
 function release(id: number, over: Partial<Release> = {}): Release {
@@ -345,5 +345,39 @@ describe('matchTargetOf', () => {
       },
     } as TrackItem
     expect(matchTargetOf(t).title).toBe('Francesco Donadoni - Rock that sound')
+  })
+})
+
+describe('acceptReviewPatch', () => {
+  const track = (over: Partial<TrackItem> = {}): TrackItem =>
+    ({ id: 't1', meta: { title: 'old', artist: 'old' }, ...over }) as TrackItem
+
+  // Accepting a review suggestion applies the stored release just like clicking it in the
+  // editor — the whole point of persisting reviewMatch is to skip the editor detour and the
+  // re-probe — and it clears the pending flags so the row leaves the review bucket for good.
+  it('builds the release patch and clears the pending review state', () => {
+    const rel = release(1, { title: 'Discovery', artists: [{ name: 'Daft Punk' }] })
+    const t = track({
+      reviewMatch: {
+        release: rel,
+        track: { position: 'A1', title: 'One More Time' },
+        result: searchResult(1),
+      },
+      matchReview: true,
+      matchConfidence: 0.7,
+    })
+    const patch = acceptReviewPatch(t)
+    expect(patch?.meta?.title).toBe('One More Time')
+    expect(patch?.meta?.album).toBe('Discovery')
+    // Leaves the review bucket and is guarded from re-probing, exactly like a hand-picked match.
+    expect(patch?.matched).toBe(true)
+    expect(patch?.matchReview).toBe(false)
+    expect(patch?.reviewMatch).toBeUndefined()
+  })
+
+  // No pending suggestion → nothing to accept, so the command that calls this stays a no-op
+  // (and its shortcut/enabled gate reads the same undefined).
+  it('returns undefined when the track has no review suggestion', () => {
+    expect(acceptReviewPatch(track())).toBeUndefined()
   })
 })

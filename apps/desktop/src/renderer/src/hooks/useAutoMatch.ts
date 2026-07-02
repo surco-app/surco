@@ -114,7 +114,13 @@ export function useAutoMatch({
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
       // its own tags until the user accepts the suggestion.
       if (confidenceTier(m.confidence) !== 'high') {
-        updateTrack(t.id, { matchReview: true, matchConfidence: m.confidence })
+        updateTrack(t.id, {
+          matchReview: true,
+          matchConfidence: m.confidence,
+          // Keep the release behind the suggestion so the user can accept it in one action
+          // (shortcut or click) without the editor re-probing Discogs for it.
+          reviewMatch: { release: m.release, track: m.track, result: m.result },
+        })
         return
       }
       const patch = buildReleaseMeta(live.meta, m.release, m.track, keepCoverArg(live))

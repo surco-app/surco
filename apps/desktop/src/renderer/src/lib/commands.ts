@@ -154,6 +154,9 @@ export interface CommandDeps {
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
   deriveTags: () => void
+  // Applies the selected track's pending 'review' suggestion — the match the sweep flagged
+  // but didn't write — without opening the editor. A no-op when there's nothing to accept.
+  acceptReview: () => void
   // Fires the celebration confetti — the same burst the donate nudge shows, on demand.
   fireConfetti: () => void
 }
@@ -209,6 +212,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleTheme,
     clearMeta,
     deriveTags,
+    acceptReview,
     fireConfetti,
   } = deps
   return [
@@ -418,6 +422,16 @@ export function buildCommands(deps: CommandDeps): Command[] {
         if (matching) cancelAutoMatch()
         else enqueueAutoMatch(visibleTracks, false)
       },
+    },
+    {
+      // Applies the review-tier suggestion the sweep flagged on the selected track, straight
+      // from the list — the keyboard-first alternative to opening the editor and clicking it.
+      // Enabled only while the selection actually carries a pending suggestion.
+      id: 'accept-review',
+      title: tr('commands.acceptReview'),
+      hint: hintFor('accept-review'),
+      enabled: !!selected?.reviewMatch,
+      run: acceptReview,
     },
     {
       id: 'export',

@@ -163,6 +163,7 @@
     "analyzeQuality": "Analyze quality of all tracks",
     "trashSuspects": "Move suspect files to Trash",
     "autoMatch": "Auto-match all tracks on Discogs",
+    "acceptReview": "Accept the suggested match",
     "export": "Export to DJ software",
     "stats": "Stats",
     "activity": "Show activity",

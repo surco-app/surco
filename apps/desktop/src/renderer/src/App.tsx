@@ -75,7 +75,7 @@ import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
-import { tracksToAutoMatch } from './lib/autoMatch'
+import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
@@ -991,6 +991,7 @@ export default function App(): React.JSX.Element {
         meta: emptyMetadata(),
         matched: false,
         matchReview: false,
+        reviewMatch: undefined,
         inAppleMusicResolved: false,
       })
   })
@@ -1000,6 +1001,14 @@ export default function App(): React.JSX.Element {
       .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
       .filter((p) => Object.keys(p.meta).length > 0)
     if (patches.length) deriveTracks(patches)
+  })
+  // Accepts the selected track's pending 'review' suggestion straight from the list, applying
+  // the stored release exactly like clicking it in the editor. A no-op when there's nothing to
+  // accept, so the command's enabled gate and this stay in agreement.
+  const acceptReview = useStableCallback(() => {
+    if (!selected) return
+    const patch = acceptReviewPatch(selected)
+    if (patch) updateTrack(selected.id, patch)
   })
   // Rotates system → light → dark and persists it, the palette twin of the Settings control.
   const toggleTheme = useStableCallback(() => {
@@ -1090,6 +1099,7 @@ export default function App(): React.JSX.Element {
       toggleTheme,
       clearMeta,
       deriveTags,
+      acceptReview,
       fireConfetti,
     }),
   )

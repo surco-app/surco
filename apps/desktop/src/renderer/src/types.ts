@@ -1,4 +1,12 @@
-import type { OutputFormat, ProcessStage, SpectrumResult, TrackMetadata } from '../../shared/types'
+import type {
+  OutputFormat,
+  ProcessStage,
+  Release,
+  ReleaseTrack,
+  SearchResult,
+  SpectrumResult,
+  TrackMetadata,
+} from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
@@ -54,6 +62,10 @@ export interface TrackItem {
   // NOT applied — the row is flagged so the user can confirm it in the editor — and the sweep
   // won't re-probe it. Cleared when the track's metadata is cleared so a retag re-probes.
   matchReview?: boolean
+  // The release/track behind a 'review' suggestion, kept so the user can accept it in one
+  // action (a shortcut or a click) without the editor re-probing Discogs. Set alongside
+  // matchReview; cleared when the suggestion is accepted or the metadata is cleared.
+  reviewMatch?: { release: Release; track: ReleaseTrack; result: SearchResult }
   // The confidence (0–1) of the auto-match applied (autoMatched) or suggested (matchReview),
   // so the row can surface how strong the match was. Undefined for hand-picked matches.
   matchConfidence?: number

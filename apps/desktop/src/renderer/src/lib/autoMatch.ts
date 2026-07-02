@@ -1,9 +1,11 @@
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { keepCoverArg } from './coverSource'
 import {
   bestMatch,
   boostForCatalogMatch,
+  buildReleaseMeta,
   catalogNumberMatches,
   confidenceTier,
   preRankResults,
@@ -40,6 +42,25 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
     artist: track.meta.artist,
     catalogNumber: track.meta.catalogNumber,
     year: track.meta.year,
+  }
+}
+
+// The track patch that accepts a persisted 'review' suggestion: applies its stored release
+// exactly like clicking the match in the editor (same buildReleaseMeta + keep-the-file's-cover
+// policy the sweep uses), then clears the pending review state and guards the row from a
+// re-probe. Returns undefined when there's nothing to accept, so the caller stays a no-op.
+export function acceptReviewPatch(track: TrackItem): Partial<TrackItem> | undefined {
+  const rm = track.reviewMatch
+  if (!rm) return undefined
+  const patch = buildReleaseMeta(track.meta, rm.release, rm.track, keepCoverArg(track))
+  return {
+    meta: patch.meta,
+    coverUrl: patch.coverUrl,
+    coverPath: patch.coverPath,
+    matched: true,
+    autoMatched: true,
+    matchReview: false,
+    reviewMatch: undefined,
   }
 }
 

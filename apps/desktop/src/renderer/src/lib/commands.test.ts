@@ -82,6 +82,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     toggleTheme: () => {},
     clearMeta: () => {},
     deriveTags: () => {},
+    acceptReview: () => {},
     fireConfetti: () => {},
     ...overrides,
   }
@@ -284,6 +285,29 @@ describe('buildCommands trash-suspects gate', () => {
       'trash-suspects',
     ).run()
     expect(askTrashSuspects).toHaveBeenCalledOnce()
+  })
+})
+
+describe('buildCommands accept-review gate', () => {
+  // Accepting a review suggestion only makes sense when the selected track carries one, so the
+  // command (and its shortcut) stay disabled otherwise — running it on a track with no pending
+  // suggestion would be a confusing no-op the user can't tell from a failure.
+  it('enables accept-review only when the selected track has a pending suggestion', () => {
+    const withReview = track({
+      reviewMatch: { release: {}, track: {}, result: {} },
+    } as Partial<TrackItem>)
+    expect(commandById(makeDeps({ selected: withReview }), 'accept-review').enabled).toBe(true)
+    expect(commandById(makeDeps({ selected: track() }), 'accept-review').enabled).toBe(false)
+    expect(commandById(makeDeps({ selected: null }), 'accept-review').enabled).toBe(false)
+  })
+
+  it('runs the injected accept-review flow', () => {
+    const acceptReview = vi.fn()
+    const withReview = track({
+      reviewMatch: { release: {}, track: {}, result: {} },
+    } as Partial<TrackItem>)
+    commandById(makeDeps({ selected: withReview, acceptReview }), 'accept-review').run()
+    expect(acceptReview).toHaveBeenCalledOnce()
   })
 })
 
