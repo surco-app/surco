@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useTrackLibrary } from './useTrackLibrary'
+import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
   cleanup()
@@ -82,27 +82,27 @@ describe('useTrackLibrary watched folders', () => {
   })
 })
 
-describe('useTrackLibrary removed tracks vs watcher', () => {
-  function setupWithTracks(): ReturnType<typeof setup> {
-    const { fire } = setApi({
-      readMeta: vi
-        .fn()
-        .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
-    })
-    const { result } = renderHook(() =>
-      useTrackLibrary({
-        setSelection: vi.fn(),
-        onForget: vi.fn(),
-        onRemove: vi.fn(),
-        onClear: vi.fn(),
-        onMetaLoaded: vi.fn(),
-        onDuplicatesSkipped: vi.fn(),
-        onMetaReadFailed: vi.fn(),
-      }),
-    )
-    return { result, fire }
-  }
+function setupWithTracks(): ReturnType<typeof setup> {
+  const { fire } = setApi({
+    readMeta: vi
+      .fn()
+      .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+  })
+  const { result } = renderHook(() =>
+    useTrackLibrary({
+      setSelection: vi.fn(),
+      onForget: vi.fn(),
+      onRemove: vi.fn(),
+      onClear: vi.fn(),
+      onMetaLoaded: vi.fn(),
+      onDuplicatesSkipped: vi.fn(),
+      onMetaReadFailed: vi.fn(),
+    }),
+  )
+  return { result, fire }
+}
 
+describe('useTrackLibrary removed tracks vs watcher', () => {
   // Removing a track with the X takes it out of the crate but not off the disk, so the
   // watcher's next report (a folder change, or the 60s safety poll) still lists its file.
   // Diffing that against the crate alone would flag the just-removed file as "new" and pop
@@ -129,6 +129,60 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
     act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/c.wav']))
 
     expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
+  })
+})
+
+describe('useTrackLibrary new-tracks prompt lifetime', () => {
+  // The watcher's safety poll re-reports the folder every minute whether or not anything
+  // changed. Without remembering the declined offer, a dismissed prompt would resurrect on
+  // the next poll (same unloaded files, still "new") — an endless popup for files the user
+  // already said no to. A genuinely new file must still prompt, counting only itself.
+  it('does not re-offer files the user dismissed', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+    expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/b.wav'] })
+    act(() => result.current.dismissPending())
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+    expect(result.current.pendingNew).toBeNull()
+
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/c.wav']))
+    expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
+  })
+
+  // A poll that reports the same still-unloaded files must not rebuild the pending object:
+  // its identity drives the toast effect (and the auto-dismiss timer), so churn would
+  // restart the prompt's countdown every minute and it would never expire.
+  it('keeps the pending object identical when a poll reports nothing new', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+    const first = result.current.pendingNew
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+
+    expect(result.current.pendingNew).toBe(first)
+  })
+
+  // The prompt must not demand an answer: left alone it times out, and timing out counts
+  // as declining — otherwise the next poll would raise it again a minute later.
+  it('expires the prompt on its own and does not re-offer the files', async () => {
+    vi.useFakeTimers()
+    try {
+      const { result, fire } = setupWithTracks()
+      await act(() => result.current.addPaths(['/m/a.wav']))
+
+      act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+      expect(result.current.pendingNew).not.toBeNull()
+      act(() => vi.advanceTimersByTime(NEW_TRACKS_PROMPT_TIMEOUT_MS))
+      expect(result.current.pendingNew).toBeNull()
+
+      act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+      expect(result.current.pendingNew).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

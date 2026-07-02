@@ -68,7 +68,7 @@ import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useSettings } from './hooks/useSettings'
 import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
-import { useTrackLibrary } from './hooks/useTrackLibrary'
+import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
@@ -551,9 +551,10 @@ export default function App(): React.JSX.Element {
   }, [tracks])
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
-  // second copy-in updates the count in place, persistent so it waits for an answer, and with
-  // a Load action that adds the tracks. Re-pushed whenever the pending set changes; dismissed
-  // when it clears (the user accepted, or the crate was emptied).
+  // second copy-in updates the count in place, and with a Load action that adds the tracks.
+  // Re-pushed whenever the pending set changes; dismissed when it clears (the user accepted,
+  // the hook's timeout declined it, or the crate was emptied). The duration only draws the
+  // countdown bar — the expiry that counts is the hook's, which remembers the declined files.
   useEffect(() => {
     if (!pendingNew) return
     const folder = pendingNew.root.split('/').pop() || pendingNew.root
@@ -564,6 +565,7 @@ export default function App(): React.JSX.Element {
       message: tr('newTracks.prompt', { count: pendingNew.paths.length, folder }),
       action: { label: tr('newTracks.load'), onAction: loadPending },
       onDismiss: dismissPending,
+      duration: NEW_TRACKS_PROMPT_TIMEOUT_MS,
     })
     return () => dismissToast(store, id)
   }, [pendingNew, loadPending, dismissPending, store, tr])

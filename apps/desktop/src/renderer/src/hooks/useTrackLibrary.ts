@@ -15,6 +15,11 @@ const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
 // ffprobe, so an unbounded drop of a full crate would flood the main process.
 const READ_CONCURRENCY = 6
 
+// How long the "N new tracks" prompt stays up before dismissing itself. Long enough to
+// read and hit Load, short enough that an ignored prompt gets out of the way; timing out
+// declines the offer, exactly like the ✕. Exported so the toast's countdown bar matches.
+export const NEW_TRACKS_PROMPT_TIMEOUT_MS = 10_000
+
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)
   return {
@@ -119,10 +124,11 @@ export function useTrackLibrary({
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
-  // Paths the user explicitly removed (row X or the multi-delete button). Their files are
-  // still on disk, so the watcher's next report would otherwise flag each one as "new"
-  // right after the user took it out.
-  const removedPaths = useRef(new Set<string>())
+  // Paths the user said no to: removed from the crate (row X or the multi-delete button) or
+  // offered by the watcher and declined (✕, or the prompt timing out). Their files are still
+  // on disk, so without this the watcher's next report — the safety poll fires every minute
+  // whether or not anything changed — would flag each one as "new" again and again.
+  const ignoredPaths = useRef(new Set<string>())
   const importDone = useRef(0)
   const importTotal = useRef(0)
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
@@ -262,13 +268,17 @@ export function useTrackLibrary({
       const fresh = newTrackPaths(
         files,
         tracksRef.current.map((t) => t.inputPath),
-      ).filter((p) => !removedPaths.current.has(p))
+      ).filter((p) => !ignoredPaths.current.has(p))
       setPendingNew((prev) => {
         if (fresh.length === 0) return prev?.root === root ? null : prev
         // Union with an outstanding prompt for the same folder so a second copy-in adds to
         // the count instead of replacing it; a different folder takes over the prompt.
         const merged =
           prev?.root === root ? Array.from(new Set([...prev.paths, ...fresh])) : fresh
+        // A poll that reports the same still-unloaded files must keep the object identity:
+        // the prompt's auto-dismiss timer restarts when pendingNew changes, and a rebuilt
+        // twin every minute would keep the toast alive forever.
+        if (prev && prev.root === root && merged.length === prev.paths.length) return prev
         return { root, paths: merged }
       })
     })
@@ -281,7 +291,24 @@ export function useTrackLibrary({
     })
   }, [])
 
-  const dismissPending = useCallback((): void => setPendingNew(null), [])
+  // Declining is remembered: the files stay on disk, so a forgotten offer would come
+  // straight back on the watcher's next report. Dragging a declined file in by hand
+  // still works — addPaths never consults the ignore set.
+  const dismissPending = useCallback((): void => {
+    setPendingNew((p) => {
+      if (p) for (const path of p.paths) ignoredPaths.current.add(path)
+      return null
+    })
+  }, [])
+
+  // The prompt dismisses itself after a while: it is an offer, not a question that blocks
+  // anything. The timer restarts when the pending set changes (a second copy-in updates the
+  // count) and is disarmed the moment the offer clears.
+  useEffect(() => {
+    if (!pendingNew) return
+    const timer = setTimeout(dismissPending, NEW_TRACKS_PROMPT_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [pendingNew, dismissPending])
 
   async function pickFiles(): Promise<void> {
     // Expand the picker's result the same way a drop does: a folder picked on macOS walks
@@ -328,7 +355,7 @@ export function useTrackLibrary({
       setTracks((prev) => prev.filter((t) => t.id !== id))
       setSelection((s) => deselect(s, id))
       if (removed) {
-        removedPaths.current.add(removed.inputPath)
+        ignoredPaths.current.add(removed.inputPath)
         onRemoveRef.current(removed)
       }
     },
@@ -349,7 +376,7 @@ export function useTrackLibrary({
         anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
       }))
       for (const track of removed) {
-        removedPaths.current.add(track.inputPath)
+        ignoredPaths.current.add(track.inputPath)
         onRemoveRef.current(track)
       }
     },
@@ -361,7 +388,7 @@ export function useTrackLibrary({
     setTracks([])
     setSelection({ ids: [], anchor: null })
     setPendingNew(null)
-    removedPaths.current.clear()
+    ignoredPaths.current.clear()
     // Stop watching the emptied crate's folders; the next folder load rebuilds the watcher.
     void window.api.unwatchFolders()
     onClear(cleared)
