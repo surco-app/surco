@@ -1,0 +1,404 @@
+[
+  {
+    "version": "0.32",
+    "date": "July 2, 2026",
+    "title": "Undo, sessions that come back and ALAC",
+    "items": [
+      "Undo with ⌘Z: if a batch fill, a find & replace or a clear tramples metadata it shouldn't have, one shortcut puts everything back the way it was.",
+      "Surco remembers your last session: on launch, a prompt offers to reload the tracks you were working on.",
+      "Automatic quality analysis (optional): turn it on in Settings and every imported track is analyzed in the background, so suspect files flag themselves without pressing Analyze.",
+      "New ALAC (Apple Lossless) output format — lossless and ready for Apple Music; and for MP3 you can now choose between 320 kbps and V0.",
+      "Duplicates filter: find the same song loaded as two files — a FLAC and an MP3, two downloads — and decide which one to keep.",
+      "Export your list as M3U8, the standard playlist almost any player understands.",
+      "More day-to-day clarity: a notice when a file's metadata can't be read, Stats shows the current list's progress, and the activity panel remembers its position and now logs imports and exports too."
+    ]
+  },
+  {
+    "version": "0.31",
+    "date": "July 2, 2026",
+    "title": "Sharper matching and clean-up at a glance",
+    "items": [
+      "Auto-matching gets more accurate: when a track carries a catalog number, Surco confirms the exact release with it and applies the match without asking you to review it; and between two editions, it prefers the one whose year matches your file.",
+      "When a suggestion lands as \"review\", you can now accept it in one step — from the palette (⌘K) or its shortcut — without opening the editor.",
+      "A button to send every track flagged as suspect to the Trash at once, right beside the quality filter.",
+      "The player gains a play button over the cover on hover, another to jump to the track that's playing, and 5-second skip back and forward with the arrow keys.",
+      "More keyboard control: search with \"/\", clear the search and filters with Escape, step between tracks with Ctrl+arrows while editing a field, and every action shows its shortcut in the tooltip."
+    ]
+  },
+  {
+    "version": "0.30",
+    "date": "July 1, 2026",
+    "title": "A sectioned editor and a palette that learns",
+    "items": [
+      "The editor groups fields into sections (Identity, Catalog, DJ and Order) so you stay oriented when many are on; in Settings → Fields, an \"Auto-organize\" button sorts them into sections in one click.",
+      "The command palette (⌘K) learns from you: as you type, the commands you use most rise to the top of the list, so your usual one lands under the cursor.",
+      "Discogs search matches more precisely: when a track carries an artist and title, it queries those fields separately instead of one loose string, finding the right release with less noise."
+    ]
+  },
+  {
+    "version": "0.29",
+    "date": "July 1, 2026",
+    "title": "Parallel conversion and more from ⌘K",
+    "items": [
+      "\"Convert all\" now processes several tracks at once instead of one after another, so a big batch finishes far sooner; the Apple Music step still runs one at a time, the way Music imports them.",
+      "The command palette (⌘K) gains new shortcuts: switch the theme, fill metadata from the file name, clear the selection's metadata, and a direct link to donate (with a little confetti)."
+    ]
+  },
+  {
+    "version": "0.28",
+    "date": "July 1, 2026",
+    "title": "Faster engine, filters that stick",
+    "items": [
+      "Surco now runs on a newer engine (Electron 42, Chromium 148) — snappier rendering for the waveform and spectrum, and the latest security fixes under the hood.",
+      "The track list's toolbar actions — Find & Replace, Auto-Match, Analyze quality, Fill tags and Empty — act on the visible tracks, never the ones a filter is hiding; while \"Clear the list\" from ⌘K still wipes everything for a clean start."
+    ]
+  },
+  {
+    "version": "0.27",
+    "date": "June 30, 2026",
+    "title": "Tidier toolbar, richer Discogs results",
+    "items": [
+      "The actions that work on your track list — add files, select all, fill tags, find & replace, clear — now live in the list's own header instead of the top toolbar, so it's clear what each one touches. The toolbar keeps only the crate-wide tools.",
+      "Discogs results are now cards that match your track rows, and each shows more of the release: year, label, catalogue number and format — so it's easier to pick the exact pressing among many.",
+      "Filtering the list and then converting now only touches the tracks you can see: filter to MP3 and hit convert, and your FLACs stay untouched.",
+      "Select All and Fill tags from filename now act on the visible or selected tracks, never silently on the whole crate.",
+      "Find & Replace shows the / / around the field in regex mode, so a pattern like Shake just works instead of being searched literally.",
+      "Tracks that Surco auto-loads from a watched folder now play straight away."
+    ]
+  },
+  {
+    "version": "0.26",
+    "date": "June 30, 2026",
+    "title": "A redesigned player and cleaner everywhere",
+    "items": [
+      "The playing track's card has been rebuilt: the title now gets its own line so it stops getting cut off, the artwork and controls sit balanced beside it, and the buttons are grouped by what they do — play, loop and waveform, close.",
+      "The track list and the player now always show the file's own cover, never a different image you're trying out in the editor — and applying a Discogs release only swaps your artwork when you've asked it to.",
+      "The Discogs search box gains a magnifier and a one-click clear, matching the track filter.",
+      "Tooltips across the app now match Surco's dark theme instead of the plain system ones, and the toolbar reads calmer with lighter icon buttons.",
+      "The audio quality spectrum for the track you've selected now draws right away, even while a whole-crate match is running in the background."
+    ]
+  },
+  {
+    "version": "0.25",
+    "date": "June 28, 2026",
+    "title": "Load new downloads without dragging the folder again",
+    "items": [
+      "Surco watches the folders you've already loaded: when new tracks show up (a download finishing, say), it offers to load just the new ones in a click — no need to drag the whole folder in again.",
+      "The player gains a real volume slider, more precise than scrolling the wheel over the card.",
+      "Notifications are unified into one tidy stack in the bottom-right, with a discreet bar showing how long until each one clears.",
+      "Each track's full title now shows in a themed tooltip when you hover its name."
+    ]
+  },
+  {
+    "version": "0.24",
+    "date": "June 26, 2026",
+    "title": "Follow background work in the Activity panel",
+    "items": [
+      "A new movable, resizable Activity panel shows background work as it happens: track analysis, Apple Music library checks and links to the published releases. Open it from the toolbar.",
+      "The spectrogram gains a crosshair that reads the exact frequency under your cursor as you move across it.",
+      "The quality verdict reports the real ceiling of high-rate audio instead of stopping at Nyquist, and sharpens Apple Music library matching further."
+    ]
+  },
+  {
+    "version": "0.23",
+    "date": "June 26, 2026",
+    "title": "Catch more fakes and sharpen your Apple Music library",
+    "items": [
+      "The quality verdict catches a new kind of fake 320: tracks with a frequency wall hidden behind a few high-frequency spikes that used to pass as good.",
+      "Apple Music \"already in my library\" detection is more accurate: it matches on title, artist and duration, remembers the Discogs-proven verdict, and shows a checking state while it resolves — so the list, the filter and the editor always agree.",
+      "Search spreads results across providers, so a Discogs-heavy query no longer buries the Bandcamp ones.",
+      "The cover picker no longer shows the same image more than once.",
+      "A new settings button empties the analysis cache to recompute spectrograms and verdicts from scratch."
+    ]
+  },
+  {
+    "version": "0.22",
+    "date": "June 21, 2026",
+    "title": "Convert without losing your cues or your tags",
+    "items": [
+      "The spectrogram is bigger and truer to Spek: a codec cut reads as dead air and the highs reach up to 22 kHz.",
+      "The file picker now accepts folders and expands them just like dropping them in.",
+      "Find and replace has a match-case toggle.",
+      "Exporting to Apple Music warns you if a track isn't converted yet.",
+      "Converting to any format now keeps Traktor's cue points and beatgrid, not just when normalizing the volume.",
+      "Conversion now respects metadata fields you've cleared: delete a comment or other value and the original no longer comes back.",
+      "New track-row indicators: the quality verdict shows as a severity icon, and already-converted tracks get a blue check badge.",
+      "Tracks show up sooner when you drop large or networked folders, and a stalled network file no longer freezes the quality analysis.",
+      "More accurate Discogs lookups when a track's name starts with a number.",
+      "The interface stays smooth while you analyze the quality of many tracks at once — the analysis no longer competes with the screen or playback.",
+      "The quality verdict is better at spotting tracks with a frequency ceiling the codec smeared over."
+    ]
+  },
+  {
+    "version": "0.21",
+    "date": "June 21, 2026",
+    "title": "Run the whole flow from the keyboard",
+    "items": [
+      "The whole workflow is now keyboard-driven: jump between the track list, the search results and the editor, move and page through the list, pick a Discogs or Bandcamp release with the arrow keys, and convert-and-move-on to the next track — all without the mouse.",
+      "The command palette now jumps straight to any track — start typing its title or artist to find it.",
+      "Tidier search results: a configurable maximum, with compilations pushed down and the most-owned pressing floated up, so the right release is easier to spot.",
+      "Hiding the player's waveform now keeps the volume, the elapsed and total time, and a seek bar — so you never lose your place."
+    ]
+  },
+  {
+    "version": "0.20",
+    "date": "June 20, 2026",
+    "title": "Filter your search results by source",
+    "items": [
+      "When you search Discogs and Bandcamp together, a new filter lets you show All, Discogs or Bandcamp — and the results are tidier: Discogs releases rank first and each source is capped so the list stays short and relevant.",
+      "Adding files now shows a live counter and a determinate progress bar as Surco reads each track's metadata, so you can see exactly how far along an import is.",
+      "New opt-in setting to apply your file-name pattern automatically, so converted tracks are named without a manual step.",
+      "The player gets a toggle to hide the waveform — handy on a small screen — which also skips the waveform analysis to save the work.",
+      "Smarter Apple Music library matching: Surco recognises the same track across more artist and title variations — ampersands, dotted acronyms (D.J. vs DJ), leading DJ/Dr./MC handles, spelled-out numbers vs digits, a leading artist before the title and trailing version markers — so fewer of your copies look missing.",
+      "Better release matching for tracks tagged “(Original Mix)”: Surco drops that trailing marker so a plain catalog title still scores, and multi-track album matching leaves a file unassigned rather than forcing a wrong cut.",
+      "Cleaner provider searches: Surco leads with the main artist before a “presents” alias and ignores a bracketed version note that only repeats the title, so the right Discogs or Bandcamp release surfaces more often.",
+      "The editor's in-library badge now lights up when a confident Discogs suggestion matches a track you already have in your Apple Music library.",
+      "Tidier list filters: each sidebar section is now its own independent filter, the menu closes as soon as you pick, and Unconverted sits under All.",
+      "Sturdier file handling: Surco reads tags from files other apps choke on and repairs malformed WAV headers instead of failing analysis.",
+      "Stability: starting a track over no longer leaves the player sounding after its card has closed."
+    ]
+  },
+  {
+    "version": "0.19",
+    "date": "June 19, 2026",
+    "title": "Export to Serato and Engine DJ",
+    "items": [
+      "Export your tracks to Serato DJ and Engine DJ (Denon), on top of rekordbox and Traktor: Surco writes the file each app imports.",
+      "Auto-match now flags uncertain matches for you to review before trusting them, instead of dropping them, and shows each track's match confidence.",
+      "Fake-lossless detection: a heads-up when a FLAC or WAV is really a lossy source repackaged as lossless.",
+      "Filter and sort your tracks by format, with a toggle to flip the sort direction."
+    ]
+  },
+  {
+    "version": "0.18",
+    "date": "June 18, 2026",
+    "title": "Now you can search Bandcamp too",
+    "items": [
+      "Search Bandcamp alongside Discogs: turn it on in Settings → Search and results from both sources merge into a single list, each tagged by its origin — great for self-released tracks, netlabels and exclusives that aren't on Discogs.",
+      "Auto-match is now a global search setting and can fall back to Bandcamp when Discogs comes up empty (with only Bandcamp it needs no token).",
+      "Sharper matching for badly named downloads: Surco strips file-name and title noise, pins the right mix, and gives the file's own artist priority.",
+      "New “Base title” clean-up in the Album field menu: strip the version or mix from a title in one tap.",
+      "Genres that differ only in case (your “Electronic” vs a source's “electronic”) no longer duplicate — a single pill shows, in your casing.",
+      "Your existing covers are kept by default: Surco no longer replaces them unless you opt in to swapping out low-resolution ones."
+    ]
+  },
+  {
+    "version": "0.17",
+    "date": "June 17, 2026",
+    "title": "Search the exact edition, in your language",
+    "items": [
+      "Filter Discogs searches by format — vinyl, CD, digital… — from the new Search tab in Settings, so you land on the edition you actually want.",
+      "Choose the app's language — System, English or Español — and it's remembered between sessions.",
+      "Cleaner Discogs results: duplicate editions are merged, and a remix with its tracks reordered still matches the right one.",
+      "Sharper Apple Music library detection: it matches on whole artist words and on the base title —so it spots a copy saved under the canonical title—, refreshes when you return to the app, and re-adds a track if its library copy is gone. (macOS)",
+      "Surco warns you when it has to skip loudness normalization because it can't measure the track, instead of doing it silently.",
+      "Clearer list and editor: Shift-click selects along the visible order, empty required fields are flagged calmly, and the Convert button explains what's missing before it lets you convert."
+    ]
+  },
+  {
+    "version": "0.16",
+    "date": "June 17, 2026",
+    "title": "Filter by what's already in your Apple Music",
+    "items": [
+      "See at a glance which tracks you already have in Apple Music: all your tracks are matched against your library, with sidebar filters to show only the ones you're missing (or the ones already there) — so you never re-import a duplicate. (macOS)",
+      "Double-click a track to play it, and double-click again to stop.",
+      "The list filters are now a single dropdown that never runs out of room, and the position counter — which track you're on and how many are left — stays visible as you switch filters."
+    ]
+  },
+  {
+    "version": "0.15",
+    "date": "June 16, 2026",
+    "title": "Sharper quality verdict and smoother track work",
+    "items": [
+      "The quality verdict has a keener eye: a genuine but dull master is no longer flagged “Review” (good when there's no codec cut), and fake hi-res is now caught — files that claim 48/96 kHz but were upsampled from 44.1 kHz.",
+      "Auto-match now sweeps all your tracks, prioritizing the tracks on screen, and stops the moment you turn it off.",
+      "Editor sections you collapse stay collapsed as you move between tracks, and aren't analyzed until you open them — quicker when reviewing lots of tracks.",
+      "Drag several selected tracks out of Surco at once.",
+      "Remove from the list or move to Trash every selected track at once from the right-click menu.",
+      "Drag an image straight from your browser as the cover.",
+      "The toolbar is reorganized into groups (edit · analyze · convert and export) so every action is easy to find.",
+      "The cover viewer steps through every image on the track: the one embedded in the file and the ones from the Discogs release.",
+      "Surco starts up faster and scrolls more smoothly through lots of tracks, and the first play sounds instantly."
+    ]
+  },
+  {
+    "version": "0.14",
+    "date": "June 15, 2026",
+    "title": "Waveform player and sharper Discogs matching",
+    "items": [
+      "The player now shows the track's waveform: click or drag on it to scrub, with the time floating on top.",
+      "Continuous playback: when a track ends, the next one in the list plays. Toggle it with the ∞ button in the player.",
+      "Much sharper Discogs matching: it ignores file-name noise (320, labels, “feat.”…), is accent-insensitive, understands more name formats, and retries by catalog number or title alone when needed.",
+      "With auto-match on, the track you select is matched on its own — no need to press the button on each one.",
+      "Dropping files that are already in the list now skips them and tells you, instead of doing nothing.",
+      "Tagging and “Add to Apple Music” are now available for WAV files too.",
+      "Adjust the player volume by scrolling over it; the level floats next to the time on hover.",
+      "Files whose highs were regenerated by an enhancer are now flagged “Reprocessed” instead of “Bad quality”, so a full-but-faked spectrum doesn't mislead.",
+      "Copy a track's generated file name — from your naming pattern — to the clipboard."
+    ]
+  },
+  {
+    "version": "0.13",
+    "date": "June 13, 2026",
+    "title": "Copy artwork and tags, drag tracks out",
+    "items": [
+      "Drag a track from the list straight into any external app — Spek, Finder, your player — to check it instantly, no exporting first.",
+      "Copy a track's artwork and paste it onto another: from the button on the cover itself or with ⌘C/⌘V, through the system clipboard (to and from other apps too).",
+      "Copy a track's full metadata and paste it onto another from the right-click menu — perfect for sharing a release's details across its tracks.",
+      "Loudness normalization now actually reaches loud targets: the club preset no longer lands short — it applies the exact gain to target and a true-peak limiter holds the ceiling."
+    ]
+  },
+  {
+    "version": "0.12",
+    "date": "June 12, 2026",
+    "title": "Much more reliable spectrum analysis",
+    "items": [
+      "The quality verdict has been rebuilt: dark masters and legitimate 320 kbps MP3s are no longer flagged as fakes for their natural high-end taper.",
+      "Grading is now absolute, the way a DJ reads it: reaching ~20 kHz is full quality (320 / lossless), 18–19.5 kHz is suspicious and below 18 kHz is bad — whatever the file's sample rate.",
+      "Surco now spots highs regenerated by audio “enhancers”: a track artificially glossed over a low-bitrate source no longer passes as good.",
+      "Soft encoder cutoffs (~160–192 kbps) that used to slip through as good quality are now caught and placed where they really are.",
+      "Reconstructed-highs detection: files “enhanced” from low-bitrate sources (SBR/enhancers) no longer pass as good quality even when their spectrum reaches the top."
+    ]
+  },
+  {
+    "version": "0.11",
+    "date": "June 12, 2026",
+    "title": "Apple Music, always in sync",
+    "items": [
+      "Apple Music sync: re-converting an edited track updates its library copy — tags and artwork — instead of duplicating it.",
+      "New “Update in Apple Music” and “Show in Apple Music” actions in the editor; if you deleted the library copy, Surco imports it again.",
+      "Click the artwork to view it full size, at its real resolution — embedded art is pulled from the original file, not the thumbnail.",
+      "The field menu now also transforms text: Title Case, lowercase or UPPERCASE in one click.",
+      "While a track plays, the Dock icon animates with a sound wave.",
+      "Editing several tracks at once now shows only the fields you picked in Settings, just like editing one."
+    ]
+  },
+  {
+    "version": "0.10",
+    "date": "June 11, 2026",
+    "title": "Built for lots of tracks",
+    "items": [
+      "Your edits never get lost: typing while Surco is still reading a slow file, or while auto-match is querying Discogs, always keeps what you typed.",
+      "Much lighter with lots of tracks: covers are kept as thumbnails (converted files still get the full-resolution art) and memory stops growing over long sessions.",
+      "Browsing the list feels smoother: BPM, key and loudness analyses wait until you rest on a track, and the one you're looking at always jumps ahead of the ones you left behind.",
+      "Every editor field can insert another field's value (artist into composer, title into comment…) from its own menu.",
+      "An amber dot marks tracks edited after converting, so you can see at a glance what still needs an update.",
+      "The Discogs search remembers what you typed on each track, shows a loading skeleton, and can be retried when it fails.",
+      "Names with a leading track number (\"104. Artist - Title\") now import with the right artist and title.",
+      "Adding several tracks to Apple Music shows its progress and can be cancelled; and when saving settings or trashing a file fails, Surco says so instead of failing silently.",
+      "Fixed: tracks whose cover was the file's own embedded art converted and landed in Apple Music with no artwork.",
+      "The player shows a loading indicator when audio takes a moment to arrive (for example, from a network drive)."
+    ]
+  },
+  {
+    "version": "0.9",
+    "date": "June 10, 2026",
+    "title": "Richer metadata and quality in three colors",
+    "items": [
+      "New metadata fields: composer, ISRC, mix, original year and a compilation flag. The composer fills itself from the Discogs writing credits.",
+      "The quality dot now grades three levels — green, amber and red — so a low-bitrate MP3 dressed up as lossless stands out, with an indicator while the spectrum is analyzed.",
+      "A button to clear all of a track's metadata, next to fill-from-filename.",
+      "Each list row shows its source format (WAV, FLAC, MP3…) so what still needs converting is obvious at a glance.",
+      "Start over in the context menu rebuilds a track from its original file.",
+      "The Apple Music check also looks up the Discogs-suggested title, catching library copies saved under the canonical name."
+    ]
+  },
+  {
+    "version": "0.8",
+    "date": "June 10, 2026",
+    "title": "BPM, key detection and free forever",
+    "items": [
+      "BPM and key detection: Surco analyzes every track and suggests the tempo and key as one-click chips, in the key notation you prefer.",
+      "Surco is now free forever: licensing and limits are gone. If it saves you hours, you can support it with a donation from the Stats tab.",
+      "New conversion destination that overwrites the original file, with a confirmation before a batch.",
+      "Text search and sorting in the track list, with album-art thumbnails on every row.",
+      "The settings folder is configurable: point it at iCloud Drive or Dropbox to share your preferences across Macs.",
+      "A shortcut to switch the interface language between English and Spanish on the fly.",
+      "A slim progress bar in the header for long background sweeps."
+    ]
+  },
+  {
+    "version": "0.7",
+    "date": "June 9, 2026",
+    "title": "A better first run and accessibility throughout",
+    "items": [
+      "The welcome wizard now sets up your output folder, visible and required fields, and teaches you to read the spectrum with a live preview.",
+      "New “Apple Music only” destination: the track lands in your library without leaving a copy in the output folder.",
+      "Full accessibility pass: the whole app works from the keyboard, plays well with screen readers and meets WCAG AA contrast.",
+      "Regenerate a file name in one click using the pattern from Settings.",
+      "Open audio files straight from Finder’s “Open With” menu.",
+      "New blue spectrogram palette that’s easier to read."
+    ]
+  },
+  {
+    "version": "0.6",
+    "date": "June 8, 2026",
+    "title": "Discogs auto-match and rekordbox & Traktor export",
+    "items": [
+      "Auto-match: Surco looks your tracks up on Discogs and applies only high-confidence matches, on import or with a toolbar sweep.",
+      "Export your collection as a rekordbox (XML) or Traktor (NML) library.",
+      "Batch quality triage: analyze the whole list at once, badge every track with its verdict and filter the suspect rips.",
+      "Customizable keyboard shortcuts with clash detection and native menus that update themselves.",
+      "Per-track properties panel (codec, bit depth, bitrate, tag formats) and a rename dialog built from metadata chips.",
+      "Redesigned icons and tooltips across the app."
+    ]
+  },
+  {
+    "version": "0.5",
+    "date": "June 6, 2026",
+    "title": "Star ratings and cover control",
+    "items": [
+      "Rate your tracks with stars; they’re written as tags Traktor, Windows Media Player and foobar2000 understand.",
+      "Pick the cover from every image the Discogs release has.",
+      "Artwork resolution is always visible and low-quality covers get flagged with a colored dot.",
+      "New Discogs release id field in the editor."
+    ]
+  },
+  {
+    "version": "0.4",
+    "date": "June 6, 2026",
+    "title": "Loudness and normalization",
+    "items": [
+      "Loudness analysis (LUFS) and optional normalization that preserves your Traktor cues.",
+      "Right-click context menu on tracks and search inside the list.",
+      "Cancel a batch conversion mid-run.",
+      "Configurable default genres applied with one click.",
+      "Optionally send the original file to the Trash after converting."
+    ]
+  },
+  {
+    "version": "0.3",
+    "date": "June 5, 2026",
+    "title": "Multi-track editing and full albums",
+    "items": [
+      "Multi-selection with bulk editing of shared fields.",
+      "Match a whole Discogs release against your files, pairing each track by duration.",
+      "Find & replace across every track’s tags, with regular expressions.",
+      "Fill tags from the file name in one click.",
+      "M4A/AAC, Opus and Ogg Vorbis now accepted as input formats.",
+      "The naming pattern supports subfolders to organize the output."
+    ]
+  },
+  {
+    "version": "0.2",
+    "date": "June 4, 2026",
+    "title": "Stability",
+    "items": [
+      "More robust importing: hidden files and macOS leftovers are skipped when dropping folders.",
+      "Better tag reading on files with embedded pictures."
+    ]
+  },
+  {
+    "version": "0.1",
+    "date": "June 2, 2026",
+    "title": "First public release",
+    "items": [
+      "Convert to AIFF, WAV, FLAC or MP3 by dragging your files in.",
+      "Discogs tagging with the most likely match suggested.",
+      "Spectrum analysis to catch fake lossless before you play out.",
+      "Send tracks straight to Apple Music, artwork included.",
+      "Template file names, a command palette, track preview and automatic updates.",
+      "macOS installs (Intel and Apple Silicon) plus Homebrew."
+    ]
+  }
+]

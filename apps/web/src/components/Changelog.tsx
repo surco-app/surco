@@ -5,11 +5,20 @@ import Header from './Header'
 import Footer from './Footer'
 import { useAutoLanguage } from '../lib/useAutoLanguage'
 
+// Items are plain strings historically; newer ones carry the exact patch they
+// shipped in ({text, in}) so the desktop "what's new" popup can filter by version.
+// The page shows the text either way.
+type Item = string | { text: string; in: string }
+
 type Release = {
   version: string
   date: string
   title: string
-  items: string[]
+  items: Item[]
+}
+
+function itemText(item: Item): string {
+  return typeof item === 'string' ? item : item.text
 }
 
 export default function Changelog() {
@@ -56,9 +65,9 @@ export default function Changelog() {
               <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
               <ul className="mt-5 space-y-2.5">
                 {r.items.map((item) => (
-                  <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted">
+                  <li key={itemText(item)} className="flex gap-3 text-sm leading-relaxed text-muted">
                     <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                    <span>{item}</span>
+                    <span>{itemText(item)}</span>
                   </li>
                 ))}
               </ul>
