@@ -3,10 +3,15 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import initSqlJs, { type Database } from 'sql.js'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { addToEngineLibrary } from './engineLibrary'
+import { isEngineDjRunning } from './engineProcess'
+
+// The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
+// what happens to be running on the machine (Engine DJ itself, for instance).
+vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 
 const meta = (over: Partial<TrackMetadata> = {}): TrackMetadata => ({
   title: 'One',
@@ -151,6 +156,26 @@ describe('addToEngineLibrary', () => {
     const file = await makeFile(root, 'four.aiff')
     await addToEngineLibrary(lib, file, meta(), 'Surco')
     await writeFile(join(lib, 'Database2', 'm.db-wal'), 'pending frames')
+    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
+  })
+
+  // Engine DJ 4.x runs its database in rollback-journal mode (m.db-journal, not -wal),
+  // so a hot journal is the same "library in use / mid-transaction" signal.
+  it('refuses to write over a hot rollback journal', async () => {
+    const lib = join(root, 'journal', 'Engine Library')
+    const file = await makeFile(root, 'five.aiff')
+    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await writeFile(join(lib, 'Database2', 'm.db-journal'), 'hot journal pages')
+    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
+  })
+
+  // Journal files are only non-empty mid-transaction, so the reliable "Engine DJ is
+  // open" signal is the process itself: it loads the library once at launch, never
+  // re-reads it, and our rename-over-m.db would orphan the file its connection holds.
+  it('refuses to write while the Engine DJ process is running', async () => {
+    const lib = join(root, 'process', 'Engine Library')
+    const file = await makeFile(root, 'six.aiff')
+    vi.mocked(isEngineDjRunning).mockResolvedValueOnce(true)
     await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
   })
 

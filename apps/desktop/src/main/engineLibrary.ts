@@ -10,6 +10,7 @@ import {
   TRACK_COLUMNS,
   trackRow,
 } from './engine'
+import { isEngineDjRunning } from './engineProcess'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
 // conversion destination), unlike engine.ts's export which always builds a fresh
@@ -95,9 +96,15 @@ async function drain(): Promise<void> {
 async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void> {
   const database2 = join(libraryDir, 'Database2')
   const dbPath = join(database2, 'm.db')
-  // A non-empty WAL means Engine DJ has the database open with writes not yet folded
-  // into m.db; rewriting the file underneath it would corrupt the DJ's library.
-  if ((await fileSize(`${dbPath}-wal`)) > 0) {
+  // Engine DJ loads the library once at launch and never re-reads it, so a write under
+  // a running Engine is invisible until restart at best — and whichever side saves
+  // last wins at worst. The process check is the reliable guard; the non-empty WAL /
+  // rollback-journal checks additionally catch a crashed session's unflushed writes.
+  if (
+    (await isEngineDjRunning()) ||
+    (await fileSize(`${dbPath}-wal`)) > 0 ||
+    (await fileSize(`${dbPath}-journal`)) > 0
+  ) {
     throw new Error('Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.')
   }
   const SQL = await loadSqlJs()
