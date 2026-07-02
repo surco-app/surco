@@ -23,6 +23,10 @@
       {
         "text": "After an update, Surco shows you what's new the next time it opens.",
         "in": "0.33.0"
+      },
+      {
+        "text": "Removing tracks from the list no longer makes Surco offer to load them back as if they were new.",
+        "in": "0.33.1"
       }
     ]
   },

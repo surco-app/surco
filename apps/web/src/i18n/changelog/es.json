@@ -23,6 +23,10 @@
       {
         "text": "Al actualizar, Surco te enseña las novedades de la versión la próxima vez que lo abres.",
         "in": "0.33.0"
+      },
+      {
+        "text": "Si quitas pistas de la lista, Surco ya no te ofrece volver a cargarlas como si fueran nuevas.",
+        "in": "0.33.1"
       }
     ]
   },
