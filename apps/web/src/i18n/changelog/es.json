@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.33",
+    "date": "2 de julio de 2026",
+    "title": "Directo a Engine DJ (Denon)",
+    "items": [
+      {
+        "text": "Nuevo destino de conversión Engine DJ: cada pista convertida se registra directa en tu biblioteca de Engine DJ (Denon), con su carátula, su rating y una playlist configurable — al abrir Engine, ahí están.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "Si Engine DJ está abierto al convertir, Surco se ofrece a cerrarlo y sigue solo — nunca escribe en la biblioteca mientras Engine la tiene en uso.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "El aviso de «ya está en tu biblioteca» ahora sigue a tu destino: comprueba Apple Music o Engine DJ según dónde envíes las pistas, y se oculta si solo conviertes a una carpeta.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "Exportar a rekordbox, Traktor, Serato o M3U8 vive ahora en el editor, justo donde termina la conversión, en vez de en un botón suelto de la barra.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "Al actualizar, Surco te enseña las novedades de la versión la próxima vez que lo abres.",
+        "in": "0.33.0"
+      }
+    ]
+  },
+  {
     "version": "0.32",
     "date": "2 de julio de 2026",
     "title": "Deshacer, sesiones que vuelven y ALAC",

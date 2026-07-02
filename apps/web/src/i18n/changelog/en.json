@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.33",
+    "date": "July 2, 2026",
+    "title": "Straight to Engine DJ (Denon)",
+    "items": [
+      {
+        "text": "New Engine DJ conversion destination: every converted track is registered straight into your Engine DJ (Denon) library, with its cover, rating and a configurable playlist — open Engine and they're there.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "If Engine DJ is open when you convert, Surco offers to close it and carries on — it never writes to the library while Engine is using it.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "The “already in your library” badge now follows your destination: it checks Apple Music or Engine DJ depending on where your tracks go, and hides when you only convert to a folder.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "Exporting to rekordbox, Traktor, Serato or M3U8 now lives in the editor, right where a conversion finishes, instead of a lone toolbar button.",
+        "in": "0.33.0"
+      },
+      {
+        "text": "After an update, Surco shows you what's new the next time it opens.",
+        "in": "0.33.0"
+      }
+    ]
+  },
+  {
     "version": "0.32",
     "date": "July 2, 2026",
     "title": "Undo, sessions that come back and ALAC",
