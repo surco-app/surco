@@ -1,7 +1,14 @@
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { bestMatch, confidenceTier, preRankResults, type TrackMatchTarget } from './release'
+import {
+  bestMatch,
+  boostForCatalogMatch,
+  catalogNumberMatches,
+  confidenceTier,
+  preRankResults,
+  type TrackMatchTarget,
+} from './release'
 
 // The tracks an auto-match sweep should attempt: those not already carrying a Discogs
 // match and holding the title plus search query a probe needs. Skipping tracks that
@@ -31,6 +38,7 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
     durationSec: track.duration,
     trackNumber: track.meta.trackNumber,
     artist: track.meta.artist,
+    catalogNumber: track.meta.catalogNumber,
   }
 }
 
@@ -84,23 +92,26 @@ export async function probeReleases(
       continue
     }
     if (opts.cancelled?.()) return undefined
-    if (
-      m &&
-      m.confidence >= (opts.minConfidence ?? 0) &&
-      opts.accepts(confidenceTier(m.confidence))
-    ) {
-      return { release: rel, track: m.track, confidence: m.confidence, result }
+    if (!m) continue
+    // A file's catalog number matching one of the release's pressings is the strongest
+    // evidence it names this exact release, so it lifts the confidence — enough to carry a
+    // review-tier hit over the high bar and apply it unattended. The boosted score drives
+    // every downstream decision (the accept bar, the fallback floor, the review fallback).
+    const confidence = catalogNumberMatches(target.catalogNumber, rel)
+      ? boostForCatalogMatch(m.confidence)
+      : m.confidence
+    if (confidence >= (opts.minConfidence ?? 0) && opts.accepts(confidenceTier(confidence))) {
+      return { release: rel, track: m.track, confidence, result }
     }
     // Keep walking for an accepted match, but remember the strongest review-tier hit in case
     // none turns up — the probe order isn't confidence order, so the best review can sit
     // behind a weaker one.
     if (
       opts.collectReview &&
-      m &&
-      confidenceTier(m.confidence) === 'review' &&
-      (!review || m.confidence > review.confidence)
+      confidenceTier(confidence) === 'review' &&
+      (!review || confidence > review.confidence)
     ) {
-      review = { release: rel, track: m.track, confidence: m.confidence, result }
+      review = { release: rel, track: m.track, confidence, result }
     }
   }
   return opts.collectReview ? review : undefined

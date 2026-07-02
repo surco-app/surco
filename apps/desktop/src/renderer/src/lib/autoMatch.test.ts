@@ -68,6 +68,39 @@ describe('autoMatchRelease', () => {
     expect(await autoMatchRelease('my song', target, api)).toBeUndefined()
   })
 
+  // A matching catalog number is the strongest evidence a file names this exact pressing, so
+  // a review-tier title hit on a release whose catno the file carries is promoted to high and
+  // applied unattended — the whole point of scoring the catno: fewer manual reviews.
+  it('applies a review-tier match unattended when the file’s catalog number matches the release', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi
+        .fn()
+        .mockResolvedValue(
+          release(1, { tracklist: [REVIEW], labels: [{ name: 'L', catno: 'SR-001' }] }),
+        ),
+    }
+    const withCatno = { ...target, durationSec: undefined, catalogNumber: 'sr 001' }
+    const m = await autoMatchRelease('my song', withCatno, api)
+    expect(m?.release.id).toBe(1)
+    expect(confidenceTier(m?.confidence ?? 0)).toBe('high')
+  })
+
+  // The boost lifts, it does not rescue: a matching catno on an otherwise-wrong track (a shared
+  // pressing of a different cut) must stay below the bar, so a low-tier hit is never applied.
+  it('does not let a matching catalog number rescue a low-tier match', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi
+        .fn()
+        .mockResolvedValue(
+          release(1, { tracklist: [LOW], labels: [{ name: 'L', catno: 'SR-001' }] }),
+        ),
+    }
+    const withCatno = { title: 'My Song', catalogNumber: 'SR-001' }
+    expect(await autoMatchRelease('my song', withCatno, api)).toBeUndefined()
+  })
+
   // A high match anywhere outranks a Discogs review suggestion: when Discogs only musters
   // a review-tier hit, a confident Bandcamp match still wins and is applied outright.
   it('prefers a high match from any source over a Discogs review suggestion', async () => {
@@ -278,16 +311,17 @@ describe('tracksToAutoMatch', () => {
 })
 
 describe('matchTargetOf', () => {
-  it('reads the title, duration, track number and artist a probe scores against', () => {
+  it('reads the title, duration, track number, artist and catalog number a probe scores against', () => {
     const t = {
       duration: 211,
-      meta: { title: 'Song', trackNumber: '3', artist: 'Artist' },
+      meta: { title: 'Song', trackNumber: '3', artist: 'Artist', catalogNumber: 'SR-001' },
     } as TrackItem
     expect(matchTargetOf(t)).toEqual({
       title: 'Song',
       durationSec: 211,
       trackNumber: '3',
       artist: 'Artist',
+      catalogNumber: 'SR-001',
     })
   })
 

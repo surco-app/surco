@@ -73,6 +73,9 @@ export interface TrackMatchTarget {
   durationSec?: number
   trackNumber?: string
   artist?: string
+  // The file's catalog number, if tagged. Not a per-track score (it's a release-level fact);
+  // it boosts the whole release's confidence when it matches one of the release's pressings.
+  catalogNumber?: string
 }
 
 export interface ScoredTrack {
@@ -215,6 +218,34 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
   if (confidence >= HIGH_CONFIDENCE) return 'high'
   if (confidence >= REVIEW_CONFIDENCE) return 'review'
   return 'low'
+}
+
+// Folds a catalog number to its bare identity so the same pressing matches across the
+// cosmetic ways it's written: "SR-001", "SR 001" and "sr001" are one number. Discogs' "none"
+// placeholder for white labels is dropped to empty so it never matches another blank.
+function foldCatalogNumber(catno: string | undefined): string {
+  const bare = (catno ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  return bare === 'none' ? '' : bare
+}
+
+// Whether the file's catalog number names one of the release's pressings. The catno is the
+// strongest evidence a file names the exact release (Discogs' own note calls it the key that
+// distinguishes pressings), so a match is worth boosting the confidence — but only a real
+// number on both sides counts, never two blanks.
+export function catalogNumberMatches(fileCatno: string | undefined, rel: Release): boolean {
+  const file = foldCatalogNumber(fileCatno)
+  if (!file) return false
+  return (rel.labels ?? []).some((l) => foldCatalogNumber(l.catno) === file)
+}
+
+// The lift a confirmed catalog-number match adds to a track's confidence. Sized to carry a
+// review-tier match (≥0.60) over the high bar (0.85) so it applies unattended, while leaving
+// a low-tier score (<0.60) below the review bar — a matching catno on an otherwise-wrong track
+// is more likely a shared pressing of a different cut than a correct hit, so it can't rescue
+// noise. Clamped so it never exceeds a perfect score.
+const CATALOG_MATCH_BOOST = 0.25
+export function boostForCatalogMatch(base: number): number {
+  return Math.min(1, base + CATALOG_MATCH_BOOST)
 }
 
 // Discogs leads, Bandcamp is the fallback — the same precedence the headless sweep uses

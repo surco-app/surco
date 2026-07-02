@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import { cleanMatchTitle } from '../../../shared/searchClean'
+import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import {
   bestMatch,
+  boostForCatalogMatch,
   buildReleaseMeta,
+  catalogNumberMatches,
   cleanName,
   confidenceTier,
   coverOf,
@@ -444,6 +446,72 @@ describe('confidenceTier', () => {
   it('calls a weak match low', () => {
     expect(confidenceTier(0.59)).toBe('low')
     expect(confidenceTier(0)).toBe('low')
+  })
+})
+
+describe('catalogNumberMatches', () => {
+  // The catalog number is the strongest signal that a file names the exact pressing, so a
+  // match must survive the cosmetic ways the same number is written — spacing, dashes and
+  // case differ between a file tag and Discogs but the pressing is the same.
+  it('matches the same number written with different spacing, dashes or case', () => {
+    const rel = release({ labels: [{ name: 'Label', catno: 'SR-001' }] })
+    expect(catalogNumberMatches('sr 001', rel)).toBe(true)
+    expect(catalogNumberMatches('SR001', rel)).toBe(true)
+    expect(catalogNumberMatches('SR-001', rel)).toBe(true)
+  })
+
+  it('does not match a different catalog number', () => {
+    const rel = release({ labels: [{ name: 'Label', catno: 'SR-001' }] })
+    expect(catalogNumberMatches('SR-002', rel)).toBe(false)
+  })
+
+  // A missing or placeholder catno on either side is not a signal — Discogs writes "none"
+  // for white labels, and treating that as a match would fire on every unlabelled release.
+  it('is not a match when either side is missing or a "none" placeholder', () => {
+    expect(
+      catalogNumberMatches(undefined, release({ labels: [{ name: 'L', catno: 'SR-001' }] })),
+    ).toBe(false)
+    expect(
+      catalogNumberMatches('SR-001', release({ labels: [{ name: 'L', catno: 'none' }] })),
+    ).toBe(false)
+    expect(catalogNumberMatches('SR-001', release())).toBe(false)
+    expect(catalogNumberMatches('', release({ labels: [{ name: 'L', catno: 'SR-001' }] }))).toBe(
+      false,
+    )
+  })
+
+  // A release can list several labels/pressings; the file's number matching any one of them
+  // still identifies the pressing.
+  it('matches against any of a release’s labels', () => {
+    const rel = release({
+      labels: [
+        { name: 'A', catno: 'AAA1' },
+        { name: 'B', catno: 'BBB2' },
+      ],
+    })
+    expect(catalogNumberMatches('bbb2', rel)).toBe(true)
+  })
+})
+
+describe('boostForCatalogMatch', () => {
+  // A confirmed catalog number is the strongest evidence a file names the exact pressing, so
+  // it promotes a plausible (review-tier) match to one safe to apply unattended — turning a
+  // manual glance into an automatic tag when the file already carries the number.
+  it('lifts a review-tier score to high', () => {
+    expect(confidenceTier(boostForCatalogMatch(0.6))).toBe('high')
+    expect(confidenceTier(boostForCatalogMatch(0.84))).toBe('high')
+  })
+
+  // It must not rescue a match that was too weak to even flag for review: a matching catno on
+  // an otherwise wrong track (title and duration both off) is more likely a shared pressing of
+  // a different cut than a correct hit, so a low score stays below the review bar.
+  it('leaves a low-tier score below the review bar', () => {
+    expect(confidenceTier(boostForCatalogMatch(0.59))).not.toBe('high')
+    expect(boostForCatalogMatch(0.3)).toBeLessThan(0.6)
+  })
+
+  it('never exceeds a perfect score', () => {
+    expect(boostForCatalogMatch(0.95)).toBeLessThanOrEqual(1)
   })
 })
 
