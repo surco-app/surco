@@ -530,6 +530,18 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.31",
+        "date": "July 2, 2026",
+        "title": "Sharper matching and clean-up at a glance",
+        "items": [
+          "Auto-matching gets more accurate: when a track carries a catalog number, Surco confirms the exact release with it and applies the match without asking you to review it; and between two editions, it prefers the one whose year matches your file.",
+          "When a suggestion lands as \"review\", you can now accept it in one step — from the palette (⌘K) or its shortcut — without opening the editor.",
+          "A button to send every track flagged as suspect to the Trash at once, right beside the quality filter.",
+          "The player gains a play button over the cover on hover, another to jump to the track that's playing, and 5-second skip back and forward with the arrow keys.",
+          "More keyboard control: search with \"/\", clear the search and filters with Escape, step between tracks with Ctrl+arrows while editing a field, and every action shows its shortcut in the tooltip."
+        ]
+      },
+      {
         "version": "0.30",
         "date": "July 1, 2026",
         "title": "A sectioned editor and a palette that learns",
