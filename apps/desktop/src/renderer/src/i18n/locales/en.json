@@ -649,6 +649,10 @@
     "dontShowAgain": "Don't show this again",
     "later": "Maybe later"
   },
+  "whatsNew": {
+    "title": "What's new",
+    "ok": "Got it"
+  },
   "confirm": {
     "fillTitle": "Fill tags from file names?",
     "fillMessage_one": "This reads the title, artist and track number from the file’s name and overwrites those fields in 1 track. Other tags are left untouched.",

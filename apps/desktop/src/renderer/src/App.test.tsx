@@ -34,6 +34,21 @@ vi.mock('./lib/triage', async (importOriginal) => {
   }
   return { ...real, sortTracks }
 })
+// The real changelog data grows with every release; pinning it keeps the what's-new
+// tests about the launch gating, not about whatever shipped last.
+vi.mock('./lib/changelog', () => ({
+  changelogReleases: () => [
+    {
+      version: '0.33',
+      date: '10 de julio de 2026',
+      title: 'Novedades y avisos',
+      items: [
+        { text: 'Popup de novedades tras actualizar.', in: '0.33.0' },
+        { text: 'Arreglo del análisis a 48 kHz.', in: '0.33.1' },
+      ],
+    },
+  ],
+}))
 
 afterEach(cleanup)
 
@@ -80,7 +95,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     conversionCount: 0,
     donateNudgeDismissed: false,
     donateNudgeLastShown: '',
-    lastSeenChangelogVersion: '',
+    // Matches setApi's version so unrelated tests never trigger the launch stamp.
+    lastSeenChangelogVersion: '0.0.0-test',
     ...over,
   }
 }
@@ -1530,6 +1546,68 @@ describe('App donate nudge', () => {
     await screen.findByTestId('batch-summary')
     expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
     await flush()
+  })
+})
+
+describe("App what's new popup", () => {
+  const flush = () =>
+    act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+  // The point of the feature: an update announces exactly what it shipped — the 0.33.0
+  // item was already seen, only the 0.33.1 one is news. The running version is stamped
+  // immediately so the popup fires once per update, never on every launch.
+  it('shows only the unseen items after an update and stamps the running version', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      version: '0.33.1',
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.0' })),
+      saveSettings,
+    })
+    await renderApp()
+    expect(await screen.findByText('Arreglo del análisis a 48 kHz.')).toBeInTheDocument()
+    expect(screen.queryByText('Popup de novedades tras actualizar.')).toBeNull()
+    expect(saveSettings).toHaveBeenCalledWith({ lastSeenChangelogVersion: '0.33.1' })
+    await flush()
+  })
+
+  // A fresh install has nothing to announce (onboarding owns that launch), but the
+  // version is still stamped silently — otherwise the second launch would "discover"
+  // the current changelog and pop it at a user who didn't update anything.
+  it('stays silent on a fresh install but stamps the version for the next update', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      version: '0.33.1',
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' }),
+        ),
+      saveSettings,
+    })
+    await renderApp()
+    await flush()
+    expect(screen.queryByTestId('whats-new-close')).toBeNull()
+    expect(saveSettings).toHaveBeenCalledWith({ lastSeenChangelogVersion: '0.33.1' })
+  })
+
+  // Same version, same launch as always: nothing to show, nothing to write.
+  it('does nothing when the running version was already seen', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      version: '0.33.1',
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.1' })),
+      saveSettings,
+    })
+    await renderApp()
+    await flush()
+    expect(screen.queryByTestId('whats-new-close')).toBeNull()
+    expect(saveSettings).not.toHaveBeenCalledWith({ lastSeenChangelogVersion: '0.33.1' })
   })
 })
 

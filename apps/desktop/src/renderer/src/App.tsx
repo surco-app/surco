@@ -72,12 +72,13 @@ import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
-import { nextLocale } from './i18n/locale'
+import { nextLocale, resolveLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
+import { changelogReleases } from './lib/changelog'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
@@ -97,6 +98,7 @@ import { contentDeficit } from './lib/resize'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
 import { dismissToast, dismissToastByUser, pushToast } from './lib/toastQueue'
+import { selectWhatsNew } from './lib/whatsNew'
 import {
   EMPTY_FILTER,
   type FilterSelection,
@@ -122,6 +124,9 @@ const OnboardingWizard = lazy(() =>
 )
 const DonateNudgeModal = lazy(() =>
   import('./components/DonateNudgeModal').then((m) => ({ default: m.DonateNudgeModal })),
+)
+const WhatsNewModal = lazy(() =>
+  import('./components/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 )
 const HelpModal = lazy(() =>
   import('./components/HelpModal').then((m) => ({ default: m.HelpModal })),
@@ -226,7 +231,20 @@ export default function App(): React.JSX.Element {
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     onFirstLoad: (s) => {
-      if (shouldShowOnboarding(s)) overlays.openOnboarding()
+      if (shouldShowOnboarding(s)) {
+        overlays.openOnboarding()
+      } else {
+        // Post-update news: the changelog items shipped between the version this
+        // machine last saw and the one now running (lib/whatsNew decides).
+        const news = selectWhatsNew(changelogReleases(resolveLocale(s.language)), s, window.api.version)
+        if (news) overlays.openWhatsNew(news)
+      }
+      // Stamped on every version change — including the fresh install that showed
+      // onboarding instead — so the popup fires once per update and a brand-new
+      // user's second launch can't "discover" the current changelog.
+      if (s.lastSeenChangelogVersion !== window.api.version) {
+        void window.api.saveSettings({ lastSeenChangelogVersion: window.api.version })
+      }
     },
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
@@ -1659,6 +1677,10 @@ export default function App(): React.JSX.Element {
                 overlays.close()
               }}
             />
+          )}
+
+          {activeModal?.type === 'whatsNew' && (
+            <WhatsNewModal releases={activeModal.releases} onClose={overlays.close} />
           )}
 
           {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}

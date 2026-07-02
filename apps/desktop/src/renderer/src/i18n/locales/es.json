@@ -649,6 +649,10 @@
     "dontShowAgain": "No volver a mostrar",
     "later": "Quizá más tarde"
   },
+  "whatsNew": {
+    "title": "Novedades",
+    "ok": "Entendido"
+  },
   "confirm": {
     "fillTitle": "¿Rellenar tags desde el nombre?",
     "fillMessage_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en 1 pista. El resto de tags no se toca.",
