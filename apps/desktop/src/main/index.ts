@@ -547,6 +547,14 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
+  ipcMain.handle('dialog:pickEngineLibraryDir', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Biblioteca de Engine DJ',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    return canceled ? null : filePaths[0]
+  })
+
   registerExportIpc()
 
   ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>

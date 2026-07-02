@@ -54,6 +54,7 @@ export interface Api {
   pickConfigDir: () => Promise<string | null>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
+  pickEngineLibraryDir: () => Promise<string | null>
   search: (
     query: string,
     provider?: SearchProviderId,

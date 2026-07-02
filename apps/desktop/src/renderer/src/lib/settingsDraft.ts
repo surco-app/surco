@@ -10,6 +10,7 @@ export interface SyncedDraft {
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   overwriteOriginal: boolean
+  addToEngineDj: boolean
   filenameFormat: string
   autoApplyFilename: boolean
   grouping: string
@@ -38,6 +39,7 @@ export interface SyncedDraft {
 export interface LocalDraft {
   token: string
   outputDir: string
+  engineLibraryDir: string
   autoMatch: boolean
 }
 
@@ -52,6 +54,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
+    addToEngineDj: s.addToEngineDj,
     filenameFormat: s.filenameFormat,
     autoApplyFilename: s.autoApplyFilename,
     grouping: s.groupingPresets.join(', '),
@@ -92,6 +95,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     ...rest,
     discogsToken: token,
     outputDir: local.outputDir,
+    engineLibraryDir: local.engineLibraryDir,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
     genrePresets: splitPresets(genre),

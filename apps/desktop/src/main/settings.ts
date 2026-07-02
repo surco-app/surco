@@ -27,6 +27,9 @@ const defaults: Settings = {
   // Off by default: exports produce a copy and never touch the source unless the user
   // opts into overwriting it.
   overwriteOriginal: false,
+  addToEngineDj: false,
+  // Engine DJ's default library location on both macOS and Windows.
+  engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   filenameFormat: '{artist} - {title}',
   // Off by default: the metadata-derived name stays opt-in (the "Regenerate" button), so a
   // plain "load and convert" keeps the source file name until the user turns this on.
@@ -69,6 +72,7 @@ const LOCAL_KEYS = [
   'discogsToken',
   'autoMatch',
   'outputDir',
+  'engineLibraryDir',
   'hasSeenOnboarding',
   'conversionCount',
   'commandUsage',

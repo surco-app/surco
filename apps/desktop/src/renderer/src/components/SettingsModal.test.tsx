@@ -42,6 +42,8 @@ const settings: Settings = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  addToEngineDj: false,
+  engineLibraryDir: '/music/Engine Library',
   filenameFormat: '',
   autoApplyFilename: false,
   groupingPresets: [],

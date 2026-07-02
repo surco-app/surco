@@ -73,6 +73,7 @@ export function SettingsModal({
   const [local, setLocal] = useState<LocalDraft>(() => ({
     token: settings.discogsToken,
     outputDir: settings.outputDir,
+    engineLibraryDir: settings.engineLibraryDir,
     autoMatch: settings.autoMatch,
   }))
   function patch<K extends keyof SyncedDraft>(key: K, value: SyncedDraft[K]): void {
@@ -85,6 +86,11 @@ export function SettingsModal({
   async function changeDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
     if (dir) patchLocal('outputDir', dir)
+  }
+
+  async function changeEngineDir(): Promise<void> {
+    const dir = await window.api.pickEngineLibraryDir()
+    if (dir) patchLocal('engineLibraryDir', dir)
   }
 
   // Where settings.json lives — null is the app default. Loaded on open because it
@@ -190,7 +196,13 @@ export function SettingsModal({
           <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
         )}
         {tab === 'conversion' && (
-          <ConversionTab synced={synced} local={local} patch={patch} onChangeDir={changeDir} />
+          <ConversionTab
+            synced={synced}
+            local={local}
+            patch={patch}
+            onChangeDir={changeDir}
+            onChangeEngineDir={changeEngineDir}
+          />
         )}
         {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
         {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}

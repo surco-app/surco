@@ -20,24 +20,33 @@ interface Props {
   local: LocalDraft
   patch: PatchSynced
   onChangeDir: () => void
+  onChangeEngineDir: () => void
 }
 
-export function ConversionTab({ synced, local, patch, onChangeDir }: Props): React.JSX.Element {
+export function ConversionTab({
+  synced,
+  local,
+  patch,
+  onChangeDir,
+  onChangeEngineDir,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
-  // while it's the format. Otherwise the two booleans map onto the single radio choice.
+  // while it's the format. Otherwise the stored booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
   const destination = toDestination(
     synced.addToAppleMusic,
     synced.keepOutputCopy,
     flacOnly,
     synced.overwriteOriginal,
+    synced.addToEngineDj,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     patch('addToAppleMusic', next.addToAppleMusic)
     patch('keepOutputCopy', next.keepOutputCopy)
     patch('overwriteOriginal', next.overwriteOriginal)
+    patch('addToEngineDj', next.addToEngineDj)
   }
   return (
     <>
@@ -108,6 +117,33 @@ export function ConversionTab({ synced, local, patch, onChangeDir }: Props): Rea
       />
       {isMac && flacOnly && (
         <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
+      )}
+      {destination === 'engineDj' && (
+        <>
+          <label
+            htmlFor="settings-engine-library"
+            className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
+          >
+            {tr('settings.engineLibraryDir')}
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="settings-engine-library"
+              data-testid="settings-engine-library"
+              value={local.engineLibraryDir}
+              readOnly
+              className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+            />
+            <button
+              type="button"
+              onClick={onChangeEngineDir}
+              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('common.change')}
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineLibraryDirHint')}</p>
+        </>
       )}
 
       <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">

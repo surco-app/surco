@@ -54,6 +54,11 @@ export function DestinationPicker({
                   {tr('settings.destinationAppleMusicHint')}
                 </span>
               )}
+              {d === 'engineDj' && (
+                <span className="block text-xs text-fg-dim">
+                  {tr('settings.destinationEngineDjHint')}
+                </span>
+              )}
               {d === 'overwrite' && (
                 <span className="block text-xs text-fg-dim">
                   {tr('settings.destinationOverwriteHint')}

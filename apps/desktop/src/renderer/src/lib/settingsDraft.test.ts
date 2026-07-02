@@ -14,6 +14,8 @@ const settings: Settings = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  addToEngineDj: false,
+  engineLibraryDir: '/music/Engine Library',
   filenameFormat: '{artist} - {title}',
   autoApplyFilename: false,
   groupingPresets: ['House'],
@@ -43,7 +45,12 @@ const settings: Settings = {
   donateNudgeLastShown: '',
 }
 
-const local: LocalDraft = { token: 'tok', outputDir: '/out', autoMatch: false }
+const local: LocalDraft = {
+  token: 'tok',
+  outputDir: '/out',
+  engineLibraryDir: '/music/Engine Library',
+  autoMatch: false,
+}
 
 describe('pickSynced', () => {
   // The presets persist as arrays but edit as one comma-joined text field, so seeding has

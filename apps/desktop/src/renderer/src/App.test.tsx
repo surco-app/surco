@@ -50,6 +50,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     addToAppleMusic: false,
     keepOutputCopy: true,
     overwriteOriginal: false,
+    addToEngineDj: false,
+    engineLibraryDir: '/music/Engine Library',
     filenameFormat: '{artist} - {title}',
     autoApplyFilename: false,
     groupingPresets: [],

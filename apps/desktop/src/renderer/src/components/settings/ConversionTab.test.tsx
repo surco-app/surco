@@ -19,6 +19,7 @@ const synced: SyncedDraft = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  addToEngineDj: false,
   filenameFormat: '{artist} - {title}',
   autoApplyFilename: false,
   grouping: '',
@@ -42,12 +43,23 @@ const synced: SyncedDraft = {
   searchProviders: ['discogs'],
 }
 
-const local: LocalDraft = { token: '', outputDir: '/out', autoMatch: false }
+const local: LocalDraft = {
+  token: '',
+  outputDir: '/out',
+  engineLibraryDir: '/music/Engine Library',
+  autoMatch: false,
+}
 
 function renderTab(over: Partial<SyncedDraft> = {}) {
   const patch = vi.fn()
   render(
-    <ConversionTab synced={{ ...synced, ...over }} local={local} patch={patch} onChangeDir={vi.fn()} />,
+    <ConversionTab
+      synced={{ ...synced, ...over }}
+      local={local}
+      patch={patch}
+      onChangeDir={vi.fn()}
+      onChangeEngineDir={vi.fn()}
+    />,
   )
   return patch
 }
@@ -78,5 +90,37 @@ describe('ConversionTab MP3 quality', () => {
     renderTab({ outputFormat: 'alac' })
     expect(screen.getByTestId('settings-format-alac')).toBeInTheDocument()
     expect(screen.queryByText(/Apple Music can't play FLAC/)).not.toBeInTheDocument()
+  })
+})
+
+describe('ConversionTab Engine DJ destination', () => {
+  // Choosing Engine DJ must clear the other destinations in the same patch batch —
+  // a leftover addToAppleMusic or overwriteOriginal would make the radio show one
+  // thing and the conversion do another.
+  it('stages Engine DJ as an exclusive destination choice', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-destination-engineDj'))
+    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
+    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
+    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
+    expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
+  })
+
+  // The library folder only matters once conversions are actually registered there;
+  // showing it under every destination would read as an unrelated global path.
+  it('shows the Engine library folder only while Engine DJ is the destination', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-engine-library')).toBeNull()
+    cleanup()
+    renderTab({ addToEngineDj: true })
+    expect(screen.getByTestId('settings-engine-library')).toHaveValue('/music/Engine Library')
+  })
+
+  // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
+  // the folder must not grey this option out.
+  it('keeps Engine DJ selectable while FLAC is the format', () => {
+    renderTab({ outputFormat: 'flac' })
+    expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
   })
 })

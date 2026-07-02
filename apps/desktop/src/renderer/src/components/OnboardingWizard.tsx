@@ -79,11 +79,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
   // it's the format. chooseDestination maps the single radio back onto the two booleans.
+  // The wizard never offers Engine DJ (a first run is about the basics), so the flag is
+  // pinned false on both sides of the mapping.
   const destination = toDestination(
     addToAppleMusic,
     keepOutputCopy,
     outputFormat === 'flac',
     overwriteOriginal,
+    false,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
@@ -230,7 +233,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       {tr('settings.destination')}
                     </span>
                     <DestinationPicker
-                      destinations={DESTINATIONS}
+                      destinations={DESTINATIONS.filter((d) => d !== 'engineDj')}
                       value={destination}
                       onChange={chooseDestination}
                       flacOnly={outputFormat === 'flac'}
