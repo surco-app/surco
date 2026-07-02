@@ -123,6 +123,7 @@
     "waveformHelp": "Show the waveform. Hiding it skips the waveform analysis — useful for large files or network drives.",
     "seek": "Seek",
     "volume": "Volume",
+    "reveal": "Show the playing track in the list",
     "close": "Close player"
   },
   "commands": {

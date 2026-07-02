@@ -123,6 +123,7 @@
     "waveformHelp": "Mostrar la forma de onda. Ocultarla evita su análisis, útil para archivos grandes o discos de red.",
     "seek": "Ir a posición",
     "volume": "Volumen",
+    "reveal": "Mostrar la pista en reproducción en la lista",
     "close": "Cerrar reproductor"
   },
   "commands": {

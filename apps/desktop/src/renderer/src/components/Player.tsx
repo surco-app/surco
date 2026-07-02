@@ -1,5 +1,6 @@
 import {
   AudioLines,
+  Crosshair,
   Infinity as InfinityIcon,
   LoaderCircle,
   Music,
@@ -27,6 +28,7 @@ export function LivePlayer({
   onToggleContinuous,
   showWaveform,
   onToggleWaveform,
+  onReveal,
   onClose,
 }: {
   track: TrackItem
@@ -35,6 +37,7 @@ export function LivePlayer({
   onToggleContinuous: () => void
   showWaveform: boolean
   onToggleWaveform: () => void
+  onReveal: () => void
   onClose: () => void
 }): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState(0)
@@ -130,6 +133,7 @@ export function LivePlayer({
       onToggleContinuous={onToggleContinuous}
       showWaveform={showWaveform}
       onToggleWaveform={onToggleWaveform}
+      onReveal={onReveal}
       onClose={onClose}
     />
   )
@@ -150,6 +154,7 @@ interface PlayerProps {
   onToggleContinuous: () => void
   showWaveform: boolean
   onToggleWaveform: () => void
+  onReveal: () => void
   onClose: () => void
 }
 
@@ -170,6 +175,7 @@ export function Player({
   onToggleContinuous,
   showWaveform,
   onToggleWaveform,
+  onReveal,
   onClose,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -313,6 +319,19 @@ export function Player({
               >
                 <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={t('player.waveformHelp')} />
+              </button>
+
+              {/* Jump the list to the track that's playing — after scrolling or selecting
+                  another row, the playing one may be off-screen with no other way back. */}
+              <button
+                type="button"
+                data-testid="player-reveal"
+                onClick={onReveal}
+                aria-label={t('player.reveal')}
+                className="press relative flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+              >
+                <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
+                <Tooltip label={t('player.reveal')} />
               </button>
 
               {/* Close held a touch apart — an exit, not a control, so a stray click doesn't

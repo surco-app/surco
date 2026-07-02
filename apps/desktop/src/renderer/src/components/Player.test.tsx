@@ -84,6 +84,7 @@ function props(over = {}) {
     onSetVolume: vi.fn(),
     onToggleContinuous: vi.fn(),
     onToggleWaveform: vi.fn(),
+    onReveal: vi.fn(),
     onClose: vi.fn(),
     ...over,
   }
@@ -167,6 +168,15 @@ describe('Player', () => {
     renderUI(<Player {...props({ onClose })} />)
     fireEvent.click(screen.getByTestId('player-close'))
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  // After scrolling or selecting elsewhere the playing track can be off-screen, so the
+  // player's locate control asks App to bring it back into the list.
+  it('reveals the playing track when the locate control is clicked', () => {
+    const onReveal = vi.fn()
+    renderUI(<Player {...props({ onReveal })} />)
+    fireEvent.click(screen.getByTestId('player-reveal'))
+    expect(onReveal).toHaveBeenCalledOnce()
   })
 
   it('shows the elapsed and total time so the listener can place the track', () => {

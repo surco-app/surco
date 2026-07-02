@@ -1416,6 +1416,7 @@ export default function App(): React.JSX.Element {
               onToggleWaveform={() =>
                 saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
               }
+              onReveal={() => revealSelection(playerTrack.id)}
               onClose={closePlayer}
             />
           )}
