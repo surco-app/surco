@@ -35,6 +35,14 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // rename (⌘⇧R) and the other toolbar shortcuts.
   { id: 'select-all', chord: ['mod', 'a'], suppressWhileTyping: true },
   { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
+  // The editor's own Tag (fill selection from file name) and Eraser (clear selection) buttons,
+  // as chords so the keyboard flow reaches them without a ⌘K detour. Mod-combos with no typing
+  // guard, like the column jumps, so they still fire with a metadata field focused.
+  { id: 'derive-tags', chord: ['mod', 't'] },
+  { id: 'clear-meta', chord: ['mod', 'e'] },
+  // Move the flagged (suspect) rips to the Trash. Guarded while typing like ⌘⌫ remove — it
+  // deletes files, so ⌫ mid-edit must never trigger it.
+  { id: 'trash-suspects', chord: ['mod', 'shift', 'backspace'], suppressWhileTyping: true },
   { id: 'analyze-quality', chord: ['mod', 'shift', 'a'] },
   { id: 'auto-match', chord: ['mod', 'shift', 'd'] },
   { id: 'export', chord: ['mod', 'shift', 'e'] },

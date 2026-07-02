@@ -65,6 +65,24 @@ describe('matchChord', () => {
     expect(matchChord(b, ['mod', 'backspace'], false)).toBe('remove')
   })
 
+  // The editor's own clean-up actions (Tag / Eraser) and the fake-purge get first-class
+  // chords so the keyboard-first flow doesn't have to detour through ⌘K for them.
+  it('resolves the editor and quality clean-up chords', () => {
+    expect(matchChord(b, ['mod', 't'], false)).toBe('derive-tags')
+    expect(matchChord(b, ['mod', 'e'], false)).toBe('clear-meta')
+    expect(matchChord(b, ['mod', 'shift', 'backspace'], false)).toBe('trash-suspects')
+  })
+
+  // derive-tags / clear-meta are editor actions the user may fire with a field focused (like
+  // the column-jump chords), so they stay live while typing. trash-suspects deletes files, so
+  // it carries the typing guard like ⌘⌫ remove — ⌫ mid-edit must never purge the crate.
+  it('keeps the editor chords live while typing but guards the destructive trash-suspects', () => {
+    expect(matchChord(b, ['mod', 't'], true)).toBe('derive-tags')
+    expect(matchChord(b, ['mod', 'e'], true)).toBe('clear-meta')
+    expect(matchChord(b, ['mod', 'shift', 'backspace'], true)).toBeNull()
+    expect(matchChord(b, ['mod', 'shift', 'backspace'], false)).toBe('trash-suspects')
+  })
+
   it('returns null for an unbound chord', () => {
     expect(matchChord(b, ['mod', 'z'], false)).toBeNull()
   })
