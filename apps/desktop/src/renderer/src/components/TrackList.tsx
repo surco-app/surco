@@ -35,6 +35,7 @@ interface Props {
   onSearch: (id: string) => void
   onStartOver: (track: TrackItem) => void
   onCopyMeta: (track: TrackItem) => void
+  onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
   canPasteMeta: boolean
   onTrash: (track: TrackItem) => void
@@ -394,6 +395,7 @@ export function TrackList({
   onSearch,
   onStartOver,
   onCopyMeta,
+  onCopyPath,
   onPasteMeta,
   canPasteMeta,
   onTrash,
@@ -491,6 +493,7 @@ export function TrackList({
           onSearch={onSearch}
           onStartOver={onStartOver}
           onCopyMeta={onCopyMeta}
+          onCopyPath={onCopyPath}
           onPasteMeta={onPasteMeta}
           canPasteMeta={canPasteMeta}
           onRemove={onRemove}

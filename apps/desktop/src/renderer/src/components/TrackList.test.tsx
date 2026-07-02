@@ -76,6 +76,7 @@ function renderList(
   const onStartOver = vi.fn()
   const onTrash = vi.fn()
   const onCopyMeta = vi.fn()
+  const onCopyPath = vi.fn()
   const onPasteMeta = vi.fn()
   render(
     <TrackList
@@ -91,6 +92,7 @@ function renderList(
       onStartOver={onStartOver}
       onTrash={onTrash}
       onCopyMeta={onCopyMeta}
+      onCopyPath={onCopyPath}
       onPasteMeta={onPasteMeta}
       canPasteMeta={canPasteMeta}
     />,
@@ -104,6 +106,7 @@ function renderList(
     onStartOver,
     onTrash,
     onCopyMeta,
+    onCopyPath,
     onPasteMeta,
   }
 }
@@ -388,8 +391,8 @@ describe('TrackList context menu', () => {
     expect(onSelect).toHaveBeenCalledWith('b', {})
   })
 
-  it('reveals, opens and copies the path of the original file', () => {
-    renderList([track({ id: 'a' })])
+  it('reveals and opens the original file, and delegates the path copy to the list owner', () => {
+    const { onCopyPath } = renderList([track({ id: 'a' })])
     const row = () => screen.getByTestId('track-row')
     fireEvent.contextMenu(row())
     fireEvent.click(screen.getByTestId('track-menu-reveal'))
@@ -399,7 +402,8 @@ describe('TrackList context menu', () => {
     fireEvent.click(screen.getByTestId('track-menu-copy'))
     expect(api.reveal).toHaveBeenCalledWith('/music/a.wav')
     expect(api.openFile).toHaveBeenCalledWith('/music/a.wav')
-    expect(api.copyText).toHaveBeenCalledWith('/music/a.wav')
+    // Copy path routes through App (so it can toast), not straight to the clipboard here.
+    expect(onCopyPath).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
   })
 
   // "Start over" rebuilds the row from the file as if it had just been dropped, so a

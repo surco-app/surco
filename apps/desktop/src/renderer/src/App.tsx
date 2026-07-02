@@ -898,9 +898,18 @@ export default function App(): React.JSX.Element {
   )
   // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
   // onto — the fast way to share release-level metadata across a crate.
-  const onCopyMeta = useStableCallback((track: TrackItem) => setCopiedMeta(track.meta))
+  const onCopyMeta = useStableCallback((track: TrackItem) => {
+    setCopiedMeta(track.meta)
+    setNotice(tr('notices.copiedMeta'))
+  })
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (copiedMeta) updateTracksMeta([track.id], copiedMeta)
+  })
+  // Copies the source path to the clipboard. Routed through App (rather than the menu's
+  // own window.api call) so it can confirm with the same toast the other copies show.
+  const onCopyPath = useStableCallback((track: TrackItem) => {
+    void window.api.copyText(track.inputPath)
+    setNotice(tr('notices.copiedPath'))
   })
   const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
     const ids = new Set(selectedIds)
@@ -962,7 +971,10 @@ export default function App(): React.JSX.Element {
   const onCopyFilename = useStableCallback(() => {
     if (!selected) return
     const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
-    if (name) void window.api.copyText(name.split('/').pop() ?? name)
+    if (name) {
+      void window.api.copyText(name.split('/').pop() ?? name)
+      setNotice(tr('notices.copiedFilename'))
+    }
   })
   // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
   // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also
@@ -1373,6 +1385,7 @@ export default function App(): React.JSX.Element {
                     onSearch={onSearchTrack}
                     onStartOver={startOverTrack}
                     onCopyMeta={onCopyMeta}
+                    onCopyPath={onCopyPath}
                     onPasteMeta={onPasteMeta}
                     canPasteMeta={copiedMeta !== null}
                     onTrash={(track) => askTrash(menuTargets(track.id))}

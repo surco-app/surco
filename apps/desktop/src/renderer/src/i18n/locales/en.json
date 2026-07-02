@@ -98,7 +98,10 @@
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
-    "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured."
+    "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured.",
+    "copiedMeta": "Metadata copied",
+    "copiedPath": "Path copied",
+    "copiedFilename": "File name copied"
   },
   "newTracks": {
     "prompt_one": "{{count}} new track in “{{folder}}”",

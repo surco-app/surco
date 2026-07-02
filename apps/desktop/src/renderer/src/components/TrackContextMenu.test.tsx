@@ -33,6 +33,7 @@ function renderMenu(over: Record<string, unknown> = {}) {
     onSearch: vi.fn(),
     onStartOver: vi.fn(),
     onCopyMeta: vi.fn(),
+    onCopyPath: vi.fn(),
     onPasteMeta: vi.fn(),
     canPasteMeta: false,
     onRemove: vi.fn(),
@@ -87,5 +88,18 @@ describe('TrackContextMenu keyboard', () => {
     cleanup()
     expect(opener).toHaveFocus()
     opener.remove()
+  })
+})
+
+describe('TrackContextMenu copy path', () => {
+  // Copy path is delegated to App (not fired at window.api here) so App can confirm the
+  // copy with a toast — the same feedback the other copies give.
+  it('delegates copy path to App with the track, then closes', () => {
+    const onCopyPath = vi.fn()
+    const onClose = vi.fn()
+    const props = renderMenu({ onCopyPath, onClose })
+    fireEvent.click(screen.getByTestId('track-menu-copy'))
+    expect(onCopyPath).toHaveBeenCalledWith(props.track)
+    expect(onClose).toHaveBeenCalled()
   })
 })

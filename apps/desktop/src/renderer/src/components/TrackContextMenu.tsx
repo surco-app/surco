@@ -12,6 +12,7 @@ interface Props {
   onSearch: (id: string) => void
   onStartOver: (track: TrackItem) => void
   onCopyMeta: (track: TrackItem) => void
+  onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
   // Whether a track's metadata has been copied and is available to paste. False hides
   // the paste item so the menu never offers a no-op.
@@ -46,10 +47,11 @@ function MenuItem({
   )
 }
 
-// Right-click menu for a single track. Reveal/open/copy talk to the OS directly through
-// window.api; the list-level actions (search, remove, trash) are delegated to App so the
-// trash flow can route through its confirm dialog. Labels switch on platform because the
-// OS file manager and recycle location differ between macOS and Windows.
+// Right-click menu for a single track. Reveal/open talk to the OS directly through
+// window.api; the list-level actions (search, copy, remove, trash) are delegated to App so
+// the trash flow can route through its confirm dialog and the copies can confirm with a
+// toast. Labels switch on platform because the OS file manager and recycle location differ
+// between macOS and Windows.
 export function TrackContextMenu({
   track,
   x,
@@ -58,6 +60,7 @@ export function TrackContextMenu({
   onSearch,
   onStartOver,
   onCopyMeta,
+  onCopyPath,
   onPasteMeta,
   canPasteMeta,
   onRemove,
@@ -158,7 +161,7 @@ export function TrackContextMenu({
         <MenuItem
           testid="track-menu-copy"
           label={tr('trackList.context.copyPath')}
-          onClick={() => run(() => window.api.copyText(track.inputPath))}
+          onClick={() => run(() => onCopyPath(track))}
         />
         <MenuItem
           testid="track-menu-search"
