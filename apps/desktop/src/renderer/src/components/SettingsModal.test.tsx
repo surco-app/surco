@@ -45,6 +45,7 @@ const settings: Settings = {
   coverSquare: false,
   replaceLowResCover: false,
   showSpectrum: true,
+  autoAnalyze: false,
   showWaveform: true,
   showLoudness: true,
   autoMatch: false,

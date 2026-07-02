@@ -23,6 +23,7 @@ export interface SyncedDraft {
   replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
+  autoAnalyze: boolean
   keyNotation: Settings['keyNotation']
   normalize: Settings['normalize']
   shortcutOverrides: Settings['shortcutOverrides']
@@ -63,6 +64,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     replaceLowResCover: s.replaceLowResCover,
     showSpectrum: s.showSpectrum,
     showLoudness: s.showLoudness,
+    autoAnalyze: s.autoAnalyze,
     keyNotation: s.keyNotation,
     normalize: s.normalize,
     shortcutOverrides: s.shortcutOverrides,

@@ -53,6 +53,22 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
           </label>
           <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
         </div>
+        {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
+            when it isn't, so the option stays discoverable. */}
+        <div className={synced.showSpectrum ? '' : 'opacity-50'}>
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              data-testid="settings-auto-analyze"
+              type="checkbox"
+              checked={synced.autoAnalyze}
+              disabled={!synced.showSpectrum}
+              onChange={(e) => patch('autoAnalyze', e.target.checked)}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <span className="text-sm">{tr('settings.autoAnalyze')}</span>
+          </label>
+          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.autoAnalyzeHint')}</p>
+        </div>
         <div>
           <label className="flex cursor-pointer items-center gap-3">
             <input

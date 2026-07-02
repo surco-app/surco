@@ -92,6 +92,10 @@ export interface Settings {
   replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
+  // When on, every imported track queues its quality analysis in the background (low
+  // priority, same shared cache as the sweep), so suspect rips surface on their own
+  // without pressing Analyze. Off by default: it spends an ffmpeg decode per drop.
+  autoAnalyze: boolean
   // When on, the bottom player shows its waveform strip; off collapses it and skips the
   // full-file decode entirely. Persisted so the choice sticks across tracks and restarts.
   showWaveform: boolean

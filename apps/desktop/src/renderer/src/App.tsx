@@ -451,6 +451,12 @@ export default function App(): React.JSX.Element {
       // is actually on screen, so an active filter holds back the rows it hides. Change the
       // filter and the newly-shown rows get matched; already-matched ones are never re-probed.
       if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
+      // Auto-analyze warms the same shared spectrum cache as the sweep and the hover
+      // prefetch, at low priority so the selected track's own decode still preempts it.
+      // Unlike the hover path it ignores the quality-section fold — this is an explicit
+      // "always triage my imports" setting, not incidental pointer traffic.
+      if (settings?.autoAnalyze && settings.showSpectrum)
+        void queryClient.prefetchQuery(spectrogramOptions(t.inputPath))
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
     onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),

@@ -62,6 +62,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     coverSquare: false,
     replaceLowResCover: false,
     showSpectrum: true,
+    autoAnalyze: false,
     showWaveform: true,
     showLoudness: false,
     autoMatch: false,
@@ -1670,5 +1671,33 @@ describe('App reopen last session', () => {
     await renderApp()
     await screen.findByTestId('last-session')
     expect(saveLastSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('App auto-analyze on import', () => {
+  // With the setting on, suspect rips surface on their own: every imported track queues
+  // its quality analysis in the background, so the user never has to know the Analyze
+  // button exists to be protected from fake-lossless files.
+  it('measures imported tracks without pressing Analyze when enabled', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-quality')).toHaveLength(2))
+  })
+
+  // Off by default: importing must not spend an ffmpeg decode per row behind the
+  // user's back — that cost is exactly why the setting is opt-in.
+  it('does not analyze imports while the setting is off', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({ spectrogram })
+    await renderApp()
+    await addTwoTracks()
+    // The auto-selected first row's editor measures itself (its own high-priority query);
+    // the unselected second row is what the off setting must leave untouched.
+    await waitFor(() => expect(spectrogram).toHaveBeenCalled())
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav', expect.anything())
   })
 })

@@ -525,6 +525,8 @@
     "replaceLowResHint": "When off, your file's own cover is always kept — a low-res one is only flagged, never swapped for the release image.",
     "showSpectrum": "Show audio spectrum",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
+    "autoAnalyze": "Analyze quality on import",
+    "autoAnalyzeHint": "Queues every imported track's quality analysis in the background, so suspect files get flagged without pressing Analyze.",
     "showLoudness": "Show loudness (LUFS)",
     "showLoudnessHint": "Measures integrated loudness, true peak and loudness range (EBU R128) while editing a track. When off, the measurement is skipped entirely.",
     "keyNotation": "Key notation",

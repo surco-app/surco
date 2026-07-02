@@ -525,6 +525,8 @@
     "replaceLowResHint": "Si está desactivado, siempre se conserva la carátula del archivo; una de baja resolución solo se avisa, nunca se cambia por la del lanzamiento.",
     "showSpectrum": "Mostrar el espectro de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
+    "autoAnalyze": "Analizar la calidad al importar",
+    "autoAnalyzeHint": "Encola el análisis de calidad de cada pista importada en segundo plano; los archivos sospechosos se marcan solos, sin pulsar Analizar.",
     "showLoudness": "Mostrar el loudness (LUFS)",
     "showLoudnessHint": "Mide el loudness integrado, el pico real y el rango de loudness (EBU R128) al editar una pista. Si lo desactivas, la medición se omite por completo.",
     "keyNotation": "Notación de la tonalidad",

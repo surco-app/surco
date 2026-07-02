@@ -45,6 +45,7 @@ const defaults: Settings = {
   showSpectrum: true,
   showLoudness: true,
   showWaveform: true,
+  autoAnalyze: false,
   autoMatch: false,
   continuousPlayback: false,
   keyNotation: 'camelot',
