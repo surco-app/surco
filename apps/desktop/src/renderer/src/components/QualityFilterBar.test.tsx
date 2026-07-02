@@ -35,6 +35,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
+      selectedCount={1}
       onRevealSelected={() => {}}
       {...over}
     />,
@@ -271,5 +272,13 @@ describe('QualityFilterBar', () => {
     renderBar({ selectedPosition: 250, visibleCount: 498, onRevealSelected })
     fireEvent.click(screen.getByTestId('track-position'))
     expect(onRevealSelected).toHaveBeenCalledOnce()
+  })
+
+  // During a multi-select the size of the selection is what the DJ cares about, so the
+  // counter shows "N selected" in place of the single-track position/reveal control.
+  it('shows the selection size instead of the position when multiple are selected', () => {
+    renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498 })
+    expect(screen.getByTestId('track-selected-count')).toHaveTextContent('3 selected')
+    expect(screen.queryByTestId('track-position')).toBeNull()
   })
 })

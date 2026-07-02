@@ -75,7 +75,9 @@
       "ascending": "Ascending order",
       "descending": "Descending order"
     },
-    "position": "Track {{current}} of {{total}}"
+    "position": "Track {{current}} of {{total}}",
+    "selectedCount_one": "{{count}} selected",
+    "selectedCount_other": "{{count}} selected"
   },
   "drop": {
     "release": "Drop to add"

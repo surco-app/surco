@@ -75,6 +75,9 @@ interface Props {
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
   selectedPosition: number | null
+  // How many rows are selected. Above one the counter shows "N selected" instead of a
+  // position, so a multi-select shows its size where the single-track position usually sits.
+  selectedCount: number
   // Scrolls the selected row into view — the position counter clicks through to it, so a
   // number the DJ can see becomes a way back to the row it counts.
   onRevealSelected: () => void
@@ -102,6 +105,7 @@ export function QualityFilterBar({
   trackCount,
   visibleCount,
   selectedPosition,
+  selectedCount,
   onRevealSelected,
   children,
 }: Props): React.JSX.Element {
@@ -372,7 +376,15 @@ export function QualityFilterBar({
         )}
       </div>
       {children}
-      {visibleCount > 0 &&
+      {selectedCount > 1 ? (
+        <span
+          data-testid="track-selected-count"
+          className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-dim"
+        >
+          {tr('sidebar.selectedCount', { count: selectedCount })}
+        </span>
+      ) : (
+        visibleCount > 0 &&
         (selectedPosition !== null ? (
           <button
             type="button"
@@ -390,7 +402,8 @@ export function QualityFilterBar({
           >
             {`‒/${visibleCount}`}
           </span>
-        ))}
+        ))
+      )}
     </div>
   )
 }

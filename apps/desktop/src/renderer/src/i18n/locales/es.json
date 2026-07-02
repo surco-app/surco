@@ -75,7 +75,9 @@
       "ascending": "Orden ascendente",
       "descending": "Orden descendente"
     },
-    "position": "Pista {{current}} de {{total}}"
+    "position": "Pista {{current}} de {{total}}",
+    "selectedCount_one": "{{count}} seleccionada",
+    "selectedCount_other": "{{count}} seleccionadas"
   },
   "drop": {
     "release": "Suelta para añadir"
