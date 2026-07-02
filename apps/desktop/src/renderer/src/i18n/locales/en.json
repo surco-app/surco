@@ -33,6 +33,7 @@
     "stats": "Stats",
     "activity": "Activity",
     "selectAll": "Select all",
+    "revealSelected": "Scroll to the selected track",
     "fillFromName": "Fill all tags from file name",
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",

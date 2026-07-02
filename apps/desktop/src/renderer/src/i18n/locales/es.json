@@ -33,6 +33,7 @@
     "stats": "Estadísticas",
     "activity": "Actividad",
     "selectAll": "Seleccionar todo",
+    "revealSelected": "Ir a la pista seleccionada",
     "fillFromName": "Rellenar todo desde el nombre",
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
