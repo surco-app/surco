@@ -768,6 +768,7 @@ export default function App(): React.JSX.Element {
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
+    tracksRef,
   })
 
   const openSettings = (tab: SettingsTab = 'general'): void => overlays.openSettings(tab)

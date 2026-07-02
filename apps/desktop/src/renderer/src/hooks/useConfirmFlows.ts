@@ -24,6 +24,9 @@ interface Params {
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
   // silent failure would read as success.
   reportTrashFailure: (fileName: string) => void
+  // The full list, so fill-all/clear-all can tell a filtered-visible subset from the
+  // whole crate and say in the dialog that hidden rows survive.
+  tracksRef: { current: TrackItem[] }
 }
 
 export interface ConfirmFlows {
@@ -46,6 +49,7 @@ export function useConfirmFlows({
   processAll,
   openConfirm,
   reportTrashFailure,
+  tracksRef,
 }: Params): ConfirmFlows {
   const { t: tr } = useTranslation()
 
@@ -117,9 +121,13 @@ export function useConfirmFlows({
   // way the count in the copy matches what actually changes.
   function askFillAll(targets: TrackItem[]): void {
     const count = targets.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
+    const filtered = targets.length < tracksRef.current.length
     openConfirm({
       title: tr('confirm.fillTitle'),
-      message: count > 0 ? tr('confirm.fillMessage', { count }) : tr('confirm.fillNone'),
+      message:
+        count > 0
+          ? tr(filtered ? 'confirm.fillMessageFiltered' : 'confirm.fillMessage', { count })
+          : tr('confirm.fillNone'),
       confirmLabel: tr('confirm.fillConfirm'),
       confirmDisabled: count === 0,
       onConfirm: () => deriveFrom(targets),
@@ -130,9 +138,14 @@ export function useConfirmFlows({
   // whole list from the palette's "Clear the list". Emptying an MP3-filtered view via the
   // toolbar must not discard the hidden FLAC/WAV rows — the count in the copy says how many go.
   function askClearAll(targets: TrackItem[]): void {
+    // A filter narrows what the toolbar button empties; the copy must say the hidden
+    // rows stay, or confirming reads like the whole list is about to go.
+    const filtered = targets.length < tracksRef.current.length
     openConfirm({
       title: tr('confirm.clearTitle'),
-      message: tr('confirm.clearMessage', { count: targets.length }),
+      message: tr(filtered ? 'confirm.clearMessageFiltered' : 'confirm.clearMessage', {
+        count: targets.length,
+      }),
       confirmLabel: tr('confirm.clearConfirm'),
       destructive: true,
       onConfirm: () => emptyTracks(targets),
