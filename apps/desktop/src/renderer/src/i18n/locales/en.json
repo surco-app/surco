@@ -57,7 +57,9 @@
       "unconverted": "Unconverted",
       "automatched": "Auto-matched",
       "notInLibrary": "Not in Apple Music",
-      "inLibrary": "In Apple Music"
+      "inLibrary": "In Apple Music",
+      "trashSuspects_one": "Move the suspect file to Trash",
+      "trashSuspects_other": "Move the {{count}} suspect files to Trash"
     },
     "search": {
       "placeholder": "Search tracks",

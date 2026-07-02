@@ -10,6 +10,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
@@ -81,6 +82,10 @@ interface Props {
   // Scrolls the selected row into view — the position counter clicks through to it, so a
   // number the DJ can see becomes a way back to the row it counts.
   onRevealSelected: () => void
+  // Moves every flagged rip to the Trash (after App's confirm). Surfaced as a one-click button
+  // only while the suspect bucket is the active filter and holds fakes, so the destructive
+  // action appears exactly when the DJ is looking at the fakes it would purge.
+  onTrashSuspects: () => void
   // Controls that share the filter row — the track sort and its direction toggle — sitting
   // beside the filter trigger so the search box above can take the full width.
   children?: React.ReactNode
@@ -107,6 +112,7 @@ export function QualityFilterBar({
   selectedPosition,
   selectedCount,
   onRevealSelected,
+  onTrashSuspects,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -376,6 +382,18 @@ export function QualityFilterBar({
         )}
       </div>
       {children}
+      {value.quality === 'suspect' && tally.suspect > 0 && (
+        <button
+          type="button"
+          data-testid="trash-suspects"
+          aria-label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })}
+          onClick={onTrashSuspects}
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:border-warn hover:text-warn focus:border-[var(--color-accent)]"
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />
+        </button>
+      )}
       {selectedCount > 1 ? (
         <span
           data-testid="track-selected-count"

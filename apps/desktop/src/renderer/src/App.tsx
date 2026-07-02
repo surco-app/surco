@@ -1221,6 +1221,7 @@ export default function App(): React.JSX.Element {
                     selectedPosition={selectedPosition}
                     selectedCount={selectedIds.length}
                     onRevealSelected={scrollToSelected}
+                    onTrashSuspects={onTrashSuspects}
                   >
                     <Select
                       testid="track-sort"

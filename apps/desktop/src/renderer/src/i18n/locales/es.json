@@ -57,7 +57,9 @@
       "unconverted": "Sin convertir",
       "automatched": "Auto-emparejadas",
       "notInLibrary": "No en Apple Music",
-      "inLibrary": "En Apple Music"
+      "inLibrary": "En Apple Music",
+      "trashSuspects_one": "Mover el archivo sospechoso a la papelera",
+      "trashSuspects_other": "Mover los {{count}} archivos sospechosos a la papelera"
     },
     "search": {
       "placeholder": "Buscar pistas",

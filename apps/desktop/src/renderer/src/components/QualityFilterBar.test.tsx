@@ -37,6 +37,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       selectedPosition={null}
       selectedCount={1}
       onRevealSelected={() => {}}
+      onTrashSuspects={() => {}}
       {...over}
     />,
   )
@@ -280,5 +281,26 @@ describe('QualityFilterBar', () => {
     renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498 })
     expect(screen.getByTestId('track-selected-count')).toHaveTextContent('3 selected')
     expect(screen.queryByTestId('track-position')).toBeNull()
+  })
+
+  // The payoff of the quality sweep at the exact moment the DJ is looking at it: once they've
+  // filtered to the suspect bucket, a one-click "trash them all" sits right there in the bar,
+  // so acting on the fakes doesn't mean opening ⌘K or the row menu one file at a time.
+  it('offers a trash-suspects button only while the suspect filter is active and holds fakes', () => {
+    const onTrashSuspects = vi.fn()
+    renderBar({ value: sel({ quality: 'suspect' }), tally: tally({ suspect: 13 }), onTrashSuspects })
+    fireEvent.click(screen.getByTestId('trash-suspects'))
+    expect(onTrashSuspects).toHaveBeenCalledOnce()
+  })
+
+  // Guard the destructive shortcut: it must not appear when another bucket is filtered, nor
+  // when the suspect bucket is empty — the DJ should only ever see it when there is genuinely
+  // something to purge in front of them.
+  it('hides the trash-suspects button outside the suspect filter or when nothing is flagged', () => {
+    renderBar({ value: sel({ quality: 'good' }), tally: tally({ suspect: 13 }) })
+    expect(screen.queryByTestId('trash-suspects')).toBeNull()
+    cleanup()
+    renderBar({ value: sel({ quality: 'suspect' }), tally: tally({ suspect: 0 }) })
+    expect(screen.queryByTestId('trash-suspects')).toBeNull()
   })
 })
