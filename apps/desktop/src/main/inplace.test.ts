@@ -30,6 +30,15 @@ describe('sanitizeOutputName', () => {
 })
 
 describe('resolveOutputTarget', () => {
+  // ALAC's extension is its container: the output must land as .m4a, and never in
+  // place — a same-extension .m4a source might be lossy AAC the re-encode would replace.
+  it('renders an ALAC target as a fresh .m4a in the output folder', () => {
+    expect(resolveOutputTarget('/music/song.m4a', 'Artist - Title', 'alac', '/out')).toEqual({
+      outputPath: '/out/Artist - Title.m4a',
+      inPlace: false,
+    })
+  })
+
   it('edits the original in its own folder when the format matches the source', () => {
     // Exporting a WAV to WAV is a tag-only rewrite, so there is no reason to spawn
     // a copy in the output folder — the file is updated where the user keeps it.

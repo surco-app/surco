@@ -156,6 +156,21 @@ export function writeTags(
     tag.subtitle = meta.mixName ?? ''
     tag.isCompilation = meta.compilation === '1'
 
+    // M4A carries iTunes atoms, not ID3: the generic assignments above cover it
+    // (TagLib maps bpm to tmpo, grouping to ©grp…), the cover rides the covr atom via
+    // the generic pictures setter, and the ID3-only extras (POPM rating, TXXX catalog,
+    // TDOR) have no MP4 home — forcing an Id3v2 tag into an MP4 file would corrupt it.
+    if (extname(file).toLowerCase() === '.m4a') {
+      if (coverPath || removeCover) f.tag.pictures = []
+      if (coverPath) {
+        const picture = Picture.fromPath(coverPath)
+        picture.type = PictureType.FrontCover
+        f.tag.pictures = [picture]
+      }
+      f.save()
+      return
+    }
+
     const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     // Pin MP3/AIFF to ID3v2.3 so an in-place edit matches the ffmpeg conversion path
     // (-id3v2_version 3) and stays readable on the CDJ/rekordbox/Serato setups that

@@ -13,7 +13,7 @@ import { FieldsEditor } from './FieldsEditor'
 import { SegmentedControl } from './SegmentedControl'
 import { useFocusTrap } from './useFocusTrap'
 
-const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 const STEPS = [
   'welcome',

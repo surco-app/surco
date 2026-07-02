@@ -6,7 +6,11 @@ export type ThemePref = 'system' | 'light' | 'dark'
 // English), or pin one of the shipped locales. Persisted so the choice survives restarts.
 export type LanguagePref = 'system' | 'en' | 'es'
 
-export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac'
+export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac' | 'alac'
+
+// MP3 encoder quality: the classic fixed 320 kbps CBR, or LAME's V0 VBR (smaller
+// files, transparent quality, variable rate some old CDJ firmwares dislike).
+export type Mp3Quality = '320' | 'v0'
 
 export type SearchProviderId = 'discogs' | 'bandcamp'
 
@@ -90,6 +94,9 @@ export interface Settings {
   // upgrading to the release's larger image. Off by default so a present cover (even a
   // small one) is never swapped for a possibly-wrong release image without the user asking.
   replaceLowResCover: boolean
+  // Encoder choice for MP3 exports. '320' (CBR) is the default: it's the de-facto
+  // DJ-pool standard and every player seeks it reliably; 'v0' trades a little size.
+  mp3Quality: Mp3Quality
   showSpectrum: boolean
   showLoudness: boolean
   // Where the floating activity panel was last parked and its size, in window pixels.

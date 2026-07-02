@@ -25,6 +25,7 @@ const settings: Settings = {
   coverMaxSize: 1200,
   coverSquare: false,
   replaceLowResCover: false,
+  mp3Quality: '320',
   showSpectrum: true,
   activityPanel: null,
   autoAnalyze: false,

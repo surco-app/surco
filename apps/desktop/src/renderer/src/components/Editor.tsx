@@ -444,7 +444,9 @@ export const Editor = memo(function Editor({
   // (as "Update") rather than the done/reveal state.
   const done = item.status === 'done' && !stale
   const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
-  const exportedFormat = FORMATS.find((f) => f === exportedExt) ?? null
+  // ALAC's extension is its container (.m4a), not its format name, so map it back.
+  const exportedFormat =
+    exportedExt === 'm4a' ? 'alac' : (FORMATS.find((f) => f === exportedExt) ?? null)
   // The post-convert actions (reveal + Apple Music) are reused in multi-select, just fed
   // aggregate values from selectionStatus.
   const multiTracks = selectedTracks ?? []

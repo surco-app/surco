@@ -9,7 +9,7 @@ import { DestinationPicker } from '../DestinationPicker'
 import { NormalizeControls } from '../NormalizeControls'
 import { SegmentedControl } from '../SegmentedControl'
 
-const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
@@ -76,6 +76,24 @@ export function ConversionTab({ synced, local, patch, onChangeDir }: Props): Rea
         labelFor={(id) => tr(`settings.formats.${id}`)}
       />
       <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+
+      {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
+          the pick, though it applies to every MP3 export (the editor's ad-hoc ones too). */}
+      {synced.outputFormat === 'mp3' && (
+        <>
+          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+            {tr('settings.mp3Quality')}
+          </span>
+          <SegmentedControl
+            options={['320', 'v0'] as const}
+            value={synced.mp3Quality}
+            onChange={(id) => patch('mp3Quality', id)}
+            testidPrefix="settings-mp3-quality"
+            labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
+          />
+          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.mp3QualityHint')}</p>
+        </>
+      )}
 
       <span className="mb-1.5 block text-sm font-medium text-fg-muted">
         {tr('settings.destination')}

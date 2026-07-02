@@ -498,11 +498,15 @@
     "outputFormat": "Formato por defecto",
     "formats": {
       "aiff": "AIFF",
+      "alac": "ALAC",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
     "outputFormatHint": "AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
+    "mp3Quality": "Calidad MP3",
+    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
+    "mp3QualityHint": "Se aplica a todas las exportaciones MP3. 320 kbps es el estándar de los pools de DJ; V0 ocupa menos con calidad transparente.",
     "destination": "Destino de los archivos convertidos",
     "destinations": {
       "folder": "Carpeta de salida",

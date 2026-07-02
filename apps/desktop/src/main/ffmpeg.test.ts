@@ -175,6 +175,25 @@ describe('convertArgs', () => {
   })
 })
 
+describe('convertArgs for an M4A target', () => {
+  // The mp4 muxer has no ID3 to version-pin, and the cover/covr atom is written by the
+  // TagLib finishing pass — embedding it here too would be redundant (and the flags
+  // meaningless), so both stay off the ffmpeg command line for .m4a outputs.
+  it('skips the ID3 flags and the cover embed', () => {
+    const args = convertArgs('/in.flac', '/out.tmp.m4a', 'alac', meta, '/cover.jpg')
+    expect(args).not.toContain('-write_id3v2')
+    expect(args).not.toContain('attached_pic')
+    expect(args).toContain('alac')
+  })
+
+  it('passes the LAME VBR level as -q:a when the plan carries one', () => {
+    const args = convertArgs('/in.wav', '/o.mp3', 'libmp3lame', meta, undefined, undefined, undefined, '0')
+    expect(args).toContain('-q:a')
+    expect(args).toContain('0')
+    expect(args).not.toContain('-b:a')
+  })
+})
+
 describe('planConversion', () => {
   const probe = vi.fn(async () => ({
     sampleFmt: 's32',
@@ -194,6 +213,29 @@ describe('planConversion', () => {
     expect(await planConversion('/in.flac', 'flac', probe)).toEqual({ codec: 'copy', ext: '.flac' })
     // copying never needs to inspect the stream
     expect(probe).not.toHaveBeenCalled()
+  })
+
+  // ALAC never stream-copies even from an .m4a source: the container can hold lossy
+  // AAC, and telling the two apart would need a codec probe — while an ALAC re-encode
+  // is lossless regardless, so always encoding is the correct (if slower) plan.
+  it('always encodes an ALAC target, even from an .m4a source', async () => {
+    expect(await planConversion('/in.m4a', 'alac', probe)).toEqual({ codec: 'alac', ext: '.m4a' })
+    expect(await planConversion('/in.flac', 'alac', probe)).toEqual({ codec: 'alac', ext: '.m4a' })
+    expect(probe).not.toHaveBeenCalled()
+  })
+
+  // The MP3 quality setting swaps the fixed 320 CBR for LAME's V0 VBR — but a source
+  // already in MP3 still stream-copies: re-encoding lossy-to-lossy only degrades it.
+  it('plans V0 VBR when asked, without breaking the MP3 stream-copy shortcut', async () => {
+    expect(await planConversion('/in.wav', 'mp3', probe, false, 'v0')).toEqual({
+      codec: 'libmp3lame',
+      quality: '0',
+      ext: '.mp3',
+    })
+    expect(await planConversion('/in.mp3', 'mp3', probe, false, 'v0')).toEqual({
+      codec: 'copy',
+      ext: '.mp3',
+    })
   })
 
   it('never stream-copies when normalizing, since the gain filter must re-encode the samples', async () => {

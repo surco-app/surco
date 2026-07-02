@@ -61,6 +61,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     coverMaxSize: 1000,
     coverSquare: false,
     replaceLowResCover: false,
+    mp3Quality: '320',
     showSpectrum: true,
     activityPanel: null,
     autoAnalyze: false,

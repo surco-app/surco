@@ -21,6 +21,7 @@ export interface SyncedDraft {
   coverMaxSize: string
   coverSquare: boolean
   replaceLowResCover: boolean
+  mp3Quality: Settings['mp3Quality']
   showSpectrum: boolean
   showLoudness: boolean
   autoAnalyze: boolean
@@ -62,6 +63,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     coverMaxSize: String(s.coverMaxSize),
     coverSquare: s.coverSquare,
     replaceLowResCover: s.replaceLowResCover,
+    mp3Quality: s.mp3Quality,
     showSpectrum: s.showSpectrum,
     showLoudness: s.showLoudness,
     autoAnalyze: s.autoAnalyze,

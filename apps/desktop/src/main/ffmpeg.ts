@@ -13,6 +13,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
+  Mp3Quality,
   TrackProperties,
   WaveformResult,
 } from '../shared/types'
@@ -475,6 +476,7 @@ const AIFF_INPUT = /\.aiff?$/i
 const MP3_INPUT = /\.mp3$/i
 const WAV_INPUT = /\.wav$/i
 const FLAC_INPUT = /\.flac$/i
+const M4A_OUTPUT = /\.m4a$/i
 const MP3_BITRATE = '320k'
 
 export function convertArgs(
@@ -485,11 +487,15 @@ export function convertArgs(
   coverPath?: string,
   bitrate?: string,
   audioFilter?: string,
+  quality?: string,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
   // reaches Apple Music via AppleScript, so a WAV target simply skips the embed.
-  const embedCover = coverPath && !WAV_INPUT.test(output) ? coverPath : undefined
+  // M4A also skips it: the TagLib pass writes the covr atom (with the rest of the
+  // iTunes tags ffmpeg's mp4 muxer can't name), so embedding here would be redundant.
+  const embedCover =
+    coverPath && !WAV_INPUT.test(output) && !M4A_OUTPUT.test(output) ? coverPath : undefined
   const args = ['-y', '-i', input]
   if (embedCover) args.push('-i', embedCover)
 
@@ -500,7 +506,10 @@ export function convertArgs(
   if (audioFilter) args.push('-af', audioFilter)
   args.push('-c:a', codec)
   if (bitrate) args.push('-b:a', bitrate)
-  args.push('-write_id3v2', '1', '-id3v2_version', '3')
+  if (quality) args.push('-q:a', quality)
+  // ID3 flags are meaningless to the mp4 muxer; the m4a tags are finished by the
+  // TagLib pass anyway (ffmpeg still maps the generic names it knows to iTunes atoms).
+  if (!M4A_OUTPUT.test(output)) args.push('-write_id3v2', '1', '-id3v2_version', '3')
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
@@ -515,7 +524,9 @@ export function convertArgs(
 export interface ConversionPlan {
   codec: string
   bitrate?: string
-  ext: '.aiff' | '.mp3' | '.wav' | '.flac'
+  // LAME VBR level for -q:a (V0), used instead of a fixed bitrate.
+  quality?: string
+  ext: '.aiff' | '.mp3' | '.wav' | '.flac' | '.m4a'
 }
 
 // Decides how to render a source into the chosen output format. A source
@@ -531,9 +542,13 @@ export async function planConversion(
   format: OutputFormat,
   probe: (input: string) => Promise<ProbeResult>,
   normalize = false,
+  mp3Quality: Mp3Quality = '320',
 ): Promise<ConversionPlan> {
   if (format === 'mp3') {
+    // A source already in MP3 still stream-copies whatever the quality setting says:
+    // re-encoding lossy-to-lossy only degrades it.
     if (MP3_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.mp3' }
+    if (mp3Quality === 'v0') return { codec: 'libmp3lame', quality: '0', ext: '.mp3' }
     return { codec: 'libmp3lame', bitrate: MP3_BITRATE, ext: '.mp3' }
   }
   if (format === 'wav') {
@@ -545,6 +560,13 @@ export async function planConversion(
     // itself, so there is no PCM width or endianness to choose — no probe needed.
     if (FLAC_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.flac' }
     return { codec: 'flac', ext: '.flac' }
+  }
+  if (format === 'alac') {
+    // No stream-copy shortcut: an .m4a source may hold lossy AAC, and telling it apart
+    // from ALAC needs a codec probe — while an ALAC re-encode is lossless regardless,
+    // so always encoding is correct, just slower. Like FLAC, the encoder reads the
+    // source bit depth itself.
+    return { codec: 'alac', ext: '.m4a' }
   }
   if (AIFF_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.aiff' }
   return { codec: pcmCodec(await probe(input), 'be'), ext: '.aiff' }
@@ -591,6 +613,7 @@ export async function convertAudio(
   coverPath?: string,
   normalize?: NormalizeConfig,
   removeCover?: boolean,
+  mp3Quality?: Mp3Quality,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -618,7 +641,13 @@ export async function convertAudio(
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
   const normalizeSkipped = normalizing && audioFilter === undefined
-  const { codec, bitrate, ext } = await planConversion(input, format, probeOnce, normalizing)
+  const { codec, bitrate, quality, ext } = await planConversion(
+    input,
+    format,
+    probeOnce,
+    normalizing,
+    mp3Quality,
+  )
   const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
 
   try {
@@ -631,14 +660,18 @@ export async function convertAudio(
       await copyFile(input, tmp)
       await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
     } else {
-      await run(ffmpegPath, convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter), {
-        maxBuffer: 1024 * 1024 * 32,
-      })
-      if (ext === '.wav') {
+      await run(
+        ffmpegPath,
+        convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter, quality),
+        { maxBuffer: 1024 * 1024 * 32 },
+      )
+      if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
         // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
+        // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
+        // that ffmpeg's mp4 muxer has no -metadata names for.
         await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
       } else if (meta.rating?.trim() && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib

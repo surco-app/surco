@@ -98,7 +98,40 @@ describe('preservesCuesInPlace', () => {
   })
 })
 
+// A minimal real ALAC .m4a (0.01s of silence, encoded once with ffmpeg and embedded
+// as base64 like the hand-built MP3 seed above): TagLib needs a genuine MPEG-4
+// container to open, and hand-assembling one is not worth the bytes.
+const TINY_M4A = 'AAAAHGZ0eXBNNEEgAAACAE00QSBpc29taXNvMgAAAAhmcmVlAAAAHW1kYXQAABAAAACgAAAPCAEAAAAAAAAA+XgAAAKrbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAAAoAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAdV0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAAAoAAAAAAAAAAAAAAAEBAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAAKAAAAAAABAAAAAAFNbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAfQAAAAFBVxAAAAAAALWhkbHIAAAAAAAAAAHNvdW4AAAAAAAAAAAAAAABTb3VuZEhhbmRsZXIAAAAA+G1pbmYAAAAQc21oZAAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAAvHN0YmwAAABYc3RzZAAAAAAAAAABAAAASGFsYWMAAAAAAAAAAQAAAAAAAAAAAAEAEAAAAAAfQAAAAAAAJGFsYWMAAAAAAAAQAAAQKAoOAQAAAAAgBAAB9AAAAB9AAAAAGHN0dHMAAAAAAAAAAQAAAAEAAABQAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAABUAAAABAAAAFHN0Y28AAAAAAAAAAQAAACwAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYyLjEyLjEwMg=='
+
+function buildM4aSeed(dir: string): string {
+  const file = join(dir, 'seed.m4a')
+  writeFileSync(file, Buffer.from(TINY_M4A, 'base64'))
+  return file
+}
+
 describe('writeTags', () => {
+  // M4A carries iTunes atoms, not ID3: the generic pass must land the fields Music and
+  // rekordbox read (title, bpm, key) without ever forcing an ID3 tag into the MP4
+  // container — TagLib would happily create one, and it corrupts the file for strict
+  // readers. The cover rides the covr atom via the generic pictures setter.
+  it('writes iTunes atoms and cover into an m4a without creating an ID3 tag', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+    const cover = join(dir, 'cover.jpg')
+    // Smallest valid JPEG: TagLib only sniffs the signature to pick a mime type.
+    writeFileSync(cover, Buffer.from('ffd8ffe000104a46494600ffd9', 'hex'))
+
+    writeTags(file, { ...meta, bpm: '128', key: '8A' }, cover)
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.title).toBe('Till I Come')
+    expect(f.tag.beatsPerMinute).toBe(128)
+    expect(f.tag.initialKey).toBe('8A')
+    expect(f.tag.pictures).toHaveLength(1)
+    expect(f.getTag(TagTypes.Id3v2, false)).toBeFalsy()
+    f.dispose()
+  })
+
   // The conversion path writes ID3v2.3 (-id3v2_version 3); the in-place mp3/aiff edit must
   // too, or a v2.4 source would stay v2.4 and trip the CDJ/rekordbox/Serato setups that
   // mishandle it.

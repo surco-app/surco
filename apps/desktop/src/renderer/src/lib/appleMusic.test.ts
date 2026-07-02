@@ -44,6 +44,8 @@ describe('canAddToAppleMusic', () => {
 
   it('refuses FLAC because Apple Music cannot ingest it', () => {
     expect(canAddToAppleMusic(track(), 'darwin', 'flac')).toBe(false)
+    // ALAC is the lossless format Music DOES ingest — the reason it exists as a target.
+    expect(canAddToAppleMusic(track(), 'darwin', 'alac')).toBe(true)
   })
 
   it('requires the track to be converted first — there is no file to add otherwise', () => {

@@ -39,6 +39,7 @@ import type {
   ThemePref,
   TrackMetadata,
 } from '../../shared/types'
+import { formatExtension } from '../../shared/format'
 import { ActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
 import { ConfirmDialog } from './components/ConfirmDialog'
@@ -1676,7 +1677,7 @@ export default function App(): React.JSX.Element {
           <RenameModal
             meta={selected.meta}
             initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-            extension={editorFormatRef.current ?? settings?.outputFormat ?? 'aiff'}
+            extension={formatExtension(editorFormatRef.current ?? settings?.outputFormat ?? 'aiff')}
             onApply={(outputName) => updateTrack(selected.id, { outputName })}
             onClose={overlays.close}
           />

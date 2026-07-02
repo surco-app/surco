@@ -1,6 +1,6 @@
 import { stat, unlink } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
-import { formatMatchesInput } from '../shared/format'
+import { formatExtension, formatMatchesInput } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
 // Cleans a generated output name that may carry "/" separators (subfolders the file-name
@@ -43,7 +43,7 @@ export function resolveOutputTarget(
 ): OutputTarget {
   const inPlace = overwriteOriginal || formatMatchesInput(format, inputPath)
   const dir = inPlace ? dirname(inputPath) : outputDir
-  return { outputPath: join(dir, `${name}.${format}`), inPlace }
+  return { outputPath: join(dir, `${name}.${formatExtension(format)}`), inPlace }
 }
 
 // Whether a conversion would clobber an unrelated file. A real conversion writing

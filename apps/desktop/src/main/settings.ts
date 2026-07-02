@@ -42,6 +42,7 @@ const defaults: Settings = {
   coverMaxSize: 1200,
   coverSquare: false,
   replaceLowResCover: false,
+  mp3Quality: '320',
   showSpectrum: true,
   showLoudness: true,
   activityPanel: null,

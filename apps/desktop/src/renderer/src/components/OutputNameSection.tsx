@@ -2,6 +2,7 @@ import { Pencil, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
+import { formatExtension } from '../../../shared/format'
 import type { TrackItem } from '../types'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
@@ -82,7 +83,7 @@ export function OutputNameSection({
             className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
           />
           <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
-            .{format}
+            .{formatExtension(format)}
           </span>
         </label>
       )}

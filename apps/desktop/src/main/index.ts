@@ -681,7 +681,19 @@ function registerIpc(): void {
         return activity.track(
           'convert',
           'activity.convert',
-          () => convertAudio(input, output, format, meta, coverPath, normalize, removeCover),
+          () =>
+            convertAudio(
+              input,
+              output,
+              format,
+              meta,
+              coverPath,
+              normalize,
+              removeCover,
+              // The encoder choice is a global preference, so it's read here rather
+              // than threaded through every renderer job.
+              getSettings().mp3Quality,
+            ),
           { labelParams: { track } },
         )
       },

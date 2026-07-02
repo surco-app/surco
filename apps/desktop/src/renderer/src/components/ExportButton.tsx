@@ -7,7 +7,7 @@ import { exportButtonLabel } from '../lib/exportLabel'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 
-export const FORMATS: OutputFormat[] = ['aiff', 'mp3', 'wav', 'flac']
+export const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 
 interface ExportButtonProps {
   status: TrackItem['status']
