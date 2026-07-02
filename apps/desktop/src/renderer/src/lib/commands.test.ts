@@ -82,6 +82,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     toggleTheme: () => {},
     clearMeta: () => {},
     deriveTags: () => {},
+    undoMeta: () => {},
+    canUndoMeta: () => false,
     acceptReview: () => {},
     fireConfetti: () => {},
     ...overrides,
@@ -405,6 +407,19 @@ describe('buildCommands editor + theme entries', () => {
     derive.run()
     expect(clearMeta).toHaveBeenCalledOnce()
     expect(deriveTags).toHaveBeenCalledOnce()
+  })
+
+  // Undo is only offered while there is something recorded to roll back — a dead entry
+  // in the palette would promise a recovery that can't happen.
+  it('gates undo-meta on a non-empty undo stack and runs it', () => {
+    const undoMeta = vi.fn()
+    expect(commandById(makeDeps({ undoMeta, canUndoMeta: () => false }), 'undo-meta').enabled).toBe(
+      false,
+    )
+    const cmd = commandById(makeDeps({ undoMeta, canUndoMeta: () => true }), 'undo-meta')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(undoMeta).toHaveBeenCalledOnce()
   })
 
   // The confetti command is pure fun, always available, and just fires the burst.

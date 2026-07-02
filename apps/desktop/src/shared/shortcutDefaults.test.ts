@@ -84,7 +84,14 @@ describe('matchChord', () => {
   })
 
   it('returns null for an unbound chord', () => {
-    expect(matchChord(b, ['mod', 'z'], false)).toBeNull()
+    expect(matchChord(b, ['mod', '9'], false)).toBeNull()
+  })
+
+  // ⌘Z is the undo for batch tag operations only while the focus is out of a field —
+  // mid-edit the press must fall through to the native in-field text undo instead.
+  it('suppresses undo-meta while typing so a field keeps its native text undo', () => {
+    expect(matchChord(b, ['mod', 'z'], false)).toBe('undo-meta')
+    expect(matchChord(b, ['mod', 'z'], true)).toBeNull()
   })
 })
 

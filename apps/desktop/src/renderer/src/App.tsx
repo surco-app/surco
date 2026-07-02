@@ -61,6 +61,7 @@ import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { editorSectionOpen } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useListNavigation } from './hooks/useListNavigation'
+import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -679,6 +680,23 @@ export default function App(): React.JSX.Element {
     else removeTracks(targets.map((t) => t.id))
   })
 
+  const metaUndo = useMetaUndo(tracksRef, setTracks)
+  // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
+  // through tracksRef so the stable callbacks capturing it never see a stale list.
+  const recordMetaUndo = useStableCallback((ids: string[]) => {
+    const set = new Set(ids)
+    metaUndo.record(tracksRef.current.filter((t) => set.has(t.id)))
+  })
+  // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
+  // the Tag buttons), so recording the undo snapshot at this seam covers them all —
+  // unlike updateTracksMeta, whose per-field bulk edits fire on every keystroke.
+  const deriveTracksUndoable = useStableCallback(
+    (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
+      recordMetaUndo(patches.map((p) => p.id))
+      deriveTracks(patches)
+    },
+  )
+
   // The confirm-before-firing actions (trash, delete original, fill-all, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const { askTrash, askDeleteOriginal, askFillAll, askClearAll, askConvertAll } = useConfirmFlows({
@@ -686,7 +704,7 @@ export default function App(): React.JSX.Element {
     removeTrack,
     updateTrack,
     emptyTracks,
-    deriveTracks,
+    deriveTracks: deriveTracksUndoable,
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
@@ -907,7 +925,9 @@ export default function App(): React.JSX.Element {
     setNotice(tr('notices.copiedMeta'))
   })
   const onPasteMeta = useStableCallback((track: TrackItem) => {
-    if (copiedMeta) updateTracksMeta([track.id], copiedMeta)
+    if (!copiedMeta) return
+    recordMetaUndo([track.id])
+    updateTracksMeta([track.id], copiedMeta)
   })
   // Copies the source path to the clipboard. Routed through App (rather than the menu's
   // own window.api call) so it can confirm with the same toast the other copies show.
@@ -985,6 +1005,7 @@ export default function App(): React.JSX.Element {
   // un-matches and re-probes); deriveTags mirrors deriveFromNames over the selection.
   const clearMeta = useStableCallback(() => {
     if (!selected) return
+    recordMetaUndo(selectedTracks.length > 1 ? selectedIds : [selected.id])
     if (selectedTracks.length > 1) updateTracksMeta(selectedIds, emptyMetadata())
     else
       updateTrack(selected.id, {
@@ -1000,7 +1021,13 @@ export default function App(): React.JSX.Element {
     const patches = targets
       .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
       .filter((p) => Object.keys(p.meta).length > 0)
-    if (patches.length) deriveTracks(patches)
+    if (patches.length) deriveTracksUndoable(patches)
+  })
+  // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
+  // silence would leave the user unsure whether anything was restored.
+  const undoMeta = useStableCallback(() => {
+    const count = metaUndo.undo()
+    if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
   })
   // Accepts the selected track's pending 'review' suggestion straight from the list, applying
   // the stored release exactly like clicking it in the editor. A no-op when there's nothing to
@@ -1099,6 +1126,8 @@ export default function App(): React.JSX.Element {
       toggleTheme,
       clearMeta,
       deriveTags,
+      undoMeta,
+      canUndoMeta: metaUndo.canUndo,
       acceptReview,
       fireConfetti,
     }),
@@ -1480,7 +1509,8 @@ export default function App(): React.JSX.Element {
                 onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
                 onChangeAllMeta={onChangeAllMeta}
                 onApplyCoverAll={onApplyCoverAll}
-                onDeriveTags={deriveTracks}
+                onDeriveTags={deriveTracksUndoable}
+                onRecordUndo={recordMetaUndo}
                 onChange={onEditorChange}
                 onProcess={onProcessSelected}
                 onFormatChange={onFormatChange}
@@ -1557,7 +1587,7 @@ export default function App(): React.JSX.Element {
         {activeModal?.type === 'findReplace' && (
           <FindReplaceModal
             tracks={findReplaceTargets}
-            onApply={deriveTracks}
+            onApply={deriveTracksUndoable}
             onClose={overlays.close}
           />
         )}

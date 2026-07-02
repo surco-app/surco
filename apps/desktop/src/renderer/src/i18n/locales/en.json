@@ -101,7 +101,9 @@
     "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured.",
     "copiedMeta": "Metadata copied",
     "copiedPath": "Path copied",
-    "copiedFilename": "File name copied"
+    "copiedFilename": "File name copied",
+    "undoneMeta_one": "Metadata restored on {{count}} track",
+    "undoneMeta_other": "Metadata restored on {{count}} tracks"
   },
   "newTracks": {
     "prompt_one": "{{count}} new track in “{{folder}}”",
@@ -160,6 +162,7 @@
     "fillAll": "Fill all tags from file name",
     "deriveTags": "Fill metadata from file name",
     "clearMeta": "Clear metadata",
+    "undoMeta": "Undo last metadata edit",
     "analyzeQuality": "Analyze quality of all tracks",
     "trashSuspects": "Move suspect files to Trash",
     "autoMatch": "Auto-match all tracks on Discogs",

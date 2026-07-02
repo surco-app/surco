@@ -154,6 +154,10 @@ export interface CommandDeps {
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
   deriveTags: () => void
+  // Restores the tags the last batch operation (fill-all, find & replace, clear, paste,
+  // derive) overwrote. Read lazily so the palette entry reflects the stack at open time.
+  undoMeta: () => void
+  canUndoMeta: () => boolean
   // Applies the selected track's pending 'review' suggestion — the match the sweep flagged
   // but didn't write — without opening the editor. A no-op when there's nothing to accept.
   acceptReview: () => void
@@ -212,6 +216,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleTheme,
     clearMeta,
     deriveTags,
+    undoMeta,
+    canUndoMeta,
     acceptReview,
     fireConfetti,
   } = deps
@@ -259,6 +265,15 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('clear-meta'),
       enabled: !!selected,
       run: clearMeta,
+    },
+    {
+      // Rolls back the last batch tag operation — the escape hatch for a mistaken
+      // fill-all, find & replace, clear, paste or derive.
+      id: 'undo-meta',
+      title: tr('commands.undoMeta'),
+      hint: hintFor('undo-meta'),
+      enabled: canUndoMeta(),
+      run: undoMeta,
     },
     {
       id: 'prev',

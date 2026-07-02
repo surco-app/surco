@@ -1567,3 +1567,49 @@ describe('App Apple Music library filter', () => {
     expect(screen.queryByTestId('quality-filter-inLibrary')).toBeNull()
   })
 })
+
+describe('App metadata undo', () => {
+  // Batch tag operations are one keystroke away (⌘E clears the whole selection) and used
+  // to be unrecoverable — a slip destroyed hand-typed or Discogs-applied work. ⌘Z must
+  // bring back exactly what the clear wiped and confirm it did, so the user knows the
+  // slip was absorbed rather than wondering what state the crate is in.
+  it('restores cleared metadata with the undo shortcut and confirms it', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
+
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('')
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
+    expect(screen.getByText('Metadata restored on 1 track')).toBeInTheDocument()
+  })
+
+  // The find & replace modal rewrites text fields across every visible track in one apply;
+  // one ⌘Z afterwards must roll the whole sweep back, not just a single row.
+  it('rolls back a find & replace sweep across tracks in one undo', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Deep Mix', artist: 'Artist' }),
+    })
+    await renderApp()
+    await addTwoTracks()
+
+    fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('find-replace-find'), { target: { value: 'Deep' } })
+    fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Dub' } })
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Dub Mix'),
+    )
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Deep Mix')
+    expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
+  })
+})

@@ -103,6 +103,9 @@ interface Props {
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
+  // overwrites them (derive is already recorded inside onDeriveTags).
+  onRecordUndo?: (ids: string[]) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // Reports the format chosen in the split-button menu so the keyboard convert
@@ -163,6 +166,7 @@ export const Editor = memo(function Editor({
   onChangeAllMeta,
   onApplyCoverAll,
   onDeriveTags,
+  onRecordUndo,
   onChange,
   onProcess,
   onFormatChange,
@@ -427,6 +431,7 @@ export const Editor = memo(function Editor({
   // the cover picker owns its own remove, and a wrong title rarely means a wrong cover.
   function clearAllMeta(): void {
     const blank = emptyMetadata()
+    onRecordUndo?.((isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id))
     if (isMulti) onChangeAllMeta?.(blank)
     // Clearing the tags un-matches the track, so the sweep may fill it again — including
     // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven

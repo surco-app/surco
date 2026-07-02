@@ -101,7 +101,9 @@
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir.",
     "copiedMeta": "Metadatos copiados",
     "copiedPath": "Ruta copiada",
-    "copiedFilename": "Nombre de archivo copiado"
+    "copiedFilename": "Nombre de archivo copiado",
+    "undoneMeta_one": "Metadatos restaurados en {{count}} pista",
+    "undoneMeta_other": "Metadatos restaurados en {{count}} pistas"
   },
   "newTracks": {
     "prompt_one": "{{count}} pista nueva en «{{folder}}»",
@@ -160,6 +162,7 @@
     "fillAll": "Rellenar todo desde el nombre",
     "deriveTags": "Rellenar metadatos del nombre",
     "clearMeta": "Borrar metadatos",
+    "undoMeta": "Deshacer última edición de metadatos",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "trashSuspects": "Mover los archivos sospechosos a la papelera",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
