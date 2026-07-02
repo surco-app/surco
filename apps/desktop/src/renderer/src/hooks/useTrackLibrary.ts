@@ -230,6 +230,14 @@ export function useTrackLibrary({
   // the user to accept. A folder that fires with nothing new clears any stale prompt.
   useEffect(() => {
     return window.api.onFoldersChanged((root, files) => {
+      // An empty crate has no loaded folder to grow, so there is nothing to diff against —
+      // every file would look "new". This happens on macOS, where closing the window keeps
+      // the app (and its watches) alive: a watch from a prior session can fire against the
+      // reopened window's empty list. Drop the event and release the orphaned watch.
+      if (tracksRef.current.length === 0) {
+        void window.api.unwatchFolders()
+        return
+      }
       const fresh = newTrackPaths(
         files,
         tracksRef.current.map((t) => t.inputPath),
