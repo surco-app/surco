@@ -22,3 +22,26 @@ export async function isEngineDjRunning(): Promise<boolean> {
     return false
   }
 }
+
+// Asks Engine DJ to quit the polite way — the AppleScript quit event (a windowed
+// taskkill on Windows) is the same as the user pressing ⌘Q, so Engine saves and closes
+// its database cleanly. Then waits for the process to actually disappear: writing the
+// library while Engine is mid-shutdown would be the exact race the guard exists for.
+// Returns whether Engine is gone; a quit refused (unsaved dialog, hang) reports false.
+export async function quitEngineDj(): Promise<boolean> {
+  try {
+    if (process.platform === 'win32') {
+      await run('taskkill', ['/IM', 'Engine DJ.exe'])
+    } else {
+      await run('osascript', ['-e', 'tell application "Engine DJ" to quit'])
+    }
+  } catch {
+    // The quit event failing outright (app already gone, tool missing) resolves by
+    // whatever the poll below observes.
+  }
+  for (let attempt = 0; attempt < 30; attempt++) {
+    if (!(await isEngineDjRunning())) return true
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  return false
+}

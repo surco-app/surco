@@ -155,6 +155,42 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // Electron wraps a main-process throw in "Error invoking remote method '…': Error: …".
+  // That plumbing prefix means nothing to the user and eats the row's visible width, so
+  // the stored error is the clean message — and the error callback (the toast) gets it too.
+  it('strips the IPC wrapper from the error and raises the error callback', async () => {
+    setApi({
+      processTrack: vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            "Error invoking remote method 'process:track': Error: Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
+          ),
+        ),
+    })
+    const updateTrack = vi.fn()
+    const onProcessError = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+          onProcessError,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const clean = 'Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.'
+    expect(updateTrack).toHaveBeenLastCalledWith(
+      'a',
+      expect.objectContaining({ status: 'error', error: clean }),
+    )
+    expect(onProcessError).toHaveBeenCalledWith(clean)
+  })
+
   // Convert-all runs every eligible track and reports the run's tally, which is what
   // the toolbar's "3 converted" summary reads from.
   it('converts every eligible track and summarizes the run', async () => {

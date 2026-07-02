@@ -740,6 +740,10 @@ export default function App(): React.JSX.Element {
     updateTrack,
     onConversion: maybeShowDonateNudge,
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
+    // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
+    // card, not thirty; persistent like every failure toast.
+    onProcessError: (message) =>
+      pushToast(store, { key: 'process-error', tone: 'danger', message, testid: 'process-error' }),
   })
 
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just

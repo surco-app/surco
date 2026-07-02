@@ -32,6 +32,7 @@ import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './an
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, appleMusicLimiter, updateInAppleMusic } from './applemusic'
 import { addToEngineLibrary } from './engineLibrary'
+import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
@@ -98,6 +99,38 @@ function sanitizeFilename(name: string): string {
     .replace(/[/\\:*?"<>|]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+// The pending "Engine DJ is open — close it?" prompt, shared so a bulk conversion's
+// parallel tracks (each hitting the Engine add at once) raise ONE dialog and all wait
+// on the same answer. Cleared once settled: the next conversion re-checks the process,
+// which by then is either gone (proceed silently) or reopened (ask again).
+let engineQuitPrompt: Promise<boolean> | null = null
+
+// True when Engine DJ is not running (possibly because the user just accepted quitting
+// it here); false when it is running and the user declined — the caller then refuses
+// the library write, since Engine would not see it and could overwrite it on exit.
+async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean> {
+  if (!(await isEngineDjRunning())) return true
+  engineQuitPrompt ??= (async () => {
+    const t = createMenuT(app.getLocale())
+    const opts = {
+      type: 'warning' as const,
+      message: t('engineQuitMessage'),
+      detail: t('engineQuitDetail'),
+      buttons: [t('engineQuitConfirm'), t('engineQuitCancel')],
+      defaultId: 0,
+      cancelId: 1,
+    }
+    const { response } = win
+      ? await dialog.showMessageBox(win, opts)
+      : await dialog.showMessageBox(opts)
+    if (response !== 0) return false
+    return quitEngineDj()
+  })().finally(() => {
+    engineQuitPrompt = null
+  })
+  return engineQuitPrompt
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
@@ -630,7 +663,11 @@ function registerIpc(): void {
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
-      addToEngineDj: (target, meta, coverPath) => {
+      addToEngineDj: async (target, meta, coverPath) => {
+        const win = BrowserWindow.fromWebContents(e.sender)
+        if (!(await ensureEngineDjClosed(win))) {
+          throw new Error(createMenuT(app.getLocale())('engineOpenError'))
+        }
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         return activity.track(
           'export',

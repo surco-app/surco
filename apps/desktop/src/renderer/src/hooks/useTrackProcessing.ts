@@ -14,6 +14,7 @@ import { coverSourceOf } from '../lib/coverSource'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
+import { cleanIpcError } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
@@ -36,6 +37,9 @@ interface Params {
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
   onConversion?: () => void
+  // Raised with the (IPC-prefix-free) message when a conversion fails, so the app can
+  // toast it — the footer's one-line error row truncates anything long.
+  onProcessError?: (message: string) => void
   // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (half the
   // cores); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
@@ -70,6 +74,7 @@ export function useTrackProcessing({
   updateTrack,
   onNormalizeSkipped,
   onConversion,
+  onProcessError,
   concurrency = CONVERT_CONCURRENCY,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
@@ -178,11 +183,13 @@ export function useTrackProcessing({
         }
         return 'converted'
       } catch (e) {
+        const message = e instanceof Error ? cleanIpcError(e.message) : tr('editor.processError')
         updateTrack(id, {
           status: 'error',
-          error: e instanceof Error ? e.message : tr('editor.processError'),
+          error: message,
           stage: undefined,
         })
+        onProcessError?.(message)
         return 'failed'
       }
     },
