@@ -5,11 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
-  KeyNotation,
   NormalizeConfig,
   OutputFormat,
   ReleaseTrack,
-  SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
@@ -37,6 +35,7 @@ import {
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
 import { stripParentheticals } from '../lib/textClean'
+import { useAppSettings } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -56,37 +55,6 @@ interface Props {
   // the same one the list and quality filter read, so the "already owned" badge can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
-  hasToken: boolean
-  outputFormat: OutputFormat
-  addToAppleMusic: boolean
-  // When set, exports rewrite the source file in place: the File Name section is hidden
-  // and the rename shortcut disabled (App enforces the latter) because the name is
-  // pinned to the original.
-  overwriteOriginal: boolean
-  // Settings → Artwork: when on, applying a release replaces an existing low-res cover
-  // with the release image; off keeps the file's own cover regardless of size.
-  replaceLowResCover: boolean
-  // Settings → Naming: when on, the output name is derived from filenameFormat as the
-  // default (instead of the source file name) and the "Regenerate" button is hidden.
-  autoApplyFilename: boolean
-  filenameFormat: string
-  groupingPresets: string[]
-  genrePresets: string[]
-  visibleFields: string[]
-  requiredFields: string[]
-  // The Discogs release formats search is restricted to (Settings), shown as a hint in
-  // the Discogs column so an empty or thinned result set is explained, not a mystery.
-  discogsFormats: string[]
-  // How many search results to show (Settings → Search).
-  discogsMaxResults: number
-  // The catalog sources the editor search queries (Settings → Search).
-  searchProviders: SearchProviderId[]
-  showSpectrum: boolean
-  showLoudness: boolean
-  // Which notation the key suggestion chip offers (Settings choice).
-  keyNotation: KeyNotation
-  // The Settings normalization default, seeding the per-track override control.
-  normalize: NormalizeConfig
   searchInputRef: React.RefObject<HTMLInputElement | null>
   // The whole multi-selection, when more than one track is picked. Its presence flips the
   // Discogs column to album-match mode (map every file to a tracklist entry at once) and
@@ -140,24 +108,6 @@ interface Props {
 export const Editor = memo(function Editor({
   item,
   libraryIndex,
-  hasToken,
-  outputFormat,
-  addToAppleMusic,
-  overwriteOriginal,
-  replaceLowResCover,
-  autoApplyFilename,
-  filenameFormat,
-  groupingPresets,
-  genrePresets,
-  visibleFields,
-  requiredFields,
-  discogsFormats,
-  discogsMaxResults,
-  searchProviders,
-  showSpectrum,
-  showLoudness,
-  keyNotation,
-  normalize,
   searchInputRef,
   selectedTracks,
   onApplyMatches,
@@ -179,6 +129,31 @@ export const Editor = memo(function Editor({
   onRegenerateName,
   onCopyFilename,
 }: Props): React.JSX.Element {
+  // Every Settings-derived value the editor reads comes from the shared context in one
+  // pull — this used to be a 17-prop wall App re-plumbed for each field (see
+  // settingsContext.tsx). Memoized upstream on the settings identity, so the memo()
+  // above keeps the same "only re-render when settings actually change" contract.
+  const {
+    discogsToken,
+    outputFormat,
+    addToAppleMusic,
+    overwriteOriginal,
+    replaceLowResCover,
+    autoApplyFilename,
+    filenameFormat,
+    groupingPresets,
+    genrePresets,
+    visibleFields,
+    requiredFields,
+    discogsFormats,
+    discogsMaxResults,
+    searchProviders,
+    showSpectrum,
+    showLoudness,
+    keyNotation,
+    normalize,
+  } = useAppSettings()
+  const hasToken = discogsToken !== ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds

@@ -28,7 +28,6 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
-import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
@@ -83,11 +82,12 @@ import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
-import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
+import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { isTypingTarget } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
+import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -159,7 +159,7 @@ async function warmSearch(query: string): Promise<void> {
 
 // Settings arrive null for the first frames; the fallback object must keep one
 // identity or it defeats the editor's memo (a fresh object per render is a changed prop).
-const DEFAULT_NORMALIZE: NormalizeConfig = {
+const _DEFAULT_NORMALIZE: NormalizeConfig = {
   mode: 'none',
   targetLufs: -14,
   truePeakDb: -1,
@@ -171,7 +171,7 @@ const isMac = window.api.platform === 'darwin'
 
 // Stable empty default for the Discogs format filter, so a settings-less first frame
 // doesn't hand the memoized Editor a fresh [] each render.
-const EMPTY_FORMATS: string[] = []
+const _EMPTY_FORMATS: string[] = []
 
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -1250,493 +1250,488 @@ export default function App(): React.JSX.Element {
   )
 
   return (
-    // Drag-and-drop is a pointer-only convenience; the "Add files" button is the
-    // keyboard-accessible path to the same action.
-    // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
-    <div
-      className="flex h-screen flex-col"
-      onDragOver={(e) => {
-        e.preventDefault()
-        setDragging(true)
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={onDrop}
-    >
-      {/* Music preview playback — there is no speech to caption. The clock
+    <SettingsProvider settings={settings}>
+      {/* Drag-and-drop is a pointer-only convenience; the "Add files" button is the
+          keyboard-accessible path to the same action. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
+      <div
+        className="flex h-screen flex-col"
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragging(true)
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+      >
+        {/* Music preview playback — there is no speech to caption. The clock
           (currentTime/duration/paused) is read by LivePlayer, which subscribes to
           this element directly so playback re-renders only the card. */}
-      {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
-      <audio ref={audioRef} hidden onEnded={onTrackEnded} />
-      {/* Names the window for screen readers; visually redundant with the title bar. */}
-      <h1 className="sr-only">Surco</h1>
-      {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
+        {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
+        <audio ref={audioRef} hidden onEnded={onTrackEnded} />
+        {/* Names the window for screen readers; visually redundant with the title bar. */}
+        <h1 className="sr-only">Surco</h1>
+        {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
           that divider so a long sweep lights up the line between the toolbar and the list. */}
-      <div className="relative">
-        {progress && <TopProgressBar fraction={progress.fraction} />}
-        <Toolbar
-          isMac={isMac}
-          hintFor={hintFor}
-          trackCount={tracks.length}
-          importing={importProgress}
-          batchSummary={batchSummary}
-          batching={batching}
-          analysis={analysis}
-          allAnalyzed={allAnalyzed}
-          matching={matching}
-          hasToken={!!settings?.discogsToken}
-          autoMatchable={autoMatchable}
-          onAnalyzeAll={onAnalyzeAll}
-          onCancelAnalyze={cancelAnalysis}
-          onAutoMatch={onAutoMatchAll}
-          onCancelAutoMatch={cancelAutoMatch}
-          onExport={onOpenExport}
-          onPalette={onOpenPalette}
-          onStats={onOpenStats}
-          onActivity={() => setActivityOpen((v) => !v)}
-          activityRunning={activityRows.some((r) => r.status === 'running')}
-          onSettings={onOpenSettings}
-        />
-      </div>
+        <div className="relative">
+          {progress && <TopProgressBar fraction={progress.fraction} />}
+          <Toolbar
+            isMac={isMac}
+            hintFor={hintFor}
+            trackCount={tracks.length}
+            importing={importProgress}
+            batchSummary={batchSummary}
+            batching={batching}
+            analysis={analysis}
+            allAnalyzed={allAnalyzed}
+            matching={matching}
+            hasToken={!!settings?.discogsToken}
+            autoMatchable={autoMatchable}
+            onAnalyzeAll={onAnalyzeAll}
+            onCancelAnalyze={cancelAnalysis}
+            onAutoMatch={onAutoMatchAll}
+            onCancelAutoMatch={cancelAutoMatch}
+            onExport={onOpenExport}
+            onPalette={onOpenPalette}
+            onStats={onOpenStats}
+            onActivity={() => setActivityOpen((v) => !v)}
+            activityRunning={activityRows.some((r) => r.status === 'running')}
+            onSettings={onOpenSettings}
+          />
+        </div>
 
-      <div className="flex min-h-0 flex-1">
-        <aside
-          style={{ width: sidebar.width }}
-          className="relative shrink-0 bg-[var(--color-panel)]"
-        >
-          <div
-            ref={listScrollRef}
-            className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}
+        <div className="flex min-h-0 flex-1">
+          <aside
+            style={{ width: sidebar.width }}
+            className="relative shrink-0 bg-[var(--color-panel)]"
           >
-            {tracks.length === 0 ? (
-              // Empty list: the drop hint plus the Add files button, so the action that fills
-              // this column is reachable here even before there's a header to host it.
-              <div className="flex flex-col items-center gap-3 p-6 text-center">
-                <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
-                <button
-                  type="button"
-                  data-testid="add-files"
-                  onClick={onAdd}
-                  className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-                >
-                  {tr('header.add')}
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
-                  <div className="flex items-center gap-1.5 px-1.5 pt-2">
-                    <SearchInput
-                      className="flex-1"
-                      testid="track-search"
-                      inputRef={trackSearchRef}
-                      value={search}
-                      onChange={setSearch}
-                      onClear={() => setSearch('')}
-                      onKeyDown={(e) => {
-                        // Escape clears a running filter, then a second press (or one on an
-                        // empty field) drops focus back to the list — a quick way out of a search.
-                        if (e.key !== 'Escape') return
-                        if (search) {
-                          e.stopPropagation()
-                          setSearch('')
-                        } else {
-                          e.currentTarget.blur()
-                        }
-                      }}
-                      ariaLabel={tr('sidebar.search.placeholder')}
-                      placeholder={tr('sidebar.search.placeholder')}
-                      clearLabel={tr('sidebar.search.clear')}
-                    />
-                  </div>
-                  <QualityFilterBar
-                    filterRef={qualityFilterRef}
-                    value={filterSelection}
-                    onChange={setFilterSelection}
-                    tally={qualityTally}
-                    formats={formatTally}
-                    trackCount={tracks.length}
-                    visibleCount={visibleTracks.length}
-                    selectedPosition={selectedPosition}
-                    selectedCount={selectedIds.length}
-                    onRevealSelected={scrollToSelected}
-                    onTrashSuspects={onTrashSuspects}
+            <div
+              ref={listScrollRef}
+              className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}
+            >
+              {tracks.length === 0 ? (
+                // Empty list: the drop hint plus the Add files button, so the action that fills
+                // this column is reachable here even before there's a header to host it.
+                <div className="flex flex-col items-center gap-3 p-6 text-center">
+                  <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
+                  <button
+                    type="button"
+                    data-testid="add-files"
+                    onClick={onAdd}
+                    className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
                   >
-                    <Select
-                      testid="track-sort"
-                      value={sortBy}
-                      onChange={(v) => setSortBy(v as TrackSort)}
-                      label={tr('sidebar.sort.label')}
-                      options={[
-                        { value: 'import', label: tr('sidebar.sort.import'), icon: ArrowDownUp },
-                        { value: 'name', label: tr('sidebar.sort.name'), icon: CaseSensitive },
-                        { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
-                        { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
-                        { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
-                      ]}
-                    />
-                    {sortBy !== 'import' && (
-                      <button
-                        type="button"
-                        data-testid="track-sort-direction"
-                        aria-pressed={sortDir === 'desc'}
-                        aria-label={tr(
-                          sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
-                        )}
-                        onClick={toggleSortDir}
-                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
-                      >
-                        {sortDir === 'asc' ? (
-                          <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
-                        ) : (
-                          <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
-                        )}
-                        <Tooltip
-                          label={tr(
+                    {tr('header.add')}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
+                    <div className="flex items-center gap-1.5 px-1.5 pt-2">
+                      <SearchInput
+                        className="flex-1"
+                        testid="track-search"
+                        inputRef={trackSearchRef}
+                        value={search}
+                        onChange={setSearch}
+                        onClear={() => setSearch('')}
+                        onKeyDown={(e) => {
+                          // Escape clears a running filter, then a second press (or one on an
+                          // empty field) drops focus back to the list — a quick way out of a search.
+                          if (e.key !== 'Escape') return
+                          if (search) {
+                            e.stopPropagation()
+                            setSearch('')
+                          } else {
+                            e.currentTarget.blur()
+                          }
+                        }}
+                        ariaLabel={tr('sidebar.search.placeholder')}
+                        placeholder={tr('sidebar.search.placeholder')}
+                        clearLabel={tr('sidebar.search.clear')}
+                      />
+                    </div>
+                    <QualityFilterBar
+                      filterRef={qualityFilterRef}
+                      value={filterSelection}
+                      onChange={setFilterSelection}
+                      tally={qualityTally}
+                      formats={formatTally}
+                      trackCount={tracks.length}
+                      visibleCount={visibleTracks.length}
+                      selectedPosition={selectedPosition}
+                      selectedCount={selectedIds.length}
+                      onRevealSelected={scrollToSelected}
+                      onTrashSuspects={onTrashSuspects}
+                    >
+                      <Select
+                        testid="track-sort"
+                        value={sortBy}
+                        onChange={(v) => setSortBy(v as TrackSort)}
+                        label={tr('sidebar.sort.label')}
+                        options={[
+                          { value: 'import', label: tr('sidebar.sort.import'), icon: ArrowDownUp },
+                          { value: 'name', label: tr('sidebar.sort.name'), icon: CaseSensitive },
+                          { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
+                          { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
+                          { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
+                        ]}
+                      />
+                      {sortBy !== 'import' && (
+                        <button
+                          type="button"
+                          data-testid="track-sort-direction"
+                          aria-pressed={sortDir === 'desc'}
+                          aria-label={tr(
                             sortDir === 'asc'
                               ? 'sidebar.sort.ascending'
                               : 'sidebar.sort.descending',
                           )}
-                        />
-                      </button>
-                    )}
-                  </QualityFilterBar>
-                  {/* List actions get their own row under the filter/sort, not squeezed into
+                          onClick={toggleSortDir}
+                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                        >
+                          {sortDir === 'asc' ? (
+                            <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
+                          )}
+                          <Tooltip
+                            label={tr(
+                              sortDir === 'asc'
+                                ? 'sidebar.sort.ascending'
+                                : 'sidebar.sort.descending',
+                            )}
+                          />
+                        </button>
+                      )}
+                    </QualityFilterBar>
+                    {/* List actions get their own row under the filter/sort, not squeezed into
                       it — crammed beside the filter they pushed the "All" quality dropdown out
                       of sight. They operate on these rows, so they live in the list header (not
                       the global toolbar where it wasn't clear which column they touched). */}
-                  <div className="flex items-center gap-0.5 px-1.5 pb-2">
-                    {/* Add files leads the list's own action row: it's what fills this column,
+                    <div className="flex items-center gap-0.5 px-1.5 pb-2">
+                      {/* Add files leads the list's own action row: it's what fills this column,
                         so it belongs with the list rather than the global toolbar. */}
-                    <button
-                      type="button"
-                      data-testid="add-files"
-                      onClick={onAdd}
-                      aria-label={tr('header.add')}
-                      className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                    >
-                      <FilePlus className="h-4 w-4" aria-hidden="true" />
-                      <Tooltip label={tr('header.add')} hint={hintFor('add')} />
-                    </button>
-                    {tracks.length > 0 && (
-                      <>
-                        <span
-                          aria-hidden="true"
-                          className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
-                        />
-                        <button
-                          type="button"
-                          data-testid="select-all"
-                          onClick={onSelectAllTracks}
-                          aria-label={tr('header.selectAll')}
-                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                        >
-                          <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
-                        </button>
-                        {selectedId && (
-                          <button
-                            type="button"
-                            data-testid="reveal-selected"
-                            onClick={scrollToSelected}
-                            aria-label={tr('header.revealSelected')}
-                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                          >
-                            <Crosshair className="h-4 w-4" aria-hidden="true" />
-                            <Tooltip label={tr('header.revealSelected')} />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          data-testid="fill-all"
-                          onClick={onFillAll}
-                          aria-label={tr('header.fillFromName')}
-                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                        >
-                          <Tag className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
-                        </button>
-                        <button
-                          type="button"
-                          data-testid="open-find-replace"
-                          onClick={onFindReplace}
-                          aria-label={tr('commands.findReplace')}
-                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-                        >
-                          <Replace className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip
-                            label={tr('commands.findReplace')}
-                            hint={hintFor('find-replace')}
-                          />
-                        </button>
-                        {/* Clear is destructive, so it sits apart at the far end. */}
-                        <span className="flex-1" />
-                        <button
-                          type="button"
-                          data-testid="clear-all"
-                          onClick={onClearAll}
-                          aria-label={tr('header.clearAll')}
-                          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('header.clearAll')} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {visibleTracks.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 p-6 text-center">
-                    <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                    {(search || filterActive) && (
                       <button
                         type="button"
-                        data-testid="reset-view"
-                        onClick={() => {
-                          setSearch('')
-                          setFilterSelection(EMPTY_FILTER)
-                        }}
-                        className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                        data-testid="add-files"
+                        onClick={onAdd}
+                        aria-label={tr('header.add')}
+                        className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                       >
-                        {tr('sidebar.search.reset')}
+                        <FilePlus className="h-4 w-4" aria-hidden="true" />
+                        <Tooltip label={tr('header.add')} hint={hintFor('add')} />
                       </button>
-                    )}
+                      {tracks.length > 0 && (
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+                          />
+                          <button
+                            type="button"
+                            data-testid="select-all"
+                            onClick={onSelectAllTracks}
+                            aria-label={tr('header.selectAll')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                          >
+                            <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
+                          </button>
+                          {selectedId && (
+                            <button
+                              type="button"
+                              data-testid="reveal-selected"
+                              onClick={scrollToSelected}
+                              aria-label={tr('header.revealSelected')}
+                              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                            >
+                              <Crosshair className="h-4 w-4" aria-hidden="true" />
+                              <Tooltip label={tr('header.revealSelected')} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            data-testid="fill-all"
+                            onClick={onFillAll}
+                            aria-label={tr('header.fillFromName')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                          >
+                            <Tag className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="open-find-replace"
+                            onClick={onFindReplace}
+                            aria-label={tr('commands.findReplace')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                          >
+                            <Replace className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip
+                              label={tr('commands.findReplace')}
+                              hint={hintFor('find-replace')}
+                            />
+                          </button>
+                          {/* Clear is destructive, so it sits apart at the far end. */}
+                          <span className="flex-1" />
+                          <button
+                            type="button"
+                            data-testid="clear-all"
+                            onClick={onClearAll}
+                            aria-label={tr('header.clearAll')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip label={tr('header.clearAll')} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <TrackList
-                    tracks={visibleTracks}
-                    selectedId={selectedId}
-                    selectedIds={selectedIdSet}
-                    outputFormat={settings?.outputFormat ?? 'aiff'}
-                    onSelect={onSelectTrack}
-                    onActivate={toggleTrack}
-                    onRemove={removeFromList}
-                    onPrefetch={handlePrefetch}
-                    onSearch={onSearchTrack}
-                    onStartOver={startOverTrack}
-                    onCopyMeta={onCopyMeta}
-                    onCopyPath={onCopyPath}
-                    onPasteMeta={onPasteMeta}
-                    canPasteMeta={copiedMeta !== null}
-                    onTrash={(track) => askTrash(menuTargets(track.id))}
-                    scrollRootRef={listScrollRef}
-                    onVisible={onTrackVisible}
-                    rowRegistry={rowEls}
-                  />
-                )}
-              </>
+                  {visibleTracks.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 p-6 text-center">
+                      <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
+                      {(search || filterActive) && (
+                        <button
+                          type="button"
+                          data-testid="reset-view"
+                          onClick={() => {
+                            setSearch('')
+                            setFilterSelection(EMPTY_FILTER)
+                          }}
+                          className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                        >
+                          {tr('sidebar.search.reset')}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <TrackList
+                      tracks={visibleTracks}
+                      selectedId={selectedId}
+                      selectedIds={selectedIdSet}
+                      outputFormat={settings?.outputFormat ?? 'aiff'}
+                      onSelect={onSelectTrack}
+                      onActivate={toggleTrack}
+                      onRemove={removeFromList}
+                      onPrefetch={handlePrefetch}
+                      onSearch={onSearchTrack}
+                      onStartOver={startOverTrack}
+                      onCopyMeta={onCopyMeta}
+                      onCopyPath={onCopyPath}
+                      onPasteMeta={onPasteMeta}
+                      canPasteMeta={copiedMeta !== null}
+                      onTrash={(track) => askTrash(menuTargets(track.id))}
+                      scrollRootRef={listScrollRef}
+                      onVisible={onTrackVisible}
+                      rowRegistry={rowEls}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+            {playerVisible && playerTrack && (
+              <LivePlayer
+                track={playerTrack}
+                audioRef={audioRef}
+                continuous={settings?.continuousPlayback ?? false}
+                onToggleContinuous={() =>
+                  saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
+                }
+                showWaveform={settings?.showWaveform ?? true}
+                onToggleWaveform={() =>
+                  saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
+                }
+                onReveal={() => revealSelection(playerTrack.id)}
+                onClose={closePlayer}
+              />
             )}
+          </aside>
+
+          <ResizeHandle
+            onPointerDown={sidebar.onPointerDown}
+            onDoubleClick={autoFitSidebar}
+            title={tr('sidebar.fitHint')}
+          />
+
+          <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
+            {selected ? (
+              // Its own boundary so a render bug in the editor degrades to "this panel
+              // crashed" — the imported crate and the list stay alive. Keyed by track,
+              // which both remounts the editor per track (its state-seeding contract)
+              // and clears a tripped fallback on the next track switch.
+              <ErrorBoundary
+                key={selected.id}
+                className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+              >
+                <Editor
+                  item={selected}
+                  libraryIndex={libraryIndex}
+                  searchInputRef={searchInputRef}
+                  selectedTracks={selectedTracks}
+                  onApplyMatches={onApplyMatches}
+                  onProcessAll={onProcessAllSelected}
+                  onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                  onChangeAllMeta={onChangeAllMeta}
+                  onApplyCoverAll={onApplyCoverAll}
+                  onDeriveTags={deriveTracksUndoable}
+                  onRecordUndo={recordMetaUndo}
+                  onChange={onEditorChange}
+                  onProcess={onProcessSelected}
+                  onFormatChange={onFormatChange}
+                  onNormalizeChange={onNormalizeChange}
+                  onAddToAppleMusic={onAddSelectedToAppleMusic}
+                  onTrashOriginal={onTrashOriginal}
+                  onOpenSettings={onOpenSettings}
+                  onShowLoudnessHelp={onShowLoudnessHelp}
+                  onOpenRename={onOpenRename}
+                  onRegenerateName={onRegenerateName}
+                  onCopyFilename={onCopyFilename}
+                />
+              </ErrorBoundary>
+            ) : (
+              <div className="flex h-full items-center justify-center p-10 text-center">
+                <div className="max-w-sm">
+                  <AudioLines
+                    aria-hidden="true"
+                    strokeWidth={1.75}
+                    className="mx-auto mb-5 h-12 w-12 text-fg-faint"
+                  />
+                  <p className="text-[15px] font-medium text-balance text-fg-muted">
+                    {tr('empty.title')}
+                  </p>
+                  <p className="mt-1.5 text-sm text-pretty text-fg-dim">
+                    {tr(
+                      window.api.platform === 'darwin' ? 'empty.subtitle' : 'empty.subtitleNoMusic',
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+
+        {dragging && (
+          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
+            <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
+              {tr('drop.release')}
+            </span>
           </div>
-          {playerVisible && playerTrack && (
-            <LivePlayer
-              track={playerTrack}
-              audioRef={audioRef}
-              continuous={settings?.continuousPlayback ?? false}
-              onToggleContinuous={() =>
-                saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
-              }
-              showWaveform={settings?.showWaveform ?? true}
-              onToggleWaveform={() =>
-                saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
-              }
-              onReveal={() => revealSelection(playerTrack.id)}
-              onClose={closePlayer}
+        )}
+
+        {/* The lazy overlays load their chunk on first open; fallback={null} because an
+          overlay arriving a frame late is invisible (it fades in anyway). */}
+        <Suspense fallback={null}>
+          {activeModal?.type === 'settings' && settings && (
+            <SettingsModal
+              settings={settings}
+              onClose={closeSettings}
+              onSave={saveSettings}
+              onPreviewTheme={setThemePreview}
+              onSettingsReplaced={setSettings}
+              listStats={listStats}
+              initialTab={activeModal.tab}
             />
           )}
-        </aside>
 
-        <ResizeHandle
-          onPointerDown={sidebar.onPointerDown}
-          onDoubleClick={autoFitSidebar}
-          title={tr('sidebar.fitHint')}
-        />
-
-        <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-          {selected ? (
-            // Its own boundary so a render bug in the editor degrades to "this panel
-            // crashed" — the imported crate and the list stay alive. Keyed by track,
-            // which both remounts the editor per track (its state-seeding contract)
-            // and clears a tripped fallback on the next track switch.
-            <ErrorBoundary
-              key={selected.id}
-              className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
-            >
-              <Editor
-                item={selected}
-                libraryIndex={libraryIndex}
-                hasToken={!!settings?.discogsToken}
-                outputFormat={settings?.outputFormat ?? 'aiff'}
-                addToAppleMusic={settings?.addToAppleMusic ?? false}
-                overwriteOriginal={settings?.overwriteOriginal ?? false}
-                replaceLowResCover={settings?.replaceLowResCover ?? false}
-                autoApplyFilename={settings?.autoApplyFilename ?? false}
-                filenameFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-                groupingPresets={settings?.groupingPresets ?? []}
-                genrePresets={settings?.genrePresets ?? []}
-                visibleFields={settings?.visibleFields ?? DEFAULT_FIELDS}
-                requiredFields={settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS}
-                discogsFormats={settings?.discogsFormats ?? EMPTY_FORMATS}
-                discogsMaxResults={settings?.discogsMaxResults ?? DEFAULT_DISCOGS_MAX_RESULTS}
-                searchProviders={settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS}
-                showSpectrum={settings?.showSpectrum ?? true}
-                showLoudness={settings?.showLoudness ?? true}
-                keyNotation={settings?.keyNotation ?? 'camelot'}
-                normalize={settings?.normalize ?? DEFAULT_NORMALIZE}
-                searchInputRef={searchInputRef}
-                selectedTracks={selectedTracks}
-                onApplyMatches={onApplyMatches}
-                onProcessAll={onProcessAllSelected}
-                onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                onChangeAllMeta={onChangeAllMeta}
-                onApplyCoverAll={onApplyCoverAll}
-                onDeriveTags={deriveTracksUndoable}
-                onRecordUndo={recordMetaUndo}
-                onChange={onEditorChange}
-                onProcess={onProcessSelected}
-                onFormatChange={onFormatChange}
-                onNormalizeChange={onNormalizeChange}
-                onAddToAppleMusic={onAddSelectedToAppleMusic}
-                onTrashOriginal={onTrashOriginal}
-                onOpenSettings={onOpenSettings}
-                onShowLoudnessHelp={onShowLoudnessHelp}
-                onOpenRename={onOpenRename}
-                onRegenerateName={onRegenerateName}
-                onCopyFilename={onCopyFilename}
-              />
-            </ErrorBoundary>
-          ) : (
-            <div className="flex h-full items-center justify-center p-10 text-center">
-              <div className="max-w-sm">
-                <AudioLines
-                  aria-hidden="true"
-                  strokeWidth={1.75}
-                  className="mx-auto mb-5 h-12 w-12 text-fg-faint"
-                />
-                <p className="text-[15px] font-medium text-balance text-fg-muted">
-                  {tr('empty.title')}
-                </p>
-                <p className="mt-1.5 text-sm text-pretty text-fg-dim">
-                  {tr(
-                    window.api.platform === 'darwin' ? 'empty.subtitle' : 'empty.subtitleNoMusic',
-                  )}
-                </p>
-              </div>
-            </div>
+          {activeModal?.type === 'onboarding' && settings && (
+            <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
           )}
-        </main>
-      </div>
 
-      {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
-          <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
-            {tr('drop.release')}
-          </span>
-        </div>
-      )}
+          {activeModal?.type === 'donateNudge' && (
+            <DonateNudgeModal
+              conversionCount={settings?.conversionCount ?? 0}
+              onClose={(dismissForever) => {
+                if (dismissForever) saveSettings({ donateNudgeDismissed: true })
+                overlays.close()
+              }}
+            />
+          )}
 
-      {/* The lazy overlays load their chunk on first open; fallback={null} because an
-          overlay arriving a frame late is invisible (it fades in anyway). */}
-      <Suspense fallback={null}>
-        {activeModal?.type === 'settings' && settings && (
-          <SettingsModal
-            settings={settings}
-            onClose={closeSettings}
-            onSave={saveSettings}
-            onPreviewTheme={setThemePreview}
-            onSettingsReplaced={setSettings}
-            listStats={listStats}
-            initialTab={activeModal.tab}
-          />
-        )}
+          {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}
+          {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
+          {activeModal?.type === 'findReplace' && (
+            <FindReplaceModal
+              tracks={findReplaceTargets}
+              onApply={deriveTracksUndoable}
+              onClose={overlays.close}
+            />
+          )}
+          {activeModal?.type === 'rename' && selected && (
+            <RenameModal
+              meta={selected.meta}
+              initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
+              extension={formatExtension(
+                editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
+              )}
+              onApply={(outputName) => updateTrack(selected.id, { outputName })}
+              onClose={overlays.close}
+            />
+          )}
+          {activeModal?.type === 'export' && (
+            <ExportModal tracks={tracks} onClose={overlays.close} />
+          )}
+          {activeModal?.type === 'confirm' && (
+            <ConfirmDialog
+              title={activeModal.confirm.title}
+              message={activeModal.confirm.message}
+              confirmLabel={activeModal.confirm.confirmLabel}
+              confirmDisabled={activeModal.confirm.confirmDisabled}
+              destructive={activeModal.confirm.destructive}
+              onConfirm={activeModal.confirm.onConfirm}
+              onClose={overlays.close}
+            />
+          )}
 
-        {activeModal?.type === 'onboarding' && settings && (
-          <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
-        )}
+          {activeModal?.type === 'palette' && (
+            <CommandPalette
+              commands={getCommands()}
+              // Searching by title/artist turns ⌘K into a jump-to-track launcher over the
+              // visible list; picking a track selects and scrolls to it, then the palette
+              // closes itself (runAt → onClose) like any other command.
+              tracks={visibleTracks}
+              onGoToTrack={revealSelection}
+              usage={settings?.commandUsage ?? {}}
+              // Learn from each run so the next filtered list floats the user's habits up.
+              onRunCommand={(id) =>
+                saveSettings({
+                  commandUsage: {
+                    ...(settings?.commandUsage ?? {}),
+                    [id]: (settings?.commandUsage?.[id] ?? 0) + 1,
+                  },
+                })
+              }
+              // A command's run() may itself open another modal (settings, find & replace,
+              // export…). Closing the palette must not clobber that: only dismiss it when the
+              // palette is still the active modal, so a command that navigated elsewhere wins.
+              onClose={overlays.closeIfPalette}
+            />
+          )}
+        </Suspense>
 
-        {activeModal?.type === 'donateNudge' && (
-          <DonateNudgeModal
-            conversionCount={settings?.conversionCount ?? 0}
-            onClose={(dismissForever) => {
-              if (dismissForever) saveSettings({ donateNudgeDismissed: true })
-              overlays.close()
-            }}
-          />
-        )}
-
-        {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}
-        {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
-        {activeModal?.type === 'findReplace' && (
-          <FindReplaceModal
-            tracks={findReplaceTargets}
-            onApply={deriveTracksUndoable}
-            onClose={overlays.close}
-          />
-        )}
-        {activeModal?.type === 'rename' && selected && (
-          <RenameModal
-            meta={selected.meta}
-            initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-            extension={formatExtension(editorFormatRef.current ?? settings?.outputFormat ?? 'aiff')}
-            onApply={(outputName) => updateTrack(selected.id, { outputName })}
-            onClose={overlays.close}
-          />
-        )}
-        {activeModal?.type === 'export' && <ExportModal tracks={tracks} onClose={overlays.close} />}
-        {activeModal?.type === 'confirm' && (
-          <ConfirmDialog
-            title={activeModal.confirm.title}
-            message={activeModal.confirm.message}
-            confirmLabel={activeModal.confirm.confirmLabel}
-            confirmDisabled={activeModal.confirm.confirmDisabled}
-            destructive={activeModal.confirm.destructive}
-            onConfirm={activeModal.confirm.onConfirm}
-            onClose={overlays.close}
-          />
-        )}
-
-        {activeModal?.type === 'palette' && (
-          <CommandPalette
-            commands={getCommands()}
-            // Searching by title/artist turns ⌘K into a jump-to-track launcher over the
-            // visible list; picking a track selects and scrolls to it, then the palette
-            // closes itself (runAt → onClose) like any other command.
-            tracks={visibleTracks}
-            onGoToTrack={revealSelection}
-            usage={settings?.commandUsage ?? {}}
-            // Learn from each run so the next filtered list floats the user's habits up.
-            onRunCommand={(id) =>
+        <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
+        {activityOpen && (
+          <ActivityPanel
+            rows={activityRows}
+            onClear={clearActivity}
+            onClose={() => setActivityOpen(false)}
+            geometry={clampPanelGeometry(settings?.activityPanel, {
+              width: window.innerWidth,
+              height: window.innerHeight,
+            })}
+            onGeometryChange={(g) =>
               saveSettings({
-                commandUsage: {
-                  ...(settings?.commandUsage ?? {}),
-                  [id]: (settings?.commandUsage?.[id] ?? 0) + 1,
+                activityPanel: {
+                  x: g.pos.x,
+                  y: g.pos.y,
+                  width: g.size.width,
+                  height: g.size.height,
                 },
               })
             }
-            // A command's run() may itself open another modal (settings, find & replace,
-            // export…). Closing the palette must not clobber that: only dismiss it when the
-            // palette is still the active modal, so a command that navigated elsewhere wins.
-            onClose={overlays.closeIfPalette}
           />
         )}
-      </Suspense>
-
-      <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
-      {activityOpen && (
-        <ActivityPanel
-          rows={activityRows}
-          onClear={clearActivity}
-          onClose={() => setActivityOpen(false)}
-          geometry={clampPanelGeometry(settings?.activityPanel, {
-            width: window.innerWidth,
-            height: window.innerHeight,
-          })}
-          onGeometryChange={(g) =>
-            saveSettings({
-              activityPanel: { x: g.pos.x, y: g.pos.y, width: g.size.width, height: g.size.height },
-            })
-          }
-        />
-      )}
-      {confettiBurst > 0 && <Confetti key={confettiBurst} />}
-    </div>
+        {confettiBurst > 0 && <Confetti key={confettiBurst} />}
+      </div>
+    </SettingsProvider>
   )
 }

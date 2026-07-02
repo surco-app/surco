@@ -10,12 +10,14 @@ import type {
   LoudnessResult,
   NormalizeConfig,
   OutputFormat,
+  Settings,
   TrackMetadata,
   TrackProperties,
 } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { SettingsProvider } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
 
@@ -24,9 +26,20 @@ afterEach(cleanup)
 // The Editor's read-only data (currently Properties) is fetched through React Query,
 // so every mount needs a client in context. A fresh client per render keeps tests
 // isolated; retry:false lets a rejected probe settle into isError within waitFor.
-function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
+function renderWithQuery(
+  ui: React.ReactElement,
+  settings: Partial<Settings> = {},
+): ReturnType<typeof render> {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+  // The editor reads its Settings-derived values from the shared context now, so the
+  // per-test overrides ride a provider instead of an 17-prop wall on <Editor>.
+  return render(
+    <QueryClientProvider client={client}>
+      <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...settings }}>
+        {ui}
+      </SettingsProvider>
+    </QueryClientProvider>,
+  )
 }
 
 // Editor mounts effects that touch window.api; a non-darwin platform skips the
@@ -127,24 +140,6 @@ function renderEditor(
     <Editor
       item={item(over)}
       libraryIndex={props.libraryIndex ?? null}
-      hasToken
-      outputFormat={outputFormat}
-      addToAppleMusic={false}
-      overwriteOriginal={props.overwriteOriginal ?? false}
-      replaceLowResCover={props.replaceLowResCover ?? false}
-      autoApplyFilename={props.autoApplyFilename ?? false}
-      filenameFormat={props.filenameFormat ?? '{artist} - {title}'}
-      groupingPresets={[]}
-      genrePresets={props.genrePresets ?? []}
-      visibleFields={props.visibleFields ?? []}
-      requiredFields={props.requiredFields ?? []}
-      discogsFormats={props.discogsFormats ?? []}
-      discogsMaxResults={25}
-      searchProviders={['discogs']}
-      showSpectrum={false}
-      showLoudness={props.showLoudness ?? false}
-      keyNotation={props.keyNotation ?? 'camelot'}
-      normalize={props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
@@ -158,6 +153,22 @@ function renderEditor(
       onRegenerateName={onRegenerateName}
       onCopyFilename={onCopyFilename}
     />,
+    {
+      outputFormat,
+      overwriteOriginal: props.overwriteOriginal ?? false,
+      replaceLowResCover: props.replaceLowResCover ?? false,
+      autoApplyFilename: props.autoApplyFilename ?? false,
+      filenameFormat: props.filenameFormat ?? '{artist} - {title}',
+      genrePresets: props.genrePresets ?? [],
+      groupingPresets: [],
+      visibleFields: props.visibleFields ?? [],
+      requiredFields: props.requiredFields ?? [],
+      discogsFormats: props.discogsFormats ?? [],
+      discogsMaxResults: 25,
+      showLoudness: props.showLoudness ?? false,
+      keyNotation: props.keyNotation ?? 'camelot',
+      normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    },
   )
   return {
     onProcess,
@@ -516,24 +527,6 @@ function MultiHarness() {
         key={selected.id}
         item={selected}
         libraryIndex={null}
-        overwriteOriginal={false}
-        replaceLowResCover={false}
-        autoApplyFilename={false}
-        filenameFormat="{artist} - {title}"
-        keyNotation="camelot"
-        hasToken
-        outputFormat="aiff"
-        addToAppleMusic={false}
-        groupingPresets={[]}
-        genrePresets={[]}
-        visibleFields={['title', 'album', 'year', 'genre']}
-        requiredFields={[]}
-        discogsFormats={[]}
-        discogsMaxResults={25}
-        searchProviders={['discogs']}
-        showSpectrum={false}
-        showLoudness={false}
-        normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
         searchInputRef={createRef<HTMLInputElement>()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
@@ -753,7 +746,7 @@ describe('Editor key suggestion', () => {
 
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
-    renderWithQuery(<MultiHarness />)
+    renderWithQuery(<MultiHarness />, { visibleFields: ['title', 'album', 'year', 'genre'] })
     fireEvent.change(screen.getByTestId('field-year'), { target: { value: '1999' } })
     fireEvent.change(screen.getByTestId('field-genre'), { target: { value: 'House' } })
     // Both edits must land on both tracks; the bug report is the second one being dropped.
@@ -797,24 +790,6 @@ describe('Editor multi-select', () => {
       <Editor
         item={a}
         libraryIndex={null}
-        hasToken
-        outputFormat="aiff"
-        addToAppleMusic={opts.music ?? false}
-        overwriteOriginal={false}
-        replaceLowResCover={false}
-        autoApplyFilename={false}
-        filenameFormat="{artist} - {title}"
-        keyNotation="camelot"
-        groupingPresets={[]}
-        genrePresets={[]}
-        visibleFields={opts.visibleFields ?? ['title', 'album']}
-        requiredFields={[]}
-        discogsFormats={[]}
-        discogsMaxResults={25}
-        searchProviders={['discogs']}
-        showSpectrum
-        showLoudness={opts.loudness ?? false}
-        normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
         searchInputRef={createRef<HTMLInputElement>()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
@@ -832,6 +807,12 @@ describe('Editor multi-select', () => {
         onRegenerateName={vi.fn()}
         onCopyFilename={vi.fn()}
       />,
+      {
+        addToAppleMusic: opts.music ?? false,
+        visibleFields: opts.visibleFields ?? ['title', 'album'],
+        showSpectrum: true,
+        showLoudness: opts.loudness ?? false,
+      },
     )
     return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }
   }
