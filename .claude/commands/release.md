@@ -21,9 +21,10 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 
 - List everything since the last release: `git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges`.
 - Keep ONLY high-level, user-facing items: new features and meaningful changes to existing features. Exclude fixes of transient bugs, refactors, tests, CI/release plumbing, dependency bumps, copy tweaks and web-only commits. Collapse related commits into a single item. Write for a DJ reading the site, not for a developer reading git history.
-- Update `changelog.releases` in BOTH `apps/web/src/i18n/locales/es.json` and `apps/web/src/i18n/locales/en.json`:
+- Update the releases in BOTH `apps/web/src/i18n/changelog/es.json` and `apps/web/src/i18n/changelog/en.json` (these files feed the web's /cambios page AND the desktop's post-update "what's new" popup):
   - **minor / major**: prepend a new entry `{version, date, title, items}` (newest first). `version` is `X.Y` (no patch digit — the shape test enforces it). Dates are written out per locale, e.g. `10 de junio de 2026` / `June 10, 2026` — get today with `date`.
   - **patch**: fold noteworthy items into the existing top entry for the current minor. A pure-fix patch can add one high-level stability item, or nothing at all.
+  - Every NEW item is an object `{"text": "…", "in": "X.Y.Z"}` where `in` is the exact version being released (patch digit included) — the desktop popup filters by it, so an unstamped item never reaches users who update. Old plain-string items predate stamping; leave them as they are.
 - If there is nothing user-facing since the last tag, say so and skip the changelog edit entirely — never pad it with filler.
 - Verify: `npm test -w apps/web && npm run build -w apps/web` (locale parity and the changelog shape test must pass).
 - Commit the changelog on its own: `Update the web changelog for vX.Y.Z`.
