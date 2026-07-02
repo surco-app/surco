@@ -82,6 +82,56 @@ describe('useTrackLibrary watched folders', () => {
   })
 })
 
+describe('useTrackLibrary removed tracks vs watcher', () => {
+  function setupWithTracks(): ReturnType<typeof setup> {
+    const { fire } = setApi({
+      readMeta: vi
+        .fn()
+        .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    return { result, fire }
+  }
+
+  // Removing a track with the X takes it out of the crate but not off the disk, so the
+  // watcher's next report (a folder change, or the 60s safety poll) still lists its file.
+  // Diffing that against the crate alone would flag the just-removed file as "new" and pop
+  // the load prompt for tracks the user deliberately took out.
+  it('does not offer tracks the user removed as new when the watcher fires', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.removeTrack(a.id))
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav']))
+
+    expect(result.current.pendingNew).toBeNull()
+  })
+
+  it('still offers genuinely new files after a removal', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.removeTracks([a.id]))
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/c.wav']))
+
+    expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
+  })
+})
+
 describe('useTrackLibrary meta read failures', () => {
   // A file whose tags can't be read still gets a row (parsed from its name), but the user
   // must be told the difference between "this file has no tags" and "the read failed" —

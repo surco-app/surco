@@ -119,6 +119,10 @@ export function useTrackLibrary({
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
+  // Paths the user explicitly removed (row X or the multi-delete button). Their files are
+  // still on disk, so the watcher's next report would otherwise flag each one as "new"
+  // right after the user took it out.
+  const removedPaths = useRef(new Set<string>())
   const importDone = useRef(0)
   const importTotal = useRef(0)
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
@@ -258,7 +262,7 @@ export function useTrackLibrary({
       const fresh = newTrackPaths(
         files,
         tracksRef.current.map((t) => t.inputPath),
-      )
+      ).filter((p) => !removedPaths.current.has(p))
       setPendingNew((prev) => {
         if (fresh.length === 0) return prev?.root === root ? null : prev
         // Union with an outstanding prompt for the same folder so a second copy-in adds to
@@ -323,7 +327,10 @@ export function useTrackLibrary({
       const removed = tracksRef.current.find((t) => t.id === id)
       setTracks((prev) => prev.filter((t) => t.id !== id))
       setSelection((s) => deselect(s, id))
-      if (removed) onRemoveRef.current(removed)
+      if (removed) {
+        removedPaths.current.add(removed.inputPath)
+        onRemoveRef.current(removed)
+      }
     },
     [setSelection],
   )
@@ -341,7 +348,10 @@ export function useTrackLibrary({
         ids: s.ids.filter((id) => !drop.has(id)),
         anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
       }))
-      for (const track of removed) onRemoveRef.current(track)
+      for (const track of removed) {
+        removedPaths.current.add(track.inputPath)
+        onRemoveRef.current(track)
+      }
     },
     [setSelection],
   )
@@ -351,6 +361,7 @@ export function useTrackLibrary({
     setTracks([])
     setSelection({ ids: [], anchor: null })
     setPendingNew(null)
+    removedPaths.current.clear()
     // Stop watching the emptied crate's folders; the next folder load rebuilds the watcher.
     void window.api.unwatchFolders()
     onClear(cleared)
