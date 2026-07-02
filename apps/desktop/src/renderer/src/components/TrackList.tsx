@@ -4,6 +4,7 @@ import {
   type LucideIcon,
   Music,
   OctagonAlert,
+  Play,
   Sparkles,
   TriangleAlert,
   X,
@@ -370,6 +371,17 @@ const TrackRow = memo(function TrackRow({
             </span>
           )}
         </span>
+      </button>
+      {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
+          the only other ways in, and neither shows itself. A sibling of the row button
+          (not a child) so it stays a valid nested-button-free control, like remove. */}
+      <button
+        type="button"
+        aria-label={tr('player.play')}
+        onClick={() => onActivate(t)}
+        className="absolute top-1/2 left-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md bg-black/55 text-white opacity-0 backdrop-blur-[1px] transition-opacity pointer-events-none hover:bg-black/70 group-hover:pointer-events-auto group-hover:opacity-100"
+      >
+        <Play className="h-4 w-4 fill-current" aria-hidden="true" />
       </button>
       <button
         type="button"

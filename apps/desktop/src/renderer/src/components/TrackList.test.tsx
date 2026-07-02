@@ -303,6 +303,14 @@ describe('TrackList', () => {
     expect(onActivate).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }))
   })
 
+  // Double-click and Space are the only other ways to play and neither is visible, so the
+  // hover ▶ over the cover is the discoverable path — it must activate the same track.
+  it('activates a track for playback from the hover play overlay', () => {
+    const { onActivate } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[1])
+    expect(onActivate).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }))
+  })
+
   // Cmd/Shift reach the reducer so it can toggle or range-extend; without forwarding
   // the modifiers every click would collapse to a single selection.
   it('forwards the Cmd modifier so the click can toggle the selection', () => {
