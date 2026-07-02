@@ -207,4 +207,56 @@ describe('extractTralbum / parseRelease', () => {
   it('throws when the page carries no data-tralbum', () => {
     expect(() => parseRelease('<html><body>nope</body></html>', 'https://x.bc')).toThrow()
   })
+
+  // Bandcamp repeats the artist as a "Artist - " prefix inside its own title strings, so a
+  // single-track release lands "Dj Mateu - Crazy Bounce" in both title and album. The artist
+  // is already known (data.artist), so the prefix is redundant and must be stripped — the
+  // album should read "Crazy Bounce", not "Dj Mateu - Crazy Bounce".
+  it('strips the release-artist prefix from a self-prefixed release title', () => {
+    const html = pageWith({
+      id: 1,
+      artist: 'Dj Mateu',
+      current: { title: 'Dj Mateu - Crazy Bounce' },
+      trackinfo: [{ track_num: 1, title: 'Dj Mateu - Crazy Bounce', duration: 389 }],
+    })
+    const rel = parseRelease(html, 'https://x.bc')
+    expect(rel.title).toBe('Crazy Bounce')
+    expect(rel.tracklist[0].title).toBe('Crazy Bounce')
+  })
+
+  // A compilation carries the real artist per track in trackinfo[].artist (the release-level
+  // artist is the label), and repeats it as a prefix in the track title. That per-track artist
+  // must reach the tracklist (so the editor's Artist fills correctly, not with the label), and
+  // its prefix must be stripped from the track title.
+  it('exposes the per-track artist and strips its prefix on a compilation', () => {
+    const html = pageWith({
+      id: 2,
+      artist: 'Beats Maker Studios',
+      current: { title: 'Various Artists Compilation' },
+      trackinfo: [
+        { track_num: 1, artist: 'Annwn', title: 'Annwn - First Contact', duration: 200 },
+        { track_num: 2, artist: 'Racheil Hearbsc', title: 'Racheil Hearbsc - Hard Hop', duration: 210 },
+      ],
+    })
+    const rel = parseRelease(html, 'https://x.bc')
+    expect(rel.tracklist[0]).toMatchObject({ artists: [{ name: 'Annwn' }], title: 'First Contact' })
+    expect(rel.tracklist[1]).toMatchObject({
+      artists: [{ name: 'Racheil Hearbsc' }],
+      title: 'Hard Hop',
+    })
+  })
+
+  // A dash that is NOT an artist prefix is a legitimate part of the title and must survive:
+  // "Closer - Precursor Mix" keeps its dash because "Closer" is not the known artist.
+  it('leaves a legitimate dash in the title untouched', () => {
+    const html = pageWith({
+      id: 3,
+      artist: 'Nine Inch Nails',
+      current: { title: 'Closer - Precursor Mix' },
+      trackinfo: [{ track_num: 1, title: 'Closer - Precursor Mix', duration: 300 }],
+    })
+    const rel = parseRelease(html, 'https://x.bc')
+    expect(rel.title).toBe('Closer - Precursor Mix')
+    expect(rel.tracklist[0].title).toBe('Closer - Precursor Mix')
+  })
 })

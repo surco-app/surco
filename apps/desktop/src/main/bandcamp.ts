@@ -116,8 +116,25 @@ interface Tralbum {
   artist?: string
   art_id?: number
   album_release_date?: string
-  trackinfo?: { track_num?: number; title?: string; duration?: number }[]
+  trackinfo?: { track_num?: number; artist?: string; title?: string; duration?: number }[]
   current?: { title?: string; release_date?: string; artist?: string; art_id?: number }
+}
+
+// Bandcamp repeats the artist as a redundant "Artist - " prefix inside its own title strings
+// (a single-track release titles itself "Dj Mateu - Crazy Bounce"; a compilation's track title
+// is "Annwn - First Contact"). The artist is already carried structurally, so the prefix just
+// duplicates it into title/album. Drop it only when the leading segment matches a known artist
+// — never a plain leading dash — so a legitimate dashed title ("Closer - Precursor Mix") stays
+// intact. Match is case-insensitive on collapsed whitespace.
+function normalizeName(s: string): string {
+  return s.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function stripArtistPrefix(title: string, artist: string | undefined): string {
+  if (!artist) return title
+  const m = title.match(/^(.*?)\s+-\s+(.+)$/)
+  if (!m || normalizeName(m[1]) !== normalizeName(artist)) return title
+  return m[2].trim()
 }
 
 // Pulls the album/track JSON out of the page's `data-tralbum` attribute. Returns
@@ -169,14 +186,18 @@ export function parseRelease(html: string, url: string): Release {
   return {
     provider: 'bandcamp',
     id: data.id,
-    title: data.current?.title ?? '',
+    title: stripArtistPrefix(data.current?.title ?? '', artist),
     artists: artist ? [{ name: artist }] : [],
     year: parseYear(data.current?.release_date ?? data.album_release_date),
     genres: tags.length ? tags : undefined,
     images: cover ? [{ uri: cover, type: 'primary', resource_url: cover }] : undefined,
     tracklist: (data.trackinfo ?? []).map((t) => ({
       position: t.track_num != null ? String(t.track_num) : '',
-      title: t.title ?? '',
+      // A compilation names each track's real artist here (the release-level artist is the
+      // label); expose it so the editor's Artist fills from the track, not the label, and use
+      // it to strip the same artist's prefix from the track title.
+      artists: t.artist ? [{ name: t.artist }] : undefined,
+      title: stripArtistPrefix(t.title ?? '', t.artist ?? artist),
       duration: formatDuration(t.duration),
     })),
   }
