@@ -15,6 +15,10 @@ import { Tooltip } from './Tooltip'
 
 interface Props {
   isMac: boolean
+  // Formats a command's bound chord (e.g. "⌘⇧D") for the button tooltips, so a sweep's
+  // shortcut is discoverable on hover. Passed in (rather than computed here) to keep the
+  // binding table in App the single source of truth.
+  hintFor: (id: string) => string
   trackCount: number
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
   // counter beside "Add files" so a big drop isn't an opaque wait.
@@ -51,6 +55,7 @@ interface Props {
 // keystroke in a metadata field no longer re-renders the whole toolbar.
 export const Toolbar = memo(function Toolbar({
   isMac,
+  hintFor,
   trackCount,
   importing,
   batchSummary,
@@ -147,6 +152,7 @@ export const Toolbar = memo(function Toolbar({
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
                 }
+                hint={matching ? undefined : hintFor('auto-match')}
                 align="end"
               />
             </button>
@@ -177,6 +183,7 @@ export const Toolbar = memo(function Toolbar({
                     ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
                     : tr('header.analyzeQuality')
                 }
+                hint={analysis ? undefined : hintFor('analyze-quality')}
                 align="end"
               />
             </button>
@@ -191,7 +198,7 @@ export const Toolbar = memo(function Toolbar({
               className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
             >
               <Upload className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('header.export')} align="end" />
+              <Tooltip label={tr('header.export')} hint={hintFor('export')} align="end" />
             </button>
           </>
         )}
@@ -214,7 +221,7 @@ export const Toolbar = memo(function Toolbar({
           aria-label={tr('header.stats')}
         >
           <ChartColumn className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={tr('header.stats')} align="end" />
+          <Tooltip label={tr('header.stats')} hint={hintFor('stats')} align="end" />
         </button>
         <button
           type="button"
@@ -238,7 +245,7 @@ export const Toolbar = memo(function Toolbar({
           aria-label={tr('header.settings')}
         >
           <SettingsIcon className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={tr('header.settings')} align="end" />
+          <Tooltip label={tr('header.settings')} hint={hintFor('settings')} align="end" />
         </button>
       </div>
     </header>

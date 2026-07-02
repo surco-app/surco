@@ -17,9 +17,13 @@ const HOVER_DELAY = 400
 
 export function Tooltip({
   label,
+  hint,
   hoverOnly = false,
 }: {
   label: string
+  // An optional keyboard chord (e.g. "⌘O"), shown dimmed after the label so a control's
+  // shortcut is discoverable on hover without a second visual style at every call site.
+  hint?: string
   align?: 'center' | 'start' | 'end'
   scope?: 'default' | 'cover' | 'dot'
   // For an editable trigger (a metadata input): the focus reveal would pop the value
@@ -119,6 +123,7 @@ export function Tooltip({
             className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-md ring-1 ring-[var(--color-line-strong)]"
           >
             {label}
+            {hint && <span className="ml-2 text-fg-faint">{hint}</span>}
           </span>,
           document.body,
         )}

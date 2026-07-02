@@ -858,7 +858,10 @@ export default function App(): React.JSX.Element {
     () => resolveBindings(settings?.shortcutOverrides),
     [settings?.shortcutOverrides],
   )
-  const hintFor = (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac)
+  const hintFor = useCallback(
+    (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac),
+    [bindings],
+  )
 
   // Every handler handed to the memoized Toolbar/Editor goes through
   // useStableCallback: one identity for the child's memo, the latest closure for the
@@ -1150,6 +1153,7 @@ export default function App(): React.JSX.Element {
         {progress && <TopProgressBar fraction={progress.fraction} />}
         <Toolbar
           isMac={isMac}
+          hintFor={hintFor}
           trackCount={tracks.length}
           importing={importProgress}
           batchSummary={batchSummary}
@@ -1289,7 +1293,7 @@ export default function App(): React.JSX.Element {
                       className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                     >
                       <FilePlus className="h-4 w-4" aria-hidden="true" />
-                      <Tooltip label={tr('header.add')} />
+                      <Tooltip label={tr('header.add')} hint={hintFor('add')} />
                     </button>
                     {tracks.length > 0 && (
                       <>
@@ -1305,7 +1309,7 @@ export default function App(): React.JSX.Element {
                           className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                         >
                           <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('header.selectAll')} />
+                          <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
                         </button>
                         {selectedId && (
                           <button
@@ -1327,7 +1331,7 @@ export default function App(): React.JSX.Element {
                           className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                         >
                           <Tag className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('header.fillFromName')} />
+                          <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
                         </button>
                         <button
                           type="button"
@@ -1337,7 +1341,10 @@ export default function App(): React.JSX.Element {
                           className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                         >
                           <Replace className="h-4 w-4" aria-hidden="true" />
-                          <Tooltip label={tr('commands.findReplace')} />
+                          <Tooltip
+                            label={tr('commands.findReplace')}
+                            hint={hintFor('find-replace')}
+                          />
                         </button>
                         {/* Clear is destructive, so it sits apart at the far end. */}
                         <span className="flex-1" />
