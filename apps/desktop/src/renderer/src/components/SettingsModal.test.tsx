@@ -72,6 +72,7 @@ const settings: Settings = {
   conversionCount: 0,
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
+  lastSeenChangelogVersion: '',
 }
 
 function openNaming() {

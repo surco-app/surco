@@ -80,6 +80,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     conversionCount: 0,
     donateNudgeDismissed: false,
     donateNudgeLastShown: '',
+    lastSeenChangelogVersion: '',
     ...over,
   }
 }

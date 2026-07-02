@@ -63,6 +63,7 @@ const defaults: Settings = {
   commandUsage: {},
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
+  lastSeenChangelogVersion: '',
 }
 
 // Settings that never leave this machine, even when the user points the settings
@@ -77,6 +78,9 @@ const LOCAL_KEYS = [
   'hasSeenOnboarding',
   'conversionCount',
   'commandUsage',
+  // Each machine updates on its own schedule, so "which changelog did I already
+  // see" only means something locally.
+  'lastSeenChangelogVersion',
   // A pixel position only means something on the screen it was saved on.
   'activityPanel',
 ] as const satisfies readonly (keyof Settings)[]
