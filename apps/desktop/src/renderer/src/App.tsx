@@ -1121,6 +1121,7 @@ export default function App(): React.JSX.Element {
     getCommands,
     onTogglePalette: overlays.togglePalette,
     onEscape,
+    onStepTrack: moveSelection,
   })
 
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,

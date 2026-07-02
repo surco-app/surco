@@ -17,6 +17,10 @@ interface Params {
   onTogglePalette: () => void
   // Escape — closes the topmost open overlay (the priority chain lives in App).
   onEscape: () => void
+  // Ctrl+↑/↓ — step the selection to the prev/next track. Handled here (not via the chord
+  // table) because it must fire while a metadata field is focused, using the literal
+  // Control key so it never collides with ⌘↑/↓ (start/end of a field) on macOS.
+  onStepTrack: (dir: -1 | 1) => void
 }
 
 // The single global keydown handler: ⌘K toggles the palette, Escape closes the top
@@ -39,6 +43,15 @@ export function useKeyboardShortcuts(params: Params): void {
       }
       if (e.key === 'Escape') {
         p.onEscape()
+        return
+      }
+      // Ctrl+↑/↓ steps tracks even mid-edit (the literal Control key, not ⌘, so it doesn't
+      // fight macOS's ⌘↑/↓ caret jumps). Held out of the chord table so the typing guard
+      // below can't suppress it. Meta must be up, or ⌃⌘↑ would double-fire.
+      if (e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        if (p.overlayOpen) return
+        e.preventDefault()
+        p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }
       const id = keyToCommandId(e, isTypingTarget(document.activeElement), p.bindings, p.isMac)

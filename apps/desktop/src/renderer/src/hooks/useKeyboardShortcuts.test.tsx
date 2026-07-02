@@ -13,9 +13,14 @@ function press(init: KeyboardEventInit): void {
   window.dispatchEvent(new KeyboardEvent('keydown', init))
 }
 
-function setup(overlayOpen: boolean): { language: () => void; play: () => void } {
+function setup(overlayOpen: boolean): {
+  language: () => void
+  play: () => void
+  stepTrack: ReturnType<typeof vi.fn>
+} {
   const language = vi.fn()
   const play = vi.fn()
+  const stepTrack = vi.fn()
   const commands: Command[] = [
     { id: 'toggle-language', title: '', enabled: true, run: language },
     { id: 'play', title: '', enabled: true, run: play },
@@ -28,9 +33,10 @@ function setup(overlayOpen: boolean): { language: () => void; play: () => void }
       getCommands: () => commands,
       onTogglePalette: () => {},
       onEscape: () => {},
+      onStepTrack: stepTrack,
     }),
   )
-  return { language, play }
+  return { language, play, stepTrack }
 }
 
 // The onboarding wizard (and every other modal) sets overlayOpen, which is meant to keep
@@ -67,5 +73,33 @@ describe('useKeyboardShortcuts keys already handled below', () => {
     const { play } = setup(false)
     press({ key: ' ', cancelable: true })
     expect(play).toHaveBeenCalledTimes(1)
+  })
+})
+
+// Ctrl+↑/↓ steps the selection even mid-edit, using the literal Control key so it never
+// collides with macOS's ⌘↑/↓ caret jumps. It's handled outside the chord table so the
+// typing guard can't suppress it.
+describe('useKeyboardShortcuts Ctrl+arrow track stepping', () => {
+  it('steps to the next track on Ctrl+ArrowDown and the previous on Ctrl+ArrowUp', () => {
+    const { stepTrack } = setup(false)
+    press({ key: 'ArrowDown', ctrlKey: true })
+    expect(stepTrack).toHaveBeenCalledWith(1)
+    press({ key: 'ArrowUp', ctrlKey: true })
+    expect(stepTrack).toHaveBeenCalledWith(-1)
+  })
+
+  // ⌘↑/↓ (mod) must stay the field's caret jump on macOS, so a Meta-held arrow never steps.
+  it('does not step when Meta (⌘) is held instead of Ctrl', () => {
+    const { stepTrack } = setup(false)
+    press({ key: 'ArrowDown', metaKey: true })
+    press({ key: 'ArrowUp', metaKey: true })
+    expect(stepTrack).not.toHaveBeenCalled()
+  })
+
+  // While a modal owns the screen the list is inert, so stepping is swallowed too.
+  it('does not step while an overlay is open', () => {
+    const { stepTrack } = setup(true)
+    press({ key: 'ArrowDown', ctrlKey: true })
+    expect(stepTrack).not.toHaveBeenCalled()
   })
 })
