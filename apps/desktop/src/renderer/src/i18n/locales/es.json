@@ -100,6 +100,7 @@
     "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir.",
     "copiedMeta": "Metadatos copiados",
+    "pastedMeta": "Metadatos pegados",
     "copiedPath": "Ruta copiada",
     "copiedFilename": "Nombre de archivo copiado",
     "undoneMeta_one": "Metadatos restaurados en {{count}} pista",

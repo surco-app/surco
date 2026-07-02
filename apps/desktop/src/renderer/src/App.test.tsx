@@ -1701,3 +1701,23 @@ describe('App auto-analyze on import', () => {
     expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav', expect.anything())
   })
 })
+
+describe('App paste metadata feedback', () => {
+  // Copying tags confirms with a toast but pasting used to be silent — on a multi-row
+  // paste spree the user couldn't tell whether the shortcut landed. Both halves of the
+  // copy/paste pair must speak.
+  it('confirms a pasted tag set with the same toast the copy shows', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    expect(await screen.findByText('Metadata copied')).toBeInTheDocument()
+
+    fireEvent.contextMenu(rows[1])
+    fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+  })
+})

@@ -988,6 +988,7 @@ export default function App(): React.JSX.Element {
     if (!copiedMeta) return
     recordMetaUndo([track.id])
     updateTracksMeta([track.id], copiedMeta)
+    setNotice(tr('notices.pastedMeta'))
   })
   // Copies the source path to the clipboard. Routed through App (rather than the menu's
   // own window.api call) so it can confirm with the same toast the other copies show.
