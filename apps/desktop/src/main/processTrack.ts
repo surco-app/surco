@@ -50,8 +50,9 @@ export interface ProcessTrackDeps {
     meta: TrackMetadata,
     coverPath?: string,
   ) => Promise<string | null>
-  // Registers the written file in the user's Engine DJ library database.
-  addToEngineDj: (target: string, meta: TrackMetadata) => Promise<void>
+  // Registers the written file in the user's Engine DJ library database, storing the
+  // cover (when there is one) as the row's artwork.
+  addToEngineDj: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
@@ -150,7 +151,24 @@ export async function runProcessTrack(
     // silent "converted but not in the library".
     if (settings.addToEngineDj) {
       stage('engineDj')
-      await deps.addToEngineDj(target, job.meta)
+      // Engine renders artwork from its own database, never from the file's tags, so
+      // the row needs the image handed over: the job's processed cover when there is
+      // one, else the art embedded in the file just written (carried over from the
+      // source). Extraction failing (an artless file) must not block the add.
+      let extracted: PreparedCover | undefined
+      if (!coverPath) {
+        extracted = await deps
+          .prepareProcessedCover(
+            { coverFromFile: target },
+            { maxSize: settings.coverMaxSize, square: settings.coverSquare },
+          )
+          .catch(() => undefined)
+      }
+      try {
+        await deps.addToEngineDj(target, job.meta, coverPath ?? extracted?.path)
+      } finally {
+        if (extracted) await extracted.cleanup()
+      }
     }
 
     // The add succeeded (a failure would have thrown above), and the temp dir is

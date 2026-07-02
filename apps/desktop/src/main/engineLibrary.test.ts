@@ -303,3 +303,70 @@ describe('addToEngineLibrary — playlist membership', () => {
     db.close()
   })
 })
+
+describe('addToEngineLibrary — album art', () => {
+  let root: string
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), 'surco-engine-art-'))
+  })
+
+  async function makeCover(name: string, bytes: string): Promise<string> {
+    const p = join(root, name)
+    await writeFile(p, bytes)
+    return p
+  }
+
+  // Engine renders artwork only from its own AlbumArt blobs — the file's embedded
+  // picture is never read — so the add must store the cover and point the row at it.
+  it('stores the cover as an AlbumArt blob and points the track at it', async () => {
+    const lib = join(root, 'art', 'Engine Library')
+    const file = await makeFile(root, 'a1.aiff')
+    const cover = await makeCover('a1.jpg', 'jpeg-bytes-one')
+    await addToEngineLibrary(lib, file, meta(), 'Surco', cover)
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    const art = rows(db, 'SELECT id, hash, length(albumArt) AS bytes FROM AlbumArt WHERE id > 1')
+    expect(art).toHaveLength(1)
+    expect(art[0].bytes).toBe('jpeg-bytes-one'.length)
+    expect(String(art[0].hash)).toMatch(/^[0-9a-f]{40}$/)
+    expect(rows(db, 'SELECT albumArtId FROM Track')[0].albumArtId).toBe(art[0].id)
+    db.close()
+  })
+
+  // Two tracks off one release share the same image; storing it once per track would
+  // balloon the database with identical blobs.
+  it('reuses the stored blob for a second track with the same cover', async () => {
+    const lib = join(root, 'dedup-art', 'Engine Library')
+    const cover = await makeCover('shared.jpg', 'jpeg-shared')
+    await addToEngineLibrary(lib, await makeFile(root, 'a2.aiff'), meta({ title: 'A2' }), 'Surco', cover)
+    await addToEngineLibrary(lib, await makeFile(root, 'a3.aiff'), meta({ title: 'A3' }), 'Surco', cover)
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    expect(rows(db, 'SELECT id FROM AlbumArt WHERE id > 1')).toHaveLength(1)
+    const ids = rows(db, 'SELECT DISTINCT albumArtId FROM Track')
+    expect(ids).toHaveLength(1)
+    db.close()
+  })
+
+  // A re-convert with new artwork must swap the existing row's art, not strand it on
+  // the old image.
+  it('repoints an existing row at fresh artwork on re-convert', async () => {
+    const lib = join(root, 'swap-art', 'Engine Library')
+    const file = await makeFile(root, 'a4.aiff')
+    await addToEngineLibrary(lib, file, meta(), 'Surco', await makeCover('old.jpg', 'old-art'))
+    await addToEngineLibrary(lib, file, meta(), 'Surco', await makeCover('new.jpg', 'new-art'))
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    const tracks = rows(db, 'SELECT albumArtId FROM Track')
+    expect(tracks).toHaveLength(1)
+    const art = rows(db, `SELECT albumArt FROM AlbumArt WHERE id = ${tracks[0].albumArtId}`)
+    expect(new TextDecoder().decode(art[0].albumArt as Uint8Array)).toBe('new-art')
+    db.close()
+  })
+
+  // No cover stays on the no-art sentinel — never a dangling albumArtId.
+  it('leaves the track on the sentinel art row when no cover is given', async () => {
+    const lib = join(root, 'no-art', 'Engine Library')
+    await addToEngineLibrary(lib, await makeFile(root, 'a5.aiff'), meta(), 'Surco')
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    expect(rows(db, 'SELECT albumArtId FROM Track')[0].albumArtId).toBe(1)
+    db.close()
+  })
+})

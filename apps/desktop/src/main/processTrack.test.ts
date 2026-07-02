@@ -265,14 +265,65 @@ describe('runProcessTrack — Apple Music', () => {
 describe('runProcessTrack — Engine DJ', () => {
   // The Engine DJ destination registers the written file (the path the library row
   // points at) after the conversion lands, and announces itself as its own stage so
-  // the row shows what the wait is for.
+  // the row shows what the wait is for. With no cover anywhere, the embedded-art
+  // extraction from the written file simply yields nothing.
   it('registers the output file in the Engine library when the setting is on', async () => {
-    const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+    })
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {})
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
     expect(deps.sendProgress).toHaveBeenCalledWith('engineDj')
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
+  // Engine only renders art stored in its own database, so the processed cover the
+  // conversion embedded must also reach the library add.
+  it('hands the prepared cover to the Engine library add', async () => {
+    const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
+    await runProcessTrack(job({ coverPath: '/art/cover.jpg' }), deps)
+
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, '/tmp/cover.jpg')
+    // The job's own cover preparation is the only one — no second extraction pass.
+    expect(deps.prepareProcessedCover).toHaveBeenCalledTimes(1)
+  })
+
+  // A job with no cover source still usually has art embedded in the source file,
+  // which the conversion carried into the output — pull it from there so the Engine
+  // row isn't artless, and drop the temp image afterwards.
+  it('extracts embedded art from the written file when the job prepared none', async () => {
+    const cleanup = vi.fn(async () => {})
+    const prepareProcessedCover = vi.fn(async () => ({ path: '/tmp/extracted.jpg', cleanup }))
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover,
+    })
+    await runProcessTrack(job(), deps)
+
+    expect(prepareProcessedCover).toHaveBeenCalledWith(
+      { coverFromFile: '/out/Artist - Title.aiff' },
+      { maxSize: 1000, square: false },
+    )
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      '/tmp/extracted.jpg',
+    )
+    expect(cleanup).toHaveBeenCalled()
+  })
+
+  // Extraction failing (artless or odd file) must not block the library add itself.
+  it('still registers the track when art extraction fails', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => {
+        throw new Error('no picture stream')
+      }),
+    })
+    await runProcessTrack(job(), deps)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
   })
 
   it('leaves the Engine library alone when the setting is off', async () => {

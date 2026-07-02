@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
@@ -44,6 +45,7 @@ interface PendingAdd {
   filePath: string
   meta: TrackMetadata
   playlist: string
+  coverPath?: string
   resolve: () => void
   reject: (e: unknown) => void
 }
@@ -60,9 +62,10 @@ export function addToEngineLibrary(
   filePath: string,
   meta: TrackMetadata,
   playlist: string,
+  coverPath?: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    pending.push({ libraryDir, filePath, meta, playlist, resolve, reject })
+    pending.push({ libraryDir, filePath, meta, playlist, coverPath, resolve, reject })
     if (!draining) void drain()
   })
 }
@@ -147,6 +150,10 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
         )
         trackId = lastId(db)
       }
+      // Engine renders artwork from its own AlbumArt blobs, never from the file's
+      // tags, so the cover has to be stored here for the row to show any art.
+      const artId = add.coverPath ? await ensureAlbumArt(db, add.coverPath) : null
+      if (artId !== null) db.run('UPDATE Track SET albumArtId = ? WHERE id = ?', [artId, trackId])
       addToPlaylist(db, add.playlist, trackId, uuid)
     }
     // Write-then-rename so a crash mid-write can never leave a truncated m.db behind.
@@ -156,6 +163,24 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   } finally {
     db.close()
   }
+}
+
+// Stores the cover image as an AlbumArt row and returns its id, reusing an existing
+// row for the same image (two tracks off one release share one blob). The hash keys
+// the dedup; sha1-hex matches what Engine's own imports write. An unreadable cover
+// returns null — the row then keeps whatever art reference it already had.
+async function ensureAlbumArt(db: Database, coverPath: string): Promise<number | null> {
+  let bytes: Buffer
+  try {
+    bytes = await readFile(coverPath)
+  } catch {
+    return null
+  }
+  const hash = createHash('sha1').update(bytes).digest('hex')
+  const found = db.exec('SELECT id FROM AlbumArt WHERE hash = ?', [hash])
+  if (found.length) return found[0].values[0][0] as number
+  db.run('INSERT INTO AlbumArt (hash, albumArt) VALUES (?, ?)', [hash, new Uint8Array(bytes)])
+  return lastId(db)
 }
 
 // Puts the track into the named root playlist — the DJ's "what Surco just converted"
