@@ -82,6 +82,7 @@ import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { smartDeriveTags } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
+import { isTypingTarget } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1069,12 +1070,20 @@ export default function App(): React.JSX.Element {
     }),
   )
 
-  // Closes the open overlay on Escape. Onboarding is deliberately omitted: it forces a
-  // deliberate choice, not an Escape dismissal.
-  function closeTopOverlay(): void {
-    if (!activeModal || activeModal.type === 'onboarding') return
-    if (activeModal.type === 'settings') setThemePreview(null)
-    overlays.close()
+  // Escape closes the topmost overlay if one is open; otherwise it clears the selection so
+  // a stray highlight (and its editor pane) can be dismissed with the same key. Onboarding
+  // is deliberately omitted from the close: it forces a deliberate choice, not an Escape
+  // dismissal. Deselect is skipped while a field is focused so Escape stays a field action
+  // (cancel an edit, close a field's own popover) instead of yanking the editor away.
+  function onEscape(): void {
+    if (activeModal) {
+      if (activeModal.type === 'onboarding') return
+      if (activeModal.type === 'settings') setThemePreview(null)
+      overlays.close()
+      return
+    }
+    if (isTypingTarget(document.activeElement)) return
+    if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
@@ -1087,7 +1096,7 @@ export default function App(): React.JSX.Element {
     bindings,
     getCommands,
     onTogglePalette: overlays.togglePalette,
-    onEscape: closeTopOverlay,
+    onEscape,
   })
 
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
