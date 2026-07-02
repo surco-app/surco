@@ -44,6 +44,7 @@ const defaults: Settings = {
   replaceLowResCover: false,
   showSpectrum: true,
   showLoudness: true,
+  activityPanel: null,
   showWaveform: true,
   autoAnalyze: false,
   autoMatch: false,
@@ -70,6 +71,8 @@ const LOCAL_KEYS = [
   'hasSeenOnboarding',
   'conversionCount',
   'commandUsage',
+  // A pixel position only means something on the screen it was saved on.
+  'activityPanel',
 ] as const satisfies readonly (keyof Settings)[]
 
 function localFile(): string {

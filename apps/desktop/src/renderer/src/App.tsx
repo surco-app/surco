@@ -86,6 +86,7 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { isTypingTarget } from './lib/keymap'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
+import { clampPanelGeometry } from './lib/panelGeometry'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -1707,6 +1708,15 @@ export default function App(): React.JSX.Element {
           rows={activityRows}
           onClear={clearActivity}
           onClose={() => setActivityOpen(false)}
+          geometry={clampPanelGeometry(settings?.activityPanel, {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          })}
+          onGeometryChange={(g) =>
+            saveSettings({
+              activityPanel: { x: g.pos.x, y: g.pos.y, width: g.size.width, height: g.size.height },
+            })
+          }
         />
       )}
       {confettiBurst > 0 && <Confetti key={confettiBurst} />}

@@ -62,6 +62,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     coverSquare: false,
     replaceLowResCover: false,
     showSpectrum: true,
+    activityPanel: null,
     autoAnalyze: false,
     showWaveform: true,
     showLoudness: false,

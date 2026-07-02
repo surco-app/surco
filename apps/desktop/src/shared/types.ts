@@ -92,6 +92,9 @@ export interface Settings {
   replaceLowResCover: boolean
   showSpectrum: boolean
   showLoudness: boolean
+  // Where the floating activity panel was last parked and its size, in window pixels.
+  // Machine-local (screen-dependent), null until the user first moves or resizes it.
+  activityPanel: { x: number; y: number; width: number; height: number } | null
   // When on, every imported track queues its quality analysis in the background (low
   // priority, same shared cache as the sweep), so suspect rips surface on their own
   // without pressing Analyze. Off by default: it spends an ffmpeg decode per drop.
@@ -316,7 +319,15 @@ export interface ProcessProgress {
 // The kinds of background work the activity log surfaces. Each maps to a
 // human-readable verb in the panel ("Buscando en Discogs", "Convirtiendo"…);
 // kept as a closed union so the renderer can localize and icon them.
-export type ActivityKind = 'discogs' | 'bandcamp' | 'cover' | 'convert' | 'analyze' | 'applemusic'
+export type ActivityKind =
+  | 'discogs'
+  | 'bandcamp'
+  | 'cover'
+  | 'convert'
+  | 'analyze'
+  | 'applemusic'
+  | 'import'
+  | 'export'
 
 // Interpolation values for an activity i18n key (query text, a count, a title).
 export type ActivityParams = Record<string, string | number>

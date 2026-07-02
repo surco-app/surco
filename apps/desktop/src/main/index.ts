@@ -505,7 +505,14 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('files:expand', async (e, paths: string[]) => {
-    const expanded = await expandPaths(paths)
+    // One feed row per drop/pick: the folder walk is the import's visible unit of work
+    // (per-file tag reads flow through the analyze rows already).
+    const expanded = await activity.track('import', 'activity.import', () => expandPaths(paths), {
+      summary: (files) => ({
+        detailKey: 'activity.trackCount',
+        detailParams: { count: files.length },
+      }),
+    })
     mediaAccess.allowAll(expanded)
     // Watch the folders the user dropped or picked so tracks copied in later surface as
     // "N new tracks"; a single dropped file has no folder to grow, so dirRoots drops it.
@@ -545,7 +552,10 @@ function registerIpc(): void {
       filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
     })
     if (canceled || !filePath) return null
-    await writeFile(filePath, xml, 'utf8')
+    // Wrap only the write, not the dialog: the user's think-time is not work.
+    await activity.track('export', 'activity.exportRekordbox', () => writeFile(filePath, xml, 'utf8'), {
+      detail: filePath,
+    })
     return filePath
   })
 
@@ -558,7 +568,9 @@ function registerIpc(): void {
       filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
     })
     if (canceled || !filePath) return null
-    await writeFile(filePath, nml, 'utf8')
+    await activity.track('export', 'activity.exportTraktor', () => writeFile(filePath, nml, 'utf8'), {
+      detail: filePath,
+    })
     return filePath
   })
 
@@ -571,7 +583,9 @@ function registerIpc(): void {
       filters: [{ name: 'Serato crate', extensions: ['crate'] }],
     })
     if (canceled || !filePath) return null
-    await writeFile(filePath, data)
+    await activity.track('export', 'activity.exportSerato', () => writeFile(filePath, data), {
+      detail: filePath,
+    })
     return filePath
   })
 
@@ -588,7 +602,9 @@ function registerIpc(): void {
       filters: [{ name: 'M3U8 playlist', extensions: ['m3u8', 'm3u'] }],
     })
     if (canceled || !filePath) return null
-    await writeFile(filePath, m3u, 'utf8')
+    await activity.track('export', 'activity.exportM3u', () => writeFile(filePath, m3u, 'utf8'), {
+      detail: filePath,
+    })
     return filePath
   })
 
@@ -632,7 +648,14 @@ function registerIpc(): void {
           }
         }),
       )
-      await writeFile(join(database2Dir, 'm.db'), await buildEngineDatabase(resolved, playlistName))
+      // The database build (sql.js) plus the write is the real work worth timing here.
+      await activity.track(
+        'export',
+        'activity.exportEngine',
+        async () =>
+          writeFile(join(database2Dir, 'm.db'), await buildEngineDatabase(resolved, playlistName)),
+        { detail: libraryDir },
+      )
       return libraryDir
     },
   )

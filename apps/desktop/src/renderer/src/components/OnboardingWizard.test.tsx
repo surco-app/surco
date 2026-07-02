@@ -38,6 +38,7 @@ const settings: Settings = {
   coverSquare: false,
   replaceLowResCover: false,
   showSpectrum: true,
+  activityPanel: null,
   autoAnalyze: false,
   showWaveform: true,
   showLoudness: true,

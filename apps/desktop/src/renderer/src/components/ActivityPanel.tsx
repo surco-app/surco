@@ -12,12 +12,15 @@ import {
   Radio,
   Trash2,
   X,
+  FolderDown,
+  FileOutput,
 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import type { ActivityRow } from '../lib/activityLog'
+import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 
 type Translate = ReturnType<typeof useTranslation>['t']
 
@@ -36,6 +39,10 @@ interface Props {
   rows: ActivityRow[]
   onClear: () => void
   onClose: () => void
+  // The parked position/size restored from settings (already clamped by App) and the
+  // callback that persists it — fired when a drag or resize ends, never per move tick.
+  geometry: PanelGeometry
+  onGeometryChange: (g: PanelGeometry) => void
 }
 
 // A per-kind glyph so the feed reads at a glance which subsystem is working —
@@ -48,6 +55,8 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   convert: Disc3,
   analyze: ActivityIcon,
   applemusic: Library,
+  import: FolderDown,
+  export: FileOutput,
 }
 
 function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.Element {
@@ -199,17 +208,30 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
 // A floating, freely-positioned activity log: a movable card that surfaces what
 // Surco is doing under the hood (each Discogs/Bandcamp search, cover download and
 // conversion) as a live, human-readable feed, with the technical detail one click
-// away. Dragged by its header; position is local component state (Phase 1 doesn't
-// persist it). Rendered inside the window, not a separate OS window.
-// Floor sizes: below these the header controls collide and the list shows nothing
-// useful, so the resize can't shrink the card into uselessness.
-const MIN_WIDTH = 260
-const MIN_HEIGHT = 160
+// away. Dragged by its header; geometry persists in localStorage (parsed and clamped
+// by panelGeometry). Rendered inside the window, not a separate OS window.
 
-export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Element {
+export function ActivityPanel({
+  rows,
+  onClear,
+  onClose,
+  geometry,
+  onGeometryChange,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [pos, setPos] = useState({ x: 24, y: 80 })
-  const [size, setSize] = useState({ width: 320, height: 360 })
+  // Seeded from the persisted geometry once per mount; local state while dragging so
+  // a move never round-trips through the settings store per pointer tick.
+  const [pos, setPos] = useState(geometry.pos)
+  const [size, setSize] = useState(geometry.size)
+  // Refs mirror the latest values because the pointer-up handlers deliberately have
+  // no state deps.
+  const posRef = useRef(pos)
+  posRef.current = pos
+  const sizeRef = useRef(size)
+  sizeRef.current = size
+  const persistGeometry = useCallback(() => {
+    onGeometryChange({ pos: posRef.current, size: sizeRef.current })
+  }, [onGeometryChange])
   const drag = useRef<{ dx: number; dy: number } | null>(null)
   const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
 
@@ -232,11 +254,15 @@ export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Elem
     const y = Math.max(0, Math.min(window.innerHeight - 40, e.clientY - drag.current.dy))
     setPos({ x, y })
   }, [])
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    if (!drag.current) return
-    drag.current = null
-    e.currentTarget.releasePointerCapture(e.pointerId)
-  }, [])
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!drag.current) return
+      drag.current = null
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      persistGeometry()
+    },
+    [persistGeometry],
+  )
 
   // The corner grip resizes both axes at once: it records the press origin and the
   // size then, and grows the card by the pointer's delta — floored at the minimums
@@ -266,11 +292,15 @@ export function ActivityPanel({ rows, onClear, onClose }: Props): React.JSX.Elem
     },
     [pos],
   )
-  const onResizeUp = useCallback((e: React.PointerEvent) => {
-    if (!resize.current) return
-    resize.current = null
-    e.currentTarget.releasePointerCapture(e.pointerId)
-  }, [])
+  const onResizeUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!resize.current) return
+      resize.current = null
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      persistGeometry()
+    },
+    [persistGeometry],
+  )
 
   return (
     <div
