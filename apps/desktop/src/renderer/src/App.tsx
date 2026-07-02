@@ -1173,6 +1173,17 @@ export default function App(): React.JSX.Element {
                       value={search}
                       onChange={setSearch}
                       onClear={() => setSearch('')}
+                      onKeyDown={(e) => {
+                        // Escape clears a running filter, then a second press (or one on an
+                        // empty field) drops focus back to the list — a quick way out of a search.
+                        if (e.key !== 'Escape') return
+                        if (search) {
+                          e.stopPropagation()
+                          setSearch('')
+                        } else {
+                          e.currentTarget.blur()
+                        }
+                      }}
                       ariaLabel={tr('sidebar.search.placeholder')}
                       placeholder={tr('sidebar.search.placeholder')}
                       clearLabel={tr('sidebar.search.clear')}
