@@ -17,7 +17,6 @@
     "traktorHint": "In Traktor: File → Import Collection → pick this file.",
     "seratoHint": "In Serato: drop the saved file into your _Serato_/Subcrates folder, then restart Serato — your tracks show up in the sidebar.",
     "m3uHint": "A plain playlist for everything else — players, car units, other library tools.",
-    "engineHint": "For Engine DJ: pick a folder (e.g. a USB drive) — Surco writes an Engine Library there. Point Engine DJ at that drive to import. Keep your tracks on the same drive as the folder.",
     "unconverted": "{{count}} track(s) aren’t converted yet — they’ll be exported as their original files.",
     "failed": "Export failed: {{error}}"
   },
@@ -708,7 +707,6 @@
     "exportRekordbox": "Exporting to rekordbox",
     "exportTraktor": "Exporting to Traktor",
     "exportSerato": "Exporting to Serato DJ",
-    "exportEngine": "Exporting to Engine DJ",
     "exportM3u": "Exporting M3U8 playlist",
     "resultCount_one": "{{count}} result",
     "resultCount_other": "{{count}} results",

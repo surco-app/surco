@@ -17,7 +17,6 @@
     "traktorHint": "En Traktor: File → Import Collection → elige este fichero.",
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "m3uHint": "Una lista de reproducción estándar para todo lo demás — reproductores, equipos de coche, otras herramientas.",
-    "engineHint": "Para Engine DJ: elige una carpeta (p. ej. un USB) — Surco crea ahí una biblioteca Engine. Apunta Engine DJ a esa unidad para importar. Mantén tus pistas en la misma unidad que la carpeta.",
     "unconverted": "{{count}} pista(s) aún sin convertir — se exportarán como sus archivos originales.",
     "failed": "Error al exportar: {{error}}"
   },
@@ -708,7 +707,6 @@
     "exportRekordbox": "Exportando a rekordbox",
     "exportTraktor": "Exportando a Traktor",
     "exportSerato": "Exportando a Serato DJ",
-    "exportEngine": "Exportando a Engine DJ",
     "exportM3u": "Exportando lista M3U8",
     "resultCount_one": "{{count}} resultado",
     "resultCount_other": "{{count}} resultados",

@@ -54,8 +54,6 @@ const api: Api = {
   exportSerato: (data: Uint8Array): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportSerato', data),
   exportM3u: (m3u: string): Promise<string | null> => ipcRenderer.invoke('dialog:exportM3u', m3u),
-  exportEngine: (tracks, playlistName): Promise<string | null> =>
-    ipcRenderer.invoke('dialog:exportEngine', tracks, playlistName),
   search: (
     query: string,
     provider?: SearchProviderId,

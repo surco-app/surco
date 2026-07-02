@@ -1,7 +1,6 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { buildEnginePayload } from '../lib/engine'
 import { buildM3u } from '../lib/m3u'
 import { buildRekordboxXml } from '../lib/rekordbox'
 import { buildSeratoCrate } from '../lib/serato'
@@ -54,15 +53,6 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
       ext: '.m3u8',
       hint: tr('export.m3uHint'),
       run: () => window.api.exportM3u(buildM3u(tracks)),
-    },
-    {
-      id: 'engine',
-      // Distinct from the Engine DJ conversion destination (which writes into the local
-      // library): this builds a portable Engine Library for a USB drive / standalone player.
-      label: 'Engine DJ (USB)',
-      ext: 'Engine Library',
-      hint: tr('export.engineHint'),
-      run: () => window.api.exportEngine(buildEnginePayload(tracks), 'Surco'),
     },
   ]
 

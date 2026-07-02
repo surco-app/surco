@@ -1,15 +1,11 @@
-import { mkdir, stat, writeFile } from 'node:fs/promises'
-import { basename, extname, join, relative } from 'node:path'
+import { writeFile } from 'node:fs/promises'
 import { dialog, ipcMain } from 'electron'
-import { starsTagToEngineRating } from '../shared/rating'
-import type { EngineExportTrack } from '../shared/types'
 import { activity } from './activity'
-import { buildEngineDatabase, type EngineTrack } from './engine'
 
 // The DJ-software export dialogs, split out of index.ts's registerIpc by domain (the
-// audioIpc.ts precedent): each picks a destination, writes the bytes the renderer (or
-// the Engine builder) produced, and reports the write to the activity feed. None of
-// them touch window or session state, which is what makes the domain self-contained.
+// audioIpc.ts precedent): each picks a destination, writes the bytes the renderer
+// produced, and reports the write to the activity feed. None of them touch window or
+// session state, which is what makes the domain self-contained.
 export function registerExportIpc(): void {
   // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
   // Returns the saved path, or null when the save dialog is cancelled.
@@ -57,10 +53,6 @@ export function registerExportIpc(): void {
     return filePath
   })
 
-  // Writes a Denon Engine DJ library (Engine Library/Database2/m.db) into a folder the user
-  // picks — its own fresh library, never the user's existing one. Returns the Engine Library
-  // path, or null when cancelled. The renderer ships serializable track data; here we resolve
-  // each to the relative path + file size Engine's SQLite schema wants.
   // Writes an extended M3U8 playlist — the bridge to everything that isn't DJ software.
   // Returns the saved path, or null when cancelled, like the other exports.
   ipcMain.handle('dialog:exportM3u', async (_e, m3u: string) => {
@@ -76,56 +68,4 @@ export function registerExportIpc(): void {
     return filePath
   })
 
-  ipcMain.handle(
-    'dialog:exportEngine',
-    async (_e, tracks: EngineExportTrack[], playlistName: string) => {
-      const { canceled, filePaths } = await dialog.showOpenDialog({
-        title: 'Exporta a Engine DJ',
-        message: 'Elige una carpeta para la biblioteca Engine',
-        properties: ['openDirectory', 'createDirectory'],
-      })
-      if (canceled || !filePaths[0]) return null
-      const libraryDir = join(filePaths[0], 'Engine Library')
-      const database2Dir = join(libraryDir, 'Database2')
-      await mkdir(database2Dir, { recursive: true })
-      const resolved: EngineTrack[] = await Promise.all(
-        tracks.map(async (t) => {
-          const bpm = Number.parseFloat(t.bpm)
-          const year = Number.parseInt(t.year, 10)
-          let fileBytes: number | null = null
-          try {
-            fileBytes = (await stat(t.path)).size
-          } catch {
-            // The source may have moved since import; Engine still imports the row without a size.
-          }
-          return {
-            // Engine stores the path relative to the Engine Library dir, forward-slashed.
-            relativePath: relative(libraryDir, t.path).split('\\').join('/'),
-            filename: basename(t.path),
-            fileType: extname(t.path).slice(1).toLowerCase(),
-            fileBytes,
-            title: t.title,
-            artist: t.artist,
-            album: t.album,
-            genre: t.genre,
-            comment: t.comment,
-            bpm: Number.isFinite(bpm) ? Math.round(bpm) : null,
-            bpmAnalyzed: Number.isFinite(bpm) ? bpm : null,
-            year: Number.isFinite(year) ? year : null,
-            rating: starsTagToEngineRating(t.rating),
-            durationSec: t.durationSec !== undefined ? Math.round(t.durationSec) : null,
-          }
-        }),
-      )
-      // The database build (sql.js) plus the write is the real work worth timing here.
-      await activity.track(
-        'export',
-        'activity.exportEngine',
-        async () =>
-          writeFile(join(database2Dir, 'm.db'), await buildEngineDatabase(resolved, playlistName)),
-        { detail: libraryDir },
-      )
-      return libraryDir
-    },
-  )
 }

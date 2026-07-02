@@ -11,7 +11,6 @@ import type {
   CoverExportJob,
   CoverRead,
   DockIconFrames,
-  EngineExportTrack,
   KeyResult,
   LoudnessResult,
   MetaRead,
@@ -84,7 +83,6 @@ export interface Api {
   exportTraktor: (nml: string) => Promise<string | null>
   exportSerato: (data: Uint8Array) => Promise<string | null>
   exportM3u: (m3u: string) => Promise<string | null>
-  exportEngine: (tracks: EngineExportTrack[], playlistName: string) => Promise<string | null>
   prepareCoverDrag: (src: {
     coverUrl?: string
     coverPath?: string

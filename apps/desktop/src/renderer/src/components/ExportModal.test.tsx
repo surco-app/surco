@@ -11,7 +11,6 @@ const api = {
   exportTraktor: vi.fn().mockResolvedValue('/out/collection.nml'),
   exportSerato: vi.fn().mockResolvedValue('/out/Surco.crate'),
   exportM3u: vi.fn().mockResolvedValue('/out/surco.m3u8'),
-  exportEngine: vi.fn().mockResolvedValue('/out/Engine Library'),
 }
 
 beforeEach(() => {
@@ -104,15 +103,6 @@ describe('ExportModal', () => {
 
   // Engine's database is built in the main process, so the modal hands the IPC the serializable
   // track payload (path + tags) plus the playlist name, not a finished file.
-  it('sends the Engine payload and playlist name when Engine is chosen', () => {
-    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
-    fireEvent.click(screen.getByTestId('export-engine'))
-    expect(api.exportEngine).toHaveBeenCalledTimes(1)
-    const [payload, playlist] = api.exportEngine.mock.calls[0]
-    expect(payload[0]).toMatchObject({ path: '/music/a.wav', title: 'A' })
-    expect(playlist).toBe('Surco')
-  })
-
   // The modal must teach that it's an import bridge, not a live add — that was the user's
   // confusion about where the tracks end up.
   it('explains how to import the saved file into the DJ software', () => {
