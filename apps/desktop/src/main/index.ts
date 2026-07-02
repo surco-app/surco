@@ -88,6 +88,10 @@ app.on('open-file', (event, path) => {
   else pendingFiles.push(path)
 })
 
+// A single flat file name (the cover-export .jpg): slashes are illegal characters here
+// and become dashes. Deliberately different from inplace.ts's sanitizeOutputName, where
+// "/" is a real subfolder separator the file-name template supports — collapsing the two
+// would either break subfolders there or let a "/" escape the save dialog's folder here.
 function sanitizeFilename(name: string): string {
   return name
     .replace(/[/\\:*?"<>|]/g, '-')

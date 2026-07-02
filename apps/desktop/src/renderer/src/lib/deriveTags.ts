@@ -91,3 +91,15 @@ export function smartDeriveTags(fileName: string): Partial<TrackMetadata> {
   }
   return {}
 }
+
+// The batch form every fill-from-name entry point shares (the ⌘T command, the Editor's
+// Tag button, the confirmed fill-all): one patch per track whose name actually matched a
+// known pattern, so callers apply exactly the derivable subset. One definition — this
+// used to live verbatim in three call sites, which is how they drift.
+export function deriveTagPatches(
+  tracks: { id: string; fileName: string }[],
+): { id: string; meta: Partial<TrackMetadata> }[] {
+  return tracks
+    .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
+    .filter((p) => Object.keys(p.meta).length > 0)
+}

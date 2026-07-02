@@ -8,6 +8,8 @@ import type { OutputFormat } from '../shared/types'
 // own so the slashes survive as directory boundaries, and a segment a blank field left
 // empty is dropped so no stray "" directory is created. "/" is the cross-platform
 // separator here; join() turns it into the OS one when the path is built.
+// index.ts's sanitizeFilename is the flat-name sibling (cover .jpg export), where "/"
+// is an illegal character, not a separator — the divergence is deliberate.
 export function sanitizeOutputName(name: string): string {
   return name
     .split('/')

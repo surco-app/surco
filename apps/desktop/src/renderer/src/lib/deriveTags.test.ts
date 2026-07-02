@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveTags, smartDeriveTags } from './deriveTags'
+import { deriveTagPatches, deriveTags, smartDeriveTags } from './deriveTags'
 
 describe('deriveTags', () => {
   it('pulls artist and title out of a "{artist} - {title}" name', () => {
@@ -112,5 +112,19 @@ describe('smartDeriveTags', () => {
       artist: 'Above & Beyond',
       title: 'Sun In Your Eyes',
     })
+  })
+})
+
+describe('deriveTagPatches', () => {
+  // The shared batch form all three fill-from-name entry points use: only tracks whose
+  // names matched a pattern yield a patch, so applying it never blanks a non-matching row.
+  it('returns one patch per derivable track and drops the rest', () => {
+    const patches = deriveTagPatches([
+      { id: 'a', fileName: 'ATB - Till I Come.wav' },
+      { id: 'b', fileName: 'untitled.wav' },
+    ])
+    expect(patches).toHaveLength(1)
+    expect(patches[0].id).toBe('a')
+    expect(patches[0].meta).toMatchObject({ artist: 'ATB', title: 'Till I Come' })
   })
 })

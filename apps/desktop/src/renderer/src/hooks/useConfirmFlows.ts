@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat, Settings, TrackMetadata } from '../../../shared/types'
 import { eligibleForBatch } from '../lib/batch'
-import { smartDeriveTags } from '../lib/deriveTags'
+import { deriveTagPatches } from '../lib/deriveTags'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
@@ -109,9 +109,7 @@ export function useConfirmFlows({
   // Fills the given tracks' tags from their own file names — the mouse-driven counterpart
   // of the editor's per-track "Fill from filename", for cleaning a whole import at once.
   function deriveFrom(targets: TrackItem[]): void {
-    const patches = targets
-      .map((t) => ({ id: t.id, meta: smartDeriveTags(t.fileName) }))
-      .filter((p) => Object.keys(p.meta).length > 0)
+    const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracks(patches)
   }
 
@@ -120,7 +118,7 @@ export function useConfirmFlows({
   // set for the toolbar buttons, or the whole list for the palette's "Clear the list" — either
   // way the count in the copy matches what actually changes.
   function askFillAll(targets: TrackItem[]): void {
-    const count = targets.filter((t) => Object.keys(smartDeriveTags(t.fileName)).length > 0).length
+    const count = deriveTagPatches(targets).length
     const filtered = targets.length < tracksRef.current.length
     openConfirm({
       title: tr('confirm.fillTitle'),

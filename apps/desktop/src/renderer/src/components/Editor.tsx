@@ -20,7 +20,7 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
-import { smartDeriveTags } from '../lib/deriveTags'
+import { deriveTagPatches } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
@@ -418,9 +418,7 @@ export const Editor = memo(function Editor({
   function deriveFromNames(): void {
     if (!onDeriveTags) return
     const targets = isMulti ? (selectedTracks ?? []) : [item]
-    const patches = targets
-      .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
-      .filter((p) => Object.keys(p.meta).length > 0)
+    const patches = deriveTagPatches(targets)
     if (patches.length) onDeriveTags(patches)
   }
 

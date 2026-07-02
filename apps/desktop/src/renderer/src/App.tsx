@@ -81,7 +81,7 @@ import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
-import { smartDeriveTags } from './lib/deriveTags'
+import { deriveTagPatches } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { isTypingTarget } from './lib/keymap'
@@ -1099,9 +1099,7 @@ export default function App(): React.JSX.Element {
   })
   const deriveTags = useStableCallback(() => {
     const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
-    const patches = targets
-      .map((f) => ({ id: f.id, meta: smartDeriveTags(f.fileName) }))
-      .filter((p) => Object.keys(p.meta).length > 0)
+    const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracksUndoable(patches)
   })
   // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
