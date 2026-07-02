@@ -18,10 +18,12 @@ export function ToastStack({
   onExpire: (id: string) => void
   // The user clicked ✕ — remove the card and run the toast's own onDismiss.
   onClose: (id: string) => void
-}): React.JSX.Element | null {
-  if (toasts.length === 0) return null
+}): React.JSX.Element {
+  // The container renders even when empty: a live region must exist BEFORE content
+  // arrives or screen readers miss the first toast. Empty it has zero size, so the
+  // fixed corner div never intercepts a click.
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
+    <div aria-live="polite" className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
       {toasts.map((toast) => (
         <ToastCard key={toast.id} toast={toast} onExpire={onExpire} onClose={onClose} />
       ))}

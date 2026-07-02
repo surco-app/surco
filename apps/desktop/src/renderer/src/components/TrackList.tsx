@@ -131,6 +131,9 @@ interface RowProps {
   // Whether this row holds the listbox's single tab stop (roving tabindex): the primary
   // row, or the first row while nothing is selected yet.
   tabbable: boolean
+  // aria-setsize/posinset for the option, so a screen reader announces "row N of M".
+  setSize: number
+  posInSet: number
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
@@ -155,6 +158,8 @@ const TrackRow = memo(function TrackRow({
   selected,
   primary,
   tabbable,
+  setSize,
+  posInSet,
   outputFormat,
   onSelect,
   onActivate,
@@ -220,6 +225,10 @@ const TrackRow = memo(function TrackRow({
         data-testid="track-row"
         role="option"
         aria-selected={selected}
+        // The rows are real DOM (content-visibility, not windowing), but a screen reader
+        // still benefits from an explicit "row 12 of 500" as filters shrink the set.
+        aria-setsize={setSize}
+        aria-posinset={posInSet}
         // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
         // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
         tabIndex={tabbable ? 0 : -1}
@@ -495,6 +504,8 @@ export function TrackList({
             // The selection owns the single tab stop; with nothing selected the first row
             // holds it so the list stays reachable by Tab.
             tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+            setSize={tracks.length}
+            posInSet={i + 1}
             outputFormat={outputFormat}
             onSelect={onSelect}
             onActivate={onActivate}

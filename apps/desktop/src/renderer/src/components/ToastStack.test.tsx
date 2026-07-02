@@ -13,11 +13,15 @@ function toast(over: Partial<Toast> = {}): Toast {
 }
 
 describe('ToastStack', () => {
-  it('renders nothing when the queue is empty', () => {
+  // The empty container still mounts: a live region must exist before content arrives
+  // or screen readers miss the first toast. No cards means nothing visible or clickable.
+  it('keeps an empty, announced live region mounted when the queue is empty', () => {
     const { container } = render(
       <ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />,
     )
-    expect(container).toBeEmptyDOMElement()
+    const region = container.firstElementChild as HTMLElement
+    expect(region).toHaveAttribute('aria-live', 'polite')
+    expect(region).toBeEmptyDOMElement()
   })
 
   it('stacks every queued toast so a notice and a prompt show at once', () => {
