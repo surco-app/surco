@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.34",
+    "date": "July 2, 2026",
+    "title": "Quieter prompts",
+    "items": [
+      {
+        "text": "The prompt for new tracks detected in your folder now dismisses itself after a few seconds, with a visible countdown — and once you decline it, it won't offer you the same files again.",
+        "in": "0.34.0"
+      }
+    ]
+  },
+  {
     "version": "0.33",
     "date": "July 2, 2026",
     "title": "Straight to Engine DJ (Denon)",

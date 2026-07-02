@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.34",
+    "date": "2 de julio de 2026",
+    "title": "Avisos más discretos",
+    "items": [
+      {
+        "text": "El aviso de pistas nuevas detectadas en tu carpeta ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible — y si lo descartas, no vuelve a ofrecerte los mismos ficheros.",
+        "in": "0.34.0"
+      }
+    ]
+  },
+  {
     "version": "0.33",
     "date": "2 de julio de 2026",
     "title": "Directo a Engine DJ (Denon)",
