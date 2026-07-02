@@ -75,6 +75,9 @@ interface Props {
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
   selectedPosition: number | null
+  // Scrolls the selected row into view — the position counter clicks through to it, so a
+  // number the DJ can see becomes a way back to the row it counts.
+  onRevealSelected: () => void
   // Controls that share the filter row — the track sort and its direction toggle — sitting
   // beside the filter trigger so the search box above can take the full width.
   children?: React.ReactNode
@@ -99,6 +102,7 @@ export function QualityFilterBar({
   trackCount,
   visibleCount,
   selectedPosition,
+  onRevealSelected,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -368,19 +372,25 @@ export function QualityFilterBar({
         )}
       </div>
       {children}
-      {visibleCount > 0 && (
-        <span
-          data-testid="track-position"
-          className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
-        >
-          {selectedPosition !== null ? `${selectedPosition}/${visibleCount}` : `‒/${visibleCount}`}
-          {selectedPosition !== null && (
-            <Tooltip
-              label={tr('sidebar.position', { current: selectedPosition, total: visibleCount })}
-            />
-          )}
-        </span>
-      )}
+      {visibleCount > 0 &&
+        (selectedPosition !== null ? (
+          <button
+            type="button"
+            data-testid="track-position"
+            onClick={onRevealSelected}
+            className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-faint outline-none hover:text-fg"
+          >
+            {`${selectedPosition}/${visibleCount}`}
+            <Tooltip label={tr('header.revealSelected')} />
+          </button>
+        ) : (
+          <span
+            data-testid="track-position"
+            className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
+          >
+            {`‒/${visibleCount}`}
+          </span>
+        ))}
     </div>
   )
 }

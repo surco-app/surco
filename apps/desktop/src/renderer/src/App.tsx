@@ -1204,6 +1204,7 @@ export default function App(): React.JSX.Element {
                     trackCount={tracks.length}
                     visibleCount={visibleTracks.length}
                     selectedPosition={selectedPosition}
+                    onRevealSelected={scrollToSelected}
                   >
                     <Select
                       testid="track-sort"

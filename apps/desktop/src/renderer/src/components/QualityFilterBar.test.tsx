@@ -35,6 +35,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
+      onRevealSelected={() => {}}
       {...over}
     />,
   )
@@ -261,5 +262,14 @@ describe('QualityFilterBar', () => {
   it('hides the counter only when there are no tracks in view at all', () => {
     renderBar({ selectedPosition: null, visibleCount: 0 })
     expect(screen.queryByTestId('track-position')).toBeNull()
+  })
+
+  // With a track selected the counter doubles as a way back to it: a long, scrolled list
+  // leaves the selected row off-screen, so clicking the number the DJ can see scrolls to it.
+  it('reveals the selected track when the position counter is clicked', () => {
+    const onRevealSelected = vi.fn()
+    renderBar({ selectedPosition: 250, visibleCount: 498, onRevealSelected })
+    fireEvent.click(screen.getByTestId('track-position'))
+    expect(onRevealSelected).toHaveBeenCalledOnce()
   })
 })
