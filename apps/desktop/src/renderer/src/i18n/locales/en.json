@@ -131,6 +131,8 @@
     "processCurrent": "Process current track",
     "processAll": "Convert all tracks",
     "play": "Play / pause track",
+    "seekBack": "Rewind 5 seconds",
+    "seekForward": "Skip ahead 5 seconds",
     "remove": "Remove current track",
     "next": "Next track",
     "prev": "Previous track",

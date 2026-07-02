@@ -27,6 +27,8 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'play', chord: ['space'] },
   { id: 'next', chord: ['down'] },
   { id: 'prev', chord: ['up'] },
+  { id: 'seek-back', chord: ['left'] },
+  { id: 'seek-forward', chord: ['right'] },
   { id: 'search', chord: ['/'] },
   // List-wide toolbar actions. select-all keeps the typing guard so ⌘A still selects
   // text inside a field; the rest are mod-combos that stay live while editing, matching

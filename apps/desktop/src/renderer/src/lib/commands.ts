@@ -45,6 +45,9 @@ export function trackLabel(t: TrackItem): string {
 // bury the commands or turn the palette into the whole library.
 const TRACK_RESULT_LIMIT = 8
 
+// How far one ←/→ press nudges the playhead — the customary 5-second scrub step.
+const SEEK_STEP_SECONDS = 5
+
 // Turns the visible tracks into "jump to this track" palette entries for a non-empty
 // query, matching on artist, title and the frozen list label. Empty query → no tracks,
 // so ⌘K stays a pure command launcher until the user types something to search for.
@@ -118,6 +121,11 @@ export interface CommandDeps {
   focusMatches: () => void
   focusEditor: () => void
   togglePlay: () => void
+  // Whether the player card is open — gates the ←/→ seek so the arrows only act on a
+  // running player, never while it's closed.
+  playerVisible: boolean
+  // Nudge the playhead by ±seconds (the ←/→ shortcuts).
+  seek: (delta: number) => void
   processOne: (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => unknown
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
   cancelAnalysis: () => void
@@ -178,6 +186,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     focusMatches,
     focusEditor,
     togglePlay,
+    playerVisible,
+    seek,
     processOne,
     askConvertAll,
     cancelAnalysis,
@@ -296,6 +306,20 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('play'),
       enabled: !!selected,
       run: togglePlay,
+    },
+    {
+      id: 'seek-back',
+      title: tr('commands.seekBack'),
+      hint: hintFor('seek-back'),
+      enabled: playerVisible,
+      run: () => seek(-SEEK_STEP_SECONDS),
+    },
+    {
+      id: 'seek-forward',
+      title: tr('commands.seekForward'),
+      hint: hintFor('seek-forward'),
+      enabled: playerVisible,
+      run: () => seek(SEEK_STEP_SECONDS),
     },
     {
       id: 'search',

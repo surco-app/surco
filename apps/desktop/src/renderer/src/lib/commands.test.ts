@@ -59,6 +59,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     focusMatches: () => {},
     focusEditor: () => {},
     togglePlay: () => {},
+    playerVisible: false,
+    seek: () => {},
     processOne: () => {},
     askConvertAll: () => {},
     cancelAnalysis: () => {},
@@ -315,6 +317,24 @@ describe('buildCommands platform-gated entries', () => {
       'reveal',
     )
     expect(noOutput.enabled).toBe(false)
+  })
+
+  // The ←/→ seek nudges the playhead by ±5s and is gated on the player being open, so the
+  // arrows never scrub a closed player. Pinning the sign guards the two commands don't swap.
+  it('seeks ±5s only while the player is open', () => {
+    const seek = vi.fn()
+    const closed = makeDeps({ seek, playerVisible: false })
+    expect(commandById(closed, 'seek-back').enabled).toBe(false)
+    expect(commandById(closed, 'seek-forward').enabled).toBe(false)
+
+    const open = makeDeps({ seek, playerVisible: true })
+    const back = commandById(open, 'seek-back')
+    const forward = commandById(open, 'seek-forward')
+    expect(back.enabled).toBe(true)
+    back.run()
+    expect(seek).toHaveBeenCalledWith(-5)
+    forward.run()
+    expect(seek).toHaveBeenCalledWith(5)
   })
 
   // The donate command is a launcher for the PayPal page and is always available, so

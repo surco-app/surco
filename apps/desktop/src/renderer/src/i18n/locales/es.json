@@ -131,6 +131,8 @@
     "processCurrent": "Procesar pista actual",
     "processAll": "Convertir todas las pistas",
     "play": "Reproducir / pausar pista",
+    "seekBack": "Retroceder 5 segundos",
+    "seekForward": "Avanzar 5 segundos",
     "remove": "Quitar pista actual",
     "next": "Siguiente pista",
     "prev": "Pista anterior",

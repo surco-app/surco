@@ -738,11 +738,12 @@ export default function App(): React.JSX.Element {
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
-  const { audioRef, playerVisible, playerTrack, togglePlay, toggleTrack, closePlayer } = usePlayer({
-    tracks,
-    selected,
-    selectedId,
-  })
+  const { audioRef, playerVisible, playerTrack, togglePlay, seek, toggleTrack, closePlayer } =
+    usePlayer({
+      tracks,
+      selected,
+      selectedId,
+    })
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 
@@ -1066,6 +1067,8 @@ export default function App(): React.JSX.Element {
       focusMatches,
       focusEditor,
       togglePlay,
+      playerVisible,
+      seek,
       processOne: convertSelected,
       askConvertAll,
       cancelAnalysis,

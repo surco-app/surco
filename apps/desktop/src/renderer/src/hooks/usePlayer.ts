@@ -23,6 +23,8 @@ export interface Player {
   // The track whose card the player shows: the playing one, or the selection fallback.
   playerTrack: TrackItem | null
   togglePlay: () => void
+  // Nudge the playhead by ±seconds (the ←/→ shortcuts, live while the player is open).
+  seek: (delta: number) => void
   // The double-click-a-row gesture: plays that track (opening the player), or stops it
   // when it's already the one playing — a play/stop toggle on the row itself.
   toggleTrack: (track: TrackItem) => void
@@ -123,6 +125,14 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     else if (selected) setPlayerVisible(true)
   }
 
+  // Nudge the playhead by delta seconds (the ←/→ shortcuts). Reads the live element so it
+  // stays in step with the clock LivePlayer owns, and clamps to the file's bounds.
+  const seek = useCallback((delta: number): void => {
+    const audio = audioRef.current
+    if (!audio || !Number.isFinite(audio.duration)) return
+    audio.currentTime = Math.min(Math.max(audio.currentTime + delta, 0), audio.duration)
+  }, [])
+
   // While the player is open, opening it or selecting another track plays that
   // track. Guarded against re-playing the one already loaded.
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedId is the trigger; `selected` is read fresh, and depending on it would re-fire every render.
@@ -149,5 +159,5 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
-  return { audioRef, playerVisible, playerTrack, togglePlay, toggleTrack, closePlayer }
+  return { audioRef, playerVisible, playerTrack, togglePlay, seek, toggleTrack, closePlayer }
 }

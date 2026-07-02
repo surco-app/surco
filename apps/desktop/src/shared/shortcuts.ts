@@ -19,6 +19,8 @@ const NAMED: Record<string, string> = {
   ' ': 'space',
   ArrowUp: 'up',
   ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
   Home: 'home',
   End: 'end',
   PageUp: 'pageup',
