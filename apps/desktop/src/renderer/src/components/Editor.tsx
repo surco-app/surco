@@ -137,6 +137,7 @@ export const Editor = memo(function Editor({
     discogsToken,
     outputFormat,
     addToAppleMusic,
+    addToEngineDj,
     overwriteOriginal,
     replaceLowResCover,
     autoApplyFilename,
@@ -700,6 +701,7 @@ export const Editor = memo(function Editor({
           incompleteReason={incompleteReason}
           willEditInPlace={willEditInPlace}
           addToAppleMusic={addToAppleMusic}
+          addToEngineDj={addToEngineDj}
           format={format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}

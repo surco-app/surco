@@ -6,6 +6,7 @@ export interface ExportLabelState {
   stale: boolean
   done: boolean
   withAppleMusic: boolean
+  withEngineDj: boolean
   // Already uppercased for display ("AIFF").
   format: string
 }
@@ -23,7 +24,11 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.quiet) return { key: 'editor.reexport' }
   if (state.count !== undefined) {
     return {
-      key: state.withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll',
+      key: state.withAppleMusic
+        ? 'editor.convertAllMusic'
+        : state.withEngineDj
+          ? 'editor.convertAllEngine'
+          : 'editor.convertAll',
       options: { count: state.count, format: state.format },
     }
   }
@@ -31,7 +36,11 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.stale) return { key: 'editor.update' }
   if (state.done) return { key: 'editor.exportAgain' }
   return {
-    key: state.withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic',
+    key: state.withAppleMusic
+      ? 'editor.convert'
+      : state.withEngineDj
+        ? 'editor.convertEngine'
+        : 'editor.convertNoMusic',
     options: { format: state.format },
   }
 }

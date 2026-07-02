@@ -24,6 +24,7 @@ interface ConvertFooterProps {
   incompleteReason?: string
   willEditInPlace: boolean
   addToAppleMusic: boolean
+  addToEngineDj: boolean
   format: OutputFormat
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
@@ -53,6 +54,7 @@ export function ConvertFooter({
   incompleteReason,
   willEditInPlace,
   addToAppleMusic,
+  addToEngineDj,
   format,
   exportedFormat,
   musicExt,
@@ -174,6 +176,7 @@ export function ConvertFooter({
                 outputFormat={format}
                 exportedFormat={isMulti ? null : exportedFormat}
                 withAppleMusic={false}
+                withEngineDj={false}
                 incomplete={false}
                 inPlace={false}
                 count={isMulti ? selectedCount : undefined}
@@ -201,6 +204,7 @@ export function ConvertFooter({
             outputFormat={format}
             exportedFormat={isMulti ? null : exportedFormat}
             withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+            withEngineDj={addToEngineDj}
             incomplete={!isMulti && incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}

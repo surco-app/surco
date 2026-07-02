@@ -14,6 +14,7 @@ const baseProps = {
   outputFormat: 'aiff' as const,
   exportedFormat: null,
   withAppleMusic: false,
+  withEngineDj: false,
   inPlace: false,
   onProcess: () => {},
   onSelectFormat: () => {},

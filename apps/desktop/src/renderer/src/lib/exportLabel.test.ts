@@ -7,6 +7,7 @@ const base: ExportLabelState = {
   stale: false,
   done: false,
   withAppleMusic: false,
+  withEngineDj: false,
   format: 'AIFF',
 }
 
@@ -17,12 +18,14 @@ describe('exportButtonLabel', () => {
     [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
     [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.reexport'],
     [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
+    [{ ...base, count: 2, inPlace: true, withEngineDj: true }, 'editor.convertAllEngine'],
     [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],
     [{ ...base, inPlace: true, stale: true, withAppleMusic: true }, 'editor.updateMusic'],
     [{ ...base, inPlace: true, stale: true }, 'editor.update'],
     [{ ...base, stale: true, done: true }, 'editor.update'],
     [{ ...base, done: true }, 'editor.exportAgain'],
     [{ ...base, withAppleMusic: true }, 'editor.convert'],
+    [{ ...base, withEngineDj: true }, 'editor.convertEngine'],
     [base, 'editor.convertNoMusic'],
   ])('resolves %o to %s', (state, key) => {
     expect(exportButtonLabel(state).key).toBe(key)

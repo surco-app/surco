@@ -16,6 +16,7 @@ interface ExportButtonProps {
   outputFormat: OutputFormat
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
+  withEngineDj: boolean
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -49,6 +50,7 @@ export function ExportButton({
   outputFormat,
   exportedFormat,
   withAppleMusic,
+  withEngineDj,
   incomplete,
   incompleteReason,
   inPlace,
@@ -82,6 +84,7 @@ export function ExportButton({
     stale,
     done,
     withAppleMusic,
+    withEngineDj,
     format: outputFormat.toUpperCase(),
   })
   const label = tr(labelSpec.key, labelSpec.options)

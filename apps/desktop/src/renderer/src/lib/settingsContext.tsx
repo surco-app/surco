@@ -17,6 +17,7 @@ export interface ResolvedSettings {
   discogsToken: string
   outputFormat: OutputFormat
   addToAppleMusic: boolean
+  addToEngineDj: boolean
   overwriteOriginal: boolean
   replaceLowResCover: boolean
   autoApplyFilename: boolean
@@ -40,6 +41,7 @@ const DEFAULTS: ResolvedSettings = {
   discogsToken: '',
   outputFormat: 'aiff',
   addToAppleMusic: false,
+  addToEngineDj: false,
   overwriteOriginal: false,
   replaceLowResCover: false,
   autoApplyFilename: false,
@@ -63,6 +65,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
+    addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,
     autoApplyFilename: settings.autoApplyFilename ?? DEFAULTS.autoApplyFilename,
