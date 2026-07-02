@@ -28,7 +28,7 @@ export function FieldsEditor({
   // so the button confirms in place, then reverts. The timer is cleared on unmount so a
   // late revert can't fire after the modal closes.
   const [organized, setOrganized] = useState(false)
-  const organizedTimer = useRef<ReturnType<typeof setTimeout>>()
+  const organizedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(organizedTimer.current), [])
   function autoOrganize(): void {
     onChangeVisible(sortFieldsByGroup(visibleFields))

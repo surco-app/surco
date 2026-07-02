@@ -316,6 +316,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -335,6 +336,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -354,6 +356,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -379,6 +382,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -397,6 +401,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -416,6 +421,7 @@ describe('LivePlayer', () => {
         onToggleContinuous={vi.fn()}
         showWaveform={true}
         onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
         onClose={vi.fn()}
       />,
     )

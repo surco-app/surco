@@ -36,6 +36,7 @@ const settings: Settings = {
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
+  commandUsage: {},
   hasSeenOnboarding: true,
   conversionCount: 0,
   donateNudgeDismissed: false,
