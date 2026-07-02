@@ -65,8 +65,8 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
       <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
     )
   if (status === 'error')
-    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-400" aria-hidden="true" />
-  return <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" aria-hidden="true" />
+  return <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
 }
 
 // Opens a release/cover URL in the user's browser. window.open is routed to the OS

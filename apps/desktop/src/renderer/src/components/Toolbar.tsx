@@ -232,7 +232,7 @@ export const Toolbar = memo(function Toolbar({
         >
           <Radio className="h-4 w-4" aria-hidden="true" />
           {activityRunning && (
-            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-good" />
           )}
           <Tooltip label={tr('header.activity')} align="end" />
         </button>
