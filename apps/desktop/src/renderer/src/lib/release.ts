@@ -76,6 +76,10 @@ export interface TrackMatchTarget {
   // The file's catalog number, if tagged. Not a per-track score (it's a release-level fact);
   // it boosts the whole release's confidence when it matches one of the release's pressings.
   catalogNumber?: string
+  // The file's release year, if tagged. Only a ranking tie-break — reissues are legitimate, so
+  // a differing year must never penalise a match — it just floats the pressing that shares the
+  // file's year ahead of an equally-relevant reissue so the right one is probed first.
+  year?: string
 }
 
 export interface ScoredTrack {
@@ -283,9 +287,15 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     const score = 2 * fraction(target.artist) + fraction(target.title)
     return score - (isCompilation(result) ? COMPILATION_PENALTY : 0)
   }
-  // Community ownership ("have") breaks ties between equally-relevant rows so the canonical
-  // pressing — the one most people own — floats above the obscure repress. Only a tie-break:
-  // it never overrides relevance, and Bandcamp/sparse rows (no stats) just score 0.
+  // A pressing whose year matches the file's tag is the edition the file came from, so it
+  // breaks a relevance tie ahead of an equally-relevant reissue and gets probed first. Ranked
+  // above `have` because the file's own year is more specific than raw popularity. A tie-break
+  // only: reissues are legitimate, so a differing year never penalises — it just doesn't lift.
+  const yearMatch = (result: SearchResult): number =>
+    target.year && result.year && result.year === target.year ? 1 : 0
+  // Community ownership ("have") breaks remaining ties between equally-relevant rows so the
+  // canonical pressing — the one most people own — floats above the obscure repress. Only a
+  // tie-break: it never overrides relevance, and Bandcamp/sparse rows (no stats) just score 0.
   const have = (result: SearchResult): number => result.community?.have ?? 0
   return results
     .map((result, index) => ({ result, index, score: relevance(result) }))
@@ -293,6 +303,7 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
       (a, b) =>
         PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         b.score - a.score ||
+        yearMatch(b.result) - yearMatch(a.result) ||
         have(b.result) - have(a.result) ||
         a.index - b.index,
     )

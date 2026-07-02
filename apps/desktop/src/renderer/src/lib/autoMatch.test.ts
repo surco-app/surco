@@ -311,10 +311,16 @@ describe('tracksToAutoMatch', () => {
 })
 
 describe('matchTargetOf', () => {
-  it('reads the title, duration, track number, artist and catalog number a probe scores against', () => {
+  it('reads the title, duration, track number, artist, catalog number and year a probe scores against', () => {
     const t = {
       duration: 211,
-      meta: { title: 'Song', trackNumber: '3', artist: 'Artist', catalogNumber: 'SR-001' },
+      meta: {
+        title: 'Song',
+        trackNumber: '3',
+        artist: 'Artist',
+        catalogNumber: 'SR-001',
+        year: '2001',
+      },
     } as TrackItem
     expect(matchTargetOf(t)).toEqual({
       title: 'Song',
@@ -322,6 +328,7 @@ describe('matchTargetOf', () => {
       trackNumber: '3',
       artist: 'Artist',
       catalogNumber: 'SR-001',
+      year: '2001',
     })
   })
 

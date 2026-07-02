@@ -39,6 +39,7 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
     trackNumber: track.meta.trackNumber,
     artist: track.meta.artist,
     catalogNumber: track.meta.catalogNumber,
+    year: track.meta.year,
   }
 }
 
