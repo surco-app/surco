@@ -461,6 +461,59 @@ export default function App(): React.JSX.Element {
     [setTracks],
   )
 
+  // The launch-time "reopen last session" offer. Asked once, and only while the list is
+  // still empty — restoring the old list on top of a fresh import would mix two sessions,
+  // so the offer withdraws itself the moment rows exist (the effect below). Accepting
+  // routes through the same expand pipeline as a drop, so media access and metadata
+  // reads behave exactly like a fresh import.
+  const lastSessionToastId = useRef<string | null>(null)
+  const reopenLastSession = useStableCallback(async (paths: string[]) => {
+    lastSessionToastId.current = null
+    await addPaths(await window.api.expandPaths(paths))
+  })
+  // Stable identity so the ask-once effect below never re-runs (tr changes identity when
+  // the settings load applies the language, which would cancel the in-flight ask), while
+  // the closure still reads the current translations when the answer lands.
+  const offerLastSession = useStableCallback((paths: string[]) => {
+    if (paths.length === 0 || tracksRef.current.length > 0) return
+    lastSessionToastId.current = pushToast(store, {
+      key: 'last-session',
+      tone: 'neutral',
+      testid: 'last-session',
+      message: tr('lastSession.prompt', { count: paths.length }),
+      action: { label: tr('lastSession.load'), onAction: () => void reopenLastSession(paths) },
+    })
+  })
+  useEffect(() => {
+    let cancelled = false
+    void window.api.getLastSession().then((paths) => {
+      if (!cancelled) offerLastSession(paths)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [offerLastSession])
+  useEffect(() => {
+    if (tracks.length === 0 || !lastSessionToastId.current) return
+    dismissToast(store, lastSessionToastId.current)
+    lastSessionToastId.current = null
+  }, [tracks, store])
+
+  // What the next launch offers to reopen: the current list's source paths, rewritten
+  // whenever that set changes. Progress ticks mint new track objects constantly, so the
+  // guard compares the joined paths, not the array identity — and the launch-time empty
+  // list is never saved (null sentinel), or it would wipe the stored session before the
+  // reopen offer could restore it.
+  const savedSessionSig = useRef<string | null>(null)
+  useEffect(() => {
+    const paths = tracks.map((t) => t.inputPath)
+    const sig = paths.join('\n')
+    if (savedSessionSig.current === null && paths.length === 0) return
+    if (savedSessionSig.current === sig) return
+    savedSessionSig.current = sig
+    void window.api.saveLastSession(paths)
+  }, [tracks])
+
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
   // second copy-in updates the count in place, persistent so it waits for an answer, and with
   // a Load action that adds the tracks. Re-pushed whenever the pending set changes; dismissed

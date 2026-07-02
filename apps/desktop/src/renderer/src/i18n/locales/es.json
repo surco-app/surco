@@ -113,6 +113,11 @@
     "load": "Cargar",
     "dismiss": "Descartar"
   },
+  "lastSession": {
+    "prompt_one": "¿Reabrir la última sesión? ({{count}} pista)",
+    "prompt_other": "¿Reabrir la última sesión? ({{count}} pistas)",
+    "load": "Reabrir"
+  },
   "update": {
     "ready": "La versión {{version}} está lista",
     "restart": "Reiniciar para actualizar",

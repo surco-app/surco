@@ -39,6 +39,10 @@ export interface Api {
   onOpenFiles: (cb: (paths: string[]) => void) => () => void
   onFoldersChanged: (cb: (root: string, files: string[]) => void) => () => void
   unwatchFolders: () => Promise<void>
+  // The reopen-last-session pair: get returns the paths saved when the app last ran
+  // (already filtered to files that still exist); save records the current list.
+  getLastSession: () => Promise<string[]>
+  saveLastSession: (paths: string[]) => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   getConfigDir: () => Promise<string | null>

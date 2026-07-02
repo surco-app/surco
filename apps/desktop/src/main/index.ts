@@ -47,6 +47,7 @@ import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
+import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
   getConfigDir,
@@ -445,6 +446,11 @@ function registerIpc(): void {
     }
     return next
   })
+
+  // The reopen-last-session pair: the renderer saves the loaded paths as the list
+  // changes and asks for them back at launch to offer restoring the previous crate.
+  ipcMain.handle('session:get', () => loadLastSession())
+  ipcMain.handle('session:set', (_e, paths: string[]) => saveLastSession(paths))
 
   ipcMain.handle('settings:getConfigDir', () => getConfigDir())
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())

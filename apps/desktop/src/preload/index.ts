@@ -34,6 +34,8 @@ const api: Api = {
     return () => ipcRenderer.removeListener('folders:changed', listener)
   },
   unwatchFolders: (): Promise<void> => ipcRenderer.invoke('folders:unwatch'),
+  getLastSession: (): Promise<string[]> => ipcRenderer.invoke('session:get'),
+  saveLastSession: (paths: string[]): Promise<void> => ipcRenderer.invoke('session:set', paths),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),

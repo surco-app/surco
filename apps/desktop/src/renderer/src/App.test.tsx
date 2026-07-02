@@ -138,6 +138,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
+    getLastSession: vi.fn().mockResolvedValue([]),
+    saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onWindowFocus: () => () => {},
     hasClipboardImage: vi.fn().mockResolvedValue(false),
@@ -1611,5 +1613,62 @@ describe('App metadata undo', () => {
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Deep Mix')
     expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
+  })
+})
+
+describe('App reopen last session', () => {
+  // The app opens empty every launch; someone cleaning the same downloads folder over
+  // days re-imported it by hand every time. The launch offer restores the previous
+  // list in one click — through the same expand pipeline as a drop, so media access
+  // and metadata reads behave exactly like a fresh import.
+  it('offers the previous session at launch and loads it on accept', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  })
+
+  it('stays quiet when there is no previous session', async () => {
+    await renderApp()
+    await screen.findByTestId('add-files')
+    expect(screen.queryByTestId('last-session')).toBeNull()
+  })
+
+  // If the user has already started importing, restoring the old list on top would mix
+  // two sessions — the offer withdraws itself the moment rows exist.
+  it('withdraws the offer once tracks arrive another way', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue(['/music/old.wav']),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    await addTwoTracks()
+    await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
+  })
+
+  it('remembers the loaded list for the next launch', async () => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
+    setApi({ saveLastSession })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() =>
+      expect(saveLastSession).toHaveBeenCalledWith(['/music/a.wav', '/music/b.wav']),
+    )
+  })
+
+  // The launch-time empty list must never be saved: it would wipe the stored session
+  // before the reopen offer had a chance to restore it.
+  it('does not overwrite the stored session with the empty launch list', async () => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+      saveLastSession,
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    expect(saveLastSession).not.toHaveBeenCalled()
   })
 })

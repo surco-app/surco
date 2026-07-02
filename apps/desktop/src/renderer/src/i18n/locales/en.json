@@ -113,6 +113,11 @@
     "load": "Load",
     "dismiss": "Dismiss"
   },
+  "lastSession": {
+    "prompt_one": "Reopen your last session? ({{count}} track)",
+    "prompt_other": "Reopen your last session? ({{count}} tracks)",
+    "load": "Reopen"
+  },
   "update": {
     "ready": "Version {{version}} is ready",
     "restart": "Restart to update",
