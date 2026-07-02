@@ -1638,6 +1638,19 @@ describe('App reopen last session', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   })
 
+  // Accepting must retire the prompt itself: it once stayed up after the click (the
+  // toast id ref was cleared before the withdraw effect could use it), so every extra
+  // press re-imported the same session and rained "already in the list" notices.
+  it('dismisses the offer once accepted', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
+  })
+
   it('stays quiet when there is no previous session', async () => {
     await renderApp()
     await screen.findByTestId('add-files')

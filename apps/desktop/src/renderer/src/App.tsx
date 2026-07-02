@@ -480,6 +480,10 @@ export default function App(): React.JSX.Element {
   // reads behave exactly like a fresh import.
   const lastSessionToastId = useRef<string | null>(null)
   const reopenLastSession = useStableCallback(async (paths: string[]) => {
+    // Retire the prompt right here, not via the rows-exist effect below: the ref must
+    // clear immediately (a second click mid-import would double-load), and once it is
+    // null that effect can no longer find the toast — it would stay up forever.
+    if (lastSessionToastId.current) dismissToast(store, lastSessionToastId.current)
     lastSessionToastId.current = null
     await addPaths(await window.api.expandPaths(paths))
   })
