@@ -31,6 +31,7 @@ import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, appleMusicLimiter, updateInAppleMusic } from './applemusic'
+import { addToEngineLibrary } from './engineLibrary'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
@@ -624,6 +625,18 @@ function registerIpc(): void {
             () => updateInAppleMusic(persistentId, meta, coverPath),
             { labelParams: { track } },
           ),
+        )
+      },
+      // The library folder is read at add time (not captured with the job) so a queue of
+      // conversions follows a mid-run settings change; addToEngineLibrary serializes the
+      // database writes itself, so no limiter is needed here.
+      addToEngineDj: (target, meta) => {
+        const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        return activity.track(
+          'export',
+          'activity.engineAdd',
+          () => addToEngineLibrary(getSettings().engineLibraryDir, target, meta),
+          { labelParams: { track } },
         )
       },
       allowMedia: (path) => mediaAccess.allow(path),

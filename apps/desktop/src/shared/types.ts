@@ -323,7 +323,7 @@ export interface AppleMusicLookupCandidate {
   durationSec?: number
 }
 
-export type ProcessStage = 'cover' | 'converting' | 'appleMusic'
+export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 
 export interface ProcessProgress {
   id: string

@@ -201,7 +201,8 @@
     "stage": {
       "cover": "Preparando carátula…",
       "converting": "Convirtiendo a {{format}}…",
-      "appleMusic": "Añadiendo a Apple Music…"
+      "appleMusic": "Añadiendo a Apple Music…",
+      "engineDj": "Añadiendo a Engine DJ…"
     },
     "context": {
       "reveal": "Mostrar en Finder",
@@ -695,6 +696,7 @@
     "appleMusicLibrary": "Cargando biblioteca de Apple Music",
     "appleMusicAdd": "Añadiendo a Apple Music: {{track}}",
     "appleMusicUpdate": "Actualizando en Apple Music: {{track}}",
+    "engineAdd": "Añadiendo a Engine DJ: {{track}}",
     "import": "Importando archivos",
     "exportRekordbox": "Exportando a rekordbox",
     "exportTraktor": "Exportando a Traktor",

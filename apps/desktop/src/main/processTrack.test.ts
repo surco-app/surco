@@ -41,6 +41,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     removeRenamedOriginal: vi.fn(async () => {}),
     addToAppleMusic: vi.fn(async () => 'added-id'),
     updateInAppleMusic: vi.fn(async () => 'updated-id'),
+    addToEngineDj: vi.fn(async () => {}),
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
     mkdir: vi.fn(async () => undefined),
@@ -258,6 +259,38 @@ describe('runProcessTrack — Apple Music', () => {
     const deps = mac({ outputFormat: 'flac' })
     await runProcessTrack(job(), deps)
     expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+  })
+})
+
+describe('runProcessTrack — Engine DJ', () => {
+  // The Engine DJ destination registers the written file (the path the library row
+  // points at) after the conversion lands, and announces itself as its own stage so
+  // the row shows what the wait is for.
+  it('registers the output file in the Engine library when the setting is on', async () => {
+    const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {})
+    expect(deps.sendProgress).toHaveBeenCalledWith('engineDj')
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
+  it('leaves the Engine library alone when the setting is off', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job(), deps)
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+  })
+
+  // A failed registration must fail the job loudly (like a failed Apple Music add) —
+  // reporting success while the library was never touched would hide the miss.
+  it('propagates a failed Engine library write', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      addToEngineDj: vi.fn(async () => {
+        throw new Error('biblioteca abierta')
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('biblioteca abierta')
   })
 })
 

@@ -50,6 +50,8 @@ export interface ProcessTrackDeps {
     meta: TrackMetadata,
     coverPath?: string,
   ) => Promise<string | null>
+  // Registers the written file in the user's Engine DJ library database.
+  addToEngineDj: (target: string, meta: TrackMetadata) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
@@ -141,6 +143,14 @@ export async function runProcessTrack(
         ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
           (await deps.addToAppleMusic(target, job.meta, coverPath)))
         : await deps.addToAppleMusic(target, job.meta, coverPath)
+    }
+
+    // The Engine DJ destination points a library row at the file just written; a failed
+    // registration throws and fails the job, like a failed Apple Music add — never a
+    // silent "converted but not in the library".
+    if (settings.addToEngineDj) {
+      stage('engineDj')
+      await deps.addToEngineDj(target, job.meta)
     }
 
     // The add succeeded (a failure would have thrown above), and the temp dir is

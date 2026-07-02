@@ -8,6 +8,7 @@ export const STAGE_PROGRESS: Record<ProcessStage, number> = {
   cover: 0.2,
   converting: 0.55,
   appleMusic: 0.85,
+  engineDj: 0.85,
 }
 
 export interface SweepProgress {
