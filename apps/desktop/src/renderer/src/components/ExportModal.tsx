@@ -2,6 +2,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildEnginePayload } from '../lib/engine'
+import { buildM3u } from '../lib/m3u'
 import { buildRekordboxXml } from '../lib/rekordbox'
 import { buildSeratoCrate } from '../lib/serato'
 import { buildTraktorNml } from '../lib/traktor'
@@ -46,6 +47,13 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
       ext: '.crate',
       hint: tr('export.seratoHint'),
       run: () => window.api.exportSerato(buildSeratoCrate(tracks)),
+    },
+    {
+      id: 'm3u',
+      label: 'M3U8',
+      ext: '.m3u8',
+      hint: tr('export.m3uHint'),
+      run: () => window.api.exportM3u(buildM3u(tracks)),
     },
     {
       id: 'engine',

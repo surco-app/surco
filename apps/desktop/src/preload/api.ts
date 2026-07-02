@@ -79,6 +79,7 @@ export interface Api {
   exportRekordbox: (xml: string) => Promise<string | null>
   exportTraktor: (nml: string) => Promise<string | null>
   exportSerato: (data: Uint8Array) => Promise<string | null>
+  exportM3u: (m3u: string) => Promise<string | null>
   exportEngine: (tracks: EngineExportTrack[], playlistName: string) => Promise<string | null>
   prepareCoverDrag: (src: {
     coverUrl?: string

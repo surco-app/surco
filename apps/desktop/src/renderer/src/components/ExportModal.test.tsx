@@ -10,6 +10,7 @@ const api = {
   exportRekordbox: vi.fn().mockResolvedValue('/out/rekordbox.xml'),
   exportTraktor: vi.fn().mockResolvedValue('/out/collection.nml'),
   exportSerato: vi.fn().mockResolvedValue('/out/Surco.crate'),
+  exportM3u: vi.fn().mockResolvedValue('/out/surco.m3u8'),
   exportEngine: vi.fn().mockResolvedValue('/out/Engine Library'),
 }
 
@@ -88,6 +89,17 @@ describe('ExportModal', () => {
     expect(api.exportSerato).toHaveBeenCalledTimes(1)
     const data = api.exportSerato.mock.calls[0][0] as Uint8Array
     expect(String.fromCharCode(data[0], data[1], data[2], data[3])).toBe('vrsn')
+  })
+
+  // The playlist bridge for everything that isn't DJ software: one row, one plain
+  // UTF-8 file, converted copies preferred like every other export.
+  it('exports an extended M3U8 playlist when M3U8 is chosen', () => {
+    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('export-m3u'))
+    expect(api.exportM3u).toHaveBeenCalledTimes(1)
+    const m3u = api.exportM3u.mock.calls[0][0] as string
+    expect(m3u.startsWith('#EXTM3U\n')).toBe(true)
+    expect(m3u).toContain('/music/a.wav')
   })
 
   // Engine's database is built in the main process, so the modal hands the IPC the serializable

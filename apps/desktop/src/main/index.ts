@@ -579,6 +579,19 @@ function registerIpc(): void {
   // picks — its own fresh library, never the user's existing one. Returns the Engine Library
   // path, or null when cancelled. The renderer ships serializable track data; here we resolve
   // each to the relative path + file size Engine's SQLite schema wants.
+  // Writes an extended M3U8 playlist — the bridge to everything that isn't DJ software.
+  // Returns the saved path, or null when cancelled, like the other exports.
+  ipcMain.handle('dialog:exportM3u', async (_e, m3u: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta a M3U8',
+      defaultPath: 'surco.m3u8',
+      filters: [{ name: 'M3U8 playlist', extensions: ['m3u8', 'm3u'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, m3u, 'utf8')
+    return filePath
+  })
+
   ipcMain.handle(
     'dialog:exportEngine',
     async (_e, tracks: EngineExportTrack[], playlistName: string) => {
