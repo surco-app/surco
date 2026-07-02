@@ -100,6 +100,7 @@ import {
   matchesSearch,
   qualityCounts,
   sortTracks,
+  suspectTracks,
   type TrackSort,
 } from './lib/triage'
 import type { TrackItem } from './types'
@@ -875,6 +876,10 @@ export default function App(): React.JSX.Element {
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(visibleTracks, false))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
+  // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
+  // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
+  // it deletes and a failure per file is still surfaced.
+  const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
   // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
   // including the ones an active format filter is hiding, unlike the toolbar trash button.
   const onClearEverything = useStableCallback(() => askClearAll(tracksRef.current))
@@ -1056,6 +1061,7 @@ export default function App(): React.JSX.Element {
       removeTrack,
       reveal: window.api.reveal,
       askClearAll: onClearEverything,
+      askTrashSuspects: onTrashSuspects,
       openSettings,
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,

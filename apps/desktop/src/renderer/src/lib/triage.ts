@@ -67,6 +67,13 @@ function matchesQuality(track: TrackItem, filter: QualityFilter): boolean {
   return q === filter
 }
 
+// The flagged rips out of a given set, for the one-click "trash the fakes" action. Reuses
+// the suspect filter so the deletion targets exactly the rows the suspect bucket shows —
+// never a genuine-lossless or still-unmeasured track.
+export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
+  return tracks.filter((t) => matchesQuality(t, 'suspect'))
+}
+
 function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
   if (filter === 'unconverted') return track.status !== 'done'
   return Boolean(track.autoMatched)

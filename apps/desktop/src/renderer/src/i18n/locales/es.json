@@ -153,6 +153,7 @@
     "deriveTags": "Rellenar metadatos del nombre",
     "clearMeta": "Borrar metadatos",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
+    "trashSuspects": "Mover los archivos sospechosos a la papelera",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
     "export": "Exportar a software DJ",
     "stats": "Estadísticas",

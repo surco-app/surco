@@ -4,6 +4,7 @@ import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
+import { suspectTracks } from './triage'
 
 export interface Command {
   id: string
@@ -129,6 +130,9 @@ export interface CommandDeps {
   // call window.api.reveal directly.
   reveal: (path: string) => void
   askClearAll: () => void
+  // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
+  // "clean the fakes" that turns the quality sweep into an action, not just a filter.
+  askTrashSuspects: () => void
   openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
   openFindReplace: () => void
   openExport: () => void
@@ -184,6 +188,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     removeTrack,
     reveal,
     askClearAll,
+    askTrashSuspects,
     openSettings,
     openFindReplace,
     openExport,
@@ -366,6 +371,16 @@ export function buildCommands(deps: CommandDeps): Command[] {
         if (analysis) cancelAnalysis()
         else analyzeAllQuality()
       },
+    },
+    {
+      // The payoff of the quality sweep: move every flagged rip to the Trash in one confirmed
+      // step, instead of right-clicking each row. Scoped to the visible set, so a filter narrows
+      // what it deletes; disabled when nothing visible is flagged, so it never fires on an empty set.
+      id: 'trash-suspects',
+      title: tr('commands.trashSuspects'),
+      hint: hintFor('trash-suspects'),
+      enabled: suspectTracks(visibleTracks).length > 0,
+      run: askTrashSuspects,
     },
     {
       // Toggles the Discogs auto-match sweep. Needs a user token and at least one unmatched

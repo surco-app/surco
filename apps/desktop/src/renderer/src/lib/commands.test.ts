@@ -69,6 +69,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     removeTrack: () => {},
     reveal: () => {},
     askClearAll: () => {},
+    askTrashSuspects: () => {},
     openSettings: () => {},
     openFindReplace: () => {},
     openExport: () => {},
@@ -243,6 +244,44 @@ describe('buildCommands convert-and-advance', () => {
     cmd.run()
     expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined)
     expect(moveSelection).toHaveBeenCalledWith(1)
+  })
+})
+
+describe('buildCommands trash-suspects gate', () => {
+  const suspect = (id: string) =>
+    track({
+      id,
+      spectrum: { image: '', cutoffHz: 16000, sampleRateHz: 44100 },
+    } as Partial<TrackItem>)
+  const clean = (id: string) =>
+    track({
+      id,
+      spectrum: { image: '', cutoffHz: 21000, sampleRateHz: 44100 },
+    } as Partial<TrackItem>)
+
+  // The action deletes files, so it must stay disabled unless the visible list actually holds a
+  // flagged rip — a DJ hitting it on an all-clean crate should find nothing to run, not an
+  // empty confirmed deletion. It reads the visible set so a filter that hides the fakes disables it.
+  it('enables the action only when a visible track is flagged as suspect', () => {
+    expect(
+      commandById(makeDeps({ visibleTracks: [suspect('a'), clean('b')] }), 'trash-suspects')
+        .enabled,
+    ).toBe(true)
+    expect(
+      commandById(makeDeps({ visibleTracks: [clean('a'), clean('b')] }), 'trash-suspects').enabled,
+    ).toBe(false)
+    expect(commandById(makeDeps({ visibleTracks: [] }), 'trash-suspects').enabled).toBe(false)
+  })
+
+  // Running it delegates to the injected flow (which confirms and trashes) rather than deleting
+  // inline, keeping the destructive path routed through App's confirm dialog.
+  it('runs the injected trash flow', () => {
+    const askTrashSuspects = vi.fn()
+    commandById(
+      makeDeps({ visibleTracks: [suspect('a')], askTrashSuspects }),
+      'trash-suspects',
+    ).run()
+    expect(askTrashSuspects).toHaveBeenCalledOnce()
   })
 })
 

@@ -11,6 +11,7 @@ import {
   qualityCounts,
   sortTracks,
   sourceFormat,
+  suspectTracks,
   trackQuality,
   tracksToAnalyze,
 } from './triage'
@@ -451,5 +452,36 @@ describe('automatched filter', () => {
 
   it('tallies the auto-matched tracks for its filter badge', () => {
     expect(qualityCounts(tracks).automatched).toBe(2)
+  })
+})
+
+describe('suspectTracks', () => {
+  const t = (id: string, cutoffHz?: number | null, processed = false): TrackItem =>
+    ({
+      id,
+      status: 'idle',
+      spectrum:
+        cutoffHz === undefined
+          ? undefined
+          : { image: '', cutoffHz, sampleRateHz: 44100, processed },
+    }) as TrackItem
+
+  // The one-click "trash the fakes" action must delete exactly what the suspect filter
+  // shows — every flagged rip and nothing that passed as genuine or was never measured —
+  // so a DJ who trusts the sweep isn't handed a surprise deletion.
+  it('returns every flagged rip: amber (warn), red (bad) and enhancer-faked (processed)', () => {
+    const tracks = [
+      t('good', 21000),
+      t('warn', 18000),
+      t('bad', 16000),
+      t('faked', 20000, true),
+      t('fresh'),
+      t('inconclusive', null),
+    ]
+    expect(suspectTracks(tracks).map((x) => x.id)).toEqual(['warn', 'bad', 'faked'])
+  })
+
+  it('returns nothing when no track has a suspect verdict, so the action stays disabled', () => {
+    expect(suspectTracks([t('good', 21000), t('fresh')])).toEqual([])
   })
 })

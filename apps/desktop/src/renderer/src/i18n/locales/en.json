@@ -153,6 +153,7 @@
     "deriveTags": "Fill metadata from file name",
     "clearMeta": "Clear metadata",
     "analyzeQuality": "Analyze quality of all tracks",
+    "trashSuspects": "Move suspect files to Trash",
     "autoMatch": "Auto-match all tracks on Discogs",
     "export": "Export to DJ software",
     "stats": "Stats",
