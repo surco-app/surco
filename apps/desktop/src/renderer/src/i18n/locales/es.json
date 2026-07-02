@@ -523,6 +523,8 @@
     "destinationOverwriteHint": "Reescribe cada archivo en su sitio; sin copia de salida. Cambiar de formato elimina el original.",
     "engineLibraryDir": "Biblioteca de Engine DJ",
     "engineLibraryDirHint": "Surco escribe en la base de datos de esta biblioteca. Cierra Engine DJ mientras conviertes.",
+    "engineDjPlaylist": "Playlist",
+    "engineDjPlaylistHint": "Las pistas convertidas se añaden a esta playlist de tu biblioteca, además de a la colección.",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "autoApplyFilename": "Aplicar el patrón automáticamente",

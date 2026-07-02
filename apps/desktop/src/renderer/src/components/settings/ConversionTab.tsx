@@ -143,6 +143,20 @@ export function ConversionTab({
             </button>
           </div>
           <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineLibraryDirHint')}</p>
+          <label
+            htmlFor="settings-engine-playlist"
+            className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
+          >
+            {tr('settings.engineDjPlaylist')}
+          </label>
+          <input
+            id="settings-engine-playlist"
+            data-testid="settings-engine-playlist"
+            value={synced.engineDjPlaylist}
+            onChange={(e) => patch('engineDjPlaylist', e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm"
+          />
+          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineDjPlaylistHint')}</p>
         </>
       )}
 

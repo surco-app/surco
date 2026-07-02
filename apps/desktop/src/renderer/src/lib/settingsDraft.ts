@@ -11,6 +11,7 @@ export interface SyncedDraft {
   keepOutputCopy: boolean
   overwriteOriginal: boolean
   addToEngineDj: boolean
+  engineDjPlaylist: string
   filenameFormat: string
   autoApplyFilename: boolean
   grouping: string
@@ -55,6 +56,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
     addToEngineDj: s.addToEngineDj,
+    engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,
     autoApplyFilename: s.autoApplyFilename,
     grouping: s.groupingPresets.join(', '),
@@ -79,6 +81,9 @@ export function pickSynced(s: Settings): SyncedDraft {
 // The default applied when the filename format is left blank — every output would collide
 // on one name without at least the artist and title.
 const DEFAULT_FILENAME_FORMAT = '{artist} - {title}'
+// The playlist restored when the Engine DJ field is left blank — a nameless playlist
+// can't be created, and losing the inbox silently would defeat its purpose.
+const DEFAULT_ENGINE_DJ_PLAYLIST = 'Surco'
 // The cover cap restored when the field can't be parsed as a non-negative number.
 const DEFAULT_COVER_MAX_SIZE = 1200
 
@@ -88,7 +93,7 @@ const DEFAULT_COVER_MAX_SIZE = 1200
 // blank, and auto-match forced off when there's no token to run it. Pure so these
 // parse/clamp/gate rules are tested directly rather than only through the modal's Save.
 export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Partial<Settings> {
-  const { grouping, genre, coverMaxSize, filenameFormat, ...rest } = synced
+  const { grouping, genre, coverMaxSize, filenameFormat, engineDjPlaylist, ...rest } = synced
   const max = parseInt(coverMaxSize, 10)
   const token = local.token.trim()
   return {
@@ -96,6 +101,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     discogsToken: token,
     outputDir: local.outputDir,
     engineLibraryDir: local.engineLibraryDir,
+    engineDjPlaylist: engineDjPlaylist.trim() || DEFAULT_ENGINE_DJ_PLAYLIST,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
     genrePresets: splitPresets(genre),

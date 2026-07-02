@@ -2,7 +2,14 @@ import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/prom
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
 import type { TrackMetadata } from '../shared/types'
-import { type EngineTrack, initEngineLibrary, loadSqlJs, TRACK_COLUMNS, trackRow } from './engine'
+import {
+  type EngineTrack,
+  initEngineLibrary,
+  lastId,
+  loadSqlJs,
+  TRACK_COLUMNS,
+  trackRow,
+} from './engine'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
 // conversion destination), unlike engine.ts's export which always builds a fresh
@@ -35,6 +42,7 @@ interface PendingAdd {
   libraryDir: string
   filePath: string
   meta: TrackMetadata
+  playlist: string
   resolve: () => void
   reject: (e: unknown) => void
 }
@@ -50,9 +58,10 @@ export function addToEngineLibrary(
   libraryDir: string,
   filePath: string,
   meta: TrackMetadata,
+  playlist: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    pending.push({ libraryDir, filePath, meta, resolve, reject })
+    pending.push({ libraryDir, filePath, meta, playlist, resolve, reject })
     if (!draining) void drain()
   })
 }
@@ -110,15 +119,18 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       db.exec('PRAGMA table_info(Track)')[0].values.map((row) => String(row[1])),
     )
     const epoch = Math.floor(Date.now() / 1000)
+    const uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
     for (const add of adds) {
       const track = await resolveTrack(libraryDir, add)
       const row = new Map(TRACK_COLUMNS.map((c, i) => [c, trackRow(track, epoch)[i]]))
       const existing = db.exec('SELECT id FROM Track WHERE path = ?', [track.relativePath])
+      let trackId: number
       if (existing.length) {
+        trackId = existing[0].values[0][0] as number
         const cols = UPDATE_COLUMNS.filter((c) => live.has(c))
         db.run(`UPDATE Track SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [
           ...cols.map((c) => row.get(c) ?? null),
-          existing[0].values[0][0] as number,
+          trackId,
         ])
       } else {
         const cols = TRACK_COLUMNS.filter((c) => live.has(c))
@@ -126,7 +138,9 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
           `INSERT INTO Track (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
           cols.map((c) => row.get(c) ?? null),
         )
+        trackId = lastId(db)
       }
+      addToPlaylist(db, add.playlist, trackId, uuid)
     }
     // Write-then-rename so a crash mid-write can never leave a truncated m.db behind.
     const tmp = `${dbPath}.surco-tmp`
@@ -135,6 +149,47 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   } finally {
     db.close()
   }
+}
+
+// Puts the track into the named root playlist — the DJ's "what Surco just converted"
+// inbox — creating the playlist on first use. Membership is deduplicated, so a
+// re-convert never lists the track twice.
+function addToPlaylist(db: Database, title: string, trackId: number, uuid: string): void {
+  const found = db.exec('SELECT id FROM Playlist WHERE title = ? AND parentListId = 0', [title])
+  let listId: number
+  if (found.length) {
+    listId = found[0].values[0][0] as number
+  } else {
+    // Playlist dates are formatted strings (unlike Track dates, which are epoch seconds).
+    // Inserting with nextListId = 0 appends at the sibling tail: the schema's
+    // before/after-insert triggers rechain whichever root playlist used to end the list.
+    const now = new Date()
+    const pad = (n: number): string => String(n).padStart(2, '0')
+    const lastEdit = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+    db.run(
+      'INSERT INTO Playlist (title, parentListId, isPersisted, nextListId, lastEditTime, isExplicitlyExported) VALUES (?, 0, 1, 0, ?, 1)',
+      [title, lastEdit],
+    )
+    listId = lastId(db)
+  }
+  const member = db.exec(
+    'SELECT id FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND databaseUuid = ?',
+    [listId, trackId, uuid],
+  )
+  if (member.length) return
+  // PlaylistEntity is an intrusive forward-linked list (0 = tail): insert the new
+  // entity as the tail, then point the previous tail at it so Engine reads the
+  // playlist back in add order.
+  db.run(
+    'INSERT INTO PlaylistEntity (listId, trackId, databaseUuid, nextEntityId, membershipReference) VALUES (?, ?, ?, 0, 0)',
+    [listId, trackId, uuid],
+  )
+  const entityId = lastId(db)
+  db.run('UPDATE PlaylistEntity SET nextEntityId = ? WHERE listId = ? AND nextEntityId = 0 AND id <> ?', [
+    entityId,
+    listId,
+    entityId,
+  ])
 }
 
 async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<EngineTrack> {

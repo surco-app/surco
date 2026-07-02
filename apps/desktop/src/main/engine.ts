@@ -143,7 +143,7 @@ export async function loadSqlJs(): Promise<SqlJsStatic> {
   return sqlJs
 }
 
-function lastId(db: Database): number {
+export function lastId(db: Database): number {
   return db.exec('SELECT last_insert_rowid()')[0].values[0][0] as number
 }
 

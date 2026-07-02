@@ -523,6 +523,8 @@
     "destinationOverwriteHint": "Rewrites each source file in place; no output copy. Changing format removes the original.",
     "engineLibraryDir": "Engine DJ library",
     "engineLibraryDirHint": "Surco writes into this library's database. Close Engine DJ while converting.",
+    "engineDjPlaylist": "Playlist",
+    "engineDjPlaylistHint": "Converted tracks are added to this playlist in your library, on top of the collection.",
     "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
     "autoApplyFilename": "Apply the pattern automatically",

@@ -16,6 +16,7 @@ const settings: Settings = {
   overwriteOriginal: false,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
+  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   autoApplyFilename: false,
   groupingPresets: ['House'],

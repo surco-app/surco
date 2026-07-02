@@ -84,6 +84,9 @@ export interface Settings {
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
+  // The root playlist Engine DJ conversions land in (the "what Surco just converted"
+  // inbox), created on first use. 'Surco' by default; a blank save restores it.
+  engineDjPlaylist: string
   filenameFormat: string
   // When on, the output name is derived from filenameFormat automatically as metadata
   // changes, so the user never has to press "Regenerate"; a manual edit still wins. Off

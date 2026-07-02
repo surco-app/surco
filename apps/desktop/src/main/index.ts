@@ -635,7 +635,10 @@ function registerIpc(): void {
         return activity.track(
           'export',
           'activity.engineAdd',
-          () => addToEngineLibrary(getSettings().engineLibraryDir, target, meta),
+          () => {
+            const s = getSettings()
+            return addToEngineLibrary(s.engineLibraryDir, target, meta, s.engineDjPlaylist)
+          },
           { labelParams: { track } },
         )
       },

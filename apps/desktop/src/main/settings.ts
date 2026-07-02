@@ -30,6 +30,7 @@ const defaults: Settings = {
   addToEngineDj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
+  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   // Off by default: the metadata-derived name stays opt-in (the "Regenerate" button), so a
   // plain "load and convert" keeps the source file name until the user turns this on.

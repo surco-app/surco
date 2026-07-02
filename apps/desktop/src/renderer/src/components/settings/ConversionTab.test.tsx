@@ -20,6 +20,7 @@ const synced: SyncedDraft = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   addToEngineDj: false,
+  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   autoApplyFilename: false,
   grouping: '',
@@ -122,5 +123,18 @@ describe('ConversionTab Engine DJ destination', () => {
     renderTab({ outputFormat: 'flac' })
     expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
     expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
+  })
+
+  // The playlist is where the DJ finds what Surco converted, so it belongs with the
+  // destination — editable, seeded from the setting, staged through the draft patch.
+  it('shows the editable playlist field only while Engine DJ is the destination', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-engine-playlist')).toBeNull()
+    cleanup()
+    const patch = renderTab({ addToEngineDj: true })
+    const field = screen.getByTestId('settings-engine-playlist')
+    expect(field).toHaveValue('Surco')
+    fireEvent.change(field, { target: { value: 'Pool' } })
+    expect(patch).toHaveBeenCalledWith('engineDjPlaylist', 'Pool')
   })
 })

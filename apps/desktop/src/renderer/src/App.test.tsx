@@ -52,6 +52,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     overwriteOriginal: false,
     addToEngineDj: false,
     engineLibraryDir: '/music/Engine Library',
+    engineDjPlaylist: 'Surco',
     filenameFormat: '{artist} - {title}',
     autoApplyFilename: false,
     groupingPresets: [],
