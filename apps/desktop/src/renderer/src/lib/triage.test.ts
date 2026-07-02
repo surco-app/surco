@@ -171,7 +171,7 @@ describe('matchesFilter / qualityCounts', () => {
 })
 
 describe('Apple Music library filter', () => {
-  const t = (id: string, inAppleMusic?: boolean): TrackItem => ({ id, inAppleMusic }) as TrackItem
+  const t = (id: string, inLibrary?: boolean): TrackItem => ({ id, inLibrary }) as TrackItem
   // 'unknown' has no verdict yet (library not loaded, or non-macOS) — neither filter
   // should claim it, or the user sees a track in both "owned" and "missing" buckets.
   const tracks = [t('owned', true), t('missing', false), t('unknown')]
@@ -192,7 +192,7 @@ describe('Apple Music library filter', () => {
 })
 
 describe('filterWithSticky', () => {
-  const t = (id: string, inAppleMusic?: boolean): TrackItem => ({ id, inAppleMusic }) as TrackItem
+  const t = (id: string, inLibrary?: boolean): TrackItem => ({ id, inLibrary }) as TrackItem
   const am = (id: string, autoMatched?: boolean): TrackItem =>
     ({ id, status: 'idle', autoMatched }) as TrackItem
 
@@ -201,7 +201,7 @@ describe('filterWithSticky', () => {
   it('keeps a row pinned under the library filter after a background auto-match flips its verdict', () => {
     // This is the whole point: the user filters to "not in Apple Music", then while they
     // hunt the right match in the second column a background auto-match rewrites a row's
-    // tags to the canonical name, which now matches the library and flips inAppleMusic
+    // tags to the canonical name, which now matches the library and flips inLibrary
     // true. Without pinning the row would vanish from under them mid-work.
     const sticky = new Set<string>()
     expect(
@@ -258,11 +258,11 @@ describe('filterWithSticky', () => {
     // A pinned row survives a background library flip, but must still satisfy the other
     // axes: if a completed analysis moves it out of the co-active quality bucket it should
     // drop, so stickiness never widens beyond the one verdict it's meant to hold steady.
-    const q = (id: string, cutoffHz: number | null, inAppleMusic: boolean): TrackItem =>
+    const q = (id: string, cutoffHz: number | null, inLibrary: boolean): TrackItem =>
       ({
         id,
         status: 'idle',
-        inAppleMusic,
+        inLibrary,
         spectrum: { image: '', cutoffHz, sampleRateHz: 44100 },
       }) as TrackItem
     const sticky = new Set<string>()

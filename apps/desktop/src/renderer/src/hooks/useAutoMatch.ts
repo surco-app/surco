@@ -145,7 +145,7 @@ export function useAutoMatch({
         autoMatched: true,
         matched: true,
         matchConfidence: m.confidence,
-        ...(resolvedOwned ? { inAppleMusicResolved: true } : {}),
+        ...(resolvedOwned ? { inLibraryResolved: true } : {}),
       })
     },
     [searchApiAt, updateTrack, tracksRef, libraryIndexRef],

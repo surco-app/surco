@@ -69,6 +69,9 @@ export interface Api {
   // The whole Apple Music library as title/artist pairs, matched against the crate in
   // the renderer to flag already-owned tracks. Empty off macOS.
   loadAppleMusicLibrary: () => Promise<AppleMusicLookupCandidate[]>
+  // The Engine DJ library's rows in the same candidate shape, for the same membership
+  // check when Engine DJ is the conversion destination. Empty when no library exists.
+  loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>
   // Both resolve with the persistent ID of the library copy they added or synced
   // (undefined off macOS), the handle the renderer stores to update or reveal that
   // exact copy later.

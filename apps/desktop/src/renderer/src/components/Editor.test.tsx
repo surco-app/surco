@@ -107,6 +107,8 @@ function renderEditor(
     showLoudness?: boolean
     normalize?: NormalizeConfig
     overwriteOriginal?: boolean
+    addToAppleMusic?: boolean
+    addToEngineDj?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
@@ -155,6 +157,11 @@ function renderEditor(
     />,
     {
       outputFormat,
+      // The membership badge follows the conversion destination now; Apple Music (the
+      // pre-destination-aware behaviour every badge test was written against) unless a
+      // test opts into another destination.
+      addToAppleMusic: props.addToAppleMusic ?? true,
+      addToEngineDj: props.addToEngineDj ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
       replaceLowResCover: props.replaceLowResCover ?? false,
       autoApplyFilename: props.autoApplyFilename ?? false,
@@ -370,7 +377,7 @@ describe('Editor clear metadata', () => {
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.
       matchReview: false,
       // ...and the Discogs-proven "owned" verdict, so it re-resolves against the retag.
-      inAppleMusicResolved: false,
+      inLibraryResolved: false,
     })
   })
 })
@@ -1342,7 +1349,7 @@ describe('Editor Discogs apply', () => {
   // The fix for the badge/filter disagreement: a file whose own tags the Apple Music
   // library can't recognise ('Bootleg Rip') but whose confidently-matched release resolves
   // to the canonical artist the library knows ('The Artist') must persist the owned verdict
-  // (inAppleMusicResolved) — not just flip the badge — so the list and its filter agree with
+  // (inLibraryResolved) — not just flip the badge — so the list and its filter agree with
   // the badge instead of still counting the track as not owned.
   it('persists the owned verdict when a confident release proves the track is in the library', async () => {
     const { getRelease } = withDiscogs()
@@ -1357,7 +1364,7 @@ describe('Editor Discogs apply', () => {
     await search()
     // The matching release auto-opens, so the editor's second library check (on the canonical
     // suggestion) runs without the user picking anything; that resolves owned and persists it.
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ inAppleMusicResolved: true }))
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ inLibraryResolved: true }))
     expect(getRelease).toHaveBeenCalled()
   })
 
@@ -1374,7 +1381,7 @@ describe('Editor Discogs apply', () => {
     )
     await search()
     await screen.findAllByTestId('discogs-track')
-    expect(onChange).not.toHaveBeenCalledWith({ inAppleMusicResolved: true })
+    expect(onChange).not.toHaveBeenCalledWith({ inLibraryResolved: true })
   })
 
   // The probe is a guess that must never mutate the song — only opening the album
@@ -1826,6 +1833,20 @@ describe('Editor Apple Music library badge', () => {
     })
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
       'Already in your Apple Music library',
+    )
+  })
+
+  // With Engine DJ as the destination the same badge reads the Engine library — and
+  // names it, so the user never wonders which library "already in" refers to. Not
+  // macOS-gated: the Engine database is plain SQLite on every platform.
+  it('names Engine DJ when it is the destination library', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      addToAppleMusic: false,
+      addToEngineDj: true,
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
+      'Already in your Engine DJ library',
     )
   })
 

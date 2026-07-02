@@ -149,6 +149,7 @@ export async function runProcessTrack(
     // The Engine DJ destination points a library row at the file just written; a failed
     // registration throws and fails the job, like a failed Apple Music add — never a
     // silent "converted but not in the library".
+    let addedToEngineDj: true | undefined
     if (settings.addToEngineDj) {
       stage('engineDj')
       // Engine renders artwork from its own database, never from the file's tags, so
@@ -166,6 +167,7 @@ export async function runProcessTrack(
       }
       try {
         await deps.addToEngineDj(target, job.meta, coverPath ?? extracted?.path)
+        addedToEngineDj = true
       } finally {
         if (extracted) await extracted.cleanup()
       }
@@ -186,7 +188,7 @@ export async function runProcessTrack(
     // The conversion wrote a real file the renderer may play next — directly, or
     // as the track's new source after an in-place rename — so let surco:// serve it.
     deps.allowMedia(target)
-    return { outputPath: target, inPlace, musicPersistentId, normalizeSkipped }
+    return { outputPath: target, inPlace, musicPersistentId, normalizeSkipped, addedToEngineDj }
   } finally {
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })

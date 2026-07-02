@@ -17,6 +17,7 @@ import {
 import type React from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { LibrarySource } from '../lib/librarySource'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
 import { Tooltip } from './Tooltip'
 
@@ -68,6 +69,9 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
 interface Props {
   // The sticky filter header, measured by App when paging the scroll position.
   filterRef: React.RefObject<HTMLDivElement | null>
+  // Which library the membership buckets read (the conversion destination's), so their
+  // labels name the right one — "In Engine DJ" when conversions land there.
+  librarySource: LibrarySource
   // The combined selection — one choice per axis (quality / conversion / library / format),
   // all ANDed. The bar toggles a single axis per click and leaves the menu open, so picking
   // one from each section stacks the filters instead of replacing the previous choice.
@@ -108,6 +112,7 @@ interface Props {
 // arrow keys move).
 export function QualityFilterBar({
   filterRef,
+  librarySource,
   value,
   onChange,
   tally,
@@ -121,6 +126,12 @@ export function QualityFilterBar({
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // The library buckets are shared mode strings; only their display names depend on
+  // which library is active, so the swap lives here rather than forking the modes.
+  const filterLabel = (mode: string): string =>
+    librarySource === 'engineDj' && (mode === 'inLibrary' || mode === 'notInLibrary')
+      ? tr(`sidebar.filter.${mode}Engine`)
+      : tr(`sidebar.filter.${mode}`)
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -238,7 +249,7 @@ export function QualityFilterBar({
   if (value.library)
     activeChips.push({
       Icon: FILTER_ICONS[value.library],
-      label: tr(`sidebar.filter.${value.library}`),
+      label: filterLabel(value.library),
       count: countOf(value.library),
     })
   if (value.duplicates)
@@ -296,7 +307,7 @@ export function QualityFilterBar({
           <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
           {dot && <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`} />}
         </span>
-        <span className="flex-1">{tr(`sidebar.filter.${mode}`)}</span>
+        <span className="flex-1">{filterLabel(mode)}</span>
         <span className="tabular-nums text-fg-dim">
           {mode === 'all' ? trackCount : countOf(mode)}
         </span>

@@ -33,7 +33,11 @@ function track(id: string, meta: Partial<TrackMetadata> = {}, extra: Partial<Tra
 
 const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateHz: 44100 }
 
-function setup(initialTracks: TrackItem[], client = new QueryClient()) {
+function setup(
+  initialTracks: TrackItem[],
+  client = new QueryClient(),
+  source: 'appleMusic' | 'engineDj' | null = 'appleMusic',
+) {
   setApi()
   const wrapper = ({ children }: { children: React.ReactNode }): React.JSX.Element => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -41,7 +45,7 @@ function setup(initialTracks: TrackItem[], client = new QueryClient()) {
   const rendered = renderHook(
     ({ tracks }: { tracks: TrackItem[] }) => {
       const viewCache = useRef(new Map<string, ViewCacheEntry>())
-      return useTracksView(tracks, viewCache)
+      return useTracksView(tracks, viewCache, source)
     },
     { wrapper, initialProps: { tracks: initialTracks } },
   )
@@ -82,7 +86,20 @@ describe('useTracksView', () => {
   // definition — it must read in-library even before any snapshot loads.
   it('treats a track it added to Apple Music as owned without a snapshot', () => {
     const { result } = setup([track('a', {}, { musicPersistentId: 'X1' })])
-    expect(result.current.tracksView[0].inAppleMusic).toBe(true)
+    expect(result.current.tracksView[0].inLibrary).toBe(true)
+  })
+
+  // Ownership is per-library: an Apple Music persistent ID says nothing about the
+  // Engine database, and vice versa — mixing them would flag tracks the destination
+  // library has never seen.
+  it('scopes the owned-by-definition flags to the active library source', () => {
+    const { result } = setup(
+      [track('a', {}, { musicPersistentId: 'X1' }), track('b', {}, { engineDjAdded: true })],
+      new QueryClient(),
+      'engineDj',
+    )
+    expect(result.current.tracksView[0].inLibrary).toBeUndefined()
+    expect(result.current.tracksView[1].inLibrary).toBe(true)
   })
 
   // Two files carrying the same folded artist+title are the same song twice; the

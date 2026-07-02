@@ -403,6 +403,9 @@ export interface ProcessResult {
   // conversion added or updated one. The renderer stores it so later syncs,
   // manual updates and reveals address this exact copy.
   musicPersistentId?: string
+  // True when the conversion registered the track in the Engine DJ library, so the
+  // renderer can mark it owned there without waiting for a library snapshot refresh.
+  addedToEngineDj?: boolean
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

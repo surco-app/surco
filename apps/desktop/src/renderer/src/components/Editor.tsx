@@ -24,6 +24,7 @@ import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { renderOutputName } from '../lib/outputName'
+import { librarySourceOf } from '../lib/librarySource'
 import { isMacOS } from '../lib/platform'
 import { isLowResCover } from '../lib/quality'
 import {
@@ -154,6 +155,12 @@ export const Editor = memo(function Editor({
     keyNotation,
     normalize,
   } = useAppSettings()
+  // Which library the membership badge reads — the conversion destination's. Null
+  // (folder/overwrite, or Apple Music off macOS) hides the badge entirely.
+  const librarySource = librarySourceOf(
+    { addToAppleMusic, addToEngineDj, overwriteOriginal, outputFormat },
+    isMacOS(),
+  )
   const hasToken = discogsToken !== ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
@@ -286,16 +293,18 @@ export const Editor = memo(function Editor({
     ],
   )
 
-  // Hint of whether the song is already in the Apple Music library, so the user doesn't
+  // Hint of whether the song is already in the destination's library — Apple Music or
+  // the Engine DJ database, whichever conversions land in — so the user doesn't
   // re-import it. Read from the same session snapshot the list and quality filter use
   // (isInLibrary on item.meta); the editor additionally accepts a confident Discogs
   // suggestion, so opening the right release can flip a tag the raw filename couldn't match.
   // That Discogs-proven verdict is persisted (resolvedViaDiscogs, below) so the row and
-  // filter agree with this badge. A track Surco itself added (musicPersistentId) counts as
-  // owned even before the snapshot lands; 'idle' hides the badge off macOS and until it arrives.
-  // 'checking' covers the gap that used to flicker "not in library": the raw tags don't match
-  // but Discogs is still resolving (the auto-search's debounce, request or release load), so
-  // its match could still flip this to 'yes' — only once that work settles without a match do
+  // filter agree with this badge. A track Surco itself added counts as owned even before
+  // the snapshot lands — via its Apple Music persistent ID or its Engine add flag,
+  // whichever library is active. 'idle' hides the badge when no library destination is
+  // chosen and until the snapshot arrives. 'checking' covers the gap that used to flicker
+  // "not in library": the raw tags don't match but Discogs is still resolving, so its
+  // match could still flip this to 'yes' — only once that work settles without a match do
   // we commit to 'no'.
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
   const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = useMemo(():
@@ -303,15 +312,21 @@ export const Editor = memo(function Editor({
     | 'yes'
     | 'no'
     | 'checking' => {
-    if (!isMacOS()) return 'idle'
-    if (item.musicPersistentId || item.inAppleMusicResolved) return 'yes'
+    if (!librarySource) return 'idle'
+    const owned =
+      librarySource === 'appleMusic'
+        ? item.musicPersistentId || item.inLibraryResolved
+        : item.engineDjAdded || item.inLibraryResolved
+    if (owned) return 'yes'
     if (!libraryIndex) return 'idle'
     if (isInLibrary(libraryIndex, ownTags)) return 'yes'
     if (resolvedViaDiscogs) return 'yes'
     return discogsResolving ? 'checking' : 'no'
   }, [
+    librarySource,
     item.musicPersistentId,
-    item.inAppleMusicResolved,
+    item.engineDjAdded,
+    item.inLibraryResolved,
     item.meta.title,
     item.meta.artist,
     item.duration,
@@ -326,8 +341,8 @@ export const Editor = memo(function Editor({
   // flag without disturbing the open edits.
   // biome-ignore lint/correctness/useExhaustiveDependencies: onChange is identity-stable (App's useStableCallback); excluding it keeps this effect from re-firing on unrelated App renders.
   useEffect(() => {
-    if (resolvedViaDiscogs && !item.inAppleMusicResolved) onChange({ inAppleMusicResolved: true })
-  }, [resolvedViaDiscogs, item.inAppleMusicResolved])
+    if (resolvedViaDiscogs && !item.inLibraryResolved) onChange({ inLibraryResolved: true })
+  }, [resolvedViaDiscogs, item.inLibraryResolved])
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
@@ -410,7 +425,7 @@ export const Editor = memo(function Editor({
     // Clearing the tags un-matches the track, so the sweep may fill it again — including
     // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven
     // owned verdict so it re-resolves against whatever the retag matches.
-    else onChange({ meta: blank, matched: false, matchReview: false, inAppleMusicResolved: false })
+    else onChange({ meta: blank, matched: false, matchReview: false, inLibraryResolved: false })
   }
 
   const stale = isStale(item)
@@ -583,7 +598,7 @@ export const Editor = memo(function Editor({
                     className="inline-flex items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
                   >
                     <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tr('editor.inLibrary')}
+                    {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
                   </span>
                 )}
                 {!isMulti && inLibrary === 'no' && (
@@ -592,7 +607,11 @@ export const Editor = memo(function Editor({
                     className="inline-flex items-center gap-1.5 rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
                   >
                     <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tr('editor.notInLibrary')}
+                    {tr(
+                      librarySource === 'engineDj'
+                        ? 'editor.notInLibraryEngine'
+                        : 'editor.notInLibrary',
+                    )}
                   </span>
                 )}
                 {/* The in-between state: Discogs is still searching, so its match could yet

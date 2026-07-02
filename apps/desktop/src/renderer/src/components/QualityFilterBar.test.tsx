@@ -29,6 +29,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
   render(
     <QualityFilterBar
       filterRef={createRef()}
+      librarySource="appleMusic"
       value={sel()}
       onChange={onChange}
       tally={tally()}

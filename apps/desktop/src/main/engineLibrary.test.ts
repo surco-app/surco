@@ -370,3 +370,26 @@ describe('addToEngineLibrary — album art', () => {
     db.close()
   })
 })
+
+describe('dumpEngineLibrary', () => {
+  let root: string
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), 'surco-engine-dump-'))
+  })
+
+  // The membership check matches by title/artist/duration, the same shape the Apple
+  // Music dump feeds the renderer's index with.
+  it('reads the library rows as membership candidates', async () => {
+    const lib = join(root, 'lib', 'Engine Library')
+    await addToEngineLibrary(lib, await makeFile(root, 'd1.aiff'), meta({ title: 'Dump One' }), 'Surco')
+    const { dumpEngineLibrary } = await import('./engineLibrary')
+    expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Dump One', artist: 'A' }])
+  })
+
+  // No library yet (the user never converted there) is a normal state, not an error:
+  // every row simply stays without a verdict.
+  it('reports an empty library when the database is missing', async () => {
+    const { dumpEngineLibrary } = await import('./engineLibrary')
+    expect(await dumpEngineLibrary(join(root, 'nowhere', 'Engine Library'))).toEqual([])
+  })
+})

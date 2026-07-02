@@ -204,7 +204,7 @@ describe('useAutoMatch', () => {
   // match the library ('Unknown DJ') but whose confident Discogs match resolves to the
   // canonical artist the library knows ('Artist') must be pinned owned, so the list/filter
   // agree with the editor's badge without the user opening the row.
-  it('pins inAppleMusicResolved when the canonical match proves the track is owned', async () => {
+  it('pins inLibraryResolved when the canonical match proves the track is owned', async () => {
     setApi()
     const t = track('a')
     // Raw tags the library can't recognise; the Discogs match canonicalises the artist.
@@ -217,14 +217,14 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(updateTrack).toHaveBeenCalled())
     expect(updateTrack).toHaveBeenCalledWith(
       'a',
-      expect.objectContaining({ autoMatched: true, inAppleMusicResolved: true }),
+      expect.objectContaining({ autoMatched: true, inLibraryResolved: true }),
     )
   })
 
   // The list already recomputes the not-owned verdict from the raw tags, so the sweep must
   // not pin a verdict when the canonical match isn't in the library — pinning false would be
   // redundant and would fight a snapshot that lands later.
-  it('does not pin inAppleMusicResolved when the match is not in the library', async () => {
+  it('does not pin inLibraryResolved when the match is not in the library', async () => {
     setApi()
     const t = track('a')
     const index = buildLibraryIndex([{ title: 'Something Else', artist: 'Other' }])
@@ -235,7 +235,7 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(updateTrack).toHaveBeenCalled())
     const patch = updateTrack.mock.calls[0][1]
     expect(patch.autoMatched).toBe(true)
-    expect(patch.inAppleMusicResolved).toBeUndefined()
+    expect(patch.inLibraryResolved).toBeUndefined()
   })
 
   // The track the user is looking at must resolve now, not wait behind the rest of the

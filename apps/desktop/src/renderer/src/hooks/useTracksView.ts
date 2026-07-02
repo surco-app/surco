@@ -3,8 +3,9 @@ import { type RefObject, useMemo } from 'react'
 import type { SpectrumResult } from '../../../shared/types'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { duplicateIds } from '../lib/duplicates'
+import type { LibrarySource } from '../lib/librarySource'
 import type { TrackItem } from '../types'
-import { useAppleMusicLibrary } from './useAppleMusicLibrary'
+import { useLibraryMembership } from './useLibraryMembership'
 import { spectrogramOptions } from './useSpectrogram'
 
 // One cache entry per track: the inputs the merged view was built from (track object,
@@ -18,13 +19,14 @@ export interface ViewCacheEntry {
   view: TrackItem
 }
 
-// Merges each track's cached spectrum and Apple Music "already owned" verdict onto it,
-// preserving object identity so the memoized list rows only re-render when their own
-// data lands. The identity cache is owned by App (so its track-removal callbacks can
-// evict an entry) and threaded in.
+// Merges each track's cached spectrum and destination-library "already owned" verdict
+// onto it, preserving object identity so the memoized list rows only re-render when
+// their own data lands. The identity cache is owned by App (so its track-removal
+// callbacks can evict an entry) and threaded in.
 export function useTracksView(
   tracks: TrackItem[],
   viewCache: RefObject<Map<string, ViewCacheEntry>>,
+  librarySource: LibrarySource,
 ): { tracksView: TrackItem[]; libraryIndex: AppleMusicIndex | null } {
   // Each track's spectrum, read from the shared React Query cache the hover prefetch,
   // the analyze sweep and the editor all fill. enabled:false so the list only observes —
@@ -40,10 +42,10 @@ export function useTracksView(
     })),
     combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
   })
-  // The session snapshot of the Apple Music library, fetched once there are tracks to
-  // check, so each row's "already owned" verdict is a local lookup rather than an
-  // osascript per track. Null until it lands / off macOS.
-  const libraryIndex = useAppleMusicLibrary(tracks.length)
+  // The session snapshot of the destination's library (Apple Music or Engine DJ),
+  // fetched once there are tracks to check, so each row's "already owned" verdict is a
+  // local lookup rather than a process per track. Null until it lands or with no source.
+  const libraryIndex = useLibraryMembership(tracks.length, librarySource)
   // Merge each cached spectrum and the Apple Music verdict onto its track for the quality
   // triage and the list, preserving object identity (via viewCache, now keyed on the
   // library snapshot too) so memoized rows don't all re-render. Memoized so a progress
@@ -60,27 +62,32 @@ export function useTracksView(
     const dups = duplicateIds(tracks)
     return tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
-        // inAppleMusicResolved is the verdict the editor/sweep already confirmed against
+        // inLibraryResolved is the verdict the editor/sweep already confirmed against
         // the canonical Discogs match — the raw tags can't reach it here, so OR it in so
         // the list and filter agree with the editor's badge instead of reading not-owned.
-        const inAppleMusic =
-          t.musicPersistentId || t.inAppleMusicResolved
-            ? true
-            : libraryIndex
-              ? isInLibrary(libraryIndex, {
-                  title: t.meta.title,
-                  artist: t.meta.artist,
-                  durationSec: t.duration,
-                })
-              : undefined
+        // What "Surco itself added it" means depends on the source: an Apple Music
+        // persistent ID only proves membership THERE, and an Engine add only there.
+        const owned =
+          librarySource === 'appleMusic'
+            ? t.musicPersistentId || t.inLibraryResolved
+            : t.engineDjAdded || t.inLibraryResolved
+        const inLibrary = owned
+          ? true
+          : libraryIndex
+            ? isInLibrary(libraryIndex, {
+                title: t.meta.title,
+                artist: t.meta.artist,
+                durationSec: t.duration,
+              })
+            : undefined
         const dup = dups.has(t.id)
         if (!spectrum && fetching) {
           const view: TrackItem = { ...t, analyzing: true }
-          if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
+          if (inLibrary !== undefined) view.inLibrary = inLibrary
           if (dup) view.duplicate = true
           return view
         }
-        if (!spectrum && inAppleMusic === undefined && !dup) return t
+        if (!spectrum && inLibrary === undefined && !dup) return t
         const cached = viewCache.current.get(t.id)
         if (
           cached &&
@@ -92,11 +99,11 @@ export function useTracksView(
           return cached.view
         const view: TrackItem = { ...t }
         if (spectrum) view.spectrum = spectrum
-        if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
+        if (inLibrary !== undefined) view.inLibrary = inLibrary
         if (dup) view.duplicate = true
         viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, dup, view })
         return view
       })
-  }, [tracks, spectra, libraryIndex])
+  }, [tracks, spectra, libraryIndex, librarySource])
   return { tracksView, libraryIndex }
 }

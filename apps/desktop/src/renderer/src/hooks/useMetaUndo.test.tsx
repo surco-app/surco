@@ -57,7 +57,7 @@ describe('useMetaUndo', () => {
   // get silently re-matched and overwritten by the next sweep.
   it('restores the match flags a clear dropped', () => {
     const cleared = setup([
-      track('a', { title: 'Matched' }, { matched: true, matchConfidence: 0.93, inAppleMusicResolved: true }),
+      track('a', { title: 'Matched' }, { matched: true, matchConfidence: 0.93, inLibraryResolved: true }),
     ])
     act(() => {
       cleared.result.current.record(cleared.result.current.tracks)
@@ -67,7 +67,7 @@ describe('useMetaUndo', () => {
           meta: emptyMetadata(),
           matched: false,
           matchConfidence: undefined,
-          inAppleMusicResolved: false,
+          inLibraryResolved: false,
         })),
       )
     })
@@ -77,7 +77,7 @@ describe('useMetaUndo', () => {
     const restored = cleared.result.current.tracks[0]
     expect(restored.matched).toBe(true)
     expect(restored.matchConfidence).toBe(0.93)
-    expect(restored.inAppleMusicResolved).toBe(true)
+    expect(restored.inLibraryResolved).toBe(true)
   })
 
   // Two successive operations must unwind in reverse order, or undoing after a

@@ -31,7 +31,7 @@ import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { addToAppleMusic, appleMusicLimiter, updateInAppleMusic } from './applemusic'
-import { addToEngineLibrary } from './engineLibrary'
+import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
@@ -590,6 +590,23 @@ function registerIpc(): void {
   })
 
   registerExportIpc()
+
+  // The Engine-library counterpart of applemusic:library: the title/artist/duration
+  // snapshot the renderer matches the crate against when Engine DJ is the destination.
+  // Read-only, so it is safe while Engine DJ itself is open.
+  ipcMain.handle('engine:library', () =>
+    activity.track(
+      'export',
+      'activity.engineLibrary',
+      () => dumpEngineLibrary(getSettings().engineLibraryDir),
+      {
+        summary: (lib) => ({
+          detailKey: 'activity.trackCount',
+          detailParams: { count: lib.length },
+        }),
+      },
+    ),
+  )
 
   ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
     getProvider(provider).search(query, priority, hints),

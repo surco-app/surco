@@ -18,7 +18,7 @@ interface MetaSnapshot {
   matchReview: TrackItem['matchReview']
   reviewMatch: TrackItem['reviewMatch']
   matchConfidence: TrackItem['matchConfidence']
-  inAppleMusicResolved: TrackItem['inAppleMusicResolved']
+  inLibraryResolved: TrackItem['inLibraryResolved']
 }
 
 export interface MetaUndo {
@@ -53,7 +53,7 @@ export function useMetaUndo(
         matchReview: t.matchReview,
         reviewMatch: t.reviewMatch,
         matchConfidence: t.matchConfidence,
-        inAppleMusicResolved: t.inAppleMusicResolved,
+        inLibraryResolved: t.inLibraryResolved,
       })),
     )
     if (stack.current.length > MAX_META_UNDO) stack.current.shift()
@@ -79,7 +79,7 @@ export function useMetaUndo(
           matchReview: s.matchReview,
           reviewMatch: s.reviewMatch,
           matchConfidence: s.matchConfidence,
-          inAppleMusicResolved: s.inAppleMusicResolved,
+          inLibraryResolved: s.inLibraryResolved,
         }
       }),
     )

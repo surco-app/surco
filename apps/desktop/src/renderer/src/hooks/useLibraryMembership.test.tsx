@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useAppleMusicLibrary } from './useAppleMusicLibrary'
+import { useLibraryMembership } from './useLibraryMembership'
 
 function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = over
@@ -19,7 +19,7 @@ function wrapper() {
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('useAppleMusicLibrary', () => {
+describe('useLibraryMembership', () => {
   // The library changes in Music while Surco is in the background. Returning to Surco
   // should pick up those adds — but only once the snapshot is old enough, so a quick
   // alt-tab doesn't re-dump the whole library every time.
@@ -27,14 +27,13 @@ describe('useAppleMusicLibrary', () => {
     let focusCb: (focused: boolean) => void = () => {}
     const load = vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }])
     setApi({
-      platform: 'darwin',
       loadAppleMusicLibrary: load,
       onWindowFocus: (cb: (f: boolean) => void) => {
         focusCb = cb
         return () => {}
       },
     })
-    renderHook(() => useAppleMusicLibrary(3), { wrapper: wrapper() })
+    renderHook(() => useLibraryMembership(3, 'appleMusic'), { wrapper: wrapper() })
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1))
 
     // Fresh snapshot: a refocus must not re-dump the library.
@@ -47,11 +46,34 @@ describe('useAppleMusicLibrary', () => {
     await waitFor(() => expect(load).toHaveBeenCalledTimes(2))
   })
 
-  it('does not query the library off macOS', async () => {
-    const load = vi.fn().mockResolvedValue([])
-    setApi({ platform: 'win32', loadAppleMusicLibrary: load, onWindowFocus: () => () => {} })
-    renderHook(() => useAppleMusicLibrary(3), { wrapper: wrapper() })
+  // Folder / overwrite destinations land in no library — there is nothing to check,
+  // so neither bridge should be spawned.
+  it('queries nothing without a library source', async () => {
+    const apple = vi.fn().mockResolvedValue([])
+    const engine = vi.fn().mockResolvedValue([])
+    setApi({
+      loadAppleMusicLibrary: apple,
+      loadEngineLibrary: engine,
+      onWindowFocus: () => () => {},
+    })
+    renderHook(() => useLibraryMembership(3, null), { wrapper: wrapper() })
     await Promise.resolve()
-    expect(load).not.toHaveBeenCalled()
+    expect(apple).not.toHaveBeenCalled()
+    expect(engine).not.toHaveBeenCalled()
+  })
+
+  // The Engine DJ destination reads the Engine database, never the Apple Music bridge —
+  // that is the whole point of the destination-aware check.
+  it('reads the Engine library when it is the source', async () => {
+    const apple = vi.fn().mockResolvedValue([])
+    const engine = vi.fn().mockResolvedValue([{ title: 'One', artist: 'A' }])
+    setApi({
+      loadAppleMusicLibrary: apple,
+      loadEngineLibrary: engine,
+      onWindowFocus: () => () => {},
+    })
+    renderHook(() => useLibraryMembership(3, 'engineDj'), { wrapper: wrapper() })
+    await waitFor(() => expect(engine).toHaveBeenCalledTimes(1))
+    expect(apple).not.toHaveBeenCalled()
   })
 })

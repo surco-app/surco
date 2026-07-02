@@ -74,22 +74,23 @@ export interface TrackItem {
   // so the row can surface how strong the match was. Undefined for hand-picked matches.
   matchConfidence?: number
   // Whether another loaded row shares this track's folded artist+title — the same song
-  // as two files. Merged in at the App boundary (like spectrum/inAppleMusic) from a
+  // as two files. Merged in at the App boundary (like spectrum/inLibrary) from a
   // whole-list scan, so the duplicates filter is a plain per-track predicate.
   duplicate?: boolean
-  // Whether this track's tags were found in the user's Apple Music library, merged in
-  // at the App boundary from the session library snapshot (like spectrum) so the list
-  // can filter "already owned" vs "missing". Undefined until the snapshot loads, off
-  // macOS, or before any candidate is filled — those rows sit in neither library bucket.
-  inAppleMusic?: boolean
+  // Whether this track's tags were found in the destination's library (Apple Music or
+  // Engine DJ, whichever the conversion destination points at), merged in at the App
+  // boundary from the session library snapshot (like spectrum) so the list can filter
+  // "already owned" vs "missing". Undefined until the snapshot loads, with no library
+  // destination, or before any candidate is filled — those rows sit in neither bucket.
+  inLibrary?: boolean
   // A persisted "owned" verdict the raw tags alone couldn't reach: the editor and the
   // auto-match sweep both re-check the library against the confident Discogs match's
   // canonical title/artist, and when that matches they pin it here. The list merge ORs
-  // this into inAppleMusic so the filter agrees with the editor's badge — otherwise a
+  // this into inLibrary so the filter agrees with the editor's badge — otherwise a
   // file whose messy filename doesn't key-match the library would keep reading not-owned
   // in the list even after the editor flipped it to owned. Set once, never cleared back
   // to false (a clear-meta drops it so a retag re-resolves).
-  inAppleMusicResolved?: boolean
+  inLibraryResolved?: boolean
   outputName?: string
   status: TrackStatus
   stage?: ProcessStage
@@ -110,6 +111,10 @@ export interface TrackItem {
   // add. Later syncs update (and reveals select) that exact copy — without it a
   // re-add after editing would duplicate the song in the library.
   musicPersistentId?: string
+  // Set when a conversion registered this track in the Engine DJ library — the Engine
+  // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
+  // so the row reads in-library before the Engine snapshot refreshes.
+  engineDjAdded?: boolean
   // Set once the user trashes the source file after a real conversion, so the
   // "delete original" action disappears — the converted output and this row stay.
   originalTrashed?: boolean

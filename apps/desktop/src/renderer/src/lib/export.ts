@@ -37,6 +37,9 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
       musicPersistentId: result.musicPersistentId,
       musicStatus: 'added' as const,
     }),
+    // The conversion put this track in the Engine DJ library, so the membership badge
+    // and filter read it owned without waiting for the library snapshot to refresh.
+    ...(result.addedToEngineDj && { engineDjAdded: true }),
     stage: undefined,
     processedSignature: trackSignature(track),
   }

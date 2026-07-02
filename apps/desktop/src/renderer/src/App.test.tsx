@@ -1539,8 +1539,10 @@ describe('App Apple Music library filter', () => {
   // chips, and the "not in library" chip narrows the list to the ones still worth adding.
   it('matches imported tracks against the library and filters down to the ones not yet owned', async () => {
     setApi({
-      // The library snapshot and the per-track lookup are macOS-only.
+      // The library snapshot and the per-track lookup are macOS-only, and the check
+      // only runs while Apple Music is the conversion destination.
       platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(settings({ addToAppleMusic: true })),
       readTags: vi.fn((path: string) =>
         Promise.resolve(
           path.includes('a.wav')

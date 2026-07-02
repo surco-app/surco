@@ -84,6 +84,8 @@ import { deriveTagPatches } from './lib/deriveTags'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { isTypingTarget } from './lib/keymap'
+import { librarySourceOf } from './lib/librarySource'
+import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
 import { renderOutputName } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -847,9 +849,12 @@ export default function App(): React.JSX.Element {
     [tracks, settings?.requiredFields],
   )
 
-  // Merges each track's cached spectrum and Apple Music verdict onto it (identity-stable
+  // Which library the membership check reads — the conversion destination's (Apple
+  // Music or the Engine DJ database), or none for folder/overwrite conversions.
+  const librarySource = useMemo(() => librarySourceOf(settings, isMacOS()), [settings])
+  // Merges each track's cached spectrum and library verdict onto it (identity-stable
   // via viewCache), driving the quality triage, the list and the editor's library badge.
-  const { tracksView, libraryIndex } = useTracksView(tracks, viewCache)
+  const { tracksView, libraryIndex } = useTracksView(tracks, viewCache, librarySource)
   tracksViewRef.current = tracksView
   // Feed the snapshot to the background sweep so it can re-check ownership against each
   // match's canonical metadata (the sweep reads .current at apply time, not at render).
@@ -1102,7 +1107,7 @@ export default function App(): React.JSX.Element {
         matched: false,
         matchReview: false,
         reviewMatch: undefined,
-        inAppleMusicResolved: false,
+        inLibraryResolved: false,
       })
   })
   const deriveTags = useStableCallback(() => {
@@ -1359,6 +1364,7 @@ export default function App(): React.JSX.Element {
                     </div>
                     <QualityFilterBar
                       filterRef={qualityFilterRef}
+                      librarySource={librarySource}
                       value={filterSelection}
                       onChange={setFilterSelection}
                       tally={qualityTally}

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
-import type { TrackMetadata } from '../shared/types'
+import type { AppleMusicLookupCandidate, TrackMetadata } from '../shared/types'
 import {
   type EngineTrack,
   initEngineLibrary,
@@ -21,6 +21,40 @@ import { isEngineDjRunning } from './engineProcess'
 // are intersected with the live schema so a library Engine 4.x migrated forward still
 // accepts our rows, and an existing row for the same path is updated — never duplicated,
 // and never stripped of the analysis Engine already stored on it.
+
+// Reads the library's title/artist/duration triples for the "already owned" membership
+// check — the Engine counterpart of the Apple Music library dump, sharing its candidate
+// shape so the renderer matches both with the same index. Read-only (plain readFile, no
+// locks), so it is safe while Engine DJ itself is open; a missing or unreadable database
+// simply reports an empty library, leaving every row's verdict undefined.
+export async function dumpEngineLibrary(libraryDir: string): Promise<AppleMusicLookupCandidate[]> {
+  const SQL = await loadSqlJs()
+  let db: Database
+  try {
+    db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+  } catch {
+    return []
+  }
+  try {
+    const result = db.exec('SELECT title, artist, length FROM Track')
+    return (result[0]?.values ?? []).flatMap(([title, artist, length]) => {
+      if (!title || !artist) return []
+      return [
+        {
+          title: String(title),
+          artist: String(artist),
+          ...(typeof length === 'number' && { durationSec: length }),
+        },
+      ]
+    })
+  } catch {
+    // A schema this query doesn't fit (some future Engine) degrades to "no verdicts",
+    // never to a failed conversion pipeline.
+    return []
+  } finally {
+    db.close()
+  }
+}
 
 // The columns a re-converted file may change on an existing row. Deliberately
 // metadata-only: isAnalyzed, beat data, cues and playlist memberships survive a

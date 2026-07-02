@@ -88,7 +88,7 @@ function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean 
 // been resolved yet (undefined) belongs to neither, so it never shows under both "owned"
 // and "missing".
 function matchesLibrary(track: TrackItem, filter: LibraryFilter): boolean {
-  return filter === 'inLibrary' ? track.inAppleMusic === true : track.inAppleMusic === false
+  return filter === 'inLibrary' ? track.inLibrary === true : track.inLibrary === false
 }
 
 // True when a track satisfies every active axis. Each null axis is skipped, so an empty
@@ -213,8 +213,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
     if (t.autoMatched) automatched += 1
-    if (t.inAppleMusic === true) inLibrary += 1
-    else if (t.inAppleMusic === false) notInLibrary += 1
+    if (t.inLibrary === true) inLibrary += 1
+    else if (t.inLibrary === false) notInLibrary += 1
     if (t.duplicate) duplicates += 1
   }
   return {
