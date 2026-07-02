@@ -530,6 +530,20 @@
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes.",
     "releases": [
       {
+        "version": "0.32",
+        "date": "July 2, 2026",
+        "title": "Undo, sessions that come back and ALAC",
+        "items": [
+          "Undo with ⌘Z: if a batch fill, a find & replace or a clear tramples metadata it shouldn't have, one shortcut puts everything back the way it was.",
+          "Surco remembers your last session: on launch, a prompt offers to reload the tracks you were working on.",
+          "Automatic quality analysis (optional): turn it on in Settings and every imported track is analyzed in the background, so suspect files flag themselves without pressing Analyze.",
+          "New ALAC (Apple Lossless) output format — lossless and ready for Apple Music; and for MP3 you can now choose between 320 kbps and V0.",
+          "Duplicates filter: find the same song loaded as two files — a FLAC and an MP3, two downloads — and decide which one to keep.",
+          "Export your list as M3U8, the standard playlist almost any player understands.",
+          "More day-to-day clarity: a notice when a file's metadata can't be read, Stats shows the current list's progress, and the activity panel remembers its position and now logs imports and exports too."
+        ]
+      },
+      {
         "version": "0.31",
         "date": "July 2, 2026",
         "title": "Sharper matching and clean-up at a glance",
@@ -695,7 +709,7 @@
           "Sharper matching for badly named downloads: Surco strips file-name and title noise, pins the right mix, and gives the file's own artist priority.",
           "New “Base title” clean-up in the Album field menu: strip the version or mix from a title in one tap.",
           "Genres that differ only in case (your “Electronic” vs a source's “electronic”) no longer duplicate — a single pill shows, in your casing.",
-    "Your existing covers are kept by default: Surco no longer replaces them unless you opt in to swapping out low-resolution ones."
+          "Your existing covers are kept by default: Surco no longer replaces them unless you opt in to swapping out low-resolution ones."
         ]
       },
       {
@@ -782,7 +796,7 @@
         "title": "Apple Music, always in sync",
         "items": [
           "Apple Music sync: re-converting an edited track updates its library copy — tags and artwork — instead of duplicating it.",
-          "New \u201cUpdate in Apple Music\u201d and \u201cShow in Apple Music\u201d actions in the editor; if you deleted the library copy, Surco imports it again.",
+          "New “Update in Apple Music” and “Show in Apple Music” actions in the editor; if you deleted the library copy, Surco imports it again.",
           "Click the artwork to view it full size, at its real resolution — embedded art is pulled from the original file, not the thumbnail.",
           "The field menu now also transforms text: Title Case, lowercase or UPPERCASE in one click.",
           "While a track plays, the Dock icon animates with a sound wave.",
