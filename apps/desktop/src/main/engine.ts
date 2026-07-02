@@ -28,6 +28,8 @@ export interface EngineTrack {
   bpmAnalyzed: number | null
   year: number | null
   durationSec: number | null
+  // Engine's 0–100 scale (20 per star), already converted from the "1"–"5" tag.
+  rating: number
 }
 
 // The verbatim 2.18.0 DDL. The misspellings (currentPlayedIndiciator, isPerfomanceData…,
@@ -188,7 +190,7 @@ export function trackRow(t: EngineTrack, epoch: number): (string | number | null
     null,
     null,
     null,
-    0,
+    t.rating,
     null,
     null,
     0,

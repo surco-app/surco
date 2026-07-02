@@ -450,6 +450,8 @@ export interface EngineExportTrack {
   // Tags are strings in Surco; the main process parses bpm/year to the integers Engine wants.
   bpm: string
   year: string
+  // Star rating "1"–"5" ("" for none); the main process maps it to Engine's 0–100 scale.
+  rating: string
   // Length in seconds, undefined when the probe never ran.
   durationSec?: number
 }

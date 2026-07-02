@@ -18,6 +18,7 @@ const track = (over: Partial<EngineTrack> = {}): EngineTrack => ({
   bpmAnalyzed: null,
   year: null,
   durationSec: null,
+  rating: 0,
   ...over,
 })
 

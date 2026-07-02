@@ -42,6 +42,7 @@ describe('buildEnginePayload', () => {
       comment: '',
       bpm: '128',
       year: '1999',
+      rating: '',
       durationSec: 200,
     })
   })

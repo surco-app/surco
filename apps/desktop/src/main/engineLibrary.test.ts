@@ -110,6 +110,7 @@ describe('addToEngineLibrary', () => {
             bpmAnalyzed: null,
             year: null,
             durationSec: null,
+            rating: 0,
           },
         ],
         'Sets',
@@ -146,6 +147,22 @@ describe('addToEngineLibrary', () => {
     const tracks = rows(db, 'SELECT * FROM Track')
     expect(tracks).toHaveLength(1)
     expect(tracks[0]).toMatchObject({ title: 'Second pass', bpm: 130, isAnalyzed: 1 })
+    db.close()
+  })
+
+  // Engine grades tracks on a 0-100 scale (20 per star), not the "1"-"5" tag value —
+  // writing the raw star count reads as no stars in Engine's rating column.
+  it("maps the tag's stars onto Engine's 0-100 rating scale, updating on re-convert", async () => {
+    const lib = join(root, 'rating', 'Engine Library')
+    const file = await makeFile(root, 'rated.aiff')
+    await addToEngineLibrary(lib, file, meta({ rating: '5' }), 'Surco')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const first = await open(dbPath)
+    expect(rows(first, 'SELECT rating FROM Track')[0].rating).toBe(100)
+    first.close()
+    await addToEngineLibrary(lib, file, meta({ rating: '3' }), 'Surco')
+    const db = await open(dbPath)
+    expect(rows(db, 'SELECT rating FROM Track')[0].rating).toBe(60)
     db.close()
   })
 
@@ -257,6 +274,7 @@ describe('addToEngineLibrary — playlist membership', () => {
             bpmAnalyzed: null,
             year: null,
             durationSec: null,
+            rating: 0,
           },
         ],
         'Sets',

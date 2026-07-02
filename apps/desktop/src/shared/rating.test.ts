@@ -5,6 +5,7 @@ import {
   ratingToStars,
   starsToRating,
   starsToWmpRating,
+  starsTagToEngineRating,
 } from './rating'
 
 describe('formatRatingTag', () => {
@@ -66,5 +67,15 @@ describe('ratingTagToStars', () => {
     expect(ratingTagToStars('  ')).toBe('')
     expect(ratingTagToStars('like')).toBe('')
     expect(ratingTagToStars('0')).toBe('')
+  })
+})
+
+describe('starsTagToEngineRating', () => {
+  // Engine's database grades 0–100 in steps of 20; the tag carries "1"–"5" or "".
+  it("maps the tag's stars to Engine's 20-per-star scale", () => {
+    expect(starsTagToEngineRating('')).toBe(0)
+    expect(starsTagToEngineRating('1')).toBe(20)
+    expect(starsTagToEngineRating('5')).toBe(100)
+    expect(starsTagToEngineRating('9')).toBe(100)
   })
 })

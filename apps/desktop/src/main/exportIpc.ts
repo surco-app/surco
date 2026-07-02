@@ -1,6 +1,7 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import { dialog, ipcMain } from 'electron'
+import { starsTagToEngineRating } from '../shared/rating'
 import type { EngineExportTrack } from '../shared/types'
 import { activity } from './activity'
 import { buildEngineDatabase, type EngineTrack } from './engine'
@@ -111,6 +112,7 @@ export function registerExportIpc(): void {
             bpm: Number.isFinite(bpm) ? Math.round(bpm) : null,
             bpmAnalyzed: Number.isFinite(bpm) ? bpm : null,
             year: Number.isFinite(year) ? year : null,
+            rating: starsTagToEngineRating(t.rating),
             durationSec: t.durationSec !== undefined ? Math.round(t.durationSec) : null,
           }
         }),

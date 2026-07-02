@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
+import { starsTagToEngineRating } from '../shared/rating'
 import type { AppleMusicLookupCandidate, TrackMetadata } from '../shared/types'
 import {
   type EngineTrack,
@@ -72,6 +73,7 @@ const UPDATE_COLUMNS = [
   'genre',
   'comment',
   'fileType',
+  'rating',
 ]
 
 interface PendingAdd {
@@ -283,6 +285,7 @@ async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<Engine
     year: Number.isFinite(year) ? year : null,
     // Unknown at conversion time; Engine fills the length when it analyzes the file.
     durationSec: null,
+    rating: starsTagToEngineRating(add.meta.rating ?? ''),
   }
 }
 

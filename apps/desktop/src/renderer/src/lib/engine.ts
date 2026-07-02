@@ -16,6 +16,7 @@ export function buildEnginePayload(tracks: TrackItem[]): EngineExportTrack[] {
     comment: t.meta.comment,
     bpm: t.meta.bpm,
     year: t.meta.year,
+    rating: t.meta.rating ?? '',
     durationSec: t.duration,
   }))
 }

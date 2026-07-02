@@ -10,6 +10,14 @@ export function starsToRating(stars: number): number {
   return clamped * RATING_STEP
 }
 
+// Engine DJ's database stores the star rating as 0–100 in steps of 20 (1★ = 20 …
+// 5★ = 100); 0 means unrated. Takes the tag's "1"–"5" string ("" for none) directly.
+export function starsTagToEngineRating(tag: string): number {
+  const stars = Number.parseInt(tag, 10)
+  if (!Number.isFinite(stars)) return 0
+  return Math.max(0, Math.min(5, stars)) * 20
+}
+
 // Windows Media Player / foobar2000 (%RATING WMP%) read a POPM frame under this
 // user, but with a non-linear byte mapping that differs from Traktor's steps of
 // 51 — so the same rating needs a second POPM frame to round-trip in both.
