@@ -101,7 +101,6 @@ describe('OnboardingWizard destination', () => {
     fireEvent.click(screen.getByTestId('onboarding-format-flac'))
     expect(screen.getByTestId('onboarding-destination-folder')).toBeChecked()
     expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeDisabled()
-    expect(screen.getByTestId('onboarding-destination-both')).toBeDisabled()
   })
 })
 

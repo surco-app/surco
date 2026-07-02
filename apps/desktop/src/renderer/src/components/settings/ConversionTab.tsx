@@ -36,7 +36,6 @@ export function ConversionTab({
   const flacOnly = synced.outputFormat === 'flac'
   const destination = toDestination(
     synced.addToAppleMusic,
-    synced.keepOutputCopy,
     flacOnly,
     synced.overwriteOriginal,
     synced.addToEngineDj,
@@ -108,7 +107,7 @@ export function ConversionTab({
         {tr('settings.destination')}
       </span>
       <DestinationPicker
-        destinations={DESTINATIONS.filter((d) => isMac || (d !== 'appleMusic' && d !== 'both'))}
+        destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
         value={destination}
         onChange={chooseDestination}
         flacOnly={flacOnly}

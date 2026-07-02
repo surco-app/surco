@@ -83,7 +83,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // pinned false on both sides of the mapping.
   const destination = toDestination(
     addToAppleMusic,
-    keepOutputCopy,
     outputFormat === 'flac',
     overwriteOriginal,
     false,

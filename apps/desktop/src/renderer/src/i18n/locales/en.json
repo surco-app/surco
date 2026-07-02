@@ -514,7 +514,6 @@
     "destinations": {
       "folder": "Output folder",
       "appleMusic": "Apple Music",
-      "both": "Output folder + Apple Music",
       "engineDj": "Engine DJ",
       "overwrite": "Overwrite original"
     },

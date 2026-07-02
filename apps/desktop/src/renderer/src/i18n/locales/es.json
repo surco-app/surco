@@ -514,7 +514,6 @@
     "destinations": {
       "folder": "Carpeta de salida",
       "appleMusic": "Apple Music",
-      "both": "Carpeta de salida + Apple Music",
       "engineDj": "Engine DJ",
       "overwrite": "Sobrescribir el original"
     },

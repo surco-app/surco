@@ -30,7 +30,7 @@ export function DestinationPicker({
   return (
     <div role="radiogroup" aria-label={tr('settings.destination')} className="flex flex-col gap-2">
       {destinations.map((d) => {
-        const disabled = flacOnly && (d === 'appleMusic' || d === 'both')
+        const disabled = flacOnly && d === 'appleMusic'
         return (
           <label
             key={d}
