@@ -127,6 +127,7 @@ function renderEditor(
   onOpenRename: ReturnType<typeof vi.fn>
   onRegenerateName: ReturnType<typeof vi.fn>
   onCopyFilename: ReturnType<typeof vi.fn>
+  onExportCollection: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
   const onChange = vi.fn()
@@ -138,6 +139,7 @@ function renderEditor(
   const onOpenRename = vi.fn()
   const onRegenerateName = vi.fn()
   const onCopyFilename = vi.fn()
+  const onExportCollection = vi.fn()
   renderWithQuery(
     <Editor
       item={item(over)}
@@ -154,6 +156,7 @@ function renderEditor(
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
       onCopyFilename={onCopyFilename}
+      onExportCollection={onExportCollection}
     />,
     {
       outputFormat,
@@ -180,6 +183,7 @@ function renderEditor(
   return {
     onProcess,
     onChange,
+    onExportCollection,
     onDeriveTags,
     onFormatChange,
     onTrashOriginal,
@@ -535,6 +539,7 @@ function MultiHarness() {
         item={selected}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
+        onExportCollection={vi.fn()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
         onProcessAll={vi.fn()}
@@ -798,6 +803,7 @@ describe('Editor multi-select', () => {
         item={a}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
+        onExportCollection={vi.fn()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}
@@ -956,6 +962,24 @@ describe('Editor export control', () => {
     expect(
       (window as unknown as { api: { reveal: ReturnType<typeof vi.fn> } }).api.reveal,
     ).toHaveBeenCalledWith('/out/a.wav')
+  })
+
+  // The toolbar export button moved here: sending the collection to another DJ app
+  // is a post-conversion step, so it rides the done-state footer — and never shows
+  // before a conversion has landed.
+  it('offers the DJ-app collection export once the track is done', () => {
+    const { onExportCollection } = renderEditor({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.wav',
+    })
+    fireEvent.click(screen.getByTestId('export-collection'))
+    expect(onExportCollection).toHaveBeenCalled()
+  })
+
+  it('hides the DJ-app export before the track converts', () => {
+    renderEditor({ id: 'a' })
+    expect(screen.queryByTestId('export-collection')).not.toBeInTheDocument()
   })
 
   // "Apple Music only" leaves no file in the output folder, so there is nothing to

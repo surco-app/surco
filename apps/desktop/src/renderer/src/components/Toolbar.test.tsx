@@ -27,7 +27,6 @@ function renderBar(over: Partial<Props> = {}): Props {
     onCancelAnalyze: vi.fn(),
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
-    onExport: vi.fn(),
     onPalette: vi.fn(),
     onStats: vi.fn(),
     onActivity: vi.fn(),

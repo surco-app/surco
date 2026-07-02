@@ -1303,7 +1303,6 @@ export default function App(): React.JSX.Element {
             onCancelAnalyze={cancelAnalysis}
             onAutoMatch={onAutoMatchAll}
             onCancelAutoMatch={cancelAutoMatch}
-            onExport={onOpenExport}
             onPalette={onOpenPalette}
             onStats={onOpenStats}
             onActivity={() => setActivityOpen((v) => !v)}
@@ -1600,6 +1599,7 @@ export default function App(): React.JSX.Element {
                   onOpenRename={onOpenRename}
                   onRegenerateName={onRegenerateName}
                   onCopyFilename={onCopyFilename}
+                  onExportCollection={onOpenExport}
                 />
               </ErrorBoundary>
             ) : (

@@ -101,6 +101,9 @@ interface Props {
   // Copies the Settings-pattern file name to the clipboard so the user can paste the track
   // into a search box. App owns the pattern and clipboard, so the editor just signals intent.
   onCopyFilename: () => void
+  // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
+  // post-conversion step that used to live on the toolbar. App owns the modal.
+  onExportCollection: () => void
 }
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
@@ -129,6 +132,7 @@ export const Editor = memo(function Editor({
   onOpenRename,
   onRegenerateName,
   onCopyFilename,
+  onExportCollection,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
@@ -730,6 +734,7 @@ export const Editor = memo(function Editor({
             setFormat(f)
             onFormatChange?.(f)
           }}
+          onExportCollection={onExportCollection}
           onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
           onTrashOriginal={onTrashOriginal}

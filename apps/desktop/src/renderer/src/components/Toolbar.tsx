@@ -5,7 +5,6 @@ import {
   Radio,
   Settings as SettingsIcon,
   Sparkles,
-  Upload,
 } from 'lucide-react'
 import type React from 'react'
 import { memo } from 'react'
@@ -38,7 +37,6 @@ interface Props {
   onCancelAnalyze: () => void
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
-  onExport: () => void
   onPalette: () => void
   onStats: () => void
   onActivity: () => void
@@ -49,7 +47,7 @@ interface Props {
 }
 
 // The window's title-bar toolbar: add files, the per-list actions (select/fill/find,
-// the analyze-quality and auto-match sweeps, convert-selected, export, clear), and the
+// the analyze-quality and auto-match sweeps, convert-selected, clear), and the
 // always-present palette/stats/settings. App owns the state and hands every action down.
 // Memoized for the same contract as the Editor: App hands it stable handlers, so a
 // keystroke in a metadata field no longer re-renders the whole toolbar.
@@ -69,7 +67,6 @@ export const Toolbar = memo(function Toolbar({
   onCancelAnalyze,
   onAutoMatch,
   onCancelAutoMatch,
-  onExport,
   onPalette,
   onStats,
   onActivity,
@@ -186,19 +183,6 @@ export const Toolbar = memo(function Toolbar({
                 hint={analysis ? undefined : hintFor('analyze-quality')}
                 align="end"
               />
-            </button>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            {/* Convert lives only in the editor footer now — the toolbar button duplicated it
-                (both convert the selection), so the crate-wide sweeps lead straight to export. */}
-            <button
-              type="button"
-              data-testid="export-open"
-              onClick={onExport}
-              aria-label={tr('header.export')}
-              className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-            >
-              <Upload className="h-4 w-4" aria-hidden="true" />
-              <Tooltip label={tr('header.export')} hint={hintFor('export')} align="end" />
             </button>
           </>
         )}

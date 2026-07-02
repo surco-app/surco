@@ -57,7 +57,9 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
     },
     {
       id: 'engine',
-      label: 'Engine DJ',
+      // Distinct from the Engine DJ conversion destination (which writes into the local
+      // library): this builds a portable Engine Library for a USB drive / standalone player.
+      label: 'Engine DJ (USB)',
       ext: 'Engine Library',
       hint: tr('export.engineHint'),
       run: () => window.api.exportEngine(buildEnginePayload(tracks), 'Surco'),

@@ -38,6 +38,9 @@ interface ConvertFooterProps {
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic?: () => void
   onTrashOriginal?: () => void
+  // Opens the DJ-app collection export — offered once the export landed, since the
+  // collection file references the converted copies.
+  onExportCollection: () => void
 }
 
 // The editor's bottom bar: the error row, the normalization note, and either the
@@ -64,6 +67,7 @@ export function ConvertFooter({
   onProcess,
   onAddToAppleMusic,
   onTrashOriginal,
+  onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const {
@@ -184,6 +188,14 @@ export function ConvertFooter({
                 onSelectFormat={onSelectFormat}
               />
             </div>
+            <button
+              type="button"
+              data-testid="export-collection"
+              onClick={onExportCollection}
+              className="press w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('editor.exportCollection')}
+            </button>
             {canDeleteOriginal && (
               <button
                 type="button"
