@@ -76,7 +76,9 @@ CREATE TRIGGER trigger_instead_delete_PerformanceData INSTEAD OF DELETE ON Perfo
 // The columns Engine fills for a metadata-only track, in a fixed order. id is AUTOINCREMENT
 // (never set manually — a trigger aborts on recycled ids); originDatabaseUuid/originTrackId are
 // left NULL so the fix-origin trigger stamps them with this DB's uuid and the new row id.
-const TRACK_COLUMNS = [
+// Exported (with trackRow) for engineLibrary.ts, which inserts into a user's existing
+// database and needs the same column/value pairing without the fresh-file assumptions.
+export const TRACK_COLUMNS = [
   'playOrder',
   'length',
   'bpm',
@@ -126,7 +128,7 @@ const TRACK_COLUMNS = [
 ]
 
 let sqlJs: SqlJsStatic | undefined
-async function loadSqlJs(): Promise<SqlJsStatic> {
+export async function loadSqlJs(): Promise<SqlJsStatic> {
   if (sqlJs) return sqlJs
   // sql.js ships the wasm next to its dist entry; read it and hand the bytes to the loader so
   // it never has to resolve a path itself (which fails once packaged inside an asar archive).
@@ -145,6 +147,77 @@ function lastId(db: Database): number {
   return db.exec('SELECT last_insert_rowid()')[0].values[0][0] as number
 }
 
+// Initializes an empty Database into a fresh Engine library (schema + Information +
+// the no-art sentinel) and returns its uuid. Shared with engineLibrary.ts, which
+// bootstraps a library at the configured location when none exists yet.
+export function initEngineLibrary(db: Database): string {
+  db.run(SCHEMA)
+  const uuid = randomUUID()
+  // currentPlayedIndiciator's meaning is unknown even to libdjinterop, which writes a random
+  // int64; any value works. lastRekordBoxLibraryImportReadCounter is 0 for a fresh library.
+  db.run(
+    'INSERT INTO Information (uuid, schemaVersionMajor, schemaVersionMinor, schemaVersionPatch, currentPlayedIndiciator, lastRekordBoxLibraryImportReadCounter) VALUES (?, 2, 18, 0, ?, 0)',
+    [uuid, Math.floor(Math.random() * 2 ** 31)],
+  )
+  // The "no album art" sentinel row Track.albumArtId points at (its FK is ON DELETE RESTRICT).
+  db.run('INSERT INTO AlbumArt (id, hash, albumArt) VALUES (1, ?, NULL)', [''])
+  return uuid
+}
+
+// The values matching TRACK_COLUMNS one-to-one for a metadata-only import: not analyzed
+// (Engine builds beatgrid/waveform on first load), available, with both date columns
+// stamped at `epoch` seconds.
+export function trackRow(t: EngineTrack, epoch: number): (string | number | null)[] {
+  return [
+    null,
+    t.durationSec,
+    t.bpm,
+    t.year,
+    t.relativePath,
+    t.filename,
+    null,
+    t.bpmAnalyzed,
+    1,
+    t.fileBytes,
+    t.title,
+    t.artist,
+    t.album,
+    t.genre,
+    t.comment,
+    null,
+    null,
+    null,
+    null,
+    0,
+    null,
+    null,
+    0,
+    t.fileType,
+    0,
+    epoch,
+    epoch,
+    1,
+    0,
+    0,
+    0,
+    1,
+    null,
+    null,
+    null,
+    0,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    0,
+    0,
+  ]
+}
+
 export async function buildEngineDatabase(
   tracks: EngineTrack[],
   playlistName: string,
@@ -152,17 +225,7 @@ export async function buildEngineDatabase(
   const SQL = await loadSqlJs()
   const db = new SQL.Database()
   try {
-    db.run(SCHEMA)
-
-    const uuid = randomUUID()
-    // currentPlayedIndiciator's meaning is unknown even to libdjinterop, which writes a random
-    // int64; any value works. lastRekordBoxLibraryImportReadCounter is 0 for a fresh library.
-    db.run(
-      'INSERT INTO Information (uuid, schemaVersionMajor, schemaVersionMinor, schemaVersionPatch, currentPlayedIndiciator, lastRekordBoxLibraryImportReadCounter) VALUES (?, 2, 18, 0, ?, 0)',
-      [uuid, Math.floor(Math.random() * 2 ** 31)],
-    )
-    // The "no album art" sentinel row Track.albumArtId points at (its FK is ON DELETE RESTRICT).
-    db.run('INSERT INTO AlbumArt (id, hash, albumArt) VALUES (1, ?, NULL)', [''])
+    const uuid = initEngineLibrary(db)
 
     // Playlist dates are formatted strings (unlike Track dates, which are epoch seconds).
     const now = new Date()
@@ -180,54 +243,7 @@ export async function buildEngineDatabase(
     )
     const trackIds: number[] = []
     for (const t of tracks) {
-      insertTrack.run([
-        null,
-        t.durationSec,
-        t.bpm,
-        t.year,
-        t.relativePath,
-        t.filename,
-        null,
-        t.bpmAnalyzed,
-        1,
-        t.fileBytes,
-        t.title,
-        t.artist,
-        t.album,
-        t.genre,
-        t.comment,
-        null,
-        null,
-        null,
-        null,
-        0,
-        null,
-        null,
-        0,
-        t.fileType,
-        0,
-        epoch,
-        epoch,
-        1,
-        0,
-        0,
-        0,
-        1,
-        null,
-        null,
-        null,
-        0,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        0,
-        0,
-      ])
+      insertTrack.run(trackRow(t, epoch))
       trackIds.push(lastId(db))
     }
     insertTrack.free()
