@@ -59,6 +59,7 @@
       "automatched": "Auto-emparejadas",
       "notInLibrary": "No en Apple Music",
       "inLibrary": "En Apple Music",
+    "duplicates": "Duplicadas",
       "trashSuspects_one": "Mover el archivo sospechoso a la papelera",
       "trashSuspects_other": "Mover los {{count}} archivos sospechosos a la papelera"
     },

@@ -12,22 +12,25 @@ import {
   Sparkles,
   Trash2,
   TriangleAlert,
+  Copy as CopyIcon,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FilterSelection, qualityCounts } from '../lib/triage'
+import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
 import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
 type QualityMode = 'unanalyzed' | 'suspect' | 'good'
 type ConversionMode = 'unconverted' | 'automatched'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
-type Mode = QualityMode | ConversionMode | LibraryMode
+type DuplicatesMode = 'duplicates'
+type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
 const CONVERSION_MODES: ConversionMode[] = ['unconverted', 'automatched']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
+const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
@@ -40,6 +43,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   automatched: Sparkles,
   inLibrary: Check,
   notInLibrary: Plus,
+  duplicates: CopyIcon,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -49,6 +53,7 @@ type Tally = ReturnType<typeof qualityCounts>
 function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if ((QUALITY_MODES as string[]).includes(mode)) return 'quality'
   if ((CONVERSION_MODES as string[]).includes(mode)) return 'conversion'
+  if (mode === 'duplicates') return 'duplicates'
   return 'library'
 }
 
@@ -137,16 +142,20 @@ export function QualityFilterBar({
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
     ...(tally.inLibrary + tally.notInLibrary > 0 ? [LIBRARY_MODES] : []),
+    // Only once the crate actually holds the same song twice — a permanently-empty
+    // duplicates bucket would just pad the menu.
+    ...(tally.duplicates > 0 ? [DUPLICATES_MODES] : []),
   ]
   const countOf = (mode: Mode): number => tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
   // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
   // or a format visibly clears its tick.
-  const nothingActive = !value.quality && !value.conversion && !value.library && !value.format
+  const nothingActive =
+    !value.quality && !value.conversion && !value.library && !value.duplicates && !value.format
 
   // Focus an active option when the menu opens (the first set axis, or "All" when nothing
   // is), so the arrows continue from the current choice like a native select.
-  const focusMode = value.quality ?? value.conversion ?? value.library ?? 'all'
+  const focusMode = value.quality ?? value.conversion ?? value.library ?? value.duplicates ?? 'all'
   useEffect(() => {
     if (!open) return
     listRef.current
@@ -176,7 +185,7 @@ export function QualityFilterBar({
   // "All" clears every axis at once, so it's a true "show everything" reset rather than
   // only resetting one dimension and leaving the others quietly applied.
   function chooseAll(): void {
-    onChange({ quality: null, conversion: null, library: null, format: null })
+    onChange(EMPTY_FILTER)
     close()
   }
 
@@ -231,6 +240,12 @@ export function QualityFilterBar({
       Icon: FILTER_ICONS[value.library],
       label: tr(`sidebar.filter.${value.library}`),
       count: countOf(value.library),
+    })
+  if (value.duplicates)
+    activeChips.push({
+      Icon: FILTER_ICONS.duplicates,
+      label: tr('sidebar.filter.duplicates'),
+      count: countOf('duplicates'),
     })
   if (value.format)
     activeChips.push({

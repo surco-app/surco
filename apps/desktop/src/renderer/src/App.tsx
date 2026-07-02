@@ -246,6 +246,7 @@ export default function App(): React.JSX.Element {
   const qualityFilter = useAppStore(store, (s) => s.qualityFilter)
   const conversionFilter = useAppStore(store, (s) => s.conversionFilter)
   const libraryFilter = useAppStore(store, (s) => s.libraryFilter)
+  const duplicatesFilter = useAppStore(store, (s) => s.duplicatesFilter)
   const formatFilter = useAppStore(store, (s) => s.formatFilter)
   // The four filter axes bundled for the bar, which toggles one per click; split back onto
   // the store fields here so each axis stays an independently-readable slice.
@@ -254,14 +255,16 @@ export default function App(): React.JSX.Element {
       quality: qualityFilter,
       conversion: conversionFilter,
       library: libraryFilter,
+      duplicates: duplicatesFilter,
       format: formatFilter,
     }),
-    [qualityFilter, conversionFilter, libraryFilter, formatFilter],
+    [qualityFilter, conversionFilter, libraryFilter, duplicatesFilter, formatFilter],
   )
   const filterActive =
     qualityFilter !== null ||
     conversionFilter !== null ||
     libraryFilter !== null ||
+    duplicatesFilter !== null ||
     formatFilter !== null
   const setFilterSelection = useCallback(
     (next: FilterSelection) =>
@@ -269,6 +272,7 @@ export default function App(): React.JSX.Element {
         qualityFilter: next.quality,
         conversionFilter: next.conversion,
         libraryFilter: next.library,
+        duplicatesFilter: next.duplicates,
         formatFilter: next.format,
       }),
     [store],
@@ -857,8 +861,8 @@ export default function App(): React.JSX.Element {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // library rows put even after a background auto-match flips their verdict.
-    const { quality, conversion, library, format } = filterSelection
-    const key = `${quality ?? ''}|${conversion ?? ''}|${library ?? ''}|${format ?? ''}`
+    const { quality, conversion, library, duplicates, format } = filterSelection
+    const key = `${quality ?? ''}|${conversion ?? ''}|${library ?? ''}|${duplicates ?? ''}|${format ?? ''}`
     if (stickyFilter.current !== key) {
       stickyFilter.current = key
       stickyIds.current = new Set()

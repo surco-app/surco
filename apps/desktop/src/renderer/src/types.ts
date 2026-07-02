@@ -73,6 +73,10 @@ export interface TrackItem {
   // The confidence (0–1) of the auto-match applied (autoMatched) or suggested (matchReview),
   // so the row can surface how strong the match was. Undefined for hand-picked matches.
   matchConfidence?: number
+  // Whether another loaded row shares this track's folded artist+title — the same song
+  // as two files. Merged in at the App boundary (like spectrum/inAppleMusic) from a
+  // whole-list scan, so the duplicates filter is a plain per-track predicate.
+  duplicate?: boolean
   // Whether this track's tags were found in the user's Apple Music library, merged in
   // at the App boundary from the session library snapshot (like spectrum) so the list
   // can filter "already owned" vs "missing". Undefined until the snapshot loads, off

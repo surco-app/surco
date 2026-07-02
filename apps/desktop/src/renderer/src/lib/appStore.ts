@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
 import type { Toast } from './toastQueue'
-import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort } from './triage'
+import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort,
+  DuplicatesFilter,
+} from './triage'
 
 // A surfaced background failure (a rejected IPC call, an unhandled rejection), stored as a
 // key plus interpolation detail and localized at render so a language switch retranslates it.
@@ -30,6 +32,7 @@ export interface AppState {
   qualityFilter: QualityFilter | null
   conversionFilter: ConversionFilter | null
   libraryFilter: LibraryFilter | null
+  duplicatesFilter: DuplicatesFilter | null
   formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
@@ -55,6 +58,7 @@ const INITIAL: AppState = {
   qualityFilter: null,
   conversionFilter: null,
   libraryFilter: null,
+  duplicatesFilter: null,
   formatFilter: null,
   dragging: false,
   toasts: [],

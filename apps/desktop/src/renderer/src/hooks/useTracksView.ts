@@ -2,6 +2,7 @@ import { useQueries } from '@tanstack/react-query'
 import { type RefObject, useMemo } from 'react'
 import type { SpectrumResult } from '../../../shared/types'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
+import { duplicateIds } from '../lib/duplicates'
 import type { TrackItem } from '../types'
 import { useAppleMusicLibrary } from './useAppleMusicLibrary'
 import { spectrogramOptions } from './useSpectrogram'
@@ -13,6 +14,7 @@ export interface ViewCacheEntry {
   track: TrackItem
   spectrum: SpectrumResult | undefined
   index: AppleMusicIndex | null
+  dup: boolean
   view: TrackItem
 }
 
@@ -52,9 +54,11 @@ export function useTracksView(
   // exists for the duration of the fetch. A track Surco itself added (musicPersistentId
   // set) is owned by definition, so it reads in-library even before the snapshot loads.
   // biome-ignore lint/correctness/useExhaustiveDependencies: viewCache is a stable ref passed in; its .get/.set are deliberately out of the deps so the merge recomputes only on its real inputs (a useRef created here would be auto-excluded, a param ref is not).
-  const tracksView = useMemo(
-    () =>
-      tracks.map((t, i) => {
+  const tracksView = useMemo(() => {
+    // Cross-track by nature (a duplicate needs a partner), so it can't live in the
+    // per-track cache compare — it's an input to it instead.
+    const dups = duplicateIds(tracks)
+    return tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
         // inAppleMusicResolved is the verdict the editor/sweep already confirmed against
         // the canonical Discogs match — the raw tags can't reach it here, so OR it in so
@@ -69,26 +73,30 @@ export function useTracksView(
                   durationSec: t.duration,
                 })
               : undefined
-        if (!spectrum && fetching)
-          return inAppleMusic === undefined
-            ? { ...t, analyzing: true }
-            : { ...t, analyzing: true, inAppleMusic }
-        if (!spectrum && inAppleMusic === undefined) return t
+        const dup = dups.has(t.id)
+        if (!spectrum && fetching) {
+          const view: TrackItem = { ...t, analyzing: true }
+          if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
+          if (dup) view.duplicate = true
+          return view
+        }
+        if (!spectrum && inAppleMusic === undefined && !dup) return t
         const cached = viewCache.current.get(t.id)
         if (
           cached &&
           cached.track === t &&
           cached.spectrum === spectrum &&
-          cached.index === libraryIndex
+          cached.index === libraryIndex &&
+          cached.dup === dup
         )
           return cached.view
         const view: TrackItem = { ...t }
         if (spectrum) view.spectrum = spectrum
         if (inAppleMusic !== undefined) view.inAppleMusic = inAppleMusic
-        viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, view })
+        if (dup) view.duplicate = true
+        viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, dup, view })
         return view
-      }),
-    [tracks, spectra, libraryIndex],
-  )
+      })
+  }, [tracks, spectra, libraryIndex])
   return { tracksView, libraryIndex }
 }

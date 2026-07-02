@@ -1722,3 +1722,42 @@ describe('App paste metadata feedback', () => {
     expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
   })
 })
+
+describe('App duplicates filter', () => {
+  // The download-folder case this bucket exists for: the same song arriving as two
+  // files. The bucket only appears once a real duplicate pair exists, and picking it
+  // narrows the list to the group so the user can choose which copy to keep.
+  it('lists a duplicates bucket and filters to the duplicated rows', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.flac', '/music/c.wav']),
+      readTags: vi.fn((path: string) =>
+        Promise.resolve(
+          path.includes('/c.')
+            ? { title: 'Unique', artist: 'Someone' }
+            : { title: 'Strobe', artist: 'deadmau5' },
+        ),
+      ),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(await screen.findByTestId('quality-filter-duplicates'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  })
+
+  // Without a duplicated pair the bucket must not exist — an empty filter row would
+  // just pad the menu with a dead entry.
+  it('lists no duplicates bucket when every track is unique', async () => {
+    setApi({
+      readTags: vi.fn((path: string) =>
+        Promise.resolve({ title: path.includes('/a.') ? 'One' : 'Two', artist: 'X' }),
+      ),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-duplicates')).toBeNull()
+  })
+})

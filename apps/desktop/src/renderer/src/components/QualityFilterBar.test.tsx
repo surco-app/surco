@@ -18,6 +18,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   automatched: 0,
   inLibrary: 0,
   notInLibrary: 0,
+  duplicates: 0,
   ...over,
 })
 

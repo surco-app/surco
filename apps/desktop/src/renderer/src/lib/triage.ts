@@ -34,6 +34,9 @@ export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
 export type ConversionFilter = 'unconverted' | 'automatched'
 // The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
 export type LibraryFilter = 'inLibrary' | 'notInLibrary'
+// The same song loaded as two files (see lib/duplicates); a single-value axis so it
+// stacks with the others like any dimension.
+export type DuplicatesFilter = 'duplicates'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -41,6 +44,7 @@ export interface FilterSelection {
   quality: QualityFilter | null
   conversion: ConversionFilter | null
   library: LibraryFilter | null
+  duplicates: DuplicatesFilter | null
   format: string | null
 }
 
@@ -48,6 +52,7 @@ export const EMPTY_FILTER: FilterSelection = {
   quality: null,
   conversion: null,
   library: null,
+  duplicates: null,
   format: null,
 }
 
@@ -92,6 +97,7 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.quality && !matchesQuality(track, sel.quality)) return false
   if (sel.conversion && !matchesConversion(track, sel.conversion)) return false
   if (sel.library && !matchesLibrary(track, sel.library)) return false
+  if (sel.duplicates && track.duplicate !== true) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
@@ -190,6 +196,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   automatched: number
   inLibrary: number
   notInLibrary: number
+  duplicates: number
 } {
   let suspect = 0
   let good = 0
@@ -198,6 +205,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   let automatched = 0
   let inLibrary = 0
   let notInLibrary = 0
+  let duplicates = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed') suspect += 1
@@ -207,8 +215,18 @@ export function qualityCounts(tracks: TrackItem[]): {
     if (t.autoMatched) automatched += 1
     if (t.inAppleMusic === true) inLibrary += 1
     else if (t.inAppleMusic === false) notInLibrary += 1
+    if (t.duplicate) duplicates += 1
   }
-  return { suspect, good, unanalyzed, unconverted, automatched, inLibrary, notInLibrary }
+  return {
+    suspect,
+    good,
+    unanalyzed,
+    unconverted,
+    automatched,
+    inLibrary,
+    notInLibrary,
+    duplicates,
+  }
 }
 
 // The distinct source formats present, each with its count, for the per-format filter

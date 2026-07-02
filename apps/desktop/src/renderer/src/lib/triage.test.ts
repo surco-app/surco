@@ -165,6 +165,7 @@ describe('matchesFilter / qualityCounts', () => {
       automatched: 0,
       inLibrary: 0,
       notInLibrary: 0,
+      duplicates: 0,
     })
   })
 })
