@@ -453,6 +453,7 @@ export default function App(): React.JSX.Element {
       if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
+    onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),
   })
 
   useEffect(

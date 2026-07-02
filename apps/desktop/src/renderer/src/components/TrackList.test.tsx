@@ -138,6 +138,14 @@ describe('TrackList', () => {
     expect(screen.queryByTestId('track-match-review')).not.toBeInTheDocument()
   })
 
+  // A file whose tag read failed shows only its file-name parse — without a mark, that row
+  // is indistinguishable from a file that simply has no tags, and the user would retag by
+  // hand data that was actually there. The mark must vanish once a re-read succeeds.
+  it('marks a row whose metadata read failed, and only that row', () => {
+    renderList([track({ id: 'a', metaReadFailed: true }), track({ id: 'b' })])
+    expect(screen.getAllByTestId('track-meta-failed')).toHaveLength(1)
+  })
+
   it('shows the stable list label, not in-progress metadata edits', () => {
     // The label freezes what the row was when imported (or last applied a match), so typing
     // a new title into the editor on the right never renames the pill on the left mid-edit.

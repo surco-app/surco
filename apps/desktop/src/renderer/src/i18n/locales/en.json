@@ -103,7 +103,9 @@
     "copiedPath": "Path copied",
     "copiedFilename": "File name copied",
     "undoneMeta_one": "Metadata restored on {{count}} track",
-    "undoneMeta_other": "Metadata restored on {{count}} tracks"
+    "undoneMeta_other": "Metadata restored on {{count}} tracks",
+    "metaReadFailed_one": "Couldn't read the tags of {{count}} file — showing its file name only.",
+    "metaReadFailed_other": "Couldn't read the tags of {{count}} files — showing their file names only."
   },
   "newTracks": {
     "prompt_one": "{{count}} new track in “{{folder}}”",
@@ -179,6 +181,7 @@
     "noArtist": "No artist",
     "autoMatched": "Auto-matched from Discogs",
     "matchReview": "Review this match",
+    "metaReadFailed": "Couldn't read this file's tags — showing file name data only",
     "remove": "Remove",
     "status": {
       "idle": "Not converted",

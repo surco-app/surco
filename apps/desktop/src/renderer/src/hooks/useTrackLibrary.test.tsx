@@ -39,6 +39,7 @@ function setup(): {
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
       onDuplicatesSkipped: vi.fn(),
+      onMetaReadFailed: vi.fn(),
     }),
   )
   return { result, fire }
@@ -71,11 +72,79 @@ describe('useTrackLibrary watched folders', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
       }),
     )
 
     act(() => fire('/music/oldcrate', ['/music/oldcrate/a.flac']))
 
     expect(unwatchFolders).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useTrackLibrary meta read failures', () => {
+  // A file whose tags can't be read still gets a row (parsed from its name), but the user
+  // must be told the difference between "this file has no tags" and "the read failed" —
+  // otherwise a corrupt or locked file quietly shows degraded data and gets tagged from
+  // scratch when its real metadata was there all along.
+  it('flags the track and reports the count when a batch finishes with failed reads', async () => {
+    const onMetaReadFailed = vi.fn()
+    setApi({
+      readMeta: vi.fn((path: string) =>
+        path.includes('broken')
+          ? Promise.reject(new Error('EACCES'))
+          : Promise.resolve({ tags: { title: 'Fine', artist: 'A' }, duration: 180, cover: null }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed,
+      }),
+    )
+    await act(() => result.current.addPaths(['/music/broken.wav', '/music/fine.wav']))
+
+    const broken = result.current.tracks.find((t) => t.fileName.includes('broken'))
+    const fine = result.current.tracks.find((t) => t.fileName.includes('fine'))
+    expect(broken?.metaReadFailed).toBe(true)
+    expect(broken?.loadingMeta).toBe(false)
+    expect(fine?.metaReadFailed).toBeUndefined()
+    expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  // A clean import must stay quiet — the aggregate notice exists for failures only, and a
+  // second import's counter must not inherit the first one's failures.
+  it('reports nothing for a clean batch and resets the count between batches', async () => {
+    const onMetaReadFailed = vi.fn()
+    let fail = true
+    setApi({
+      readMeta: vi.fn(() =>
+        fail
+          ? Promise.reject(new Error('EIO'))
+          : Promise.resolve({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed,
+      }),
+    )
+    await act(() => result.current.addPaths(['/music/one.wav']))
+    expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
+
+    fail = false
+    await act(() => result.current.addPaths(['/music/two.wav']))
+    expect(onMetaReadFailed).toHaveBeenCalledTimes(1)
   })
 })

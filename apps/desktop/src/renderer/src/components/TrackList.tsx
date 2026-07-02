@@ -301,6 +301,18 @@ const TrackRow = memo(function TrackRow({
               <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
                 {t.meta.artist || tr('trackList.noArtist')}
               </span>
+              {/* A failed tag read leaves the row showing only its file-name parse; the mark
+                  tells that apart from a file that genuinely carries no tags. Lives in the
+                  flexible artist area so the reserved indicator columns don't shift. */}
+              {t.metaReadFailed && (
+                <span
+                  data-testid="track-meta-failed"
+                  className="group/dot relative flex shrink-0 items-center text-warn"
+                >
+                  <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
+                </span>
+              )}
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
                   badge and duration line up in the same column down every row instead of
                   shifting whenever a track lacks a sparkle or a quality verdict. */}

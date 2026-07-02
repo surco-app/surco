@@ -24,6 +24,10 @@ export interface TrackItem {
   // The row renders straight away (parsed from the file name) with a placeholder for
   // these fields, so a slow cloud/network drop shows progress instead of an empty list.
   loadingMeta?: boolean
+  // Set when the metadata read failed outright (corrupt file, dropped mount): the row
+  // shows only its file-name parse, and the warning mark tells that apart from a file
+  // that genuinely carries no tags. Cleared by rebuilding the row (start over).
+  metaReadFailed?: boolean
   // Total length in seconds, probed when the file is added. Undefined when the
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number

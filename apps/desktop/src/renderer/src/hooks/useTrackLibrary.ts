@@ -60,6 +60,10 @@ interface Params {
   // How many dropped/picked audio files were already in the list and skipped, so App
   // can tell the user instead of the silent no-op a re-dragged folder used to be.
   onDuplicatesSkipped: (count: number) => void
+  // How many files in a finished import batch failed their metadata read, so App can
+  // say so — those rows silently showing only file-name data used to read as "this
+  // file has no tags" when the real tags were just unreadable.
+  onMetaReadFailed: (count: number) => void
 }
 
 // Tracks that appeared in a watched folder after it was loaded, waiting on the user to
@@ -104,6 +108,7 @@ export function useTrackLibrary({
   onClear,
   onMetaLoaded,
   onDuplicatesSkipped,
+  onMetaReadFailed,
 }: Params): TrackLibrary {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
@@ -116,6 +121,9 @@ export function useTrackLibrary({
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   const importDone = useRef(0)
   const importTotal = useRef(0)
+  // Failed metadata reads in the in-flight batch, reported once when it settles so a
+  // 300-file drop yields one "couldn't read N" notice rather than a toast per file.
+  const importFailed = useRef(0)
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
@@ -142,19 +150,24 @@ export function useTrackLibrary({
     importTotal.current += bases.length
     setImportProgress({ done: importDone.current, total: importTotal.current })
     void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
-      await loadTrackMeta(base)
+      const ok = await loadTrackMeta(base)
+      if (!ok) importFailed.current += 1
       importDone.current += 1
       if (importDone.current >= importTotal.current) {
         importDone.current = 0
         importTotal.current = 0
         setImportProgress(null)
+        if (importFailed.current > 0) {
+          onMetaReadFailed(importFailed.current)
+          importFailed.current = 0
+        }
       } else {
         setImportProgress({ done: importDone.current, total: importTotal.current })
       }
     })
   }
 
-  async function loadTrackMeta(base: TrackItem): Promise<void> {
+  async function loadTrackMeta(base: TrackItem): Promise<boolean> {
     const path = base.inputPath
     try {
       const { tags, duration, cover } = await window.api.readMeta(path)
@@ -187,8 +200,12 @@ export function useTrackLibrary({
         ),
       )
       onMetaLoaded({ ...base, ...patch, meta: readMeta })
+      return true
     } catch {
-      updateTrack(base.id, { loadingMeta: false })
+      // The row survives on its file-name parse, but flagged: without the mark, an
+      // unreadable file is indistinguishable from a file that simply carries no tags.
+      updateTrack(base.id, { loadingMeta: false, metaReadFailed: true })
+      return false
     }
   }
 

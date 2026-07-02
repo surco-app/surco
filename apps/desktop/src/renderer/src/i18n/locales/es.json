@@ -103,7 +103,9 @@
     "copiedPath": "Ruta copiada",
     "copiedFilename": "Nombre de archivo copiado",
     "undoneMeta_one": "Metadatos restaurados en {{count}} pista",
-    "undoneMeta_other": "Metadatos restaurados en {{count}} pistas"
+    "undoneMeta_other": "Metadatos restaurados en {{count}} pistas",
+    "metaReadFailed_one": "No se pudieron leer los metadatos de {{count}} archivo — se muestra solo su nombre.",
+    "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos — se muestran solo sus nombres."
   },
   "newTracks": {
     "prompt_one": "{{count}} pista nueva en «{{folder}}»",
@@ -179,6 +181,7 @@
     "noArtist": "Sin artista",
     "autoMatched": "Auto-emparejada desde Discogs",
     "matchReview": "Revisa esta coincidencia",
+    "metaReadFailed": "No se pudieron leer los metadatos del archivo — se muestra solo el nombre",
     "remove": "Quitar",
     "status": {
       "idle": "Sin convertir",
