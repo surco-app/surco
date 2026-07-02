@@ -791,19 +791,25 @@ export default function App(): React.JSX.Element {
     [selectedTracks, visibleTracks],
   )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
-  const { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded } =
-    useListNavigation({
-      visibleTracks,
-      selectedId,
-      setSelection,
-      continuousPlayback: settings?.continuousPlayback ?? false,
-      playerVisible,
-      playerTrack,
-      closePlayer,
-      rowEls,
-      listScrollRef,
-      qualityFilterRef,
-    })
+  const {
+    moveSelection,
+    jumpSelection,
+    pageSelection,
+    revealSelection,
+    scrollToSelected,
+    onTrackEnded,
+  } = useListNavigation({
+    visibleTracks,
+    selectedId,
+    setSelection,
+    continuousPlayback: settings?.continuousPlayback ?? false,
+    playerVisible,
+    playerTrack,
+    closePlayer,
+    rowEls,
+    listScrollRef,
+    qualityFilterRef,
+  })
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
   // is selected (or the selection was filtered out of view).
@@ -1253,7 +1259,7 @@ export default function App(): React.JSX.Element {
                           <button
                             type="button"
                             data-testid="reveal-selected"
-                            onClick={() => revealSelection(selectedId)}
+                            onClick={scrollToSelected}
                             aria-label={tr('header.revealSelected')}
                             className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
                           >

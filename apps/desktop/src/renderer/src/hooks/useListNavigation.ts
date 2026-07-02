@@ -30,6 +30,10 @@ export interface ListNavigation {
   // Jump straight to a track by id (the command palette), selecting it and paging it
   // into view. No-op if the id isn't in the current visible list.
   revealSelection: (id: string) => void
+  // Scroll the already-selected row back into view without changing the selection or
+  // needing a travel direction — the "scroll to selected" button, usable when the row
+  // has been scrolled far off-screen.
+  scrollToSelected: () => void
   onTrackEnded: () => void
 }
 
@@ -110,6 +114,29 @@ export function useListNavigation({
     selectIndex(idx, current === -1 ? 1 : idx - current)
   }
 
+  // Reveal the selected row unconditionally. Unlike revealSelection (which pages with a
+  // travel direction), the row here is usually already the selection, so delta would be 0
+  // and pageScrollTop would no-op. Instead centre the row in the visible band between the
+  // sticky header and the floating player, and only scroll if it isn't already in view.
+  function scrollToSelected(): void {
+    if (!selectedId) return
+    const row = rowEls.current.get(selectedId)
+    const container = listScrollRef.current
+    if (!row || !container) return
+    const cRect = container.getBoundingClientRect()
+    const rRect = row.getBoundingClientRect()
+    const headerH = qualityFilterRef.current?.offsetHeight ?? 0
+    const footerH = playerVisible && playerTrack ? 128 : 0
+    const rowTop = rRect.top - cRect.top
+    const rowBottom = rRect.bottom - cRect.top
+    const visibleBottom = container.clientHeight - footerH
+    // Already comfortably in the visible band — nothing to do.
+    if (rowTop >= headerH && rowBottom <= visibleBottom) return
+    const band = visibleBottom - headerH
+    const top = container.scrollTop + rowTop - headerH - Math.max(0, (band - rRect.height) / 2)
+    container.scrollTo({ top, behavior: 'smooth' })
+  }
+
   // When a track finishes: in continuous mode advance to the next visible track —
   // the selection-follows-playback effect plays it and moveSelection scrolls it
   // into view. Otherwise, or once the list runs out, close the player.
@@ -122,5 +149,12 @@ export function useListNavigation({
     }
   }
 
-  return { moveSelection, jumpSelection, pageSelection, revealSelection, onTrackEnded }
+  return {
+    moveSelection,
+    jumpSelection,
+    pageSelection,
+    revealSelection,
+    scrollToSelected,
+    onTrackEnded,
+  }
 }
