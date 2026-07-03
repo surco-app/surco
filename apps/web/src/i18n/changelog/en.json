@@ -11,6 +11,10 @@
       {
         "text": "The welcome wizard offers Engine DJ and the destination choice on every platform, not just macOS.",
         "in": "0.35.0"
+      },
+      {
+        "text": "The “reopen your last session” prompt now dismisses itself after a few seconds, with a visible countdown — and every notice now eases out gently instead of vanishing abruptly.",
+        "in": "0.35.1"
       }
     ]
   },

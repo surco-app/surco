@@ -11,6 +11,10 @@
       {
         "text": "El asistente de bienvenida ofrece Engine DJ y la elección de destino en todas las plataformas, no solo en macOS.",
         "in": "0.35.0"
+      },
+      {
+        "text": "El aviso de «recuperar la última sesión» ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible — y todos los avisos se despiden con una salida suave en vez de desaparecer de golpe.",
+        "in": "0.35.1"
       }
     ]
   },
