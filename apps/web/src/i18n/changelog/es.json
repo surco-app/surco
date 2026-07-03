@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.35",
+    "date": "3 de julio de 2026",
+    "title": "Un final de exportación más claro",
+    "items": [
+      {
+        "text": "Al terminar una exportación, el editor va al grano: la confirmación con enlaces para ver el archivo o eliminar el original, y una sola fila de botones — Apple Music, otra app de DJ y reexportar.",
+        "in": "0.35.0"
+      },
+      {
+        "text": "El asistente de bienvenida ofrece Engine DJ y la elección de destino en todas las plataformas, no solo en macOS.",
+        "in": "0.35.0"
+      }
+    ]
+  },
+  {
     "version": "0.34",
     "date": "2 de julio de 2026",
     "title": "Avisos más discretos",

@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.35",
+    "date": "July 3, 2026",
+    "title": "A clearer export finish",
+    "items": [
+      {
+        "text": "When an export finishes, the editor gets to the point: the confirmation with links to show the file or delete the original, and a single row of buttons — Apple Music, another DJ app and re-export.",
+        "in": "0.35.0"
+      },
+      {
+        "text": "The welcome wizard offers Engine DJ and the destination choice on every platform, not just macOS.",
+        "in": "0.35.0"
+      }
+    ]
+  },
+  {
     "version": "0.34",
     "date": "July 2, 2026",
     "title": "Quieter prompts",
