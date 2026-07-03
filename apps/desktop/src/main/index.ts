@@ -58,6 +58,7 @@ import {
   saveSettings,
   setConfigDir,
 } from './settings'
+import { wireUpdateDelivery } from './updateDelivery'
 import { armUpdateRecheck } from './updateRecheck'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -941,7 +942,7 @@ app.whenReady().then(() => {
       headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
     })
   })
-  const win = createWindow()
+  createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).
@@ -953,29 +954,39 @@ app.whenReady().then(() => {
     // macOS) so a failed install — which Squirrel.Mac otherwise swallows — leaves
     // a trace we can read.
     updater.logger = log
-    updater.on('update-downloaded', (info) =>
-      win.webContents.send('update:downloaded', info.version),
+    // Never capture `win` here: on macOS ⌘W destroys the window while the app and
+    // the updater keep running, so anything bound to the launch window would send
+    // its events into a destroyed webContents after a Dock reopen.
+    const liveWindow = (): BrowserWindow | undefined =>
+      BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+    wireUpdateDelivery(updater, liveWindow, (cb) =>
+      app.on('browser-window-created', (_e, newWin) =>
+        newWin.webContents.once('did-finish-load', () => cb(newWin)),
+      ),
     )
     updater.on('update-not-available', () => {
       if (!manualUpdateCheck) return
       manualUpdateCheck = false
-      dialog.showMessageBox(win, {
-        type: 'info',
-        message: createMenuT(app.getLocale())('upToDate'),
-      })
+      const target = liveWindow()
+      const opts = { type: 'info' as const, message: createMenuT(app.getLocale())('upToDate') }
+      if (target) dialog.showMessageBox(target, opts)
+      else dialog.showMessageBox(opts)
     })
     updater.on('error', (err) => {
       // Always log and tell the renderer: when the restart-to-update install fails
       // (manualUpdateCheck is false) this is the only sign the user gets that the
       // button did anything. The manual-check dialog stays as before.
       log.error('autoUpdater error', err)
-      win.webContents.send('update:error', err instanceof Error ? err.message : String(err))
+      liveWindow()?.webContents.send(
+        'update:error',
+        err instanceof Error ? err.message : String(err),
+      )
       if (!manualUpdateCheck) return
       manualUpdateCheck = false
-      dialog.showMessageBox(win, {
-        type: 'error',
-        message: createMenuT(app.getLocale())('updateError'),
-      })
+      const target = liveWindow()
+      const opts = { type: 'error' as const, message: createMenuT(app.getLocale())('updateError') }
+      if (target) dialog.showMessageBox(target, opts)
+      else dialog.showMessageBox(opts)
     })
     updater.checkForUpdates()
     // The launch probe alone missed every patch: they ship within the hour of their
