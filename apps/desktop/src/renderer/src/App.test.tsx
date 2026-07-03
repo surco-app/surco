@@ -1738,6 +1738,19 @@ describe('App reopen last session', () => {
     expect(screen.queryByTestId('last-session')).toBeNull()
   })
 
+  // An unanswered launch offer must not park in the corner forever: like the
+  // new-tracks prompt it carries a duration, so the shared toast draws its
+  // countdown bar and retires the card on its own. The stored session survives
+  // the expiry, so the next launch simply offers again.
+  it('auto-dismisses the offer with a visible countdown', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
+  })
+
   // If the user has already started importing, restoring the old list on top would mix
   // two sessions — the offer withdraws itself the moment rows exist.
   it('withdraws the offer once tracks arrive another way', async () => {

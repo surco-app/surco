@@ -497,7 +497,10 @@ export default function App(): React.JSX.Element {
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment rows exist (the effect below). Accepting
   // routes through the same expand pipeline as a drop, so media access and metadata
-  // reads behave exactly like a fresh import.
+  // reads behave exactly like a fresh import. Left unanswered it retires on its own
+  // (duration → countdown bar) like the new-tracks prompt; the stored session is not
+  // touched by the expiry, so the next launch simply offers again.
+  const LAST_SESSION_PROMPT_TIMEOUT_MS = 10_000
   const lastSessionToastId = useRef<string | null>(null)
   const reopenLastSession = useStableCallback(async (paths: string[]) => {
     // Retire the prompt right here, not via the rows-exist effect below: the ref must
@@ -518,6 +521,7 @@ export default function App(): React.JSX.Element {
       testid: 'last-session',
       message: tr('lastSession.prompt', { count: paths.length }),
       action: { label: tr('lastSession.load'), onAction: () => void reopenLastSession(paths) },
+      duration: LAST_SESSION_PROMPT_TIMEOUT_MS,
     })
   })
   useEffect(() => {
