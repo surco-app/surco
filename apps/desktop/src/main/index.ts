@@ -58,6 +58,7 @@ import {
   saveSettings,
   setConfigDir,
 } from './settings'
+import { armUpdateRecheck } from './updateRecheck'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 
@@ -977,6 +978,10 @@ app.whenReady().then(() => {
       })
     })
     updater.checkForUpdates()
+    // The launch probe alone missed every patch: they ship within the hour of their
+    // minor, after users have already relaunched, and a running instance never asked
+    // again. Re-checking on an interval keeps a long-lived session in the loop.
+    armUpdateRecheck(() => updater.checkForUpdates())
   }
 
   app.on('activate', () => {
