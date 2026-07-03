@@ -864,9 +864,14 @@ function registerIpc(): void {
 app.setName('Surco')
 // The default macOS About panel only shows the bundle name and version; spelling
 // out the brand and author here gives it a finished look instead of a bare window.
+// `website` is Linux-only, so on macOS the URL and contact email live in
+// `credits`, and the empty `version` drops the redundant "(x.y.z)" build suffix.
 app.setAboutPanelOptions({
   applicationName: 'Surco',
-  copyright: 'Vicent Gozalbes',
+  applicationVersion: app.getVersion(),
+  version: '',
+  credits: 'getsurco.app\nhello@vicent.io',
+  copyright: `© ${new Date().getFullYear()} Vicent Gozalbes`,
   website: 'https://getsurco.app',
 })
 
