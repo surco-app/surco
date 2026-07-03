@@ -29,10 +29,6 @@ interface ExportButtonProps {
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
   count?: number
-  // The demoted variant shown after a successful export: a bordered, muted control
-  // that sits in the secondary row labelled "Re-export", rather than the prominent
-  // accent button used to convert.
-  quiet?: boolean
   onProcess: (format: OutputFormat) => void
   onSelectFormat: (format: OutputFormat) => void
 }
@@ -40,9 +36,8 @@ interface ExportButtonProps {
 // A split button: the body exports in the currently chosen format (seeded from
 // Settings), the chevron opens a menu to switch which format that is. Picking a
 // format only relabels the button — it never converts on the spot, so a misclick
-// can't write a file; the deliberate click on the body is what exports. The control
-// stays visible after a track is done so re-exporting to another format never
-// means reloading the file or touching Settings.
+// can't write a file; the deliberate click on the body is what exports. Once a
+// track is done the footer swaps this for its demoted re-export link.
 export function ExportButton({
   status,
   stale,
@@ -55,7 +50,6 @@ export function ExportButton({
   incompleteReason,
   inPlace,
   count,
-  quiet,
   onProcess,
   onSelectFormat,
 }: ExportButtonProps): React.JSX.Element {
@@ -78,7 +72,6 @@ export function ExportButton({
 
   const labelSpec = exportButtonLabel({
     processing,
-    quiet,
     count,
     inPlace,
     stale,
@@ -98,21 +91,13 @@ export function ExportButton({
     // A disabled control fires no pointer events of its own, so the buttons go
     // pointer-events-none while blocked and this wrapper carries the hover — letting the
     // "why is this disabled" tooltip below appear over the greyed-out button.
-    <div
-      data-testid="process-btn-wrap"
-      ref={ref}
-      className={`group relative flex ${quiet ? 'flex-1' : ''}`}
-    >
+    <div data-testid="process-btn-wrap" ref={ref} className="group relative flex">
       <button
         type="button"
         data-testid="process-btn"
         onClick={() => onProcess(outputFormat)}
         disabled={blocked}
-        className={
-          quiet
-            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
-            : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
-        }
+        className="press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50"
       >
         {label}
       </button>
@@ -123,11 +108,7 @@ export function ExportButton({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         disabled={blocked}
-        className={
-          quiet
-            ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
-            : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
-        }
+        className="press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronDown
           aria-hidden="true"

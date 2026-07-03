@@ -942,14 +942,32 @@ describe('Editor multi-select', () => {
     renderMulti({ done: true })
     expect(screen.getByTestId('export-success')).toHaveTextContent('2')
   })
+
+  // The demoted re-export link must keep working over a selection: picking a
+  // format re-runs the whole batch, same as the old quiet button did.
+  it('re-exports the whole selection from the demoted link', () => {
+    const { onProcessAll } = renderMulti({ done: true })
+    fireEvent.click(screen.getByTestId('reexport'))
+    fireEvent.click(screen.getByTestId('reexport-format-mp3'))
+    expect(onProcessAll).toHaveBeenCalledWith('mp3')
+  })
 })
 
 describe('Editor export control', () => {
   // The original bug: once a track was done its export button vanished, so a user
-  // who exported WAV had no way to also export MP3 without reloading the file.
-  it('keeps the export button visible after the track is done', () => {
-    renderEditor({ id: 'a', status: 'done', outputPath: '/out/a.wav' })
-    expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+  // who exported WAV had no way to also export MP3 without reloading the file. The
+  // demoted link keeps that path open: its menu picks the format and exports in one
+  // go, both deliberate clicks, so the two-step never writes a file by accident.
+  it('re-exports in another format from the demoted link once the track is done', () => {
+    const { onProcess, onFormatChange } = renderEditor({
+      id: 'a',
+      status: 'done',
+      outputPath: '/out/a.wav',
+    })
+    fireEvent.click(screen.getByTestId('reexport'))
+    fireEvent.click(screen.getByTestId('reexport-format-mp3'))
+    expect(onFormatChange).toHaveBeenCalledWith('mp3')
+    expect(onProcess).toHaveBeenCalledWith('mp3')
   })
 
   // Once done, the noise of four equal buttons is replaced by a single primary

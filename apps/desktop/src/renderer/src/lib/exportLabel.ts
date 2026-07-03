@@ -1,6 +1,5 @@
 export interface ExportLabelState {
   processing: boolean
-  quiet?: boolean
   count?: number
   inPlace: boolean
   stale: boolean
@@ -12,8 +11,8 @@ export interface ExportLabelState {
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
-// order IS the precedence — an in-flight conversion beats everything, the quiet
-// re-export variant beats the batch count, and so on down to the plain convert.
+// order IS the precedence — an in-flight conversion beats everything, the batch
+// count beats the single-track states, and so on down to the plain convert.
 // Early returns instead of a nested ternary so adding a seventh state can't
 // silently change which existing state wins.
 export function exportButtonLabel(state: ExportLabelState): {
@@ -21,7 +20,6 @@ export function exportButtonLabel(state: ExportLabelState): {
   options?: Record<string, unknown>
 } {
   if (state.processing) return { key: 'editor.processing' }
-  if (state.quiet) return { key: 'editor.reexport' }
   if (state.count !== undefined) {
     return {
       key: state.withAppleMusic
