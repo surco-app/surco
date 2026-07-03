@@ -15,7 +15,8 @@ describe('exportButtonLabel', () => {
   // The label is a precedence chain; each row pins which state wins when several
   // apply, so adding a new state can't silently reshuffle the existing ones.
   it.each([
-    [{ ...base, processing: true, count: 2, done: true }, 'editor.processing'],
+    [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
+    [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.reexport'],
     [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
     [{ ...base, count: 2, inPlace: true, withEngineDj: true }, 'editor.convertAllEngine'],
     [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],

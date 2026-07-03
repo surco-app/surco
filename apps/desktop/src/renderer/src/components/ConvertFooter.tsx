@@ -1,13 +1,12 @@
-import { Check, ChevronDown, SlidersVertical } from 'lucide-react'
+import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
-import { ExportButton, FORMATS } from './ExportButton'
+import { ExportButton } from './ExportButton'
 import { Tooltip } from './Tooltip'
 
 interface ConvertFooterProps {
@@ -46,7 +45,7 @@ interface ConvertFooterProps {
 
 // The editor's bottom bar: the error row, the normalization note, and either the
 // convert split-button or — once everything selected is done — the outcome line with
-// its quiet Apple-Music/DJ-app row and the demoted re-export/trash links.
+// its inline file links (reveal/re-export/trash) and the Apple-Music/DJ-app row.
 export function ConvertFooter({
   item,
   isMulti,
@@ -88,18 +87,6 @@ export function ConvertFooter({
   // keeps the plain add semantics: the sweep resolves add-vs-update per track.
   const hasMusicCopy = !isMulti && !!item.musicPersistentId
   const showInMusic = hasMusicCopy && musicAdded
-  const [reexportOpen, setReexportOpen] = useState(false)
-  const reexportRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!reexportOpen) return
-    const onDown = (e: MouseEvent): void => {
-      if (reexportRef.current && !reexportRef.current.contains(e.target as Node))
-        setReexportOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [reexportOpen])
   return (
     <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
       {item.status === 'error' && (
@@ -132,32 +119,44 @@ export function ConvertFooter({
           </button>
         )}
         {showDone ? (
-          // The done state mirrors how often each next step happens: "Show file"
-          // is the one thing most users want, so it keeps the only loud button;
-          // Apple Music and the DJ-app export share one quiet row; re-export —
-          // the rarest action — and the destructive trash demote to plain links.
-          // Re-export is a menu that converts on pick: both clicks are
-          // deliberate, so the two-step can't write a file by accident.
+          // Two lines, ordered by what matters after an export. The first is
+          // about the file just written: the confirmation plus its low-stakes
+          // housekeeping (reveal, trash the source) as inline links. The
+          // second holds the actions as equal quiet buttons: the destinations
+          // (Apple Music, DJ-app export) and the re-export split-button, whose
+          // chevron re-picks the format without converting on the spot.
           <>
-            <p data-testid="export-success" className="text-center text-xs font-medium text-good">
-              {inMusicLibraryOnly
-                ? isMulti
-                  ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
-                  : tr('editor.addedToAppleMusic')
-                : isMulti
-                  ? tr('editor.exportedCount', { count: selectedCount })
-                  : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
-            </p>
-            {revealPath && (
-              <button
-                type="button"
-                data-testid="show-file"
-                onClick={() => window.api.reveal(revealPath)}
-                className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-              >
-                {tr('editor.showFile')}
-              </button>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <p data-testid="export-success" className="text-xs font-medium text-good">
+                {inMusicLibraryOnly
+                  ? isMulti
+                    ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
+                    : tr('editor.addedToAppleMusic')
+                  : isMulti
+                    ? tr('editor.exportedCount', { count: selectedCount })
+                    : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
+              </p>
+              {revealPath && (
+                <button
+                  type="button"
+                  data-testid="show-file"
+                  onClick={() => window.api.reveal(revealPath)}
+                  className="press text-xs text-fg-dim hover:text-fg"
+                >
+                  {tr('editor.showFile')}
+                </button>
+              )}
+              {canDeleteOriginal && (
+                <button
+                  type="button"
+                  data-testid="delete-original"
+                  onClick={onTrashOriginal}
+                  className="press text-xs text-fg-dim hover:text-danger"
+                >
+                  {tr('editor.deleteOriginal')}
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               {isMacOS() &&
                 (musicExt !== 'flac' || hasMusicCopy) &&
@@ -194,62 +193,21 @@ export function ConvertFooter({
               >
                 {tr('editor.exportCollection')}
               </button>
-            </div>
-            <div className="flex items-center justify-center gap-4">
-              <div ref={reexportRef} className="relative">
-                <button
-                  type="button"
-                  data-testid="reexport"
-                  aria-expanded={reexportOpen}
-                  onClick={() => setReexportOpen((v) => !v)}
-                  className="press flex items-center gap-1 text-xs text-fg-dim hover:text-fg"
-                >
-                  {tr('editor.reexport')}
-                  <ChevronDown
-                    aria-hidden="true"
-                    className={`h-3 w-3 transition-transform ${reexportOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {reexportOpen && (
-                  <div className="absolute bottom-full left-1/2 mb-2 w-56 -translate-x-1/2 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
-                    {FORMATS.map((id) => (
-                      <button
-                        key={id}
-                        type="button"
-                        data-testid={`reexport-format-${id}`}
-                        aria-current={id === format ? 'true' : undefined}
-                        onClick={() => {
-                          setReexportOpen(false)
-                          onSelectFormat(id)
-                          onProcess(id)
-                        }}
-                        className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
-                          id === format ? 'font-medium text-[var(--color-accent)]' : ''
-                        }`}
-                      >
-                        {tr(`settings.formats.${id}`)}
-                        {id === exportedFormat && !isMulti && (
-                          <Check
-                            className="h-3.5 w-3.5 text-good"
-                            strokeWidth={2.5}
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {canDeleteOriginal && (
-                <button
-                  type="button"
-                  data-testid="delete-original"
-                  onClick={onTrashOriginal}
-                  className="press text-xs text-fg-dim hover:text-danger"
-                >
-                  {tr('editor.deleteOriginal')}
-                </button>
-              )}
+              <ExportButton
+                quiet
+                status={isMulti ? 'idle' : item.status}
+                stale={false}
+                done={false}
+                outputFormat={format}
+                exportedFormat={isMulti ? null : exportedFormat}
+                withAppleMusic={false}
+                withEngineDj={false}
+                incomplete={false}
+                inPlace={false}
+                count={isMulti ? selectedCount : undefined}
+                onProcess={onProcess}
+                onSelectFormat={onSelectFormat}
+              />
             </div>
             {musicError && <p className="text-xs text-danger">{musicError}</p>}
           </>

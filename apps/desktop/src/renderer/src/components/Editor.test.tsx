@@ -943,37 +943,37 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('export-success')).toHaveTextContent('2')
   })
 
-  // The demoted re-export link must keep working over a selection: picking a
-  // format re-runs the whole batch, same as the old quiet button did.
-  it('re-exports the whole selection from the demoted link', () => {
+  // The quiet re-export button must keep working over a selection: its body
+  // re-runs the whole batch in the chosen format.
+  it('re-exports the whole selection from the quiet button', () => {
     const { onProcessAll } = renderMulti({ done: true })
-    fireEvent.click(screen.getByTestId('reexport'))
-    fireEvent.click(screen.getByTestId('reexport-format-mp3'))
-    expect(onProcessAll).toHaveBeenCalledWith('mp3')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcessAll).toHaveBeenCalledWith('aiff')
   })
 })
 
 describe('Editor export control', () => {
   // The original bug: once a track was done its export button vanished, so a user
   // who exported WAV had no way to also export MP3 without reloading the file. The
-  // demoted link keeps that path open: its menu picks the format and exports in one
-  // go, both deliberate clicks, so the two-step never writes a file by accident.
-  it('re-exports in another format from the demoted link once the track is done', () => {
+  // quiet split-button keeps that path open: the chevron re-picks the format and
+  // the body exports, without reloading the file or touching Settings.
+  it('keeps the re-export split-button working after the track is done', () => {
     const { onProcess, onFormatChange } = renderEditor({
       id: 'a',
       status: 'done',
       outputPath: '/out/a.wav',
     })
-    fireEvent.click(screen.getByTestId('reexport'))
-    fireEvent.click(screen.getByTestId('reexport-format-mp3'))
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onFormatChange).toHaveBeenCalledWith('mp3')
-    expect(onProcess).toHaveBeenCalledWith('mp3')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalled()
   })
 
-  // Once done, the noise of four equal buttons is replaced by a single primary
-  // action: the outcome line confirms what was written and "Show file" is the one
-  // thing most users want next, so it earns the only prominent button.
-  it('confirms the export outcome and reveals the file with the primary action', () => {
+  // Once done, the outcome line confirms what was written and "Show file" rides
+  // it as an inline link — a quick check on the file, not a next step, so it
+  // must not outshout the destination buttons below.
+  it('confirms the export outcome and reveals the file from its inline link', () => {
     renderEditor({ id: 'a', status: 'done', inputPath: '/music/a.flac', outputPath: '/out/a.wav' })
     expect(screen.getByTestId('export-success')).toHaveTextContent('WAV')
     fireEvent.click(screen.getByTestId('show-file'))
