@@ -118,5 +118,44 @@ describe('ToastStack', () => {
       act(() => vi.advanceTimersByTime(60_000))
       expect(onExpire).not.toHaveBeenCalled()
     })
+
+    // A dismissed card must not blink out of existence — it lingers just long enough
+    // for its leave animation, then unmounts. Now that several toasts expire on their
+    // own, an instant unmount reads as a rendering glitch, not a dismissal.
+    it('keeps a dismissed card briefly for its exit animation, then drops it', () => {
+      const { rerender } = render(
+        <ToastStack
+          toasts={[toast({ id: 'a', testid: 'app-notice' })]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      rerender(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
+      expect(screen.getByTestId('app-notice')).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.queryByTestId('app-notice')).toBeNull()
+    })
+
+    // A keyed re-push (the new-tracks count updating in place) swaps ids in the queue;
+    // the outgoing twin must vanish immediately or every count change would flash a
+    // duplicate card fading out under the fresh one.
+    it('replaces a keyed card instantly instead of fading the old one out', () => {
+      const { rerender } = render(
+        <ToastStack
+          toasts={[toast({ id: 'a', key: 'new-tracks', message: '2 new tracks' })]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      rerender(
+        <ToastStack
+          toasts={[toast({ id: 'b', key: 'new-tracks', message: '3 new tracks' })]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      expect(screen.getByText('3 new tracks')).toBeInTheDocument()
+      expect(screen.queryByText('2 new tracks')).toBeNull()
+    })
   })
 })

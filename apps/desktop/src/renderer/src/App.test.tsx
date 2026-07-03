@@ -690,7 +690,7 @@ describe('App error surfacing', () => {
     expect(screen.getByTestId('track-row')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('app-error-dismiss'))
-    expect(screen.queryByTestId('app-error')).toBeNull()
+    await waitFor(() => expect(screen.queryByTestId('app-error')).toBeNull())
   })
 
   // A failed settings read leaves the whole session on defaults with onboarding

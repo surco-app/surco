@@ -294,6 +294,20 @@ textarea {
   animation: toast-countdown linear forwards;
 }
 
+/* A dismissed toast's exit: softer than the pop-in, a short fade sliding back toward the
+   corner. Duration must stay in step with TOAST_LEAVE_MS in ToastStack.tsx — the timer
+   there unmounts the card when this finishes. */
+@keyframes toast-leave {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.animate-toast-leave {
+  animation: toast-leave 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
 .press {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
