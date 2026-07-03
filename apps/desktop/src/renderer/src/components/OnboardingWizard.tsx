@@ -25,8 +25,6 @@ const STEPS = [
   'fields',
   'spectrum',
 ] as const
-// Apple Music exists only on macOS, so the destination choice is offered there alone.
-const isMac = isMacOS()
 
 interface Props {
   settings: Settings
@@ -35,6 +33,9 @@ interface Props {
 
 export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // Read at render (not module load) like the rest of the tree; Apple Music is the one
+  // destination that only exists on macOS.
+  const isMac = isMacOS()
   const [step, setStep] = useState(0)
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
@@ -49,6 +50,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
+  const [addToEngineDj, setAddToEngineDj] = useState(settings.addToEngineDj)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
@@ -73,25 +75,25 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         addToAppleMusic,
         keepOutputCopy,
         overwriteOriginal,
+        addToEngineDj,
       }),
     )
   }
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
-  // it's the format. chooseDestination maps the single radio back onto the two booleans.
-  // The wizard never offers Engine DJ (a first run is about the basics), so the flag is
-  // pinned false on both sides of the mapping.
+  // it's the format. chooseDestination maps the single radio back onto the stored booleans.
   const destination = toDestination(
     addToAppleMusic,
     outputFormat === 'flac',
     overwriteOriginal,
-    false,
+    addToEngineDj,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
     setKeepOutputCopy(next.keepOutputCopy)
     setOverwriteOriginal(next.overwriteOriginal)
+    setAddToEngineDj(next.addToEngineDj)
   }
 
   return (
@@ -226,26 +228,24 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 />
                 <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
-                {isMac && (
-                  <div className="mt-5 border-t border-[var(--color-line)] pt-4">
-                    <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-                      {tr('settings.destination')}
-                    </span>
-                    <DestinationPicker
-                      destinations={DESTINATIONS.filter((d) => d !== 'engineDj')}
-                      value={destination}
-                      onChange={chooseDestination}
-                      flacOnly={outputFormat === 'flac'}
-                      testidPrefix="onboarding-destination"
-                      radioName="onboarding-destination"
-                    />
-                    {outputFormat === 'flac' && (
-                      <p className="mt-1.5 text-xs text-fg-dim">
-                        {tr('settings.appleMusicFlacNote')}
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+                  <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                    {tr('settings.destination')}
+                  </span>
+                  <DestinationPicker
+                    destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
+                    value={destination}
+                    onChange={chooseDestination}
+                    flacOnly={outputFormat === 'flac'}
+                    testidPrefix="onboarding-destination"
+                    radioName="onboarding-destination"
+                  />
+                  {isMac && outputFormat === 'flac' && (
+                    <p className="mt-1.5 text-xs text-fg-dim">
+                      {tr('settings.appleMusicFlacNote')}
+                    </p>
+                  )}
+                </div>
               </>
             )}
 

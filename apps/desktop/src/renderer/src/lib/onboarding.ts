@@ -16,12 +16,15 @@ export interface OnboardingChoices {
   // The editor fields the user wants shown (in order) and which of them are required.
   visibleFields: string[]
   requiredFields: string[]
-  // The output destination, only chosen on macOS (where Apple Music exists); on other
-  // platforms these stay at their defaults since the wizard never offers the choice.
+  // The output destination, mirroring the Settings booleans (Apple Music is only offered
+  // on macOS; Engine DJ and overwrite are offered everywhere).
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   // Rewrites the source files in place instead of producing copies (destructive).
   overwriteOriginal: boolean
+  // Registers converted tracks in the Engine DJ library; its folder and playlist keep
+  // their defaults here, tunable later in Settings.
+  addToEngineDj: boolean
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -57,6 +60,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     addToAppleMusic: choices.addToAppleMusic,
     keepOutputCopy: choices.keepOutputCopy,
     overwriteOriginal: choices.overwriteOriginal,
+    addToEngineDj: choices.addToEngineDj,
     hasSeenOnboarding: true,
   }
 }

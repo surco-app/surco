@@ -27,6 +27,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: false,
     })
     expect(patch).toEqual({
@@ -42,6 +43,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: false,
       hasSeenOnboarding: true,
     })
@@ -64,6 +66,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: ['title', 'artist'],
       addToAppleMusic: true,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: true,
     })
     expect(patch.discogsToken).toBe('tok')
@@ -94,6 +97,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: ['title', 'artist'],
       addToAppleMusic: false,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: true,
     })
     expect(patch.autoMatch).toBe(false)
@@ -114,6 +118,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: [],
       addToAppleMusic: false,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: true,
     })
     expect(patch.autoMatch).toBe(true)
@@ -136,10 +141,34 @@ describe('buildOnboardingPatch', () => {
       requiredFields: [],
       addToAppleMusic: true,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: false,
     })
     expect(patch.addToAppleMusic).toBe(true)
     expect(patch.keepOutputCopy).toBe(false)
+  })
+
+  // Engine DJ chosen in the wizard must reach settings like any other destination, or a
+  // Denon user's first conversions would silently skip their Engine library.
+  it('persists Engine DJ as the destination', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '',
+      searchProviders: ['discogs'],
+      outputFormat: 'aiff',
+      autoApplyFilename: false,
+      grouping: '',
+      genre: '',
+      showSpectrum: true,
+      autoMatch: false,
+      visibleFields: [],
+      requiredFields: [],
+      addToAppleMusic: false,
+      overwriteOriginal: false,
+      addToEngineDj: true,
+      keepOutputCopy: true,
+    })
+    expect(patch.addToEngineDj).toBe(true)
+    expect(patch.keepOutputCopy).toBe(true)
   })
 
   // The fields chosen in the wizard's Fields step must reach settings in the picked
@@ -158,6 +187,7 @@ describe('buildOnboardingPatch', () => {
       requiredFields: ['artist'],
       addToAppleMusic: false,
       overwriteOriginal: false,
+      addToEngineDj: false,
       keepOutputCopy: true,
     })
     expect(patch.visibleFields).toEqual(['artist', 'title', 'bpm'])
