@@ -139,7 +139,18 @@ export function useConfirmFlows({
         // The activity row names what was actually removed: the old copy itself.
         window.api
           .deleteAppleMusic(stale.persistentId, stale.label)
-          .then(() => onOldMusicCopyRemoved())
+          .then((res) => {
+            // The trashed file can BE a loaded row's source (Music's "copy files to
+            // the Media folder" off + the user's own file added by hand): mark those
+            // rows originalTrashed so the footer's delete-original link retires
+            // instead of failing later on a file that's already in the Trash.
+            if (res?.location) {
+              for (const t of tracksRef.current) {
+                if (t.inputPath === res.location) updateTrack(t.id, { originalTrashed: true })
+              }
+            }
+            onOldMusicCopyRemoved()
+          })
           // Same as askTrash: the user confirmed a destructive dialog, so a
           // failure must be said out loud, not swallowed. The sentinel travels as an
           // error-message substring because Electron IPC rejections carry only that.

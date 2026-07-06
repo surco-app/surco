@@ -24,6 +24,7 @@ function setup(
   extra: {
     onOldMusicCopyRemoved?: ReturnType<typeof vi.fn>
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn>
+    updateTrack?: ReturnType<typeof vi.fn>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
@@ -31,7 +32,7 @@ function setup(
     useConfirmFlows({
       settings: null,
       removeTrack: vi.fn(),
-      updateTrack: vi.fn(),
+      updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
       deriveTracks: vi.fn(),
       processAll: vi.fn(),
@@ -121,6 +122,25 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
     })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(false))
+  })
+
+  // With Music's "copy files to the Media folder" off, the old entry's file can BE a
+  // loaded row's source. Once it goes to the Trash, that row must know (originalTrashed)
+  // so the footer's own delete-original link retires instead of failing confusingly on
+  // a file that is already in the Trash.
+  it('marks a loaded track whose source file was the trashed old copy', async () => {
+    const deleteAppleMusic = vi
+      .fn()
+      .mockResolvedValue({ outcome: 'deleted', location: '/a.wav' })
+    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const updateTrack = vi.fn()
+    const { flows, opened } = setup([track('a')], { updateTrack })
+    flows.askRemoveOldMusicCopy(track('a'), {
+      persistentId: 'OLDCOPY123456789',
+      label: 'Djmofly - Save My Love (26 Rmx)',
+    })
+    opened[0].onConfirm()
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { originalTrashed: true }))
   })
 
   // The delete script refused because the live Music track no longer matches the label

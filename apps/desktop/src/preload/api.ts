@@ -79,11 +79,12 @@ export interface Api {
   revealAppleMusic: (persistentId: string) => Promise<void>
   // Removes a superseded library copy (entry + file to the OS Trash) after a replace.
   // 'missing' means the copy was already gone, which the caller treats as done; the
-  // track label feeds the activity row. Undefined off macOS.
+  // trashed file's path rides back so rows loaded from that same file can be marked.
+  // The track label feeds the activity row. Undefined off macOS.
   deleteAppleMusic: (
     persistentId: string,
     track: string,
-  ) => Promise<'deleted' | 'missing' | undefined>
+  ) => Promise<{ outcome: 'deleted' | 'missing'; location?: string } | undefined>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   exportCover: (job: CoverExportJob) => Promise<string | null>
   exportRekordbox: (xml: string) => Promise<string | null>

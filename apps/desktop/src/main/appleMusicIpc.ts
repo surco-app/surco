@@ -128,9 +128,11 @@ export function registerAppleMusicIpc(): void {
         'activity.appleMusicDelete',
         async () => {
           const location = await deleteFromAppleMusic(persistentId, track)
-          if (location === null) return 'missing'
+          if (location === null) return { outcome: 'missing' as const }
           if (location) await shell.trashItem(location).catch(() => undefined)
-          return 'deleted'
+          // The trashed path travels back so the renderer can mark any loaded row
+          // whose source file this was (Music referencing the user's own file).
+          return { outcome: 'deleted' as const, location: location || undefined }
         },
         { labelParams: { track } },
       ),
