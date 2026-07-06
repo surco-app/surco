@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildM3u } from '../lib/m3u'
 import { buildRekordboxXml } from '../lib/rekordbox'
-import { buildSeratoCrate } from '../lib/serato'
 import { buildTraktorNml } from '../lib/traktor'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
@@ -45,7 +44,12 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
       label: 'Serato DJ',
       ext: '.crate',
       hint: tr('export.seratoHint'),
-      run: () => window.api.exportSerato(buildSeratoCrate(tracks)),
+      // Main builds the crate bytes: Serato paths are relative to the volume the crate
+      // is saved on, which only the save dialog knows.
+      run: () =>
+        window.api.exportSerato(
+          tracks.map((t) => ({ inputPath: t.inputPath, outputPath: t.outputPath })),
+        ),
     },
     {
       id: 'm3u',

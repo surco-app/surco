@@ -1,4 +1,3 @@
-import type { TrackItem } from '../types'
 
 // Builds a Serato DJ ".crate" file from the loaded tracks. Unlike rekordbox/Traktor (plain
 // text), a crate is a binary tree of frames: a 4-byte ASCII tag, a 4-byte big-endian length,
@@ -55,17 +54,35 @@ function columnFrame(name: string): Uint8Array {
   return frame('ovct', concat([textFrame('tvcn', name), textFrame('tvcw', '0')]))
 }
 
-// Serato stores track paths relative to the root of the volume the crate lives on: forward
-// slashes, no leading slash (macOS) and no drive letter (Windows). It resolves them against
-// that volume on import, so an absolute path with the leading "/" left in fails to load.
-function seratoPath(path: string): string {
-  return path
-    .replace(/\\/g, '/')
-    .replace(/^[A-Za-z]:/, '')
-    .replace(/^\/+/, '')
+// The root of the volume a file lives on: an external volume on macOS (/Volumes/Name),
+// a drive letter on Windows, '' for the boot volume.
+function volumeRoot(path: string): string {
+  const mac = path.match(/^\/Volumes\/[^/]+/)
+  if (mac) return mac[0]
+  const win = path.replace(/\\/g, '/').match(/^[A-Za-z]:/)
+  return win ? win[0] : ''
 }
 
-export function buildSeratoCrate(tracks: TrackItem[]): Uint8Array {
+// Serato stores track paths relative to the root of the volume the CRATE lives on:
+// forward slashes, no leading slash (macOS) and no drive letter (Windows). A crate
+// saved into an external drive's own _Serato_ folder (the standard USB workflow) must
+// therefore lose the whole /Volumes/Name prefix its tracks share with it — while a
+// boot-volume crate keeps that prefix, which is what resolves from "/". Tracks on a
+// different volume than the crate can't be represented and keep the boot-relative form.
+function seratoPath(path: string, crateRoot: string): string {
+  const slashed = path.replace(/\\/g, '/')
+  if (crateRoot && slashed.toLowerCase().startsWith(`${crateRoot.toLowerCase()}/`))
+    return slashed.slice(crateRoot.length + 1)
+  return slashed.replace(/^[A-Za-z]:/, '').replace(/^\/+/, '')
+}
+
+// `crateFilePath` is where the caller will save the crate — known only after the save
+// dialog, which is why main builds the bytes rather than the renderer.
+export function buildSeratoCrate(
+  tracks: { inputPath: string; outputPath?: string }[],
+  crateFilePath = '',
+): Uint8Array {
+  const crateRoot = crateFilePath ? volumeRoot(crateFilePath) : ''
   const frames: Uint8Array[] = [
     textFrame('vrsn', VERSION),
     // Sort by the song column, ascending (brev = 0).
@@ -76,7 +93,7 @@ export function buildSeratoCrate(tracks: TrackItem[]): Uint8Array {
     // Point at the converted output when there is one; Serato should reference the file the
     // DJ will actually play, not the pre-conversion source.
     const path = t.outputPath ?? t.inputPath
-    frames.push(frame('otrk', textFrame('ptrk', seratoPath(path))))
+    frames.push(frame('otrk', textFrame('ptrk', seratoPath(path, crateRoot))))
   }
   return concat(frames)
 }

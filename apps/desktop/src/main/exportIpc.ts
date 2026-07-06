@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { dialog, ipcMain } from 'electron'
+import { buildSeratoCrate } from '../shared/serato'
 import { activity } from './activity'
 
 // The DJ-software export dialogs, split out of index.ts's registerIpc by domain (the
@@ -38,20 +39,27 @@ export function registerExportIpc(): void {
     return filePath
   })
 
-  // Writes a Serato DJ crate (binary). The renderer builds the bytes; the DJ drops the file
-  // into their _Serato_/Subcrates folder. Returns the saved path, or null when cancelled.
-  ipcMain.handle('dialog:exportSerato', async (_e, data: Uint8Array) => {
-    const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exporta a Serato',
-      defaultPath: 'Surco.crate',
-      filters: [{ name: 'Serato crate', extensions: ['crate'] }],
-    })
-    if (canceled || !filePath) return null
-    await activity.track('export', 'activity.exportSerato', () => writeFile(filePath, data), {
-      detail: filePath,
-    })
-    return filePath
-  })
+  // Writes a Serato DJ crate (binary) into the DJ's _Serato_/Subcrates folder. The bytes
+  // are built HERE, after the dialog: crate paths are relative to the volume the crate
+  // lands on, so the save location has to be known before the paths can be rendered.
+  ipcMain.handle(
+    'dialog:exportSerato',
+    async (_e, tracks: { inputPath: string; outputPath?: string }[]) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Exporta a Serato',
+        defaultPath: 'Surco.crate',
+        filters: [{ name: 'Serato crate', extensions: ['crate'] }],
+      })
+      if (canceled || !filePath) return null
+      await activity.track(
+        'export',
+        'activity.exportSerato',
+        () => writeFile(filePath, buildSeratoCrate(tracks, filePath)),
+        { detail: filePath },
+      )
+      return filePath
+    },
+  )
 
   // Writes an extended M3U8 playlist — the bridge to everything that isn't DJ software.
   // Returns the saved path, or null when cancelled, like the other exports.

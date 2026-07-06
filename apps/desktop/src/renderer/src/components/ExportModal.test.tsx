@@ -80,14 +80,16 @@ describe('ExportModal', () => {
     expect(api.exportRekordbox.mock.calls[0][0]).toContain('<DJ_PLAYLISTS')
   })
 
-  // Serato's crate is binary, not text: the modal hands the IPC the raw bytes, which must
-  // begin with the crate's "vrsn" version frame.
-  it('writes a Serato crate when Serato is chosen', () => {
+  // Serato paths are relative to the volume the crate is saved on, which only main's
+  // save dialog knows — so the modal hands the IPC the track paths, and main builds
+  // the crate bytes after the dialog.
+  it('hands the track paths to main when Serato is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
     fireEvent.click(screen.getByTestId('export-serato'))
     expect(api.exportSerato).toHaveBeenCalledTimes(1)
-    const data = api.exportSerato.mock.calls[0][0] as Uint8Array
-    expect(String.fromCharCode(data[0], data[1], data[2], data[3])).toBe('vrsn')
+    expect(api.exportSerato.mock.calls[0][0]).toEqual([
+      { inputPath: track().inputPath, outputPath: track().outputPath },
+    ])
   })
 
   // The playlist bridge for everything that isn't DJ software: one row, one plain

@@ -88,7 +88,7 @@ export interface Api {
   exportCover: (job: CoverExportJob) => Promise<string | null>
   exportRekordbox: (xml: string) => Promise<string | null>
   exportTraktor: (nml: string) => Promise<string | null>
-  exportSerato: (data: Uint8Array) => Promise<string | null>
+  exportSerato: (tracks: { inputPath: string; outputPath?: string }[]) => Promise<string | null>
   exportM3u: (m3u: string) => Promise<string | null>
   prepareCoverDrag: (src: {
     coverUrl?: string

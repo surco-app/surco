@@ -1,18 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { TrackMetadata } from '../../../shared/types'
-import type { TrackItem } from '../types'
 import { buildSeratoCrate } from './serato'
 
-const track = (
-  over: Omit<Partial<TrackItem>, 'meta'> & { meta?: Partial<TrackMetadata> },
-): TrackItem =>
-  ({
-    id: over.id ?? 'x',
-    inputPath: over.inputPath ?? '/music/x.wav',
-    fileName: over.fileName ?? 'x.wav',
-    outputPath: over.outputPath,
-    meta: { title: '', artist: '', ...over.meta },
-  }) as TrackItem
+const track = (over: { inputPath?: string; outputPath?: string } = {}): {
+  inputPath: string
+  outputPath?: string
+} => ({ inputPath: over.inputPath ?? '/music/x.wav', outputPath: over.outputPath })
 
 // Walks the crate's top-level frames (tag + big-endian uint32 length + body), so the tests
 // assert against the real parsed structure rather than opaque byte offsets — the same shape
@@ -42,8 +34,8 @@ function decodeUtf16be(bytes: Uint8Array): string {
 
 describe('buildSeratoCrate', () => {
   const crate = buildSeratoCrate([
-    track({ id: 'a', inputPath: '/music/Run To Me.wav', meta: { title: 'Run To Me' } }),
-    track({ id: 'b', inputPath: '/music/b.aiff' }),
+    track({ inputPath: '/music/Run To Me.wav' }),
+    track({ inputPath: '/music/b.aiff' }),
   ])
   const frames = parseFrames(crate)
 
@@ -93,5 +85,45 @@ describe('buildSeratoCrate', () => {
     ).filter((f) => f.tag === 'otrk')
     const path = parseFrames(tracks[0].body).find((c) => c.tag === 'ptrk')
     expect(path && decodeUtf16be(path.body)).toBe('out/a.aiff')
+  })
+
+  // The crate's paths resolve against the volume the CRATE lives on. Saved into an
+  // external drive's own _Serato_/Subcrates (the standard USB workflow), a track on
+  // that drive must lose the whole /Volumes/USB prefix — the old blanket stripping left
+  // 'Volumes/USB/…', which Serato resolved to /Volumes/USB/Volumes/USB/… and every
+  // track imported as missing.
+  it('makes paths relative to the crate’s own volume when saved on an external drive', () => {
+    const tracks = parseFrames(
+      buildSeratoCrate(
+        [track({ inputPath: '/Volumes/USB/Music/a.aiff' })],
+        '/Volumes/USB/_Serato_/Subcrates/Surco.crate',
+      ),
+    ).filter((f) => f.tag === 'otrk')
+    const path = parseFrames(tracks[0].body).find((c) => c.tag === 'ptrk')
+    expect(path && decodeUtf16be(path.body)).toBe('Music/a.aiff')
+  })
+
+  // A boot-volume crate referencing an external file resolves from "/", so the
+  // Volumes prefix is exactly what makes it load — it must survive there.
+  it('keeps the Volumes prefix for a crate saved on the boot volume', () => {
+    const tracks = parseFrames(
+      buildSeratoCrate(
+        [track({ inputPath: '/Volumes/USB/Music/a.aiff' })],
+        '/Users/me/Music/_Serato_/Subcrates/Surco.crate',
+      ),
+    ).filter((f) => f.tag === 'otrk')
+    const path = parseFrames(tracks[0].body).find((c) => c.tag === 'ptrk')
+    expect(path && decodeUtf16be(path.body)).toBe('Volumes/USB/Music/a.aiff')
+  })
+
+  it('strips the drive only when it matches the crate’s own on Windows', () => {
+    const tracks = parseFrames(
+      buildSeratoCrate(
+        [track({ inputPath: 'D:\\Music\\a.mp3' })],
+        'D:\\_Serato_\\Subcrates\\Surco.crate',
+      ),
+    ).filter((f) => f.tag === 'otrk')
+    const path = parseFrames(tracks[0].body).find((c) => c.tag === 'ptrk')
+    expect(path && decodeUtf16be(path.body)).toBe('Music/a.mp3')
   })
 })
