@@ -601,6 +601,35 @@ describe('useTrackProcessing', () => {
     }
   })
 
+  // Each queued job re-read Settings when its turn came, so enabling "overwrite
+  // original" (or switching the format) mid-run changed what the REST of the batch did
+  // — in-place source rewrites the user never confirmed. The run must convert every
+  // track with the settings it was started under.
+  it('pins the overwrite and format settings at batch start, ignoring a mid-run change', async () => {
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const settingsA = { outputFormat: 'aiff', overwriteOriginal: false } as Settings
+    const settingsB = { outputFormat: 'mp3', overwriteOriginal: true } as Settings
+    const processTrack = vi.fn().mockImplementation(async () => {
+      rerenderWith(settingsB)
+      return { outputPath: '/out/x.aiff' }
+    })
+    setApi({ processTrack })
+    const { result, rerender } = renderHook(
+      ({ settings }: { settings: Settings }) =>
+        useTrackProcessing({ tracks, settings, updateTrack: vi.fn(), concurrency: 1 }),
+      { wrapper: withClient(), initialProps: { settings: settingsA } },
+    )
+    const rerenderWith = (s: Settings): void => rerender({ settings: s })
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(processTrack).toHaveBeenCalledTimes(2)
+    expect(processTrack).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: 'b', format: 'aiff', overwriteOriginal: false }),
+    )
+  })
+
   // The batch's done/total pools into the top progress bar with the other sweeps; left
   // at {N,N} after the run it kept the bar pinned at 100% forever and skewed every later
   // sweep's pooled fraction. It must return to zero the moment the run ends.

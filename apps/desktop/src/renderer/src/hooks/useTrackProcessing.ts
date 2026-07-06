@@ -50,6 +50,7 @@ export interface TrackProcessing {
     id: string,
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
+    overwriteOverride?: boolean,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
@@ -105,6 +106,7 @@ export function useTrackProcessing({
       id: string,
       formatOverride?: OutputFormat,
       normalizeOverride?: NormalizeConfig,
+      overwriteOverride?: boolean,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -152,7 +154,8 @@ export function useTrackProcessing({
       const autoName = settings?.autoApplyFilename
         ? renderOutputName(settings.filenameFormat, meta)
         : ''
-      const outputName = settings?.overwriteOriginal
+      const overwriteOriginal = overwriteOverride ?? settings?.overwriteOriginal
+      const outputName = overwriteOriginal
         ? track.fileName
         : track.outputName?.trim() || autoName || track.fileName
       try {
@@ -165,6 +168,7 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           format: formatOverride,
           normalize: normalizeOverride,
+          overwriteOriginal: overwriteOverride,
           previousOutputPath: track.outputPath,
           musicPersistentId: track.musicPersistentId,
         })
@@ -293,6 +297,12 @@ export function useTrackProcessing({
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
       // so aren't marked failed) — they stay flagged in the list for the user to finish.
       const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+      // Pin the settings that decide what a conversion DOES to the user's files: every
+      // queued track converts under the settings the run started with, so a Settings
+      // change mid-batch can't fork the run into another format or into unconfirmed
+      // in-place rewrites. The rest (covers, destinations) stays live-read.
+      const pinnedFormat = formatOverride ?? settings?.outputFormat
+      const pinnedOverwrite = settings?.overwriteOriginal
       cancelBatchRef.current = false
       setBatching(true)
       setBatchSummary(null)
@@ -308,7 +318,7 @@ export function useTrackProcessing({
         // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
         results = await mapWithConcurrency(ids, concurrency, async (id) => {
           if (cancelBatchRef.current) return 'skipped'
-          const outcome = await processOne(id, formatOverride, normalizeOverride)
+          const outcome = await processOne(id, pinnedFormat, normalizeOverride, pinnedOverwrite)
           done += 1
           setBatchProgress({ done, total: ids.length })
           return outcome

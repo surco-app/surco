@@ -274,6 +274,10 @@ export interface ProcessJob {
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.
   normalize?: NormalizeConfig
+  // Overwrite-original pinned when the batch started; falls back to the live setting
+  // when undefined (single converts read it at click time). Pinned so a Settings flip
+  // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
+  overwriteOriginal?: boolean
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.
   previousOutputPath?: string

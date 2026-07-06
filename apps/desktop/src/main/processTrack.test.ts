@@ -259,6 +259,34 @@ describe('runProcessTrack — in-place rewrite', () => {
   })
 })
 
+describe('runProcessTrack — pinned overwrite', () => {
+  // The batch pins overwriteOriginal when it starts; the flag rides each job so a
+  // Settings flip mid-run cannot turn the remaining queued tracks into unconfirmed
+  // in-place rewrites of their sources.
+  it('honors the job pin over the live setting', async () => {
+    const deps = makeDeps({ settings: settings({ overwriteOriginal: true }) })
+    const result = await runProcessTrack(job({ overwriteOriginal: false }), deps)
+
+    expect(deps.convertAudio).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/out/Artist - Title.aiff',
+      'aiff',
+      {},
+      undefined,
+      { mode: 'none' },
+      undefined,
+    )
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.inPlace).toBe(false)
+  })
+
+  it('falls back to the live setting when the job carries no pin', async () => {
+    const deps = makeDeps({ settings: settings({ overwriteOriginal: true }) })
+    const result = await runProcessTrack(job(), deps)
+    expect(result.inPlace).toBe(true)
+  })
+})
+
 describe('runProcessTrack — Apple Music', () => {
   const mac = (over: Partial<Settings> = {}) =>
     makeDeps({ platform: 'darwin', settings: settings({ addToAppleMusic: true, ...over }) })
