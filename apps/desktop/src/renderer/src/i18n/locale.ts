@@ -17,3 +17,10 @@ export function systemLocale(): 'en' | 'es' {
 export function resolveLocale(pref: 'system' | 'en' | 'es'): 'en' | 'es' {
   return pref === 'system' ? systemLocale() : pref
 }
+
+// The base locale of whatever tag i18next currently reports (en-US, es-ES…): the
+// live-language counterpart of resolveLocale, for content that must follow a mid-
+// session language switch (the what's-new news picks its changelog file with it).
+export function baseLocale(current: string): 'en' | 'es' {
+  return current.toLowerCase().startsWith('es') ? 'es' : 'en'
+}

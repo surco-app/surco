@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import type { SettingsTab } from '../lib/settingsTabs'
-import type { WhatsNewRelease } from '../lib/whatsNew'
 
 export type { SettingsTab }
 
@@ -20,7 +19,7 @@ export type ActiveModal =
   | { type: 'settings'; tab: SettingsTab }
   | { type: 'onboarding' }
   | { type: 'donateNudge' }
-  | { type: 'whatsNew'; releases: WhatsNewRelease[] }
+  | { type: 'whatsNew'; lastSeen: string }
   | { type: 'help' }
   | { type: 'loudnessHelp' }
   | { type: 'findReplace' }
@@ -35,7 +34,7 @@ export interface Overlays {
   openSettings: (tab?: SettingsTab) => void
   openOnboarding: () => void
   openDonateNudge: () => void
-  openWhatsNew: (releases: WhatsNewRelease[]) => void
+  openWhatsNew: (lastSeen: string) => void
   openHelp: () => void
   openLoudnessHelp: () => void
   openFindReplace: () => void
@@ -64,7 +63,7 @@ export function useOverlays(): Overlays {
   const openOnboarding = useCallback(() => setActiveModal({ type: 'onboarding' }), [])
   const openDonateNudge = useCallback(() => setActiveModal({ type: 'donateNudge' }), [])
   const openWhatsNew = useCallback(
-    (releases: WhatsNewRelease[]) => setActiveModal({ type: 'whatsNew', releases }),
+    (lastSeen: string) => setActiveModal({ type: 'whatsNew', lastSeen }),
     [],
   )
   const openHelp = useCallback(() => setActiveModal({ type: 'help' }), [])

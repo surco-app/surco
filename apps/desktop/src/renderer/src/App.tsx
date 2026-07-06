@@ -235,9 +235,11 @@ export default function App(): React.JSX.Element {
         overlays.openOnboarding()
       } else {
         // Post-update news: the changelog items shipped between the version this
-        // machine last saw and the one now running (lib/whatsNew decides).
+        // machine last saw and the one now running (lib/whatsNew decides whether there
+        // is anything). The modal only gets the last-seen stamp — it re-selects the
+        // localized items itself, so the news follows a language switch live.
         const news = selectWhatsNew(changelogReleases(resolveLocale(s.language)), s, window.api.version)
-        if (news) overlays.openWhatsNew(news)
+        if (news) overlays.openWhatsNew(s.lastSeenChangelogVersion)
       }
       // Stamped on every version change — including the fresh install that showed
       // onboarding instead — so the popup fires once per update and a brand-new
@@ -1726,7 +1728,7 @@ export default function App(): React.JSX.Element {
           )}
 
           {activeModal?.type === 'whatsNew' && (
-            <WhatsNewModal releases={activeModal.releases} onClose={overlays.close} />
+            <WhatsNewModal lastSeen={activeModal.lastSeen} onClose={overlays.close} />
           )}
 
           {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}

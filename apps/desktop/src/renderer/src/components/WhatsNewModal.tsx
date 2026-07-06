@@ -1,11 +1,17 @@
 import { Sparkles } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { WhatsNewRelease } from '../lib/whatsNew'
+import { baseLocale } from '../i18n/locale'
+import { changelogReleases } from '../lib/changelog'
+import { selectWhatsNew } from '../lib/whatsNew'
 import { ModalShell } from './ModalShell'
 
 interface Props {
-  releases: WhatsNewRelease[]
+  // The version stamp the user last saw, snapshotted by App BEFORE it stamps the
+  // running version — the modal re-selects its batches from it on every render, so
+  // the news follows a mid-session language switch instead of staying frozen in the
+  // language of the moment the popup opened.
+  lastSeen: string
   onClose: () => void
 }
 
@@ -13,8 +19,14 @@ interface Props {
 // version so it can never reappear): the changelog entries the user skipped, grouped
 // under each release's title. Closing is a single click — no checkbox, because the
 // popup already silences itself.
-export function WhatsNewModal({ releases, onClose }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+export function WhatsNewModal({ lastSeen, onClose }: Props): React.JSX.Element {
+  const { t: tr, i18n } = useTranslation()
+  const releases =
+    selectWhatsNew(
+      changelogReleases(baseLocale(i18n.language)),
+      { hasSeenOnboarding: true, lastSeenChangelogVersion: lastSeen },
+      window.api.version,
+    ) ?? []
 
   return (
     <ModalShell
