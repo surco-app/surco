@@ -27,6 +27,10 @@
       {
         "text": "Surco checks for updates now and then while it stays open, not just at launch.",
         "in": "0.36.0"
+      },
+      {
+        "text": "Dismissing the “reopen your last session” offer — with the ✕ or letting it expire — now counts as an answer: it won't come back on the next launch.",
+        "in": "0.36.1"
       }
     ]
   },
