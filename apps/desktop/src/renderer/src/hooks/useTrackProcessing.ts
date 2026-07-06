@@ -110,6 +110,10 @@ export function useTrackProcessing({
       // A track removed after being queued was a user decision, not a failure — count
       // it as skipped so the summary never reports an error with no visible row.
       if (!track) return 'skipped'
+      // Already mid-conversion: the user hand-converted (or ⌘⏎'d) a still-idle track a
+      // running batch had queued, or vice versa. A second job would write the same
+      // output path at the same time — whoever started first owns the conversion.
+      if (track.status === 'processing') return 'skipped'
       const missing = missingRequired(
         track.meta,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,

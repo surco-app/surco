@@ -130,6 +130,32 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'error' }))
   })
 
+  // A track already mid-conversion must never convert twice at once: the user can
+  // hand-convert (or ⌘⏎) a still-idle track while a running batch has it queued, and
+  // when the batch later reaches it both jobs would write the same output path.
+  // Whoever started first owns the conversion; the second call counts as skipped.
+  it('skips a track that is already converting instead of starting a second job', async () => {
+    const processTrack = vi.fn()
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', status: 'processing' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('skipped')
+    expect(processTrack).not.toHaveBeenCalled()
+    expect(updateTrack).not.toHaveBeenCalled()
+  })
+
   // A main-process failure surfaces on the row rather than throwing, so one bad file
   // never takes the app down mid-convert.
   it('surfaces a conversion error on the track', async () => {
