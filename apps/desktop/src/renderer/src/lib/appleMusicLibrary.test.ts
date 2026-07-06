@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLibraryIndex, isInLibrary } from './appleMusicLibrary'
+import { buildLibraryIndex, isInLibrary, staleLibraryCopyId } from './appleMusicLibrary'
 
 describe('buildLibraryIndex / isInLibrary', () => {
   const index = buildLibraryIndex([
@@ -316,5 +316,57 @@ describe('isInLibrary — version-aware scoring with duration', () => {
     expect(
       isInLibrary(idx, { title: 'Strobe (Club Mix)', artist: 'deadmau5', durationSec: 300 }),
     ).toBe(true)
+  })
+})
+
+describe('staleLibraryCopyId', () => {
+  // The replace flow: Surco converted the FLAC to AIFF and added it to Apple Music, but
+  // the library still holds the old MP3 rip of the same song. The matcher must name THAT
+  // entry — never the copy Surco just added — so the footer can offer deleting it.
+  it('names the matching library entry that is not the copy Surco just added', () => {
+    const idx = buildLibraryIndex([
+      {
+        title: 'Save My Love (26 Rmx)',
+        artist: 'Djmofly',
+        durationSec: 365,
+        persistentId: 'OLDCOPY123456789',
+      },
+      {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+        persistentId: 'NEWCOPY123456789',
+      },
+    ])
+    const candidate = { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly', durationSec: 365 }
+    expect(staleLibraryCopyId(idx, candidate, 'NEWCOPY123456789')).toBe('OLDCOPY123456789')
+  })
+
+  // Before the snapshot refreshes, the index may hold only the new copy itself; offering
+  // to delete it would remove the track the user just added.
+  it('returns null when the only match is the added copy itself', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Strobe', artist: 'deadmau5', durationSec: 634, persistentId: 'NEWCOPY123456789' },
+    ])
+    const candidate = { title: 'Strobe', artist: 'deadmau5', durationSec: 634 }
+    expect(staleLibraryCopyId(idx, candidate, 'NEWCOPY123456789')).toBe(null)
+  })
+
+  // A row with no persistent ID (an old-shape dump, or an Engine DJ row) can't be
+  // deleted, so it is never offered as a stale copy.
+  it('returns null for a matching entry that carries no persistent ID', () => {
+    const idx = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5', durationSec: 634 }])
+    const candidate = { title: 'Strobe', artist: 'deadmau5', durationSec: 634 }
+    expect(staleLibraryCopyId(idx, candidate, 'NEWCOPY123456789')).toBe(null)
+  })
+
+  // The stale offer rides the same threshold as the membership badge: a different song
+  // must never be offered for deletion.
+  it('returns null when no library entry matches the candidate', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Ghosts n Stuff', artist: 'deadmau5', durationSec: 200, persistentId: 'AAAABBBBCCCCDDDD' },
+    ])
+    const candidate = { title: 'Strobe', artist: 'deadmau5', durationSec: 634 }
+    expect(staleLibraryCopyId(idx, candidate, 'NEWCOPY123456789')).toBe(null)
   })
 })

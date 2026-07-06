@@ -799,17 +799,37 @@ export default function App(): React.JSX.Element {
 
   // The confirm-before-firing actions (trash, delete original, fill-all, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
-  const { askTrash, askDeleteOriginal, askFillAll, askClearAll, askConvertAll } = useConfirmFlows({
-    settings,
-    removeTrack,
-    updateTrack,
-    emptyTracks,
-    deriveTracks: deriveTracksUndoable,
-    processAll,
-    openConfirm: overlays.openConfirm,
-    reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
-    tracksRef,
-  })
+  const { askTrash, askDeleteOriginal, askRemoveOldMusicCopy, askFillAll, askClearAll, askConvertAll } =
+    useConfirmFlows({
+      settings,
+      removeTrack,
+      updateTrack,
+      emptyTracks,
+      deriveTracks: deriveTracksUndoable,
+      processAll,
+      openConfirm: overlays.openConfirm,
+      reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
+      // The old entry left the snapshot's library, so refresh it — that recompute is
+      // also what retires the footer's "remove the old copy" link. The toast confirms
+      // the outcome meanwhile, since the refetch can take a moment on a big library.
+      onOldMusicCopyRemoved: () => {
+        void queryClient.invalidateQueries({ queryKey: ['library-membership'] })
+        pushToast(store, {
+          tone: 'neutral',
+          message: tr('editor.oldCopyRemoved'),
+          duration: 4000,
+          testid: 'old-copy-removed',
+        })
+      },
+      reportOldCopyRemoveFailure: () =>
+        pushToast(store, {
+          key: 'old-copy-error',
+          tone: 'danger',
+          message: tr('editor.removeOldCopyError'),
+          testid: 'old-copy-error',
+        }),
+      tracksRef,
+    })
 
   const openSettings = (tab: SettingsTab = 'general'): void => overlays.openSettings(tab)
 
@@ -1099,6 +1119,9 @@ export default function App(): React.JSX.Element {
   })
   const onTrashOriginal = useStableCallback(() => {
     if (selected) askDeleteOriginal(selected)
+  })
+  const onRemoveOldMusicCopy = useStableCallback((staleId: string) => {
+    if (selected) askRemoveOldMusicCopy(selected, staleId)
   })
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   const onOpenRename = useStableCallback(overlays.openRename)
@@ -1618,6 +1641,7 @@ export default function App(): React.JSX.Element {
                   onNormalizeChange={onNormalizeChange}
                   onAddToAppleMusic={onAddSelectedToAppleMusic}
                   onTrashOriginal={onTrashOriginal}
+                  onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                   onOpenSettings={onOpenSettings}
                   onShowLoudnessHelp={onShowLoudnessHelp}
                   onOpenRename={onOpenRename}

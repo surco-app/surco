@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import {
   buildAddScript,
+  buildDeleteScript,
   buildLibraryDumpScript,
   buildRevealScript,
   buildUpdateScript,
@@ -151,6 +152,24 @@ describe('buildRevealScript', () => {
   })
 })
 
+describe('buildDeleteScript', () => {
+  it('locates the copy by persistent ID, reports "missing" instead of erroring when it is gone, and returns the file location so the caller can trash it', () => {
+    const script = buildDeleteScript('ABCD1234ABCD1234')
+    expect(script).toContain(
+      'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234ABCD1234")',
+    )
+    expect(script).toContain('if (count of theMatches) is 0 then return "missing"')
+    expect(script).toContain('POSIX path of (location of theTrack)')
+    expect(script).toContain('delete theTrack')
+  })
+
+  it('reads the location before deleting, inside a try so a track without a file still deletes', () => {
+    const script = buildDeleteScript('ABCD1234ABCD1234')
+    expect(script.indexOf('location of theTrack')).toBeLessThan(script.indexOf('delete theTrack'))
+    expect(script.indexOf('try')).toBeLessThan(script.indexOf('location of theTrack'))
+  })
+})
+
 describe('buildLibraryDumpScript', () => {
   it('reads name and artist of every library track as lists, not one track at a time, so a multi-thousand-track library dumps in one fast pass instead of N AppleScript round-trips', () => {
     const script = buildLibraryDumpScript()
@@ -161,6 +180,11 @@ describe('buildLibraryDumpScript', () => {
   it('also reads each track duration as a list so the matcher can tell two versions of one title apart by length', () => {
     const script = buildLibraryDumpScript()
     expect(script).toContain('duration of every track of library playlist 1')
+  })
+
+  it('also reads each track persistent ID so a matched entry can later be updated or deleted, not just detected', () => {
+    const script = buildLibraryDumpScript()
+    expect(script).toContain('persistent ID of every track of library playlist 1')
   })
 
   it('joins each name and artist with a tab and the rows with linefeeds so the renderer can split the snapshot back into pairs', () => {
@@ -205,6 +229,34 @@ describe('parseLibraryDump', () => {
   it('skips blank and malformed rows (a trailing newline, or a line without a tab) rather than emitting empty pairs that would match everything', () => {
     expect(parseLibraryDump('Strobe\tdeadmau5\t634\n\nNoTabLine\n')).toEqual([
       { title: 'Strobe', artist: 'deadmau5', durationSec: 634 },
+    ])
+  })
+
+  it('peels a trailing persistent ID off the row so the entry can later be deleted or revealed, keeping the duration parse intact', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5\t634\t9F1B7C2D8E3A4F50')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5', durationSec: 634, persistentId: '9F1B7C2D8E3A4F50' },
+    ])
+    // es-locale comma decimal still parses with the ID behind it.
+    expect(parseLibraryDump('Funky Feelings\tHead Horny\t486,55\tA0B1C2D3E4F56789')).toEqual([
+      {
+        title: 'Funky Feelings',
+        artist: 'Head Horny',
+        durationSec: 487,
+        persistentId: 'A0B1C2D3E4F56789',
+      },
+    ])
+  })
+
+  it('keeps a row without a persistent ID a plain candidate, so an old-shape dump still parses', () => {
+    expect(parseLibraryDump('Strobe\tdeadmau5\t634')).toEqual([
+      { title: 'Strobe', artist: 'deadmau5', durationSec: 634 },
+    ])
+  })
+
+  it('never mistakes an artist tail for a persistent ID: only a 16-hex-uppercase last field is peeled', () => {
+    // The trailing field is not a pid nor a number, so it stays part of the artist.
+    expect(parseLibraryDump('Title\tA, B\tC0FFEE')).toEqual([
+      { title: 'Title', artist: 'A, B\tC0FFEE' },
     ])
   })
 })

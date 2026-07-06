@@ -122,6 +122,7 @@ function renderEditor(
   onDeriveTags: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
+  onRemoveOldMusicCopy: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
   onShowLoudnessHelp: ReturnType<typeof vi.fn>
   onOpenRename: ReturnType<typeof vi.fn>
@@ -134,6 +135,7 @@ function renderEditor(
   const onDeriveTags = vi.fn()
   const onFormatChange = vi.fn()
   const onTrashOriginal = vi.fn()
+  const onRemoveOldMusicCopy = vi.fn()
   const onOpenSettings = vi.fn()
   const onShowLoudnessHelp = vi.fn()
   const onOpenRename = vi.fn()
@@ -151,6 +153,7 @@ function renderEditor(
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
       onTrashOriginal={onTrashOriginal}
+      onRemoveOldMusicCopy={onRemoveOldMusicCopy}
       onOpenSettings={onOpenSettings}
       onShowLoudnessHelp={onShowLoudnessHelp}
       onOpenRename={onOpenRename}
@@ -187,6 +190,7 @@ function renderEditor(
     onDeriveTags,
     onFormatChange,
     onTrashOriginal,
+    onRemoveOldMusicCopy,
     onOpenSettings,
     onShowLoudnessHelp,
     onOpenRename,
@@ -1149,6 +1153,94 @@ describe('Editor delete original', () => {
       originalTrashed: true,
     })
     expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+  })
+})
+
+describe('Editor replace old Apple Music copy', () => {
+  // The user's manual loop today: convert the fresh rip, add it to Apple Music, then
+  // hunt down and delete the old lower-quality copy in Music by hand. When the library
+  // snapshot shows a matching entry under a DIFFERENT persistent ID than the one the
+  // add returned, that entry is the superseded copy — offer removing it right here.
+  it('offers to remove the superseded library copy after the add', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (26 Rmx)',
+        artist: 'Djmofly',
+        durationSec: 365,
+        persistentId: 'OLDCOPY123456789',
+      },
+    ])
+    const { onRemoveOldMusicCopy } = renderEditor(
+      {
+        id: 'a',
+        status: 'done',
+        outputPath: '/out/a.aiff',
+        musicStatus: 'added',
+        musicPersistentId: 'NEWCOPY123456789',
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    fireEvent.click(screen.getByTestId('remove-old-copy'))
+    expect(onRemoveOldMusicCopy).toHaveBeenCalledWith('OLDCOPY123456789')
+  })
+
+  // Once the snapshot refreshes it also holds the copy the add itself created; the
+  // offer must never point at that fresh copy — "replacing" it would delete the track
+  // the user just added.
+  it('never offers to remove the copy the add itself created', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+        persistentId: 'NEWCOPY123456789',
+      },
+    ])
+    renderEditor(
+      {
+        id: 'a',
+        status: 'done',
+        outputPath: '/out/a.aiff',
+        musicStatus: 'added',
+        musicPersistentId: 'NEWCOPY123456789',
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    expect(screen.queryByTestId('remove-old-copy')).not.toBeInTheDocument()
+  })
+
+  // Before the add there is nothing in the library to supersede anything: the entry the
+  // matcher sees IS the user's only copy, and deleting it would not be a replace.
+  it('does not offer the removal before the track was added to Apple Music', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (26 Rmx)',
+        artist: 'Djmofly',
+        durationSec: 365,
+        persistentId: 'OLDCOPY123456789',
+      },
+    ])
+    renderEditor(
+      {
+        id: 'a',
+        status: 'done',
+        outputPath: '/out/a.aiff',
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    expect(screen.queryByTestId('remove-old-copy')).not.toBeInTheDocument()
   })
 })
 

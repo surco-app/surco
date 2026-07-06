@@ -1,9 +1,10 @@
-import { app, ipcMain } from 'electron'
+import { app, ipcMain, shell } from 'electron'
 import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
 import { activity } from './activity'
 import {
   addToAppleMusic,
   appleMusicLimiter,
+  deleteFromAppleMusic,
   dumpAppleMusicLibrary,
   revealInAppleMusic,
   updateInAppleMusic,
@@ -110,4 +111,27 @@ export function registerAppleMusicIpc(): void {
   ipcMain.handle('applemusic:reveal', (_e, persistentId: string) =>
     process.platform === 'darwin' ? revealInAppleMusic(persistentId) : undefined,
   )
+
+  // Removes the superseded library copy after a replace: the entry leaves Music and its
+  // file goes to the OS Trash (recoverable, matching shell:trash's "never a hard delete").
+  // The trash failing — the file was already removed by hand, or sits on an unmounted
+  // volume — must not report the action failed: the library entry is already gone and
+  // that removal can't roll back, so the outcome the user asked for stands. "missing"
+  // (the copy vanished from Music since the snapshot) counts as done for the same reason.
+  ipcMain.handle('applemusic:delete', async (_e, persistentId: string, track: string) => {
+    if (process.platform !== 'darwin') return
+    return appleMusicLimiter.run(() =>
+      activity.track(
+        'applemusic',
+        'activity.appleMusicDelete',
+        async () => {
+          const location = await deleteFromAppleMusic(persistentId)
+          if (location === null) return 'missing'
+          if (location) await shell.trashItem(location).catch(() => undefined)
+          return 'deleted'
+        },
+        { labelParams: { track } },
+      ),
+    )
+  })
 }

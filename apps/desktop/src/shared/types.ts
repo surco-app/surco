@@ -327,6 +327,10 @@ export interface AppleMusicLookupCandidate {
   // versions of one title apart (a 6-minute mix vs an 8-minute one); absent on a row
   // Music reported no duration for, or on a Discogs-suggested candidate that carries none.
   durationSec?: number
+  // The Music persistent ID of the library row, so a matched entry can later be acted
+  // on (deleted when the user replaces an old copy), not just detected. Absent on
+  // probe candidates and on Engine DJ library rows, which have no Music identity.
+  persistentId?: string
 }
 
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'

@@ -24,6 +24,11 @@ interface Params {
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
   // silent failure would read as success.
   reportTrashFailure: (fileName: string) => void
+  // Fired once the superseded Apple Music copy is gone (deleted, or already missing),
+  // so App can refresh the library snapshot and confirm the outcome.
+  onOldMusicCopyRemoved: () => void
+  // Same fail-loud contract as reportTrashFailure, for the Apple Music removal.
+  reportOldCopyRemoveFailure: () => void
   // The full list, so fill-all/clear-all can tell a filtered-visible subset from the
   // whole crate and say in the dialog that hidden rows survive.
   tracksRef: { current: TrackItem[] }
@@ -32,6 +37,7 @@ interface Params {
 export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
+  askRemoveOldMusicCopy: (track: TrackItem, staleId: string) => void
   askFillAll: (targets: TrackItem[]) => void
   askClearAll: (targets: TrackItem[]) => void
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
@@ -49,6 +55,8 @@ export function useConfirmFlows({
   processAll,
   openConfirm,
   reportTrashFailure,
+  onOldMusicCopyRemoved,
+  reportOldCopyRemoveFailure,
   tracksRef,
 }: Params): ConfirmFlows {
   const { t: tr } = useTranslation()
@@ -102,6 +110,35 @@ export function useConfirmFlows({
           // Same as askTrash: the user confirmed a destructive dialog, so a
           // failure must be said out loud, not swallowed.
           .catch(() => reportTrashFailure(track.fileName))
+      },
+    })
+  }
+
+  // Post-add "Remove the old copy": the freshly converted track is already in Apple
+  // Music, so this deletes the library entry it superseded and sends that entry's file
+  // to the OS Trash — the half of "replace the old rip" the add itself can't do. It acts
+  // on the user's library off a scored hint (the stale-copy match), so it confirms
+  // first. A 'missing' result resolves the same success path: the goal is "the old copy
+  // is no longer there", and it isn't.
+  function askRemoveOldMusicCopy(track: TrackItem, staleId: string): void {
+    const name = track.meta.title || track.fileName
+    openConfirm({
+      title: tr('confirm.removeOldCopyTitle'),
+      message: tr('confirm.removeOldCopyMessage', { name }),
+      confirmLabel: tr('confirm.removeOldCopyConfirm'),
+      destructive: true,
+      onConfirm: () => {
+        // "Artist - Title" for the activity row, like the main-process adds.
+        const label =
+          track.meta.artist && track.meta.title
+            ? `${track.meta.artist} - ${track.meta.title}`
+            : name
+        window.api
+          .deleteAppleMusic(staleId, label)
+          .then(() => onOldMusicCopyRemoved())
+          // Same as askTrash: the user confirmed a destructive dialog, so a
+          // failure must be said out loud, not swallowed.
+          .catch(() => reportOldCopyRemoveFailure())
       },
     })
   }
@@ -175,5 +212,12 @@ export function useConfirmFlows({
     })
   }
 
-  return { askTrash, askDeleteOriginal, askFillAll, askClearAll, askConvertAll }
+  return {
+    askTrash,
+    askDeleteOriginal,
+    askRemoveOldMusicCopy,
+    askFillAll,
+    askClearAll,
+    askConvertAll,
+  }
 }

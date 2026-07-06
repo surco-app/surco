@@ -38,6 +38,11 @@ interface ConvertFooterProps {
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic?: () => void
   onTrashOriginal?: () => void
+  // The persistent ID of the library copy this track's add superseded (the old rip the
+  // fresh copy replaces), resolved by the editor from the library snapshot. Null when
+  // there is nothing to replace.
+  staleMusicCopyId?: string | null
+  onRemoveOldMusicCopy?: (staleId: string) => void
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
@@ -67,6 +72,8 @@ export function ConvertFooter({
   onProcess,
   onAddToAppleMusic,
   onTrashOriginal,
+  staleMusicCopyId,
+  onRemoveOldMusicCopy,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -154,6 +161,16 @@ export function ConvertFooter({
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
                   {tr('editor.deleteOriginal')}
+                </button>
+              )}
+              {!isMulti && musicAdded && staleMusicCopyId && (
+                <button
+                  type="button"
+                  data-testid="remove-old-copy"
+                  onClick={() => onRemoveOldMusicCopy?.(staleMusicCopyId)}
+                  className="press text-xs text-fg-dim hover:text-danger"
+                >
+                  {tr('editor.removeOldCopy')}
                 </button>
               )}
             </div>

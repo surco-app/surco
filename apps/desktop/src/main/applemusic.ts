@@ -148,6 +148,32 @@ export function buildRevealScript(persistentId: string): string {
   ].join('\n')
 }
 
+// Removes a library copy by persistent ID — the "replace the old rip" tail: once the
+// freshly converted file is in the library, the copy it supersedes is deleted. Returns
+// "missing" instead of erroring when the copy is already gone (the user beat us to it in
+// Music), so the caller can treat that as done. The file location is read BEFORE the
+// delete (the track reference dies with it) and inside a try, because a dead reference —
+// the file was moved or lives on an unmounted volume — reports missing value, and
+// coercing that to POSIX path errors; such a copy must still delete, just with no file
+// for the caller to trash. AppleScript's delete removes only the library entry and never
+// touches the file, which is why the location travels back: trashing the superseded file
+// is the caller's half of the job.
+export function buildDeleteScript(persistentId: string): string {
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    '  set loc to ""',
+    '  try',
+    '    set loc to POSIX path of (location of theTrack)',
+    '  end try',
+    '  delete theTrack',
+    '  return "deleted" & tab & loc',
+    'end tell',
+  ].join('\n')
+}
+
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
 // the whole feature on the platform. Apple Music for Windows exposes no
 // automation, so a track simply finishes in the output folder there. FLAC is
@@ -177,24 +203,26 @@ export function isAppleMusicOnly(
   return shouldAddToAppleMusic(addToAppleMusic, platform, format) && !keepOutputCopy && !inPlace
 }
 
-// Dumps the whole library's name+artist+duration in one osascript so the renderer can
-// match the crate against it locally — checking 282 tracks one lookup at a time
-// would be 282 osascript spawns, each scanning the entire library. The names, artists
-// and durations are read as three lists (fast) and zipped into "name<tab>artist<tab>dur"
-// lines via a list built with `set end of` (O(n)); concatenating a string in the loop
-// would be O(n²) and stall on a multi-thousand-track library. Coercing the list to text
-// with a linefeed delimiter gives one row per track. Duration feeds the version-aware
-// matcher (a 6-minute mix vs an 8-minute one) and reads instantly even on a big library.
+// Dumps the whole library's name+artist+duration+persistent ID in one osascript so the
+// renderer can match the crate against it locally — checking 282 tracks one lookup at a
+// time would be 282 osascript spawns, each scanning the entire library. The fields are
+// read as four lists (fast) and zipped into "name<tab>artist<tab>dur<tab>pid" lines via a
+// list built with `set end of` (O(n)); concatenating a string in the loop would be O(n²)
+// and stall on a multi-thousand-track library. Coercing the list to text with a linefeed
+// delimiter gives one row per track. Duration feeds the version-aware matcher (a 6-minute
+// mix vs an 8-minute one); the persistent ID names the matched entry, so an old copy the
+// user is replacing can later be deleted instead of merely detected.
 export function buildLibraryDumpScript(): string {
   return [
     'tell application "Music"',
     '  set theNames to name of every track of library playlist 1',
     '  set theArtists to artist of every track of library playlist 1',
     '  set theDurations to duration of every track of library playlist 1',
+    '  set thePids to persistent ID of every track of library playlist 1',
     'end tell',
     'set out to {}',
     'repeat with i from 1 to count of theNames',
-    '  set end of out to (item i of theNames) & tab & (item i of theArtists) & tab & (item i of theDurations)',
+    '  set end of out to (item i of theNames) & tab & (item i of theArtists) & tab & (item i of theDurations) & tab & (item i of thePids)',
     'end repeat',
     "set AppleScript's text item delimiters to linefeed",
     'return out as text',
@@ -206,13 +234,18 @@ export function buildLibraryDumpScript(): string {
 // ever peels a real number off the last tab, never a tab the artist itself contains.
 const TRAILING_DURATION = /\t(\d+(?:[.,]\d+)?)$/
 
+// A trailing Music persistent ID — always 16 uppercase hex chars, so the pattern can't
+// mistake an artist's own trailing text for one. Peeled before the duration, mirroring
+// the dump's field order.
+const TRAILING_PID = /\t([0-9A-F]{16})$/
+
 // Parses the dump back into candidates. The title is everything up to the first tab; the
-// duration, when the row ends in a number, is peeled off the last tab and the artist is
-// what's left between — so an artist that itself holds a tab survives intact (its trailing
-// field isn't a number, so nothing is peeled) and never gains a bogus duration. Rows
-// missing a title or artist are dropped — a trailing newline or empty field would
-// otherwise become a pair that matches the whole crate; a missing/unparseable duration
-// just leaves the row a plain title/artist pair, never dropped.
+// persistent ID and duration, when the row ends in them, are peeled off the last tabs and
+// the artist is what's left between — so an artist that itself holds a tab survives intact
+// (its trailing fields match neither pattern, so nothing is peeled) and never gains a bogus
+// duration or ID. Rows missing a title or artist are dropped — a trailing newline or empty
+// field would otherwise become a pair that matches the whole crate; a missing/unparseable
+// duration or ID just leaves the row a plainer candidate, never dropped.
 export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
   const pairs: AppleMusicLookupCandidate[] = []
   for (const line of stdout.split('\n')) {
@@ -220,6 +253,12 @@ export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
     if (tab === -1) continue
     const title = line.slice(0, tab).trim()
     let rest = line.slice(tab + 1)
+    let persistentId: string | undefined
+    const pid = rest.match(TRAILING_PID)
+    if (pid) {
+      persistentId = pid[1]
+      rest = rest.slice(0, pid.index)
+    }
     let durationSec: number | undefined
     const dur = rest.match(TRAILING_DURATION)
     if (dur) {
@@ -229,7 +268,10 @@ export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
     }
     const artist = rest.trim()
     if (!title || !artist) continue
-    pairs.push(durationSec !== undefined ? { title, artist, durationSec } : { title, artist })
+    const candidate: AppleMusicLookupCandidate = { title, artist }
+    if (durationSec !== undefined) candidate.durationSec = durationSec
+    if (persistentId) candidate.persistentId = persistentId
+    pairs.push(candidate)
   }
   return pairs
 }
@@ -269,4 +311,13 @@ export async function updateInAppleMusic(
 
 export async function revealInAppleMusic(persistentId: string): Promise<void> {
   await run('osascript', ['-e', buildRevealScript(persistentId)])
+}
+
+// null means the copy was already gone; otherwise the deleted entry's file path, ''
+// when Music held no reachable file for it.
+export async function deleteFromAppleMusic(persistentId: string): Promise<string | null> {
+  const { stdout } = await run('osascript', ['-e', buildDeleteScript(persistentId)])
+  const result = stdout.trim()
+  if (result === 'missing') return null
+  return result.split('\t')[1] ?? ''
 }

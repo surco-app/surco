@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackItem } from '../types'
@@ -19,7 +19,13 @@ function track(id: string): TrackItem {
   }
 }
 
-function setup(allTracks: TrackItem[]) {
+function setup(
+  allTracks: TrackItem[],
+  extra: {
+    onOldMusicCopyRemoved?: ReturnType<typeof vi.fn>
+    reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn>
+  } = {},
+) {
   const opened: ConfirmModal[] = []
   const { result } = renderHook(() =>
     useConfirmFlows({
@@ -31,6 +37,8 @@ function setup(allTracks: TrackItem[]) {
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
       reportTrashFailure: vi.fn(),
+      onOldMusicCopyRemoved: extra.onOldMusicCopyRemoved ?? vi.fn(),
+      reportOldCopyRemoveFailure: extra.reportOldCopyRemoveFailure ?? vi.fn(),
       tracksRef: { current: allTracks },
     }),
   )
@@ -71,5 +79,35 @@ describe('useConfirmFlows scope wording', () => {
     const { flows, opened } = setup(all)
     flows.askFillAll(all)
     expect(opened[0].message).not.toContain('visible')
+  })
+})
+
+describe('useConfirmFlows remove old Apple Music copy', () => {
+  // Removing a track from the user's Apple Music library is destructive and rides on a
+  // scored hint (the stale-copy match), so nothing may fire before the confirmation —
+  // and the outcome must be reported so the library snapshot refreshes.
+  it('deletes the superseded copy only after the confirmation and reports the removal', async () => {
+    const deleteAppleMusic = vi.fn().mockResolvedValue('deleted')
+    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const onOldMusicCopyRemoved = vi.fn()
+    const { flows, opened } = setup([], { onOldMusicCopyRemoved })
+    flows.askRemoveOldMusicCopy(track('a'), 'OLDCOPY123456789')
+    expect(opened[0].destructive).toBe(true)
+    expect(deleteAppleMusic).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(deleteAppleMusic).toHaveBeenCalledWith('OLDCOPY123456789', 'A - a')
+    await waitFor(() => expect(onOldMusicCopyRemoved).toHaveBeenCalled())
+  })
+
+  // The user confirmed a destructive dialog; a silent failure would read as "the old
+  // copy is gone" when it isn't.
+  it('reports a failed removal out loud', async () => {
+    const deleteAppleMusic = vi.fn().mockRejectedValue(new Error('osascript failed'))
+    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const reportOldCopyRemoveFailure = vi.fn()
+    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
+    flows.askRemoveOldMusicCopy(track('a'), 'OLDCOPY123456789')
+    opened[0].onConfirm()
+    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalled())
   })
 })

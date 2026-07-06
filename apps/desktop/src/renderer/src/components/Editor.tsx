@@ -16,7 +16,7 @@ import { useEditorSections } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
-import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
+import { type AppleMusicIndex, isInLibrary, staleLibraryCopyId } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
@@ -87,6 +87,9 @@ interface Props {
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
+  // Removes the superseded Apple Music copy (the library entry the fresh add replaced)
+  // by its persistent ID. Confirmation lives in App, so the link just signals intent.
+  onRemoveOldMusicCopy?: (staleId: string) => void
   onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
   // shortcuts like every other dialog — a track-switch key pressed while it was
@@ -127,6 +130,7 @@ export const Editor = memo(function Editor({
   onNormalizeChange,
   onAddToAppleMusic,
   onTrashOriginal,
+  onRemoveOldMusicCopy,
   onOpenSettings,
   onShowLoudnessHelp,
   onOpenRename,
@@ -338,6 +342,28 @@ export const Editor = memo(function Editor({
     resolvedViaDiscogs,
     discogsResolving,
   ])
+
+  // The library entry this track's Apple Music add superseded: the snapshot still matches
+  // the same song under a DIFFERENT persistent ID than the one the add returned — the old
+  // rip. The footer offers deleting it, closing the "add the new copy, hunt down the old
+  // one in Music" loop. Excluding the add's own ID is what keeps the offer from pointing
+  // at the fresh copy once the snapshot refreshes and holds both. Memoized on the exact
+  // tags it reads, same as the badge above.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
+  const staleMusicCopyId = useMemo(
+    () =>
+      librarySource === 'appleMusic' && libraryIndex && item.musicPersistentId
+        ? staleLibraryCopyId(libraryIndex, ownTags, item.musicPersistentId)
+        : null,
+    [
+      librarySource,
+      libraryIndex,
+      item.musicPersistentId,
+      item.meta.title,
+      item.meta.artist,
+      item.duration,
+    ],
+  )
 
   // Pin a Discogs-proven "owned" verdict onto the track so the list and filter read it too,
   // not just this badge. Only when it's newly proven and not already pinned, so the effect
@@ -738,6 +764,8 @@ export const Editor = memo(function Editor({
           onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
           onTrashOriginal={onTrashOriginal}
+          staleMusicCopyId={staleMusicCopyId}
+          onRemoveOldMusicCopy={onRemoveOldMusicCopy}
         />
       </div>
     </div>

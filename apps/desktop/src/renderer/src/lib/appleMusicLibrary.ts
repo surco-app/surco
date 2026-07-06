@@ -5,11 +5,14 @@ import { cleanName, durationProximitySec } from './release'
 // One library track, narrowed to what the matcher scores against. The artist is pre-folded
 // at index time (foldArtist) so each lookup is a cheap word-set compare; parts is the raw
 // title's base+version-suffix split for version-aware scoring; durationSec is its length when
-// Music reported one, used to tell two versions of a title apart.
+// Music reported one, used to tell two versions of a title apart. persistentId names the
+// Music row so a matched old copy can be acted on (the replace flow deletes it), not just
+// detected; absent on Engine DJ rows and old-shape dumps.
 interface LibraryEntry {
   artist: string
   durationSec?: number
   parts: { base: string; suffix: string }
+  persistentId?: string
 }
 
 // A snapshot of the user's Apple Music library, keyed by canonical title so a track's
@@ -183,7 +186,7 @@ function titleScore(
 
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
-  for (const { title, artist, durationSec } of tracks) {
+  for (const { title, artist, durationSec, persistentId } of tracks) {
     const folded = foldArtist(artist)
     // An empty artist can't identify a song and would later word-match nothing
     // meaningfully; skip the row entirely.
@@ -192,7 +195,12 @@ export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMus
     // ways still gathers this exact row (deduped by reference at lookup). parts holds the
     // raw-title base+suffix split for version-aware scoring (the folded keys have lost the
     // parens, so the suffix must be captured here from the original title).
-    const entry: LibraryEntry = { artist: folded, durationSec, parts: titleParts(title, artist) }
+    const entry: LibraryEntry = {
+      artist: folded,
+      durationSec,
+      parts: titleParts(title, artist),
+      persistentId,
+    }
     for (const key of bucketKeys(title, artist)) {
       if (!key) continue
       const list = index.get(key)
@@ -247,6 +255,28 @@ function libraryMatchScore(
   return weighted / total
 }
 
+// The candidate's scoring shape plus the library entries plausible enough to score against
+// it: the entries filed under any of its title keys, deduped by reference (one row is filed
+// under several keys). Null when the tags can't identify a song at all.
+function candidateEntries(
+  index: AppleMusicIndex,
+  candidate: { title: string; artist: string; durationSec?: number },
+): {
+  cand: { parts: { base: string; suffix: string }; primaryWords: string[]; durationSec?: number }
+  entries: Set<LibraryEntry>
+} | null {
+  const primary = primaryArtist(candidate.artist)
+  if (!primary) return null
+  const parts = titleParts(candidate.title, candidate.artist)
+  if (!parts.base) return null
+  const cand = { parts, primaryWords: primary.split(' '), durationSec: candidate.durationSec }
+  const entries = new Set<LibraryEntry>()
+  for (const key of bucketKeys(candidate.title, candidate.artist)) {
+    for (const entry of index.get(key) ?? []) entries.add(entry)
+  }
+  return { cand, entries }
+}
+
 // Whether the candidate (a track's live tags) is already in the library: it scores at least
 // LIBRARY_MATCH_THRESHOLD against some library entry sharing a title key. Bucketed by title
 // key so only the handful of plausible entries are scored, never the whole library. It's a
@@ -255,19 +285,34 @@ export function isInLibrary(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string; durationSec?: number },
 ): boolean {
-  const primary = primaryArtist(candidate.artist)
-  if (!primary) return false
-  const parts = titleParts(candidate.title, candidate.artist)
-  if (!parts.base) return false
-  const cand = { parts, primaryWords: primary.split(' '), durationSec: candidate.durationSec }
-  // Gather the entries filed under any of the candidate's title keys, deduped by reference
-  // (one row is filed under several keys), then score each.
-  const seen = new Set<LibraryEntry>()
-  for (const key of bucketKeys(candidate.title, candidate.artist)) {
-    for (const entry of index.get(key) ?? []) seen.add(entry)
-  }
-  for (const entry of seen) {
-    if (libraryMatchScore(entry, cand) >= LIBRARY_MATCH_THRESHOLD) return true
+  const gathered = candidateEntries(index, candidate)
+  if (!gathered) return false
+  for (const entry of gathered.entries) {
+    if (libraryMatchScore(entry, gathered.cand) >= LIBRARY_MATCH_THRESHOLD) return true
   }
   return false
+}
+
+// The persistent ID of a library copy the candidate supersedes: an entry that matches the
+// same way isInLibrary does but is NOT the copy Surco itself added (currentId — before the
+// snapshot refreshes only the old rip is in the index, after it both are, so the exclusion
+// is what keeps the replace offer from pointing at the fresh copy). Entries with no ID
+// (Engine DJ rows, old-shape dumps) can't be deleted, so they are never named. Same
+// threshold as the badge: a different song is never offered for deletion.
+export function staleLibraryCopyId(
+  index: AppleMusicIndex,
+  candidate: { title: string; artist: string; durationSec?: number },
+  currentId: string,
+): string | null {
+  const gathered = candidateEntries(index, candidate)
+  if (!gathered) return null
+  for (const entry of gathered.entries) {
+    if (
+      entry.persistentId &&
+      entry.persistentId !== currentId &&
+      libraryMatchScore(entry, gathered.cand) >= LIBRARY_MATCH_THRESHOLD
+    )
+      return entry.persistentId
+  }
+  return null
 }
