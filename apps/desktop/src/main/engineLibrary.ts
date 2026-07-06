@@ -58,10 +58,11 @@ export async function dumpEngineLibrary(libraryDir: string): Promise<AppleMusicL
 }
 
 // The columns a re-converted file may change on an existing row. Deliberately
-// metadata-only: isAnalyzed, beat data, cues and playlist memberships survive a
-// re-export untouched.
+// metadata-only: isAnalyzed, length, beat data, cues and playlist memberships survive
+// a re-export untouched — length is Engine's own analysis output (resolveTrack never
+// knows it), so updating it could only ever null a value Engine derived, on a row
+// Engine will not re-analyze.
 const UPDATE_COLUMNS = [
-  'length',
   'bpm',
   'year',
   'filename',
@@ -75,6 +76,10 @@ const UPDATE_COLUMNS = [
   'fileType',
   'rating',
 ]
+
+// BPM columns Engine also fills from its own analysis: a tag that carries a BPM should
+// update them, but a tag without one must not null out what Engine derived.
+const KEEP_WHEN_NULL = new Set(['bpm', 'bpmAnalyzed'])
 
 interface PendingAdd {
   libraryDir: string
@@ -173,7 +178,9 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       let trackId: number
       if (existing.length) {
         trackId = existing[0].values[0][0] as number
-        const cols = UPDATE_COLUMNS.filter((c) => live.has(c))
+        const cols = UPDATE_COLUMNS.filter(
+          (c) => live.has(c) && !(KEEP_WHEN_NULL.has(c) && row.get(c) == null),
+        )
         db.run(`UPDATE Track SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [
           ...cols.map((c) => row.get(c) ?? null),
           trackId,

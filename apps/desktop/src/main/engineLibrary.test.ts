@@ -150,6 +150,35 @@ describe('addToEngineLibrary', () => {
     db.close()
   })
 
+  // Engine fills Track.length (and the analyzed BPM) when IT analyzes the file; Surco
+  // never knows the duration at convert time. A re-convert used to write length = NULL
+  // (and null BPM columns when the tag carried none) while leaving isAnalyzed = 1 — the
+  // row lost its duration forever, since Engine never re-analyzes an analyzed track.
+  it('keeps the length and BPM Engine analyzed when the re-convert knows nothing better', async () => {
+    const lib = join(root, 'analysis', 'Engine Library')
+    const file = await makeFile(root, 'four.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const before = await open(dbPath)
+    before.run('UPDATE Track SET isAnalyzed = 1, length = 245, bpm = 127, bpmAnalyzed = 127.25')
+    await writeFile(dbPath, before.export())
+    before.close()
+
+    await addToEngineLibrary(lib, file, meta({ title: 'Second', bpm: '' }), 'Surco')
+
+    const db = await open(dbPath)
+    const tracks = rows(db, 'SELECT * FROM Track')
+    expect(tracks).toHaveLength(1)
+    expect(tracks[0]).toMatchObject({
+      title: 'Second',
+      length: 245,
+      bpm: 127,
+      bpmAnalyzed: 127.25,
+      isAnalyzed: 1,
+    })
+    db.close()
+  })
+
   // Engine grades tracks on a 0-100 scale (20 per star), not the "1"-"5" tag value —
   // writing the raw star count reads as no stars in Engine's rating column.
   it("maps the tag's stars onto Engine's 0-100 rating scale, updating on re-convert", async () => {
