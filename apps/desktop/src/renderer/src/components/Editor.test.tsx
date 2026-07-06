@@ -1303,6 +1303,17 @@ describe('Editor output file name', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     expect(screen.getByTestId('overwrite-hint')).not.toHaveTextContent(/master is lost/i)
   })
+
+  // ALAC never edits in place — an .m4a source may be lossy AAC, so the export always
+  // renders a fresh file and keeps the source (see shared/format). In overwrite mode
+  // the generic "replaces the source" promise would be a lie for ALAC; the notice must
+  // say the original is kept instead.
+  it('says the original is kept when overwrite mode targets ALAC', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.m4a' }, 'alac', { overwriteOriginal: true })
+    expect(screen.getByTestId('overwrite-hint')).toHaveTextContent(
+      i18n.t('editor.overwriteAlacHint'),
+    )
+  })
 })
 
 describe('Editor star rating', () => {

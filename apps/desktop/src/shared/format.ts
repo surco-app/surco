@@ -26,3 +26,18 @@ export function formatMatchesInput(format: OutputFormat, input: string): boolean
 export function formatExtension(format: OutputFormat): string {
   return format === 'alac' ? 'm4a' : format
 }
+
+// Whether an export edits the source file in place (rewrite/rename where it lives)
+// instead of writing a fresh copy to the output folder: the target format is the one
+// the file is already in, or overwrite mode forces it. ALAC keeps its never-in-place
+// invariant even under overwrite — the .m4a source it would replace may hold lossy
+// AAC, and re-encoding it over itself destroys the only true copy while presenting a
+// lossy encode as lossless. The main process and the editor's warnings both decide
+// through here so what the UI promises is what resolveOutputTarget does.
+export function editsInPlace(
+  format: OutputFormat,
+  inputPath: string,
+  overwriteOriginal = false,
+): boolean {
+  return (overwriteOriginal && format !== 'alac') || formatMatchesInput(format, inputPath)
+}

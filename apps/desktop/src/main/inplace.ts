@@ -1,6 +1,6 @@
 import { stat, unlink } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
-import { formatExtension, formatMatchesInput } from '../shared/format'
+import { editsInPlace, formatExtension } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
 // Cleans a generated output name that may carry "/" separators (subfolders the file-name
@@ -33,9 +33,10 @@ export interface OutputTarget {
 // Decides where an export lands. Same format as the source → edit the original
 // file right where it lives (rewrite tags, rename if the name changed); a real
 // conversion (e.g. WAV→MP3) → a fresh file in the output folder, original kept.
-// `overwriteOriginal` forces the in-place path regardless of format: the converted
-// file replaces the source in its own folder, and removeRenamedOriginal drops the
-// old-extension original afterwards. `name` is the already-sanitized base name.
+// `overwriteOriginal` forces the in-place path regardless of format — except ALAC,
+// which always renders fresh (see editsInPlace): the converted file replaces the
+// source in its own folder, and removeRenamedOriginal drops the old-extension
+// original afterwards. `name` is the already-sanitized base name.
 export function resolveOutputTarget(
   inputPath: string,
   name: string,
@@ -43,7 +44,7 @@ export function resolveOutputTarget(
   outputDir: string,
   overwriteOriginal = false,
 ): OutputTarget {
-  const inPlace = overwriteOriginal || formatMatchesInput(format, inputPath)
+  const inPlace = editsInPlace(format, inputPath, overwriteOriginal)
   const dir = inPlace ? dirname(inputPath) : outputDir
   return { outputPath: join(dir, `${name}.${formatExtension(format)}`), inPlace }
 }

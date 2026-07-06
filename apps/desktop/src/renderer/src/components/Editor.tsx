@@ -2,7 +2,7 @@ import { Copy, Disc3, Eraser, Tag } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatMatchesInput } from '../../../shared/format'
+import { editsInPlace, formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
   NormalizeConfig,
@@ -502,8 +502,10 @@ export const Editor = memo(function Editor({
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
-  // forces this for every format, replacing the source whatever the target.
-  const willEditInPlace = overwriteOriginal || formatMatchesInput(format, item.inputPath)
+  // forces this for every format except ALAC, which always renders a fresh file
+  // (see editsInPlace) — the shared helper keeps this warning honest against what
+  // resolveOutputTarget actually does.
+  const willEditInPlace = editsInPlace(format, item.inputPath, overwriteOriginal)
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
@@ -729,7 +731,11 @@ export const Editor = memo(function Editor({
                 className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
                 data-testid="overwrite-hint"
               >
-                {lossyOverwrite ? tr('editor.overwriteLossyHint') : tr('editor.overwriteHint')}
+                {lossyOverwrite
+                  ? tr('editor.overwriteLossyHint')
+                  : willEditInPlace
+                    ? tr('editor.overwriteHint')
+                    : tr('editor.overwriteAlacHint')}
               </p>
             </div>
           )}

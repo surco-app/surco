@@ -67,6 +67,17 @@ describe('resolveOutputTarget', () => {
       inPlace: true,
     })
   })
+
+  // Overwrite mode must not break ALAC's never-in-place invariant: an .m4a source may
+  // hold lossy AAC, and forcing in place would re-encode it over itself — the original
+  // destroyed and a lossy encode presented as lossless. ALAC always renders a fresh
+  // file in the output folder and the source is kept.
+  it('never overwrites in place for ALAC, even with overwrite on', () => {
+    expect(resolveOutputTarget('/music/song.m4a', 'song', 'alac', '/out', true)).toEqual({
+      outputPath: '/out/song.m4a',
+      inPlace: false,
+    })
+  })
 })
 
 describe('isOutputConflict', () => {

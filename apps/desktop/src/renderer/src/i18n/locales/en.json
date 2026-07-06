@@ -316,6 +316,7 @@
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
     "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Conversion.",
+    "overwriteAlacHint": "ALAC never replaces the original: the source may hold lossy audio, so a new file is written to the output folder and the original is kept.",
     "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Conversion.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
