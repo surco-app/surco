@@ -265,9 +265,11 @@ export function useTrackLibrary({
         void window.api.unwatchFolders()
         return
       }
+      // Outputs count as loaded too: converting into (or inside) the watched folder
+      // must not offer Surco's own conversions back as "new tracks".
       const fresh = newTrackPaths(
         files,
-        tracksRef.current.map((t) => t.inputPath),
+        tracksRef.current.flatMap((t) => (t.outputPath ? [t.inputPath, t.outputPath] : [t.inputPath])),
       ).filter((p) => !ignoredPaths.current.has(p))
       setPendingNew((prev) => {
         if (fresh.length === 0) return prev?.root === root ? null : prev

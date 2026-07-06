@@ -132,6 +132,24 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
   })
 })
 
+describe('useTrackLibrary own outputs vs watcher', () => {
+  // Converting into (or inside) the watched folder makes the app's own output appear in
+  // the watcher's next report. Diffing against inputPath alone offered Surco's own
+  // conversions back as "new tracks" — accepting imported duplicate rows, and a later
+  // Convert all re-converted already-converted files.
+  it('does not offer the app’s own conversion outputs as new tracks', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.updateTrack(a.id, { outputPath: '/m/a.aiff', status: 'done' }))
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/a.aiff']))
+
+    expect(result.current.pendingNew).toBeNull()
+  })
+})
+
 describe('useTrackLibrary new-tracks prompt lifetime', () => {
   // The watcher's safety poll re-reports the folder every minute whether or not anything
   // changed. Without remembering the declined offer, a dismissed prompt would resurrect on
