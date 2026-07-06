@@ -97,7 +97,7 @@ import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
 import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
 import { formatShortcut } from './lib/shortcuts'
-import { dismissToast, dismissToastByUser, pushToast } from './lib/toastQueue'
+import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
 import { selectWhatsNew } from './lib/whatsNew'
 import {
   EMPTY_FILTER,
@@ -200,7 +200,7 @@ export default function App(): React.JSX.Element {
   if (storeRef.current === null) storeRef.current = createAppStore()
   const store = storeRef.current
   const toasts = useAppStore(store, (s) => s.toasts)
-  const expireToast = useCallback((id: string) => dismissToast(store, id), [store])
+  const expireToast = useCallback((id: string) => dismissToastByExpiry(store, id), [store])
   const closeToast = useCallback((id: string) => dismissToastByUser(store, id), [store])
   // A transient neutral status line (e.g. "skipped N already-added files") that clears itself
   // on a 4s timer so it never lingers after the user has moved on.
@@ -497,9 +497,9 @@ export default function App(): React.JSX.Element {
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment rows exist (the effect below). Accepting
   // routes through the same expand pipeline as a drop, so media access and metadata
-  // reads behave exactly like a fresh import. Left unanswered it retires on its own
-  // (duration → countdown bar) like the new-tracks prompt; the stored session is not
-  // touched by the expiry, so the next launch simply offers again.
+  // reads behave exactly like a fresh import. The ✕ and the countdown expiring are both
+  // an answer: they clear the stored session so the next launch doesn't re-ask about
+  // the very list the user already waved off.
   const LAST_SESSION_PROMPT_TIMEOUT_MS = 10_000
   const lastSessionToastId = useRef<string | null>(null)
   const reopenLastSession = useStableCallback(async (paths: string[]) => {
@@ -513,6 +513,10 @@ export default function App(): React.JSX.Element {
   // Stable identity so the ask-once effect below never re-runs (tr changes identity when
   // the settings load applies the language, which would cancel the in-flight ask), while
   // the closure still reads the current translations when the answer lands.
+  const declineLastSession = useStableCallback(() => {
+    lastSessionToastId.current = null
+    void window.api.saveLastSession([])
+  })
   const offerLastSession = useStableCallback((paths: string[]) => {
     if (paths.length === 0 || tracksRef.current.length > 0) return
     lastSessionToastId.current = pushToast(store, {
@@ -522,6 +526,8 @@ export default function App(): React.JSX.Element {
       message: tr('lastSession.prompt', { count: paths.length }),
       action: { label: tr('lastSession.load'), onAction: () => void reopenLastSession(paths) },
       duration: LAST_SESSION_PROMPT_TIMEOUT_MS,
+      onDismiss: declineLastSession,
+      onExpire: declineLastSession,
     })
   })
   useEffect(() => {

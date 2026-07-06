@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAppStore } from './appStore'
-import { dismissToast, dismissToastByUser, pushToast } from './toastQueue'
+import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './toastQueue'
 
 describe('toast queue', () => {
   it('appends pushed toasts in order so several can stack at once', () => {
@@ -51,5 +51,20 @@ describe('toast queue', () => {
     const id2 = pushToast(store, { tone: 'neutral', message: 'y', onDismiss })
     dismissToastByUser(store, id2)
     expect(onDismiss).toHaveBeenCalledTimes(1)
+  })
+  // The countdown aging a prompt out can be an ANSWER (the session offer treats it as
+  // "no"), but bookkeeping removals (replaced by key, accepted programmatically) must
+  // stay silent — so expiry gets its own hook, symmetric with onDismiss for the ✕.
+  it('runs onExpire only when the countdown ages a toast out, never on a bare removal', () => {
+    const store = createAppStore()
+    const onExpire = vi.fn()
+    const onDismiss = vi.fn()
+    const a = pushToast(store, { tone: 'neutral', message: 'a', onExpire, onDismiss })
+    dismissToast(store, a)
+    expect(onExpire).not.toHaveBeenCalled()
+    const b = pushToast(store, { tone: 'neutral', message: 'b', onExpire, onDismiss })
+    dismissToastByExpiry(store, b)
+    expect(onExpire).toHaveBeenCalledOnce()
+    expect(onDismiss).not.toHaveBeenCalled()
   })
 })

@@ -16,6 +16,9 @@ export interface Toast {
   // Extra cleanup to run when this toast is dismissed (by the ✕, its timer, or an action),
   // beyond removing the card — e.g. clearing the pending-new-tracks set so its count resets.
   onDismiss?: () => void
+  // Runs only when the countdown ages the toast out — for prompts whose expiry IS an
+  // answer (the session offer treats it as "no"), symmetric with onDismiss for the ✕.
+  onExpire?: () => void
 }
 
 let counter = 0
@@ -55,4 +58,12 @@ export function dismissToastByUser(store: AppStore, id: string): void {
   const toast = store.getState().toasts.find((t) => t.id === id)
   dismissToast(store, id)
   toast?.onDismiss?.()
+}
+
+// The countdown timer's removal: like the ✕ it can carry an answer (onExpire), unlike
+// the bare dismissToast used when a card is replaced or retired programmatically.
+export function dismissToastByExpiry(store: AppStore, id: string): void {
+  const toast = store.getState().toasts.find((t) => t.id === id)
+  dismissToast(store, id)
+  toast?.onExpire?.()
 }
