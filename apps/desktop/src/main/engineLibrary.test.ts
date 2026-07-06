@@ -197,6 +197,23 @@ describe('addToEngineLibrary', () => {
     db.close()
   })
 
+  // The engine-open guard runs before the batch's reads (covers, file stats); Engine
+  // launched in that window loads the pre-write library and its save-on-quit silently
+  // reverts everything the batch added. A second check right before the rename shrinks
+  // the vulnerable window from the whole batch to the swap itself.
+  it('aborts the write when Engine DJ opens mid-batch, leaving the library untouched', async () => {
+    const lib = join(root, 'race', 'Engine Library')
+    const file = await makeFile(root, 'five.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'Seed' }), 'Surco')
+    vi.mocked(isEngineDjRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+
+    await expect(addToEngineLibrary(lib, file, meta({ title: 'Changed' }), 'Surco')).rejects.toThrow()
+
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    expect(rows(db, 'SELECT title FROM Track')[0].title).toBe('Seed')
+    db.close()
+  })
+
   // Engine grades tracks on a 0-100 scale (20 per star), not the "1"-"5" tag value —
   // writing the raw star count reads as no stars in Engine's rating column.
   it("maps the tag's stars onto Engine's 0-100 rating scale, updating on re-convert", async () => {

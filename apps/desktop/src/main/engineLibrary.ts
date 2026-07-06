@@ -144,13 +144,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   // a running Engine is invisible until restart at best — and whichever side saves
   // last wins at worst. The process check is the reliable guard; the non-empty WAL /
   // rollback-journal checks additionally catch a crashed session's unflushed writes.
-  if (
-    (await isEngineDjRunning()) ||
-    (await fileSize(`${dbPath}-wal`)) > 0 ||
-    (await fileSize(`${dbPath}-journal`)) > 0
-  ) {
-    throw new Error('Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.')
-  }
+  await assertEngineClosed(dbPath)
   const SQL = await loadSqlJs()
   let db: Database
   if ((await fileSize(dbPath)) >= 0) {
@@ -209,6 +203,12 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       if (artId !== null) db.run('UPDATE Track SET albumArtId = ? WHERE id = ?', [artId, trackId])
       addToPlaylist(db, add.playlist, trackId, uuid)
     }
+    // The guard above ran before the batch's reads (covers, file stats); Engine
+    // launched in that window has loaded the pre-write library, and renaming over it
+    // would set up the silent save-on-quit revert the guard exists to prevent. Check
+    // again at the last moment so the vulnerable window shrinks from the whole batch
+    // to the swap itself.
+    await assertEngineClosed(dbPath)
     // Write-then-rename so a crash mid-write can never leave a truncated m.db behind.
     const tmp = `${dbPath}.surco-tmp`
     await writeFile(tmp, db.export())
@@ -303,6 +303,16 @@ async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<Engine
     // Unknown at conversion time; Engine fills the length when it analyzes the file.
     durationSec: null,
     rating: starsTagToEngineRating(add.meta.rating ?? ''),
+  }
+}
+
+async function assertEngineClosed(dbPath: string): Promise<void> {
+  if (
+    (await isEngineDjRunning()) ||
+    (await fileSize(`${dbPath}-wal`)) > 0 ||
+    (await fileSize(`${dbPath}-journal`)) > 0
+  ) {
+    throw new Error('Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.')
   }
 }
 
