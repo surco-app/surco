@@ -57,6 +57,24 @@ describe('loudnormFilter', () => {
     expect(f).toContain('linear=true')
   })
 
+  // Verified empirically: with measured_LRA above the LRA target, af_loudnorm ignores
+  // linear=true and normalizes dynamically (pumping) — and even lands off the
+  // integrated target (a −14 request came out at −11 on a 14-LU source). Raising the
+  // LRA parameter to the measured value keeps linear mode; in linear mode the LRA
+  // target compresses nothing (a constant gain can't change range), it's only the
+  // linear/dynamic gate.
+  it('raises the LRA target to the measured range so linear mode survives dynamic material', () => {
+    const f = loudnormFilter(loudness, {
+      inputI: -24.07,
+      inputTp: -20.06,
+      inputLra: 14,
+      inputThresh: -36.71,
+      targetOffset: -0.04,
+    })
+    expect(f).toContain('loudnorm=I=-14:TP=-1:LRA=14')
+    expect(f).toContain('linear=true')
+  })
+
   // loudnorm oversamples to 192 kHz internally and emits its output at that rate;
   // without restoring the source rate every normalized file would balloon to
   // 192 kHz and silently change sample rate — wrong for a 44.1 kHz rip.

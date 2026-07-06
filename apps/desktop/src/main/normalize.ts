@@ -62,10 +62,17 @@ export function loudnormFilter(
   m: LoudnormMeasured,
   sampleRate?: number,
 ): string {
+  // af_loudnorm honors linear=true only while measured_LRA ≤ the LRA target; past it,
+  // the filter silently falls back to dynamic (pumping) mode AND misses the integrated
+  // target (verified with ffmpeg: a −14 request on a 14-LU source came out at −11).
+  // Raise the target to the measured range — in linear mode LRA compresses nothing (a
+  // constant gain can't change range), it is purely the linear/dynamic gate. Ceiled
+  // for a margin against float equality; 50 is the parameter's documented maximum.
+  const lra = Math.min(50, Math.max(LOUDNORM_LRA, Math.ceil(m.inputLra)))
   const filter = [
     `loudnorm=I=${cfg.targetLufs}`,
     `TP=${cfg.truePeakDb}`,
-    `LRA=${LOUDNORM_LRA}`,
+    `LRA=${lra}`,
     `measured_I=${m.inputI}`,
     `measured_TP=${m.inputTp}`,
     `measured_LRA=${m.inputLra}`,
