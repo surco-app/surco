@@ -74,7 +74,7 @@ import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale, resolveLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
-import type { AppleMusicIndex } from './lib/appleMusicLibrary'
+import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
@@ -1120,8 +1120,8 @@ export default function App(): React.JSX.Element {
   const onTrashOriginal = useStableCallback(() => {
     if (selected) askDeleteOriginal(selected)
   })
-  const onRemoveOldMusicCopy = useStableCallback((staleId: string) => {
-    if (selected) askRemoveOldMusicCopy(selected, staleId)
+  const onRemoveOldMusicCopy = useStableCallback((stale: StaleLibraryCopy) => {
+    if (selected) askRemoveOldMusicCopy(selected, stale)
   })
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   const onOpenRename = useStableCallback(overlays.openRename)

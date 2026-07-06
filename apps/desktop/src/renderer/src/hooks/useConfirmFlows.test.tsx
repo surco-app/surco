@@ -85,17 +85,26 @@ describe('useConfirmFlows scope wording', () => {
 describe('useConfirmFlows remove old Apple Music copy', () => {
   // Removing a track from the user's Apple Music library is destructive and rides on a
   // scored hint (the stale-copy match), so nothing may fire before the confirmation —
-  // and the outcome must be reported so the library snapshot refreshes.
-  it('deletes the superseded copy only after the confirmation and reports the removal', async () => {
+  // and the outcome must be reported so the library snapshot refreshes. The dialog must
+  // name the library entry by ITS OWN artist/title, not the fresh track's: the match can
+  // be wrong, and the entry's label is the only thing that lets the user catch it.
+  it('deletes the superseded copy only after a confirmation naming that copy', async () => {
     const deleteAppleMusic = vi.fn().mockResolvedValue('deleted')
     ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
     const onOldMusicCopyRemoved = vi.fn()
     const { flows, opened } = setup([], { onOldMusicCopyRemoved })
-    flows.askRemoveOldMusicCopy(track('a'), 'OLDCOPY123456789')
+    flows.askRemoveOldMusicCopy(track('a'), {
+      persistentId: 'OLDCOPY123456789',
+      label: 'Djmofly - Save My Love (26 Rmx)',
+    })
     expect(opened[0].destructive).toBe(true)
+    expect(opened[0].message).toContain('Djmofly - Save My Love (26 Rmx)')
     expect(deleteAppleMusic).not.toHaveBeenCalled()
     opened[0].onConfirm()
-    expect(deleteAppleMusic).toHaveBeenCalledWith('OLDCOPY123456789', 'A - a')
+    expect(deleteAppleMusic).toHaveBeenCalledWith(
+      'OLDCOPY123456789',
+      'Djmofly - Save My Love (26 Rmx)',
+    )
     await waitFor(() => expect(onOldMusicCopyRemoved).toHaveBeenCalled())
   })
 
@@ -106,7 +115,10 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
     ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
     const reportOldCopyRemoveFailure = vi.fn()
     const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
-    flows.askRemoveOldMusicCopy(track('a'), 'OLDCOPY123456789')
+    flows.askRemoveOldMusicCopy(track('a'), {
+      persistentId: 'OLDCOPY123456789',
+      label: 'Djmofly - Save My Love (26 Rmx)',
+    })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalled())
   })

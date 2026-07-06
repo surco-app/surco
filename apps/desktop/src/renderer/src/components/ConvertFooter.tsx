@@ -2,6 +2,7 @@ import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
+import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -38,11 +39,11 @@ interface ConvertFooterProps {
   onProcess: (format: OutputFormat) => void
   onAddToAppleMusic?: () => void
   onTrashOriginal?: () => void
-  // The persistent ID of the library copy this track's add superseded (the old rip the
-  // fresh copy replaces), resolved by the editor from the library snapshot. Null when
-  // there is nothing to replace.
-  staleMusicCopyId?: string | null
-  onRemoveOldMusicCopy?: (staleId: string) => void
+  // The library copy this track's add superseded (the old rip the fresh copy replaces),
+  // resolved by the editor from the library snapshot: its persistent ID plus the raw
+  // label the confirm dialog names it by. Null when there is nothing to replace.
+  staleMusicCopy?: StaleLibraryCopy | null
+  onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
@@ -72,7 +73,7 @@ export function ConvertFooter({
   onProcess,
   onAddToAppleMusic,
   onTrashOriginal,
-  staleMusicCopyId,
+  staleMusicCopy,
   onRemoveOldMusicCopy,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
@@ -163,11 +164,11 @@ export function ConvertFooter({
                   {tr('editor.deleteOriginal')}
                 </button>
               )}
-              {!isMulti && musicAdded && staleMusicCopyId && (
+              {!isMulti && musicAdded && staleMusicCopy && (
                 <button
                   type="button"
                   data-testid="remove-old-copy"
-                  onClick={() => onRemoveOldMusicCopy?.(staleMusicCopyId)}
+                  onClick={() => onRemoveOldMusicCopy?.(staleMusicCopy)}
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
                   {tr('editor.removeOldCopy')}

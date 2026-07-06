@@ -1185,7 +1185,10 @@ describe('Editor replace old Apple Music copy', () => {
       { libraryIndex },
     )
     fireEvent.click(screen.getByTestId('remove-old-copy'))
-    expect(onRemoveOldMusicCopy).toHaveBeenCalledWith('OLDCOPY123456789')
+    expect(onRemoveOldMusicCopy).toHaveBeenCalledWith({
+      persistentId: 'OLDCOPY123456789',
+      label: 'Djmofly - Save My Love (26 Rmx)',
+    })
   })
 
   // Once the snapshot refreshes it also holds the copy the add itself created; the

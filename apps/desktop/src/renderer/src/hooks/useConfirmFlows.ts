@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat, Settings, TrackMetadata } from '../../../shared/types'
+import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
@@ -37,7 +38,7 @@ interface Params {
 export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
-  askRemoveOldMusicCopy: (track: TrackItem, staleId: string) => void
+  askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[]) => void
   askClearAll: (targets: TrackItem[]) => void
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
@@ -118,23 +119,23 @@ export function useConfirmFlows({
   // Music, so this deletes the library entry it superseded and sends that entry's file
   // to the OS Trash — the half of "replace the old rip" the add itself can't do. It acts
   // on the user's library off a scored hint (the stale-copy match), so it confirms
-  // first. A 'missing' result resolves the same success path: the goal is "the old copy
-  // is no longer there", and it isn't.
-  function askRemoveOldMusicCopy(track: TrackItem, staleId: string): void {
-    const name = track.meta.title || track.fileName
+  // first — naming the matched entry by its own artist/title, since that label is the
+  // only thing that lets the user catch a wrong match before it deletes. A 'missing'
+  // result resolves the same success path: the goal is "the old copy is no longer
+  // there", and it isn't.
+  function askRemoveOldMusicCopy(track: TrackItem, stale: StaleLibraryCopy): void {
     openConfirm({
       title: tr('confirm.removeOldCopyTitle'),
-      message: tr('confirm.removeOldCopyMessage', { name }),
+      message: tr('confirm.removeOldCopyMessage', {
+        name: track.meta.title || track.fileName,
+        copy: stale.label,
+      }),
       confirmLabel: tr('confirm.removeOldCopyConfirm'),
       destructive: true,
       onConfirm: () => {
-        // "Artist - Title" for the activity row, like the main-process adds.
-        const label =
-          track.meta.artist && track.meta.title
-            ? `${track.meta.artist} - ${track.meta.title}`
-            : name
+        // The activity row names what was actually removed: the old copy itself.
         window.api
-          .deleteAppleMusic(staleId, label)
+          .deleteAppleMusic(stale.persistentId, stale.label)
           .then(() => onOldMusicCopyRemoved())
           // Same as askTrash: the user confirmed a destructive dialog, so a
           // failure must be said out loud, not swallowed.

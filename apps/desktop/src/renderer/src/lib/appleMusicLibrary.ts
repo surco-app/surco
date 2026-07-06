@@ -13,6 +13,10 @@ interface LibraryEntry {
   durationSec?: number
   parts: { base: string; suffix: string }
   persistentId?: string
+  // The row's raw "Artist - Title" as Music displays it, untouched by folding. The
+  // stale-copy confirm dialog shows it so the user can verify WHICH entry the scored
+  // match picked before anything is deleted.
+  label: string
 }
 
 // A snapshot of the user's Apple Music library, keyed by canonical title so a track's
@@ -200,6 +204,7 @@ export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMus
       durationSec,
       parts: titleParts(title, artist),
       persistentId,
+      label: `${artist} - ${title}`,
     }
     for (const key of bucketKeys(title, artist)) {
       if (!key) continue
@@ -293,17 +298,24 @@ export function isInLibrary(
   return false
 }
 
-// The persistent ID of a library copy the candidate supersedes: an entry that matches the
-// same way isInLibrary does but is NOT the copy Surco itself added (currentId — before the
+// What the replace flow needs from the superseded copy: the persistent ID to delete it
+// by, and its raw label so the confirm dialog can name it.
+export interface StaleLibraryCopy {
+  persistentId: string
+  label: string
+}
+
+// The library copy the candidate supersedes: an entry that matches the same way
+// isInLibrary does but is NOT the copy Surco itself added (currentId — before the
 // snapshot refreshes only the old rip is in the index, after it both are, so the exclusion
 // is what keeps the replace offer from pointing at the fresh copy). Entries with no ID
 // (Engine DJ rows, old-shape dumps) can't be deleted, so they are never named. Same
 // threshold as the badge: a different song is never offered for deletion.
-export function staleLibraryCopyId(
+export function staleLibraryCopy(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string; durationSec?: number },
   currentId: string,
-): string | null {
+): StaleLibraryCopy | null {
   const gathered = candidateEntries(index, candidate)
   if (!gathered) return null
   for (const entry of gathered.entries) {
@@ -312,7 +324,7 @@ export function staleLibraryCopyId(
       entry.persistentId !== currentId &&
       libraryMatchScore(entry, gathered.cand) >= LIBRARY_MATCH_THRESHOLD
     )
-      return entry.persistentId
+      return { persistentId: entry.persistentId, label: entry.label }
   }
   return null
 }

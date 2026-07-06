@@ -683,7 +683,7 @@
     "deleteOriginalMessage": "This moves the original “{{name}}” to the Trash. Your converted file stays in place. You can restore the original from the Trash.",
     "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there.",
     "removeOldCopyTitle": "Remove the old copy from Apple Music?",
-    "removeOldCopyMessage": "Your library still holds another copy of \u201c{{name}}\u201d. It will be removed from Apple Music and its file will move to the Trash, where you can restore it.",
+    "removeOldCopyMessage": "Your library still holds another copy of \u201c{{name}}\u201d: \u201c{{copy}}\u201d. That entry will be removed from Apple Music and its file will move to the Trash, where you can restore it.",
     "removeOldCopyConfirm": "Remove old copy",
     "convertInPlaceTitle": "Overwrite the original files?",
     "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",

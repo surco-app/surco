@@ -683,7 +683,7 @@
     "deleteOriginalMessage": "Esto mueve el original «{{name}}» a la papelera. El archivo convertido se mantiene. Puedes restaurar el original desde la papelera.",
     "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí.",
     "removeOldCopyTitle": "\u00bfEliminar la copia antigua de Apple Music?",
-    "removeOldCopyMessage": "Tu biblioteca a\u00fan tiene otra copia de \u00ab{{name}}\u00bb. Se eliminar\u00e1 de Apple Music y su archivo ir\u00e1 a la papelera, desde donde puedes restaurarlo.",
+    "removeOldCopyMessage": "Tu biblioteca a\u00fan tiene otra copia de \u00ab{{name}}\u00bb: \u00ab{{copy}}\u00bb. Esa entrada se eliminar\u00e1 de Apple Music y su archivo ir\u00e1 a la papelera, desde donde puedes restaurarlo.",
     "removeOldCopyConfirm": "Eliminar copia antigua",
     "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
     "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
