@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.36",
+    "date": "July 6, 2026",
+    "title": "Replace your old Apple Music copy",
+    "items": [
+      {
+        "text": "When a converted track lands in Apple Music, Surco spots the old copy of the same song and offers to remove it: it shows you exactly which one, removes the library entry and sends its file to the Trash, where you can recover it.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Batch conversions can be cancelled: while one runs you'll see its progress in the toolbar, and one click there (or the command in the palette) stops it.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Serato exports saved to a USB drive now locate the files on import.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Re-converting a track Engine DJ already analyzed keeps its analysis: length and BPM are no longer lost.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Search results are ranked by relevance, with your preferred provider as the tie-break.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Surco checks for updates now and then while it stays open, not just at launch.",
+        "in": "0.36.0"
+      }
+    ]
+  },
+  {
     "version": "0.35",
     "date": "July 3, 2026",
     "title": "A clearer export finish",

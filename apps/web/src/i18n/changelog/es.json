@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.36",
+    "date": "6 de julio de 2026",
+    "title": "Reemplaza tu copia antigua de Apple Music",
+    "items": [
+      {
+        "text": "Al añadir una pista convertida a Apple Music, Surco detecta la copia antigua de la misma canción y te ofrece eliminarla: te enseña exactamente cuál es, quita la entrada de la biblioteca y manda su archivo a la papelera, de donde puedes recuperarlo.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Las conversiones en lote se pueden cancelar: mientras corre una verás su progreso en la barra de herramientas, y basta un clic ahí (o el comando en la paleta) para pararla.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "La exportación a Serato guardada en una memoria USB ahora encuentra los archivos al importarla.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Reconvertir una pista que Engine DJ ya había analizado conserva su análisis: la duración y el BPM no se pierden.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Los resultados de búsqueda se ordenan por relevancia, con tu proveedor preferido como desempate.",
+        "in": "0.36.0"
+      },
+      {
+        "text": "Surco comprueba si hay actualizaciones de vez en cuando mientras está abierta, no solo al arrancar.",
+        "in": "0.36.0"
+      }
+    ]
+  },
+  {
     "version": "0.35",
     "date": "3 de julio de 2026",
     "title": "Un final de exportación más claro",
