@@ -46,6 +46,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     autoMatchable: 0,
     canProcessSelected: false,
     canProcessAll: false,
+    batching: false,
+    cancelBatch: () => {},
     editorFormatRef: { current: null },
     editorNormalizeRef: { current: null },
     trackSearchRef: { current: null },
@@ -249,6 +251,24 @@ describe('buildCommands convert-and-advance', () => {
     cmd.run()
     expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined)
     expect(moveSelection).toHaveBeenCalledWith(1)
+  })
+})
+
+describe('buildCommands process-all toggle', () => {
+  // Like the sweep commands, 'process-all' flips meaning mid-run: a misfired Convert
+  // all must be cancellable from the same palette entry that started it, instead of
+  // running unstoppably to the end of the crate.
+  it('cancels the running batch instead of starting another', () => {
+    const cancelBatch = vi.fn()
+    const askConvertAll = vi.fn()
+    const cmd = commandById(
+      makeDeps({ batching: true, canProcessAll: false, cancelBatch, askConvertAll }),
+      'process-all',
+    )
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(cancelBatch).toHaveBeenCalledOnce()
+    expect(askConvertAll).not.toHaveBeenCalled()
   })
 })
 

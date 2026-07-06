@@ -760,6 +760,7 @@ export default function App(): React.JSX.Element {
     batching,
     batchProgress,
     batchSummary,
+    cancelBatch,
   } = useTrackProcessing({
     tracks,
     settings,
@@ -1234,6 +1235,8 @@ export default function App(): React.JSX.Element {
       autoMatchable,
       canProcessSelected,
       canProcessAll,
+      batching,
+      cancelBatch,
       editorFormatRef,
       editorNormalizeRef,
       trackSearchRef,
@@ -1346,6 +1349,7 @@ export default function App(): React.JSX.Element {
             importing={importProgress}
             batchSummary={batchSummary}
             batching={batching}
+            batchProgress={batchProgress}
             analysis={analysis}
             allAnalyzed={allAnalyzed}
             matching={matching}
@@ -1355,6 +1359,7 @@ export default function App(): React.JSX.Element {
             onCancelAnalyze={cancelAnalysis}
             onAutoMatch={onAutoMatchAll}
             onCancelAutoMatch={cancelAutoMatch}
+            onCancelBatch={cancelBatch}
             onPalette={onOpenPalette}
             onStats={onOpenStats}
             onActivity={() => setActivityOpen((v) => !v)}

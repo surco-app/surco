@@ -105,6 +105,10 @@ export interface CommandDeps {
   autoMatchable: number
   canProcessSelected: boolean
   canProcessAll: boolean
+  // Whether a convert-all/add-all batch is running, and its cancel — 'process-all'
+  // flips into that cancel mid-run, like the sweep commands do.
+  batching: boolean
+  cancelBatch: () => void
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: OutputFormat | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
@@ -180,6 +184,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     autoMatchable,
     canProcessSelected,
     canProcessAll,
+    batching,
+    cancelBatch,
     editorFormatRef,
     editorNormalizeRef,
     trackSearchRef,
@@ -389,18 +395,24 @@ export function buildCommands(deps: CommandDeps): Command[] {
       },
     },
     {
+      // Toggles the batch: starts a convert-all, or cancels the one running — same
+      // flip as the sweep commands, so a misfired run can be stopped from the palette
+      // that started it (queued tracks bail; in-flight conversions finish).
       id: 'process-all',
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
-      enabled: canProcessAll,
+      enabled: batching ? true : canProcessAll,
       // Convert the VISIBLE rows, not the whole crate: with a format filter on (e.g. MP3),
       // "convert all" must touch only what's shown, never the hidden FLAC/WAV rows.
-      run: () =>
-        askConvertAll(
-          visibleTracks,
-          editorFormatRef.current ?? undefined,
-          editorNormalizeRef.current ?? undefined,
-        ),
+      run: () => {
+        if (batching) cancelBatch()
+        else
+          askConvertAll(
+            visibleTracks,
+            editorFormatRef.current ?? undefined,
+            editorNormalizeRef.current ?? undefined,
+          )
+      },
     },
     {
       // Toggles the quality sweep: starts it, or cancels a running one — the same button

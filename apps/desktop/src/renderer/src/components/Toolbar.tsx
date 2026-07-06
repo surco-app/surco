@@ -24,6 +24,9 @@ interface Props {
   importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
   batching: boolean
+  // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
+  // while `batching` — the conversion's counterpart of the sweep buttons below.
+  batchProgress: { done: number; total: number }
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number } | null
@@ -37,6 +40,9 @@ interface Props {
   onCancelAnalyze: () => void
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
+  // Stops the running batch between tracks: queued conversions bail as skipped, the
+  // ones already in ffmpeg finish.
+  onCancelBatch: () => void
   onPalette: () => void
   onStats: () => void
   onActivity: () => void
@@ -58,6 +64,7 @@ export const Toolbar = memo(function Toolbar({
   importing,
   batchSummary,
   batching,
+  batchProgress,
   analysis,
   allAnalyzed,
   matching,
@@ -67,6 +74,7 @@ export const Toolbar = memo(function Toolbar({
   onCancelAnalyze,
   onAutoMatch,
   onCancelAutoMatch,
+  onCancelBatch,
   onPalette,
   onStats,
   onActivity,
@@ -95,6 +103,26 @@ export const Toolbar = memo(function Toolbar({
               .filter(Boolean)
               .join(' · ')}
           </span>
+        )}
+        {batching && (
+          // The running batch's pill: same accent ring and inline phase text as the
+          // import pill (a generic loader can't identify its sweep by icon alone), but
+          // clickable — like the sweep buttons, the control that shows the run is the
+          // one that cancels it, so a misfired Convert all can be stopped right here.
+          <button
+            type="button"
+            data-testid="batch-progress"
+            onClick={onCancelBatch}
+            aria-label={tr('header.cancelConvert')}
+            className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {tr('header.convertingCount', {
+              done: batchProgress.done,
+              total: batchProgress.total,
+            })}
+            <Tooltip label={tr('header.cancelConvert')} align="end" />
+          </button>
         )}
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent ring, spinning

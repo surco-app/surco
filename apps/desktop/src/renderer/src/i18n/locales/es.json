@@ -38,6 +38,8 @@
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
+    "convertingCount": "Convirtiendo… {{done}}/{{total}}",
+    "cancelConvert": "Cancelar la conversión: las pistas en cola se saltan, las que están en curso terminan",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",

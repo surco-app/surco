@@ -20,6 +20,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     batching: false,
     analysis: null,
     allAnalyzed: false,
+    batchProgress: { done: 0, total: 0 },
     matching: null,
     hasToken: true,
     autoMatchable: 2,
@@ -27,6 +28,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onCancelAnalyze: vi.fn(),
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
+    onCancelBatch: vi.fn(),
     onPalette: vi.fn(),
     onStats: vi.fn(),
     onActivity: vi.fn(),
@@ -72,6 +74,23 @@ describe('Toolbar', () => {
     renderBar({ hasToken: false, allAnalyzed: true })
     expect(screen.getByTestId('auto-match')).toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).toBeDisabled()
+  })
+
+  // A misfired Convert all used to be unstoppable from anywhere in the UI. The batch
+  // pill is the conversion's counterpart of the sweep buttons: visible only while a
+  // batch runs, naming its done/total, and clicking it cancels — queued tracks bail,
+  // the ones already converting finish.
+  it('shows the batch progress pill while converting and cancels on click', () => {
+    const props = renderBar({ batching: true, batchProgress: { done: 3, total: 12 } })
+    const pill = screen.getByTestId('batch-progress')
+    expect(pill).toHaveTextContent('3/12')
+    fireEvent.click(pill)
+    expect(props.onCancelBatch).toHaveBeenCalledOnce()
+  })
+
+  it('hides the batch pill when no batch is running', () => {
+    renderBar({ batchProgress: { done: 5, total: 5 } })
+    expect(screen.queryByTestId('batch-progress')).toBeNull()
   })
 
   // A big drop used to be an opaque wait; the counter is the import's only progress

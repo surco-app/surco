@@ -38,6 +38,8 @@
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "convertingCount": "Converting… {{done}}/{{total}}",
+    "cancelConvert": "Cancel the conversion: queued tracks are skipped, the ones underway finish",
     "autoMatch": "Auto-match all tracks on Discogs",
     "autoMatchNoToken": "Add a Discogs token in Settings to auto-match",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
