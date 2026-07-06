@@ -19,7 +19,9 @@ const escapeXml = (s: string): string =>
 function trackLocation(path: string): string {
   const normalized = path.replace(/\\/g, '/')
   const absolute = normalized.startsWith('/') ? normalized : `/${normalized}`
-  return `file://localhost${encodeURI(absolute).replace(/#/g, '%23')}`
+  // encodeURI leaves the URL separators # and ? alone; either one truncates the
+  // Location at import (fragment/query boundary) and rekordbox silently drops the track.
+  return `file://localhost${encodeURI(absolute).replace(/#/g, '%23').replace(/\?/g, '%3F')}`
 }
 
 const KINDS: Record<string, string> = {

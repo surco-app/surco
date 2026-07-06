@@ -66,6 +66,18 @@ describe('buildRekordboxXml', () => {
     expect(xml).toContain('Location="file://localhost/music/Run%20To%20Me.wav"')
   })
 
+  // encodeURI leaves the URL separators # and ? alone; either one truncates the
+  // Location at import time (fragment/query boundary) and rekordbox silently drops the
+  // track. Question-titled filenames are legal and common on macOS.
+  it('percent-encodes # and ? in the file path', () => {
+    const withPunct = buildRekordboxXml([
+      track({ id: 'q', inputPath: '/music/What Is Love? #1.wav' }),
+    ])
+    expect(withPunct).toContain(
+      'Location="file://localhost/music/What%20Is%20Love%3F%20%231.wav"',
+    )
+  })
+
   it('labels the kind from the file extension', () => {
     expect(xml).toContain('Kind="WAV File"')
     expect(xml).toContain('Kind="AIFF File"')
