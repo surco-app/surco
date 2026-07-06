@@ -368,6 +368,49 @@ describe('TrackList', () => {
     expect(rows[1]).toHaveAttribute('tabindex', '-1')
   })
 
+  // Plain ⌫/Supr on a focused row is the keyboard ✕ — the list is a no-typing surface,
+  // so the bare key is unambiguous there (the global ⌘⌫ chord stays for everywhere
+  // else). Removal deselects, which would strand the keyboard: selection and focus
+  // must hop to a neighbour so ⌫ ⌫ ⌫ can walk down the list.
+  it('removes the focused row with plain Backspace and moves selection to the next row', () => {
+    const { onSelect, onRemove } = renderList(
+      [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })],
+      'b',
+    )
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'Backspace' })
+    expect(onRemove).toHaveBeenCalledWith('b')
+    expect(onSelect).toHaveBeenCalledWith('c', {})
+  })
+
+  it('falls back to the previous row when the last row is removed with Delete', () => {
+    const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'b')
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'Delete' })
+    expect(onRemove).toHaveBeenCalledWith('b')
+    expect(onSelect).toHaveBeenCalledWith('a', {})
+  })
+
+  // With the row part of a multi-selection, onRemove routes through App's selection-aware
+  // removal — the neighbour must be the first row OUTSIDE the doomed set, or selection
+  // would land on a row that is about to vanish.
+  it('hops selection past the rest of a multi-selection being removed', () => {
+    const { onSelect, onRemove } = renderList(
+      [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })],
+      'a',
+      ['a', 'b'],
+    )
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace' })
+    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onSelect).toHaveBeenCalledWith('c', {})
+  })
+
+  // ⌘⌫ is the global remove command's chord; the row must leave it alone or the same
+  // press would remove two tracks.
+  it('ignores Backspace with a modifier held', () => {
+    const { onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace', metaKey: true })
+    expect(onRemove).not.toHaveBeenCalled()
+  })
+
   it('removes a track without selecting it when the remove control is clicked', () => {
     const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByLabelText('Remove')[0])

@@ -12,6 +12,7 @@ import {
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useStableCallback } from '../hooks/useStableCallback'
 import type { OutputFormat } from '../../../shared/types'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
@@ -138,6 +139,9 @@ interface RowProps {
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
+  // Plain ⌫/Supr on the focused row — the keyboard ✕. Separate from onRemove because
+  // the list must also hop selection/focus to a surviving neighbour (see TrackList).
+  onRemoveKey: (id: string) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
   // Starts the native drag-out for this row (all selected files when it's part of the
@@ -164,6 +168,7 @@ const TrackRow = memo(function TrackRow({
   onSelect,
   onActivate,
   onRemove,
+  onRemoveKey,
   onPrefetch,
   onOpenMenu,
   onDragOut,
@@ -233,6 +238,14 @@ const TrackRow = memo(function TrackRow({
         // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
         tabIndex={tabbable ? 0 : -1}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
+        onKeyDown={(e) => {
+          // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
+          // no-typing surface so plain ⌫/Supr is unambiguous here.
+          if (e.key !== 'Backspace' && e.key !== 'Delete') return
+          if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+          e.preventDefault()
+          onRemoveKey(t.id)
+        }}
         onDoubleClick={() => onActivate(t)}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -437,6 +450,25 @@ export function TrackList({
   rowRegistry,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
+  // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
+  // strand the keyboard on a dead row: hop selection — and focus, via the registry —
+  // to the first row OUTSIDE the doomed set (onRemove is selection-aware in App), so
+  // ⌫ ⌫ ⌫ walks down the list like Finder's delete does.
+  const removeViaKeyboard = useStableCallback((id: string): void => {
+    const doomed = selectedIds.has(id) ? selectedIds : new Set([id])
+    const i = tracks.findIndex((t) => t.id === id)
+    const neighbor =
+      tracks.slice(i + 1).find((t) => !doomed.has(t.id)) ??
+      tracks
+        .slice(0, Math.max(i, 0))
+        .reverse()
+        .find((t) => !doomed.has(t.id))
+    onRemove(id)
+    if (neighbor) {
+      onSelect(neighbor.id, {})
+      rowRegistry?.current?.get(neighbor.id)?.focus()
+    }
+  })
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
   const openMenu = useCallback(
     (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
@@ -510,6 +542,7 @@ export function TrackList({
             onSelect={onSelect}
             onActivate={onActivate}
             onRemove={onRemove}
+            onRemoveKey={removeViaKeyboard}
             onPrefetch={onPrefetch}
             onOpenMenu={openMenu}
             onDragOut={startDragOut}
