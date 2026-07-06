@@ -277,6 +277,9 @@ export function useTrackProcessing({
       }
     } finally {
       setBatching(false)
+      // Back to zero, not left at {N,N}: the done/total pools into the top bar with the
+      // other sweeps, and a finished batch must stop contributing to that fraction.
+      setBatchProgress({ done: 0, total: 0 })
     }
   })
 
@@ -312,6 +315,9 @@ export function useTrackProcessing({
         })
       } finally {
         setBatching(false)
+        // Same zeroing as addAllToAppleMusic: a finished batch must leave the pooled
+        // top-bar fraction, or the bar sticks at 100% and skews every later sweep.
+        setBatchProgress({ done: 0, total: 0 })
         setBatchSummary(summarizeBatch(results))
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or

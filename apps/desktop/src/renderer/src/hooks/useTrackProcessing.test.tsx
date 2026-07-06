@@ -601,6 +601,36 @@ describe('useTrackProcessing', () => {
     }
   })
 
+  // The batch's done/total pools into the top progress bar with the other sweeps; left
+  // at {N,N} after the run it kept the bar pinned at 100% forever and skewed every later
+  // sweep's pooled fraction. It must return to zero the moment the run ends.
+  it('resets the batch progress once a convert-all run finishes', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(result.current.batchProgress).toEqual({ done: 0, total: 0 })
+  })
+
+  // Same contract for the other sweep that rides the shared batch state.
+  it('resets the batch progress once an add-all sweep finishes', async () => {
+    setApi({ addToAppleMusic: vi.fn().mockResolvedValue('PID1234ABCD') })
+    const tracks = [track({ id: 'a', status: 'done', outputPath: '/out/a.aiff' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.addAllToAppleMusic(['a'])
+    })
+    expect(result.current.batchProgress).toEqual({ done: 0, total: 0 })
+  })
+
   it('hands the stored persistent ID to the conversion, so the automatic Apple Music step syncs the existing library copy instead of importing a duplicate', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
     setApi({ processTrack })
