@@ -254,13 +254,13 @@ export function boostForCatalogMatch(base: number): number {
 
 // Discogs leads, Bandcamp is the fallback — the same precedence the headless sweep uses
 // (discogsFirst): Discogs is the canonical catalog for this music and carries the
-// tracklists/durations the suggestion scores against, so a merged multi-provider list keeps
-// every Discogs row above the Bandcamp ones. Within a provider, results are re-ranked so the
-// rows that name the file's artist (and, secondarily, its title) lead — Discogs orders by
-// its own relevance, which ignores the file's artist, so the right release can otherwise
-// fall past the probe cap behind compilations and reissues, and the auto-match's recall
-// hinges on it being reached inside the cap. The sort is stable, so Discogs' order stands as
-// the final tie-break and equally-relevant rows keep their place.
+// tracklists/durations the suggestion scores against, so between two equally-relevant rows
+// the Discogs one leads and Bandcamp stays the fallback. A tie-break only, never the primary
+// key: with Discogs holding nothing but noise for a query, an unconditional provider sort
+// pinned unrelated Discogs rows above Bandcamp's exact release (real case: "Save My Love
+// DJ Mofly" listed Zappa and Champs Elysées first and the right release dead last). The sort
+// is stable, so Discogs' order stands as the final tie-break and equally-relevant rows keep
+// their place.
 const PROVIDER_RANK: Record<SearchProviderId, number> = { discogs: 0, bandcamp: 1 }
 
 const COMPILATION_PENALTY = 1
@@ -301,8 +301,8 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     .map((result, index) => ({ result, index, score: relevance(result) }))
     .sort(
       (a, b) =>
-        PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         b.score - a.score ||
+        PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         yearMatch(b.result) - yearMatch(a.result) ||
         have(b.result) - have(a.result) ||
         a.index - b.index,

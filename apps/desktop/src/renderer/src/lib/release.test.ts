@@ -344,17 +344,33 @@ describe('preRankResults', () => {
     expect(ranked.map((x) => x.id)).toEqual([1, 2])
   })
 
-  // Discogs is the canonical catalog for this music and carries the tracklists the
-  // suggestion scores against, so its rows lead — even when a Bandcamp row matches the file
-  // text better — with Bandcamp as the fallback. Relevance still orders within a provider.
-  it('floats every Discogs row above the Bandcamp ones, then ranks by relevance', () => {
+  // Real case: searching "Save My Love DJ Mofly" — Discogs only has unrelated noise
+  // (Zappa, Champs Elysées…) while Bandcamp carries the exact release, which used to sit
+  // dead last because every Discogs row outranked every Bandcamp one unconditionally.
+  // Relevance must lead the sort; the provider preference only breaks ties.
+  it('lets a Bandcamp row naming the file exactly outrank irrelevant Discogs rows', () => {
     const bc = (id: number, title: string): SearchResult => ({ provider: 'bandcamp', id, title })
     const ranked = preRankResults(
-      [bc(1, 'Daft Punk - One More Time'), r(2, 'Various - Comp'), r(3, 'Daft Punk - Discovery')],
+      [
+        r(1, 'Frank Zappa - Zappa'),
+        r(2, 'Bob Sinclar - Champs Elysées'),
+        bc(3, 'DJ Mofly - Save My Love'),
+      ],
+      { title: 'Save My Love', artist: 'DJ Mofly' },
+    )
+    expect(ranked[0].id).toBe(3)
+  })
+
+  // Discogs is still the canonical catalog (it carries the tracklists the suggestion
+  // scores against), so when both providers offer an equally-relevant row the Discogs
+  // one leads and Bandcamp stays the fallback.
+  it('keeps Discogs ahead of an equally-relevant Bandcamp row', () => {
+    const bc = (id: number, title: string): SearchResult => ({ provider: 'bandcamp', id, title })
+    const ranked = preRankResults(
+      [bc(1, 'Daft Punk - Discovery'), r(2, 'Daft Punk - Discovery')],
       { title: 'One More Time', artist: 'Daft Punk' },
     )
-    // Both Discogs rows lead (the artist-naming one first), the better-matching Bandcamp last.
-    expect(ranked.map((x) => x.id)).toEqual([3, 2, 1])
+    expect(ranked.map((x) => x.id)).toEqual([2, 1])
   })
 
   // Between two equally-relevant pressings, the one more of the community owns is the
