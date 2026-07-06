@@ -76,6 +76,15 @@ const toNumber = (value: string): number => {
   return value.trim() !== '' && Number.isFinite(n) ? n : 0
 }
 
+// The year field imports the source's `date` tag verbatim, which in FLAC/WAV rips is
+// often a full date ("2024-03-01") that Number() turns into NaN — writing 0 and
+// destroying the year. Take the leading 4-digit year; anything else falls back to the
+// plain numeric parse.
+const toYear = (value: string): number => {
+  const dated = value.trim().match(/^(\d{4})\b/)
+  return dated ? Number(dated[1]) : toNumber(value)
+}
+
 const toArray = (value: string): string[] => (value.trim() ? [value] : [])
 
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
@@ -141,7 +150,7 @@ export function writeTags(
     tag.performers = toArray(meta.artist)
     tag.album = meta.album
     tag.albumArtists = toArray(meta.albumArtist)
-    tag.year = toNumber(meta.year)
+    tag.year = toYear(meta.year)
     tag.genres = toArray(meta.genre)
     tag.grouping = meta.grouping
     tag.comment = meta.comment

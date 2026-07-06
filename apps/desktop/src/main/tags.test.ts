@@ -151,6 +151,21 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // FLAC/WAV rips commonly carry a full date ("2024-03-01") in the tag the year field
+  // imports from verbatim; Number() on that is NaN, so this pass used to write year 0 —
+  // an in-place edit (or the rating-triggered second pass on a re-encode) silently
+  // destroyed a valid year. The leading year must survive.
+  it('keeps the year when the field holds a full date', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, year: '2024-03-01' })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.year).toBe(2024)
+    f.dispose()
+  })
+
   it("preserves Traktor's GEOB cue frame while overwriting metadata", () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
