@@ -6,6 +6,7 @@ import type { TrackMetadata } from '../shared/types'
 import {
   buildSpectrum,
   convertArgs,
+  convertTmpPath,
   coverArgs,
   cutoffFilter,
   formatMatchesInput,
@@ -36,6 +37,30 @@ const meta: TrackMetadata = {
   catalogNumber: '',
   remixArtist: '',
 }
+
+describe('convertTmpPath', () => {
+  // Bulk conversions run several jobs in parallel; two tracks resolving to the same
+  // output name must never share a temp file, or their ffmpeg processes interleave
+  // writes into one path and a corrupted file lands as a "successful" conversion.
+  it('gives every call its own temp path for the same output', () => {
+    expect(convertTmpPath('/out/song.aiff', '.aiff')).not.toBe(
+      convertTmpPath('/out/song.aiff', '.aiff'),
+    )
+  })
+
+  // The rename over the final output is only atomic within one volume, and ffmpeg
+  // picks its muxer from the target's extension — so the temp must stay in the
+  // output's own directory and keep the real extension last.
+  it('stays beside the output and keeps the extension last', () => {
+    const tmp = convertTmpPath('/out/song.aiff', '.aiff')
+    expect(tmp).toMatch(/^\/out\/song\.tmp-[0-9a-f]+\.aiff$/)
+  })
+
+  it('matches the extension case-insensitively, like planConversion input handling', () => {
+    expect(convertTmpPath('/out/song.AIFF', '.aiff')).toMatch(/\.AIFF$/i)
+    expect(convertTmpPath('/out/song.AIFF', '.aiff')).toContain('.tmp-')
+  })
+})
 
 describe('convertArgs', () => {
   it('writes to the given (temp) target, not straight to the final output', () => {

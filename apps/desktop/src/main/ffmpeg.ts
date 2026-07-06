@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -605,6 +606,16 @@ export async function normalizeFilter(
     : limitedLoudnormFilter(cfg, measured, sampleRate)
 }
 
+// The temp file a conversion renders into before the rename over the final output.
+// Unique per call: bulk runs convert several tracks in parallel, and two tracks whose
+// metadata resolves to the same output name would otherwise share one deterministic
+// temp path — both ffmpeg processes writing it at once, corruption landing as a
+// "successful" conversion. Beside the output (same volume, so the rename stays atomic)
+// and with the real extension last (ffmpeg picks its muxer from it).
+export function convertTmpPath(output: string, ext: string): string {
+  return output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp-${randomUUID().slice(0, 8)}${ext}`)
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -648,7 +659,7 @@ export async function convertAudio(
     normalizing,
     mp3Quality,
   )
-  const tmp = output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp${ext}`)
+  const tmp = convertTmpPath(output, ext)
 
   try {
     if (codec === 'copy' && preservesCuesInPlace(ext)) {
