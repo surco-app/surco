@@ -179,6 +179,24 @@ describe('addToEngineLibrary', () => {
     db.close()
   })
 
+  // APFS treats NFC and NFD names as one file, but the byte-exact SQL path match saw
+  // two: a re-convert of a file whose on-disk name arrived NFD (browser/Soulseek
+  // downloads) under an NFC-composed name from the renderer inserted a twin row — the
+  // old one keeping the cues, the playlist listing both.
+  it('matches an existing row whose path differs only in Unicode normalization', async () => {
+    const lib = join(root, 'nfd', 'Engine Library')
+    const file = await makeFile(root, 'cancio\u0301n.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+
+    await addToEngineLibrary(lib, join(root, 'canci\u00f3n.aiff'), meta({ title: 'Second' }), 'Surco')
+
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    const tracks = rows(db, 'SELECT * FROM Track')
+    expect(tracks).toHaveLength(1)
+    expect(tracks[0]).toMatchObject({ title: 'Second' })
+    db.close()
+  })
+
   // Engine grades tracks on a 0-100 scale (20 per star), not the "1"-"5" tag value —
   // writing the raw star count reads as no stars in Engine's rating column.
   it("maps the tag's stars onto Engine's 0-100 rating scale, updating on re-convert", async () => {

@@ -171,13 +171,22 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     )
     const epoch = Math.floor(Date.now() / 1000)
     const uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
+    // Path matching is normalization-aware: APFS treats NFC and NFD names as one file,
+    // so a byte-exact SQL compare would insert a twin row for a path Engine (or a
+    // browser download) stored in the other form. Compare NFC-to-NFC in JS instead.
+    const existingByPath = new Map(
+      (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(([id, p]) => [
+        String(p).normalize('NFC'),
+        id as number,
+      ]),
+    )
     for (const add of adds) {
       const track = await resolveTrack(libraryDir, add)
       const row = new Map(TRACK_COLUMNS.map((c, i) => [c, trackRow(track, epoch)[i]]))
-      const existing = db.exec('SELECT id FROM Track WHERE path = ?', [track.relativePath])
+      const existingId = existingByPath.get(track.relativePath.normalize('NFC'))
       let trackId: number
-      if (existing.length) {
-        trackId = existing[0].values[0][0] as number
+      if (existingId !== undefined) {
+        trackId = existingId
         const cols = UPDATE_COLUMNS.filter(
           (c) => live.has(c) && !(KEEP_WHEN_NULL.has(c) && row.get(c) == null),
         )
@@ -192,6 +201,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
           cols.map((c) => row.get(c) ?? null),
         )
         trackId = lastId(db)
+        existingByPath.set(track.relativePath.normalize('NFC'), trackId)
       }
       // Engine renders artwork from its own AlbumArt blobs, never from the file's
       // tags, so the cover has to be stored here for the row to show any art.
