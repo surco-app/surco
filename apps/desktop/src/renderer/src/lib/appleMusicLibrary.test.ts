@@ -115,6 +115,38 @@ describe('buildLibraryIndex / isInLibrary', () => {
     )
   })
 
+  // Real case: the library files the act with the handle glued straight onto the name
+  // ("Djmofly") while the tag spells it apart ("DJ Mofly"). The handle strip only sees a
+  // spaced "dj ", so one side kept the handle and the other lost it — neither the word-set
+  // compare nor the spaces-removed fallback could reconcile them. Splitting a glued leading
+  // "dj" makes both sides fold to the same name.
+  it('matches a glued "Dj" library artist against its spaced tag', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Save My Love (26 Rmx)', artist: 'Djmofly', durationSec: 365 },
+    ])
+    expect(
+      isInLibrary(idx, {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+      }),
+    ).toBe(true)
+  })
+
+  // And the mirror: the tag glues the handle while the library spells it apart.
+  it('matches a glued "Dj" tag against its spaced library artist', () => {
+    const idx = buildLibraryIndex([{ title: 'Save My Love (26 Rmx)', artist: 'DJ Mofly' }])
+    expect(isInLibrary(idx, { title: 'Save My Love', artist: 'Djmofly' })).toBe(true)
+  })
+
+  // The glued split must not cut real names that merely start with "dj": both sides fold
+  // the same way, so a genuine "Django" still matches itself and never a different act.
+  it('keeps a real name starting with "dj" matching itself and nothing else', () => {
+    const idx = buildLibraryIndex([{ title: 'Erased', artist: 'Django' }])
+    expect(isInLibrary(idx, { title: 'Erased', artist: 'Django' })).toBe(true)
+    expect(isInLibrary(idx, { title: 'Erased', artist: 'Someone Else' })).toBe(false)
+  })
+
   // A "DJ"/"Dr."/"MC" handle is noise around the same act: "DJ Raúl Soto & DJ Jaime Gimeno"
   // (tag) is the "Raul Soto & Jaime Gimeno" the library files. Strip a leading handle so the
   // lead artist matches.

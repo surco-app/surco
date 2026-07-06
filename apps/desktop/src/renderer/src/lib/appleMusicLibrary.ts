@@ -76,6 +76,12 @@ const HANDLE_PREFIX = /^(?:(?:dj|dr|mc|the) )+/
 //    a lone trailing initial ("Ricardo F") isn't a run and stays its own word;
 //  - split a letter/digit boundary so a joined "A7" reads as "a 7";
 //  - turn a spelled-out small number into its digit, so "A Seven" matches "A7";
+//  - split a glued leading "Dj" off the name ("Djmofly" → "dj mofly"), so the handle strip
+//    below sees it and the glued spelling meets the spaced tag ("DJ Mofly"). Only "dj" is
+//    split this way: real names starting with "dr"/"mc"/"the" are everywhere (Drake,
+//    McCoy, Therese) while a leading "dj" is almost always the handle — and a genuine
+//    Django folds the same on both sides, so it still matches itself. The 2+ letter
+//    lookahead keeps a bare "DJS" a word instead of cutting it to "s";
 //  - drop a leading DJ/Dr./MC handle or "The" article, so "DJ Raúl Soto" meets the library's
 //    "Raul Soto" and "The Untidy DJs" meets "Untidy DJ's".
 // The collapse runs first so the split's "a 7" isn't re-joined back into "a7".
@@ -88,6 +94,7 @@ function foldArtist(artist: string): string {
       /\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/g,
       (w) => NUMBER_WORDS[w],
     )
+    .replace(/^dj(?=[a-z]{2,})/, 'dj ')
     .replace(HANDLE_PREFIX, '')
 }
 
