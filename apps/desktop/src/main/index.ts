@@ -30,7 +30,13 @@ import type {
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
-import { addToAppleMusic, appleMusicLimiter, updateInAppleMusic } from './applemusic'
+import {
+  addToAppleMusic,
+  appleMusicEntryLocation,
+  appleMusicLimiter,
+  deleteFromAppleMusic,
+  updateInAppleMusic,
+} from './applemusic'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { registerAudioIpc } from './audioIpc'
@@ -722,6 +728,12 @@ function registerIpc(): void {
           : await dialog.showMessageBox(opts)
         return response === 2 ? 'skip' : response === 1 ? 'keepBoth' : 'overwrite'
       },
+      appleMusicEntryLocation,
+      // The rollback for an "Apple Music only" add that must not stand. The label is
+      // what the delete script verifies the live entry against — the tags the add
+      // itself just wrote, so the match is by construction.
+      deleteAppleMusic: (persistentId) =>
+        deleteFromAppleMusic(persistentId, `${job.meta.artist} - ${job.meta.title}`),
     }),
   )
 

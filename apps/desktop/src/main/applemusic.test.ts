@@ -4,6 +4,7 @@ import {
   buildAddScript,
   buildDeleteScript,
   buildLibraryDumpScript,
+  buildLocationScript,
   buildRevealScript,
   buildUpdateScript,
   isAppleMusicOnly,
@@ -180,6 +181,18 @@ describe('buildDeleteScript', () => {
     expect(script).toContain('"Djmofly - Save My Love (26 Rmx)"')
     expect(script).toContain('return "mismatch"')
     expect(script.indexOf('return "mismatch"')).toBeLessThan(script.indexOf('delete theTrack'))
+  })
+})
+
+describe('buildLocationScript', () => {
+  // "Apple Music only" deletes its temp conversion after the add — safe only if Music
+  // copied the file into its Media folder. This script reads where the fresh entry
+  // actually points so the caller can tell a copy from a reference to the temp path.
+  it('returns the entry file path, empty when the entry holds no reachable file', () => {
+    const script = buildLocationScript('ABCD1234ABCD1234')
+    expect(script).toContain('whose persistent ID is "ABCD1234ABCD1234"')
+    expect(script).toContain('POSIX path of (location of')
+    expect(script).toContain('return ""')
   })
 })
 

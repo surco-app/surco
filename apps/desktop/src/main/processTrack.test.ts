@@ -49,6 +49,8 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
+    appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
+    deleteAppleMusic: vi.fn(async () => {}),
     ...overrides,
   }
 }
@@ -256,6 +258,34 @@ describe('runProcessTrack — in-place rewrite', () => {
     expect(deps.confirmConflict).not.toHaveBeenCalled()
     expect(deps.convertAudio).toHaveBeenCalledOnce()
     expect(result.inPlace).toBe(true)
+  })
+})
+
+describe('runProcessTrack — Apple Music only copy verification', () => {
+  const musicOnly = () =>
+    makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+    })
+
+  // "Apple Music only" removes the temp conversion after the add — safe only when
+  // Music COPIED the file into its Media folder. With that preference off the fresh
+  // entry still references the temp path; deleting it would leave a library row that
+  // plays nothing. The add must be rolled back and the job failed out loud instead.
+  it('rolls back the add and fails when Music referenced the temp file instead of copying it', async () => {
+    const deps = musicOnly()
+    deps.appleMusicEntryLocation = vi.fn(async () => '/tmp/surco-abc/Artist - Title.aiff')
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id')
+    expect(deps.rm).toHaveBeenCalled()
+  })
+
+  it('cleans the temp and succeeds when Music copied the file into its own folder', async () => {
+    const deps = musicOnly()
+    deps.appleMusicEntryLocation = vi.fn(async () => '/Users/me/Music/Media/Artist - Title.aiff')
+    const result = await runProcessTrack(job(), deps)
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
   })
 })
 

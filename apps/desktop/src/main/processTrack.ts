@@ -65,6 +65,10 @@ export interface ProcessTrackDeps {
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   confirmConflict: (outputName: string) => Promise<'overwrite' | 'keepBoth' | 'skip'>
+  // Where a fresh library entry's file lives, and the rollback for an add that must
+  // not stand — both only exercised by the "Apple Music only" copy verification below.
+  appleMusicEntryLocation: (persistentId: string) => Promise<string>
+  deleteAppleMusic: (persistentId: string) => Promise<unknown>
 }
 
 export async function runProcessTrack(
@@ -152,6 +156,20 @@ export async function runProcessTrack(
         ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
           (await deps.addToAppleMusic(target, job.meta, coverPath)))
         : await deps.addToAppleMusic(target, job.meta, coverPath)
+      // "Apple Music only" removes the temp conversion in the finally below — safe only
+      // when Music COPIED the file into its Media folder. With "Copy files to the Media
+      // folder when adding" off, the fresh entry still references the temp path, and
+      // the cleanup would leave a library row that plays nothing. Verify where the
+      // entry points; a temp reference rolls the add back and fails the job out loud.
+      if (tmpDir && musicPersistentId) {
+        const entryPath = await deps.appleMusicEntryLocation(musicPersistentId)
+        if (entryPath.startsWith(tmpDir)) {
+          await deps.deleteAppleMusic(musicPersistentId)
+          throw new Error(
+            'Música no copió el archivo a su carpeta multimedia, así que "Solo Apple Music" lo dejaría sin audio. Activa "Copiar archivos a la carpeta multimedia" en los ajustes de Música, o desactiva "Solo Apple Music".',
+          )
+        }
+      }
     }
 
     // The Engine DJ destination points a library row at the file just written; a failed

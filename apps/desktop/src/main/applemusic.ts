@@ -133,6 +133,29 @@ export function buildUpdateScript(
   ].join('\n')
 }
 
+// Where a library entry's file actually lives — read after an "Apple Music only" add
+// so the caller can tell whether Music COPIED the file into its Media folder (safe to
+// remove the temp conversion) or merely referenced the temp path ("Copy files to the
+// Media folder" turned off — removing the temp would strand the entry). Empty string
+// when the entry is gone or holds no reachable file.
+export function buildLocationScript(persistentId: string): string {
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '  if (count of theMatches) is 0 then return ""',
+    '  try',
+    '    return POSIX path of (location of item 1 of theMatches)',
+    '  end try',
+    '  return ""',
+    'end tell',
+  ].join('\n')
+}
+
+export async function appleMusicEntryLocation(persistentId: string): Promise<string> {
+  const { stdout } = await run('osascript', ['-e', buildLocationScript(persistentId)])
+  return stdout.trim()
+}
+
 // Selects the library copy in the Music window and brings the app forward — the
 // "show in Apple Music" counterpart of revealing a file in Finder. Erroring when the
 // track is gone (rather than silently activating Music) lets the footer surface why
