@@ -56,6 +56,9 @@ export interface ProcessTrackDeps {
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
+  // Device+inode identity, so an in-place edit can tell "the target is the source
+  // being rewritten" (fine) from "the target is an unrelated file" (a collision).
+  isSameFile: (a: string, b: string) => Promise<boolean>
   mkdir: (path: string, opts: { recursive: boolean }) => Promise<unknown>
   mkdtemp: (prefix: string) => Promise<string>
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
@@ -110,7 +113,12 @@ export async function runProcessTrack(
       tmpDir = await deps.mkdtemp(join(tmpdir(), 'surco-'))
       target = join(tmpDir, basename(outputPath))
     } else if (
-      isOutputConflict(outputPath, job.previousOutputPath, inPlace, deps.existsSync(outputPath))
+      isOutputConflict(
+        outputPath,
+        job.previousOutputPath,
+        deps.existsSync(outputPath),
+        inPlace && (await deps.isSameFile(job.inputPath, outputPath)),
+      )
     ) {
       const choice = await deps.confirmConflict(basename(outputPath))
       if (choice === 'skip') return { outputPath: '', inPlace, skipped: true }

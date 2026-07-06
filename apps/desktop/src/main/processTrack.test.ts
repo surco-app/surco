@@ -44,6 +44,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     addToEngineDj: vi.fn(async () => {}),
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
+    isSameFile: vi.fn(async () => false),
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
@@ -197,10 +198,10 @@ describe('runProcessTrack — output conflict', () => {
 })
 
 describe('runProcessTrack — in-place rewrite', () => {
-  it('rewrites the source, removes the renamed original and never prompts', async () => {
+  it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),
-      existsSync: vi.fn(() => true),
+      existsSync: vi.fn(() => false),
     })
     const result = await runProcessTrack(job(), deps)
 
@@ -218,6 +219,42 @@ describe('runProcessTrack — in-place rewrite', () => {
       '/in/Artist - Title.aiff',
     )
     expect(deps.confirmConflict).not.toHaveBeenCalled()
+    expect(result.inPlace).toBe(true)
+  })
+
+  // The old exemption assumed an in-place target "always exists by definition" — only
+  // true when the name doesn't change. A rename can land on an unrelated neighbour,
+  // and the clobber then chains into removeRenamedOriginal deleting the source too,
+  // so it must ride the same conflict prompt as a fresh conversion.
+  it('prompts before an in-place rename lands on an existing unrelated file, and skip leaves everything untouched', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      existsSync: vi.fn(() => true),
+      isSameFile: vi.fn(async () => false),
+    })
+    deps.confirmConflict = vi.fn(async () => 'skip' as const)
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.skipped).toBe(true)
+  })
+
+  // Rewriting a file under its own name (or a case-only rename the volume resolves to
+  // one file) is the ordinary in-place edit — the "existing" target is the source
+  // itself, never a collision.
+  it('never prompts when the in-place target is the source file itself', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      existsSync: vi.fn(() => true),
+      isSameFile: vi.fn(async () => true),
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.isSameFile).toHaveBeenCalledWith('/in/song.wav', '/in/Artist - Title.aiff')
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+    expect(deps.convertAudio).toHaveBeenCalledOnce()
     expect(result.inPlace).toBe(true)
   })
 })

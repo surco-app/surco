@@ -48,17 +48,20 @@ export function resolveOutputTarget(
   return { outputPath: join(dir, `${name}.${formatExtension(format)}`), inPlace }
 }
 
-// Whether a conversion would clobber an unrelated file. A real conversion writing
-// over an existing target is a collision worth a prompt — unless the target is the
-// same track's own previous output (the intended re-export overwrite). In-place
-// edits rewrite the source itself, so they're never a collision.
+// Whether a conversion would clobber an unrelated file. Writing over an existing
+// target is a collision worth a prompt — unless the target is the same track's own
+// previous output (the intended re-export overwrite), or the source file itself
+// (`outputIsInput`): an in-place edit rewriting the file under its own name, where
+// the target "existing" is the point, not a collision. An in-place RENAME gets no
+// such pass — its target can be an unrelated neighbour, and the clobber would chain
+// into removeRenamedOriginal deleting the source too.
 export function isOutputConflict(
   outputPath: string,
   previousOutputPath: string | undefined,
-  inPlace: boolean,
   outputExists: boolean,
+  outputIsInput: boolean,
 ): boolean {
-  return !inPlace && outputExists && outputPath !== previousOutputPath
+  return outputExists && !outputIsInput && outputPath !== previousOutputPath
 }
 
 // Finds the first free "name (n).ext" beside a taken path, so "keep both" never
@@ -71,6 +74,16 @@ export function uniqueOutputPath(outputPath: string, exists: (p: string) => bool
   let n = 2
   while (exists(join(dir, `${base} (${n})${ext}`))) n++
   return join(dir, `${base} (${n})${ext}`)
+}
+
+// Whether two paths name the same on-disk file. Device+inode rather than the path
+// string, because a case-only difference (Song.WAV vs song.wav) is one file on the
+// case-insensitive macOS/Windows volumes Surco runs on. Missing files are never
+// "the same" — the conflict check that calls this cares about a target that exists.
+export async function isSameFile(a: string, b: string): Promise<boolean> {
+  if (a === b) return true
+  const [aStat, bStat] = await Promise.all([stat(a).catch(() => null), stat(b).catch(() => null)])
+  return !!aStat && !!bStat && aStat.ino === bStat.ino && aStat.dev === bStat.dev
 }
 
 // After an in-place edit, convertAudio has already written the (possibly renamed)

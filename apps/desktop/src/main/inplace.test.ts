@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   isOutputConflict,
+  isSameFile,
   removeRenamedOriginal,
   resolveOutputTarget,
   sanitizeOutputName,
@@ -69,10 +70,10 @@ describe('resolveOutputTarget', () => {
 })
 
 describe('isOutputConflict', () => {
-  // The danger we're guarding against: a real conversion silently overwriting an
+  // The danger we're guarding against: a conversion silently overwriting an
   // unrelated file that already sits at the target path.
   it('flags an existing target that a fresh conversion would clobber', () => {
-    expect(isOutputConflict('/out/song.mp3', undefined, false, true)).toBe(true)
+    expect(isOutputConflict('/out/song.mp3', undefined, true, false)).toBe(true)
   })
 
   it('is not a conflict when no file sits at the target', () => {
@@ -82,13 +83,54 @@ describe('isOutputConflict', () => {
   // Re-exporting a track replaces the file the same track produced before — that's
   // the intended overwrite, not a collision, so it must not prompt.
   it('is not a conflict when the target is this track’s own previous output', () => {
-    expect(isOutputConflict('/out/song.mp3', '/out/song.mp3', false, true)).toBe(false)
+    expect(isOutputConflict('/out/song.mp3', '/out/song.mp3', true, false)).toBe(false)
   })
 
-  // In-place edits rewrite the source itself (and removeRenamedOriginal handles the
-  // old name); that path always "exists" by definition and is never a collision.
-  it('is never a conflict for an in-place edit', () => {
+  // An in-place edit that RENAMES can land on an unrelated neighbour ("track.mp3"
+  // beside the "track (copy).mp3" being edited) — that clobber then chains into
+  // removeRenamedOriginal deleting the source, so it must prompt like any other.
+  it('flags an in-place rename landing on an existing unrelated file', () => {
+    expect(isOutputConflict('/music/track.mp3', undefined, true, false)).toBe(true)
+  })
+
+  // The one legitimate "target exists" for in-place: the target IS the source being
+  // rewritten (same name, or a case-only rename the volume resolves to one file).
+  it('is not a conflict when the target is the source file itself', () => {
     expect(isOutputConflict('/music/song.wav', undefined, true, true)).toBe(false)
+  })
+})
+
+describe('isSameFile', () => {
+  let dir: string
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  it('is true for the identical path without touching the filesystem', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-same-'))
+    expect(await isSameFile('/nowhere/song.wav', '/nowhere/song.wav')).toBe(true)
+  })
+
+  // A case-only in-place rename (Song.WAV → song.wav) resolves to one file on the
+  // case-insensitive volumes Surco runs on; a hard link models one-inode-two-names.
+  it('is true for two names of the same inode', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-same-'))
+    const real = join(dir, 'song.wav')
+    const alias = join(dir, 'song-alias.wav')
+    await writeFile(real, 'a')
+    await link(real, alias)
+    expect(await isSameFile(real, alias)).toBe(true)
+  })
+
+  it('is false for two distinct files, and false when either side is missing', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-same-'))
+    const a = join(dir, 'a.wav')
+    const b = join(dir, 'b.wav')
+    await writeFile(a, 'a')
+    await writeFile(b, 'b')
+    expect(await isSameFile(a, b)).toBe(false)
+    expect(await isSameFile(a, join(dir, 'missing.wav'))).toBe(false)
   })
 })
 

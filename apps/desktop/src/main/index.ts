@@ -40,7 +40,7 @@ import { downloadCover, imageExt } from './coverDownload'
 import { expandPaths } from './expand'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
-import { removeRenamedOriginal } from './inplace'
+import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -700,6 +700,7 @@ function registerIpc(): void {
       },
       allowMedia: (path) => mediaAccess.allow(path),
       existsSync,
+      isSameFile,
       mkdir,
       mkdtemp,
       rm,
