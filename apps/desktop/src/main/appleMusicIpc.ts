@@ -118,6 +118,8 @@ export function registerAppleMusicIpc(): void {
   // volume — must not report the action failed: the library entry is already gone and
   // that removal can't roll back, so the outcome the user asked for stands. "missing"
   // (the copy vanished from Music since the snapshot) counts as done for the same reason.
+  // `track` is the confirmed copy's own "artist - title" label: it names the activity
+  // row AND is what the delete script verifies the live track against before deleting.
   ipcMain.handle('applemusic:delete', async (_e, persistentId: string, track: string) => {
     if (process.platform !== 'darwin') return
     return appleMusicLimiter.run(() =>
@@ -125,7 +127,7 @@ export function registerAppleMusicIpc(): void {
         'applemusic',
         'activity.appleMusicDelete',
         async () => {
-          const location = await deleteFromAppleMusic(persistentId)
+          const location = await deleteFromAppleMusic(persistentId, track)
           if (location === null) return 'missing'
           if (location) await shell.trashItem(location).catch(() => undefined)
           return 'deleted'

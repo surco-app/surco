@@ -28,8 +28,11 @@ interface Params {
   // Fired once the superseded Apple Music copy is gone (deleted, or already missing),
   // so App can refresh the library snapshot and confirm the outcome.
   onOldMusicCopyRemoved: () => void
-  // Same fail-loud contract as reportTrashFailure, for the Apple Music removal.
-  reportOldCopyRemoveFailure: () => void
+  // Same fail-loud contract as reportTrashFailure, for the Apple Music removal. The
+  // flag distinguishes the delete script REFUSING because the live track no longer
+  // matches the confirmed label (nothing was deleted; the snapshot needs a refresh)
+  // from an ordinary failure.
+  reportOldCopyRemoveFailure: (mismatch: boolean) => void
   // The full list, so fill-all/clear-all can tell a filtered-visible subset from the
   // whole crate and say in the dialog that hidden rows survive.
   tracksRef: { current: TrackItem[] }
@@ -138,8 +141,11 @@ export function useConfirmFlows({
           .deleteAppleMusic(stale.persistentId, stale.label)
           .then(() => onOldMusicCopyRemoved())
           // Same as askTrash: the user confirmed a destructive dialog, so a
-          // failure must be said out loud, not swallowed.
-          .catch(() => reportOldCopyRemoveFailure())
+          // failure must be said out loud, not swallowed. The sentinel travels as an
+          // error-message substring because Electron IPC rejections carry only that.
+          .catch((e: unknown) =>
+            reportOldCopyRemoveFailure(String(e).includes('applemusic-delete-mismatch')),
+          )
       },
     })
   }

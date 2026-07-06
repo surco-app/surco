@@ -120,6 +120,27 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
       label: 'Djmofly - Save My Love (26 Rmx)',
     })
     opened[0].onConfirm()
-    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalled())
+    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(false))
+  })
+
+  // The delete script refused because the live Music track no longer matches the label
+  // the user confirmed (a stale/misaligned snapshot). Nothing was deleted — the flow
+  // must say so distinctly, not with the generic "could not remove" error, so App can
+  // also refresh the poisoned snapshot.
+  it('reports a refused mismatched removal as a mismatch', async () => {
+    const deleteAppleMusic = vi
+      .fn()
+      .mockRejectedValue(
+      new Error("Error invoking remote method 'applemusic:delete': applemusic-delete-mismatch"),
+      )
+    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const reportOldCopyRemoveFailure = vi.fn()
+    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
+    flows.askRemoveOldMusicCopy(track('a'), {
+      persistentId: 'OLDCOPY123456789',
+      label: 'Djmofly - Save My Love (26 Rmx)',
+    })
+    opened[0].onConfirm()
+    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
   })
 })

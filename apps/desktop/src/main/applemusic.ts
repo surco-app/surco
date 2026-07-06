@@ -151,19 +151,24 @@ export function buildRevealScript(persistentId: string): string {
 // Removes a library copy by persistent ID — the "replace the old rip" tail: once the
 // freshly converted file is in the library, the copy it supersedes is deleted. Returns
 // "missing" instead of erroring when the copy is already gone (the user beat us to it in
-// Music), so the caller can treat that as done. The file location is read BEFORE the
-// delete (the track reference dies with it) and inside a try, because a dead reference —
-// the file was moved or lives on an unmounted volume — reports missing value, and
-// coercing that to POSIX path errors; such a copy must still delete, just with no file
-// for the caller to trash. AppleScript's delete removes only the library entry and never
-// touches the file, which is why the location travels back: trashing the superseded file
-// is the caller's half of the job.
-export function buildDeleteScript(persistentId: string): string {
+// Music), so the caller can treat that as done. The ID comes from a library snapshot
+// whose whole-library fetches can misalign if Music mutates mid-dump, pairing the ID
+// with the wrong song — so before deleting, the live track's own "artist - name" must
+// equal the label the user confirmed in the dialog; anything else returns "mismatch"
+// and deletes nothing. The file location is read BEFORE the delete (the track reference
+// dies with it) and inside a try, because a dead reference — the file was moved or lives
+// on an unmounted volume — reports missing value, and coercing that to POSIX path
+// errors; such a copy must still delete, just with no file for the caller to trash.
+// AppleScript's delete removes only the library entry and never touches the file, which
+// is why the location travels back: trashing the superseded file is the caller's half
+// of the job.
+export function buildDeleteScript(persistentId: string, expectedLabel: string): string {
   return [
     'tell application "Music"',
     `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
     '  if (count of theMatches) is 0 then return "missing"',
     '  set theTrack to item 1 of theMatches',
+    `  if (artist of theTrack) & " - " & (name of theTrack) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
     '  set loc to ""',
     '  try',
     '    set loc to POSIX path of (location of theTrack)',
@@ -314,10 +319,19 @@ export async function revealInAppleMusic(persistentId: string): Promise<void> {
 }
 
 // null means the copy was already gone; otherwise the deleted entry's file path, ''
-// when Music held no reachable file for it.
-export async function deleteFromAppleMusic(persistentId: string): Promise<string | null> {
-  const { stdout } = await run('osascript', ['-e', buildDeleteScript(persistentId)])
+// when Music held no reachable file for it. A "mismatch" (the live track no longer
+// carries the confirmed label — a stale/misaligned snapshot) throws with a sentinel the
+// renderer recognizes across the IPC boundary, so it can say nothing was deleted.
+export async function deleteFromAppleMusic(
+  persistentId: string,
+  expectedLabel: string,
+): Promise<string | null> {
+  const { stdout } = await run('osascript', [
+    '-e',
+    buildDeleteScript(persistentId, expectedLabel),
+  ])
   const result = stdout.trim()
   if (result === 'missing') return null
+  if (result === 'mismatch') throw new Error('applemusic-delete-mismatch')
   return result.split('\t')[1] ?? ''
 }

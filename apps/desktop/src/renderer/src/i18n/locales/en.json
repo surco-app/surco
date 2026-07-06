@@ -349,6 +349,7 @@
     "removeOldCopy": "Remove the old copy",
     "oldCopyRemoved": "Old copy removed from Apple Music; its file is in the Trash",
     "removeOldCopyError": "Could not remove the old Apple Music copy",
+    "removeOldCopyMismatch": "The copy in Apple Music no longer matches the expected one \u2014 nothing was removed",
     "searchError": "Search failed",
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",

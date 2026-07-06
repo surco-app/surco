@@ -154,7 +154,7 @@ describe('buildRevealScript', () => {
 
 describe('buildDeleteScript', () => {
   it('locates the copy by persistent ID, reports "missing" instead of erroring when it is gone, and returns the file location so the caller can trash it', () => {
-    const script = buildDeleteScript('ABCD1234ABCD1234')
+    const script = buildDeleteScript('ABCD1234ABCD1234', 'Djmofly - Save My Love (26 Rmx)')
     expect(script).toContain(
       'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234ABCD1234")',
     )
@@ -164,9 +164,22 @@ describe('buildDeleteScript', () => {
   })
 
   it('reads the location before deleting, inside a try so a track without a file still deletes', () => {
-    const script = buildDeleteScript('ABCD1234ABCD1234')
+    const script = buildDeleteScript('ABCD1234ABCD1234', 'Djmofly - Save My Love (26 Rmx)')
     expect(script.indexOf('location of theTrack')).toBeLessThan(script.indexOf('delete theTrack'))
     expect(script.indexOf('try')).toBeLessThan(script.indexOf('location of theTrack'))
+  })
+
+  // The persistent ID comes from a library snapshot whose four whole-library fetches can
+  // misalign if Music mutates mid-dump — an ID paired with the wrong song. The script is
+  // the last line of defense: it must compare the live track's own artist/name against
+  // the label the user confirmed and refuse to delete anything else.
+  it('verifies the live track matches the confirmed label before deleting, and bails as "mismatch" without deleting otherwise', () => {
+    const script = buildDeleteScript('ABCD1234ABCD1234', 'Djmofly - Save My Love (26 Rmx)')
+    expect(script).toContain('artist of theTrack')
+    expect(script).toContain('name of theTrack')
+    expect(script).toContain('"Djmofly - Save My Love (26 Rmx)"')
+    expect(script).toContain('return "mismatch"')
+    expect(script.indexOf('return "mismatch"')).toBeLessThan(script.indexOf('delete theTrack'))
   })
 })
 

@@ -821,13 +821,18 @@ export default function App(): React.JSX.Element {
           testid: 'old-copy-removed',
         })
       },
-      reportOldCopyRemoveFailure: () =>
+      // A mismatch means the script refused to delete: the live Music track no longer
+      // matched the confirmed label, so the snapshot that named it is stale/misaligned —
+      // refresh it so the footer link recomputes from reality.
+      reportOldCopyRemoveFailure: (mismatch) => {
+        if (mismatch) void queryClient.invalidateQueries({ queryKey: ['library-membership'] })
         pushToast(store, {
           key: 'old-copy-error',
           tone: 'danger',
-          message: tr('editor.removeOldCopyError'),
+          message: tr(mismatch ? 'editor.removeOldCopyMismatch' : 'editor.removeOldCopyError'),
           testid: 'old-copy-error',
-        }),
+        })
+      },
       tracksRef,
     })
 
