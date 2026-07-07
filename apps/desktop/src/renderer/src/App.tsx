@@ -9,7 +9,7 @@ import {
   Crosshair,
   FileAudio,
   FilePlus,
-  Recycle,
+  ListX,
   Replace,
   SquareCheckBig,
   Tag,
@@ -1561,19 +1561,10 @@ export default function App(): React.JSX.Element {
                               hint={hintFor('find-replace')}
                             />
                           </button>
-                          {/* The destructive pair sits apart at the far end: trash the
-                              converted originals, then clear the list. */}
+                          {/* The destructive pair sits apart at the far end, mildest first:
+                              clear the list (rows only), then trash the converted originals
+                              (real files to the Trash). */}
                           <span className="flex-1" />
-                          <button
-                            type="button"
-                            data-testid="trash-originals"
-                            onClick={onDeleteOriginals}
-                            aria-label={tr('commands.trashOriginals')}
-                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
-                          >
-                            <Recycle className="h-4 w-4" aria-hidden="true" />
-                            <Tooltip label={tr('commands.trashOriginals')} />
-                          </button>
                           <button
                             type="button"
                             data-testid="clear-all"
@@ -1581,8 +1572,18 @@ export default function App(): React.JSX.Element {
                             aria-label={tr('header.clearAll')}
                             className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
                           >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            <ListX className="h-4 w-4" aria-hidden="true" />
                             <Tooltip label={tr('header.clearAll')} />
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="trash-originals"
+                            onClick={onDeleteOriginals}
+                            aria-label={tr('commands.trashOriginals')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip label={tr('commands.trashOriginals')} />
                           </button>
                         </>
                       )}
