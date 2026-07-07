@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
+import type { SyncedDraft } from '../../lib/settingsDraft'
 import '../../i18n'
 
 // ConversionTab reads window.api.platform at module scope (isMacOS), so the bridge
@@ -47,24 +47,9 @@ const synced: SyncedDraft = {
   searchProviders: ['discogs'],
 }
 
-const local: LocalDraft = {
-  token: '',
-  outputDir: '/out',
-  engineLibraryDir: '/music/Engine Library',
-  autoMatch: false,
-}
-
 function renderTab(over: Partial<SyncedDraft> = {}) {
   const patch = vi.fn()
-  render(
-    <ConversionTab
-      synced={{ ...synced, ...over }}
-      local={local}
-      patch={patch}
-      onChangeDir={vi.fn()}
-      onChangeEngineDir={vi.fn()}
-    />,
-  )
+  render(<ConversionTab synced={{ ...synced, ...over }} patch={patch} />)
   return patch
 }
 
@@ -122,59 +107,8 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('flacCompression', '8')
   })
 
-  // ALAC exists as a target precisely because Music ingests it — unlike FLAC it must
-  // not pin the destination to the output folder.
-  it('lists ALAC without the FLAC destination restriction', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByText(/Apple Music can't play FLAC/)).toBeInTheDocument()
-    cleanup()
+  it('lists ALAC among the output formats', () => {
     renderTab({ outputFormat: 'alac' })
     expect(screen.getByTestId('settings-format-alac')).toBeInTheDocument()
-    expect(screen.queryByText(/Apple Music can't play FLAC/)).not.toBeInTheDocument()
-  })
-})
-
-describe('ConversionTab Engine DJ destination', () => {
-  // Choosing Engine DJ must clear the other destinations in the same patch batch —
-  // a leftover addToAppleMusic or overwriteOriginal would make the radio show one
-  // thing and the conversion do another.
-  it('stages Engine DJ as an exclusive destination choice', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-destination-engineDj'))
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
-    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
-    expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
-  })
-
-  // The library folder only matters once conversions are actually registered there;
-  // showing it under every destination would read as an unrelated global path.
-  it('shows the Engine library folder only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.queryByTestId('settings-engine-library')).toBeNull()
-    cleanup()
-    renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-engine-library')).toHaveValue('/music/Engine Library')
-  })
-
-  // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
-  // the folder must not grey this option out.
-  it('keeps Engine DJ selectable while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
-    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
-  })
-
-  // The playlist is where the DJ finds what Surco converted, so it belongs with the
-  // destination — editable, seeded from the setting, staged through the draft patch.
-  it('shows the editable playlist field only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.queryByTestId('settings-engine-playlist')).toBeNull()
-    cleanup()
-    const patch = renderTab({ addToEngineDj: true })
-    const field = screen.getByTestId('settings-engine-playlist')
-    expect(field).toHaveValue('Surco')
-    fireEvent.change(field, { target: { value: 'Pool' } })
-    expect(patch).toHaveBeenCalledWith('engineDjPlaylist', 'Pool')
   })
 })

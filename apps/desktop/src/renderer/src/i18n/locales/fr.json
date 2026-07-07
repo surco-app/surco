@@ -434,6 +434,7 @@
       "general": "Général",
       "search": "Recherche",
       "conversion": "Conversion",
+      "destination": "Sortie",
       "naming": "Noms",
       "editor": "Éditeur",
       "artwork": "Pochette",
@@ -513,7 +514,6 @@
       "File": "Fichier (numérique)",
       "Cassette": "Cassette"
     },
-    "outputSection": "Sortie",
     "outputDir": "Dossier de sortie",
     "outputFormat": "Format par défaut",
     "formats": {

@@ -434,6 +434,7 @@
       "general": "Geral",
       "search": "Busca",
       "conversion": "Conversão",
+      "destination": "Saída",
       "naming": "Nomes",
       "editor": "Editor",
       "artwork": "Capa",
@@ -513,7 +514,6 @@
       "File": "Arquivo (digital)",
       "Cassette": "Cassette"
     },
-    "outputSection": "Saída",
     "outputDir": "Pasta de saída",
     "outputFormat": "Formato padrão",
     "formats": {

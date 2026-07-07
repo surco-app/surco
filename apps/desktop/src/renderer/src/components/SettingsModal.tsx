@@ -15,6 +15,7 @@ import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
 import { ConversionTab } from './settings/ConversionTab'
+import { DestinationTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
 import { NamingTab } from './settings/NamingTab'
@@ -195,8 +196,9 @@ export function SettingsModal({
         {tab === 'search' && (
           <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
         )}
-        {tab === 'conversion' && (
-          <ConversionTab
+        {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
+        {tab === 'destination' && (
+          <DestinationTab
             synced={synced}
             local={local}
             patch={patch}

@@ -434,6 +434,7 @@
       "general": "General",
       "search": "Search",
       "conversion": "Conversion",
+      "destination": "Output",
       "naming": "Naming",
       "editor": "Editor",
       "artwork": "Artwork",
@@ -513,7 +514,6 @@
       "File": "File (digital)",
       "Cassette": "Cassette"
     },
-    "outputSection": "Output",
     "outputDir": "Output folder",
     "outputFormat": "Default format",
     "formats": {

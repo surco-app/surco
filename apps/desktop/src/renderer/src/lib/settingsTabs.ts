@@ -1,5 +1,6 @@
 import {
   ChartColumn,
+  FolderOutput,
   Image,
   Keyboard,
   List,
@@ -19,6 +20,7 @@ export type SettingsTab =
   | 'general'
   | 'search'
   | 'conversion'
+  | 'destination'
   | 'naming'
   | 'editor'
   | 'fields'
@@ -32,6 +34,7 @@ export const SETTINGS_TABS: SettingsTab[] = [
   'general',
   'search',
   'conversion',
+  'destination',
   'naming',
   'editor',
   'fields',
@@ -44,6 +47,7 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   general: SlidersHorizontal,
   search: Search,
   conversion: RefreshCw,
+  destination: FolderOutput,
   naming: Tag,
   editor: SquarePen,
   fields: List,
