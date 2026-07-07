@@ -112,7 +112,7 @@ import {
   suspectTracks,
   type TrackSort,
 } from './lib/triage'
-import type { TrackItem } from './types'
+import type { CopiedTags, TrackItem } from './types'
 
 // On-demand overlays: none is part of the first paint (each renders only behind its
 // activeModal branch), so each is split into its own chunk and kept out of the startup
@@ -327,7 +327,7 @@ export default function App(): React.JSX.Element {
   const setDragging = useCallback((d: boolean) => store.setState({ dragging: d }), [store])
   const copiedMeta = useAppStore(store, (s) => s.copiedMeta)
   const setCopiedMeta = useCallback(
-    (m: TrackMetadata | null) => store.setState({ copiedMeta: m }),
+    (m: CopiedTags | null) => store.setState({ copiedMeta: m }),
     [store],
   )
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -797,9 +797,12 @@ export default function App(): React.JSX.Element {
   const metaUndo = useMetaUndo(tracksRef, setTracks)
   // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
   // through tracksRef so the stable callbacks capturing it never see a stale list.
-  const recordMetaUndo = useStableCallback((ids: string[]) => {
+  const recordMetaUndo = useStableCallback((ids: string[], opts?: { cover?: boolean }) => {
     const set = new Set(ids)
-    metaUndo.record(tracksRef.current.filter((t) => set.has(t.id)))
+    metaUndo.record(
+      tracksRef.current.filter((t) => set.has(t.id)),
+      opts,
+    )
   })
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all —
@@ -1079,13 +1082,22 @@ export default function App(): React.JSX.Element {
   // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
   // onto — the fast way to share release-level metadata across a crate.
   const onCopyMeta = useStableCallback((track: TrackItem) => {
-    setCopiedMeta(track.meta)
+    setCopiedMeta({ meta: track.meta, coverUrl: track.coverUrl, coverPath: track.coverPath })
     setNotice(tr('notices.copiedMeta'))
   })
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (!copiedMeta) return
-    recordMetaUndo([track.id])
-    updateTracksMeta([track.id], copiedMeta)
+    recordMetaUndo([track.id], { cover: true })
+    updateTracksMeta([track.id], copiedMeta.meta)
+    // A hand-picked cover is a blob: URL that is freed once no row shows it; if the
+    // source row left the list since the copy, paste the tags but skip the dead image.
+    const { coverUrl, coverPath } = copiedMeta
+    const coverAlive =
+      !!coverUrl &&
+      (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
+    // The displaced cover is NOT revoked here (unlike onApplyCoverAll): the undo
+    // snapshot above may restore it, and revoking would hand ⌘Z a dead blob URL.
+    if (coverAlive) patchTracks([track.id], { coverUrl, coverPath })
     setNotice(tr('notices.pastedMeta'))
   })
   // Copies the source path to the clipboard. Routed through App (rather than the menu's

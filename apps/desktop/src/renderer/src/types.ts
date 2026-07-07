@@ -10,6 +10,14 @@ import type {
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
 
+// Metadata copied from one track's context menu, to stamp onto another — the tags
+// plus the cover the source row was showing, so a paste dresses the target whole.
+export interface CopiedTags {
+  meta: TrackMetadata
+  coverUrl?: string
+  coverPath?: string
+}
+
 export interface TrackItem {
   id: string
   inputPath: string

@@ -121,6 +121,39 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('A')
   })
 
+  // Pasting a copied tag set also stamps the cover, so its undo must bring the old
+  // cover back — but ONLY for cover-recording operations: a plain find & replace
+  // snapshot must never revert a cover the user changed afterwards.
+  it('restores the cover only when the operation recorded it', () => {
+    const withCover = setup([
+      track('a', { title: 'A' }, { coverUrl: 'data:old', coverPath: '/covers/old.jpg' }),
+    ])
+    act(() => {
+      withCover.result.current.record(withCover.result.current.tracks, { cover: true })
+      withCover.result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, coverUrl: 'data:pasted', coverPath: undefined })),
+      )
+    })
+    act(() => {
+      withCover.result.current.undo()
+    })
+    expect(withCover.result.current.tracks[0].coverUrl).toBe('data:old')
+    expect(withCover.result.current.tracks[0].coverPath).toBe('/covers/old.jpg')
+
+    const metaOnly = setup([track('a', { title: 'A' }, { coverUrl: 'data:old' })])
+    act(() => {
+      metaOnly.result.current.record(metaOnly.result.current.tracks)
+      metaOnly.result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'X' }, coverUrl: 'data:newer' })),
+      )
+    })
+    act(() => {
+      metaOnly.result.current.undo()
+    })
+    expect(metaOnly.result.current.tracks[0].meta.title).toBe('A')
+    expect(metaOnly.result.current.tracks[0].coverUrl).toBe('data:newer')
+  })
+
   // ⌘Z with nothing recorded must be a harmless no-op — the caller uses the 0 to skip
   // its "restored" toast, and canUndo gates the palette entry.
   it('reports an empty stack instead of touching state', () => {

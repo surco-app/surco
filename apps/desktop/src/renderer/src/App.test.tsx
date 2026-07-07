@@ -1853,6 +1853,43 @@ describe('App paste metadata feedback', () => {
     fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
     expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
   })
+
+  // The vinyl-rip case the pair exists for: one side got the full treatment (tags AND
+  // artwork), the rest should take all of it in one paste — a copied tag set without
+  // its cover would leave the pasted rows half-dressed.
+  it('pastes the copied cover along with the tags', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      // The selected row's editor mounts the cover well once a cover exists.
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi.fn((path: string) =>
+        Promise.resolve(
+          path === '/music/a.wav' ? { thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 } : null,
+        ),
+      ),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    await waitFor(() => expect(within(rows[0]).getByTestId('track-cover')).toBeInTheDocument())
+
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    // Select the coverless second track: its editor shows the drop zone, not an image.
+    fireEvent.click(rows[1])
+    await waitFor(() => expect(screen.queryByTestId('cover-preview')).toBeNull())
+
+    fireEvent.contextMenu(rows[1])
+    fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
+
+    // The row thumbnail deliberately stays frozen at import; the LIVE cover the paste
+    // set is what the selected track's editor shows (and what a conversion embeds).
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-preview')).toHaveAttribute(
+        'src',
+        'data:image/jpeg;base64,AA',
+      ),
+    )
+  })
 })
 
 describe('App duplicates filter', () => {

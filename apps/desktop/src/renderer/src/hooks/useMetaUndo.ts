@@ -19,11 +19,16 @@ interface MetaSnapshot {
   reviewMatch: TrackItem['reviewMatch']
   matchConfidence: TrackItem['matchConfidence']
   inLibraryResolved: TrackItem['inLibraryResolved']
+  // Present only when the operation also overwrites artwork (paste). Recording it
+  // unconditionally would make undoing a plain tag sweep revert a cover the user
+  // changed afterwards — the snapshot may only restore what its operation touched.
+  cover?: { url: TrackItem['coverUrl']; path: TrackItem['coverPath'] }
 }
 
 export interface MetaUndo {
-  // Snapshots the given tracks' tags before a batch operation overwrites them.
-  record: (targets: TrackItem[]) => void
+  // Snapshots the given tracks' tags before a batch operation overwrites them;
+  // cover: true also snapshots the artwork for operations that overwrite it.
+  record: (targets: TrackItem[], opts?: { cover?: boolean }) => void
   // Restores the most recent snapshot; returns how many tracks actually changed
   // (0 for an empty stack or when every recorded track has since been removed),
   // so the caller can word — or skip — its confirmation toast.
@@ -42,7 +47,7 @@ export function useMetaUndo(
 ): MetaUndo {
   const stack = useRef<MetaSnapshot[][]>([])
 
-  const record = useCallback((targets: TrackItem[]) => {
+  const record = useCallback((targets: TrackItem[], opts?: { cover?: boolean }) => {
     if (targets.length === 0) return
     stack.current.push(
       targets.map((t) => ({
@@ -54,6 +59,7 @@ export function useMetaUndo(
         reviewMatch: t.reviewMatch,
         matchConfidence: t.matchConfidence,
         inLibraryResolved: t.inLibraryResolved,
+        ...(opts?.cover ? { cover: { url: t.coverUrl, path: t.coverPath } } : {}),
       })),
     )
     if (stack.current.length > MAX_META_UNDO) stack.current.shift()
@@ -80,6 +86,7 @@ export function useMetaUndo(
           reviewMatch: s.reviewMatch,
           matchConfidence: s.matchConfidence,
           inLibraryResolved: s.inLibraryResolved,
+          ...(s.cover ? { coverUrl: s.cover.url, coverPath: s.cover.path } : {}),
         }
       }),
     )

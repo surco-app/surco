@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { TrackMetadata } from '../../../shared/types'
+import type { CopiedTags } from '../types'
 import type { Toast } from './toastQueue'
 import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort,
   DuplicatesFilter,
@@ -42,7 +42,7 @@ export interface AppState {
   toasts: Toast[]
   // Metadata copied from one track's context menu, to stamp onto another. Null until the
   // user copies, which is what gates the paste item in the row menu.
-  copiedMeta: TrackMetadata | null
+  copiedMeta: CopiedTags | null
 }
 
 export interface AppStore {
