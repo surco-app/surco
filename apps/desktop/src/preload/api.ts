@@ -95,6 +95,7 @@ export interface Api {
   exportSerato: (tracks: { inputPath: string; outputPath?: string }[]) => Promise<string | null>
   exportM3u: (m3u: string) => Promise<string | null>
   exportQualityReport: (dataUrl: string, baseName: string) => Promise<string | null>
+  exportStatsImage: (dataUrl: string) => Promise<string | null>
   prepareCoverDrag: (src: {
     coverUrl?: string
     coverPath?: string

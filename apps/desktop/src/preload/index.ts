@@ -57,6 +57,8 @@ const api: Api = {
   exportM3u: (m3u: string): Promise<string | null> => ipcRenderer.invoke('dialog:exportM3u', m3u),
   exportQualityReport: (dataUrl: string, baseName: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportQualityReport', dataUrl, baseName),
+  exportStatsImage: (dataUrl: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportStatsImage', dataUrl),
   search: (
     query: string,
     provider?: SearchProviderId,

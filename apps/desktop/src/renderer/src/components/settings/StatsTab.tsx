@@ -1,5 +1,6 @@
-import { AudioLines, Disc3, FolderDown, Headphones, Heart, Store } from 'lucide-react'
+import { AudioLines, Disc3, FolderDown, Headphones, Heart, ImageDown, Store } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL } from '../../lib/donate'
@@ -9,6 +10,7 @@ import {
   nextMilestone,
   timeSavedSeconds,
 } from '../../lib/stats'
+import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
 
 interface Props {
   settings: Settings
@@ -29,6 +31,48 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
   const { conversionCount, stats } = settings
   const anyActivity = conversionCount > 0 || CELLS.some(({ key }) => stats[key] > 0)
   const milestone = nextMilestone(conversionCount)
+  // Composes the story-sized share card (an Instagram-ready PNG of these same numbers)
+  // and hands it to the save dialog. Guarded against double-clicks while composing.
+  const [sharing, setSharing] = useState(false)
+  const shareImage = async (): Promise<void> => {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const png = renderStatsImage({
+        title: tr('settings.stats.shareTitle'),
+        conversionCount,
+        countLabel: tr('settings.stats.count'),
+        milestoneLabel:
+          milestone !== null
+            ? tr('settings.stats.milestone', { milestone, remaining: milestone - conversionCount })
+            : null,
+        milestoneFraction: milestone !== null ? conversionCount / milestone : null,
+        cells: statsImageCells(stats).map(({ key, value }) => ({
+          value,
+          label: tr(`settings.stats.${key}`),
+        })),
+        timeSaved:
+          conversionCount > 0
+            ? tr('settings.stats.timeSaved', {
+                time: formatTimeSaved(timeSavedSeconds(conversionCount)),
+              })
+            : null,
+        perTrack:
+          conversionCount > 0
+            ? tr('settings.stats.perTrack', { minutes: MANUAL_SECONDS_PER_CONVERSION / 60 })
+            : null,
+        footer: tr('settings.stats.shareFooter'),
+      })
+      await window.api.exportStatsImage(png)
+    } catch (err) {
+      // Composition only draws numbers already on screen, so a failure is a bug, not a
+      // user state; this tab has no error surface, so at least say so loudly where a
+      // bug report's console capture will carry it.
+      console.error('stats image failed', err)
+    } finally {
+      setSharing(false)
+    }
+  }
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
@@ -89,6 +133,18 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
             })}
           </p>
         </>
+      )}
+      {anyActivity && (
+        <button
+          type="button"
+          data-testid="stats-share"
+          onClick={() => void shareImage()}
+          disabled={sharing}
+          className="press mt-5 flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60"
+        >
+          <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
+          {tr('settings.stats.share')}
+        </button>
       )}
       <p className="mt-5 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
       <a

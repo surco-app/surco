@@ -470,7 +470,10 @@
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
       "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
       "donate": "Si Surco te ahorra horas, apoya su desarrollo",
-      "donateCta": "Donar con PayPal"
+      "donateCta": "Donar con PayPal",
+      "share": "Compartir imagen",
+      "shareTitle": "Mi música en cifras",
+      "shareFooter": "Hecho con Surco — getsurco.app"
     },
     "theme": "Apariencia",
     "themes": {

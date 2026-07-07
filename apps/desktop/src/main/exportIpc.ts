@@ -78,6 +78,20 @@ export function registerExportIpc(): void {
     return filePath
   })
 
+  // Writes the shareable lifetime-stats card the renderer composed (a PNG data URL),
+  // story-sized for social media. Returns the saved path, or null when cancelled.
+  ipcMain.handle('dialog:exportStatsImage', async (_e, dataUrl: string) => {
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Guarda tus estadísticas',
+      defaultPath: 'Mis estadísticas de Surco.png',
+      filters: [{ name: 'PNG', extensions: ['png'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, Buffer.from(base64, 'base64'))
+    return filePath
+  })
+
   // Writes an extended M3U8 playlist — the bridge to everything that isn't DJ software.
   // Returns the saved path, or null when cancelled, like the other exports.
   ipcMain.handle('dialog:exportM3u', async (_e, m3u: string) => {

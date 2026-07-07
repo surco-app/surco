@@ -73,4 +73,14 @@ describe('StatsTab', () => {
     expect(screen.queryByTestId('stats-count')).toBeNull()
     expect(screen.queryByTestId('stats-empty')).toBeNull()
   })
+
+  // The share card exists so the numbers can leave the app (Instagram, forums) — but
+  // only once there is something to show; an all-zero card would be an empty brag.
+  it('offers the share-image button only once there is activity', () => {
+    render(<StatsTab settings={withStats({ conversionCount: 3 })} />)
+    expect(screen.getByTestId('stats-share')).toBeInTheDocument()
+    cleanup()
+    render(<StatsTab settings={withStats()} />)
+    expect(screen.queryByTestId('stats-share')).toBeNull()
+  })
 })

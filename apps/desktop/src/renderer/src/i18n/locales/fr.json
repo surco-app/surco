@@ -470,7 +470,10 @@
       "perTrack": "≈ {{minutes}} min de travail manuel par morceau",
       "empty": "Rien de converti pour l'instant. Dès que tu commences, tu verras ici combien de temps Surco te fait gagner.",
       "donate": "Si Surco te fait gagner des heures, soutiens son développement",
-      "donateCta": "Faire un don avec PayPal"
+      "donateCta": "Faire un don avec PayPal",
+      "share": "Partager une image",
+      "shareTitle": "Ma musique en chiffres",
+      "shareFooter": "Créé avec Surco — getsurco.app"
     },
     "theme": "Apparence",
     "themes": {
