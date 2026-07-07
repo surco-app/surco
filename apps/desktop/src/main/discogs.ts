@@ -162,6 +162,18 @@ async function searchTracklist(
   return runSearch(params, `tracklist ${artist} ${title}`, token, opts, priority)
 }
 
+// The catalog number on the catalog's own catno field: as free text (q=) the code matches
+// anywhere — titles, label names — and returns dozens of unrelated rows, while catno=
+// returns just the pressings actually filed under it.
+async function searchCatno(
+  catno: string,
+  token: string,
+  opts: SearchOpts = {},
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
+  return runSearch(`catno=${encodeURIComponent(catno)}`, `catno ${catno}`, token, opts, priority)
+}
+
 // Collapses results that would render identically in the list — same title, year, label
 // and format — keeping the first (Discogs ranks the most relevant pressing first). A
 // search for a popular album otherwise shows the same row a dozen times, once per
@@ -228,8 +240,14 @@ export async function search(
         if (byTrack.length) return byTrack
       }
       let results: SearchResult[] = []
+      // The catalog-number candidate keeps its place in the candidate order but runs on
+      // the structured catno field instead of q= — same fallback turn, precise results.
+      const catno = hints?.catalogNumber?.trim()
       for (const candidate of buildSearchCandidates(query, hints)) {
-        const raw = await searchOnce(candidate, token, opts, priority)
+        const raw =
+          candidate === catno
+            ? await searchCatno(candidate, token, opts, priority)
+            : await searchOnce(candidate, token, opts, priority)
         results = keep(raw)
         if (results.length) break
       }

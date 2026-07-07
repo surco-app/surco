@@ -177,6 +177,18 @@ describe('search', () => {
     expect(discogsLimiter.acquire).not.toHaveBeenCalled()
   })
 
+  // The catalog-number candidate searched as free text (q=) matches the code anywhere —
+  // titles, label names — and returns dozens of unrelated rows; the catno field returns
+  // just the pressings actually filed under it, in the candidate's same turn.
+  it('searches the catalog-number candidate on the catno field, not as free text', async () => {
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 41 }] })])
+    const out = await search('inexistent noise', 'tok', undefined, { catalogNumber: 'ANJ-001' })
+    expect(out).toEqual([{ id: 41, provider: 'discogs' }])
+    const second = fetchMock.mock.calls[1][0] as string
+    expect(second).toContain(`catno=${encodeURIComponent('ANJ-001')}`)
+    expect(second).not.toContain('&q=')
+  })
+
   // No hints (a raw filename search) means there's nothing to fill the structured
   // fields, so it must go straight to free-text as before — no wasted extra call.
   it('skips the structured query and uses free-text when hints are missing', async () => {
