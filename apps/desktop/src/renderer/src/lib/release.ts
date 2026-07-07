@@ -110,11 +110,24 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 const DURATION_EXACT_SEC = 2
 const DURATION_MISS_SEC = 8
 
+// Whether `needle`'s words appear as a contiguous run inside `haystack`'s — containment
+// at word level. A raw substring check would let a title hide inside another word
+// ("Night" in "Nightmare") and, with an incidentally-close duration, carry a different
+// song over the high bar; whole words can never cross a boundary like that.
+function containsWordRun(haystack: string[], needle: string[]): boolean {
+  for (let i = 0; i + needle.length <= haystack.length; i++) {
+    if (needle.every((w, j) => haystack[i + j] === w)) return true
+  }
+  return false
+}
+
 export function titleSimilarity(target: string, candidate: string): number {
   const a = normalize(target)
   const b = normalize(candidate)
   if (!a || !b) return 0
   if (a === b) return 1
+  const targetWords = a.split(' ')
+  const bWords = b.split(' ')
   // A candidate that merely appends words to the file's title — the common case where
   // Discogs spells out "(Original Mix)" the file omits — is still the same track, so it
   // stays a strong match. But the reverse, a candidate that drops words the file's title
@@ -122,13 +135,12 @@ export function titleSimilarity(target: string, candidate: string): number {
   // version asked for: score it by how little of the title it covers so it can't outrank
   // a track that keeps a matching mix. This is what pins the right version when Discogs
   // lists no durations to separate the cuts.
-  if (b.includes(a)) return 0.7
-  if (a.includes(b)) return 0.5 * (b.split(' ').length / a.split(' ').length)
-  const targetWords = a.split(' ')
-  const candidateWords = new Set(b.split(' '))
+  if (containsWordRun(bWords, targetWords)) return 0.7
+  if (containsWordRun(targetWords, bWords)) return 0.5 * (bWords.length / targetWords.length)
+  const candidateWords = new Set(bWords)
   // Same words in a different order ("Love All" vs "All Love", "X vs Y" vs "Y vs X") are
   // almost certainly the same title — score them high so a duration tie doesn't bury the
-  // right track under a reordering the substring check above can't see.
+  // right track under a reordering the containment check above can't see.
   const targetSet = new Set(targetWords)
   if (targetSet.size === candidateWords.size && [...targetSet].every((w) => candidateWords.has(w)))
     return 0.9
@@ -161,13 +173,16 @@ function positionMatch(trackNumber: string, position: string): number | undefine
   return candidate === trackNumber ? 1 : 0
 }
 
+// The partial credit rides the same whole-word same-act rule the high-tier guard uses
+// (sameAct): a lead artist meets the fuller collaboration credit, a partial name
+// ("Ben") never meets a longer one ("Benny") the way a raw substring check allowed.
 function artistMatch(target: string, artists: { name: string }[] | undefined): number | undefined {
   if (!artists?.length) return undefined
   const a = normalize(target)
   const b = normalize(joinArtists(artists))
   if (!b) return undefined
   if (a === b) return 1
-  if (a.includes(b) || b.includes(a)) return 0.7
+  if (sameAct(target, artists)) return 0.7
   return 0
 }
 
@@ -318,11 +333,15 @@ function isCompilation(result: SearchResult): boolean {
 
 export function preRankResults(results: SearchResult[], target: TrackMatchTarget): SearchResult[] {
   const relevance = (result: SearchResult): number => {
-    const hay = normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
+    // Whole words, never substrings: "Art" hiding inside "Artificial" must not count as
+    // naming the act, or the noise row ties the real one and gets probed first.
+    const hay = new Set(
+      normalize(`${result.title} ${(result.label ?? []).join(' ')}`).split(' ').filter(Boolean),
+    )
     const fraction = (field: string | undefined): number => {
       const words = field ? normalize(field).split(' ').filter(Boolean) : []
       if (!words.length) return 0
-      return words.filter((w) => hay.includes(w)).length / words.length
+      return words.filter((w) => hay.has(w)).length / words.length
     }
     // Artist is the reliable signal — a full artist match all but names the release — so
     // it outweighs the title, which often isn't in the "Artist - Album" row at all. A

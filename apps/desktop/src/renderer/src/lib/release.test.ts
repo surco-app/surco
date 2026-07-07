@@ -17,6 +17,7 @@ import {
   resultFromRelease,
   scoreTrack,
   stepImageIndex,
+  titleSimilarity,
 } from './release'
 
 function release(over: Partial<Release> = {}): Release {
@@ -258,6 +259,51 @@ describe('scoreTrack', () => {
       scoreTrack({ position: 'A1', title: 'Acid (Original Mix)' }, { title: 'Acid' }),
     ).toBeGreaterThan(0.6)
   })
+
+  // "Night" hiding inside "Nightmare" used to read as containment (a raw substring check),
+  // and with an incidentally-matching duration and position that lifted a different song
+  // over the high bar — tags written unattended for the wrong track. Containment must be
+  // whole words: no shared word, no title score, so the hit stays below even the review bar.
+  it('never reads a title hiding inside another word as a match', () => {
+    const wrong = scoreTrack(
+      { position: '1', title: 'Nightmare', duration: '3:20' },
+      { title: 'Night', durationSec: 200, trackNumber: '1' },
+    )
+    expect(confidenceTier(wrong)).toBe('low')
+  })
+
+  // The artist signal follows the same word-level rule: a lead artist matches the fuller
+  // collaboration credit, but a partial name ("Ben") never matches a longer one ("Benny").
+  it('scores an artist only on whole words, never on a partial name', () => {
+    const lead = scoreTrack(
+      { position: '1', title: 'Track', artists: [{ name: 'Sasha & John Digweed' }] },
+      { title: 'Track', artist: 'Sasha' },
+    )
+    const partial = scoreTrack(
+      { position: '1', title: 'Track', artists: [{ name: 'Benny Benassi' }] },
+      { title: 'Track', artist: 'Ben' },
+    )
+    expect(lead).toBeGreaterThan(partial)
+    expect(partial).toBeCloseTo(0.9)
+  })
+})
+
+describe('titleSimilarity', () => {
+  // Containment semantics at word level: appended words still read as the same track
+  // (the release spells out the version the file omits), dropped words still score by
+  // coverage — but a word boundary is never crossed.
+  it('treats appended words as the same track', () => {
+    expect(titleSimilarity('Acid', 'Acid (Extended Mix)')).toBe(0.7)
+  })
+
+  it('scores a candidate that drops words by how little it covers', () => {
+    expect(titleSimilarity('Acid Extended Mix', 'Acid')).toBeCloseTo(0.5 / 3)
+  })
+
+  it('never lets a partial word read as containment', () => {
+    expect(titleSimilarity('Night', 'Nightmare')).toBe(0)
+    expect(titleSimilarity('Nightmare', 'Night')).toBe(0)
+  })
 })
 
 describe('bestMatch', () => {
@@ -343,6 +389,17 @@ describe('preRankResults', () => {
   it('keeps the original order when no row matches better', () => {
     const ranked = preRankResults([r(1, 'A - X'), r(2, 'B - Y')], { title: 'Z', artist: 'Q' })
     expect(ranked.map((x) => x.id)).toEqual([1, 2])
+  })
+
+  // Relevance counts whole words, never substrings: a row whose text merely hides the
+  // artist inside another word ("Art" in "Artificial") must not tie with — and by list
+  // order get probed before — the row that actually names the act.
+  it('does not count an artist hiding inside another word as relevance', () => {
+    const ranked = preRankResults(
+      [r(1, 'Artificial Intelligence - Selected Works'), r(2, 'Art - Album')],
+      { title: 'Track', artist: 'Art' },
+    )
+    expect(ranked.map((x) => x.id)).toEqual([2, 1])
   })
 
   // Real case: searching "Save My Love DJ Mofly" — Discogs only has unrelated noise
