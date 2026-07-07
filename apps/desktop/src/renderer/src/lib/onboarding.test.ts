@@ -18,13 +18,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       searchProviders: ['discogs'],
       outputFormat: 'wav',
-      autoApplyFilename: true,
-      grouping: 'Bases, Cantaditas',
-      genre: 'Hard Dance, Techno',
       showSpectrum: false,
       autoMatch: true,
-      visibleFields: ['title', 'artist', 'album', 'genre'],
-      requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       overwriteOriginal: false,
       addToEngineDj: false,
@@ -34,13 +29,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       searchProviders: ['discogs'],
       outputFormat: 'wav',
-      autoApplyFilename: true,
-      groupingPresets: ['Bases', 'Cantaditas'],
-      genrePresets: ['Hard Dance', 'Techno'],
       showSpectrum: false,
       autoMatch: true,
-      visibleFields: ['title', 'artist', 'album', 'genre'],
-      requiredFields: ['title', 'artist', 'genre'],
       addToAppleMusic: true,
       overwriteOriginal: false,
       addToEngineDj: false,
@@ -49,29 +39,21 @@ describe('buildOnboardingPatch', () => {
     })
   })
 
-  // A stray space around a pasted token breaks Discogs auth, and empty grouping
-  // segments would render as blank quick-buttons, so both are cleaned like the
-  // settings form does.
-  it('trims the token and drops blank grouping segments', () => {
+  // A stray space around a pasted token breaks Discogs auth, so it is cleaned like
+  // the settings form does.
+  it('trims the token', () => {
     const patch = buildOnboardingPatch({
       discogsToken: '  tok  ',
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: 'Bases, , Cantaditas,',
-      genre: 'Hard Dance, , Techno,',
       showSpectrum: true,
       autoMatch: false,
-      visibleFields: ['title', 'artist'],
-      requiredFields: ['title', 'artist'],
       addToAppleMusic: true,
       overwriteOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: true,
     })
     expect(patch.discogsToken).toBe('tok')
-    expect(patch.groupingPresets).toEqual(['Bases', 'Cantaditas'])
-    expect(patch.genrePresets).toEqual(['Hard Dance', 'Techno'])
   })
 
   // Skipping (null choices) must still mark the wizard seen, but must NOT write
@@ -88,13 +70,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: '   ',
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: '',
-      genre: '',
       showSpectrum: true,
       autoMatch: true,
-      visibleFields: ['title', 'artist'],
-      requiredFields: ['title', 'artist'],
       addToAppleMusic: false,
       overwriteOriginal: false,
       addToEngineDj: false,
@@ -109,13 +86,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: '',
       searchProviders: ['bandcamp'],
       outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: '',
-      genre: '',
       showSpectrum: true,
       autoMatch: true,
-      visibleFields: [],
-      requiredFields: [],
       addToAppleMusic: false,
       overwriteOriginal: false,
       addToEngineDj: false,
@@ -132,13 +104,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: '',
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: '',
-      genre: '',
       showSpectrum: true,
       autoMatch: false,
-      visibleFields: [],
-      requiredFields: [],
       addToAppleMusic: true,
       overwriteOriginal: false,
       addToEngineDj: false,
@@ -155,13 +122,8 @@ describe('buildOnboardingPatch', () => {
       discogsToken: '',
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: '',
-      genre: '',
       showSpectrum: true,
       autoMatch: false,
-      visibleFields: [],
-      requiredFields: [],
       addToAppleMusic: false,
       overwriteOriginal: false,
       addToEngineDj: true,
@@ -171,26 +133,4 @@ describe('buildOnboardingPatch', () => {
     expect(patch.keepOutputCopy).toBe(true)
   })
 
-  // The fields chosen in the wizard's Fields step must reach settings in the picked
-  // order, so a new user's editor matches what they set up rather than the defaults.
-  it('persists the chosen visible fields in order', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-      autoApplyFilename: false,
-      grouping: '',
-      genre: '',
-      showSpectrum: true,
-      autoMatch: false,
-      visibleFields: ['artist', 'title', 'bpm'],
-      requiredFields: ['artist'],
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    })
-    expect(patch.visibleFields).toEqual(['artist', 'title', 'bpm'])
-    expect(patch.requiredFields).toEqual(['artist'])
-  })
 })

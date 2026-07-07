@@ -8,7 +8,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
-import '../i18n'
+import i18n from '../i18n'
 import type { Settings } from '../../../shared/types'
 import { OnboardingWizard } from './OnboardingWizard'
 
@@ -88,8 +88,8 @@ describe('OnboardingWizard destination', () => {
     const onFinish = vi.fn()
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
-    // format → naming → grouping → genre → required → spectrum, then finish.
-    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    // format → spectrum, then finish.
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
@@ -110,7 +110,7 @@ describe('OnboardingWizard destination', () => {
     const onFinish = vi.fn()
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
-    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({
         addToEngineDj: true,
@@ -135,31 +135,13 @@ describe('OnboardingWizard destination', () => {
   })
 })
 
-describe('OnboardingWizard fields', () => {
-  // The Fields step now embeds the same editor as Settings, so a new user can pick which
-  // fields show and which are required in one place rather than only toggling required.
-  it('shows the shared fields editor reflecting the current visible and required fields', () => {
-    render(
-      <OnboardingWizard
-        settings={{ ...settings, visibleFields: ['title', 'artist'], requiredFields: ['title'] }}
-        onFinish={() => {}}
-      />,
-    )
-    // welcome → token → format → naming → grouping → genre → fields
-    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-    expect(screen.getByTestId('field-row-title')).toBeInTheDocument()
-    expect(screen.getByTestId('field-required-title')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('field-required-artist')).toHaveAttribute('aria-pressed', 'false')
-  })
-})
-
 describe('OnboardingWizard spectrum', () => {
   // The spectrum step shows a faked spectrogram so a brand-new user (no tracks loaded yet)
   // can see what the feature is — including the lossy-cutoff line it's there to reveal.
   it('illustrates the spectrum with a preview and a cutoff marker', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    // welcome → token → format → naming → grouping → genre → fields → spectrum
-    for (let i = 0; i < 7; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    // welcome → token → format → spectrum
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('spectrum-preview')).toBeInTheDocument()
     expect(screen.getByText(/cutoff/i)).toBeInTheDocument()
   })
@@ -173,5 +155,16 @@ describe('OnboardingWizard auto-match', () => {
     expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
     fireEvent.change(screen.getByTestId('onboarding-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('onboarding-auto-match')).toBeEnabled()
+  })
+})
+
+describe('OnboardingWizard length', () => {
+  // Every extra question delays the first drop of files. The wizard asks only what shapes
+  // the first import — sources + token + auto-match, format + destination, and the
+  // spectrum feature — and defers power-user tuning (naming, presets, fields) to Settings.
+  it('reaches Finish on the fourth step', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('onboarding-next')).toHaveTextContent(i18n.t('onboarding.finish'))
   })
 })

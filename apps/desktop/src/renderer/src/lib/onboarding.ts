@@ -6,16 +6,8 @@ export interface OnboardingChoices {
   // The catalogs the editor search queries (Discogs and/or Bandcamp).
   searchProviders: SearchProviderId[]
   outputFormat: OutputFormat
-  // When on, the output name is derived from the naming pattern automatically; off keeps
-  // the source file name until the user presses "Regenerate" per track.
-  autoApplyFilename: boolean
-  grouping: string
-  genre: string
   showSpectrum: boolean
   autoMatch: boolean
-  // The editor fields the user wants shown (in order) and which of them are required.
-  visibleFields: string[]
-  requiredFields: string[]
   // The output destination, mirroring the Settings booleans (Apple Music is only offered
   // on macOS; Engine DJ and overwrite are offered everywhere).
   addToAppleMusic: boolean
@@ -40,23 +32,12 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     discogsToken,
     searchProviders: choices.searchProviders,
     outputFormat: choices.outputFormat,
-    autoApplyFilename: choices.autoApplyFilename,
-    groupingPresets: choices.grouping
-      .split(',')
-      .map((g) => g.trim())
-      .filter(Boolean),
-    genrePresets: choices.genre
-      .split(',')
-      .map((g) => g.trim())
-      .filter(Boolean),
     showSpectrum: choices.showSpectrum,
     // Auto-match can only persist as on when its prerequisites are met (a source, plus a
     // Discogs token whenever Discogs is one), never just because the checkbox was left ticked.
     autoMatch:
       choices.autoMatch &&
       autoMatchAvailable({ searchProviders: choices.searchProviders, discogsToken }),
-    visibleFields: choices.visibleFields,
-    requiredFields: choices.requiredFields,
     addToAppleMusic: choices.addToAppleMusic,
     keepOutputCopy: choices.keepOutputCopy,
     overwriteOriginal: choices.overwriteOriginal,

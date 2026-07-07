@@ -9,22 +9,16 @@ import { buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { DestinationPicker } from './DestinationPicker'
-import { FieldsEditor } from './FieldsEditor'
 import { SegmentedControl } from './SegmentedControl'
 import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
-const STEPS = [
-  'welcome',
-  'search',
-  'format',
-  'naming',
-  'grouping',
-  'genre',
-  'fields',
-  'spectrum',
-] as const
+// Four steps only: what shapes the first import (search sources + auto-match, output
+// format + destination) plus the spectrum feature the welcome can't explain. Naming,
+// grouping/genre presets and the fields editor are power-user tuning that lives in
+// Settings — every extra question here delays the first drop of files.
+const STEPS = ['welcome', 'search', 'format', 'spectrum'] as const
 
 interface Props {
   settings: Settings
@@ -40,13 +34,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
-  const [autoApplyFilename, setAutoApplyFilename] = useState(settings.autoApplyFilename)
-  const [grouping, setGrouping] = useState(settings.groupingPresets.join(', '))
-  const [genre, setGenre] = useState(settings.genrePresets.join(', '))
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
-  const [visibleFields, setVisibleFields] = useState(settings.visibleFields)
-  const [requiredFields, setRequiredFields] = useState(settings.requiredFields)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
@@ -65,13 +54,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         discogsToken: token,
         searchProviders,
         outputFormat,
-        autoApplyFilename,
-        grouping,
-        genre,
         showSpectrum,
         autoMatch,
-        visibleFields,
-        requiredFields,
         addToAppleMusic,
         keepOutputCopy,
         overwriteOriginal,
@@ -246,83 +230,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     </p>
                   )}
                 </div>
-              </>
-            )}
-
-            {STEPS[step] === 'naming' && (
-              <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('onboarding.namingTitle')}
-                </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.namingBody')}</p>
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    data-testid="onboarding-auto-apply-filename"
-                    type="checkbox"
-                    checked={autoApplyFilename}
-                    onChange={(e) => setAutoApplyFilename(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">
-                    {tr('settings.autoApplyFilename')}
-                    <span className="mt-0.5 block text-xs text-fg-dim">
-                      {tr('settings.autoApplyFilenameHint')}
-                    </span>
-                  </span>
-                </label>
-                <p className="mt-4 text-xs text-fg-dim">
-                  {tr('onboarding.namingPattern')}{' '}
-                  <span className="font-mono text-fg-muted">{settings.filenameFormat}</span>
-                </p>
-              </>
-            )}
-
-            {STEPS[step] === 'grouping' && (
-              <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.grouping')}
-                </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.groupingBody')}</p>
-                <input
-                  data-testid="onboarding-grouping"
-                  value={grouping}
-                  onChange={(e) => setGrouping(e.target.value)}
-                  placeholder={tr('settings.groupingPlaceholder')}
-                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-                />
-                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
-              </>
-            )}
-
-            {STEPS[step] === 'genre' && (
-              <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.genre')}
-                </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.genreBody')}</p>
-                <input
-                  data-testid="onboarding-genre"
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                  placeholder={tr('settings.genrePlaceholder')}
-                  className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-                />
-                <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
-              </>
-            )}
-
-            {STEPS[step] === 'fields' && (
-              <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.tabs.fields')}
-                </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.fieldsBody')}</p>
-                <FieldsEditor
-                  visibleFields={visibleFields}
-                  requiredFields={requiredFields}
-                  onChangeVisible={setVisibleFields}
-                  onChangeRequired={setRequiredFields}
-                />
               </>
             )}
 
