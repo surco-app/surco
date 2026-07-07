@@ -1,4 +1,4 @@
-import { AudioLines, Disc3, FolderDown, Headphones, Heart, ImageDown, Store } from 'lucide-react'
+import { AudioLines, Disc3, FolderDown, Headphones, Heart, Share, Store } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -74,7 +74,20 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     }
   }
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+    <div className="relative flex min-h-[280px] flex-col items-center justify-center text-center">
+      {anyActivity && (
+        <button
+          type="button"
+          data-testid="stats-share"
+          title={tr('settings.stats.share')}
+          aria-label={tr('settings.stats.share')}
+          onClick={() => void shareImage()}
+          disabled={sharing}
+          className="press absolute right-0 top-0 flex h-7 w-7 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-60"
+        >
+          <Share size={15} aria-hidden="true" />
+        </button>
+      )}
       {conversionCount > 0 && (
         <>
           <p data-testid="stats-count" className="text-5xl font-semibold tabular-nums text-fg">
@@ -133,18 +146,6 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
             })}
           </p>
         </>
-      )}
-      {anyActivity && (
-        <button
-          type="button"
-          data-testid="stats-share"
-          onClick={() => void shareImage()}
-          disabled={sharing}
-          className="press mt-5 flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60"
-        >
-          <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
-          {tr('settings.stats.share')}
-        </button>
       )}
       <p className="mt-5 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
       <a
