@@ -747,6 +747,11 @@ export const Editor = memo(function Editor({
                 )}
                 {!isMulti && copyFilenameButton}
                 {!isMulti && searchWebButton}
+                {/* Two pairs, one divider: copy/search act on the file NAME (read-only,
+                    hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS. */}
+                {!isMulti && (
+                  <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
+                )}
                 {clearButton}
                 {deriveButton}
               </div>
