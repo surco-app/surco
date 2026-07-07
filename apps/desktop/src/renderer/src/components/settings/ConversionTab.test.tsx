@@ -33,6 +33,9 @@ const synced: SyncedDraft = {
   coverSquare: false,
   replaceLowResCover: false,
   mp3Quality: '320',
+  outputBitDepth: 'source',
+  outputSampleRate: 'source',
+  flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
   autoAnalyze: false,
@@ -80,6 +83,43 @@ describe('ConversionTab MP3 quality', () => {
     const patch = renderTab({ outputFormat: 'mp3' })
     fireEvent.click(screen.getByTestId('settings-mp3-quality-v0'))
     expect(patch).toHaveBeenCalledWith('mp3Quality', 'v0')
+  })
+
+  // "It's an app that does it all": the expanded ladder lets a space-constrained USB
+  // export land on 192/128 instead of silently forcing 320.
+  it('offers the full CBR ladder and both VBR presets', () => {
+    const patch = renderTab({ outputFormat: 'mp3' })
+    fireEvent.click(screen.getByTestId('settings-mp3-quality-192'))
+    expect(patch).toHaveBeenCalledWith('mp3Quality', '192')
+    fireEvent.click(screen.getByTestId('settings-mp3-quality-v2'))
+    expect(patch).toHaveBeenCalledWith('mp3Quality', 'v2')
+  })
+
+  // Bit depth shapes PCM/FLAC/ALAC encodes; under MP3 it would read as a knob that
+  // does nothing (LAME has no bit depth).
+  it('shows the bit depth control only for lossless formats and stages the pick', () => {
+    renderTab({ outputFormat: 'mp3' })
+    expect(screen.queryByTestId('settings-bit-depth-16')).toBeNull()
+    cleanup()
+    const patch = renderTab({ outputFormat: 'flac' })
+    fireEvent.click(screen.getByTestId('settings-bit-depth-16'))
+    expect(patch).toHaveBeenCalledWith('outputBitDepth', '16')
+  })
+
+  // Every encoder resamples, so the rate pin applies to MP3 too.
+  it('offers the sample rate pin for every format', () => {
+    const patch = renderTab({ outputFormat: 'mp3' })
+    fireEvent.click(screen.getByTestId('settings-sample-rate-44100'))
+    expect(patch).toHaveBeenCalledWith('outputSampleRate', '44100')
+  })
+
+  it('shows the FLAC compression control only while FLAC is the format', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-flac-compression-8')).toBeNull()
+    cleanup()
+    const patch = renderTab({ outputFormat: 'flac' })
+    fireEvent.click(screen.getByTestId('settings-flac-compression-8'))
+    expect(patch).toHaveBeenCalledWith('flacCompression', '8')
   })
 
   // ALAC exists as a target precisely because Music ingests it — unlike FLAC it must

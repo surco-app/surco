@@ -62,7 +62,7 @@
       "notInLibraryEngine": "Not in Engine DJ",
       "inLibrary": "In Apple Music",
       "inLibraryEngine": "In Engine DJ",
-    "duplicates": "Duplicates",
+      "duplicates": "Duplicates",
       "trashSuspects_one": "Move the suspect file to Trash",
       "trashSuspects_other": "Move the {{count}} suspect files to Trash"
     },
@@ -355,7 +355,7 @@
     "removeOldCopy": "Remove the old copy",
     "oldCopyRemoved": "Old copy removed from Apple Music; its file is in the Trash",
     "removeOldCopyError": "Could not remove the old Apple Music copy",
-    "removeOldCopyMismatch": "The copy in Apple Music no longer matches the expected one \u2014 nothing was removed",
+    "removeOldCopyMismatch": "The copy in Apple Music no longer matches the expected one — nothing was removed",
     "searchError": "Search failed",
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
@@ -525,8 +525,37 @@
     },
     "outputFormatHint": "AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
     "mp3Quality": "MP3 quality",
-    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
-    "mp3QualityHint": "Applies to every MP3 export. 320 kbps is the DJ-pool standard; V0 is smaller at transparent quality.",
+    "mp3Qualities": {
+      "320": "320",
+      "256": "256",
+      "192": "192",
+      "160": "160",
+      "128": "128",
+      "v0": "V0",
+      "v2": "V2"
+    },
+    "mp3QualityHint": "Applies to every MP3 export. CBR rates in kbps — 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality). A source already in MP3 is never re-encoded.",
+    "bitDepth": "Bit depth",
+    "bitDepths": {
+      "source": "Same as source",
+      "16": "16-bit",
+      "24": "24-bit"
+    },
+    "bitDepthHint": "“Same as source” keeps the file's exact depth. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding.",
+    "sampleRate": "Sample rate",
+    "sampleRates": {
+      "source": "Same as source",
+      "44100": "44.1 kHz",
+      "48000": "48 kHz"
+    },
+    "sampleRateHint": "“Same as source” never resamples. Pin a rate to unify your library for gear that expects one.",
+    "flacCompression": "FLAC compression",
+    "flacCompressions": {
+      "0": "Fast",
+      "5": "Normal",
+      "8": "Maximum"
+    },
+    "flacCompressionHint": "Size vs. speed only — the audio is identical at every level.",
     "destination": "Where converted tracks go",
     "destinations": {
       "folder": "Output folder",
@@ -687,7 +716,7 @@
     "deleteOriginalMessage": "This moves the original “{{name}}” to the Trash. Your converted file stays in place. You can restore the original from the Trash.",
     "deleteOriginalMessageWin": "This moves the original “{{name}}” to the Recycle Bin. Your converted file stays in place. You can restore the original from there.",
     "removeOldCopyTitle": "Remove the old copy from Apple Music?",
-    "removeOldCopyMessage": "Your library still holds another copy of \u201c{{name}}\u201d: \u201c{{copy}}\u201d. That entry will be removed from Apple Music and its file will move to the Trash, where you can restore it.",
+    "removeOldCopyMessage": "Your library still holds another copy of “{{name}}”: “{{copy}}”. That entry will be removed from Apple Music and its file will move to the Trash, where you can restore it.",
     "removeOldCopyConfirm": "Remove old copy",
     "convertInPlaceTitle": "Overwrite the original files?",
     "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",

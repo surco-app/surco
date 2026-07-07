@@ -24,6 +24,9 @@ export interface SyncedDraft {
   coverSquare: boolean
   replaceLowResCover: boolean
   mp3Quality: Settings['mp3Quality']
+  outputBitDepth: Settings['outputBitDepth']
+  outputSampleRate: Settings['outputSampleRate']
+  flacCompression: Settings['flacCompression']
   showSpectrum: boolean
   showLoudness: boolean
   autoAnalyze: boolean
@@ -69,6 +72,9 @@ export function pickSynced(s: Settings): SyncedDraft {
     coverSquare: s.coverSquare,
     replaceLowResCover: s.replaceLowResCover,
     mp3Quality: s.mp3Quality,
+    outputBitDepth: s.outputBitDepth,
+    outputSampleRate: s.outputSampleRate,
+    flacCompression: s.flacCompression,
     showSpectrum: s.showSpectrum,
     showLoudness: s.showLoudness,
     autoAnalyze: s.autoAnalyze,

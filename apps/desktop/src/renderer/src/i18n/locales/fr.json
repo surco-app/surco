@@ -62,7 +62,7 @@
       "notInLibraryEngine": "Pas dans Engine DJ",
       "inLibrary": "Dans Apple Music",
       "inLibraryEngine": "Dans Engine DJ",
-    "duplicates": "Doublons",
+      "duplicates": "Doublons",
       "trashSuspects_one": "Mettre le fichier suspect à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers suspects à la corbeille"
     },
@@ -525,8 +525,37 @@
     },
     "outputFormatHint": "AIFF/WAV/FLAC sont sans perte (FLAC compressé) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
     "mp3Quality": "Qualité MP3",
-    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
-    "mp3QualityHint": "S'applique à tous les exports MP3. 320 kbps est le standard des pools DJ ; le V0 est plus léger à qualité transparente.",
+    "mp3Qualities": {
+      "320": "320",
+      "256": "256",
+      "192": "192",
+      "160": "160",
+      "128": "128",
+      "v0": "V0",
+      "v2": "V2"
+    },
+    "mp3QualityHint": "S'applique à tous les exports MP3. Débits CBR en kbit/s — 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente). Une source déjà en MP3 n'est jamais réencodée.",
+    "bitDepth": "Profondeur de bits",
+    "bitDepths": {
+      "source": "Comme la source",
+      "16": "16 bits",
+      "24": "24 bits"
+    },
+    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier. La réduction à 16 bits applique un dither ; un fichier déjà au format de sortie est copié sans réencodage.",
+    "sampleRate": "Fréquence d'échantillonnage",
+    "sampleRates": {
+      "source": "Comme la source",
+      "44100": "44,1 kHz",
+      "48000": "48 kHz"
+    },
+    "sampleRateHint": "« Comme la source » ne rééchantillonne jamais. Fixez une fréquence pour unifier votre bibliothèque.",
+    "flacCompression": "Compression FLAC",
+    "flacCompressions": {
+      "0": "Rapide",
+      "5": "Normale",
+      "8": "Maximale"
+    },
+    "flacCompressionHint": "N'affecte que la taille et la vitesse ; l'audio est identique à tous les niveaux.",
     "destination": "Destination des morceaux convertis",
     "destinations": {
       "folder": "Dossier de sortie",

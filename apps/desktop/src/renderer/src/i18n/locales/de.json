@@ -525,8 +525,37 @@
     },
     "outputFormatHint": "AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
     "mp3Quality": "MP3-Qualität",
-    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
-    "mp3QualityHint": "Gilt für jeden MP3-Export. 320 kbps ist der Standard der DJ-Pools; V0 ist kleiner bei transparenter Qualität.",
+    "mp3Qualities": {
+      "320": "320",
+      "256": "256",
+      "192": "192",
+      "160": "160",
+      "128": "128",
+      "v0": "V0",
+      "v2": "V2"
+    },
+    "mp3QualityHint": "Gilt für alle MP3-Exporte. CBR-Raten in kbit/s — 320 ist der Standard der DJ-Pools; V0 und V2 sind VBR (kleinere Dateien bei transparenter Qualität). Eine MP3-Quelle wird nie neu kodiert.",
+    "bitDepth": "Bittiefe",
+    "bitDepths": {
+      "source": "Wie die Quelle",
+      "16": "16 Bit",
+      "24": "24 Bit"
+    },
+    "bitDepthHint": "„Wie die Quelle“ behält die exakte Bittiefe der Datei. Beim Reduzieren auf 16 Bit wird Dithering angewendet; eine Datei im Zielformat wird ohne Neukodierung kopiert.",
+    "sampleRate": "Abtastrate",
+    "sampleRates": {
+      "source": "Wie die Quelle",
+      "44100": "44,1 kHz",
+      "48000": "48 kHz"
+    },
+    "sampleRateHint": "„Wie die Quelle“ resampelt nie. Lege eine Rate fest, um deine Bibliothek zu vereinheitlichen.",
+    "flacCompression": "FLAC-Kompression",
+    "flacCompressions": {
+      "0": "Schnell",
+      "5": "Normal",
+      "8": "Maximal"
+    },
+    "flacCompressionHint": "Betrifft nur Größe und Geschwindigkeit; das Audio ist auf jeder Stufe identisch.",
     "destination": "Wohin konvertierte Tracks gehen",
     "destinations": {
       "folder": "Ausgabeordner",

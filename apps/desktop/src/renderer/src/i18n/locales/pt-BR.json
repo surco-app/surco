@@ -62,7 +62,7 @@
       "notInLibraryEngine": "Fora do Engine DJ",
       "inLibrary": "No Apple Music",
       "inLibraryEngine": "No Engine DJ",
-    "duplicates": "Duplicadas",
+      "duplicates": "Duplicadas",
       "trashSuspects_one": "Mover o arquivo suspeito para a Lixeira",
       "trashSuspects_other": "Mover os {{count}} arquivos suspeitos para a Lixeira"
     },
@@ -525,8 +525,37 @@
     },
     "outputFormatHint": "AIFF/WAV/FLAC são sem perdas (FLAC comprimido); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
     "mp3Quality": "Qualidade do MP3",
-    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
-    "mp3QualityHint": "Vale para toda exportação em MP3. 320 kbps é o padrão dos pools de DJ; V0 ocupa menos com qualidade transparente.",
+    "mp3Qualities": {
+      "320": "320",
+      "256": "256",
+      "192": "192",
+      "160": "160",
+      "128": "128",
+      "v0": "V0",
+      "v2": "V2"
+    },
+    "mp3QualityHint": "Aplica-se a todas as exportações MP3. Taxas CBR em kbps — 320 é o padrão dos pools de DJ; V0 e V2 são VBR (arquivos menores com qualidade transparente). Uma fonte já em MP3 nunca é recodificada.",
+    "bitDepth": "Profundidade de bits",
+    "bitDepths": {
+      "source": "Igual à origem",
+      "16": "16 bits",
+      "24": "24 bits"
+    },
+    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem recodificação.",
+    "sampleRate": "Taxa de amostragem",
+    "sampleRates": {
+      "source": "Igual à origem",
+      "44100": "44,1 kHz",
+      "48000": "48 kHz"
+    },
+    "sampleRateHint": "“Igual à origem” nunca reamostra. Fixe uma taxa para unificar sua biblioteca.",
+    "flacCompression": "Compressão FLAC",
+    "flacCompressions": {
+      "0": "Rápida",
+      "5": "Normal",
+      "8": "Máxima"
+    },
+    "flacCompressionHint": "Afeta apenas tamanho e velocidade; o áudio é idêntico em todos os níveis.",
     "destination": "Para onde vão as faixas convertidas",
     "destinations": {
       "folder": "Pasta de saída",

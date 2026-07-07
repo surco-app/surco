@@ -93,13 +93,59 @@ export function ConversionTab({
             {tr('settings.mp3Quality')}
           </span>
           <SegmentedControl
-            options={['320', 'v0'] as const}
+            options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
             value={synced.mp3Quality}
             onChange={(id) => patch('mp3Quality', id)}
             testidPrefix="settings-mp3-quality"
             labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
           />
           <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.mp3QualityHint')}</p>
+        </>
+      )}
+
+      {/* Bit depth shapes the PCM/FLAC/ALAC encoders; LAME has no bit depth, so under
+          MP3 the control would read as a knob that does nothing. */}
+      {synced.outputFormat !== 'mp3' && (
+        <>
+          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+            {tr('settings.bitDepth')}
+          </span>
+          <SegmentedControl
+            options={['source', '16', '24'] as const}
+            value={synced.outputBitDepth}
+            onChange={(id) => patch('outputBitDepth', id)}
+            testidPrefix="settings-bit-depth"
+            labelFor={(id) => tr(`settings.bitDepths.${id}`)}
+          />
+          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.bitDepthHint')}</p>
+        </>
+      )}
+
+      <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+        {tr('settings.sampleRate')}
+      </span>
+      <SegmentedControl
+        options={['source', '44100', '48000'] as const}
+        value={synced.outputSampleRate}
+        onChange={(id) => patch('outputSampleRate', id)}
+        testidPrefix="settings-sample-rate"
+        labelFor={(id) => tr(`settings.sampleRates.${id}`)}
+      />
+      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.sampleRateHint')}</p>
+
+      {synced.outputFormat === 'flac' && (
+        <>
+          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+            {tr('settings.flacCompression')}
+          </span>
+          <SegmentedControl
+            options={['0', '5', '8'] as const}
+            value={synced.flacCompression}
+            onChange={(id) => patch('flacCompression', id)}
+            testidPrefix="settings-flac-compression"
+            labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
+          />
+          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.flacCompressionHint')}</p>
         </>
       )}
 

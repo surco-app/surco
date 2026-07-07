@@ -353,9 +353,9 @@
     "appleMusicShow": "Mostrar en Apple Music",
     "appleMusicError": "No se pudo añadir a Apple Music",
     "removeOldCopy": "Eliminar la copia antigua",
-    "oldCopyRemoved": "Copia antigua eliminada de Apple Music; su archivo est\u00e1 en la papelera",
+    "oldCopyRemoved": "Copia antigua eliminada de Apple Music; su archivo está en la papelera",
     "removeOldCopyError": "No se pudo eliminar la copia antigua de Apple Music",
-    "removeOldCopyMismatch": "La copia en Apple Music ya no coincide con la esperada \u2014 no se ha eliminado nada",
+    "removeOldCopyMismatch": "La copia en Apple Music ya no coincide con la esperada — no se ha eliminado nada",
     "searchError": "Error en la búsqueda",
     "releaseError": "No se pudo cargar el release",
     "analyzeError": "No se pudo analizar el audio",
@@ -525,8 +525,37 @@
     },
     "outputFormatHint": "AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
     "mp3Quality": "Calidad MP3",
-    "mp3Qualities": { "320": "320 kbps", "v0": "V0 (VBR)" },
-    "mp3QualityHint": "Se aplica a todas las exportaciones MP3. 320 kbps es el estándar de los pools de DJ; V0 ocupa menos con calidad transparente.",
+    "mp3Qualities": {
+      "320": "320",
+      "256": "256",
+      "192": "192",
+      "160": "160",
+      "128": "128",
+      "v0": "V0",
+      "v2": "V2"
+    },
+    "mp3QualityHint": "Se aplica a todas las exportaciones MP3. Tasas CBR en kbps: 320 es el estándar de los pools de DJ; V0 y V2 son VBR (archivos más pequeños con calidad transparente). Un MP3 de origen nunca se recomprime.",
+    "bitDepth": "Profundidad de bits",
+    "bitDepths": {
+      "source": "Igual que el origen",
+      "16": "16 bits",
+      "24": "24 bits"
+    },
+    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir.",
+    "sampleRate": "Frecuencia de muestreo",
+    "sampleRates": {
+      "source": "Igual que el origen",
+      "44100": "44,1 kHz",
+      "48000": "48 kHz"
+    },
+    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca.",
+    "flacCompression": "Compresión FLAC",
+    "flacCompressions": {
+      "0": "Rápida",
+      "5": "Normal",
+      "8": "Máxima"
+    },
+    "flacCompressionHint": "Solo afecta al tamaño y la velocidad; el audio es idéntico en todos los niveles.",
     "destination": "Destino de los archivos convertidos",
     "destinations": {
       "folder": "Carpeta de salida",
@@ -686,8 +715,8 @@
     "trashConfirmWin": "Mover a la papelera de reciclaje",
     "deleteOriginalMessage": "Esto mueve el original «{{name}}» a la papelera. El archivo convertido se mantiene. Puedes restaurar el original desde la papelera.",
     "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí.",
-    "removeOldCopyTitle": "\u00bfEliminar la copia antigua de Apple Music?",
-    "removeOldCopyMessage": "Tu biblioteca a\u00fan tiene otra copia de \u00ab{{name}}\u00bb: \u00ab{{copy}}\u00bb. Esa entrada se eliminar\u00e1 de Apple Music y su archivo ir\u00e1 a la papelera, desde donde puedes restaurarlo.",
+    "removeOldCopyTitle": "¿Eliminar la copia antigua de Apple Music?",
+    "removeOldCopyMessage": "Tu biblioteca aún tiene otra copia de «{{name}}»: «{{copy}}». Esa entrada se eliminará de Apple Music y su archivo irá a la papelera, desde donde puedes restaurarlo.",
     "removeOldCopyConfirm": "Eliminar copia antigua",
     "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
     "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
