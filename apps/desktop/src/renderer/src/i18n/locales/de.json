@@ -387,7 +387,9 @@
     "clearMeta": "Metadaten löschen",
     "clearMetaHint": "Leert alle Metadatenfelder",
     "copyFilename": "Dateinamen kopieren",
-    "copyFilenameHint": "Kopiert den Dateinamen in die Zwischenablage"
+    "copyFilenameHint": "Kopiert den Dateinamen in die Zwischenablage",
+    "searchWeb": "Auf Google suchen",
+    "searchWebHint": "Sucht den Dateinamen auf Google"
   },
   "fields": {
     "title": "Titel",

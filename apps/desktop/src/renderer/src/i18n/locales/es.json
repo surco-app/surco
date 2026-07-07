@@ -387,7 +387,9 @@
     "clearMeta": "Borrar metadatos",
     "clearMetaHint": "Vacía todos los campos de metadatos",
     "copyFilename": "Copiar nombre de archivo",
-    "copyFilenameHint": "Copia el nombre del archivo al portapapeles"
+    "copyFilenameHint": "Copia el nombre del archivo al portapapeles",
+    "searchWeb": "Buscar en Google",
+    "searchWebHint": "Busca el nombre del archivo en Google"
   },
   "fields": {
     "title": "Título",

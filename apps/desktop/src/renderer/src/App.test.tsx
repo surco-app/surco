@@ -992,6 +992,24 @@ describe('App regenerate filename', () => {
     fireEvent.click(screen.getByTestId('copy-filename-btn'))
     await waitFor(() => expect(copyText).toHaveBeenCalledWith('Di Carlo - Bumping'))
   })
+
+  // The search button skips the copy-paste round trip entirely: window.open routes the
+  // Google URL through the main process to the default browser, the same path every
+  // external link takes. The query must be URL-encoded or a "&" in a title breaks it.
+  it('opens a Google search for the Settings-pattern file name in one click', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/raw 01.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Bumping', artist: 'Di Carlo' }),
+      getSettings: vi.fn().mockResolvedValue(settings({ filenameFormat: '{artist} - {title}' })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('search-web-btn'))
+    expect(open).toHaveBeenCalledWith('https://www.google.com/search?q=Di%20Carlo%20-%20Bumping')
+    open.mockRestore()
+  })
 })
 
 describe('App open with', () => {

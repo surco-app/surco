@@ -132,6 +132,7 @@ function renderEditor(
   onOpenRename: ReturnType<typeof vi.fn>
   onRegenerateName: ReturnType<typeof vi.fn>
   onCopyFilename: ReturnType<typeof vi.fn>
+  onSearchWeb: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
@@ -146,6 +147,7 @@ function renderEditor(
   const onOpenRename = vi.fn()
   const onRegenerateName = vi.fn()
   const onCopyFilename = vi.fn()
+  const onSearchWeb = vi.fn()
   const onExportCollection = vi.fn()
   renderWithQuery(
     <Editor
@@ -165,6 +167,7 @@ function renderEditor(
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
       onCopyFilename={onCopyFilename}
+      onSearchWeb={onSearchWeb}
       onExportCollection={onExportCollection}
     />,
     {
@@ -205,6 +208,7 @@ function renderEditor(
     onOpenRename,
     onRegenerateName,
     onCopyFilename,
+    onSearchWeb,
   }
 }
 
@@ -399,6 +403,17 @@ describe('Editor copy filename', () => {
     const { onCopyFilename } = renderEditor({ id: 'a' })
     fireEvent.click(screen.getByTestId('copy-filename-btn'))
     expect(onCopyFilename).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Editor search web', () => {
+  // Copy-then-paste-into-Google was the manual chore the copy button left behind; this
+  // one-click twin opens the search itself. App owns the pattern and the browser hand-off,
+  // so the button just signals intent.
+  it('searches the web for the file name in one click', () => {
+    const { onSearchWeb } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('search-web-btn'))
+    expect(onSearchWeb).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -615,6 +630,7 @@ function MultiHarness() {
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
         onCopyFilename={vi.fn()}
+        onSearchWeb={vi.fn()}
       />
       <div data-testid="dump">
         {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
@@ -879,6 +895,7 @@ describe('Editor multi-select', () => {
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
         onCopyFilename={vi.fn()}
+        onSearchWeb={vi.fn()}
       />,
       {
         addToAppleMusic: opts.music ?? false,

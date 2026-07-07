@@ -1185,6 +1185,17 @@ export default function App(): React.JSX.Element {
       setNotice(tr('notices.copiedFilename'))
     }
   })
+  // The copy button's one-click twin: opens a Google search for the same name in the
+  // default browser. window.open routes through the main process's window-open handler
+  // (shell.openExternal), the same path every external link takes.
+  const onSearchWeb = useStableCallback(() => {
+    if (!selected) return
+    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
+    if (name) {
+      const query = name.split('/').pop() ?? name
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`)
+    }
+  })
   // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
   // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also
   // un-matches and re-probes); deriveTags mirrors deriveFromNames over the selection.
@@ -1725,6 +1736,7 @@ export default function App(): React.JSX.Element {
                   onOpenRename={onOpenRename}
                   onRegenerateName={onRegenerateName}
                   onCopyFilename={onCopyFilename}
+                  onSearchWeb={onSearchWeb}
                   onExportCollection={onOpenExport}
                 />
               </ErrorBoundary>

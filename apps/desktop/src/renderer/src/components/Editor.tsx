@@ -1,4 +1,4 @@
-import { Copy, Disc3, Eraser, Tag } from 'lucide-react'
+import { Copy, Disc3, Eraser, Globe, Tag } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -117,6 +117,9 @@ interface Props {
   // Copies the Settings-pattern file name to the clipboard so the user can paste the track
   // into a search box. App owns the pattern and clipboard, so the editor just signals intent.
   onCopyFilename: () => void
+  // Opens a Google search for the same name in the default browser — the one-click twin of
+  // copy-then-paste. App owns the pattern and the hand-off, so the editor just signals intent.
+  onSearchWeb: () => void
   // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
@@ -150,6 +153,7 @@ export const Editor = memo(function Editor({
   onOpenRename,
   onRegenerateName,
   onCopyFilename,
+  onSearchWeb,
   onExportCollection,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
@@ -661,6 +665,21 @@ export const Editor = memo(function Editor({
     </button>
   )
 
+  // The copy button's one-click twin: opens the search directly instead of leaving the
+  // paste to the user. Icon-only like its neighbours.
+  const searchWebButton = (
+    <button
+      type="button"
+      data-testid="search-web-btn"
+      aria-label={tr('editor.searchWeb')}
+      onClick={onSearchWeb}
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+    >
+      <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('editor.searchWebHint')} align="end" />
+    </button>
+  )
+
   return (
     <div className="flex h-full min-h-0">
       <DiscogsPanel
@@ -727,6 +746,7 @@ export const Editor = memo(function Editor({
                   </span>
                 )}
                 {!isMulti && copyFilenameButton}
+                {!isMulti && searchWebButton}
                 {clearButton}
                 {deriveButton}
               </div>

@@ -387,7 +387,9 @@
     "clearMeta": "Effacer les métadonnées",
     "clearMetaHint": "Vide tous les champs de métadonnées",
     "copyFilename": "Copier le nom du fichier",
-    "copyFilenameHint": "Copie le nom du fichier dans le presse-papiers"
+    "copyFilenameHint": "Copie le nom du fichier dans le presse-papiers",
+    "searchWeb": "Rechercher sur Google",
+    "searchWebHint": "Recherche le nom du fichier sur Google"
   },
   "fields": {
     "title": "Titre",
