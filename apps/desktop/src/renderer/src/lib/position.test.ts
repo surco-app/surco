@@ -16,6 +16,9 @@ describe('splitPosition', () => {
     expect(splitPosition('B2')).toEqual({ disc: '', track: 'B2' })
     // 7" singles list a bare side letter
     expect(splitPosition('A')).toEqual({ disc: '', track: 'A' })
+    // Double-A-side singles repeat the letter ("AA", or "AA1" when numbered)
+    expect(splitPosition('AA')).toEqual({ disc: '', track: 'AA' })
+    expect(splitPosition('AA1')).toEqual({ disc: '', track: 'AA1' })
   })
 
   it('handles a bare track number', () => {
