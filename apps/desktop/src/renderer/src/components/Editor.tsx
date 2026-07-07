@@ -745,15 +745,23 @@ export const Editor = memo(function Editor({
                     {tr('editor.checkingLibrary')}
                   </span>
                 )}
-                {!isMulti && copyFilenameButton}
-                {!isMulti && searchWebButton}
                 {/* Two pairs, one divider: copy/search act on the file NAME (read-only,
-                    hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS. */}
+                    hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS.
+                    Each pair packs tighter (gap-1.5) than the row (gap-3) so the
+                    grouping reads at a glance. */}
+                {!isMulti && (
+                  <div className="flex items-center gap-1.5">
+                    {copyFilenameButton}
+                    {searchWebButton}
+                  </div>
+                )}
                 {!isMulti && (
                   <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
                 )}
-                {clearButton}
-                {deriveButton}
+                <div className="flex items-center gap-1.5">
+                  {clearButton}
+                  {deriveButton}
+                </div>
               </div>
             }
           />
