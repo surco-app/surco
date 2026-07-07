@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.37",
+    "date": "July 7, 2026",
+    "title": "Surco in five languages, and matching you can trust",
+    "items": [
+      {
+        "text": "Surco now speaks German, French and Brazilian Portuguese, alongside Spanish and English. Pick a language in Settings or let it follow your system.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Auto-matching is more careful: an identical title alone no longer tags a file on its own — duration, artist or catalog number has to corroborate it, and otherwise the suggestion is flagged for you to confirm.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Discogs search now finds album tracks: when the title doesn't match a release, it searches inside tracklists; and catalog numbers are looked up on their exact field instead of as free text.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Save a quality report as a PNG from the editor: the spectrogram with its verdict and cutoff line, ready to share whenever someone asks whether a file is really lossless.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "First-run setup is down to four steps; file naming, genre shortcuts and editor fields wait for you in Settings.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Remove the selected track with Backspace or Delete; the selection hops to its neighbour.",
+        "in": "0.37.0"
+      }
+    ]
+  },
+  {
     "version": "0.36",
     "date": "July 6, 2026",
     "title": "Replace your old Apple Music copy",

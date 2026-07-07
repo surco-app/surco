@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.37",
+    "date": "7 de julio de 2026",
+    "title": "Surco en cinco idiomas y un emparejado más de fiar",
+    "items": [
+      {
+        "text": "Surco ahora habla alemán, francés y portugués (Brasil), además de español e inglés. Elige el idioma en Ajustes o deja que siga al del sistema.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "El emparejado automático es más prudente: un título idéntico ya no basta para etiquetar por su cuenta — la duración, el artista o el número de catálogo tienen que corroborarlo, y si no, la sugerencia queda marcada para que la confirmes tú.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "La búsqueda en Discogs encuentra pistas de álbum: cuando el título no coincide con ningún disco, busca dentro de las listas de pistas; y el número de catálogo se consulta en su campo exacto en vez de como texto libre.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Guarda un informe de calidad en PNG desde el editor: el espectrograma con su veredicto y su línea de corte, listo para compartir cuando alguien pregunte si un archivo es lossless de verdad.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "La primera configuración se queda en cuatro pasos; el nombrado de archivos, los atajos de género y los campos del editor te esperan en Ajustes.",
+        "in": "0.37.0"
+      },
+      {
+        "text": "Quita la pista seleccionada con retroceso o suprimir; la selección salta a la vecina.",
+        "in": "0.37.0"
+      }
+    ]
+  },
+  {
     "version": "0.36",
     "date": "6 de julio de 2026",
     "title": "Reemplaza tu copia antigua de Apple Music",
