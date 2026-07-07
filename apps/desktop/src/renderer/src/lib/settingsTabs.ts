@@ -28,17 +28,19 @@ export type SettingsTab =
   | 'shortcuts'
   | 'stats'
 
-// Ordered by workflow: app setup, then output, then per-track editing prefs, then results.
-// Stats trails last as the one read-only, informational tab.
+// Ordered by workflow: app setup, where metadata comes from, how you edit it
+// (editor prefs, its fields, the artwork), then producing the file (what → its
+// name → where it lands), then utilities. Stats trails last as the one
+// read-only, informational tab.
 export const SETTINGS_TABS: SettingsTab[] = [
   'general',
   'search',
-  'conversion',
-  'destination',
-  'naming',
   'editor',
   'fields',
   'artwork',
+  'conversion',
+  'naming',
+  'destination',
   'shortcuts',
   'stats',
 ]
