@@ -63,10 +63,16 @@ export function dropPresentsAlias(artist: string): string {
 // the end ("Artist - Title (Original Mix) - 02 Artist - Title (Original Mix)"). The part
 // before that mid-string track number is already a complete query, and the duplication
 // throws free-text search off (Bandcamp's autocomplete returns nothing). Cut from the
-// first " - NN " — a 1-3 digit track number, never a 4-digit year — onward. Leaves a
-// string with no such marker unchanged, so it only ever helps.
+// first " - NN " — a 1-3 digit track number, never a 4-digit year — onward, but only when
+// the prefix is itself a full "A - B" query: a title can legitimately start with a number
+// ("Nena - 99 Luftballons"), and cutting that to the bare artist returns plenty of noise
+// that — since the candidate loop keeps the first non-empty result — would mask the real
+// title forever. Leaves a string with no such marker unchanged, so it only ever helps.
 export function dropTrackNumberTail(query: string): string {
-  return squeeze(query.replace(/\s-\s\d{1,3}(?:\s.*)?$/, ''))
+  const m = query.match(/\s-\s\d{1,3}(?:\s.*)?$/)
+  if (m?.index === undefined) return squeeze(query)
+  const prefix = squeeze(query.slice(0, m.index))
+  return prefix.includes(' - ') ? prefix : squeeze(query)
 }
 
 // The track title to score a tracklist entry against. DJ-pool / batch file names front-load

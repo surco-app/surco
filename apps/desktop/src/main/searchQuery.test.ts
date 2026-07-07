@@ -151,6 +151,15 @@ describe('buildSearchCandidates', () => {
     ])
   })
 
+  // A title can legitimately start with a number ("99 Luftballons", "7 Seconds"). With a
+  // single "Artist - Title" segment, cutting at the number leaves just the artist, whose
+  // search returns plenty — and since the loop keeps the first candidate that returns
+  // anything, the real title would never be searched. Only a prefix that is itself a full
+  // "A - B" query (the DJ-pool duplication shape) is safe to cut to.
+  it('keeps a numeric title intact instead of cutting to the bare artist', () => {
+    expect(buildSearchCandidates('Nena - 99 Luftballons')).toEqual(['Nena - 99 Luftballons'])
+  })
+
   // The reported case: a file tagged "Artist Title (Original Mix)" must search the bare
   // "Artist Title" first, or the parenthetical pulls in Bandcamp noise that hides the EP.
   it('searches the bare "Artist Title" first for an "(Original Mix)" tag', () => {
