@@ -4,7 +4,7 @@ import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
-import { suspectTracks } from './triage'
+import { suspectTracks, trashableOriginals } from './triage'
 
 export interface Command {
   id: string
@@ -145,6 +145,9 @@ export interface CommandDeps {
   // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
   // "clean the fakes" that turns the quality sweep into an action, not just a filter.
   askTrashSuspects: () => void
+  // Sends every converted visible row's ORIGINAL to the OS Trash after a confirm — the
+  // post-batch cleanup for "convert, then drop the sources".
+  askDeleteOriginals: () => void
   openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
   openFindReplace: () => void
   openExport: () => void
@@ -212,6 +215,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     reveal,
     askClearAll,
     askTrashSuspects,
+    askDeleteOriginals,
     openSettings,
     openFindReplace,
     openExport,
@@ -436,6 +440,16 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('trash-suspects'),
       enabled: suspectTracks(visibleTracks).length > 0,
       run: askTrashSuspects,
+    },
+    {
+      // The post-batch cleanup: trashes every converted visible row's ORIGINAL after a
+      // confirm, keeping the rows and their outputs. Enabled once at least one visible
+      // track left a distinct converted output whose original is still around.
+      id: 'trash-originals',
+      title: tr('commands.trashOriginals'),
+      hint: hintFor('trash-originals'),
+      enabled: trashableOriginals(visibleTracks).length > 0,
+      run: askDeleteOriginals,
     },
     {
       // Toggles the Discogs auto-match sweep. Needs a user token and at least one unmatched

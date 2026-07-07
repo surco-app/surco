@@ -9,6 +9,7 @@ import {
   Crosshair,
   FileAudio,
   FilePlus,
+  Recycle,
   Replace,
   SquareCheckBig,
   Tag,
@@ -808,8 +809,15 @@ export default function App(): React.JSX.Element {
 
   // The confirm-before-firing actions (trash, delete original, fill-all, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
-  const { askTrash, askDeleteOriginal, askRemoveOldMusicCopy, askFillAll, askClearAll, askConvertAll } =
-    useConfirmFlows({
+  const {
+    askTrash,
+    askDeleteOriginal,
+    askDeleteOriginals,
+    askRemoveOldMusicCopy,
+    askFillAll,
+    askClearAll,
+    askConvertAll,
+  } = useConfirmFlows({
       settings,
       removeTrack,
       updateTrack,
@@ -1053,6 +1061,9 @@ export default function App(): React.JSX.Element {
   // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
   const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
+  // The post-batch cleanup: trash the ORIGINALS of the visible converted rows (the flow
+  // itself narrows to the eligible ones and explains an empty count in its dialog).
+  const onDeleteOriginals = useStableCallback(() => askDeleteOriginals(visibleTracksRef.current))
   // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
   // including the ones an active format filter is hiding, unlike the toolbar trash button.
   const onClearEverything = useStableCallback(() => askClearAll(tracksRef.current))
@@ -1271,6 +1282,7 @@ export default function App(): React.JSX.Element {
       reveal: window.api.reveal,
       askClearAll: onClearEverything,
       askTrashSuspects: onTrashSuspects,
+      askDeleteOriginals: onDeleteOriginals,
       openSettings,
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,
@@ -1549,8 +1561,19 @@ export default function App(): React.JSX.Element {
                               hint={hintFor('find-replace')}
                             />
                           </button>
-                          {/* Clear is destructive, so it sits apart at the far end. */}
+                          {/* The destructive pair sits apart at the far end: trash the
+                              converted originals, then clear the list. */}
                           <span className="flex-1" />
+                          <button
+                            type="button"
+                            data-testid="trash-originals"
+                            onClick={onDeleteOriginals}
+                            aria-label={tr('commands.trashOriginals')}
+                            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+                          >
+                            <Recycle className="h-4 w-4" aria-hidden="true" />
+                            <Tooltip label={tr('commands.trashOriginals')} />
+                          </button>
                           <button
                             type="button"
                             data-testid="clear-all"

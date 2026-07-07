@@ -74,6 +74,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     reveal: () => {},
     askClearAll: () => {},
     askTrashSuspects: () => {},
+    askDeleteOriginals: () => {},
     openSettings: () => {},
     openFindReplace: () => {},
     openExport: () => {},
@@ -449,5 +450,35 @@ describe('buildCommands editor + theme entries', () => {
     expect(cmd.enabled).toBe(true)
     cmd.run()
     expect(fireConfetti).toHaveBeenCalledOnce()
+  })
+})
+
+describe('buildCommands trash-originals gate', () => {
+  const converted = (id: string) =>
+    track({ id, inputPath: `/${id}.wav`, outputPath: `/out/${id}.aiff` } as Partial<TrackItem>)
+
+  // The post-batch cleanup only makes sense once a visible track actually left a distinct
+  // converted output behind whose original is still around — otherwise the palette would
+  // offer an action with nothing to act on.
+  it('enables the action only when a visible track has a deletable original', () => {
+    expect(
+      commandById(makeDeps({ visibleTracks: [converted('a'), track()] }), 'trash-originals')
+        .enabled,
+    ).toBe(true)
+    expect(
+      commandById(
+        makeDeps({ visibleTracks: [track({ outputPath: undefined })] }),
+        'trash-originals',
+      ).enabled,
+    ).toBe(false)
+    expect(commandById(makeDeps({ visibleTracks: [] }), 'trash-originals').enabled).toBe(false)
+  })
+
+  // Running it delegates to the injected flow (which confirms and trashes) rather than
+  // deleting inline, keeping the destructive path routed through App's confirm dialog.
+  it('runs the injected delete-originals flow', () => {
+    const askDeleteOriginals = vi.fn()
+    commandById(makeDeps({ askDeleteOriginals }), 'trash-originals').run()
+    expect(askDeleteOriginals).toHaveBeenCalled()
   })
 })
