@@ -11,7 +11,7 @@ import {
 import { mapWithConcurrency } from '../lib/concurrency'
 import { keepCoverArg } from '../lib/coverSource'
 import { fetchRelease } from '../lib/fetchRelease'
-import { buildReleaseMeta, confidenceTier } from '../lib/release'
+import { buildReleaseMeta } from '../lib/release'
 import type { TrackItem } from '../types'
 
 // Auto-match fires a Discogs search plus release loads per track, so the sweep stays
@@ -112,8 +112,9 @@ export function useAutoMatch({
       if (!live || live.meta !== t.meta) return
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
-      // its own tags until the user accepts the suggestion.
-      if (confidenceTier(m.confidence) !== 'high') {
+      // its own tags until the user accepts the suggestion. The probe's guarded tier decides,
+      // never the raw confidence: a demoted title-only hit still scores above the high bar.
+      if (m.tier !== 'high') {
         updateTrack(t.id, {
           matchReview: true,
           matchConfidence: m.confidence,

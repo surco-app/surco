@@ -101,6 +101,35 @@ describe('autoMatchRelease', () => {
     expect(await autoMatchRelease('my song', withCatno, api)).toBeUndefined()
   })
 
+  // A release with no durations scores 1.0 on the title alone (weights renormalise over
+  // the signals present), so an exact one-word title on another act's release would be
+  // applied unattended. The probe must hand that to a human instead: flag it review.
+  it('flags an exact-title hit with nothing to corroborate it for review, never applying it', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi.fn().mockResolvedValue(
+        release(1, {
+          artists: [{ name: 'Another Act' }],
+          tracklist: [{ position: '1', title: 'My Song' }],
+        }),
+      ),
+    }
+    const m = await autoMatchRelease('my song', { title: 'My Song', artist: 'Artist' }, api)
+    expect(m?.release.id).toBe(1)
+    expect(m?.tier).toBe('review')
+  })
+
+  // The tier callers act on is the probe's guarded verdict, not something re-derived from
+  // the raw confidence — a demoted match still carries confidence above the high bar.
+  it('reports the guarded tier alongside the raw confidence', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.tier).toBe('high')
+  })
+
   // A high match anywhere outranks a Discogs review suggestion: when Discogs only musters
   // a review-tier hit, a confident Bandcamp match still wins and is applied outright.
   it('prefers a high match from any source over a Discogs review suggestion', async () => {

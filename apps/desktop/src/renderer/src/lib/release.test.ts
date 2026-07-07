@@ -8,6 +8,7 @@ import {
   catalogNumberMatches,
   cleanName,
   confidenceTier,
+  corroboratedTier,
   coverOf,
   joinArtists,
   preRankResults,
@@ -462,6 +463,90 @@ describe('confidenceTier', () => {
   it('calls a weak match low', () => {
     expect(confidenceTier(0.59)).toBe('low')
     expect(confidenceTier(0)).toBe('low')
+  })
+})
+
+describe('corroboratedTier', () => {
+  // The weights renormalise over the signals present, so a release listing no durations
+  // scores 1.0 on the title alone — and one-word titles ("Acid") exist on dozens of
+  // unrelated releases. A high built on nothing but the title must come back to a human
+  // glance instead of writing another act's album/artist/genre into the file unattended.
+  it('demotes a title-only high on a release naming another artist to review', () => {
+    const rel = release({ artists: [{ name: 'Mike Dred' }] })
+    const track = { position: '1', title: 'Digeridoo' }
+    const target = { title: 'Digeridoo', artist: 'Aphex Twin' }
+    expect(corroboratedTier(1, target, rel, track, false)).toBe('review')
+  })
+
+  it('demotes an uncorroborated title-only high even when no artist is known anywhere', () => {
+    const rel = release()
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(1, { title: 'My Song' }, rel, track, false)).toBe('review')
+  })
+
+  // Durations agreeing on both sides is physical evidence the cut is the same one — the
+  // signal that lets a file with a garbage artist tag still canonicalise unattended.
+  it('keeps a high corroborated by durations on both sides', () => {
+    const rel = release({ artists: [{ name: 'Someone Else' }] })
+    const track = { position: '1', title: 'My Song', duration: '3:20' }
+    const target = { title: 'My Song', artist: 'Unknown DJ', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, track, false)).toBe('high')
+  })
+
+  // The same-act check is whole-word containment either way (the matching philosophy:
+  // word-level yes, fuzzy no) — a lead artist matches the release's fuller collaboration
+  // credit, and a partial name never matches a longer one.
+  it('keeps a high whose release artist contains the file’s lead artist', () => {
+    const rel = release({ artists: [{ name: 'Sasha' }, { name: 'John Digweed' }] })
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(1, { title: 'My Song', artist: 'Sasha' }, rel, track, false)).toBe(
+      'high',
+    )
+  })
+
+  it('never lets a partial artist word corroborate', () => {
+    const rel = release({ artists: [{ name: 'Matador' }] })
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(1, { title: 'My Song', artist: 'Mat' }, rel, track, false)).toBe(
+      'review',
+    )
+  })
+
+  // A glued spelling ("Djmofly" for "DJ Mofly") is one act whose rip lost the word
+  // boundary; comparing with spaces removed still can't fuse two different names.
+  it('matches a glued artist spelling against its spaced form', () => {
+    const rel = release({ artists: [{ name: 'DJ Mofly' }] })
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(1, { title: 'My Song', artist: 'Djmofly' }, rel, track, false)).toBe(
+      'high',
+    )
+  })
+
+  // On a compilation the release artist is "Various"; the per-track credit is the one
+  // that names the act, so it corroborates on its own.
+  it('lets a compilation’s per-track artist corroborate', () => {
+    const rel = release({ artists: [{ name: 'Various' }] })
+    const track = { position: '5', title: 'My Song', artists: [{ name: 'Artist' }] }
+    expect(corroboratedTier(1, { title: 'My Song', artist: 'Artist' }, rel, track, false)).toBe(
+      'high',
+    )
+  })
+
+  // The file's catalog number naming the pressing is release-level identity — corroboration
+  // enough on its own, exactly why the boost may carry a review over the high bar.
+  it('keeps a high corroborated by a catalog-number match', () => {
+    const rel = release()
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(0.9, { title: 'My Song' }, rel, track, true)).toBe('high')
+  })
+
+  // The guard only gates the unattended tier: review and low pass through untouched, so
+  // the suggestion flow and the too-weak cutoff behave exactly as before.
+  it('passes review and low tiers through untouched', () => {
+    const rel = release()
+    const track = { position: '1', title: 'My Song' }
+    expect(corroboratedTier(0.7, { title: 'My Song' }, rel, track, false)).toBe('review')
+    expect(corroboratedTier(0.3, { title: 'My Song' }, rel, track, false)).toBe('low')
   })
 })
 

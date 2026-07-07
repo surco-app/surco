@@ -7,7 +7,7 @@ import {
   boostForCatalogMatch,
   buildReleaseMeta,
   catalogNumberMatches,
-  confidenceTier,
+  corroboratedTier,
   preRankResults,
   type TrackMatchTarget,
 } from './release'
@@ -73,6 +73,11 @@ export interface ProbeMatch {
   release: Release
   track: ReleaseTrack
   confidence: number
+  // The probe's guarded verdict: confidenceTier demoted to 'review' when nothing beyond
+  // the title corroborates the hit (corroboratedTier). Callers must act on this, never
+  // re-derive a tier from the raw confidence — a demoted match still carries a confidence
+  // above the high bar, and re-deriving would apply exactly what the guard flagged.
+  tier: 'high' | 'review' | 'low'
   // The search-result row that produced this match. Carried back because a release is
   // identified by its provider+result row, not by Release.id alone (Bandcamp's parsed
   // release id can differ from the autocomplete id, and the row holds the page URL).
@@ -119,21 +124,17 @@ export async function probeReleases(
     // evidence it names this exact release, so it lifts the confidence — enough to carry a
     // review-tier hit over the high bar and apply it unattended. The boosted score drives
     // every downstream decision (the accept bar, the fallback floor, the review fallback).
-    const confidence = catalogNumberMatches(target.catalogNumber, rel)
-      ? boostForCatalogMatch(m.confidence)
-      : m.confidence
-    if (confidence >= (opts.minConfidence ?? 0) && opts.accepts(confidenceTier(confidence))) {
-      return { release: rel, track: m.track, confidence, result }
+    const catalogMatched = catalogNumberMatches(target.catalogNumber, rel)
+    const confidence = catalogMatched ? boostForCatalogMatch(m.confidence) : m.confidence
+    const tier = corroboratedTier(confidence, target, rel, m.track, catalogMatched)
+    if (confidence >= (opts.minConfidence ?? 0) && opts.accepts(tier)) {
+      return { release: rel, track: m.track, confidence, tier, result }
     }
     // Keep walking for an accepted match, but remember the strongest review-tier hit in case
     // none turns up — the probe order isn't confidence order, so the best review can sit
     // behind a weaker one.
-    if (
-      opts.collectReview &&
-      confidenceTier(confidence) === 'review' &&
-      (!review || confidence > review.confidence)
-    ) {
-      review = { release: rel, track: m.track, confidence, result }
+    if (opts.collectReview && tier === 'review' && (!review || confidence > review.confidence)) {
+      review = { release: rel, track: m.track, confidence, tier, result }
     }
   }
   return opts.collectReview ? review : undefined
@@ -200,7 +201,7 @@ export async function autoMatchRelease(
       maxProbe,
     })
     if (match) {
-      if (confidenceTier(match.confidence) === 'high') return match
+      if (match.tier === 'high') return match
       // A Discogs review suggestion: hold it, but keep trying the other sources for a high
       // match that would win outright.
       review ??= match

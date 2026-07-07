@@ -1754,14 +1754,27 @@ describe('Editor track preselection', () => {
     expect(other).not.toHaveAttribute('aria-current')
   })
 
-  // A confident preselection (exact title) and a shakier one (a partial match)
-  // should not look the same: the badge tells the user whether to trust the
+  // A confident preselection (exact title, artist agreeing) and a shakier one (a partial
+  // match) should not look the same: the badge tells the user whether to trust the
   // highlight or double-check it, which is what makes a batch auto-match safe.
-  it('marks an exact-title preselection as a confident match', async () => {
+  it('marks an exact-title preselection with an agreeing artist as a confident match', async () => {
+    withDiscogs()
+    renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'The Artist' } })
+    await loadTracklist()
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
+  })
+
+  // An exact title with nothing to corroborate it (no durations, no agreeing artist, no
+  // catalog number) is the classic false positive — a same-named track on another act's
+  // release — so the badge shows the same 'review' verdict the sweep acts on.
+  it('marks an exact-title preselection with no corroborating signal for review', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix' } })
     await loadTracklist()
-    expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute(
+      'data-confidence',
+      'review',
+    )
   })
 
   // A check icon reads as "already applied", but nothing is applied until the

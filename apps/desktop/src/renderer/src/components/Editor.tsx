@@ -35,7 +35,8 @@ import { isLowResCover } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
-  confidenceTier,
+  catalogNumberMatches,
+  corroboratedTier,
   joinArtists,
   type ReleaseMetaPatch,
 } from '../lib/release'
@@ -257,7 +258,18 @@ export const Editor = memo(function Editor({
     () => (release ? bestMatch(release.tracklist, matchTargetOf(item)) : undefined),
     [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
   )
-  const matchTier = match ? confidenceTier(match.confidence) : undefined
+  // The same guarded tier the sweep acts on (corroboratedTier), so the badge never reads
+  // 'high' on a title-only hit the sweep would have flagged for review.
+  const matchTier =
+    match && release
+      ? corroboratedTier(
+          match.confidence,
+          matchTargetOf(item),
+          release,
+          match.track,
+          catalogNumberMatches(item.meta.catalogNumber, release),
+        )
+      : undefined
   // 'low' is too weak to trust, so it points at nothing — otherwise loading an
   // unrelated release still badges whichever mix shares an incidental word.
   const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined

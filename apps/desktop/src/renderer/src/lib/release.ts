@@ -224,6 +224,50 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
   return 'low'
 }
 
+// Whether the file's artist and the matched track's act read as the same one. Whole-word
+// containment either way (the matching philosophy: word-level yes, fuzzy no): the file's
+// lead artist matches the release's fuller collaboration credit and vice versa, while a
+// partial name ("Mat") never matches a longer one ("Matador"). The glued-spelling fallback
+// compares with spaces removed — that only erases word boundaries, never letters, so
+// "Djmofly" meets "DJ Mofly" but two different names still can't fuse.
+function sameAct(target: string, artists: { name: string }[] | undefined): boolean {
+  const releaseWords = normalize(joinArtists(artists)).split(' ').filter(Boolean)
+  const targetWords = normalize(target).split(' ').filter(Boolean)
+  if (releaseWords.length === 0 || targetWords.length === 0) return false
+  const releaseSet = new Set(releaseWords)
+  const targetSet = new Set(targetWords)
+  return (
+    targetWords.every((w) => releaseSet.has(w)) ||
+    releaseWords.every((w) => targetSet.has(w)) ||
+    targetWords.join('') === releaseWords.join('')
+  )
+}
+
+// Whether a 'high' score is corroborated by a signal independent of the title. The weights
+// renormalise over the signals present, so a release listing no durations scores 1.0 on the
+// title alone — and one-word titles exist on dozens of unrelated releases. Corroboration is
+// durations on both sides (physical evidence the cut is the same, which lets a file with a
+// garbage artist tag still canonicalise unattended), the artist reading as the same act
+// (the per-track credit — compilations name the real act there — counts as much as the
+// release's own), or the file's catalog number naming the pressing. Without one, the match
+// drops to 'review' — flagged for a human glance instead of writing another act's tags into
+// the file. Lower tiers pass through untouched: the guard only gates the unattended tier.
+export function corroboratedTier(
+  confidence: number,
+  target: TrackMatchTarget,
+  rel: Release,
+  track: ReleaseTrack,
+  catalogMatched: boolean,
+): 'high' | 'review' | 'low' {
+  const tier = confidenceTier(confidence)
+  if (tier !== 'high') return tier
+  const durations = target.durationSec !== undefined && parseDuration(track.duration) !== undefined
+  const artistAgrees =
+    !!target.artist &&
+    (sameAct(target.artist, track.artists) || sameAct(target.artist, rel.artists))
+  return durations || artistAgrees || catalogMatched ? 'high' : 'review'
+}
+
 // Folds a catalog number to its bare identity so the same pressing matches across the
 // cosmetic ways it's written: "SR-001", "SR 001" and "sr001" are one number. Discogs' "none"
 // placeholder for white labels is dropped to empty so it never matches another blank.
