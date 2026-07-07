@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.39",
+    "date": "7 de julio de 2026",
+    "title": "Tus estadísticas, y edición en lote más rápida",
+    "items": [
+      {
+        "text": "La pestaña Estadísticas ahora cuenta toda tu actividad: pistas cargadas, escuchadas, analizadas y encontradas en Discogs o Bandcamp, junto a una barra de progreso hacia tu próximo hito de conversiones. Todo a la vista, sin scroll.",
+        "in": "0.39.0"
+      },
+      {
+        "text": "Copiar y pegar metadatos entre pistas ahora incluye también la portada, y ⌘Z lo deshace entero.",
+        "in": "0.39.0"
+      },
+      {
+        "text": "Nuevo comando para numerar las pistas seleccionadas en orden de lista (1, 2, 3…), pensado para álbumes que no están en Discogs.",
+        "in": "0.39.0"
+      }
+    ]
+  },
+  {
     "version": "0.38",
     "date": "7 de julio de 2026",
     "title": "La calidad de conversión, bajo tu control",

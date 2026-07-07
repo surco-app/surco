@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.39",
+    "date": "July 7, 2026",
+    "title": "Your stats, and faster batch editing",
+    "items": [
+      {
+        "text": "The Stats tab now counts all your activity: tracks loaded, played, analyzed and found on Discogs or Bandcamp, next to a progress bar toward your next conversion milestone. All visible at a glance, no scrolling.",
+        "in": "0.39.0"
+      },
+      {
+        "text": "Copying and pasting metadata between tracks now includes the cover too, and ⌘Z undoes the whole thing.",
+        "in": "0.39.0"
+      },
+      {
+        "text": "New command to number the selected tracks in list order (1, 2, 3…), made for albums that are not on Discogs.",
+        "in": "0.39.0"
+      }
+    ]
+  },
+  {
     "version": "0.38",
     "date": "July 7, 2026",
     "title": "Conversion quality, under your control",
