@@ -74,20 +74,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     }
   }
   return (
-    <div className="relative flex min-h-[280px] flex-col items-center justify-center text-center">
-      {anyActivity && (
-        <button
-          type="button"
-          data-testid="stats-share"
-          title={tr('settings.stats.share')}
-          aria-label={tr('settings.stats.share')}
-          onClick={() => void shareImage()}
-          disabled={sharing}
-          className="press absolute right-0 top-0 flex h-7 w-7 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-60"
-        >
-          <Share size={15} aria-hidden="true" />
-        </button>
-      )}
+    <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
         <>
           <p data-testid="stats-count" className="text-5xl font-semibold tabular-nums text-fg">
@@ -148,16 +135,30 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </>
       )}
       <p className="mt-5 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
-      <a
-        data-testid="stats-donate"
-        href={DONATE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="press mt-3 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-      >
-        <Heart size={14} />
-        {tr('settings.stats.donateCta')}
-      </a>
+      <div className="mt-3 flex items-center gap-2">
+        <a
+          data-testid="stats-donate"
+          href={DONATE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+        >
+          <Heart size={14} />
+          {tr('settings.stats.donateCta')}
+        </a>
+        {anyActivity && (
+          <button
+            type="button"
+            data-testid="stats-share"
+            onClick={() => void shareImage()}
+            disabled={sharing}
+            className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-60"
+          >
+            <Share size={14} aria-hidden="true" />
+            {tr('settings.stats.share')}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
