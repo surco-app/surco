@@ -812,7 +812,6 @@ export default function App(): React.JSX.Element {
   const {
     askTrash,
     askDeleteOriginal,
-    askDeleteOriginals,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,
@@ -1061,9 +1060,11 @@ export default function App(): React.JSX.Element {
   // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
   const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
-  // The post-batch cleanup: trash the ORIGINALS of the visible converted rows (the flow
-  // itself narrows to the eligible ones and explains an empty count in its dialog).
-  const onDeleteOriginals = useStableCallback(() => askDeleteOriginals(visibleTracksRef.current))
+  // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
+  // context menu, over the multi-selection or the single selected row.
+  const onTrashSelected = useStableCallback(() =>
+    askTrash(selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []),
+  )
   // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
   // including the ones an active format filter is hiding, unlike the toolbar trash button.
   const onClearEverything = useStableCallback(() => askClearAll(tracksRef.current))
@@ -1282,7 +1283,7 @@ export default function App(): React.JSX.Element {
       reveal: window.api.reveal,
       askClearAll: onClearEverything,
       askTrashSuspects: onTrashSuspects,
-      askDeleteOriginals: onDeleteOriginals,
+      askTrashSelected: onTrashSelected,
       openSettings,
       openFindReplace: overlays.openFindReplace,
       openExport: overlays.openExport,
@@ -1562,8 +1563,8 @@ export default function App(): React.JSX.Element {
                             />
                           </button>
                           {/* The destructive pair sits apart at the far end, mildest first:
-                              clear the list (rows only), then trash the converted originals
-                              (real files to the Trash). */}
+                              clear the list (rows only), then move the selection to the
+                              Trash (real files). */}
                           <span className="flex-1" />
                           <button
                             type="button"
@@ -1577,13 +1578,13 @@ export default function App(): React.JSX.Element {
                           </button>
                           <button
                             type="button"
-                            data-testid="trash-originals"
-                            onClick={onDeleteOriginals}
-                            aria-label={tr('commands.trashOriginals')}
+                            data-testid="trash-selected"
+                            onClick={onTrashSelected}
+                            aria-label={tr('commands.trashSelected')}
                             className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            <Tooltip label={tr('commands.trashOriginals')} />
+                            <Tooltip label={tr('commands.trashSelected')} />
                           </button>
                         </>
                       )}

@@ -12,7 +12,6 @@ import {
   sortTracks,
   sourceFormat,
   suspectTracks,
-  trashableOriginals,
   trackQuality,
   tracksToAnalyze,
 } from './triage'
@@ -485,22 +484,5 @@ describe('suspectTracks', () => {
 
   it('returns nothing when no track has a suspect verdict, so the action stays disabled', () => {
     expect(suspectTracks([t('good', 21000), t('fresh')])).toEqual([])
-  })
-})
-
-describe('trashableOriginals', () => {
-  const t = (id: string, over: Partial<TrackItem> = {}): TrackItem =>
-    ({ id, inputPath: `/${id}.wav`, status: 'idle', ...over }) as TrackItem
-
-  // The bulk "trash the converted originals" must touch exactly the files a finished
-  // conversion left behind: a real output at a different path, whose original is still
-  // on disk. Unconverted rows, in-place exports (input IS the output) and rows whose
-  // original already went to the Trash have nothing safe to delete.
-  it('keeps only converted tracks whose distinct original is still around', () => {
-    const eligible = t('a', { outputPath: '/out/a.aiff' })
-    const unconverted = t('b')
-    const inPlace = t('c', { outputPath: '/c.wav' })
-    const alreadyTrashed = t('d', { outputPath: '/out/d.aiff', originalTrashed: true })
-    expect(trashableOriginals([eligible, unconverted, inPlace, alreadyTrashed])).toEqual([eligible])
   })
 })

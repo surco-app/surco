@@ -79,14 +79,6 @@ export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
   return tracks.filter((t) => matchesQuality(t, 'suspect'))
 }
 
-// The rows whose ORIGINAL file a bulk cleanup may trash: a finished conversion wrote a
-// real output at a different path (an in-place export rewrote the source, so there is
-// nothing distinct to delete) and the original hasn't already gone to the Trash. The
-// per-track predicate mirrors the editor footer's delete-original link (selectionStatus).
-export function trashableOriginals(tracks: TrackItem[]): TrackItem[] {
-  return tracks.filter((t) => !!t.outputPath && t.outputPath !== t.inputPath && !t.originalTrashed)
-}
-
 function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
   if (filter === 'unconverted') return track.status !== 'done'
   return Boolean(track.autoMatched)

@@ -25,21 +25,19 @@ function setup(
     onOldMusicCopyRemoved?: ReturnType<typeof vi.fn>
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn>
     updateTrack?: ReturnType<typeof vi.fn>
-    removeTrack?: ReturnType<typeof vi.fn>
-    reportTrashFailure?: ReturnType<typeof vi.fn>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
   const { result } = renderHook(() =>
     useConfirmFlows({
       settings: null,
-      removeTrack: extra.removeTrack ?? vi.fn(),
+      removeTrack: vi.fn(),
       updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
       deriveTracks: vi.fn(),
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
-      reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
+      reportTrashFailure: vi.fn(),
       onOldMusicCopyRemoved: extra.onOldMusicCopyRemoved ?? vi.fn(),
       reportOldCopyRemoveFailure: extra.reportOldCopyRemoveFailure ?? vi.fn(),
       tracksRef: { current: allTracks },
@@ -162,60 +160,5 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
     })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
-  })
-})
-
-describe('useConfirmFlows trash converted originals', () => {
-  const converted = (id: string): TrackItem => ({
-    ...track(id),
-    status: 'done',
-    outputPath: `/out/${id}.aiff`,
-  })
-
-  // The bulk cleanup after a batch conversion: send every converted row's ORIGINAL to
-  // the OS Trash in one confirmed action, keep the rows (their outputs still exist) and
-  // mark them so the per-track delete-original link retires. Rows with nothing safe to
-  // delete — unconverted, in-place, already trashed — must be skipped, not swept in.
-  it('trashes only the eligible originals and marks the rows, keeping them listed', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
-    ;(window as unknown as { api: unknown }).api = { platform: 'darwin', trashFile }
-    const updateTrack = vi.fn()
-    const removeTrack = vi.fn()
-    const targets = [converted('a'), converted('b'), track('c')]
-    const { flows, opened } = setup(targets, { updateTrack, removeTrack })
-    flows.askDeleteOriginals(targets)
-    expect(opened[0].destructive).toBe(true)
-    expect(opened[0].message).toContain('2')
-    expect(trashFile).not.toHaveBeenCalled()
-    opened[0].onConfirm()
-    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('b', { originalTrashed: true }))
-    expect(trashFile).toHaveBeenCalledTimes(2)
-    expect(trashFile).toHaveBeenCalledWith('/a.wav')
-    expect(trashFile).toHaveBeenCalledWith('/b.wav')
-    expect(removeTrack).not.toHaveBeenCalled()
-  })
-
-  // Clicking the toolbar button with nothing converted yet must explain itself instead
-  // of silently no-opping or offering a confirm that would do nothing.
-  it('disables the confirmation when no visible track has a deletable original', () => {
-    ;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
-    const { flows, opened } = setup([])
-    flows.askDeleteOriginals([track('a')])
-    expect(opened[0].confirmDisabled).toBe(true)
-  })
-
-  // The user confirmed a destructive dialog; each file that could not be trashed must
-  // be said out loud, and its row must keep its delete-original affordance.
-  it('reports every original that failed to reach the trash', async () => {
-    const trashFile = vi.fn().mockRejectedValue(new Error('locked'))
-    ;(window as unknown as { api: unknown }).api = { platform: 'darwin', trashFile }
-    const updateTrack = vi.fn()
-    const reportTrashFailure = vi.fn()
-    const targets = [converted('a')]
-    const { flows, opened } = setup(targets, { updateTrack, reportTrashFailure })
-    flows.askDeleteOriginals(targets)
-    opened[0].onConfirm()
-    await waitFor(() => expect(reportTrashFailure).toHaveBeenCalledWith('Artist - a.wav'))
-    expect(updateTrack).not.toHaveBeenCalled()
   })
 })

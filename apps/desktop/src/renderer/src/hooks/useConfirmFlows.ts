@@ -4,7 +4,6 @@ import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
-import { trashableOriginals } from '../lib/triage'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
@@ -42,7 +41,6 @@ interface Params {
 export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
-  askDeleteOriginals: (targets: TrackItem[]) => void
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[]) => void
   askClearAll: (targets: TrackItem[]) => void
@@ -116,40 +114,6 @@ export function useConfirmFlows({
           // Same as askTrash: the user confirmed a destructive dialog, so a
           // failure must be said out loud, not swallowed.
           .catch(() => reportTrashFailure(track.fileName))
-      },
-    })
-  }
-
-  // The bulk counterpart of askDeleteOriginal, for cleaning up after a batch: send every
-  // converted row's ORIGINAL to the OS Trash in one confirmed action. Rows stay (their
-  // converted outputs still exist) and get marked originalTrashed so the footer link
-  // retires; rows with nothing safe to delete — unconverted, in-place, already trashed —
-  // are skipped here rather than trusted to the caller. With none eligible the dialog
-  // still opens and says why, with its confirm disabled, so the button always answers.
-  function askDeleteOriginals(targets: TrackItem[]): void {
-    const eligible = trashableOriginals(targets)
-    const isWin = window.api.platform === 'win32'
-    const count = eligible.length
-    openConfirm({
-      title: tr('confirm.deleteOriginalsTitle'),
-      message:
-        count > 0
-          ? tr(isWin ? 'confirm.deleteOriginalsMessageWin' : 'confirm.deleteOriginalsMessage', {
-              count,
-            })
-          : tr('confirm.deleteOriginalsNone'),
-      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
-      confirmDisabled: count === 0,
-      destructive: true,
-      onConfirm: () => {
-        for (const track of eligible) {
-          window.api
-            .trashFile(track.inputPath)
-            .then(() => updateTrack(track.id, { originalTrashed: true }))
-            // Same as askTrash: the user confirmed a destructive dialog, so a
-            // failure must be said out loud, not swallowed.
-            .catch(() => reportTrashFailure(track.fileName))
-        }
       },
     })
   }
@@ -269,7 +233,6 @@ export function useConfirmFlows({
   return {
     askTrash,
     askDeleteOriginal,
-    askDeleteOriginals,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,

@@ -4,7 +4,7 @@ import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
-import { suspectTracks, trashableOriginals } from './triage'
+import { suspectTracks } from './triage'
 
 export interface Command {
   id: string
@@ -145,9 +145,9 @@ export interface CommandDeps {
   // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
   // "clean the fakes" that turns the quality sweep into an action, not just a filter.
   askTrashSuspects: () => void
-  // Sends every converted visible row's ORIGINAL to the OS Trash after a confirm — the
-  // post-batch cleanup for "convert, then drop the sources".
-  askDeleteOriginals: () => void
+  // Sends the selected tracks' files to the OS Trash after a confirm — the palette/toolbar
+  // counterpart of the context menu's "Move to Trash".
+  askTrashSelected: () => void
   openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
   openFindReplace: () => void
   openExport: () => void
@@ -215,7 +215,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     reveal,
     askClearAll,
     askTrashSuspects,
-    askDeleteOriginals,
+    askTrashSelected,
     openSettings,
     openFindReplace,
     openExport,
@@ -442,14 +442,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: askTrashSuspects,
     },
     {
-      // The post-batch cleanup: trashes every converted visible row's ORIGINAL after a
-      // confirm, keeping the rows and their outputs. Enabled once at least one visible
-      // track left a distinct converted output whose original is still around.
-      id: 'trash-originals',
-      title: tr('commands.trashOriginals'),
-      hint: hintFor('trash-originals'),
-      enabled: trashableOriginals(visibleTracks).length > 0,
-      run: askDeleteOriginals,
+      // Sends the selection's files to the OS Trash after a confirm — the same flow as the
+      // context menu's "Move to Trash", surfaced where the keyboard can reach it.
+      id: 'trash-selected',
+      title: tr('commands.trashSelected'),
+      hint: hintFor('trash-selected'),
+      enabled: selectedTracksCount > 0 || !!selected,
+      run: askTrashSelected,
     },
     {
       // Toggles the Discogs auto-match sweep. Needs a user token and at least one unmatched
