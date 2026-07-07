@@ -104,6 +104,10 @@ async function runSearch(
   const key = searchKey(cacheId, opts.format, perPage)
   const cached = searchCache.get(key)
   if (cached) return cached
+  // Pacing lives with the request itself: the token is taken here, after the cache
+  // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)
+  // never queues behind the limiter for a call it won't make.
+  await discogsLimiter.acquire(priority)
   // The API's `format` param filters server-side, so the whole page comes back in the
   // wanted format instead of a mix we'd thin out afterwards.
   const formatParam = opts.format ? `&format=${encodeURIComponent(opts.format)}` : ''
@@ -212,14 +216,12 @@ export async function search(
       // catalog's own fields before the noisier free-text candidates. It's brittle (a
       // mistyped tag returns nothing), so an empty result falls through to free-text.
       if (hints?.artist?.trim() && hints?.title?.trim()) {
-        await discogsLimiter.acquire(priority)
         const structured = keep(
           await searchStructured(hints.artist.trim(), hints.title.trim(), token, opts, priority),
         )
         if (structured.length) return structured
         // Album tracks: the tag's title names a track, not a release, so try the
         // tracklist field next — still the catalog's own fields, before free text.
-        await discogsLimiter.acquire(priority)
         const byTrack = keep(
           await searchTracklist(hints.artist.trim(), hints.title.trim(), token, opts, priority),
         )
@@ -227,7 +229,6 @@ export async function search(
       }
       let results: SearchResult[] = []
       for (const candidate of buildSearchCandidates(query, hints)) {
-        if (!hasCachedSearch(candidate, opts)) await discogsLimiter.acquire(priority)
         const raw = await searchOnce(candidate, token, opts, priority)
         results = keep(raw)
         if (results.length) break

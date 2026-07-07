@@ -164,6 +164,19 @@ describe('search', () => {
     expect(third).toContain('&q=')
   })
 
+  // The limiter token is spent by the request, not the attempt: a repeat of an
+  // already-cached structured query makes no network call, so it must not queue
+  // behind the rate limiter either — the free-text candidates already worked this
+  // way, and the structured shapes must too.
+  it('spends no limiter token on a cached structured query', async () => {
+    mockFetch([{ id: 31 }])
+    const hints = { artist: 'Autechre', title: 'Amber' }
+    await search('autechre amber', 'tok', undefined, hints)
+    vi.mocked(discogsLimiter.acquire).mockClear()
+    await search('autechre amber', 'tok', undefined, hints)
+    expect(discogsLimiter.acquire).not.toHaveBeenCalled()
+  })
+
   // No hints (a raw filename search) means there's nothing to fill the structured
   // fields, so it must go straight to free-text as before — no wasted extra call.
   it('skips the structured query and uses free-text when hints are missing', async () => {
