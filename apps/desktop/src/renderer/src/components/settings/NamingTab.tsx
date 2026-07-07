@@ -10,7 +10,9 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { Tooltip } from '../Tooltip'
 
 // A representative track so the filename preview shows real-looking output
-// instead of empty braces, and every token has something to render.
+// instead of empty braces, and every token has something to render. All values
+// belong to the same fictional Dj Vixent release so the preview reads as ONE
+// coherent track, never a mash-up of unrelated names.
 const SAMPLE_META: TrackMetadata = {
   title: 'Take me into the sky',
   artist: 'Dj Vixent',
@@ -26,12 +28,12 @@ const SAMPLE_META: TrackMetadata = {
   key: '8A',
   publisher: 'Surco',
   catalogNumber: 'SRC001',
-  remixArtist: 'Dj Breeze',
+  remixArtist: 'Dj Vixent',
   discogsReleaseId: '2406512',
   rating: '5',
-  composer: 'V. Ferrer',
+  composer: 'Dj Vixent',
   isrc: 'ES-SRC-26-00031',
-  mixName: 'Original Mix',
+  mixName: 'Original Remix',
   originalYear: '1998',
   compilation: '1',
 }
