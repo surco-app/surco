@@ -1206,6 +1206,17 @@ export default function App(): React.JSX.Element {
     const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracksUndoable(patches)
   })
+  // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
+  // rips with no Discogs release to take positions from. Plain digits on purpose: the
+  // zero-pad hygiene pass formats them at write time like every other track number.
+  const numberTracks = useStableCallback(() => {
+    const targets = bulkTracksRef.current
+    if (targets.length < 2) return
+    deriveTracksUndoable(
+      targets.map((t, i) => ({ id: t.id, meta: { trackNumber: String(i + 1) } })),
+    )
+    setNotice(tr('notices.numberedTracks', { count: targets.length }))
+  })
   // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
   // silence would leave the user unsure whether anything was restored.
   const undoMeta = useStableCallback(() => {
@@ -1316,6 +1327,7 @@ export default function App(): React.JSX.Element {
       toggleTheme,
       clearMeta,
       deriveTags,
+      numberTracks,
       undoMeta,
       canUndoMeta: metaUndo.canUndo,
       acceptReview,

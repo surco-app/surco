@@ -86,6 +86,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     toggleTheme: () => {},
     clearMeta: () => {},
     deriveTags: () => {},
+    numberTracks: () => {},
     undoMeta: () => {},
     canUndoMeta: () => false,
     acceptReview: () => {},
@@ -429,6 +430,20 @@ describe('buildCommands editor + theme entries', () => {
     derive.run()
     expect(clearMeta).toHaveBeenCalledOnce()
     expect(deriveTags).toHaveBeenCalledOnce()
+  })
+
+  // Numbering stamps 1..N over the bulk scope's track numbers; with a single track
+  // in scope there is no order to write, so the palette greys the entry out.
+  it('gates number-tracks on a multi-track scope and runs it', () => {
+    const numberTracks = vi.fn()
+    const single = makeDeps({ numberTracks, bulkTracks: [track()] })
+    expect(commandById(single, 'number-tracks').enabled).toBe(false)
+
+    const many = makeDeps({ numberTracks, bulkTracks: [track(), track({ id: 't2' })] })
+    const command = commandById(many, 'number-tracks')
+    expect(command.enabled).toBe(true)
+    command.run()
+    expect(numberTracks).toHaveBeenCalledOnce()
   })
 
   // Undo is only offered while there is something recorded to roll back — a dead entry

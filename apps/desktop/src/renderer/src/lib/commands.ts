@@ -165,6 +165,8 @@ export interface CommandDeps {
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
   deriveTags: () => void
+  // Stamps 1..N (list order) onto the bulk scope's track numbers.
+  numberTracks: () => void
   // Restores the tags the last batch operation (fill-all, find & replace, clear, paste,
   // derive) overwrote. Read lazily so the palette entry reflects the stack at open time.
   undoMeta: () => void
@@ -231,6 +233,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleTheme,
     clearMeta,
     deriveTags,
+    numberTracks,
     undoMeta,
     canUndoMeta,
     acceptReview,
@@ -272,6 +275,16 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('derive-tags'),
       enabled: !!selected,
       run: deriveTags,
+    },
+    {
+      // Writes the bulk scope's list order into the track numbers (1..N) — for albums
+      // with no Discogs release to take positions from. Needs at least two tracks in
+      // scope: numbering a single row has no order to express.
+      id: 'number-tracks',
+      title: tr('commands.numberTracks'),
+      hint: hintFor('number-tracks'),
+      enabled: bulkTracks.length > 1,
+      run: numberTracks,
     },
     {
       // Empties every metadata field on the current selection — the Editor's Eraser button.

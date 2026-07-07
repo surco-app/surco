@@ -1080,6 +1080,37 @@ describe('App command palette', () => {
   })
 })
 
+describe('App track numbering', () => {
+  // Rips with no Discogs release carry no positions; numbering stamps the list order
+  // as 1..N so the album still exports in the right sequence — and ⌘Z takes it back.
+  it('numbers the visible tracks in list order from the palette', async () => {
+    // The fixture's default field set hides Track No.; the assertion reads it. Both
+    // mocks must agree: a launch-time save's response replaces the settings state.
+    const fields = settings({ visibleFields: ['title', 'artist', 'trackNumber'] })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(fields),
+      saveSettings: vi.fn().mockResolvedValue(fields),
+      readTags: vi.fn().mockResolvedValue({}),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'Number' } })
+    fireEvent.click(screen.getByTestId('palette-item'))
+
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue('1'))
+    fireEvent.click(rows[1])
+    await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue('2'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue(''))
+  })
+})
+
 describe('App settings button', () => {
   // The header button wires onClick straight to the opener, so React hands it the click
   // event. The opener used to read that event as its tab argument, leaving the modal on a
