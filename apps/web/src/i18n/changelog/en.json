@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.38",
+    "date": "July 7, 2026",
+    "title": "Conversion quality, under your control",
+    "items": [
+      {
+        "text": "Choose the quality of every conversion: MP3 bitrate (320 down to 128 kbps, or V0/V2 VBR), bit depth, sample rate and FLAC compression level. Everything defaults to matching the original — maximum fidelity without touching a thing.",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Conversions keep the source's exact bit depth: a 44.1/16 file no longer comes out 24-bit when normalizing, reducing to 16-bit applies dither, and an MP3 converted to WAV or AIFF yields integer PCM every player accepts.",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Conversion settings now live in two tabs: Conversion (format and quality) and Output (folder, Apple Music, Engine DJ).",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Send the originals of already-converted tracks to the trash in one action; bulk actions work on your multi-selection when you have one.",
+        "in": "0.38.0"
+      }
+    ]
+  },
+  {
     "version": "0.37",
     "date": "July 7, 2026",
     "title": "Surco in five languages, and matching you can trust",

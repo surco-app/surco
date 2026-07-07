@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.38",
+    "date": "7 de julio de 2026",
+    "title": "La calidad de conversión, bajo tu control",
+    "items": [
+      {
+        "text": "Elige la calidad de cada conversión: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y nivel de compresión FLAC. Por defecto todo queda como el original: máxima fidelidad sin tocar nada.",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Las conversiones respetan la profundidad de bits exacta del origen: un 44,1/16 ya no sale a 24 bits al normalizar, reducir a 16 bits aplica dither, y un MP3 convertido a WAV o AIFF produce PCM entero que cualquier reproductor acepta.",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Los ajustes de conversión se reparten ahora en dos pestañas: Conversión (formato y calidad) y Destino (carpeta, Apple Music, Engine DJ).",
+        "in": "0.38.0"
+      },
+      {
+        "text": "Manda los originales de las pistas ya convertidas a la papelera con una sola acción; las acciones en bloque actúan sobre tu selección múltiple cuando la hay.",
+        "in": "0.38.0"
+      }
+    ]
+  },
+  {
     "version": "0.37",
     "date": "7 de julio de 2026",
     "title": "Surco en cinco idiomas y un emparejado más de fiar",
