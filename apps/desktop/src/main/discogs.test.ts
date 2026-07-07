@@ -164,6 +164,21 @@ describe('search', () => {
     expect(third).toContain('&q=')
   })
 
+  // Raw tag values sabotage the structured fields: Discogs files a "pres." alias under the
+  // lead act, and catalogs omit the "(Original Mix)" marker — an exact-field query carrying
+  // either returns empty and burns the precise attempt. Clean both with the same helpers
+  // the free-text candidates already use.
+  it('cleans a presents-alias and an original-mix marker off the structured hints', async () => {
+    const fetchMock = mockFetch([{ id: 51 }])
+    await search('brian cross shine', 'tok', undefined, {
+      artist: 'Brian Cross pres. Fat Synth',
+      title: 'Shine (Original Mix)',
+    })
+    const url = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(url.searchParams.get('artist')).toBe('Brian Cross')
+    expect(url.searchParams.get('release_title')).toBe('Shine')
+  })
+
   // The limiter token is spent by the request, not the attempt: a repeat of an
   // already-cached structured query makes no network call, so it must not queue
   // behind the rate limiter either — the free-text candidates already worked this

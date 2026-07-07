@@ -1,3 +1,4 @@
+import { dropOriginalMarker, dropPresentsAlias } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { discogsLimiter } from './discogsLimiter'
@@ -227,16 +228,17 @@ export async function search(
       // Precise first: when the tag gives both an artist and a title, match on the
       // catalog's own fields before the noisier free-text candidates. It's brittle (a
       // mistyped tag returns nothing), so an empty result falls through to free-text.
-      if (hints?.artist?.trim() && hints?.title?.trim()) {
-        const structured = keep(
-          await searchStructured(hints.artist.trim(), hints.title.trim(), token, opts, priority),
-        )
+      // Raw tag values sabotage exact fields, so clean them the way the free-text
+      // candidates already do: Discogs files a "pres." alias under the lead act, and
+      // catalogs omit the "(Original Mix)" marker the file's title carries.
+      const artist = dropPresentsAlias(hints?.artist?.trim() ?? '')
+      const title = dropOriginalMarker(hints?.title?.trim() ?? '')
+      if (artist && title) {
+        const structured = keep(await searchStructured(artist, title, token, opts, priority))
         if (structured.length) return structured
         // Album tracks: the tag's title names a track, not a release, so try the
         // tracklist field next — still the catalog's own fields, before free text.
-        const byTrack = keep(
-          await searchTracklist(hints.artist.trim(), hints.title.trim(), token, opts, priority),
-        )
+        const byTrack = keep(await searchTracklist(artist, title, token, opts, priority))
         if (byTrack.length) return byTrack
       }
       let results: SearchResult[] = []
