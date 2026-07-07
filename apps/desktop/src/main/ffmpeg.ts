@@ -19,6 +19,7 @@ import type {
   TrackProperties,
   WaveformResult,
 } from '../shared/types'
+import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
 import {
   BAND_WIDTH_HZ,
@@ -701,6 +702,10 @@ export async function planConversion(
 // volumedetect + a constant gain for peak. Returns null (no filter) for mode
 // 'none' and whenever the measurement can't be parsed, so a measurement failure
 // degrades to a plain conversion instead of aborting it.
+// The measurement decodes the whole file — as long again as the conversion — so
+// it is memoized like the other analyses (path + mtime key, null never pinned):
+// re-converting an unchanged track pays for it once. Only the measurement is
+// cached, never the filter string, which also depends on the output sample rate.
 export async function normalizeFilter(
   input: string,
   cfg: NormalizeConfig,
@@ -709,17 +714,29 @@ export async function normalizeFilter(
   if (cfg.mode === 'none') return null
   if (cfg.mode === 'peak') {
     // Peak mode is a constant-gain `volume` filter, which doesn't resample, so it
-    // needs no rate restoration.
-    const { stderr } = await run(ffmpegPath, volumedetectArgs(input), {
-      maxBuffer: 1024 * 1024 * 16,
+    // needs no rate restoration. The measured peak is a fact about the file alone,
+    // so one namespace serves every target.
+    const max = await cachedAnalysis('volumedetect-v1', input, async () => {
+      const { stderr } = await run(ffmpegPath, volumedetectArgs(input), {
+        maxBuffer: 1024 * 1024 * 16,
+      })
+      return parseMaxVolume(stderr)
     })
-    const max = parseMaxVolume(stderr)
     return max === null ? null : volumeFilter(peakGainDb(cfg.peakDb, max))
   }
-  const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg), {
-    maxBuffer: 1024 * 1024 * 16,
-  })
-  const measured = parseLoudnorm(stderr)
+  // The requested I/TP ride in the measurement filter and target_offset depends on
+  // them, so the key carries both — same file, different target re-measures. The
+  // fixed LRA is baked into the version suffix: bump it if LOUDNORM_LRA changes.
+  const measured = await cachedAnalysis(
+    `loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}`,
+    input,
+    async () => {
+      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg), {
+        maxBuffer: 1024 * 1024 * 16,
+      })
+      return parseLoudnorm(stderr)
+    },
+  )
   if (!measured) return null
   // A reachable target normalizes linearly (dynamics intact); a target too loud for a
   // constant gain (the club preset on most material) would otherwise land short, so

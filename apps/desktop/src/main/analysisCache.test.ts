@@ -91,6 +91,24 @@ describe('cachedAnalysis', () => {
     expect(compute).toHaveBeenCalledTimes(2)
   })
 
+  // The cache dir comes from app.getPath, which unit tests of the conversion
+  // pipeline stub out (and Electron could conceivably fail) — the documented
+  // contract is that every failure path degrades to a live compute.
+  it('computes without caching when the cache location cannot be resolved', async () => {
+    const file = await makeFile()
+    const compute = vi.fn().mockResolvedValue({ v: 7 })
+    const spy = vi.spyOn(app, 'getPath').mockImplementation(() => {
+      throw new Error('no userData')
+    })
+    try {
+      await expect(cachedAnalysis('demo', file, compute)).resolves.toEqual({ v: 7 })
+      await expect(cachedAnalysis('demo', file, compute)).resolves.toEqual({ v: 7 })
+      expect(compute).toHaveBeenCalledTimes(2)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   // A failed measurement (null) must not be pinned: the next request should retry
   // rather than serve the failure forever.
   it('does not cache a null result, so a later attempt retries', async () => {
