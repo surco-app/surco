@@ -42,6 +42,7 @@ import {
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
+import { matchStatKey } from '../lib/stats'
 import { stripParentheticals } from '../lib/textClean'
 import { useAppSettings } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
@@ -425,6 +426,7 @@ export const Editor = memo(function Editor({
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
     })
+    window.api.recordStat(matchStatKey(release.provider))
     // Applying a release is the cue to verify the tags, so move focus to the first field:
     // the keyboard flow continues ⌘2 → pick → Enter → edit without a manual ⌘3. The field's
     // input node persists across the re-render (stable key), so focusing it now sticks.

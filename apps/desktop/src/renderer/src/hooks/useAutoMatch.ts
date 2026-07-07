@@ -12,6 +12,7 @@ import { mapWithConcurrency } from '../lib/concurrency'
 import { keepCoverArg } from '../lib/coverSource'
 import { fetchRelease } from '../lib/fetchRelease'
 import { buildReleaseMeta } from '../lib/release'
+import { matchStatKey } from '../lib/stats'
 import type { TrackItem } from '../types'
 
 // Auto-match fires a Discogs search plus release loads per track, so the sweep stays
@@ -148,6 +149,7 @@ export function useAutoMatch({
         matchConfidence: m.confidence,
         ...(resolvedOwned ? { inLibraryResolved: true } : {}),
       })
+      window.api.recordStat(matchStatKey(m.release.provider))
     },
     [searchApiAt, updateTrack, tracksRef, libraryIndexRef],
   )

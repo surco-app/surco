@@ -8,6 +8,7 @@ import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import { matchStatKey } from '../lib/stats'
 import type { TrackItem } from '../types'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
@@ -82,6 +83,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
     })
     if (!patches.length) return
     onApply(patches)
+    window.api.recordStat(matchStatKey(release.provider), patches.length)
     setJustApplied(true)
   }
 

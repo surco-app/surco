@@ -96,6 +96,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     commandUsage: {},
     hasSeenOnboarding: true,
     conversionCount: 0,
+    stats: { imported: 0, listened: 0, analyzed: 0, discogsMatches: 0, bandcampMatches: 0 },
     donateNudgeDismissed: false,
     donateNudgeLastShown: '',
     // Matches setApi's version so unrelated tests never trigger the launch stamp.
@@ -152,6 +153,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
     saveSettings: vi.fn().mockResolvedValue(settings()),
+    recordStat: vi.fn(),
     getConfigDir: vi.fn().mockResolvedValue(null),
     defaultConfigDir: vi.fn().mockResolvedValue('/Users/test/Library/Application Support/Surco'),
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),

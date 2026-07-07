@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Release, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 
 afterEach(cleanup)
+
+beforeEach(() => {
+  ;(window as unknown as { api: unknown }).api = { recordStat: vi.fn() }
+})
 
 const emptyMeta: TrackMetadata = {
   title: '',

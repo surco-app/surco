@@ -12,6 +12,7 @@ import type {
   CoverRead,
   DockIconFrames,
   KeyResult,
+  LifetimeStats,
   LoudnessResult,
   MetaRead,
   ProcessJob,
@@ -44,6 +45,8 @@ export interface Api {
   saveLastSession: (paths: string[]) => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
+  // Fire-and-forget bump of one lifetime tally (Stats tab); main validates and persists.
+  recordStat: (key: keyof LifetimeStats, by?: number) => void
   getConfigDir: () => Promise<string | null>
   // The app-default settings location, shown in the field when no custom folder is set.
   defaultConfigDir: () => Promise<string>

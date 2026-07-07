@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { MANUAL_SECONDS_PER_CONVERSION, formatTimeSaved, timeSavedSeconds } from './stats'
+import {
+  MANUAL_SECONDS_PER_CONVERSION,
+  formatTimeSaved,
+  matchStatKey,
+  nextMilestone,
+  timeSavedSeconds,
+} from './stats'
 
 describe('timeSavedSeconds', () => {
   it('credits the per-conversion manual estimate for every conversion', () => {
@@ -29,5 +35,28 @@ describe('formatTimeSaved', () => {
 
   it('drops the hours below an hour so short tallies read cleanly', () => {
     expect(formatTimeSaved(40 * 60)).toBe('40 min')
+  })
+})
+
+describe('nextMilestone', () => {
+  // The milestone bar exists to give the counter a goal: it must always point at a
+  // target strictly ahead, so hitting one immediately aims at the next.
+  it('returns the first milestone strictly above the count', () => {
+    expect(nextMilestone(0)).toBe(10)
+    expect(nextMilestone(385)).toBe(500)
+    expect(nextMilestone(500)).toBe(1000)
+  })
+
+  it('runs out quietly past the last milestone instead of inventing targets', () => {
+    expect(nextMilestone(999999)).toBeNull()
+  })
+})
+
+describe('matchStatKey', () => {
+  // The provider decides which lifetime tally a match apply bumps; a wrong mapping
+  // would silently credit Discogs with Bandcamp finds.
+  it('maps each provider to its own counter', () => {
+    expect(matchStatKey('discogs')).toBe('discogsMatches')
+    expect(matchStatKey('bandcamp')).toBe('bandcampMatches')
   })
 })

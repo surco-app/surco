@@ -455,6 +455,12 @@
     },
     "stats": {
       "count": "conversiones",
+      "milestone": "Próximo hito: {{milestone}} conversiones — faltan {{remaining}}",
+      "imported": "Pistas cargadas",
+      "listened": "Pistas escuchadas",
+      "analyzed": "Pistas analizadas",
+      "discogsMatches": "Encontradas en Discogs",
+      "bandcampMatches": "Encontradas en Bandcamp",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
       "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",

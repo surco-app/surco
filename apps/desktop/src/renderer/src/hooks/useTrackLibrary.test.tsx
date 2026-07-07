@@ -21,6 +21,7 @@ function setApi(over: Record<string, unknown> = {}): { fire: FoldersChangedCb } 
     }),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn().mockResolvedValue([]),
+    recordStat: vi.fn(),
     ...over,
   }
   return { fire: (root, files) => cb(root, files) }

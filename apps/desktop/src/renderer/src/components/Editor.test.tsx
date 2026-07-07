@@ -49,6 +49,7 @@ beforeEach(() => {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
     reveal: vi.fn(),
+    recordStat: vi.fn(),
     // The Properties effect probes once per single track on mount; resolve to null
     // so tests that don't care about it don't hit an undefined bridge method.
     properties: vi.fn().mockResolvedValue(null),
@@ -1429,6 +1430,7 @@ describe('Editor Discogs apply', () => {
   function withDiscogs(): { getRelease: ReturnType<typeof vi.fn> } {
     const getRelease = vi.fn().mockResolvedValue(release)
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1604,6 +1606,7 @@ describe('Editor Discogs apply', () => {
       images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }],
     }
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1712,6 +1715,7 @@ describe('Editor Discogs apply', () => {
       ],
     }
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1776,6 +1780,7 @@ describe('Editor track preselection', () => {
 
   function withDiscogs(): void {
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -2029,6 +2034,7 @@ describe('Editor Apple Music library badge', () => {
 
   function setApi(platform: string): void {
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform,
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -2139,6 +2145,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
 
   function setApi(): void {
     ;(window as unknown as { api: unknown }).api = {
+      recordStat: vi.fn(),
       platform: 'darwin',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),

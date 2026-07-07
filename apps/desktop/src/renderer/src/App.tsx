@@ -78,6 +78,7 @@ import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
+import { matchStatKey } from './lib/stats'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { changelogReleases } from './lib/changelog'
 import { buildCommands, type Command, runCommand } from './lib/commands'
@@ -1205,7 +1206,10 @@ export default function App(): React.JSX.Element {
   const acceptReview = useStableCallback(() => {
     if (!selected) return
     const patch = acceptReviewPatch(selected)
-    if (patch) updateTrack(selected.id, patch)
+    if (patch && selected.reviewMatch) {
+      updateTrack(selected.id, patch)
+      window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
+    }
   })
   // Rotates system → light → dark and persists it, the palette twin of the Settings control.
   const toggleTheme = useStableCallback(() => {

@@ -65,6 +65,7 @@ const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,
+  stats: { imported: 0, listened: 0, analyzed: 0, discogsMatches: 0, bandcampMatches: 0 },
   commandUsage: {},
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
@@ -82,6 +83,7 @@ const LOCAL_KEYS = [
   'engineLibraryDir',
   'hasSeenOnboarding',
   'conversionCount',
+  'stats',
   'commandUsage',
   // Each machine updates on its own schedule, so "which changelog did I already
   // see" only means something locally.
@@ -195,4 +197,14 @@ export function setConfigDir(dir: string | null): Settings {
 export function recordConversion(): void {
   const cur = getSettings()
   saveSettings({ conversionCount: cur.conversionCount + 1 })
+}
+
+// The lifetime tallies next to conversionCount. `by` crosses the IPC boundary from
+// the renderer, so it is validated here: anything but a positive finite number is
+// dropped rather than persisted into the tally.
+export function recordStat(key: keyof Settings['stats'], by = 1): void {
+  const n = Math.floor(by)
+  if (!Number.isFinite(n) || n <= 0) return
+  const cur = getSettings()
+  saveSettings({ stats: { ...cur.stats, [key]: cur.stats[key] + n } })
 }

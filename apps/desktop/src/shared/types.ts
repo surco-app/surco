@@ -171,6 +171,10 @@ export interface Settings {
   shortcutOverrides: Record<string, Chord>
   hasSeenOnboarding: boolean
   conversionCount: number
+  // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
+  // only in the main process (stats:record fire-and-forget), so near-simultaneous
+  // events from the renderer can't clobber each other's read-modify-write.
+  stats: LifetimeStats
   // How many times each command palette entry has been run (command id → count), so the
   // palette can float a user's most-used commands to the top of a filtered list.
   commandUsage: Record<string, number>
@@ -181,6 +185,14 @@ export interface Settings {
   // The app version whose changelog the user last saw ('' = never stamped), which
   // lib/whatsNew gates the post-update "what's new" popup on.
   lastSeenChangelogVersion: string
+}
+
+export interface LifetimeStats {
+  imported: number
+  listened: number
+  analyzed: number
+  discogsMatches: number
+  bandcampMatches: number
 }
 
 export interface TrackMetadata {

@@ -22,6 +22,7 @@ import {
   readTags,
   tagsFromProbe,
 } from './ffmpeg'
+import { recordStat } from './settings'
 
 // Reports one quality probe to the activity log, grouped under its track so a sweep's
 // six probes per file fold onto a single "Analizando «file»" row rather than flooding
@@ -37,8 +38,8 @@ function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Pr
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
 // (spectrogram, loudness, properties, bpm, key, waveform). Self-contained — these handlers
-// depend only on the ffmpeg helpers and the analysis cache/limiter, never on any window or
-// session state — so they live apart from the stateful handlers in index.ts.
+// depend only on the ffmpeg helpers, the analysis cache/limiter and the stats tally, never
+// on any window or session state — so they live apart from the stateful handlers in index.ts.
 export function registerAudioIpc(): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
@@ -97,7 +98,7 @@ export function registerAudioIpc(): void {
           'spectrogram-mono-v13',
           inputPath,
           () =>
-            probe('activity.probeSpectrogram', inputPath, () =>
+            probe('activity.probeSpectrogram', inputPath, async () => {
               // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
               // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
               // quality sweep then put ~3× the intended decodes on the cores. Instead each
@@ -105,13 +106,18 @@ export function registerAudioIpc(): void {
               // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
               // overlap when slots are free (no single-track latency hit) and none waits on a
               // slot it's also holding (no deadlock).
-              buildSpectrum(inputPath, {
+              const built = await buildSpectrum(inputPath, {
                 probe: probeAudio,
                 spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), priority),
                 cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), priority),
                 shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), priority),
-              }),
-            ),
+              })
+              // This producer only runs on a cache miss (disk cache hits return above, and
+              // the renderer's React Query cache dedups repeats), so bumping here counts
+              // each track's quality analysis exactly once for the Stats tab.
+              recordStat('analyzed')
+              return built
+            }),
           (b) => b.cutoffError === undefined,
         )
         // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's

@@ -26,7 +26,14 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { getConfigDir, getSettings, recordConversion, saveSettings, setConfigDir } from './settings'
+import {
+  getConfigDir,
+  getSettings,
+  recordConversion,
+  recordStat,
+  saveSettings,
+  setConfigDir,
+} from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -38,6 +45,29 @@ describe('recordConversion', () => {
     recordConversion()
     recordConversion()
     expect(getSettings().conversionCount).toBe(2)
+  })
+})
+
+describe('recordStat', () => {
+  // The lifetime tallies feed the same Stats tab: each bump must persist, respect
+  // the batch size (a 30-file drop is one call), and leave the other counters alone.
+  it('increments one counter by the given amount without touching the rest', () => {
+    expect(getSettings().stats.imported).toBe(0)
+    recordStat('imported', 30)
+    recordStat('listened')
+    expect(getSettings().stats.imported).toBe(30)
+    expect(getSettings().stats.listened).toBe(1)
+    expect(getSettings().stats.analyzed).toBe(0)
+  })
+
+  // The channel is exposed to the renderer, so a malformed amount must be dropped
+  // rather than corrupt the persisted tally into NaN or wind it backwards.
+  it('ignores non-positive and non-finite amounts', () => {
+    const before = getSettings().stats.listened
+    recordStat('listened', 0)
+    recordStat('listened', -5)
+    recordStat('listened', Number.NaN)
+    expect(getSettings().stats.listened).toBe(before)
   })
 })
 
@@ -89,6 +119,7 @@ describe('configurable settings folder', () => {
       'outputDir',
       'hasSeenOnboarding',
       'conversionCount',
+      'stats',
     ]) {
       expect(synced).not.toHaveProperty(key)
     }

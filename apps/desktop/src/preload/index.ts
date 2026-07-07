@@ -38,6 +38,7 @@ const api: Api = {
   saveLastSession: (paths: string[]): Promise<void> => ipcRenderer.invoke('session:set', paths),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
+  recordStat: (key, by) => ipcRenderer.send('stats:record', key, by),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
   defaultConfigDir: (): Promise<string> => ipcRenderer.invoke('settings:defaultConfigDir'),
   setConfigDir: (dir: string | null) => ipcRenderer.invoke('settings:setConfigDir', dir),

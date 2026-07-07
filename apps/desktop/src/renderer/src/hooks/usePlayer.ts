@@ -54,6 +54,9 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
     if (!audio) return
+    // Only a genuinely different track counts as a new listen for the lifetime tally:
+    // the in-place-export watcher below restarts the SAME track from its new path.
+    if (track.id !== playingIdRef.current) window.api.recordStat('listened')
     // The custom surco:// scheme streams the file from the main process, so the
     // <audio> element seeks through it without buffering the whole track in memory.
     audio.src = mediaUrl(track.inputPath)

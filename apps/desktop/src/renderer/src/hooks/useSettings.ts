@@ -52,17 +52,20 @@ export function useSettings({
       .catch(() => latest.current.onLoadError())
   }, [latest])
 
-  // Conversions bump the persisted count from the main process, so re-read settings
-  // each time the Settings modal opens to keep the Stats tab current within a session.
-  // Only the count is merged in — never the whole object: a save or config-dir adoption
-  // can land while this read is still in flight, and replacing everything would revert
-  // those just-applied fields. The cancel flag still drops it once the modal closes.
+  // Conversions and the lifetime tallies bump their persisted counts from the main
+  // process, so re-read settings each time the Settings modal opens to keep the Stats
+  // tab current within a session. Only the counters are merged in — never the whole
+  // object: a save or config-dir adoption can land while this read is still in flight,
+  // and replacing everything would revert those just-applied fields. The cancel flag
+  // still drops it once the modal closes.
   useEffect(() => {
     if (!settingsOpen) return
     let cancelled = false
     window.api.getSettings().then((s) => {
       if (!cancelled) {
-        setSettings((cur) => (cur ? { ...cur, conversionCount: s.conversionCount } : s))
+        setSettings((cur) =>
+          cur ? { ...cur, conversionCount: s.conversionCount, stats: s.stats } : s,
+        )
       }
     })
     return () => {

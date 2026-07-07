@@ -61,6 +61,7 @@ import {
   getConfigDir,
   getSettings,
   recordConversion,
+  recordStat,
   saveSettings,
   setConfigDir,
 } from './settings'
@@ -491,6 +492,22 @@ function registerIpc(): void {
       if (win) buildAppMenu(win)
     }
     return next
+  })
+
+  // Fire-and-forget lifetime-tally bumps from the renderer (imports, listens, match
+  // applies). The key is allowlisted here — this channel takes renderer input, so an
+  // arbitrary string must not reach the settings file as a new property.
+  ipcMain.on('stats:record', (_e, key: unknown, by?: unknown) => {
+    const keys: readonly string[] = [
+      'imported',
+      'listened',
+      'analyzed',
+      'discogsMatches',
+      'bandcampMatches',
+    ] satisfies (keyof Settings['stats'])[]
+    if (typeof key === 'string' && keys.includes(key)) {
+      recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
+    }
   })
 
   // The reopen-last-session pair: the renderer saves the loaded paths as the list

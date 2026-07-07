@@ -10,6 +10,10 @@ import { usePlayer } from './usePlayer'
 
 afterEach(cleanup)
 
+beforeEach(() => {
+  ;(window as unknown as { api: unknown }).api = { recordStat: vi.fn() }
+})
+
 function track(id: string, inputPath: string): TrackItem {
   return {
     id,

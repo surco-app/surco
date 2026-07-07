@@ -156,6 +156,9 @@ export function useTrackLibrary({
     // seconds of an empty list that looks broken even though the import is running.
     const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
     setTracks((prev) => [...prev, ...bases])
+    // Every import route (drop, picker, Open With, watched folder) funnels through
+    // here after dedup, so this is the one bump for the lifetime "loaded" tally.
+    window.api.recordStat('imported', bases.length)
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
     importTotal.current += bases.length
     setImportProgress({ done: importDone.current, total: importTotal.current })
