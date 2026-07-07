@@ -638,6 +638,18 @@ describe('catalogNumberMatches', () => {
     )
   })
 
+  // Every small label numbers its first releases "001", so a short bare number matches
+  // unrelated pressings constantly — far too weak for the identity claim the boost (and
+  // the high-tier corroboration) rides on. A lettered code or a long number keeps it.
+  it('rejects a short purely-numeric catalog number as too weak to name a pressing', () => {
+    expect(catalogNumberMatches('001', release({ labels: [{ name: 'L', catno: '001' }] }))).toBe(
+      false,
+    )
+    expect(
+      catalogNumberMatches('540216', release({ labels: [{ name: 'L', catno: '540216' }] })),
+    ).toBe(true)
+  })
+
   // A release can list several labels/pressings; the file's number matching any one of them
   // still identifies the pressing.
   it('matches against any of a release’s labels', () => {

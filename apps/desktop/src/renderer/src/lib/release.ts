@@ -294,10 +294,13 @@ function foldCatalogNumber(catno: string | undefined): string {
 // Whether the file's catalog number names one of the release's pressings. The catno is the
 // strongest evidence a file names the exact release (Discogs' own note calls it the key that
 // distinguishes pressings), so a match is worth boosting the confidence — but only a real
-// number on both sides counts, never two blanks.
+// number on both sides counts, never two blanks. A short purely-numeric code ("001") is how
+// every small label numbers its first releases, so unrelated pressings share it constantly:
+// too weak for the identity claim the boost and the high-tier corroboration ride on.
 export function catalogNumberMatches(fileCatno: string | undefined, rel: Release): boolean {
   const file = foldCatalogNumber(fileCatno)
   if (!file) return false
+  if (/^\d+$/.test(file) && file.length < 5) return false
   return (rel.labels ?? []).some((l) => foldCatalogNumber(l.catno) === file)
 }
 
