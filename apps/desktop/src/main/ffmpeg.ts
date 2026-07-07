@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
+import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -807,7 +807,11 @@ export async function convertAudio(
       // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
       // TagLib's save is synchronous and rewrites the whole file when the tag
       // grows, so every tag pass below runs in the worker thread.
-      await copyFile(input, tmp)
+      // COPYFILE_FICLONE clones instead of copying when source and destination
+      // share a filesystem that supports it (APFS: instant, copy-on-write, any
+      // size) and silently falls back to a byte copy otherwise (other
+      // filesystems, or an output folder on a different volume).
+      await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
       await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
     } else {
       await run(ffmpegPath, convertArgs(input, tmp, plan, meta, coverPath, audioFilter), {
