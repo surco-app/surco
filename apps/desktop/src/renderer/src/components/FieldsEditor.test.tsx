@@ -24,11 +24,14 @@ function setup(over: { visibleFields?: string[]; requiredFields?: string[] } = {
 
 describe('FieldsEditor', () => {
   // The localized label ("Título") hides the internal name templates and tag tools
-  // use ({trackNumber}, Mp3tag's field mapping); the hover tooltip bridges the two.
+  // use ({trackNumber}, Mp3tag's field mapping); the hover tooltip bridges the two —
+  // the app's styled Tooltip (instant on hover), not the slow native title.
   it('exposes the internal field name as a hover tooltip', () => {
     setup()
     const row = screen.getByTestId('field-row-title')
-    expect(within(row).getByTitle('title')).toBeInTheDocument()
+    // focusin reveals the tooltip instantly (the hover path sits behind a 400ms timer)
+    fireEvent.focusIn(within(row).getByText('Title'))
+    expect(screen.getByText('{title}')).toBeInTheDocument()
   })
 
   it('toggles a field required', () => {

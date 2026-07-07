@@ -2,6 +2,7 @@ import { Check, ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Tooltip } from './Tooltip'
 import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -69,8 +70,9 @@ export function FieldsEditor({
               data-testid={`field-row-${key}`}
               className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
             >
-              <span className="text-sm" title={key}>
+              <span className="text-sm">
                 {tr(`fields.${key}`)}
+                <Tooltip label={`{${key}}`} />
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -141,8 +143,9 @@ export function FieldsEditor({
                 data-testid={`hidden-field-${d.key}`}
                 className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
               >
-                <span className="text-sm text-fg-muted" title={d.key}>
+                <span className="text-sm text-fg-muted">
                   {tr(`fields.${d.key}`)}
+                  <Tooltip label={`{${d.key}}`} />
                 </span>
                 <button
                   type="button"
