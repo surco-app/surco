@@ -27,6 +27,10 @@
       {
         "text": "Un archivo que ya está en el formato de salida sigue actualizándose sin reconvertir — pero si no cumple la frecuencia o profundidad de tus ajustes, el editor te ofrece reconvertirlo explícitamente, dejando el original intacto.",
         "in": "0.38.2"
+      },
+      {
+        "text": "Ajustes más cómodos: pestañas ordenadas según el flujo de trabajo, los campos del editor se reordenan arrastrándolos (con su nombre interno visible al pasar el cursor), y la puntuación ya puede usarse para nombrar archivos.",
+        "in": "0.38.3"
       }
     ]
   },

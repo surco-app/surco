@@ -27,6 +27,10 @@
       {
         "text": "A file already in the output format still updates without re-encoding — but when it doesn't meet your pinned sample rate or bit depth, the editor now offers an explicit re-encode, leaving the original untouched.",
         "in": "0.38.2"
+      },
+      {
+        "text": "More comfortable Settings: tabs ordered by workflow, editor fields reorder by dragging (with their internal name shown on hover), and the rating can now name your files.",
+        "in": "0.38.3"
       }
     ]
   },
