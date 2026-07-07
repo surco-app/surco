@@ -19,6 +19,10 @@
       {
         "text": "Manda los originales de las pistas ya convertidas a la papelera con una sola acción; las acciones en bloque actúan sobre tu selección múltiple cuando la hay.",
         "in": "0.38.0"
+      },
+      {
+        "text": "Las posiciones de vinilo de Discogs (A1, B2…) se conservan como número de pista, tanto en las etiquetas como en {trackNumber} al nombrar archivos, en vez de reducirse a un simple número.",
+        "in": "0.38.1"
       }
     ]
   },

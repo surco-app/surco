@@ -19,6 +19,10 @@
       {
         "text": "Send the originals of already-converted tracks to the trash in one action; bulk actions work on your multi-selection when you have one.",
         "in": "0.38.0"
+      },
+      {
+        "text": "Discogs vinyl positions (A1, B2…) are kept as the track number, both in the tags and in {trackNumber} when naming files, instead of being reduced to a plain number.",
+        "in": "0.38.1"
       }
     ]
   },
