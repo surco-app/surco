@@ -1,13 +1,17 @@
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import type { LocalActivityReport } from './activityLog'
 import { keepCoverArg } from './coverSource'
 import {
   bestMatch,
   boostForCatalogMatch,
   buildReleaseMeta,
   catalogNumberMatches,
+  confidenceTier,
   corroboratedTier,
+  type MatchSignals,
+  matchSignals,
   preRankResults,
   type TrackMatchTarget,
 } from './release'
@@ -82,6 +86,17 @@ export interface ProbeMatch {
   // identified by its provider+result row, not by Release.id alone (Bandcamp's parsed
   // release id can differ from the autocomplete id, and the row holds the page URL).
   result: SearchResult
+  // Which title-independent evidence the guard saw, per signal — the "why" behind the
+  // tier, carried out so the activity feed can explain the verdict.
+  signals: MatchSignals
+}
+
+// One scored candidate the probe walked. Streamed out through `onProbe` so the activity
+// feed can show what was considered and rejected, not just the winner.
+export interface ProbedCandidate {
+  result: SearchResult
+  confidence: number
+  tier: 'high' | 'review' | 'low'
 }
 
 // Walks search results in order, loading each release and scoring its tracklist
@@ -105,6 +120,9 @@ export async function probeReleases(
     collectReview?: boolean
     maxProbe?: number
     cancelled?: () => boolean
+    // Called once per scored candidate, accepted or not — the raw trail behind the
+    // verdict, surfaced in the activity feed.
+    onProbe?: (candidate: ProbedCandidate) => void
   },
 ): Promise<ProbeMatch | undefined> {
   let review: ProbeMatch | undefined
@@ -127,14 +145,16 @@ export async function probeReleases(
     const catalogMatched = catalogNumberMatches(target.catalogNumber, rel)
     const confidence = catalogMatched ? boostForCatalogMatch(m.confidence) : m.confidence
     const tier = corroboratedTier(confidence, target, rel, m.track, catalogMatched)
+    const signals = matchSignals(target, rel, m.track, catalogMatched)
+    opts.onProbe?.({ result, confidence, tier })
     if (confidence >= (opts.minConfidence ?? 0) && opts.accepts(tier)) {
-      return { release: rel, track: m.track, confidence, tier, result }
+      return { release: rel, track: m.track, confidence, tier, result, signals }
     }
     // Keep walking for an accepted match, but remember the strongest review-tier hit in case
     // none turns up — the probe order isn't confidence order, so the best review can sit
     // behind a weaker one.
     if (opts.collectReview && tier === 'review' && (!review || confidence > review.confidence)) {
-      review = { release: rel, track: m.track, confidence, tier, result }
+      review = { release: rel, track: m.track, confidence, tier, result, signals }
     }
   }
   return opts.collectReview ? review : undefined
@@ -177,6 +197,7 @@ export async function autoMatchRelease(
   target: TrackMatchTarget,
   api: SearchApi,
   maxProbe = MAX_AUTO_PROBE,
+  onProbe?: (candidate: ProbedCandidate) => void,
 ): Promise<AutoMatch | undefined> {
   if (!query.trim() || !target.title.trim()) return undefined
   // A review-tier suggestion from the curated source, held while the other sources are still
@@ -199,6 +220,7 @@ export async function autoMatchRelease(
       // borderline title hit is noise, never worth flagging for a human glance.
       collectReview: provider === 'discogs',
       maxProbe,
+      onProbe,
     })
     if (match) {
       if (match.tier === 'high') return match
@@ -208,4 +230,79 @@ export async function autoMatchRelease(
     }
   }
   return review
+}
+
+// The provider names are brand names, shown verbatim in every language.
+const PROVIDER_NAME: Record<SearchProviderId, string> = {
+  discogs: 'Discogs',
+  bandcamp: 'Bandcamp',
+}
+
+function pct(confidence: number): number {
+  return Math.round(confidence * 100)
+}
+
+function mark(fired: boolean): string {
+  return fired ? '✓' : '✗'
+}
+
+// Where the chosen release lives on the web, for the row's open-in-browser affordance —
+// the same link the release-load activity entry carries (Discogs builds it from the id,
+// Bandcamp's search row already holds its page URL).
+function releasePageUrl(m: ProbeMatch): string | undefined {
+  return m.release.provider === 'discogs'
+    ? `https://www.discogs.com/release/${m.release.id}`
+    : m.result.releaseUrl
+}
+
+// Turns one probe verdict into an activity-feed entry that explains itself: which release
+// won (or was only suggested), the confidence, a ✓/✗ per corroboration signal, and every
+// candidate the walk scored — the debug trail the user asked the panel to show. Scaffold
+// words live in the i18n strings; the params are pure data (titles, numbers, marks), so a
+// language switch retranslates the row like any main-process entry.
+export function matchActivityReport(
+  trackTitle: string,
+  m: ProbeMatch | undefined,
+  probes: ProbedCandidate[],
+  ms: number,
+): LocalActivityReport {
+  const candidates = probes
+    .map((p) => `${PROVIDER_NAME[p.result.provider]} · ${p.result.title} — ${pct(p.confidence)} %`)
+    .join('\n')
+  if (!m) {
+    return {
+      kind: 'match',
+      labelKey: 'activity.autoMatchNone',
+      labelParams: { track: trackTitle },
+      ...(probes.length
+        ? { detailKey: 'activity.autoMatchNoneDetail', detailParams: { candidates } }
+        : { detailKey: 'activity.autoMatchNoCandidates' }),
+      ms,
+    }
+  }
+  const applied = m.tier === 'high'
+  // A review verdict reads differently by cause: a raw-high score demoted by the guard
+  // ("nothing beyond the title corroborates it") vs a score under the auto-apply bar.
+  const demoted = !applied && confidenceTier(m.confidence) === 'high'
+  return {
+    kind: 'match',
+    labelKey: applied ? 'activity.autoMatchApplied' : 'activity.autoMatchReview',
+    labelParams: { track: trackTitle },
+    detailKey: applied
+      ? 'activity.autoMatchAppliedDetail'
+      : demoted
+        ? 'activity.autoMatchReviewUncorroboratedDetail'
+        : 'activity.autoMatchReviewLowDetail',
+    detailParams: {
+      release: m.result.title,
+      track: [m.track.position, m.track.title].filter(Boolean).join('. '),
+      confidence: pct(m.confidence),
+      duration: mark(m.signals.durations),
+      artist: mark(m.signals.artistAgrees),
+      catno: mark(m.signals.catalogMatched),
+      candidates,
+    },
+    ms,
+    url: releasePageUrl(m),
+  }
 }

@@ -46,15 +46,17 @@ function setup(
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
   tracksRef: { current: TrackItem[] }
+  reportActivity: ReturnType<typeof vi.fn>
 } {
   const updateTrack = vi.fn()
+  const reportActivity = vi.fn()
   const tracksRef = { current: tracks }
   const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
   const { result } = renderHook(() =>
-    useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef }),
+    useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef, reportActivity }),
   )
-  return { result, updateTrack, tracksRef }
+  return { result, updateTrack, tracksRef, reportActivity }
 }
 
 describe('useAutoMatch', () => {
@@ -257,5 +259,45 @@ describe('useAutoMatch', () => {
     const hints = { artist: 'Artist', title: 'My Song', catalogNumber: undefined }
     expect(search).toHaveBeenCalledWith('query b', 'discogs', 'high', hints)
     expect(search).toHaveBeenCalledWith('query a', 'discogs', 'low', hints)
+  })
+
+  // Every probe verdict lands in the activity feed so the user can read *why* a row was
+  // matched, flagged for review or left alone — the debug trail behind the sparkle.
+  it('reports an applied match to the activity feed with its reasoning', async () => {
+    setApi()
+    const tracks = [track('a')]
+    const { result, reportActivity } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks, false))
+
+    await waitFor(() => expect(reportActivity).toHaveBeenCalledTimes(1))
+    expect(reportActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'match',
+        labelKey: 'activity.autoMatchApplied',
+        labelParams: { track: 'My Song' },
+        detailKey: 'activity.autoMatchAppliedDetail',
+      }),
+    )
+  })
+
+  it('reports a no-match verdict to the activity feed', async () => {
+    setApi({
+      getRelease: vi.fn().mockResolvedValue({
+        id: 1,
+        title: 'Album',
+        artists: [],
+        tracklist: [{ position: '1', title: 'Something Entirely Different' }],
+      }),
+    })
+    const tracks = [track('a')]
+    const { result, reportActivity } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks, false))
+
+    await waitFor(() => expect(reportActivity).toHaveBeenCalledTimes(1))
+    expect(reportActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ labelKey: 'activity.autoMatchNone' }),
+    )
   })
 })

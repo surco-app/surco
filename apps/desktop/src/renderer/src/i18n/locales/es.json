@@ -767,7 +767,15 @@
     "resultCount_one": "{{count}} resultado",
     "resultCount_other": "{{count}} resultados",
     "trackCount_one": "{{count}} pista",
-    "trackCount_other": "{{count}} pistas"
+    "trackCount_other": "{{count}} pistas",
+    "autoMatchApplied": "Auto-emparejada: {{track}}",
+    "autoMatchReview": "Coincidencia para revisar: {{track}}",
+    "autoMatchNone": "Sin coincidencia: {{track}}",
+    "autoMatchAppliedDetail": "{{release}} → {{track}}\nConfianza: {{confidence}} % · duración {{duration}} · artista {{artist}} · nº de catálogo {{catno}}\nAplicada automáticamente: confianza alta corroborada por una señal independiente del título.\nCandidatos sondeados:\n{{candidates}}",
+    "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfianza: {{confidence}} % · duración {{duration}} · artista {{artist}} · nº de catálogo {{catno}}\nPara revisar: la confianza no alcanza el umbral de aplicación automática (85 %).\nCandidatos sondeados:\n{{candidates}}",
+    "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfianza: {{confidence}} % · duración {{duration}} · artista {{artist}} · nº de catálogo {{catno}}\nPara revisar: solo coincide el título; ninguna señal independiente (duración, artista, nº de catálogo) lo corrobora.\nCandidatos sondeados:\n{{candidates}}",
+    "autoMatchNoneDetail": "Ningún candidato alcanzó la confianza mínima.\nCandidatos sondeados:\n{{candidates}}",
+    "autoMatchNoCandidates": "La búsqueda no devolvió candidatos que sondear."
   },
   "fieldGroups": {
     "identity": "Identidad",

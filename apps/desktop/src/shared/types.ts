@@ -405,6 +405,9 @@ export type ActivityKind =
   | 'applemusic'
   | 'import'
   | 'export'
+  // The auto-match sweep's verdicts. Unlike the rest, reported from the renderer (where
+  // the probe decides), not the main process.
+  | 'match'
 
 // Interpolation values for an activity i18n key (query text, a count, a title).
 export type ActivityParams = Record<string, string | number>

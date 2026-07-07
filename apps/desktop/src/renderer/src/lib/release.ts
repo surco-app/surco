@@ -282,11 +282,32 @@ export function corroboratedTier(
 ): 'high' | 'review' | 'low' {
   const tier = confidenceTier(confidence)
   if (tier !== 'high') return tier
-  const durations = target.durationSec !== undefined && parseDuration(track.duration) !== undefined
-  const artistAgrees =
-    !!target.artist &&
-    (sameAct(target.artist, track.artists) || sameAct(target.artist, rel.artists))
-  return durations || artistAgrees || catalogMatched ? 'high' : 'review'
+  const s = matchSignals(target, rel, track, catalogMatched)
+  return s.durations || s.artistAgrees || s.catalogMatched ? 'high' : 'review'
+}
+
+// The guard's three title-independent signals, one flag each. Kept readable per signal
+// (not folded into the tier) so the activity feed can show *which* evidence fired —
+// the "why" behind an applied match or a review demotion.
+export interface MatchSignals {
+  durations: boolean
+  artistAgrees: boolean
+  catalogMatched: boolean
+}
+
+export function matchSignals(
+  target: TrackMatchTarget,
+  rel: Release,
+  track: ReleaseTrack,
+  catalogMatched: boolean,
+): MatchSignals {
+  return {
+    durations: target.durationSec !== undefined && parseDuration(track.duration) !== undefined,
+    artistAgrees:
+      !!target.artist &&
+      (sameAct(target.artist, track.artists) || sameAct(target.artist, rel.artists)),
+    catalogMatched,
+  }
 }
 
 // Folds a catalog number to its bare identity so the same pressing matches across the

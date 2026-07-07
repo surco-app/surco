@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { acceptReviewPatch, autoMatchRelease, matchTargetOf, tracksToAutoMatch } from './autoMatch'
+import {
+  acceptReviewPatch,
+  autoMatchRelease,
+  MAX_AUTO_PROBE,
+  matchActivityReport,
+  matchTargetOf,
+  type ProbedCandidate,
+  type ProbeMatch,
+  tracksToAutoMatch,
+} from './autoMatch'
 import { confidenceTier } from './release'
 
 function release(id: number, over: Partial<Release> = {}): Release {
@@ -408,5 +417,120 @@ describe('acceptReviewPatch', () => {
   // (and its shortcut/enabled gate reads the same undefined).
   it('returns undefined when the track has no review suggestion', () => {
     expect(acceptReviewPatch(track())).toBeUndefined()
+  })
+})
+
+describe('probe reporting', () => {
+  // The activity panel's verdict rows show what the sweep considered, not just what won:
+  // every scored candidate flows out through onProbe with the confidence/tier it earned.
+  it('reports each scored candidate with its confidence and tier', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      getRelease: vi
+        .fn()
+        .mockResolvedValueOnce(release(1, { tracklist: [REVIEW] }))
+        .mockResolvedValueOnce(release(2, { tracklist: [HIGH] })),
+    }
+    const probes: ProbedCandidate[] = []
+    await autoMatchRelease('my song', target, api, MAX_AUTO_PROBE, (c) => probes.push(c))
+    expect(probes).toHaveLength(2)
+    expect(probes[0].result.id).toBe(1)
+    expect(probes[0].tier).toBe('review')
+    expect(probes[1].result.id).toBe(2)
+    expect(probes[1].tier).toBe('high')
+    expect(probes[1].confidence).toBeGreaterThan(probes[0].confidence)
+  })
+
+  // The verdict row explains *why* the tier landed where it did, so the winning match
+  // carries the corroboration signals the guard saw, per signal.
+  it('returns the corroboration signals with the match', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(1)]),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
+    }
+    const m = await autoMatchRelease('my song', target, api)
+    expect(m?.signals).toEqual({ durations: true, artistAgrees: false, catalogMatched: false })
+  })
+})
+
+describe('matchActivityReport', () => {
+  const probe = (id: number, confidence: number): ProbedCandidate => ({
+    result: searchResult(id),
+    confidence,
+    tier: confidenceTier(confidence),
+  })
+  const match = (over: Partial<ProbeMatch> = {}): ProbeMatch => ({
+    release: release(9),
+    track: { position: 'A1', title: 'My Song' },
+    confidence: 0.92,
+    tier: 'high',
+    result: searchResult(9),
+    signals: { durations: true, artistAgrees: false, catalogMatched: false },
+    ...over,
+  })
+
+  it('describes an applied match: release, marks per signal and the probed candidates', () => {
+    const r = matchActivityReport('My Song', match(), [probe(9, 0.92), probe(3, 0.4)], 120)
+    expect(r.kind).toBe('match')
+    expect(r.labelKey).toBe('activity.autoMatchApplied')
+    expect(r.labelParams).toEqual({ track: 'My Song' })
+    expect(r.detailKey).toBe('activity.autoMatchAppliedDetail')
+    expect(r.detailParams).toMatchObject({
+      release: 'Result 9',
+      track: 'A1. My Song',
+      confidence: 92,
+      duration: '✓',
+      artist: '✗',
+      catno: '✗',
+    })
+    expect(r.detailParams?.candidates).toBe('Discogs · Result 9 — 92 %\nDiscogs · Result 3 — 40 %')
+    expect(r.ms).toBe(120)
+    expect(r.url).toBe('https://www.discogs.com/release/9')
+  })
+
+  // The two ways a suggestion lands in review read differently: a demoted title-only high
+  // says "nothing corroborates it", a middling score says "below the auto-apply bar".
+  it('distinguishes an uncorroborated high from a middling confidence', () => {
+    const demoted = matchActivityReport(
+      'My Song',
+      match({
+        tier: 'review',
+        signals: { durations: false, artistAgrees: false, catalogMatched: false },
+      }),
+      [],
+      50,
+    )
+    expect(demoted.labelKey).toBe('activity.autoMatchReview')
+    expect(demoted.detailKey).toBe('activity.autoMatchReviewUncorroboratedDetail')
+    const middling = matchActivityReport(
+      'My Song',
+      match({ tier: 'review', confidence: 0.7 }),
+      [],
+      50,
+    )
+    expect(middling.detailKey).toBe('activity.autoMatchReviewLowDetail')
+  })
+
+  it('links a Bandcamp match to its release page', () => {
+    const m = match({
+      release: release(9, { provider: 'bandcamp' as const }),
+      result: {
+        provider: 'bandcamp',
+        id: 9,
+        title: 'BC',
+        releaseUrl: 'https://x.bandcamp.com/album/y',
+      },
+    })
+    expect(matchActivityReport('My Song', m, [], 10).url).toBe('https://x.bandcamp.com/album/y')
+  })
+
+  it('describes a no-match verdict, with or without candidates to show', () => {
+    const none = matchActivityReport('My Song', undefined, [probe(3, 0.4)], 80)
+    expect(none.labelKey).toBe('activity.autoMatchNone')
+    expect(none.detailKey).toBe('activity.autoMatchNoneDetail')
+    expect(none.detailParams?.candidates).toBe('Discogs · Result 3 — 40 %')
+    const empty = matchActivityReport('My Song', undefined, [], 80)
+    expect(empty.detailKey).toBe('activity.autoMatchNoCandidates')
+    expect(empty.detailParams).toBeUndefined()
   })
 })

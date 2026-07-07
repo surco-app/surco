@@ -11,6 +11,7 @@ import {
   corroboratedTier,
   coverOf,
   joinArtists,
+  matchSignals,
   preRankResults,
   providerCountsOf,
   releaseKey,
@@ -432,10 +433,10 @@ describe('preRankResults', () => {
   // one leads and Bandcamp stays the fallback.
   it('keeps Discogs ahead of an equally-relevant Bandcamp row', () => {
     const bc = (id: number, title: string): SearchResult => ({ provider: 'bandcamp', id, title })
-    const ranked = preRankResults(
-      [bc(1, 'Daft Punk - Discovery'), r(2, 'Daft Punk - Discovery')],
-      { title: 'One More Time', artist: 'Daft Punk' },
-    )
+    const ranked = preRankResults([bc(1, 'Daft Punk - Discovery'), r(2, 'Daft Punk - Discovery')], {
+      title: 'One More Time',
+      artist: 'Daft Punk',
+    })
     expect(ranked.map((x) => x.id)).toEqual([2, 1])
   })
 
@@ -528,6 +529,41 @@ describe('confidenceTier', () => {
   it('calls a weak match low', () => {
     expect(confidenceTier(0.59)).toBe('low')
     expect(confidenceTier(0)).toBe('low')
+  })
+})
+
+describe('matchSignals', () => {
+  // The activity feed explains *why* a match applied or fell to review, so the guard's
+  // three independent signals must be readable one by one, not folded into a tier string.
+  it('reports durations only when both sides carry one', () => {
+    const rel = release()
+    const withDuration = { position: '1', title: 'My Song', duration: '3:20' }
+    const noDuration = { position: '1', title: 'My Song' }
+    const target = { title: 'My Song', durationSec: 200 }
+    expect(matchSignals(target, rel, withDuration, false).durations).toBe(true)
+    expect(matchSignals({ title: 'My Song' }, rel, withDuration, false).durations).toBe(false)
+    expect(matchSignals(target, rel, noDuration, false).durations).toBe(false)
+  })
+
+  it('reports artist agreement from either the track credit or the release act', () => {
+    const track = { position: '1', title: 'My Song' }
+    const target = { title: 'My Song', artist: 'Aphex Twin' }
+    const sameAct = release({ artists: [{ name: 'Aphex Twin' }] })
+    const otherAct = release({ artists: [{ name: 'Mike Dred' }] })
+    expect(matchSignals(target, sameAct, track, false).artistAgrees).toBe(true)
+    expect(matchSignals(target, otherAct, track, false).artistAgrees).toBe(false)
+    const credited = { position: '5', title: 'My Song', artists: [{ name: 'Aphex Twin' }] }
+    expect(
+      matchSignals(target, release({ artists: [{ name: 'Various' }] }), credited, false)
+        .artistAgrees,
+    ).toBe(true)
+  })
+
+  it('carries the catalog verdict through unchanged', () => {
+    const rel = release()
+    const track = { position: '1', title: 'My Song' }
+    expect(matchSignals({ title: 'My Song' }, rel, track, true).catalogMatched).toBe(true)
+    expect(matchSignals({ title: 'My Song' }, rel, track, false).catalogMatched).toBe(false)
   })
 })
 

@@ -767,7 +767,15 @@
     "resultCount_one": "{{count}} Ergebnis",
     "resultCount_other": "{{count}} Ergebnisse",
     "trackCount_one": "{{count}} Track",
-    "trackCount_other": "{{count}} Tracks"
+    "trackCount_other": "{{count}} Tracks",
+    "autoMatchApplied": "Automatisch abgeglichen: {{track}}",
+    "autoMatchReview": "Treffer zur Prüfung: {{track}}",
+    "autoMatchNone": "Kein Treffer: {{track}}",
+    "autoMatchAppliedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nAutomatisch angewendet: hohe Konfidenz, durch ein vom Titel unabhängiges Signal bestätigt.\nGeprüfte Kandidaten:\n{{candidates}}",
+    "autoMatchReviewLowDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: Konfidenz unter der Schwelle für automatisches Anwenden (85 %).\nGeprüfte Kandidaten:\n{{candidates}}",
+    "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: nur der Titel stimmt überein; kein unabhängiges Signal (Dauer, Künstler, Katalognr.) bestätigt ihn.\nGeprüfte Kandidaten:\n{{candidates}}",
+    "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
+    "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen."
   },
   "fieldGroups": {
     "identity": "Identität",

@@ -225,7 +225,7 @@ export default function App(): React.JSX.Element {
   )
   // The activity log: always-accumulating feed of background work, shown in a
   // movable floating panel the user toggles.
-  const { rows: activityRows, clear: clearActivity } = useActivityLog()
+  const { rows: activityRows, clear: clearActivity, report: reportActivity } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
@@ -683,7 +683,7 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
-  } = useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef })
+  } = useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef, reportActivity })
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its

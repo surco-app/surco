@@ -92,6 +92,28 @@ export function applyActivity(rows: ActivityRow[], event: ActivityEvent): Activi
   return matched ? next : rows
 }
 
+// A completed unit of renderer-side work reported straight into the feed (an auto-match
+// verdict). It has no start event to stream — the decision only exists once made — so it
+// skips the start/done fold and lands as a single finished row.
+export interface LocalActivityReport {
+  kind: ActivityEvent['kind']
+  labelKey: string
+  labelParams?: ActivityParams
+  detail?: string
+  detailKey?: string
+  detailParams?: ActivityParams
+  ms?: number
+  url?: string
+}
+
+export function reportRow(
+  rows: ActivityRow[],
+  id: string,
+  report: LocalActivityReport,
+): ActivityRow[] {
+  return [{ id, status: 'done' as const, ...report }, ...rows].slice(0, MAX_ROWS)
+}
+
 function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] {
   const groupId = `group:${event.group}`
   const child: ActivityRow = {

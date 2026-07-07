@@ -767,7 +767,15 @@
     "resultCount_one": "{{count}} résultat",
     "resultCount_other": "{{count}} résultats",
     "trackCount_one": "{{count}} morceau",
-    "trackCount_other": "{{count}} morceaux"
+    "trackCount_other": "{{count}} morceaux",
+    "autoMatchApplied": "Auto-associé : {{track}}",
+    "autoMatchReview": "Correspondance à vérifier : {{track}}",
+    "autoMatchNone": "Aucune correspondance : {{track}}",
+    "autoMatchAppliedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nAppliqué automatiquement : confiance élevée corroborée par un signal indépendant du titre.\nCandidats sondés :\n{{candidates}}",
+    "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ vérifier : la confiance n'atteint pas le seuil d'application automatique (85 %).\nCandidats sondés :\n{{candidates}}",
+    "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ vérifier : seul le titre correspond ; aucun signal indépendant (durée, artiste, nº de catalogue) ne le corrobore.\nCandidats sondés :\n{{candidates}}",
+    "autoMatchNoneDetail": "Aucun candidat n'a atteint la confiance minimale.\nCandidats sondés :\n{{candidates}}",
+    "autoMatchNoCandidates": "La recherche n'a renvoyé aucun candidat à sonder."
   },
   "fieldGroups": {
     "identity": "Identité",

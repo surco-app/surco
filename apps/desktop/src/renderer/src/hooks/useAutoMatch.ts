@@ -1,10 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import type { SearchHints, SearchPriority, SearchProviderId } from '../../../shared/types'
+import type { LocalActivityReport } from '../lib/activityLog'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import {
   autoMatchRelease,
+  MAX_AUTO_PROBE,
+  matchActivityReport,
   matchTargetOf,
+  type ProbedCandidate,
   type SearchApi,
   tracksToAutoMatch,
 } from '../lib/autoMatch'
@@ -34,6 +38,9 @@ interface Params {
   // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
   searchProvidersRef: { readonly current: SearchProviderId[] }
+  // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
+  // won or was suggested, why, and every candidate scored along the way.
+  reportActivity: (report: LocalActivityReport) => void
 }
 
 export interface AutoMatchSweep {
@@ -60,6 +67,7 @@ export function useAutoMatch({
   updateTrack,
   libraryIndexRef,
   searchProvidersRef,
+  reportActivity,
 }: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
   // so an import landing mid-sweep doesn't start a second concurrent run.
@@ -99,18 +107,32 @@ export function useAutoMatch({
   const applyAutoMatch = useCallback(
     async (t: TrackItem): Promise<void> => {
       const priority: SearchPriority = t.id === focusedId.current ? 'high' : 'low'
+      // Every candidate the probe scores is collected so the verdict's activity entry can
+      // show the full trail — what was considered and rejected, not just the winner.
+      const probes: ProbedCandidate[] = []
+      const startedAt = performance.now()
       const m = await autoMatchRelease(
         t.query,
         matchTargetOf(t),
         searchApiAt(priority, searchHintsOf(t.meta)),
+        MAX_AUTO_PROBE,
+        (c) => probes.push(c),
       )
-      if (!m || matchCancel.current) return
+      if (matchCancel.current) return
+      const ms = Math.round(performance.now() - startedAt)
+      if (!m) {
+        reportActivity(matchActivityReport(t.meta.title, undefined, probes, ms))
+        return
+      }
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
       // a manual match or a removal landing during the Discogs round-trip wins. Re-read
       // the live track and only apply to one still exactly as probed — every edit path
-      // mints a new meta object, so an identity check covers all fields at once.
+      // mints a new meta object, so an identity check covers all fields at once. A stale
+      // verdict is discarded silently: reporting it would describe an apply that never
+      // happened.
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta) return
+      reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
       // its own tags until the user accepts the suggestion. The probe's guarded tier decides,
@@ -151,7 +173,7 @@ export function useAutoMatch({
       })
       window.api.recordStat(matchStatKey(m.release.provider))
     },
-    [searchApiAt, updateTrack, tracksRef, libraryIndexRef],
+    [searchApiAt, updateTrack, tracksRef, libraryIndexRef, reportActivity],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an

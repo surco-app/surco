@@ -767,7 +767,15 @@
     "resultCount_one": "{{count}} result",
     "resultCount_other": "{{count}} results",
     "trackCount_one": "{{count}} track",
-    "trackCount_other": "{{count}} tracks"
+    "trackCount_other": "{{count}} tracks",
+    "autoMatchApplied": "Auto-matched: {{track}}",
+    "autoMatchReview": "Match to review: {{track}}",
+    "autoMatchNone": "No match: {{track}}",
+    "autoMatchAppliedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nApplied automatically: high confidence corroborated by a signal independent of the title.\nCandidates probed:\n{{candidates}}",
+    "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nFlagged for review: confidence below the auto-apply bar (85 %).\nCandidates probed:\n{{candidates}}",
+    "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nFlagged for review: only the title matches; no independent signal (duration, artist, catalog #) corroborates it.\nCandidates probed:\n{{candidates}}",
+    "autoMatchNoneDetail": "No candidate reached the minimum confidence.\nCandidates probed:\n{{candidates}}",
+    "autoMatchNoCandidates": "The search returned no candidates to probe."
   },
   "fieldGroups": {
     "identity": "Identity",

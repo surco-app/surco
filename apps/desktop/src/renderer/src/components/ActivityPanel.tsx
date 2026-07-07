@@ -5,15 +5,16 @@ import {
   ChevronRight,
   Disc3,
   ExternalLink,
+  FileOutput,
+  FolderDown,
   Image as ImageIcon,
   Library,
   Loader2,
   Music,
   Radio,
+  Sparkles,
   Trash2,
   X,
-  FolderDown,
-  FileOutput,
 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
@@ -57,6 +58,9 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   applemusic: Library,
   import: FolderDown,
   export: FileOutput,
+  // The same sparkle the track list stamps on auto-matched rows, so the verdict entry
+  // and the row it explains read as one feature.
+  match: Sparkles,
 }
 
 function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.Element {

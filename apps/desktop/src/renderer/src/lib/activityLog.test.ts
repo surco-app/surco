@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivityEvent } from '../../../shared/types'
-import { type ActivityRow, applyActivity, MAX_ROWS } from './activityLog'
+import {
+  type ActivityRow,
+  applyActivity,
+  type LocalActivityReport,
+  MAX_ROWS,
+  reportRow,
+} from './activityLog'
 
 const start = (id: string, labelKey = 'activity.searchDiscogs'): ActivityEvent => ({
   id,
@@ -160,5 +166,36 @@ describe('applyActivity grouping', () => {
       analyze('q1', 'start', 'activity.probeSpectrogram', { group: '/music/other.wav' }),
     )
     expect(rows).toHaveLength(2)
+  })
+})
+
+describe('reportRow', () => {
+  const verdict: LocalActivityReport = {
+    kind: 'match',
+    labelKey: 'activity.autoMatchApplied',
+    labelParams: { track: 'My Song' },
+    detailKey: 'activity.autoMatchAppliedDetail',
+    ms: 120,
+  }
+
+  // A renderer-side verdict (the auto-match decision) has no start event to stream — the
+  // decision only exists once made — so it lands directly as a finished row on top.
+  it('prepends a completed row carrying the report', () => {
+    const rows = reportRow([{ id: 'a', kind: 'discogs', status: 'running' }], 'local-0', verdict)
+    expect(rows[0]).toMatchObject({
+      id: 'local-0',
+      kind: 'match',
+      status: 'done',
+      labelKey: 'activity.autoMatchApplied',
+      ms: 120,
+    })
+    expect(rows[1].id).toBe('a')
+  })
+
+  it('respects the feed cap like streamed events do', () => {
+    let rows: ActivityRow[] = []
+    for (let i = 0; i <= MAX_ROWS; i++) rows = reportRow(rows, `local-${i}`, verdict)
+    expect(rows).toHaveLength(MAX_ROWS)
+    expect(rows[0].id).toBe(`local-${MAX_ROWS}`)
   })
 })
