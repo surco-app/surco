@@ -100,4 +100,21 @@ describe('convertAudio cue preservation', () => {
     await convertAudio(src, out, 'mp3', meta)
     expect(hasCue(out)).toBe(true)
   })
+
+  // A rated track exercises the encode path's TagLib pass (POPM has no ffmpeg
+  // flag) on top of the cue carry-over — both must land in the output, whatever
+  // shape the tag passes take.
+  it('keeps both the cue frame and the rating when re-encoding a rated track', async () => {
+    const out = join(dir, 'out-rated.mp3')
+    await convertAudio(src, out, 'mp3', { ...meta, rating: '4' })
+    expect(hasCue(out)).toBe(true)
+    const f = TagFile.createFromPath(out)
+    try {
+      const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      const popm = (tag?.frames ?? []).filter((fr) => fr.frameId.toString() === 'POPM')
+      expect(popm.length).toBeGreaterThan(0)
+    } finally {
+      f.dispose()
+    }
+  })
 })

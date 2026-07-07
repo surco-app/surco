@@ -31,7 +31,13 @@ describe('runWorkerJob', () => {
   it('routes tag writes with the full file/meta/cover arguments', () => {
     const meta = { title: 'T' } as TrackMetadata
     runWorkerJob({ type: 'writeTags', file: '/out/a.aiff', meta, coverPath: '/c.jpg' })
-    expect(writeTags).toHaveBeenCalledWith('/out/a.aiff', meta, '/c.jpg', undefined)
+    expect(writeTags).toHaveBeenCalledWith('/out/a.aiff', meta, '/c.jpg', undefined, undefined)
+  })
+
+  it('routes the cue source through tag writes so cues merge into the same save', () => {
+    const meta = { title: 'T' } as TrackMetadata
+    runWorkerJob({ type: 'writeTags', file: '/out/a.mp3', meta, cueSource: '/in.mp3' })
+    expect(writeTags).toHaveBeenCalledWith('/out/a.mp3', meta, undefined, undefined, '/in.mp3')
   })
 
   it('routes cue copies with source and destination in order', () => {

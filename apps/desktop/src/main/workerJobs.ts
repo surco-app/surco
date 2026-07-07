@@ -18,6 +18,9 @@ export type WorkerJob =
       meta: TrackMetadata
       coverPath?: string
       removeCover?: boolean
+      // Carries this file's GEOB cue frames over in the same TagLib save,
+      // sparing the separate copyCueFrames rewrite (see tags.ts).
+      cueSource?: string
     }
   | { type: 'copyCueFrames'; source: string; dest: string }
 
@@ -32,7 +35,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult {
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'writeTags':
-      writeTags(job.file, job.meta, job.coverPath, job.removeCover)
+      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource)
       return null
     case 'copyCueFrames':
       copyCueFrames(job.source, job.dest)

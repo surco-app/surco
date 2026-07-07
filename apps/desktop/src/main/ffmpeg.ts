@@ -828,16 +828,19 @@ export async function convertAudio(
       } else if (meta.rating?.trim() && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating, to
-        // avoid a second tag pass on every conversion.
-        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
+        // avoid a second tag pass on every conversion. cueSource folds the cue
+        // carry-over (below) into this same save, so the rating never costs a
+        // second whole-file rewrite on top of it.
+        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, cueSource: input })
       }
       // Any re-encode through ffmpeg drops Traktor's GEOB cue/beatgrid frame — a
       // plain format change just as much as a normalizing gain pass. Neither moves
       // the cues in time (a constant gain doesn't, and the decoded sample timeline
       // is preserved across formats), so carry the frame over from the source for
       // the ID3 containers it round-trips through, restoring cues on every encode
-      // rather than only when normalizing.
-      if (preservesCuesInPlace(ext))
+      // rather than only when normalizing. A rated MP3/AIFF already carried them
+      // in its writeTags pass above.
+      else if (preservesCuesInPlace(ext))
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp })
     }
     await rename(tmp, output)

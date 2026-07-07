@@ -46,15 +46,7 @@ export function preservesCuesInPlace(ext: string): boolean {
 // rather than aborting the conversion. Only meaningful for ID3 containers.
 export function copyCueFrames(source: string, dest: string): void {
   try {
-    const src = TagFile.createFromPath(source)
-    let cues: Id3v2Frame[]
-    try {
-      const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      const geob = tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB') ?? []
-      cues = geob.map((fr) => fr.clone())
-    } finally {
-      src.dispose()
-    }
+    const cues = readCueFrames(source)
     if (cues.length === 0) return
 
     const out = TagFile.createFromPath(dest)
@@ -68,6 +60,24 @@ export function copyCueFrames(source: string, dest: string): void {
     }
   } catch {
     // Cue preservation is a bonus; never let it break a successful conversion.
+  }
+}
+
+// The read half of copyCueFrames, also used by writeTags' cueSource merge: clones
+// the source's GEOB frames without parsing their opaque Traktor blobs. Best-effort
+// like the copy itself — an unreadable source yields no cues, never an error.
+function readCueFrames(source: string): Id3v2Frame[] {
+  try {
+    const src = TagFile.createFromPath(source)
+    try {
+      const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      const geob = tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB') ?? []
+      return geob.map((fr) => fr.clone())
+    } finally {
+      src.dispose()
+    }
+  } catch {
+    return []
   }
 }
 
@@ -145,11 +155,17 @@ function setRating(tag: Id3v2Tag, stars: string): void {
 // written as empty so clearing a value in the editor clears it on disk too,
 // matching the metadata the ffmpeg path would have produced. `removeCover` drops
 // the embedded art with no replacement, for when the user clears the artwork.
+// `cueSource` carries the GEOB cue frames over from that file in this same save —
+// TagLib's save can rewrite the whole file, so a conversion that needs both the
+// rating and the cues merges them into one pass instead of rewriting a 100MB+
+// AIFF twice. ID3 targets only; the m4a early-return below ignores it, matching
+// copyCueFrames' scope.
 export function writeTags(
   file: string,
   meta: TrackMetadata,
   coverPath?: string,
   removeCover = false,
+  cueSource?: string,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -231,6 +247,14 @@ export function writeTags(
       const picture = Picture.fromPath(coverPath)
       picture.type = PictureType.FrontCover
       id3.addFrame(Id3v2AttachmentFrame.fromPicture(picture))
+    }
+
+    if (cueSource) {
+      const cues = readCueFrames(cueSource)
+      if (cues.length > 0) {
+        id3.removeFrames(Id3v2FrameIdentifiers.GEOB)
+        for (const frame of cues) id3.addFrame(frame)
+      }
     }
 
     // A WAV can hold both a RIFF "INFO" chunk and an ID3v2 "id3 " chunk, but
