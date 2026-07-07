@@ -33,19 +33,19 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
         <>
-          <p data-testid="stats-count" className="text-6xl font-semibold tabular-nums text-fg">
+          <p data-testid="stats-count" className="text-5xl font-semibold tabular-nums text-fg">
             {conversionCount}
           </p>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
           {milestone !== null && (
-            <div data-testid="stats-milestone" className="mt-5 w-full max-w-xs">
+            <div data-testid="stats-milestone" className="mt-4 w-full max-w-xs">
               <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
                 <div
                   className="h-full rounded-full bg-[var(--color-accent)]"
                   style={{ width: `${Math.min(100, (conversionCount / milestone) * 100)}%` }}
                 />
               </div>
-              <p className="mt-2 text-xs text-fg-dim">
+              <p className="mt-1.5 text-xs text-fg-dim">
                 {tr('settings.stats.milestone', {
                   milestone,
                   remaining: milestone - conversionCount,
@@ -56,16 +56,18 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </>
       )}
       {anyActivity ? (
-        <div className="mt-7 flex w-full max-w-md flex-wrap justify-center gap-2">
+        <div className="mt-5 grid w-full max-w-xl grid-cols-5 gap-1.5">
           {CELLS.map(({ key, icon: Icon }) => (
             <div
               key={key}
               data-testid={`stats-${key}`}
-              className="w-36 rounded-lg border border-[var(--color-line)] px-3 py-3"
+              className="rounded-lg border border-[var(--color-line)] px-1 py-2"
             >
-              <Icon size={16} className="mx-auto text-fg-dim" aria-hidden="true" />
-              <p className="mt-1.5 text-xl font-semibold tabular-nums text-fg">{stats[key]}</p>
-              <p className="text-xs text-fg-muted">{tr(`settings.stats.${key}`)}</p>
+              <Icon size={14} className="mx-auto text-fg-dim" aria-hidden="true" />
+              <p className="mt-1 text-lg font-semibold tabular-nums text-fg">{stats[key]}</p>
+              <p className="text-[10px] leading-tight text-fg-muted">
+                {tr(`settings.stats.${key}`)}
+              </p>
             </div>
           ))}
         </div>
@@ -76,7 +78,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       )}
       {conversionCount > 0 && (
         <>
-          <p data-testid="stats-time-saved" className="mt-7 text-lg text-fg">
+          <p data-testid="stats-time-saved" className="mt-5 text-lg text-fg">
             {tr('settings.stats.timeSaved', {
               time: formatTimeSaved(timeSavedSeconds(conversionCount)),
             })}
@@ -88,7 +90,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
           </p>
         </>
       )}
-      <p className="mt-8 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
+      <p className="mt-5 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
       <a
         data-testid="stats-donate"
         href={DONATE_URL}
