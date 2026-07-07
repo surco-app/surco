@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.40",
+    "date": "7 de julio de 2026",
+    "title": "Buscar en Google y estadísticas para compartir",
+    "items": [
+      {
+        "text": "Nuevo botón en el editor para buscar la pista en Google: abre tu navegador con el nombre del archivo ya buscado, sin copiar y pegar.",
+        "in": "0.40.0"
+      },
+      {
+        "text": "Comparte tus estadísticas: la pestaña Estadísticas genera una imagen con tus números de por vida, lista para presumir en redes.",
+        "in": "0.40.0"
+      },
+      {
+        "text": "Las posiciones de vinilo de caras doble-A (AA, AA1) también se conservan como número de pista al aplicar un release de Discogs.",
+        "in": "0.40.0"
+      }
+    ]
+  },
+  {
     "version": "0.39",
     "date": "7 de julio de 2026",
     "title": "Tus estadísticas, y edición en lote más rápida",

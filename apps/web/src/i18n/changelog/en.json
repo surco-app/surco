@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.40",
+    "date": "July 7, 2026",
+    "title": "Google search and shareable stats",
+    "items": [
+      {
+        "text": "New editor button to search Google for a track: it opens your browser with the file name already searched, no copy-paste needed.",
+        "in": "0.40.0"
+      },
+      {
+        "text": "Share your stats: the Statistics tab now generates an image with your lifetime numbers, ready to show off on social media.",
+        "in": "0.40.0"
+      },
+      {
+        "text": "Double-A-side vinyl positions (AA, AA1) are also kept as the track number when applying a Discogs release.",
+        "in": "0.40.0"
+      }
+    ]
+  },
+  {
     "version": "0.39",
     "date": "July 7, 2026",
     "title": "Your stats, and faster batch editing",
