@@ -23,6 +23,10 @@
       {
         "text": "Discogs vinyl positions (A1, B2…) are kept as the track number, both in the tags and in {trackNumber} when naming files, instead of being reduced to a plain number.",
         "in": "0.38.1"
+      },
+      {
+        "text": "A file already in the output format still updates without re-encoding — but when it doesn't meet your pinned sample rate or bit depth, the editor now offers an explicit re-encode, leaving the original untouched.",
+        "in": "0.38.2"
       }
     ]
   },

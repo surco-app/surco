@@ -23,6 +23,10 @@
       {
         "text": "Las posiciones de vinilo de Discogs (A1, B2…) se conservan como número de pista, tanto en las etiquetas como en {trackNumber} al nombrar archivos, en vez de reducirse a un simple número.",
         "in": "0.38.1"
+      },
+      {
+        "text": "Un archivo que ya está en el formato de salida sigue actualizándose sin reconvertir — pero si no cumple la frecuencia o profundidad de tus ajustes, el editor te ofrece reconvertirlo explícitamente, dejando el original intacto.",
+        "in": "0.38.2"
       }
     ]
   },
