@@ -930,19 +930,6 @@ export default function App(): React.JSX.Element {
 
   const qualityTally = useMemo(() => qualityCounts(tracksView), [tracksView])
   const formatTally = useMemo(() => formatBuckets(tracksView), [tracksView])
-  // The Stats tab's "current list" block, derived from the same tallies the filter
-  // chips read so the two never disagree on a count.
-  const listStats = useMemo(
-    () => ({
-      total: tracksView.length,
-      analyzed: qualityTally.suspect + qualityTally.good,
-      suspect: qualityTally.suspect,
-      converted: tracksView.length - qualityTally.unconverted,
-      duplicates: qualityTally.duplicates,
-      formats: formatTally,
-    }),
-    [tracksView, qualityTally, formatTally],
-  )
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
   // the crate gone single-format — fall back to every format so the user is never stranded
@@ -1753,7 +1740,6 @@ export default function App(): React.JSX.Element {
               onSave={saveSettings}
               onPreviewTheme={setThemePreview}
               onSettingsReplaced={setSettings}
-              listStats={listStats}
               initialTab={activeModal.tab}
             />
           )}

@@ -21,7 +21,7 @@ import { GeneralTab } from './settings/GeneralTab'
 import { NamingTab } from './settings/NamingTab'
 import { SearchTab } from './settings/SearchTab'
 import { ShortcutsTab } from './settings/ShortcutsTab'
-import { type ListStats, StatsTab } from './settings/StatsTab'
+import { StatsTab } from './settings/StatsTab'
 
 export { DONATE_URL }
 
@@ -33,8 +33,6 @@ interface Props {
   // Moving the settings folder applies immediately and may adopt another machine's
   // prefs, so the app's settings state is replaced outside the Save flow.
   onSettingsReplaced: (next: Settings) => void
-  // The loaded list's cleanup progress for the Stats tab, tallied by App.
-  listStats: ListStats
   initialTab?: SettingsTab
 }
 
@@ -44,7 +42,6 @@ export function SettingsModal({
   onSave,
   onPreviewTheme,
   onSettingsReplaced,
-  listStats,
   initialTab,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -225,7 +222,7 @@ export function SettingsModal({
             conflictIds={conflictIds}
           />
         )}
-        {tab === 'stats' && <StatsTab settings={settings} listStats={listStats} />}
+        {tab === 'stats' && <StatsTab settings={settings} />}
       </div>
 
       <div className="mt-6 flex shrink-0 justify-end gap-2">

@@ -454,12 +454,6 @@
       "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise."
     },
     "stats": {
-      "listTitle": "Aktuelle Liste — {{count}} Tracks",
-      "listAnalyzed": "Analysiert",
-      "listSuspect": "Verdächtig",
-      "listConverted": "Konvertiert",
-      "listDuplicates": "Duplikate",
-      "listFormats": "Formate",
       "count": "Konvertierungen",
       "timeSaved": "Du hast rund {{time}} gespart",
       "perTrack": "≈ {{minutes}} Min. Handarbeit pro Track",

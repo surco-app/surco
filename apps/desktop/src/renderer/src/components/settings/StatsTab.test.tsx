@@ -8,43 +8,20 @@ import { StatsTab } from './StatsTab'
 
 afterEach(cleanup)
 
-const settings = { conversionCount: 3 } as Settings
-
-const listStats = {
-  total: 10,
-  analyzed: 6,
-  suspect: 2,
-  converted: 4,
-  duplicates: 2,
-  formats: [
-    { format: 'WAV', count: 7 },
-    { format: 'FLAC', count: 3 },
-  ],
-}
-
-describe('StatsTab current list summary', () => {
-  // The stats view is where the cleanup flow's sense of progress lives: alongside the
-  // lifetime counter it must say how far the CURRENT list has come — how much is
-  // analyzed, flagged and converted — so "am I done with this batch?" has an answer.
-  it('summarizes the loaded list next to the lifetime counter', () => {
-    render(<StatsTab settings={settings} listStats={listStats} />)
-    const list = screen.getByTestId('stats-list')
-    expect(list).toHaveTextContent('10')
-    expect(screen.getByTestId('stats-list-analyzed')).toHaveTextContent('6/10')
-    expect(screen.getByTestId('stats-list-suspect')).toHaveTextContent('2')
-    expect(screen.getByTestId('stats-list-converted')).toHaveTextContent('4/10')
-    expect(screen.getByTestId('stats-list-formats')).toHaveTextContent('WAV 7 · FLAC 3')
+describe('StatsTab', () => {
+  // The lifetime counter is the tab's centerpiece: it turns "I used the app" into a
+  // number the user can feel good about, right next to the donate ask.
+  it('shows the lifetime conversion counter and time saved', () => {
+    render(<StatsTab settings={{ conversionCount: 3 } as Settings} />)
+    expect(screen.getByTestId('stats-count')).toHaveTextContent('3')
+    expect(screen.getByTestId('stats-time-saved')).toBeInTheDocument()
+    expect(screen.getByTestId('stats-donate')).toBeInTheDocument()
   })
 
-  // An empty list has nothing to summarize; the lifetime stats stand alone.
-  it('shows no list section while nothing is loaded', () => {
-    render(
-      <StatsTab
-        settings={settings}
-        listStats={{ total: 0, analyzed: 0, suspect: 0, converted: 0, duplicates: 0, formats: [] }}
-      />,
-    )
-    expect(screen.queryByTestId('stats-list')).toBeNull()
-    expect(screen.getByTestId('stats-count')).toBeInTheDocument()
+  // Before the first conversion there is no tally to celebrate, only an invitation.
+  it('shows the empty state until the first conversion', () => {
+    render(<StatsTab settings={{ conversionCount: 0 } as Settings} />)
+    expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
+    expect(screen.queryByTestId('stats-count')).toBeNull()
   })
 })

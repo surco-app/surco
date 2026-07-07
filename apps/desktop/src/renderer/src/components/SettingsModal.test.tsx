@@ -21,15 +21,6 @@ import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
 
-const emptyListStats = {
-  total: 0,
-  analyzed: 0,
-  suspect: 0,
-  converted: 0,
-  duplicates: 0,
-  formats: [],
-}
-
 const settings: Settings = {
   theme: 'system',
   language: 'system',
@@ -81,7 +72,6 @@ const settings: Settings = {
 function openNaming() {
   render(
     <SettingsModal
-        listStats={emptyListStats}
       settings={settings}
       onClose={() => {}}
       onSave={() => {}}
@@ -109,7 +99,6 @@ describe('SettingsModal tablist', () => {
   function open() {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -146,7 +135,6 @@ describe('SettingsModal save', () => {
     const onSave = vi.fn()
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -164,7 +152,6 @@ describe('SettingsModal save', () => {
     const onSave = vi.fn()
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -183,7 +170,6 @@ describe('SettingsModal auto-match', () => {
   function openSearch(onSave: (patch: Partial<Settings>) => void = () => {}) {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -264,7 +250,6 @@ describe('SettingsModal destination', () => {
   ) {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={{ ...settings, ...over }}
         onClose={() => {}}
         onSave={onSave}
@@ -364,7 +349,6 @@ describe('SettingsModal filename tokens', () => {
     const onClose = vi.fn()
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={onClose}
         onSave={() => {}}
@@ -385,7 +369,6 @@ describe('SettingsModal theme preview', () => {
     const onSave = vi.fn()
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -405,7 +388,6 @@ describe('SettingsModal organization', () => {
   it('shows the audio spectrum toggle under the Editor tab, not General', () => {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -425,7 +407,6 @@ describe('SettingsModal stats', () => {
   it('shows the conversion count and the estimated time saved', () => {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={{ ...settings, conversionCount: 142 }}
         onClose={() => {}}
         onSave={() => {}}
@@ -443,7 +424,6 @@ describe('SettingsModal stats', () => {
   it('explains the value instead of showing zeros before the first conversion', () => {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -463,7 +443,6 @@ describe('SettingsModal stats', () => {
   it('offers a donation link in both the filled and empty states', () => {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={{ ...settings, conversionCount: 142 }}
         onClose={() => {}}
         onSave={() => {}}
@@ -479,7 +458,6 @@ describe('SettingsModal stats', () => {
 
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -496,7 +474,6 @@ describe('SettingsModal stats', () => {
   it('opens directly on the stats tab when asked', () => {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={{ ...settings, conversionCount: 142 }}
         onClose={() => {}}
         onSave={() => {}}
@@ -513,7 +490,6 @@ describe('SettingsModal shortcuts', () => {
   function openShortcuts(onSave: (p: Partial<Settings>) => void = () => {}) {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -583,7 +559,6 @@ describe('SettingsModal key notation', () => {
   function openEditor(onSave: (p: Partial<Settings>) => void = () => {}) {
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -624,7 +599,6 @@ describe('SettingsModal settings folder', () => {
     const onSave = vi.fn()
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={onSave}
@@ -648,7 +622,6 @@ describe('SettingsModal settings folder', () => {
     api.setConfigDir = vi.fn(async () => settings)
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -677,7 +650,6 @@ describe('SettingsModal analysis cache', () => {
       .mockResolvedValue({ files: 0, bytes: 0 })
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}
@@ -698,7 +670,6 @@ describe('SettingsModal analysis cache', () => {
     api.cacheStats = vi.fn(async () => ({ files: 0, bytes: 0 }))
     render(
       <SettingsModal
-        listStats={emptyListStats}
         settings={settings}
         onClose={() => {}}
         onSave={() => {}}

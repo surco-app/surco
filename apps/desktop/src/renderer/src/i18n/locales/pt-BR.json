@@ -454,12 +454,6 @@
       "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página."
     },
     "stats": {
-      "listTitle": "Lista atual — {{count}} faixas",
-      "listAnalyzed": "Analisadas",
-      "listSuspect": "Suspeitas",
-      "listConverted": "Convertidas",
-      "listDuplicates": "Duplicadas",
-      "listFormats": "Formatos",
       "count": "conversões",
       "timeSaved": "Você economizou cerca de {{time}}",
       "perTrack": "≈ {{minutes}} min de trabalho manual por faixa",

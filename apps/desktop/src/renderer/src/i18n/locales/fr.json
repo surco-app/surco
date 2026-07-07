@@ -454,12 +454,6 @@
       "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page."
     },
     "stats": {
-      "listTitle": "Liste actuelle — {{count}} morceaux",
-      "listAnalyzed": "Analysés",
-      "listSuspect": "Suspects",
-      "listConverted": "Convertis",
-      "listDuplicates": "Doublons",
-      "listFormats": "Formats",
       "count": "conversions",
       "timeSaved": "Tu as économisé environ {{time}}",
       "perTrack": "≈ {{minutes}} min de travail manuel par morceau",
