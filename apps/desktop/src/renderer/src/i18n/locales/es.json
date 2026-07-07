@@ -281,6 +281,8 @@
     "qualityCaptionBad": "Techo en ~{{cutoff}}, propio de una fuente con pérdidas.",
     "qualityCaptionProcessed": "Agudos que suben donde un espectro natural cae — regenerados sobre un techo real en ~{{cutoff}}.",
     "qualityUpsampled": "Declara más de 44.1 kHz, pero el contenido real se corta en 22.05 kHz — reescalado desde 44.1 kHz, no es hi-res real.",
+    "saveQualityReport": "Guardar informe…",
+    "reportFooter": "Analizado con Surco — getsurco.app",
     "qualityCaptionGenuine": "Sin corte de códec: cae con suavidad hasta ~{{cutoff}}, un máster con agudos discretos pero genuino.",
     "qualityCaptionTranscode": "Corte de códec en ~{{cutoff}} dentro de un contenedor lossless: una fuente con pérdidas reempaquetada.",
     "loudnessLufsLabel": "Volumen",

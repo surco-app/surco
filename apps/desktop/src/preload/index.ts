@@ -54,6 +54,8 @@ const api: Api = {
   exportSerato: (tracks: { inputPath: string; outputPath?: string }[]): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportSerato', tracks),
   exportM3u: (m3u: string): Promise<string | null> => ipcRenderer.invoke('dialog:exportM3u', m3u),
+  exportQualityReport: (dataUrl: string, baseName: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:exportQualityReport', dataUrl, baseName),
   search: (
     query: string,
     provider?: SearchProviderId,

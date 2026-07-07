@@ -61,6 +61,23 @@ export function registerExportIpc(): void {
     },
   )
 
+  // Writes the shareable audio-quality report the renderer composed (a PNG data URL):
+  // the spectrogram with its verdict, ready to drop in a forum thread. Returns the saved
+  // path, or null when cancelled — same shape as the other exports.
+  ipcMain.handle('dialog:exportQualityReport', async (_e, dataUrl: string, baseName: string) => {
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+    // The base name comes from track metadata, which can carry path separators.
+    const safe = baseName.replace(/[/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim() || 'Surco'
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Guarda el informe de calidad',
+      defaultPath: `${safe}.png`,
+      filters: [{ name: 'PNG', extensions: ['png'] }],
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, Buffer.from(base64, 'base64'))
+    return filePath
+  })
+
   // Writes an extended M3U8 playlist — the bridge to everything that isn't DJ software.
   // Returns the saved path, or null when cancelled, like the other exports.
   ipcMain.handle('dialog:exportM3u', async (_e, m3u: string) => {

@@ -1,5 +1,6 @@
-import { TriangleAlert } from 'lucide-react'
+import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
@@ -11,6 +12,7 @@ import {
   qualityVerdict,
   type Verdict,
 } from '../lib/quality'
+import { renderQualityReport } from '../lib/qualityReport'
 import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
 import { SectionHeader } from './SectionHeader'
@@ -106,6 +108,43 @@ export function QualitySection({
           ? 'editor.qualityCaptionGenuine'
           : qualityCaption[verdict]
       : null
+  // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
+  // and hands it to the save dialog. Guarded against double-clicks while composing.
+  const [savingReport, setSavingReport] = useState(false)
+  const saveReport = async (): Promise<void> => {
+    if (!spectrum || !verdict || savingReport) return
+    setSavingReport(true)
+    try {
+      const heading =
+        [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || item.fileName
+      const cutoff = spectrum.cutoffHz !== null ? formatKHz(spectrum.cutoffHz) : ''
+      const png = await renderQualityReport({
+        spectrum,
+        heading,
+        facts: `${ext.toUpperCase()} · ${spectrum.sampleRateHz / 1000} kHz`,
+        verdict: transcoded ? 'bad' : verdict,
+        verdictLabel: tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label),
+        cutoffLabel:
+          spectrum.cutoffHz !== null
+            ? tr(
+                spectrum.hasKnee === false && !spectrum.processed
+                  ? 'editor.spectrumHighs'
+                  : 'editor.spectrumCutoff',
+                { cutoff },
+              )
+            : null,
+        caption: captionKey ? tr(captionKey, { cutoff }) : '',
+        upsampledNote: spectrum.upsampled ? tr('editor.qualityUpsampled') : undefined,
+        footer: tr('editor.reportFooter'),
+      })
+      await window.api.exportQualityReport(png, `${item.fileName} — Surco`)
+    } catch {
+      // Composition reads the image already rendered on screen, so a failure here is a
+      // dev-tools curiosity, not a user state — there is no error surface in this section.
+    } finally {
+      setSavingReport(false)
+    }
+  }
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -153,6 +192,20 @@ export function QualitySection({
                   <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
                     {tr('editor.qualityUpsampled')}
                   </p>
+                )}
+                {verdict && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      data-testid="quality-save-report"
+                      onClick={() => void saveReport()}
+                      disabled={savingReport}
+                      className="press flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60"
+                    >
+                      <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
+                      {tr('editor.saveQualityReport')}
+                    </button>
+                  </div>
                 )}
               </>
             ) : null)}

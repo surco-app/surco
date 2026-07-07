@@ -1,12 +1,20 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { QualitySection } from './QualitySection'
+
+// The report composition is canvas work jsdom can't run; a plain stub (not vi.fn — the
+// restoreAllMocks in beforeEach would wipe a vi.fn's implementation) returns a
+// recognisable data URL so the tests can assert what reaches the export dialog.
+vi.mock('../lib/qualityReport', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  renderQualityReport: () => Promise.resolve('data:image/png;base64,report'),
+}))
 
 afterEach(cleanup)
 
@@ -288,5 +296,34 @@ describe('QualitySection analysis failure', () => {
     const error = await screen.findByTestId('quality-error')
     expect(error).toHaveTextContent(i18n.t('editor.analyzeError'))
     expect(screen.queryByText(raw)).not.toBeInTheDocument()
+  })
+})
+
+// The report button is the shareable proof: "is this FLAC fake?" threads live on
+// screenshots, so the verdict must leave the app as a single PNG. The composition is
+// canvas work (mocked here); what the section owns is showing the action only when
+// there is a verdict to share and handing the composed image to the save dialog.
+describe('QualitySection shareable report', () => {
+  it('saves the composed report through the export dialog', async () => {
+    const exportQualityReport = vi.fn().mockResolvedValue('/tmp/report.png')
+    renderSection(
+      { image: 'data:image/png;base64,x', cutoffHz: 16000, sampleRateHz: 44100, processed: false },
+      '/m/a.flac',
+    )
+    ;(window as unknown as { api: { exportQualityReport: unknown } }).api.exportQualityReport =
+      exportQualityReport
+    fireEvent.click(await screen.findByTestId('quality-save-report'))
+    await waitFor(() => expect(exportQualityReport).toHaveBeenCalled())
+    expect(exportQualityReport.mock.calls[0][0]).toBe('data:image/png;base64,report')
+    expect(exportQualityReport.mock.calls[0][1]).toContain('a.flac')
+  })
+
+  it('offers no report while there is no verdict to share', async () => {
+    renderSection(
+      { image: 'data:image/png;base64,x', cutoffHz: null, sampleRateHz: 44100, processed: false },
+      '/m/a.flac',
+    )
+    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-save-report')).not.toBeInTheDocument()
   })
 })

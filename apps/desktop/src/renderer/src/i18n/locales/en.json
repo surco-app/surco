@@ -281,6 +281,8 @@
     "qualityCaptionBad": "Ceiling at ~{{cutoff}}, the mark of a lossy source.",
     "qualityCaptionProcessed": "Highs that rise where a natural spectrum falls — regenerated over a real ceiling near ~{{cutoff}}.",
     "qualityUpsampled": "Declared above 44.1 kHz, but the real content walls off at 22.05 kHz — upsampled from 44.1 kHz, not true hi-res.",
+    "saveQualityReport": "Save report…",
+    "reportFooter": "Analyzed with Surco — getsurco.app",
     "qualityCaptionGenuine": "No codec cut: tapers smoothly to ~{{cutoff}}, a gently rolled-off but genuine master.",
     "qualityCaptionTranscode": "A codec cut at ~{{cutoff}} inside a lossless container: a lossy source repackaged.",
     "loudnessLufsLabel": "Loudness",
