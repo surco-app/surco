@@ -38,7 +38,7 @@ Everything runs on your machine: no account, no telemetry, free forever.
 macOS via Homebrew:
 
 ```bash
-brew install vigosan/tap/surco
+brew install --cask vigosan/surco/surco
 ```
 
 All builds are published at [vigosan/surco-releases](https://github.com/vigosan/surco-releases/releases).
