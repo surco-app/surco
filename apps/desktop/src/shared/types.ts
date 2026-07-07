@@ -2,9 +2,9 @@ import type { Chord } from './shortcuts'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 
-// UI language: 'system' follows the OS locale (Spanish if it starts with "es", else
-// English), or pin one of the shipped locales. Persisted so the choice survives restarts.
-export type LanguagePref = 'system' | 'en' | 'es'
+// UI language: 'system' follows the OS locale (collapsed to a shipped locale, English
+// as the catch-all), or pin one of them. Persisted so the choice survives restarts.
+export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac' | 'alac'
 

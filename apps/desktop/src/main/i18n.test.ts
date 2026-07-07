@@ -11,9 +11,16 @@ describe('pickMenuLang', () => {
     expect(pickMenuLang('es')).toBe('es')
   })
 
-  it('falls back to English for anything else', () => {
+  it('maps every shipped language, collapsing regional variants', () => {
+    expect(pickMenuLang('de-AT')).toBe('de')
+    expect(pickMenuLang('fr-FR')).toBe('fr')
+    expect(pickMenuLang('pt-PT')).toBe('pt-BR')
+    expect(pickMenuLang('pt-BR')).toBe('pt-BR')
+  })
+
+  it('falls back to English for anything not shipped', () => {
     expect(pickMenuLang('en-US')).toBe('en')
-    expect(pickMenuLang('fr-FR')).toBe('en')
+    expect(pickMenuLang('ja')).toBe('en')
     expect(pickMenuLang('')).toBe('en')
   })
 })
@@ -25,7 +32,13 @@ describe('createMenuT', () => {
   })
 
   it('uses English when the locale is unsupported', () => {
-    expect(createMenuT('de-DE')('feedback')).toBe('Send feedback…')
+    expect(createMenuT('ja-JP')('feedback')).toBe('Send feedback…')
+  })
+
+  it('translates for the newly shipped languages', () => {
+    expect(createMenuT('de-DE')('settings')).toBe('Einstellungen…')
+    expect(createMenuT('fr-FR')('settings')).toBe('Réglages…')
+    expect(createMenuT('pt-BR')('file')).toBe('Arquivo')
   })
 
   it('covers the menus added beyond the original two items', () => {

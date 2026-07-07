@@ -4,7 +4,8 @@ import type { ChangelogRelease } from './whatsNew'
 
 // The desktop reads the web's changelog files directly (same monorepo) so the
 // what's-new popup and the /cambios page can never drift apart: curating a release
-// there is the single step that feeds both.
-export function changelogReleases(locale: 'en' | 'es'): ChangelogRelease[] {
+// there is the single step that feeds both. The changelog is only curated in Spanish
+// and English, so every other UI locale reads the English one.
+export function changelogReleases(locale: string): ChangelogRelease[] {
   return (locale === 'es' ? changelogEs : changelogEn) as ChangelogRelease[]
 }

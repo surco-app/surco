@@ -473,7 +473,10 @@
     "languages": {
       "system": "System",
       "en": "English",
-      "es": "Español"
+      "es": "Español",
+      "de": "Deutsch",
+      "fr": "Français",
+      "pt-BR": "Português (Brasil)"
     },
     "configDir": "Settings folder",
     "configDirDefault": "App default folder",

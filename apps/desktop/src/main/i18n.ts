@@ -4,7 +4,7 @@
 // rest of the UI. Items backed by an Electron `role` are localized by the OS
 // automatically; only the app's custom labels live here.
 
-export type MenuLang = 'es' | 'en'
+export type MenuLang = 'es' | 'en' | 'de' | 'fr' | 'pt-BR'
 
 interface MenuStrings {
   settings: string
@@ -127,10 +127,137 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitCancel: 'Cancel',
     engineOpenError: 'Close Engine DJ before converting: it has the library open.',
   },
-}
+  de: {
+    settings: 'Einstellungen…',
+    feedback: 'Feedback senden…',
+    file: 'Datei',
+    add: 'Tracks hinzufügen…',
+    reveal: 'Im Finder zeigen',
+    rename: 'Dateinamen erstellen…',
+    findReplace: 'Suchen & Ersetzen…',
+    addAppleMusic: 'Zu Apple Music hinzufügen',
+    remove: 'Aus der Liste entfernen',
+    removeAll: 'Liste leeren',
+    processCurrent: 'Track verarbeiten',
+    processAll: 'Alle verarbeiten',
+    view: 'Ansicht',
+    palette: 'Befehlspalette',
+    activity: 'Aktivität',
+    search: 'Metadaten suchen',
+    play: 'Abspielen / Pause',
+    prev: 'Vorheriger Track',
+    next: 'Nächster Track',
+    help: 'Hilfe',
+    faq: 'Häufige Fragen',
+    guide: 'Benutzerhandbuch',
+    website: 'Surco-Website',
+    checkUpdates: 'Nach Updates suchen…',
+    upToDate: 'Du hast bereits die neueste Version von Surco.',
+    updateError: 'Nach Updates konnte nicht gesucht werden.',
+    updatesDevOnly: 'Updates sind nur in der installierten App verfügbar.',
+    conflictExists: 'Im Zielordner existiert bereits eine Datei mit diesem Namen.',
+    conflictOverwrite: 'Überschreiben',
+    conflictKeepBoth: 'Beide behalten',
+    conflictSkip: 'Überspringen',
+    appleMusicGone: 'Der Track ist nicht mehr in deiner Apple Music-Bibliothek.',
+    engineQuitMessage: 'Engine DJ ist geöffnet',
+    engineQuitDetail: 'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+    engineQuitConfirm: 'Engine DJ schließen',
+    engineQuitCancel: 'Abbrechen',
+    engineOpenError: 'Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.',
+  },
+  fr: {
+    settings: 'Réglages…',
+    feedback: 'Envoyer un retour…',
+    file: 'Fichier',
+    add: 'Ajouter des morceaux…',
+    reveal: 'Afficher dans le Finder',
+    rename: 'Composer le nom du fichier…',
+    findReplace: 'Rechercher et remplacer…',
+    addAppleMusic: 'Ajouter à Apple Music',
+    remove: 'Retirer de la liste',
+    removeAll: 'Vider la liste',
+    processCurrent: 'Traiter le morceau',
+    processAll: 'Tout traiter',
+    view: 'Présentation',
+    palette: 'Palette de commandes',
+    activity: 'Activité',
+    search: 'Rechercher les métadonnées',
+    play: 'Lecture / pause',
+    prev: 'Morceau précédent',
+    next: 'Morceau suivant',
+    help: 'Aide',
+    faq: 'Questions fréquentes',
+    guide: 'Guide d\'utilisation',
+    website: 'Site web de Surco',
+    checkUpdates: 'Rechercher les mises à jour…',
+    upToDate: 'Tu as déjà la dernière version de Surco.',
+    updateError: 'Impossible de vérifier les mises à jour.',
+    updatesDevOnly: 'Les mises à jour ne sont disponibles que dans l\'app installée.',
+    conflictExists: 'Un fichier du même nom existe déjà dans le dossier de destination.',
+    conflictOverwrite: 'Écraser',
+    conflictKeepBoth: 'Conserver les deux',
+    conflictSkip: 'Ignorer',
+    appleMusicGone: 'Le morceau n\'est plus dans ta bibliothèque Apple Music.',
+    engineQuitMessage: 'Engine DJ est ouvert',
+    engineQuitDetail: 'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+    engineQuitConfirm: 'Fermer Engine DJ',
+    engineQuitCancel: 'Annuler',
+    engineOpenError: 'Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.',
+  },
+  'pt-BR': {
+    settings: 'Ajustes…',
+    feedback: 'Enviar feedback…',
+    file: 'Arquivo',
+    add: 'Adicionar faixas…',
+    reveal: 'Mostrar no Finder',
+    rename: 'Gerar nome do arquivo…',
+    findReplace: 'Localizar e substituir…',
+    addAppleMusic: 'Adicionar ao Apple Music',
+    remove: 'Remover da lista',
+    removeAll: 'Limpar a lista',
+    processCurrent: 'Processar faixa',
+    processAll: 'Processar tudo',
+    view: 'Visualizar',
+    palette: 'Paleta de comandos',
+    activity: 'Atividade',
+    search: 'Buscar metadados',
+    play: 'Reproduzir / pausar',
+    prev: 'Faixa anterior',
+    next: 'Próxima faixa',
+    help: 'Ajuda',
+    faq: 'Perguntas frequentes',
+    guide: 'Guia de uso',
+    website: 'Site do Surco',
+    checkUpdates: 'Buscar atualizações…',
+    upToDate: 'Você já tem a versão mais recente do Surco.',
+    updateError: 'Não foi possível verificar se há atualizações.',
+    updatesDevOnly: 'As atualizações só estão disponíveis no app instalado.',
+    conflictExists: 'Já existe um arquivo com esse nome na pasta de destino.',
+    conflictOverwrite: 'Sobrescrever',
+    conflictKeepBoth: 'Manter ambos',
+    conflictSkip: 'Pular',
+    appleMusicGone: 'A faixa não está mais na sua biblioteca do Apple Music.',
+    engineQuitMessage: 'O Engine DJ está aberto',
+    engineQuitDetail: 'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    engineQuitConfirm: 'Fechar o Engine DJ',
+    engineQuitCancel: 'Cancelar',
+    engineOpenError: 'Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.',
+  },}
 
+// Mirrors the renderer's baseLocale mapping (i18n/locale.ts): regional variants
+// collapse onto a shipped language, Portuguese always lands on pt-BR, and anything
+// not shipped falls back to English.
+const MENU_PREFIXES: [string, MenuLang][] = [
+  ['es', 'es'],
+  ['de', 'de'],
+  ['fr', 'fr'],
+  ['pt', 'pt-BR'],
+]
 export function pickMenuLang(locale: string): MenuLang {
-  return locale.toLowerCase().startsWith('es') ? 'es' : 'en'
+  const tag = locale.toLowerCase()
+  for (const [prefix, lang] of MENU_PREFIXES) if (tag.startsWith(prefix)) return lang
+  return 'en'
 }
 
 export function createMenuT(locale: string): (key: keyof MenuStrings) => string {

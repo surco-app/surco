@@ -8,7 +8,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
-const LANGUAGES: LanguagePref[] = ['system', 'en', 'es']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
 
 interface Props {
   synced: SyncedDraft

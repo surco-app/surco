@@ -473,7 +473,10 @@
     "languages": {
       "system": "Sistema",
       "en": "English",
-      "es": "Español"
+      "es": "Español",
+      "de": "Deutsch",
+      "fr": "Français",
+      "pt-BR": "Português (Brasil)"
     },
     "configDir": "Carpeta de configuración",
     "configDirDefault": "Carpeta por defecto de la app",
