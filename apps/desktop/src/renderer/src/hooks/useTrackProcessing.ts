@@ -19,12 +19,15 @@ import { renderOutputName } from '../lib/outputName'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
-// How many tracks convert at once in a bulk run. Half the logical cores (min 2), the same
-// budget the analysis sweep uses (analysisLimiter): ffmpeg is CPU-bound, so this overlaps
-// conversions while leaving headroom for the UI and audio. Chosen automatically rather than
-// exposed as a setting — the real ceiling on a bulk run is Apple Music's serialized import,
-// not the ffmpeg count, so a knob here would suggest more control than it delivers.
-const CONVERT_CONCURRENCY = Math.max(2, Math.floor((navigator.hardwareConcurrency || 4) / 2))
+// How many tracks convert at once in a bulk run. All logical cores but one (min 2): the
+// audio encoders ffmpeg uses (lame, flac, alac, pcm) are single-threaded, so each
+// conversion occupies about one core, and every ffmpeg child is spawned below-normal
+// priority (see niceDecode in main/ffmpeg.ts) so the scheduler hands the UI and the
+// surco:// audio stream their cores the moment they compete — the spare core is for
+// them when everything is saturated. Chosen automatically rather than exposed as a
+// setting — the real ceiling on a bulk run is Apple Music's serialized import, not the
+// ffmpeg count, so a knob here would suggest more control than it delivers.
+const CONVERT_CONCURRENCY = Math.max(2, (navigator.hardwareConcurrency || 4) - 1)
 
 interface Params {
   tracks: TrackItem[]
@@ -40,8 +43,8 @@ interface Params {
   // Raised with the (IPC-prefix-free) message when a conversion fails, so the app can
   // toast it — the footer's one-line error row truncates anything long.
   onProcessError?: (message: string) => void
-  // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (half the
-  // cores); only overridden in tests, which pin it to make the concurrency deterministic.
+  // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (all cores
+  // but one); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
 }
 
