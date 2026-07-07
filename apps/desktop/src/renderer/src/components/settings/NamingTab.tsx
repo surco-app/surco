@@ -19,14 +19,21 @@ const SAMPLE_META: TrackMetadata = {
   year: '2026',
   genre: 'Hard Dance',
   grouping: 'Bases',
-  comment: '',
+  comment: 'Vinyl rip',
   trackNumber: '03',
   discNumber: '1',
   bpm: '128',
   key: '8A',
   publisher: 'Surco',
   catalogNumber: 'SRC001',
-  remixArtist: '',
+  remixArtist: 'Dj Breeze',
+  discogsReleaseId: '2406512',
+  rating: '5',
+  composer: 'V. Ferrer',
+  isrc: 'ES-SRC-26-00031',
+  mixName: 'Original Mix',
+  originalYear: '1998',
+  compilation: '1',
 }
 
 interface Props {

@@ -17,6 +17,7 @@ vi.hoisted(() => {
 
 import '../i18n'
 import type { Settings } from '../../../shared/types'
+import { FIELD_DEFS } from '../lib/fields'
 import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
@@ -344,6 +345,17 @@ describe('SettingsModal filename tokens', () => {
     expect(screen.getByTestId('settings-format-preview')).toHaveTextContent(
       'Dj VixentTake me into the sky.aiff',
     )
+  })
+
+  // Every chip must move the preview: a token that renders to nothing reads as
+  // "this field doesn't work in file names" even though real tracks fill it.
+  it('renders a sample value for every insertable token', () => {
+    openNaming()
+    const format = screen.getByTestId('settings-filename-format')
+    for (const key of [...FIELD_DEFS.map((f) => f.key), 'rating']) {
+      fireEvent.change(format, { target: { value: `{${key}}` } })
+      expect(screen.getByTestId('settings-format-preview')).not.toHaveTextContent('—')
+    }
   })
 
   it('closes when the backdrop is clicked', () => {
