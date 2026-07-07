@@ -14,7 +14,9 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
       if (typeof value === 'string') clean[key] = value.replace(/\s+/g, ' ').trim()
     }
   }
-  if (opts.zeroPad) {
+  // A lettered track number is a vinyl side position ("A1"); padding works on
+  // digits and would strip the letter, so it only touches purely numeric values.
+  if (opts.zeroPad && !/[A-Za-z]/.test(clean.trackNumber)) {
     const digits = clean.trackNumber.replace(/\D/g, '')
     if (digits) clean.trackNumber = digits.padStart(2, '0')
   }

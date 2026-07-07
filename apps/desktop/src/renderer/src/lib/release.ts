@@ -170,7 +170,13 @@ function durationProximity(
 function positionMatch(trackNumber: string, position: string): number | undefined {
   const candidate = splitPosition(position).track
   if (!candidate) return undefined
-  return candidate === trackNumber ? 1 : 0
+  // Verbatim first: a collector-tagged "A1" meets the release position exactly.
+  if (candidate.toUpperCase() === trackNumber.trim().toUpperCase()) return 1
+  // Digits fallback: files tagged before vinyl positions were preserved carry the
+  // bare number ("1"), which is what splitPosition used to reduce "A1" to.
+  const digits = (s: string): string => s.replace(/\D/g, '')
+  const numeric = digits(candidate)
+  return numeric !== '' && numeric === digits(trackNumber) ? 1 : 0
 }
 
 // The partial credit rides the same whole-word same-act rule the high-tier guard uses

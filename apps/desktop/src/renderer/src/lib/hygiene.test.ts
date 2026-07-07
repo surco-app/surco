@@ -48,6 +48,14 @@ describe('sanitizeMeta', () => {
     ).toBe('')
   })
 
+  it('leaves a vinyl position untouched when zero-padding, keeping the side letter', () => {
+    // "A1" from a Discogs vinyl release is the whole value; stripping to digits and
+    // padding ("01") destroys exactly what collectors tag for.
+    expect(
+      sanitizeMeta(meta({ trackNumber: 'A1' }), { trim: false, zeroPad: true }).trackNumber,
+    ).toBe('A1')
+  })
+
   it('applies nothing when both options are off', () => {
     const input = meta({ title: '  x  ', trackNumber: '3' })
     const r = sanitizeMeta(input, { trim: false, zeroPad: false })

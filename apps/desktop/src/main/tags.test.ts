@@ -273,6 +273,48 @@ describe('writeTags', () => {
     expect(readFileSync(file).includes(Buffer.from('TORY'))).toBe(true)
   })
 
+  // Collectors tag vinyl the Discogs way: the side position ("A2") IS the track
+  // number. TagLib's numeric track setter can't hold it, so writeTags must rewrite
+  // the TRCK frame verbatim — matching what the ffmpeg conversion path writes.
+  it('writes a vinyl-position track number verbatim into TRCK', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, trackNumber: 'A2' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const trck = id3.frames.find(
+      (fr) => fr.frameId === Id3v2FrameIdentifiers.TRCK,
+    ) as Id3v2TextInformationFrame
+    expect(trck?.text).toEqual(['A2'])
+    f.dispose()
+  })
+
+  it('keeps a plain numeric track number numeric', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, trackNumber: '7' })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.track).toBe(7)
+    f.dispose()
+  })
+
+  // MP4's trkn atom holds integers only, so the side letter cannot survive there;
+  // the digits are the most a vinyl position can keep in an .m4a.
+  it('falls back to the digits of a vinyl position for the m4a track atom', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+
+    writeTags(file, { ...meta, trackNumber: 'A2' })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.track).toBe(2)
+    f.dispose()
+  })
+
   it('round-trips the compilation flag and clears it when unset', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)

@@ -9,17 +9,22 @@ describe('splitPosition', () => {
     expect(splitPosition('1-12')).toEqual({ disc: '1', track: '12' })
   })
 
-  it('keeps a vinyl side position as a plain track number with no disc', () => {
-    // "A1"/"B2" are sides, not discs, so disc stays empty
-    expect(splitPosition('A1')).toEqual({ disc: '', track: '1' })
-    expect(splitPosition('B2')).toEqual({ disc: '', track: '2' })
+  it('keeps a vinyl side position verbatim — for collectors A1 IS the track number', () => {
+    // Discogs-style taggers write the side position straight into the track field;
+    // reducing "A2" to "2" is what users reported as data loss. No disc either way.
+    expect(splitPosition('A1')).toEqual({ disc: '', track: 'A1' })
+    expect(splitPosition('B2')).toEqual({ disc: '', track: 'B2' })
+    // 7" singles list a bare side letter
+    expect(splitPosition('A')).toEqual({ disc: '', track: 'A' })
   })
 
   it('handles a bare track number', () => {
     expect(splitPosition('5')).toEqual({ disc: '', track: '5' })
   })
 
-  it('returns empty parts when the position carries no digits', () => {
-    expect(splitPosition('A')).toEqual({ disc: '', track: '' })
+  it('keeps the digits-only fallback for positions that are not vinyl sides', () => {
+    // Two-letter prefixes ("CD1") are media labels, not sides — the old digits
+    // behaviour still applies to them.
+    expect(splitPosition('CD1')).toEqual({ disc: '', track: '1' })
   })
 })

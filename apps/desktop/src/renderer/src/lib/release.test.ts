@@ -169,6 +169,14 @@ describe('resultFromRelease', () => {
 })
 
 describe('scoreTrack', () => {
+  it('scores a vinyl position verbatim and still meets legacy numeric tags', () => {
+    // Files tagged the collector way carry "A1" in the track field; files tagged
+    // before the fix carry "1". Both must count as the same position hit.
+    const track = { position: 'A1', title: 'Nannou' }
+    expect(scoreTrack(track, { title: 'Nannou', trackNumber: 'A1' })).toBe(1)
+    expect(scoreTrack(track, { title: 'Nannou', trackNumber: '1' })).toBe(1)
+  })
+
   it('scores an exact title match as fully confident when nothing else is known', () => {
     expect(scoreTrack({ position: 'A1', title: 'Nannou' }, { title: 'Nannou' })).toBe(1)
   })

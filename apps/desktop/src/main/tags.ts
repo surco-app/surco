@@ -87,6 +87,14 @@ const toYear = (value: string): number => {
 
 const toArray = (value: string): string[] => (value.trim() ? [value] : [])
 
+// The numeric track for TagLib's generic setter. A vinyl position ("A2") is not a
+// number, so its digits are all that can ride the numeric slots (MP4's trkn atom
+// holds integers only); the ID3 path rewrites the full text afterwards.
+const toTrackNumber = (value: string): number => {
+  const n = toNumber(value)
+  return n || toNumber(value.replace(/\D/g, ''))
+}
+
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
@@ -154,7 +162,7 @@ export function writeTags(
     tag.genres = toArray(meta.genre)
     tag.grouping = meta.grouping
     tag.comment = meta.comment
-    tag.track = toNumber(meta.trackNumber)
+    tag.track = toTrackNumber(meta.trackNumber)
     tag.disc = toNumber(meta.discNumber)
     tag.beatsPerMinute = toNumber(meta.bpm)
     tag.initialKey = meta.key
@@ -200,6 +208,17 @@ export function writeTags(
       id3.addFrame(tory)
     }
     setRating(id3, meta.rating ?? '')
+
+    // A vinyl-position track number ("A2") is text the numeric tag.track setter
+    // above cannot hold — it wrote the bare digits. Rewrite the TRCK frame with the
+    // verbatim value so the side position survives, matching what the ffmpeg
+    // conversion path writes with `-metadata track=`.
+    if (/[A-Za-z]/.test(meta.trackNumber)) {
+      id3.removeFrames(Id3v2FrameIdentifiers.TRCK)
+      const trck = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TRCK)
+      trck.text = [meta.trackNumber]
+      id3.addFrame(trck)
+    }
 
     if (coverPath || removeCover) {
       // TagLib models APIC and GEOB as the same attachment kind, so the generic
