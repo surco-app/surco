@@ -695,6 +695,8 @@
     "fillMessage_other": "Liest Titel, Künstler und Track-Nummer aus jedem Dateinamen und überschreibt diese Felder in {{count}} Tracks. Andere Tags bleiben unangetastet.",
     "fillMessageFiltered_one": "Liest Titel, Künstler und Track-Nummer aus dem Dateinamen und überschreibt diese Felder im einzigen sichtbaren Track. Vom Filter ausgeblendete Tracks bleiben unangetastet.",
     "fillMessageFiltered_other": "Liest Titel, Künstler und Track-Nummer aus jedem Dateinamen und überschreibt diese Felder in den {{count}} sichtbaren Tracks. Vom Filter ausgeblendete Tracks bleiben unangetastet.",
+    "fillMessageSelected_one": "Liest Titel, Künstler und Tracknummer aus dem Dateinamen und überschreibt diese Felder beim ausgewählten Track. Alle anderen Tags bleiben unberührt.",
+    "fillMessageSelected_other": "Liest Titel, Künstler und Tracknummer aus jedem Dateinamen und überschreibt diese Felder bei den {{count}} ausgewählten Tracks. Alle anderen Tags bleiben unberührt.",
     "fillNone": "Kein Dateiname passt zu einem bekannten Muster, es gibt also nichts zu füllen.",
     "fillConfirm": "Tags füllen",
     "clearTitle": "Liste leeren?",

@@ -75,6 +75,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     askClearAll: () => {},
     askTrashSuspects: () => {},
     askTrashSelected: () => {},
+    bulkTracks: [],
     openSettings: () => {},
     openFindReplace: () => {},
     openExport: () => {},
@@ -468,5 +469,41 @@ describe('buildCommands trash-selected gate', () => {
     const askTrashSelected = vi.fn()
     commandById(makeDeps({ askTrashSelected, selected: track() }), 'trash-selected').run()
     expect(askTrashSelected).toHaveBeenCalled()
+  })
+})
+
+describe('buildCommands bulk scope', () => {
+  // The palette's Convert-all and Auto-match must act on the shared bulk scope (a
+  // deliberate multi-selection when there is one, else the visible rows) — the same
+  // set the toolbar's own buttons sweep — never unconditionally on the visible list.
+  it('converts the bulk scope, not the visible rows', () => {
+    const askConvertAll = vi.fn()
+    const bulk = [track({ id: 'sel1' }), track({ id: 'sel2' })]
+    commandById(
+      makeDeps({
+        canProcessAll: true,
+        askConvertAll,
+        bulkTracks: bulk,
+        visibleTracks: [track({ id: 'other' })],
+      }),
+      'process-all',
+    ).run()
+    expect(askConvertAll).toHaveBeenCalledWith(bulk, undefined, undefined)
+  })
+
+  it('auto-matches the bulk scope, not the visible rows', () => {
+    const enqueueAutoMatch = vi.fn()
+    const bulk = [track({ id: 'sel1' })]
+    commandById(
+      makeDeps({
+        settings: { outputFormat: 'aiff', discogsToken: 'tok' } as Settings,
+        autoMatchable: 1,
+        enqueueAutoMatch,
+        bulkTracks: bulk,
+        visibleTracks: [track({ id: 'other' })],
+      }),
+      'auto-match',
+    ).run()
+    expect(enqueueAutoMatch).toHaveBeenCalledWith(bulk, false)
   })
 })

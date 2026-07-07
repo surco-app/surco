@@ -42,7 +42,7 @@ export interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
-  askFillAll: (targets: TrackItem[]) => void
+  askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
   askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
 }
@@ -172,15 +172,19 @@ export function useConfirmFlows({
   // on the click; the dialog spells out exactly what changes. Targets is the visible (filtered)
   // set for the toolbar buttons, or the whole list for the palette's "Clear the list" — either
   // way the count in the copy matches what actually changes.
-  function askFillAll(targets: TrackItem[]): void {
+  function askFillAll(targets: TrackItem[], opts: { fromSelection?: boolean } = {}): void {
     const count = deriveTagPatches(targets).length
     const filtered = targets.length < tracksRef.current.length
+    // A selection and a filter can produce the same count; only the caller knows which
+    // scope it passed, and the dialog must name it ("selected" vs "visible").
+    const messageKey = opts.fromSelection
+      ? 'confirm.fillMessageSelected'
+      : filtered
+        ? 'confirm.fillMessageFiltered'
+        : 'confirm.fillMessage'
     openConfirm({
       title: tr('confirm.fillTitle'),
-      message:
-        count > 0
-          ? tr(filtered ? 'confirm.fillMessageFiltered' : 'confirm.fillMessage', { count })
-          : tr('confirm.fillNone'),
+      message: count > 0 ? tr(messageKey, { count }) : tr('confirm.fillNone'),
       confirmLabel: tr('confirm.fillConfirm'),
       confirmDisabled: count === 0,
       onConfirm: () => deriveFrom(targets),

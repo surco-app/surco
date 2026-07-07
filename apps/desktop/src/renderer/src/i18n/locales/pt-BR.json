@@ -695,6 +695,8 @@
     "fillMessage_other": "Lê o título, o artista e o nº da faixa do nome de cada arquivo e sobrescreve esses campos em {{count}} faixas. As outras tags não são tocadas.",
     "fillMessageFiltered_one": "Lê o título, o artista e o nº da faixa do nome do arquivo e sobrescreve esses campos na única faixa visível. As que o filtro oculta ficam como estão.",
     "fillMessageFiltered_other": "Lê o título, o artista e o nº da faixa do nome de cada arquivo e sobrescreve esses campos nas {{count}} faixas visíveis. As que o filtro oculta ficam como estão.",
+    "fillMessageSelected_one": "Lê o título, o artista e o número da faixa do nome do arquivo e sobrescreve esses campos na faixa selecionada. As outras tags não são tocadas.",
+    "fillMessageSelected_other": "Lê o título, o artista e o número da faixa do nome de cada arquivo e sobrescreve esses campos nas {{count}} faixas selecionadas. As outras tags não são tocadas.",
     "fillNone": "Nenhum nome segue um padrão conhecido, então não há nada para preencher.",
     "fillConfirm": "Preencher tags",
     "clearTitle": "Limpar a lista?",

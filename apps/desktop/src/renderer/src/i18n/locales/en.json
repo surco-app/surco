@@ -695,6 +695,8 @@
     "fillMessage_other": "This reads the title, artist and track number from each file’s name and overwrites those fields in {{count}} tracks. Other tags are left untouched.",
     "fillMessageFiltered_one": "This reads the title, artist and track number from the file’s name and overwrites those fields in the 1 visible track. Tracks hidden by the filter are left alone.",
     "fillMessageFiltered_other": "This reads the title, artist and track number from each file’s name and overwrites those fields in the {{count}} visible tracks. Tracks hidden by the filter are left alone.",
+    "fillMessageSelected_one": "Reads the title, artist and track number from the file's name and overwrites those fields on the selected track. Other tags stay untouched.",
+    "fillMessageSelected_other": "Reads the title, artist and track number from each file's name and overwrites those fields on the {{count}} selected tracks. Other tags stay untouched.",
     "fillNone": "None of the file names match a known pattern, so there is nothing to fill.",
     "fillConfirm": "Fill tags",
     "clearTitle": "Clear the list?",

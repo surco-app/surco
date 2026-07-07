@@ -162,3 +162,17 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
   })
 })
+
+describe('useConfirmFlows fill-all selection scope', () => {
+  // Bulk actions follow the shared scope rule: a deliberate multi-selection wins over
+  // the visible rows. The dialog must then say "selected", not "visible" — the count
+  // alone can't tell a selection from a filter, so the caller states it.
+  it('says selected when the fill targets a multi-selection', () => {
+    const all = [track('a'), track('b'), track('c')]
+    const { flows, opened } = setup(all)
+    flows.askFillAll(all.slice(0, 2), { fromSelection: true })
+    expect(opened[0].message.toLowerCase()).toContain('selected')
+    expect(opened[0].message).toContain('2')
+    expect(opened[0].message.toLowerCase()).not.toContain('visible')
+  })
+})

@@ -695,6 +695,8 @@
     "fillMessage_other": "Lit le titre, l'artiste et le n° de piste depuis le nom de chaque fichier et écrase ces champs dans {{count}} morceaux. Les autres tags ne sont pas touchés.",
     "fillMessageFiltered_one": "Lit le titre, l'artiste et le n° de piste depuis le nom du fichier et écrase ces champs dans le seul morceau visible. Les morceaux masqués par le filtre ne sont pas touchés.",
     "fillMessageFiltered_other": "Lit le titre, l'artiste et le n° de piste depuis le nom de chaque fichier et écrase ces champs dans les {{count}} morceaux visibles. Les morceaux masqués par le filtre ne sont pas touchés.",
+    "fillMessageSelected_one": "Lit le titre, l'artiste et le numéro de piste depuis le nom du fichier et écrase ces champs sur le morceau sélectionné. Les autres tags ne sont pas touchés.",
+    "fillMessageSelected_other": "Lit le titre, l'artiste et le numéro de piste depuis le nom de chaque fichier et écrase ces champs sur les {{count}} morceaux sélectionnés. Les autres tags ne sont pas touchés.",
     "fillNone": "Aucun nom de fichier ne correspond à un motif connu, donc il n'y a rien à remplir.",
     "fillConfirm": "Remplir les tags",
     "clearTitle": "Vider la liste ?",

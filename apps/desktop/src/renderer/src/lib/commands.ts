@@ -142,6 +142,10 @@ export interface CommandDeps {
   // call window.api.reveal directly.
   reveal: (path: string) => void
   askClearAll: () => void
+  // The shared bulk-action scope: a deliberate multi-selection (>1) when there is one,
+  // else the visible rows. Convert-all and Auto-match sweep THIS set, matching Find &
+  // Replace and the toolbar buttons, so a selection is never silently ignored.
+  bulkTracks: TrackItem[]
   // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
   // "clean the fakes" that turns the quality sweep into an action, not just a filter.
   askTrashSuspects: () => void
@@ -214,6 +218,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     removeTrack,
     reveal,
     askClearAll,
+    bulkTracks,
     askTrashSuspects,
     askTrashSelected,
     openSettings,
@@ -406,13 +411,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
       enabled: batching ? true : canProcessAll,
-      // Convert the VISIBLE rows, not the whole crate: with a format filter on (e.g. MP3),
-      // "convert all" must touch only what's shown, never the hidden FLAC/WAV rows.
+      // Convert the bulk scope: the multi-selection when one exists, else the visible
+      // rows — with a format filter on, never the hidden FLAC/WAV rows.
       run: () => {
         if (batching) cancelBatch()
         else
           askConvertAll(
-            visibleTracks,
+            bulkTracks,
             editorFormatRef.current ?? undefined,
             editorNormalizeRef.current ?? undefined,
           )
@@ -460,7 +465,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
       run: () => {
         if (matching) cancelAutoMatch()
-        else enqueueAutoMatch(visibleTracks, false)
+        else enqueueAutoMatch(bulkTracks, false)
       },
     },
     {

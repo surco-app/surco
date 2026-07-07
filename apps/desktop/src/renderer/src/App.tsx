@@ -366,6 +366,9 @@ export default function App(): React.JSX.Element {
   // The current visible (filtered/sorted/searched) order, so the stable select callback
   // resolves a Shift range over what's on screen rather than the full import order.
   const visibleTracksRef = useRef<TrackItem[]>([])
+  // Ref twin of the bulk-action scope (declared early: the analysis sweep reads it
+  // before the memo below exists); assigned right after bulkTracks is computed.
+  const bulkTracksRef = useRef<TrackItem[]>([])
   // The rows pinned into the current library-filter view, so a background auto-match that
   // flips a row's "already owned" verdict can't drop it out from under the user mid-work
   // (see filterWithSticky). Tied to the filter it was built for: switching filter (or
@@ -662,10 +665,10 @@ export default function App(): React.JSX.Element {
   // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
   // wires the start/cancel actions into the toolbar and commands.
   const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({
-    // The visible (filtered) rows, so the sweep analyses what's shown — change the filter and
-    // the next run reaches the newly-visible tracks. Already-measured ones are skipped, so
-    // widening the filter never re-analyses what a narrower one already did.
-    targetsRef: visibleTracksRef,
+    // The bulk scope: a deliberate multi-selection when there is one, else the visible
+    // (filtered) rows. Already-measured tracks are skipped, so widening the scope never
+    // re-analyses what a narrower one already did.
+    targetsRef: bulkTracksRef,
     onErrors: (count) => setNotice(tr('notices.qualityErrors', { count })),
   })
 
@@ -973,12 +976,14 @@ export default function App(): React.JSX.Element {
   visibleTracksRef.current = visibleTracks
   // Find & Replace overwrites text tags across many rows, so it obeys the same rule as the
   // other bulk actions: a deliberate multi-selection when there is one, else the visible
-  // (filtered) rows — never the tracks the active filter is hiding. Reactive (not the ref
-  // bulkActionTarget uses) because the open modal re-previews live as the set changes.
-  const findReplaceTargets = useMemo(
+  // (filtered) rows — never the tracks the active filter is hiding. Reactive because the
+  // open Find & Replace modal re-previews live as the set changes; the ref twin below
+  // feeds the sweeps and stable callbacks that read at call time.
+  const bulkTracks = useMemo(
     () => (selectedTracks.length > 1 ? selectedTracks : visibleTracks),
     [selectedTracks, visibleTracks],
   )
+  bulkTracksRef.current = bulkTracks
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
     moveSelection,
@@ -1050,10 +1055,12 @@ export default function App(): React.JSX.Element {
   // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
   // a few rows is the right-click menu's "Remove from list"; wiping the entire list regardless
   // of filter is the palette's "Clear the list".
-  const onFillAll = useStableCallback(() => askFillAll(visibleTracksRef.current))
+  const onFillAll = useStableCallback(() =>
+    askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
+  )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(analyzeAllQuality)
-  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(visibleTracks, false))
+  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks, false))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
@@ -1282,6 +1289,7 @@ export default function App(): React.JSX.Element {
       removeTrack,
       reveal: window.api.reveal,
       askClearAll: onClearEverything,
+      bulkTracks,
       askTrashSuspects: onTrashSuspects,
       askTrashSelected: onTrashSelected,
       openSettings,
@@ -1760,7 +1768,7 @@ export default function App(): React.JSX.Element {
           {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
           {activeModal?.type === 'findReplace' && (
             <FindReplaceModal
-              tracks={findReplaceTargets}
+              tracks={bulkTracks}
               onApply={deriveTracksUndoable}
               onClose={overlays.close}
             />
@@ -1777,7 +1785,7 @@ export default function App(): React.JSX.Element {
             />
           )}
           {activeModal?.type === 'export' && (
-            <ExportModal tracks={tracks} onClose={overlays.close} />
+            <ExportModal tracks={bulkTracks} onClose={overlays.close} />
           )}
           {activeModal?.type === 'confirm' && (
             <ConfirmDialog

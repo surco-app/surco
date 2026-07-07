@@ -695,6 +695,8 @@
     "fillMessage_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de tags no se toca.",
     "fillMessageFiltered_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en la única pista visible. Las que el filtro oculta no se tocan.",
     "fillMessageFiltered_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en las {{count}} pistas visibles. Las que el filtro oculta no se tocan.",
+    "fillMessageSelected_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en la pista seleccionada. El resto de tags no se toca.",
+    "fillMessageSelected_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en las {{count}} pistas seleccionadas. El resto de tags no se toca.",
     "fillNone": "Ningún nombre encaja con un patrón conocido, así que no hay nada que rellenar.",
     "fillConfirm": "Rellenar tags",
     "clearTitle": "¿Vaciar la lista?",
