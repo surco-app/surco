@@ -69,7 +69,9 @@ export function FieldsEditor({
               data-testid={`field-row-${key}`}
               className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
             >
-              <span className="text-sm">{tr(`fields.${key}`)}</span>
+              <span className="text-sm" title={key}>
+                {tr(`fields.${key}`)}
+              </span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -139,7 +141,9 @@ export function FieldsEditor({
                 data-testid={`hidden-field-${d.key}`}
                 className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
               >
-                <span className="text-sm text-fg-muted">{tr(`fields.${d.key}`)}</span>
+                <span className="text-sm text-fg-muted" title={d.key}>
+                  {tr(`fields.${d.key}`)}
+                </span>
                 <button
                   type="button"
                   onClick={() => onChangeVisible([...visibleFields, d.key])}

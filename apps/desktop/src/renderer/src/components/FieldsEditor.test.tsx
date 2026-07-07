@@ -23,6 +23,14 @@ function setup(over: { visibleFields?: string[]; requiredFields?: string[] } = {
 }
 
 describe('FieldsEditor', () => {
+  // The localized label ("Título") hides the internal name templates and tag tools
+  // use ({trackNumber}, Mp3tag's field mapping); the hover tooltip bridges the two.
+  it('exposes the internal field name as a hover tooltip', () => {
+    setup()
+    const row = screen.getByTestId('field-row-title')
+    expect(within(row).getByTitle('title')).toBeInTheDocument()
+  })
+
   it('toggles a field required', () => {
     const { onChangeRequired } = setup()
     fireEvent.click(screen.getByTestId('field-required-artist'))
