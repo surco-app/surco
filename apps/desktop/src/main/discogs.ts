@@ -142,6 +142,22 @@ async function searchStructured(
   return runSearch(params, `structured ${artist} ${title}`, token, opts, priority)
 }
 
+// The tracklist query: an album track's title is not the release's title, so the
+// release_title field misses it entirely — Discogs' `track` field searches inside
+// tracklists and finds the album (or single) that carries the cut. Tried after
+// release_title, which pins the exact single when the two coincide, and before the
+// noisy free-text candidates. Cache id tagged apart from the other query shapes.
+async function searchTracklist(
+  artist: string,
+  title: string,
+  token: string,
+  opts: SearchOpts = {},
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
+  const params = `artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}`
+  return runSearch(params, `tracklist ${artist} ${title}`, token, opts, priority)
+}
+
 // Collapses results that would render identically in the list — same title, year, label
 // and format — keeping the first (Discogs ranks the most relevant pressing first). A
 // search for a popular album otherwise shows the same row a dozen times, once per
@@ -201,6 +217,13 @@ export async function search(
           await searchStructured(hints.artist.trim(), hints.title.trim(), token, opts, priority),
         )
         if (structured.length) return structured
+        // Album tracks: the tag's title names a track, not a release, so try the
+        // tracklist field next — still the catalog's own fields, before free text.
+        await discogsLimiter.acquire(priority)
+        const byTrack = keep(
+          await searchTracklist(hints.artist.trim(), hints.title.trim(), token, opts, priority),
+        )
+        if (byTrack.length) return byTrack
       }
       let results: SearchResult[] = []
       for (const candidate of buildSearchCandidates(query, hints)) {

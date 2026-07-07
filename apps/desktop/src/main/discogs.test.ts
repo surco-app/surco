@@ -124,12 +124,32 @@ describe('search', () => {
     expect(first).not.toContain('&q=')
   })
 
-  // The structured query is precise but brittle — a mistyped artist in the tag returns
-  // nothing. When it comes up empty the client must still fall through to the free-text
+  // An album track's title is not the release's title, so the release_title query misses
+  // it entirely; Discogs' `track` field searches inside tracklists and finds the album
+  // that carries the cut — the case the free-text fallback used to fumble through noise.
+  it('falls back to the tracklist track= query when the release-title one finds nothing', async () => {
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 21 }] })])
+    const out = await search('orbital halcyon', 'tok', undefined, {
+      artist: 'Orbital',
+      title: 'Halcyon',
+    })
+    expect(out).toEqual([{ id: 21, provider: 'discogs' }])
+    const second = fetchMock.mock.calls[1][0] as string
+    expect(second).toContain(`artist=${encodeURIComponent('Orbital')}`)
+    expect(second).toContain(`track=${encodeURIComponent('Halcyon')}`)
+    expect(second).not.toContain('&q=')
+  })
+
+  // The structured queries are precise but brittle — a mistyped artist in the tag returns
+  // nothing. When both come up empty the client must still fall through to the free-text
   // candidates so a rough tag can still find the release.
-  it('falls back to free-text candidates when the structured query finds nothing', async () => {
-    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 12 }] })])
-    // Distinct artist/title from the other structured test: the module-level search cache
+  it('falls back to free-text candidates when the structured queries find nothing', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [] }),
+      res(200, { results: [] }),
+      res(200, { results: [{ id: 12 }] }),
+    ])
+    // Distinct artist/title from the other structured tests: the module-level search cache
     // persists across tests, so reusing the same pair would serve the cached hit.
     const out = await search('nifra everglow', 'tok', undefined, {
       artist: 'Nifra',
@@ -138,8 +158,10 @@ describe('search', () => {
     expect(out).toEqual([{ id: 12, provider: 'discogs' }])
     const first = fetchMock.mock.calls[0][0] as string
     const second = fetchMock.mock.calls[1][0] as string
+    const third = fetchMock.mock.calls[2][0] as string
     expect(first).toContain('release_title=')
-    expect(second).toContain('&q=')
+    expect(second).toContain('track=')
+    expect(third).toContain('&q=')
   })
 
   // No hints (a raw filename search) means there's nothing to fill the structured
