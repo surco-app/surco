@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, GripVertical, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,18 @@ import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
 const ORGANIZED_FEEDBACK_MS = 1500
+
+// Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
+// before it — how every list DnD reads, so the row stays where the user dropped it.
+function reorder(list: string[], fromKey: string, toKey: string): string[] {
+  const from = list.indexOf(fromKey)
+  const to = list.indexOf(toKey)
+  if (from === -1 || to === -1 || from === to) return list
+  const next = [...list]
+  next.splice(from, 1)
+  next.splice(to, 0, fromKey)
+  return next
+}
 
 interface Props {
   visibleFields: string[]
@@ -29,6 +41,11 @@ export function FieldsEditor({
   // so the button confirms in place, then reverts. The timer is cleared on unmount so a
   // late revert can't fire after the modal closes.
   const [organized, setOrganized] = useState(false)
+  // Drag-to-reorder state: the row being dragged (armed from its grip handle, so the
+  // row's buttons stay plain clicks) and the row currently hovered as the drop target.
+  // The arrow buttons remain as the keyboard-accessible path.
+  const [dragKey, setDragKey] = useState<string | null>(null)
+  const [dropKey, setDropKey] = useState<string | null>(null)
   const organizedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(organizedTimer.current), [])
   function autoOrganize(): void {
@@ -65,12 +82,44 @@ export function FieldsEditor({
         </div>
         <div className="space-y-1.5">
           {visibleFields.map((key, i) => (
+            // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
             <div
               key={key}
               data-testid={`field-row-${key}`}
-              className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+              draggable={dragKey === key}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/plain', key)
+              }}
+              onDragOver={(e) => {
+                if (dragKey && dragKey !== key) {
+                  e.preventDefault()
+                  setDropKey(key)
+                }
+              }}
+              onDragLeave={() => setDropKey((k) => (k === key ? null : k))}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragKey && dragKey !== key) onChangeVisible(reorder(visibleFields, dragKey, key))
+                setDragKey(null)
+                setDropKey(null)
+              }}
+              onDragEnd={() => {
+                setDragKey(null)
+                setDropKey(null)
+              }}
+              onMouseUp={() => setDragKey(null)}
+              className={`flex items-center justify-between rounded-lg border bg-[var(--color-field)] py-1.5 pl-2 pr-2 ${
+                dropKey === key ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'
+              } ${dragKey === key ? 'opacity-40' : ''}`}
             >
-              <span className="text-sm">
+              <span className="flex items-center gap-1.5 text-sm">
+                <GripVertical
+                  data-testid={`field-grip-${key}`}
+                  onMouseDown={() => setDragKey(key)}
+                  className="h-4 w-4 cursor-grab text-fg-dim"
+                  aria-hidden="true"
+                />
                 {tr(`fields.${key}`)}
                 <Tooltip label={`{${key}}`} />
               </span>

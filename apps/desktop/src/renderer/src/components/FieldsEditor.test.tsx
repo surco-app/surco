@@ -34,6 +34,19 @@ describe('FieldsEditor', () => {
     expect(screen.getByText('{title}')).toBeInTheDocument()
   })
 
+  // Arrow buttons move one step at a time; with 21 fields, dragging a row straight
+  // to its place is the natural gesture. The drag starts from the grip handle so
+  // the row's buttons stay plain clicks.
+  it('reorders by dragging a row onto another', () => {
+    const { onChangeVisible } = setup()
+    const dt = { setData: vi.fn(), effectAllowed: '' }
+    fireEvent.mouseDown(within(screen.getByTestId('field-row-title')).getByTestId('field-grip-title'))
+    fireEvent.dragStart(screen.getByTestId('field-row-title'), { dataTransfer: dt })
+    fireEvent.dragOver(screen.getByTestId('field-row-album'), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('field-row-album'), { dataTransfer: dt })
+    expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'album', 'title'])
+  })
+
   it('toggles a field required', () => {
     const { onChangeRequired } = setup()
     fireEvent.click(screen.getByTestId('field-required-artist'))
