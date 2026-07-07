@@ -254,6 +254,8 @@
     "propSampleRate": "Frecuencia de muestreo",
     "propBitDepth": "Profundidad de bits",
     "propBitDepthValue": "{{bits}} bits",
+    "reencodeHint": "Este archivo está a {{current}}; tus ajustes piden {{target}}. Procesar solo actualiza sus metadatos.",
+    "reencodeAction": "Reconvertir a {{target}}",
     "propChannels": "Canales",
     "propChannelMode": "Modo de canal",
     "channelModeMono": "Mono",

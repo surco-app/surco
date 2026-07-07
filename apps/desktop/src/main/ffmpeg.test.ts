@@ -321,6 +321,50 @@ describe('planConversion', () => {
     })
   })
 
+  // Djotas' case: a same-format source (96/24 FLAC → FLAC) is a metadata-only
+  // update BY DESIGN, even with pins set — the quality knobs never silently
+  // re-encode what looks like "already converted". The explicit per-track
+  // "Re-encode" action passes forceReencode, and only then do the pins apply.
+  it('keeps the same-format copy shortcut even when quality pins are set', async () => {
+    const probe96 = vi.fn(async () => ({
+      codecName: 'flac',
+      sampleFmt: 's32',
+      bitsPerRawSample: 24,
+      sampleRate: '96000',
+      channels: 2,
+    }))
+    expect(
+      await planConversion('/in.flac', 'flac', probe96, false, { sampleRate: '48000' }),
+    ).toEqual({ codec: 'copy', ext: '.flac' })
+    expect(probe96).not.toHaveBeenCalled()
+  })
+
+  it('re-encodes a same-format source when the explicit force flag is set, applying the pins', async () => {
+    const probe96 = vi.fn(async () => ({
+      codecName: 'flac',
+      sampleFmt: 's32',
+      bitsPerRawSample: 24,
+      sampleRate: '96000',
+      channels: 2,
+    }))
+    expect(
+      await planConversion('/in.flac', 'flac', probe96, false, { sampleRate: '48000' }, true),
+    ).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      sampleRateHz: 48000,
+      ext: '.flac',
+    })
+    expect(
+      await planConversion('/in.wav', 'wav', probe96, false, { bitDepth: '16' }, true),
+    ).toEqual({
+      codec: 'pcm_s16le',
+      dither: true,
+      ext: '.wav',
+    })
+  })
+
   it('never stream-copies when normalizing, since the gain filter must re-encode the samples', async () => {
     // Same-format sources that would normally copy must encode instead, or the
     // normalization would be silently dropped (a stream copy emits the source bytes).

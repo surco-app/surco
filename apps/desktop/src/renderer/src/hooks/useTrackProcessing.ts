@@ -51,6 +51,7 @@ export interface TrackProcessing {
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
     overwriteOverride?: boolean,
+    forceReencode?: boolean,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
@@ -107,6 +108,7 @@ export function useTrackProcessing({
       formatOverride?: OutputFormat,
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
+      forceReencode?: boolean,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -169,6 +171,7 @@ export function useTrackProcessing({
           format: formatOverride,
           normalize: normalizeOverride,
           overwriteOriginal: overwriteOverride,
+          forceReencode,
           previousOutputPath: track.outputPath,
           musicPersistentId: track.musicPersistentId,
         })

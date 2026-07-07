@@ -254,6 +254,8 @@
     "propSampleRate": "Taxa de amostragem",
     "propBitDepth": "Profundidade de bits",
     "propBitDepthValue": "{{bits}} bits",
+    "reencodeHint": "Este arquivo está em {{current}}; seus ajustes pedem {{target}}. Processar só atualiza os metadados.",
+    "reencodeAction": "Recodificar para {{target}}",
     "propChannels": "Canais",
     "propChannelMode": "Modo de canal",
     "channelModeMono": "Mono",

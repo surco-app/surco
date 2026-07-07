@@ -311,6 +311,10 @@ export interface ProcessJob {
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
   overwriteOriginal?: boolean
+  // The editor's explicit "Re-encode" action: render a same-format source again
+  // (applying the pinned bit depth/sample rate) into the output folder instead of
+  // the metadata-only in-place update. Never set by bulk conversions.
+  forceReencode?: boolean
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.
   previousOutputPath?: string

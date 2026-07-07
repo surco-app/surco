@@ -115,9 +115,12 @@ function renderEditor(
     replaceLowResCover?: boolean
     autoApplyFilename?: boolean
     filenameFormat?: string
+    outputBitDepth?: Settings['outputBitDepth']
+    outputSampleRate?: Settings['outputSampleRate']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
+  onReencode: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
@@ -131,6 +134,7 @@ function renderEditor(
   onExportCollection: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
+  const onReencode = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
   const onFormatChange = vi.fn()
@@ -149,6 +153,7 @@ function renderEditor(
       searchInputRef={createRef<HTMLInputElement>()}
       onChange={onChange}
       onProcess={onProcess}
+      onReencode={onReencode}
       onFormatChange={onFormatChange}
       onDeriveTags={onDeriveTags}
       onAddToAppleMusic={vi.fn()}
@@ -181,10 +186,13 @@ function renderEditor(
       showLoudness: props.showLoudness ?? false,
       keyNotation: props.keyNotation ?? 'camelot',
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      outputBitDepth: props.outputBitDepth ?? 'source',
+      outputSampleRate: props.outputSampleRate ?? 'source',
     },
   )
   return {
     onProcess,
+    onReencode,
     onChange,
     onExportCollection,
     onDeriveTags,
@@ -198,6 +206,53 @@ function renderEditor(
     onCopyFilename,
   }
 }
+
+// Djotas' ask: same-format processing stays a metadata-only update, and when the
+// source misses the pinned quality the editor offers the re-encode EXPLICITLY —
+// a passive line plus an action, never a silent conversion.
+describe('Editor re-encode offer', () => {
+  const flacProps = (sampleRateHz: number, bitDepth: number | null = 24) => ({
+    codec: 'flac',
+    container: 'flac',
+    sampleRateHz,
+    bitDepth,
+    channels: 2,
+    bitrateKbps: null,
+    sizeBytes: 1,
+    createdMs: null,
+    modifiedMs: null,
+    tagFormats: [],
+  })
+
+  it('offers an explicit re-encode when a same-format source misses the pinned rate', async () => {
+    ;(window.api as unknown as Record<string, unknown>).properties = vi
+      .fn()
+      .mockResolvedValue(flacProps(96000))
+    const { onReencode } = renderEditor(
+      { id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' },
+      'flac',
+      { outputSampleRate: '48000' },
+    )
+    expect(await screen.findByTestId('reencode-offer')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('reencode-action'))
+    expect(onReencode).toHaveBeenCalledWith('flac')
+  })
+
+  it('stays silent when no pins are set — same-format remains a metadata-only update', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' }, 'flac')
+    expect(screen.queryByTestId('reencode-offer')).toBeNull()
+  })
+
+  it('stays silent when the source already meets the pins', async () => {
+    const properties = vi.fn().mockResolvedValue(flacProps(48000))
+    ;(window.api as unknown as Record<string, unknown>).properties = properties
+    renderEditor({ id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' }, 'flac', {
+      outputSampleRate: '48000',
+    })
+    await waitFor(() => expect(properties).toHaveBeenCalled())
+    expect(screen.queryByTestId('reencode-offer')).toBeNull()
+  })
+})
 
 describe('Editor cover picker', () => {
   afterEach(() => vi.unstubAllGlobals())

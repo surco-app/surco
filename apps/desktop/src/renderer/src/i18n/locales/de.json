@@ -254,6 +254,8 @@
     "propSampleRate": "Abtastrate",
     "propBitDepth": "Bittiefe",
     "propBitDepthValue": "{{bits}} Bit",
+    "reencodeHint": "Diese Datei liegt in {{current}} vor; deine Einstellungen verlangen {{target}}. Verarbeiten aktualisiert nur die Metadaten.",
+    "reencodeAction": "Neu kodieren in {{target}}",
     "propChannels": "Kanäle",
     "propChannelMode": "Kanalmodus",
     "channelModeMono": "Mono",

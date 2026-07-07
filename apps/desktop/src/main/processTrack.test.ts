@@ -73,6 +73,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       { mode: 'none' },
       undefined,
+      undefined,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -123,6 +124,7 @@ describe('runProcessTrack — cover handling', () => {
       '/tmp/cover.jpg',
       { mode: 'none' },
       undefined,
+      undefined,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -170,6 +172,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       { mode: 'none' },
       undefined,
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -187,6 +190,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       { mode: 'none' },
       undefined,
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -196,6 +200,34 @@ describe('runProcessTrack — output conflict', () => {
     await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), deps)
     expect(deps.confirmConflict).not.toHaveBeenCalled()
     expect(deps.convertAudio).toHaveBeenCalledOnce()
+  })
+})
+
+// The editor's explicit "Re-encode": same-format source, but the job carries
+// forceReencode — it must route to the output folder like a real conversion
+// (original untouched) and hand the flag to convertAudio so the copy shortcut
+// is skipped and the pinned quality applies.
+describe('runProcessTrack — forced re-encode', () => {
+  it('writes a fresh output-folder file and passes the flag to the encoder', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(
+      job({ inputPath: '/in/song.aiff', forceReencode: true }),
+      deps,
+    )
+
+    expect(result.inPlace).toBe(false)
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(deps.convertAudio).toHaveBeenCalledWith(
+      '/in/song.aiff',
+      '/out/Artist - Title.aiff',
+      'aiff',
+      {},
+      undefined,
+      { mode: 'none' },
+      undefined,
+      true,
+    )
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
 })
 
@@ -214,6 +246,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       {},
       undefined,
       { mode: 'none' },
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
@@ -304,6 +337,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       {},
       undefined,
       { mode: 'none' },
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -459,6 +493,7 @@ describe('runProcessTrack — Apple Music only', () => {
       {},
       undefined,
       { mode: 'none' },
+      undefined,
       undefined,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(

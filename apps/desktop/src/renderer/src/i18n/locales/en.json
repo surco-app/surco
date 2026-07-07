@@ -254,6 +254,8 @@
     "propSampleRate": "Sample rate",
     "propBitDepth": "Bit depth",
     "propBitDepthValue": "{{bits}} Bit",
+    "reencodeHint": "This file is {{current}}; your settings ask for {{target}}. Processing only updates its metadata.",
+    "reencodeAction": "Re-encode to {{target}}",
     "propChannels": "Channels",
     "propChannelMode": "Channel mode",
     "channelModeMono": "Mono",

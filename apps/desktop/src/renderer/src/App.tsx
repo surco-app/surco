@@ -1131,8 +1131,13 @@ export default function App(): React.JSX.Element {
   // process-current command/shortcut alike — or the same action nudges from one and
   // stays silent from the other.
   const convertSelected = useStableCallback(
-    async (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => {
-      const outcome = await processOne(id, format, normalize)
+    async (
+      id: string,
+      format?: OutputFormat,
+      normalize?: NormalizeConfig,
+      forceReencode?: boolean,
+    ) => {
+      const outcome = await processOne(id, format, normalize, undefined, forceReencode)
       if (outcome === 'converted') void maybeShowDonateNudge()
       return outcome
     },
@@ -1140,6 +1145,12 @@ export default function App(): React.JSX.Element {
   const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
     if (selected)
       await convertSelected(selected.id, format, editorNormalizeRef.current ?? undefined)
+  })
+  // The editor's explicit "Re-encode": a same-format source rendered again with the
+  // pinned quality applied — the only path that sets forceReencode.
+  const onReencodeSelected = useStableCallback(async (format: OutputFormat) => {
+    if (selected)
+      await convertSelected(selected.id, format, editorNormalizeRef.current ?? undefined, true)
   })
   const onFormatChange = useStableCallback((format: OutputFormat) => {
     editorFormatRef.current = format
@@ -1688,6 +1699,7 @@ export default function App(): React.JSX.Element {
                   onRecordUndo={recordMetaUndo}
                   onChange={onEditorChange}
                   onProcess={onProcessSelected}
+                  onReencode={onReencodeSelected}
                   onFormatChange={onFormatChange}
                   onNormalizeChange={onNormalizeChange}
                   onAddToAppleMusic={onAddSelectedToAppleMusic}

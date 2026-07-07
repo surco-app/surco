@@ -600,14 +600,19 @@ export interface ConversionPlan extends EncodeArgs {
 // `normalize` forces a re-encode: applying a loudness/peak filter changes the
 // samples, so a stream copy (which would emit the untouched source) is never
 // valid — every matching-format shortcut is gated on it being off.
+// `forceReencode` is the editor's explicit per-track "Re-encode" action: the one
+// path where a same-format source is rendered again (applying the pins) instead
+// of taking the metadata-only shortcut. Never set by bulk conversions.
 export async function planConversion(
   input: string,
   format: OutputFormat,
   probe: (input: string) => Promise<ProbeResult>,
   normalize = false,
   quality: Partial<ConversionQuality> = {},
+  forceReencode = false,
 ): Promise<ConversionPlan> {
   const q = { ...DEFAULT_QUALITY, ...quality }
+  const copyOk = !normalize && !forceReencode
   // One probe shared by every decision below; only spawned when something needs it,
   // so the fast paths (stream copy, plain MP3 encode) stay probe-free.
   let probed: Promise<ProbeResult> | undefined
@@ -624,7 +629,7 @@ export async function planConversion(
   if (format === 'mp3') {
     // A source already in MP3 still stream-copies whatever the quality setting says:
     // re-encoding lossy-to-lossy only degrades it.
-    if (MP3_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.mp3' }
+    if (MP3_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.mp3' }
     const rate = await pinnedRate()
     const vbr = MP3_VBR[q.mp3Quality]
     return {
@@ -657,12 +662,12 @@ export async function planConversion(
   }
 
   if (format === 'wav') {
-    if (WAV_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.wav' }
+    if (WAV_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.wav' }
     const { depth, ...rest } = await losslessPlan()
     return { codec: pcmCodec(depth, 'le'), ...rest, ext: '.wav' }
   }
   if (format === 'flac') {
-    if (FLAC_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.flac' }
+    if (FLAC_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.flac' }
     const { depth, ...rest } = await losslessPlan()
     // FLAC holds integers only (its s32 input writes 24-bit), so a float source
     // lands on the encoder's widest width rather than keeping float.
@@ -686,7 +691,7 @@ export async function planConversion(
       ext: '.m4a',
     }
   }
-  if (AIFF_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.aiff' }
+  if (AIFF_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.aiff' }
   const { depth, ...rest } = await losslessPlan()
   return { codec: pcmCodec(depth, 'be'), ...rest, ext: '.aiff' }
 }
@@ -749,6 +754,7 @@ export async function convertAudio(
   normalize?: NormalizeConfig,
   removeCover?: boolean,
   quality?: Partial<ConversionQuality>,
+  forceReencode?: boolean,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -779,7 +785,14 @@ export async function convertAudio(
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
   const normalizeSkipped = normalizing && normalizeAf === undefined
-  const plan = await planConversion(input, format, probeOnce, normalizing, quality)
+  const plan = await planConversion(
+    input,
+    format,
+    probeOnce,
+    normalizing,
+    quality,
+    forceReencode ?? false,
+  )
   const { codec, dither, ext } = plan
   // The dither stage runs after the normalize filter, right where the float chain is
   // quantized back to 16 bits.

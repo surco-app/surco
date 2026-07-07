@@ -43,8 +43,13 @@ export function resolveOutputTarget(
   format: OutputFormat,
   outputDir: string,
   overwriteOriginal = false,
+  forceReencode = false,
 ): OutputTarget {
-  const inPlace = editsInPlace(format, inputPath, overwriteOriginal)
+  // An explicit re-encode is a real conversion: it renders a fresh file into the
+  // output folder and leaves the same-format original untouched — unless overwrite
+  // mode already promises to rewrite the source where it lives.
+  const inPlace =
+    editsInPlace(format, inputPath, overwriteOriginal) && !(forceReencode && !overwriteOriginal)
   const dir = inPlace ? dirname(inputPath) : outputDir
   return { outputPath: join(dir, `${name}.${formatExtension(format)}`), inPlace }
 }

@@ -24,6 +24,10 @@ interface ConvertFooterProps {
   // tooltip. Single-track only; undefined when nothing is missing.
   incompleteReason?: string
   willEditInPlace: boolean
+  // The explicit re-encode offer, resolved by the editor: the source's mismatching
+  // figures vs the pinned ones ("96.0 kHz" → "48.0 kHz"). Undefined = no offer.
+  reencode?: { current: string; target: string }
+  onReencode?: () => void
   addToAppleMusic: boolean
   addToEngineDj: boolean
   format: OutputFormat
@@ -62,6 +66,8 @@ export function ConvertFooter({
   incomplete,
   incompleteReason,
   willEditInPlace,
+  reencode,
+  onReencode,
   addToAppleMusic,
   addToEngineDj,
   format,
@@ -230,21 +236,41 @@ export function ConvertFooter({
             {musicError && <p className="text-xs text-danger">{musicError}</p>}
           </>
         ) : (
-          <ExportButton
-            status={isMulti ? 'idle' : item.status}
-            stale={!isMulti && stale}
-            done={!isMulti && done}
-            outputFormat={format}
-            exportedFormat={isMulti ? null : exportedFormat}
-            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-            withEngineDj={addToEngineDj}
-            incomplete={!isMulti && incomplete}
-            incompleteReason={incompleteReason}
-            inPlace={!isMulti && willEditInPlace}
-            count={isMulti ? selectedCount : undefined}
-            onProcess={onProcess}
-            onSelectFormat={onSelectFormat}
-          />
+          <>
+            {reencode && item.status !== 'processing' && (
+              <div
+                data-testid="reencode-offer"
+                className="mb-2 flex items-center justify-between gap-3"
+              >
+                <p className="text-xs text-fg-dim">
+                  {tr('editor.reencodeHint', { current: reencode.current, target: reencode.target })}
+                </p>
+                <button
+                  type="button"
+                  data-testid="reencode-action"
+                  onClick={onReencode}
+                  className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+                >
+                  {tr('editor.reencodeAction', { target: reencode.target })}
+                </button>
+              </div>
+            )}
+            <ExportButton
+              status={isMulti ? 'idle' : item.status}
+              stale={!isMulti && stale}
+              done={!isMulti && done}
+              outputFormat={format}
+              exportedFormat={isMulti ? null : exportedFormat}
+              withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+              withEngineDj={addToEngineDj}
+              incomplete={!isMulti && incomplete}
+              incompleteReason={incompleteReason}
+              inPlace={!isMulti && willEditInPlace}
+              count={isMulti ? selectedCount : undefined}
+              onProcess={onProcess}
+              onSelectFormat={onSelectFormat}
+            />
+          </>
         )}
       </div>
     </div>

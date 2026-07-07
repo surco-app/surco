@@ -632,7 +632,7 @@ function registerIpc(): void {
       sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
       hasCoverSource,
       prepareProcessedCover,
-      convertAudio: (input, output, format, meta, coverPath, normalize, removeCover) => {
+      convertAudio: (input, output, format, meta, coverPath, normalize, removeCover, force) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
         // rather than threaded through every renderer job.
@@ -641,12 +641,22 @@ function registerIpc(): void {
           'convert',
           'activity.convert',
           () =>
-            convertAudio(input, output, format, meta, coverPath, normalize, removeCover, {
-              mp3Quality: s.mp3Quality,
-              bitDepth: s.outputBitDepth,
-              sampleRate: s.outputSampleRate,
-              flacCompression: s.flacCompression,
-            }),
+            convertAudio(
+              input,
+              output,
+              format,
+              meta,
+              coverPath,
+              normalize,
+              removeCover,
+              {
+                mp3Quality: s.mp3Quality,
+                bitDepth: s.outputBitDepth,
+                sampleRate: s.outputSampleRate,
+                flacCompression: s.flacCompression,
+              },
+              force,
+            ),
           { labelParams: { track } },
         )
       },

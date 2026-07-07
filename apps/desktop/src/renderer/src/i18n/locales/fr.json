@@ -254,6 +254,8 @@
     "propSampleRate": "Fréquence d'échantillonnage",
     "propBitDepth": "Profondeur de bits",
     "propBitDepthValue": "{{bits}} bits",
+    "reencodeHint": "Ce fichier est en {{current}} ; vos réglages demandent {{target}}. Traiter ne met à jour que les métadonnées.",
+    "reencodeAction": "Réencoder en {{target}}",
     "propChannels": "Canaux",
     "propChannelMode": "Mode des canaux",
     "channelModeMono": "Mono",

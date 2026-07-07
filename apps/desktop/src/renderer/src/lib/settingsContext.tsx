@@ -4,7 +4,9 @@ import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
 import type {
   KeyNotation,
   NormalizeConfig,
+  OutputBitDepth,
   OutputFormat,
+  OutputSampleRate,
   SearchProviderId,
   Settings,
 } from '../../../shared/types'
@@ -16,6 +18,10 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 export interface ResolvedSettings {
   discogsToken: string
   outputFormat: OutputFormat
+  // The quality pins, read by the editor's "re-encode this one" offer: a same-format
+  // source that doesn't meet them gets the explicit action instead of a silent re-encode.
+  outputBitDepth: OutputBitDepth
+  outputSampleRate: OutputSampleRate
   addToAppleMusic: boolean
   addToEngineDj: boolean
   overwriteOriginal: boolean
@@ -40,6 +46,8 @@ export interface ResolvedSettings {
 const DEFAULTS: ResolvedSettings = {
   discogsToken: '',
   outputFormat: 'aiff',
+  outputBitDepth: 'source',
+  outputSampleRate: 'source',
   addToAppleMusic: false,
   addToEngineDj: false,
   overwriteOriginal: false,
@@ -64,6 +72,8 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
   return {
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
+    outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
+    outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,

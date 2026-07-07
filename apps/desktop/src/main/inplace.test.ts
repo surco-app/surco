@@ -31,6 +31,20 @@ describe('sanitizeOutputName', () => {
 })
 
 describe('resolveOutputTarget', () => {
+
+  // The editor's explicit "Re-encode" action: same format, but the user asked for a
+  // real conversion — it must land in the output folder, leaving the original alone.
+  // Overwrite mode is the exception: rewriting the source is its whole contract.
+  it('routes a forced re-encode to the output folder instead of in place', () => {
+    expect(resolveOutputTarget('/music/a.flac', 'a', 'flac', '/out', false, true)).toEqual({
+      outputPath: '/out/a.flac',
+      inPlace: false,
+    })
+    expect(resolveOutputTarget('/music/a.flac', 'a', 'flac', '/out', true, true)).toEqual({
+      outputPath: '/music/a.flac',
+      inPlace: true,
+    })
+  })
   // ALAC's extension is its container: the output must land as .m4a, and never in
   // place — a same-extension .m4a source might be lossy AAC the re-encode would replace.
   it('renders an ALAC target as a fresh .m4a in the output folder', () => {

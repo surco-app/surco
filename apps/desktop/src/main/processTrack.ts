@@ -41,6 +41,7 @@ export interface ProcessTrackDeps {
     coverPath?: string,
     normalize?: NormalizeConfig,
     removeCover?: boolean,
+    forceReencode?: boolean,
   ) => Promise<{ normalizeSkipped: boolean }>
   recordConversion: () => void
   removeRenamedOriginal: (inputPath: string, target: string) => Promise<void>
@@ -100,6 +101,7 @@ export async function runProcessTrack(
       format,
       settings.outputDir,
       job.overwriteOriginal ?? settings.overwriteOriginal,
+      job.forceReencode ?? false,
     )
     // "Apple Music only": the user wants the track in Apple Music and no copy left in
     // the output folder. Apple Music still imports a real path, so write the conversion
@@ -140,6 +142,7 @@ export async function runProcessTrack(
       coverPath,
       job.normalize ?? settings.normalize,
       job.removeCover,
+      job.forceReencode,
     )
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
     deps.recordConversion()
