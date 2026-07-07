@@ -47,6 +47,11 @@ const defaults: Settings = {
   coverSquare: false,
   replaceLowResCover: false,
   mp3Quality: '320',
+  // Max fidelity by default: preserve the source's own bit depth and sample rate.
+  outputBitDepth: 'source',
+  outputSampleRate: 'source',
+  // ffmpeg's own FLAC default; higher only shrinks files slower, the audio is identical.
+  flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
   activityPanel: null,

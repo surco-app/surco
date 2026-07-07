@@ -66,13 +66,13 @@ describe('convertArgs', () => {
   it('writes to the given (temp) target, not straight to the final output', () => {
     // we always render to a temp file and rename it over the destination, so
     // re-processing an AIFF in place can never read and write the same path
-    const args = convertArgs('/in.wav', '/out.tmp.aiff', 'pcm_s24be', meta)
+    const args = convertArgs('/in.wav', '/out.tmp.aiff', { codec: 'pcm_s24be' }, meta)
     expect(args[args.length - 1]).toBe('/out.tmp.aiff')
     expect(args).toContain('/in.wav')
   })
 
   it('passes through a stream-copy codec so an AIFF input is not re-encoded', () => {
-    const args = convertArgs('/in.aiff', '/out.tmp.aiff', 'copy', meta)
+    const args = convertArgs('/in.aiff', '/out.tmp.aiff', { codec: 'copy' }, meta)
     const i = args.indexOf('-c:a')
     expect(args[i + 1]).toBe('copy')
   })
@@ -81,9 +81,8 @@ describe('convertArgs', () => {
     const args = convertArgs(
       '/in.wav',
       '/o.aiff',
-      'pcm_s16be',
+      { codec: 'pcm_s16be' },
       meta,
-      undefined,
       undefined,
       'volume=3dB',
     )
@@ -95,18 +94,18 @@ describe('convertArgs', () => {
   })
 
   it('omits -af entirely when no filter is given, leaving a plain conversion', () => {
-    expect(convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta)).not.toContain('-af')
+    expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain('-af')
   })
 
   it('maps the cover as attached art only when a cover is provided', () => {
-    expect(convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta)).not.toContain('attached_pic')
-    const withCover = convertArgs('/in.wav', '/o.aiff', 'pcm_s16be', meta, '/cover.jpg')
+    expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain('attached_pic')
+    const withCover = convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta, '/cover.jpg')
     expect(withCover).toContain('/cover.jpg')
     expect(withCover).toContain('attached_pic')
   })
 
   it('never embeds the cover into a WAV target, whose single-stream RIFF container makes ffmpeg abort with "WAVE files have exactly one stream" — the art reaches Apple Music via AppleScript instead', () => {
-    const args = convertArgs('/in.flac', '/out.tmp.wav', 'pcm_s24le', meta, '/cover.jpg')
+    const args = convertArgs('/in.flac', '/out.tmp.wav', { codec: 'pcm_s24le' }, meta, '/cover.jpg')
     expect(args).not.toContain('attached_pic')
     expect(args).not.toContain('/cover.jpg')
     expect(args).not.toContain('1:v')
@@ -115,7 +114,7 @@ describe('convertArgs', () => {
   it('writes the advanced tags to the ID3 frames the DJ tools and Music read', () => {
     // verified against ffmpeg: these keys land in real TBPM/TKEY/TPUB/TPOS/TPE4
     // frames and the de-facto TXXX:CATALOGNUMBER, all re-readable by ffprobe
-    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', {
+    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, {
       ...meta,
       bpm: '128',
       key: '8A',
@@ -142,9 +141,9 @@ describe('convertArgs', () => {
   })
 
   it('writes the compilation flag ffmpeg maps to the TCMP frame iTunes reads', () => {
-    const id3 = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', { ...meta, compilation: '1' })
+    const id3 = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, { ...meta, compilation: '1' })
     expect(id3).toContain('compilation=1')
-    const flac = convertArgs('/in.wav', '/o.flac', 'flac', { ...meta, compilation: '1' })
+    const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, { ...meta, compilation: '1' })
     expect(flac).toContain('COMPILATION=1')
   })
 
@@ -152,7 +151,7 @@ describe('convertArgs', () => {
     // verified against ffmpeg: the FLAC muxer has no ID3 mapping and writes the
     // keys verbatim, so TKEY/TBPM/TPE4 would land as comments Traktor and Mixed
     // In Key never look for — they read INITIALKEY/BPM/REMIXER in FLAC
-    const args = convertArgs('/in.wav', '/o.flac', 'flac', {
+    const args = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, {
       ...meta,
       bpm: '128',
       key: '8A',
@@ -186,17 +185,17 @@ describe('convertArgs', () => {
     // editor must be overridden with an empty tag — otherwise the original
     // comment/BPM/etc. resurfaces. Covers both a generic key (comment) and a
     // raw frame name (TBPM), which clear the carried-over value alike.
-    const args = convertArgs('/in.wav', '/o.mp3', 'pcm_s16be', { ...meta, comment: '', bpm: '' })
+    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, { ...meta, comment: '', bpm: '' })
     expect(args).toContain('comment=')
     expect(args).toContain('TBPM=')
   })
 
   it('sets the audio bitrate right after the codec when one is given', () => {
     // an MP3 encode needs an explicit bitrate; a stream-copy must not carry one
-    const args = convertArgs('/in.wav', '/o.mp3', 'libmp3lame', meta, undefined, '320k')
+    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame', bitrate: '320k' }, meta)
     const i = args.indexOf('-c:a')
     expect(args.slice(i, i + 4)).toEqual(['-c:a', 'libmp3lame', '-b:a', '320k'])
-    expect(convertArgs('/in.mp3', '/o.mp3', 'copy', meta)).not.toContain('-b:a')
+    expect(convertArgs('/in.mp3', '/o.mp3', { codec: 'copy' }, meta)).not.toContain('-b:a')
   })
 })
 
@@ -205,24 +204,55 @@ describe('convertArgs for an M4A target', () => {
   // TagLib finishing pass — embedding it here too would be redundant (and the flags
   // meaningless), so both stay off the ffmpeg command line for .m4a outputs.
   it('skips the ID3 flags and the cover embed', () => {
-    const args = convertArgs('/in.flac', '/out.tmp.m4a', 'alac', meta, '/cover.jpg')
+    const args = convertArgs('/in.flac', '/out.tmp.m4a', { codec: 'alac' }, meta, '/cover.jpg')
     expect(args).not.toContain('-write_id3v2')
     expect(args).not.toContain('attached_pic')
     expect(args).toContain('alac')
   })
 
   it('passes the LAME VBR level as -q:a when the plan carries one', () => {
-    const args = convertArgs('/in.wav', '/o.mp3', 'libmp3lame', meta, undefined, undefined, undefined, '0')
+    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame', quality: '0' }, meta)
     expect(args).toContain('-q:a')
     expect(args).toContain('0')
     expect(args).not.toContain('-b:a')
+  })
+
+  it('emits the encoder-shaping flags (-sample_fmt, -ar, -compression_level) right after the codec', () => {
+    // -sample_fmt is what pins FLAC/ALAC to the source width (the 16→24 fix): without
+    // it, a float filter chain makes the encoder pick its widest input format.
+    const args = convertArgs(
+      '/in.wav',
+      '/o.flac',
+      { codec: 'flac', sampleFmt: 's16', sampleRateHz: 44100, compressionLevel: '8' },
+      meta,
+    )
+    const i = args.indexOf('-c:a')
+    expect(args.slice(i, i + 8)).toEqual([
+      '-c:a',
+      'flac',
+      '-sample_fmt',
+      's16',
+      '-ar',
+      '44100',
+      '-compression_level',
+      '8',
+    ])
+    expect(convertArgs('/in.aiff', '/o.aiff', { codec: 'copy' }, meta)).not.toContain('-sample_fmt')
   })
 })
 
 describe('planConversion', () => {
   const probe = vi.fn(async () => ({
+    codecName: 'flac',
     sampleFmt: 's32',
     bitsPerRawSample: 24,
+    sampleRate: '44100',
+    channels: 2,
+  }))
+  const probe16 = vi.fn(async () => ({
+    codecName: 'flac',
+    sampleFmt: 's16',
+    bitsPerRawSample: 16,
     sampleRate: '44100',
     channels: 2,
   }))
@@ -242,23 +272,51 @@ describe('planConversion', () => {
 
   // ALAC never stream-copies even from an .m4a source: the container can hold lossy
   // AAC, and telling the two apart would need a codec probe — while an ALAC re-encode
-  // is lossless regardless, so always encoding is the correct (if slower) plan.
-  it('always encodes an ALAC target, even from an .m4a source', async () => {
-    expect(await planConversion('/in.m4a', 'alac', probe)).toEqual({ codec: 'alac', ext: '.m4a' })
-    expect(await planConversion('/in.flac', 'alac', probe)).toEqual({ codec: 'alac', ext: '.m4a' })
-    expect(probe).not.toHaveBeenCalled()
+  // is lossless regardless. The probe pins the encoder to the source width so a float
+  // decode (or filter) can never widen it.
+  it('always encodes an ALAC target, even from an .m4a source, pinned to the source width', async () => {
+    expect(await planConversion('/in.m4a', 'alac', probe)).toEqual({
+      codec: 'alac',
+      sampleFmt: 's32p',
+      ext: '.m4a',
+    })
+    expect(await planConversion('/in.flac', 'alac', probe16)).toEqual({
+      codec: 'alac',
+      sampleFmt: 's16p',
+      ext: '.m4a',
+    })
   })
 
   // The MP3 quality setting swaps the fixed 320 CBR for LAME's V0 VBR — but a source
   // already in MP3 still stream-copies: re-encoding lossy-to-lossy only degrades it.
   it('plans V0 VBR when asked, without breaking the MP3 stream-copy shortcut', async () => {
-    expect(await planConversion('/in.wav', 'mp3', probe, false, 'v0')).toEqual({
+    expect(await planConversion('/in.wav', 'mp3', probe, false, { mp3Quality: 'v0' })).toEqual({
       codec: 'libmp3lame',
       quality: '0',
       ext: '.mp3',
     })
-    expect(await planConversion('/in.mp3', 'mp3', probe, false, 'v0')).toEqual({
+    expect(await planConversion('/in.mp3', 'mp3', probe, false, { mp3Quality: 'v0' })).toEqual({
       codec: 'copy',
+      ext: '.mp3',
+    })
+  })
+
+  it('maps every MP3 quality choice onto its LAME flags', async () => {
+    for (const [choice, bitrate] of [
+      ['256', '256k'],
+      ['192', '192k'],
+      ['160', '160k'],
+      ['128', '128k'],
+    ] as const) {
+      expect(await planConversion('/in.wav', 'mp3', probe, false, { mp3Quality: choice })).toEqual({
+        codec: 'libmp3lame',
+        bitrate,
+        ext: '.mp3',
+      })
+    }
+    expect(await planConversion('/in.wav', 'mp3', probe, false, { mp3Quality: 'v2' })).toEqual({
+      codec: 'libmp3lame',
+      quality: '2',
       ext: '.mp3',
     })
   })
@@ -277,6 +335,134 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.flac', 'flac', probe, true)).toEqual({
       codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
+  })
+
+  // The reported 16→24 bug: loudnorm/volume filters hand the encoder float samples,
+  // and an unpinned FLAC/ALAC encoder then picks its widest input format (24-bit).
+  // Pinning -sample_fmt to the probed source width keeps a 44.1/16 rip at 16 bits,
+  // and the reduction back from the float chain gets TPDF dither.
+  it('keeps a 16-bit source at 16 bits when normalizing to FLAC/ALAC', async () => {
+    expect(await planConversion('/in.flac', 'flac', probe16, true)).toEqual({
+      codec: 'flac',
+      sampleFmt: 's16',
+      compressionLevel: '5',
+      dither: true,
+      ext: '.flac',
+    })
+    expect(await planConversion('/in.wav', 'alac', probe16, true)).toEqual({
+      codec: 'alac',
+      sampleFmt: 's16p',
+      dither: true,
+      ext: '.m4a',
+    })
+  })
+
+  // A lossy decoder emits float as an artifact of decoding, not as source precision.
+  // Rendering it as 32-bit float WAV/AIFF bloats the file and CDJs refuse float WAV,
+  // so lossy sources land on 24-bit integer PCM — the widest depth DJ gear plays.
+  it('renders a lossy decode as 24-bit integer PCM, never 32-bit float', async () => {
+    const lossy = vi.fn(async () => ({
+      codecName: 'mp3float',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    expect(await planConversion('/in.mp3', 'wav', lossy)).toEqual({
+      codec: 'pcm_s24le',
+      ext: '.wav',
+    })
+    expect(await planConversion('/in.mp3', 'aiff', lossy)).toEqual({
+      codec: 'pcm_s24be',
+      ext: '.aiff',
+    })
+    expect(await planConversion('/in.mp3', 'flac', lossy)).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
+  })
+
+  // Unlike a lossy decode, a genuine float PCM source (field recorder, DAW bounce)
+  // really holds float precision — converting it behind the user's back would lose data.
+  it('preserves a genuine float PCM source as 32-bit float', async () => {
+    const f32 = vi.fn(async () => ({
+      codecName: 'pcm_f32le',
+      sampleFmt: 'flt',
+      bitsPerRawSample: 0,
+      sampleRate: '48000',
+      channels: 2,
+    }))
+    expect(await planConversion('/in.wav', 'aiff', f32)).toEqual({
+      codec: 'pcm_f32be',
+      ext: '.aiff',
+    })
+  })
+
+  it('pins the output bit depth when the settings ask for one, dithering only reductions to 16', async () => {
+    expect(await planConversion('/in.flac', 'wav', probe, false, { bitDepth: '16' })).toEqual({
+      codec: 'pcm_s16le',
+      dither: true,
+      ext: '.wav',
+    })
+    // Pinning 24 on a 16-bit source pads (the user's explicit ask) — nothing to dither.
+    expect(await planConversion('/in.wav', 'flac', probe16, false, { bitDepth: '24' })).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
+    // 16→16 with no filter passes the samples through untouched: dither would only add noise.
+    expect(await planConversion('/in.wav', 'flac', probe16, false, { bitDepth: '16' })).toEqual({
+      codec: 'flac',
+      sampleFmt: 's16',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
+  })
+
+  it('resamples only when the pinned rate differs from the source, dithering the 16-bit requantization', async () => {
+    const probe48 = vi.fn(async () => ({
+      codecName: 'flac',
+      sampleFmt: 's16',
+      bitsPerRawSample: 16,
+      sampleRate: '48000',
+      channels: 2,
+    }))
+    expect(
+      await planConversion('/in.flac', 'wav', probe48, false, { sampleRate: '44100' }),
+    ).toEqual({
+      codec: 'pcm_s16le',
+      sampleRateHz: 44100,
+      dither: true,
+      ext: '.wav',
+    })
+    // Already at the pinned rate → no resample, no dither.
+    expect(
+      await planConversion('/in.flac', 'wav', probe48, false, { sampleRate: '48000' }),
+    ).toEqual({
+      codec: 'pcm_s16le',
+      ext: '.wav',
+    })
+    // MP3 needs the probe only to compare rates; the encoder itself never cares about depth.
+    expect(await planConversion('/in.wav', 'mp3', probe48, false, { sampleRate: '44100' })).toEqual({
+      codec: 'libmp3lame',
+      bitrate: '320k',
+      sampleRateHz: 44100,
+      ext: '.mp3',
+    })
+  })
+
+  it('passes the chosen FLAC compression level through — a size/speed trade-off, never a quality one', async () => {
+    expect(await planConversion('/in.wav', 'flac', probe, false, { flacCompression: '8' })).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '8',
       ext: '.flac',
     })
   })
@@ -289,7 +475,12 @@ describe('planConversion', () => {
       bitrate: '320k',
       ext: '.mp3',
     })
-    expect(await planConversion('/in.m4a', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
+    expect(await planConversion('/in.m4a', 'flac', probe)).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
     expect(await planConversion('/in.m4a', 'wav', probe)).toEqual({
       codec: 'pcm_s24le',
       ext: '.wav',
@@ -301,18 +492,28 @@ describe('planConversion', () => {
   })
 
   it('transcodes an Opus/Ogg source too rather than stream-copying', async () => {
-    expect(await planConversion('/in.opus', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
+    expect(await planConversion('/in.opus', 'flac', probe)).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
     expect(await planConversion('/in.ogg', 'aiff', probe)).toEqual({
       codec: 'pcm_s24be',
       ext: '.aiff',
     })
   })
 
-  it('encodes a lossless source to FLAC without probing, since the flac codec preserves the source bit depth itself', async () => {
-    // FLAC is losslessly compressed and derives its bit depth from the input,
-    // so there is no endianness or PCM width to pick — unlike AIFF/WAV
-    expect(await planConversion('/in.wav', 'flac', probe)).toEqual({ codec: 'flac', ext: '.flac' })
-    expect(probe).not.toHaveBeenCalled()
+  it('probes the source when encoding FLAC, pinning the encoder to the source width', async () => {
+    // The flac encoder would otherwise derive its width from whatever the decode/filter
+    // chain hands it — float in the normalize/lossy cases — silently widening 16→24.
+    expect(await planConversion('/in.wav', 'flac', probe)).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      ext: '.flac',
+    })
+    expect(probe).toHaveBeenCalledWith('/in.wav')
   })
 
   it('encodes a lossless source to 320 kbps MP3 without probing the bit depth', async () => {

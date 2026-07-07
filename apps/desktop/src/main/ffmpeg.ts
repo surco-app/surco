@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import { formatRatingTag } from '../shared/rating'
 import type {
   BpmResult,
+  ConversionQuality,
   CoverRead,
   KeyResult,
   LoudnessResult,
@@ -338,6 +339,9 @@ export async function readMeta(input: string): Promise<MetaRead> {
 }
 
 interface ProbeResult {
+  // The stream's codec — what tells a genuine float PCM source (pcm_f32le) apart from
+  // a lossy decoder that merely emits float (mp3float/aac), see sourceDepth.
+  codecName: string
   sampleFmt: string
   bitsPerRawSample: number
   sampleRate: string
@@ -353,7 +357,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
       '-select_streams',
       'a:0',
       '-show_entries',
-      'stream=sample_fmt,bits_per_raw_sample,sample_rate,channels',
+      'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels',
       '-of',
       'json',
       input,
@@ -362,6 +366,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
   )
   const stream = JSON.parse(stdout).streams?.[0] ?? {}
   return {
+    codecName: String(stream.codec_name ?? ''),
     sampleFmt: stream.sample_fmt ?? 's16',
     bitsPerRawSample: Number(stream.bits_per_raw_sample) || 0,
     sampleRate: String(stream.sample_rate ?? ''),
@@ -441,17 +446,43 @@ export async function probeProperties(input: string): Promise<TrackProperties> {
   )
 }
 
-// Picks a PCM codec that preserves the source bit depth exactly (lossless),
-// never downsampling. Endianness differs by container: AIFF stores big-endian
-// samples, WAV (RIFF) little-endian, so the caller passes the one its target
-// needs — using the wrong endianness corrupts every sample.
-function pcmCodec(probe: ProbeResult, endian: 'be' | 'le'): string {
-  if (probe.sampleFmt.startsWith('f')) return `pcm_f32${endian}`
+// The source's real sample precision, as the planner reasons about it.
+interface SampleDepth {
+  float: boolean
+  bits: number
+}
+
+// float=true only for genuine float PCM sources (a field recorder's f32 WAV, a DAW
+// bounce): their full precision IS the source's depth and must survive. A lossy
+// decoder (mp3float/aac) also hands ffmpeg float samples, but that's an artifact of
+// decoding, not source precision — those map to 24-bit integer, the widest PCM DJ
+// gear actually plays (CDJs refuse 32-bit float WAV), which loses nothing audible
+// of a lossy decode.
+function sourceDepth(probe: ProbeResult): SampleDepth {
+  if (probe.codecName.startsWith('pcm_f')) return { float: true, bits: 32 }
+  if (probe.sampleFmt.startsWith('f')) return { float: false, bits: 24 }
   const bits =
     probe.bitsPerRawSample ||
     (probe.sampleFmt.includes('32') ? 32 : probe.sampleFmt.includes('16') ? 16 : 24)
-  if (bits >= 32) return `pcm_s32${endian}`
-  if (bits >= 24) return `pcm_s24${endian}`
+  return { float: false, bits }
+}
+
+// Resolves the settings' bit-depth choice against the source: 'source' preserves the
+// probed depth exactly, a pinned 16/24 wins over it (padding a narrower source is the
+// user's explicit ask, never done silently).
+function targetDepth(src: SampleDepth, pin: ConversionQuality['bitDepth']): SampleDepth {
+  if (pin === '16') return { float: false, bits: 16 }
+  if (pin === '24') return { float: false, bits: 24 }
+  return src
+}
+
+// Picks a PCM codec for the resolved target depth. Endianness differs by container:
+// AIFF stores big-endian samples, WAV (RIFF) little-endian, so the caller passes the
+// one its target needs — using the wrong endianness corrupts every sample.
+function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
+  if (depth.float) return `pcm_f32${endian}`
+  if (depth.bits >= 32) return `pcm_s32${endian}`
+  if (depth.bits >= 24) return `pcm_s24${endian}`
   return `pcm_s16${endian}`
 }
 
@@ -478,17 +509,42 @@ const MP3_INPUT = /\.mp3$/i
 const WAV_INPUT = /\.wav$/i
 const FLAC_INPUT = /\.flac$/i
 const M4A_OUTPUT = /\.m4a$/i
-const MP3_BITRATE = '320k'
+
+// The LAME flags each MP3 quality choice maps onto: a fixed CBR bitrate, or a VBR
+// preset level for -q:a (V0 ≈ 245 kbps, V2 ≈ 190 kbps).
+const MP3_VBR: Partial<Record<Mp3Quality, string>> = { v0: '0', v2: '2' }
+
+// Every quality knob defaults to maximum fidelity: 320 CBR, the source's own bit
+// depth and sample rate, ffmpeg's own FLAC effort.
+const DEFAULT_QUALITY: ConversionQuality = {
+  mp3Quality: '320',
+  bitDepth: 'source',
+  sampleRate: 'source',
+  flacCompression: '5',
+}
+
+// The encoder-shaping half of a ConversionPlan — what convertArgs turns into flags.
+export interface EncodeArgs {
+  codec: string
+  bitrate?: string
+  // LAME VBR level for -q:a, used instead of a fixed bitrate.
+  quality?: string
+  // Pins the FLAC/ALAC encoder's input width (-sample_fmt), so a float decode or
+  // filter chain can never widen the output past the source/pinned depth.
+  sampleFmt?: string
+  // Output rate (-ar), present only when the pinned rate differs from the source's.
+  sampleRateHz?: number
+  // FLAC -compression_level.
+  compressionLevel?: string
+}
 
 export function convertArgs(
   input: string,
   output: string,
-  codec: string,
+  plan: EncodeArgs,
   meta: TrackMetadata,
   coverPath?: string,
-  bitrate?: string,
   audioFilter?: string,
-  quality?: string,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -505,9 +561,12 @@ export function convertArgs(
 
   // Normalization filter (loudnorm / volume), applied to the audio before encoding.
   if (audioFilter) args.push('-af', audioFilter)
-  args.push('-c:a', codec)
-  if (bitrate) args.push('-b:a', bitrate)
-  if (quality) args.push('-q:a', quality)
+  args.push('-c:a', plan.codec)
+  if (plan.bitrate) args.push('-b:a', plan.bitrate)
+  if (plan.quality) args.push('-q:a', plan.quality)
+  if (plan.sampleFmt) args.push('-sample_fmt', plan.sampleFmt)
+  if (plan.sampleRateHz) args.push('-ar', String(plan.sampleRateHz))
+  if (plan.compressionLevel) args.push('-compression_level', plan.compressionLevel)
   // ID3 flags are meaningless to the mp4 muxer; the m4a tags are finished by the
   // TagLib pass anyway (ffmpeg still maps the generic names it knows to iTunes atoms).
   if (!M4A_OUTPUT.test(output)) args.push('-write_id3v2', '1', '-id3v2_version', '3')
@@ -522,19 +581,22 @@ export function convertArgs(
   return args
 }
 
-export interface ConversionPlan {
-  codec: string
-  bitrate?: string
-  // LAME VBR level for -q:a (V0), used instead of a fixed bitrate.
-  quality?: string
+export interface ConversionPlan extends EncodeArgs {
+  // A reduction to 16 bits from a wider/float pipeline needs TPDF dither at the
+  // requantization (ffmpeg's swresample doesn't dither on its own); convertAudio
+  // appends the aresample stage when this is set.
+  dither?: boolean
   ext: '.aiff' | '.mp3' | '.wav' | '.flac' | '.m4a'
 }
 
-// Decides how to render a source into the chosen output format. A source
-// already in the target format is bit-identical, so it stream-copies (instant);
-// otherwise it encodes — lossless to bit-depth-preserving PCM for AIFF/WAV
-// (big-endian for AIFF, little-endian for WAV), or to a fixed 320 kbps for MP3.
-// The bit depth only matters for the lossless targets, so MP3 skips the probe.
+// Decides how to render a source into the chosen output format. A source already in
+// the target format is bit-identical, so it stream-copies (instant) and the quality
+// knobs deliberately don't apply — re-encoding a file already in the format would
+// only degrade (lossy) or destroy (in-place edit) the original. Otherwise it
+// encodes, pinning the encoder to the resolved bit depth: PCM codecs for AIFF/WAV
+// (big-endian/little-endian respectively), -sample_fmt for FLAC/ALAC — without the
+// pin those encoders pick their widest format whenever the decode or a normalize
+// filter hands them float, which is how a 44.1/16 rip came out 24-bit.
 // `normalize` forces a re-encode: applying a loudness/peak filter changes the
 // samples, so a stream copy (which would emit the untouched source) is never
 // valid — every matching-format shortcut is gated on it being off.
@@ -543,34 +605,90 @@ export async function planConversion(
   format: OutputFormat,
   probe: (input: string) => Promise<ProbeResult>,
   normalize = false,
-  mp3Quality: Mp3Quality = '320',
+  quality: Partial<ConversionQuality> = {},
 ): Promise<ConversionPlan> {
+  const q = { ...DEFAULT_QUALITY, ...quality }
+  // One probe shared by every decision below; only spawned when something needs it,
+  // so the fast paths (stream copy, plain MP3 encode) stay probe-free.
+  let probed: Promise<ProbeResult> | undefined
+  const probeOnce = (): Promise<ProbeResult> => (probed ??= probe(input))
+
+  // Output rate flag, present only when the pinned rate differs from the source's —
+  // resampling a file already at the target rate would be pure quality-neutral churn.
+  const pinnedRate = async (): Promise<number | undefined> => {
+    if (q.sampleRate === 'source') return undefined
+    const target = Number(q.sampleRate)
+    return Number((await probeOnce()).sampleRate) === target ? undefined : target
+  }
+
   if (format === 'mp3') {
     // A source already in MP3 still stream-copies whatever the quality setting says:
     // re-encoding lossy-to-lossy only degrades it.
     if (MP3_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.mp3' }
-    if (mp3Quality === 'v0') return { codec: 'libmp3lame', quality: '0', ext: '.mp3' }
-    return { codec: 'libmp3lame', bitrate: MP3_BITRATE, ext: '.mp3' }
+    const rate = await pinnedRate()
+    const vbr = MP3_VBR[q.mp3Quality]
+    return {
+      codec: 'libmp3lame',
+      ...(vbr ? { quality: vbr } : { bitrate: `${q.mp3Quality}k` }),
+      ...(rate ? { sampleRateHz: rate } : {}),
+      ext: '.mp3',
+    }
   }
+
+  // The lossless targets share the depth/rate resolution: probe the source, resolve
+  // the pinned depth against it, and flag the dither a 16-bit requantization needs
+  // (any float pipeline — normalize filter, lossy/float decode — or a wider source,
+  // or a resample; 16→16 untouched passes through and dither would only add noise).
+  const losslessPlan = async (): Promise<
+    Pick<ConversionPlan, 'sampleRateHz' | 'dither'> & { depth: SampleDepth }
+  > => {
+    const src = sourceDepth(await probeOnce())
+    const depth = targetDepth(src, q.bitDepth)
+    const rate = await pinnedRate()
+    const dither =
+      depth.bits === 16 &&
+      !depth.float &&
+      (normalize || src.float || src.bits > 16 || rate !== undefined)
+    return {
+      ...(rate ? { sampleRateHz: rate } : {}),
+      ...(dither ? { dither: true } : {}),
+      depth,
+    }
+  }
+
   if (format === 'wav') {
     if (WAV_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.wav' }
-    return { codec: pcmCodec(await probe(input), 'le'), ext: '.wav' }
+    const { depth, ...rest } = await losslessPlan()
+    return { codec: pcmCodec(depth, 'le'), ...rest, ext: '.wav' }
   }
   if (format === 'flac') {
-    // FLAC is losslessly compressed and the encoder reads the source bit depth
-    // itself, so there is no PCM width or endianness to choose — no probe needed.
     if (FLAC_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.flac' }
-    return { codec: 'flac', ext: '.flac' }
+    const { depth, ...rest } = await losslessPlan()
+    // FLAC holds integers only (its s32 input writes 24-bit), so a float source
+    // lands on the encoder's widest width rather than keeping float.
+    return {
+      codec: 'flac',
+      sampleFmt: !depth.float && depth.bits <= 16 ? 's16' : 's32',
+      compressionLevel: q.flacCompression,
+      ...rest,
+      ext: '.flac',
+    }
   }
   if (format === 'alac') {
     // No stream-copy shortcut: an .m4a source may hold lossy AAC, and telling it apart
     // from ALAC needs a codec probe — while an ALAC re-encode is lossless regardless,
-    // so always encoding is correct, just slower. Like FLAC, the encoder reads the
-    // source bit depth itself.
-    return { codec: 'alac', ext: '.m4a' }
+    // so always encoding is correct, just slower.
+    const { depth, ...rest } = await losslessPlan()
+    return {
+      codec: 'alac',
+      sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
+      ...rest,
+      ext: '.m4a',
+    }
   }
   if (AIFF_INPUT.test(input) && !normalize) return { codec: 'copy', ext: '.aiff' }
-  return { codec: pcmCodec(await probe(input), 'be'), ext: '.aiff' }
+  const { depth, ...rest } = await losslessPlan()
+  return { codec: pcmCodec(depth, 'be'), ...rest, ext: '.aiff' }
 }
 
 // Resolves the audio filter for the chosen normalization, running the required
@@ -616,6 +734,12 @@ export function convertTmpPath(output: string, ext: string): string {
   return output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp-${randomUUID().slice(0, 8)}${ext}`)
 }
 
+// The TPDF-dithered requantization a reduction to 16 bits needs: swresample only
+// dithers when asked, and a truncated float chain would otherwise leave harmonic
+// quantization distortion where dither leaves benign noise. triangular_hp keeps the
+// dither energy up where it's least audible.
+const DITHER_FILTER = 'aresample=out_sample_fmt=s16:dither_method=triangular_hp'
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -624,7 +748,7 @@ export async function convertAudio(
   coverPath?: string,
   normalize?: NormalizeConfig,
   removeCover?: boolean,
-  mp3Quality?: Mp3Quality,
+  quality?: Partial<ConversionQuality>,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -639,26 +763,28 @@ export async function convertAudio(
   // normalized AIFF/WAV conversion.
   let probed: Promise<ProbeResult> | undefined
   const probeOnce = (file: string): Promise<ProbeResult> => (probed ??= probeAudio(file))
-  // loudnorm emits 192 kHz; pass the source rate so the filter can resample back.
+  // loudnorm emits 192 kHz; pass the rate the filter should resample back to — the
+  // pinned output rate when the settings set one, else the source's own rate.
   // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
+  const pinnedRateHz =
+    quality?.sampleRate && quality.sampleRate !== 'source' ? Number(quality.sampleRate) : undefined
   const sampleRate =
     normalize?.mode === 'loudness'
-      ? Number((await probeOnce(input)).sampleRate) || undefined
+      ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
       : undefined
-  const audioFilter = normalizing
+  const normalizeAf = normalizing
     ? ((await normalizeFilter(input, normalize, sampleRate)) ?? undefined)
     : undefined
   // Normalization was asked for but its measurement pass failed (normalizeFilter returned
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
-  const normalizeSkipped = normalizing && audioFilter === undefined
-  const { codec, bitrate, quality, ext } = await planConversion(
-    input,
-    format,
-    probeOnce,
-    normalizing,
-    mp3Quality,
-  )
+  const normalizeSkipped = normalizing && normalizeAf === undefined
+  const plan = await planConversion(input, format, probeOnce, normalizing, quality)
+  const { codec, dither, ext } = plan
+  // The dither stage runs after the normalize filter, right where the float chain is
+  // quantized back to 16 bits.
+  const audioFilter =
+    [normalizeAf, dither ? DITHER_FILTER : undefined].filter(Boolean).join(',') || undefined
   const tmp = convertTmpPath(output, ext)
 
   try {
@@ -671,11 +797,9 @@ export async function convertAudio(
       await copyFile(input, tmp)
       await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
     } else {
-      await run(
-        ffmpegPath,
-        convertArgs(input, tmp, codec, meta, coverPath, bitrate, audioFilter, quality),
-        { maxBuffer: 1024 * 1024 * 32 },
-      )
+      await run(ffmpegPath, convertArgs(input, tmp, plan, meta, coverPath, audioFilter), {
+        maxBuffer: 1024 * 1024 * 32,
+      })
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
@@ -732,7 +856,7 @@ export function previewWavArgs(input: string, output: string, codec: string): st
 // depth exactly (the player only needs to play it, but losing precision for a
 // preview would still misrepresent the rip).
 export async function transcodeAiffToWav(input: string, output: string): Promise<void> {
-  const codec = pcmCodec(await probeAudio(input), 'le')
+  const codec = pcmCodec(sourceDepth(await probeAudio(input)), 'le')
   await run(ffmpegPath, previewWavArgs(input, output, codec), { maxBuffer: 1024 * 1024 * 32 })
 }
 

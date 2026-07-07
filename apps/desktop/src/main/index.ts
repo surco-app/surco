@@ -634,22 +634,19 @@ function registerIpc(): void {
       prepareProcessedCover,
       convertAudio: (input, output, format, meta, coverPath, normalize, removeCover) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
+        // The quality knobs are global preferences, so they're read here (at job time)
+        // rather than threaded through every renderer job.
+        const s = getSettings()
         return activity.track(
           'convert',
           'activity.convert',
           () =>
-            convertAudio(
-              input,
-              output,
-              format,
-              meta,
-              coverPath,
-              normalize,
-              removeCover,
-              // The encoder choice is a global preference, so it's read here rather
-              // than threaded through every renderer job.
-              getSettings().mp3Quality,
-            ),
+            convertAudio(input, output, format, meta, coverPath, normalize, removeCover, {
+              mp3Quality: s.mp3Quality,
+              bitDepth: s.outputBitDepth,
+              sampleRate: s.outputSampleRate,
+              flacCompression: s.flacCompression,
+            }),
           { labelParams: { track } },
         )
       },

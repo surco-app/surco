@@ -8,9 +8,31 @@ export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac' | 'alac'
 
-// MP3 encoder quality: the classic fixed 320 kbps CBR, or LAME's V0 VBR (smaller
-// files, transparent quality, variable rate some old CDJ firmwares dislike).
-export type Mp3Quality = '320' | 'v0'
+// MP3 encoder quality: fixed CBR rates (320 the DJ-pool default, the lower steps for
+// space-constrained USBs), or LAME's VBR presets — V0 ≈ 245 kbps transparent, V2 ≈ 190
+// kbps — whose variable rate some old CDJ firmwares dislike.
+export type Mp3Quality = '320' | '256' | '192' | '160' | '128' | 'v0' | 'v2'
+
+// Output bit depth for the lossless targets: 'source' (the default) preserves the
+// source's exact width — never silently widening it — or the user pins 16/24.
+export type OutputBitDepth = 'source' | '16' | '24'
+
+// Output sample rate: 'source' (the default) never resamples; pinning 44.1/48 kHz
+// unifies a library for gear that expects one rate.
+export type OutputSampleRate = 'source' | '44100' | '48000'
+
+// FLAC -compression_level: a pure size/speed trade-off, the decoded audio is
+// identical at every level.
+export type FlacCompression = '0' | '5' | '8'
+
+// The quality knobs a conversion reads, bundled so the encode planner receives one
+// coherent snapshot of the settings.
+export interface ConversionQuality {
+  mp3Quality: Mp3Quality
+  bitDepth: OutputBitDepth
+  sampleRate: OutputSampleRate
+  flacCompression: FlacCompression
+}
 
 export type SearchProviderId = 'discogs' | 'bandcamp'
 
@@ -105,8 +127,19 @@ export interface Settings {
   // small one) is never swapped for a possibly-wrong release image without the user asking.
   replaceLowResCover: boolean
   // Encoder choice for MP3 exports. '320' (CBR) is the default: it's the de-facto
-  // DJ-pool standard and every player seeks it reliably; 'v0' trades a little size.
+  // DJ-pool standard and every player seeks it reliably; the lower rates and the VBR
+  // presets trade size. A source already in MP3 always stream-copies regardless —
+  // re-encoding lossy-to-lossy only degrades it.
   mp3Quality: Mp3Quality
+  // Bit depth for the lossless targets. 'source' (the default, max fidelity) preserves
+  // the source's exact width; applies to re-encodes only — a file already in the output
+  // format keeps its audio untouched.
+  outputBitDepth: OutputBitDepth
+  // Sample rate for every re-encode; 'source' (the default) never resamples.
+  outputSampleRate: OutputSampleRate
+  // FLAC encoder effort (size/speed only, the audio is identical); '5' is ffmpeg's own
+  // default.
+  flacCompression: FlacCompression
   showSpectrum: boolean
   showLoudness: boolean
   // Where the floating activity panel was last parked and its size, in window pixels.
