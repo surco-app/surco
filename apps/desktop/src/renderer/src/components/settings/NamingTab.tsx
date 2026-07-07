@@ -75,16 +75,19 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
       </p>
       <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
       <div className="flex flex-wrap gap-1.5">
-        {FIELD_DEFS.map((f) => (
+        {/* Every metadata field is a legal {token}, including rating — it lives outside
+            FIELD_DEFS (the editor draws it as the stars row, not a text field), so it's
+            appended here rather than added to the registry. */}
+        {[...FIELD_DEFS.map((f) => f.key), 'rating'].map((key) => (
           <button
-            key={f.key}
+            key={key}
             type="button"
-            data-testid={`settings-token-${f.key}`}
-            onClick={() => addToken(f.key)}
+            data-testid={`settings-token-${key}`}
+            onClick={() => addToken(key)}
             className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
-            {tr(`fields.${f.key}`)}
-            <Tooltip label={`{${f.key}}`} />
+            {tr(`fields.${key}`)}
+            <Tooltip label={`{${key}}`} />
           </button>
         ))}
       </div>

@@ -334,6 +334,15 @@ describe('SettingsModal destination', () => {
 })
 
 describe('SettingsModal filename tokens', () => {
+
+  // Rating is the one field outside FIELD_DEFS (the editor draws it as stars), but
+  // every metadata field must be usable in the file name — e.g. {rating}/{artist}
+  // sorts exports into per-rating folders.
+  it('offers a rating chip that inserts {rating}', () => {
+    openNaming()
+    fireEvent.click(screen.getByTestId('settings-token-rating'))
+    expect(screen.getByTestId('settings-filename-format')).toHaveValue('{rating}')
+  })
   // The whole point of the feature: users who don't know the token names just
   // click the field they want and it lands in the format.
   it('inserts a token into the format when its chip is clicked', () => {
