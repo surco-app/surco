@@ -194,7 +194,7 @@ export function FieldInsertMenu({
             data-testid="field-insert-menu"
             aria-label={tr('editor.fieldActions')}
             onKeyDown={onMenuKeyDown}
-            className="animate-pop absolute top-full right-0 z-50 mt-1 max-h-48 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+            className="animate-pop-flat absolute top-full right-0 z-50 mt-1 max-h-48 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
           >
             {sources.map((s) => (
               <button

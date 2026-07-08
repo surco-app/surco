@@ -233,6 +233,25 @@ textarea {
   animation: pop-in 0.22s cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* The in-field dropdown's variant: same brisk pop but WITHOUT pop-in's translateY —
+   the menu sits near the edge of a scrolling modal body, and those 8 px of travel
+   overflowed it for a frame, flashing a scrollbar until the animation settled.
+   Scale-only shrinks inward, so the box never leaves its final bounds. */
+@keyframes pop-in-flat {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pop-flat {
+  animation: pop-in-flat 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
 .animate-overlay {
   animation: overlay-in 0.16s ease;
 }
