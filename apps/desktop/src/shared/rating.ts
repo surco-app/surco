@@ -39,11 +39,17 @@ export function formatRatingTag(stars: number): string {
 }
 
 // Reads a raw RATING tag value back to a "1"–"5" string, or "" when missing.
-// Accepts both a plain byte ("204") and the POPM string ("user|204|0"). Empty
-// means "no rating", which the writer leaves untouched rather than clearing.
+// Accepts a plain byte ("204"), the POPM string ("user|204|0"), and the plain
+// "1"–"5" stars mp3tag/foobar2000 write — a byte that small rounds to no stars,
+// so the star reading is unambiguous, and without it those ratings read as
+// unrated and the FLAC clear-on-empty write would silently delete them.
 export function ratingTagToStars(raw: string): string {
   if (!raw.trim()) return ''
   const parts = raw.split('|')
+  const plain = Number(raw)
+  if (parts.length < 2 && Number.isInteger(plain) && plain >= 1 && plain <= 5) {
+    return String(plain)
+  }
   const byte = Number(parts.length >= 2 ? parts[1] : raw)
   if (!Number.isFinite(byte)) return ''
   const stars = ratingToStars(byte)

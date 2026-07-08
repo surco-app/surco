@@ -68,6 +68,17 @@ describe('ratingTagToStars', () => {
     expect(ratingTagToStars('like')).toBe('')
     expect(ratingTagToStars('0')).toBe('')
   })
+
+  // mp3tag and foobar2000 write the Vorbis RATING as plain "1"–"5" stars, not a
+  // POPM byte. A byte that small is meaningless (5/51 rounds to no stars), so the
+  // star reading is unambiguous — and without it those ratings showed as unrated,
+  // which the FLAC clear-on-empty would then silently delete.
+  it('reads a plain 1–5 value as stars, not as a POPM byte', () => {
+    expect(ratingTagToStars('5')).toBe('5')
+    expect(ratingTagToStars('1')).toBe('1')
+    // The POPM-string form stays byte-scale even for tiny bytes.
+    expect(ratingTagToStars('user|5|0')).toBe('')
+  })
 })
 
 describe('starsTagToEngineRating', () => {

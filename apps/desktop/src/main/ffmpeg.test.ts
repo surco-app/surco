@@ -190,6 +190,22 @@ describe('convertArgs', () => {
     expect(args).toContain('TBPM=')
   })
 
+  it('clears the FLAC RATING comment when the rating field is empty', () => {
+    // FLAC is the one format whose rating round-trips through ffprobe, so an empty
+    // field at convert time means the file had none or the user erased it — either
+    // way writing the empty tag (which deletes it) is safe, and it is what makes
+    // "Empty every metadata field" actually empty the rating too.
+    const args = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, rating: '' })
+    expect(args).toContain('RATING=')
+    // A set rating still writes the Traktor POPM string, not the empty clear.
+    const rated = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, rating: '4' })
+    expect(rated).toContain('RATING=traktor@native-instruments.de|204|0')
+    expect(rated).not.toContain('RATING=')
+    // Non-FLAC targets keep their POPM handling in the TagLib pass; no Vorbis tag.
+    const mp3 = convertArgs('/in.flac', '/o.mp3', { codec: 'copy' }, { ...meta, rating: '' })
+    expect(mp3.some((a) => a.startsWith('RATING'))).toBe(false)
+  })
+
   it('marks the output bitexact so the muxer writes no ENCODER=Lavf… tag', () => {
     // Verified against ffmpeg 6.1.1: without it every FLAC gains an ENCODER Vorbis
     // comment and every MP3 a TSSE frame; with it both disappear while the MP3

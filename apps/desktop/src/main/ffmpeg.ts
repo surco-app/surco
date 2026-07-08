@@ -589,9 +589,15 @@ export function convertArgs(
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
-  const rating = Number(meta.rating)
-  if (output.toLowerCase().endsWith('.flac') && meta.rating?.trim() && rating > 0) {
-    args.push('-metadata', `RATING=${formatRatingTag(rating)}`)
+  // Unlike POPM, this comment round-trips through ffprobe, so an empty field means
+  // the file had no (readable) rating or the user erased it — write the empty tag
+  // and the leftover is deleted, making "Empty every metadata field" cover the
+  // rating too. The other formats stay preserve-on-empty: their POPM is invisible
+  // to the probe, so clearing would wipe ratings the user never saw.
+  if (output.toLowerCase().endsWith('.flac')) {
+    const rating = Number(meta.rating)
+    const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
+    args.push('-metadata', `RATING=${value}`)
   }
   args.push(output)
   return args
