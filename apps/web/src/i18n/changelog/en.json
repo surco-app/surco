@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.41",
+    "date": "July 8, 2026",
+    "title": "Crash-safe edits and faster conversions",
+    "items": [
+      {
+        "text": "Your unapplied edits no longer get lost: they are saved automatically as you work, and if the app closes unexpectedly you can reopen the session with everything just as you left it — metadata, covers and matches included. When there is work at stake, the reopen prompt waits for your answer instead of fading away on its own.",
+        "in": "0.41.0"
+      },
+      {
+        "text": "Bulk converting is noticeably faster: conversions run in parallel across your Mac's cores, converting to the same format is nearly instant, and each track needs fewer passes.",
+        "in": "0.41.0"
+      },
+      {
+        "text": "The activity panel explains every auto-match verdict: which signals matched, which didn't, and which candidates were probed.",
+        "in": "0.41.0"
+      }
+    ]
+  },
+  {
     "version": "0.40",
     "date": "July 7, 2026",
     "title": "Google search and shareable stats",

@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.41",
+    "date": "8 de julio de 2026",
+    "title": "Ediciones a salvo y conversiones más rápidas",
+    "items": [
+      {
+        "text": "Tus ediciones sin aplicar ya no se pierden: se guardan solas mientras trabajas y, si la app se cierra de golpe, al reabrir puedes recuperar la sesión con todo tal y como lo dejaste — metadatos, portadas y matches incluidos. Cuando hay trabajo en juego, el aviso de reabrir espera a que respondas en vez de esfumarse solo.",
+        "in": "0.41.0"
+      },
+      {
+        "text": "Convertir en lote es bastante más rápido: las conversiones se reparten en paralelo entre los núcleos del Mac, convertir al mismo formato es prácticamente instantáneo y cada pista necesita menos pasadas.",
+        "in": "0.41.0"
+      },
+      {
+        "text": "El panel de actividad explica cada veredicto del auto-match: qué señales coincidieron, cuáles no y qué candidatos se sondearon.",
+        "in": "0.41.0"
+      }
+    ]
+  },
+  {
     "version": "0.40",
     "date": "7 de julio de 2026",
     "title": "Buscar en Google y estadísticas para compartir",
