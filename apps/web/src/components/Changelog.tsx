@@ -21,11 +21,31 @@ function itemText(item: Item): string {
   return typeof item === 'string' ? item : item.text
 }
 
+// With 40+ releases the full history made the page endless; only the newest few
+// stay expanded and the rest collapse to one row each behind native <details>,
+// so the text is still in the prerendered HTML for crawlers.
+const EXPANDED_RELEASES = 5
+
+function ItemList({ items }: { items: Item[] }) {
+  return (
+    <ul className="mt-5 space-y-2.5">
+      {items.map((item) => (
+        <li key={itemText(item)} className="flex gap-3 text-sm leading-relaxed text-muted">
+          <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+          <span>{itemText(item)}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export default function Changelog() {
   const { t } = useTranslation()
   useAutoLanguage()
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
+  const recent = releases.slice(0, EXPANDED_RELEASES)
+  const older = releases.slice(EXPANDED_RELEASES)
 
   return (
     <div className="min-h-screen bg-bg text-fg antialiased">
@@ -53,7 +73,7 @@ export default function Changelog() {
           </Reveal>
         </section>
 
-        {releases.map((r) => (
+        {recent.map((r) => (
           <section key={r.version} className="border-t border-line/60 py-12 first-of-type:border-t-0">
             <Reveal>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -63,17 +83,40 @@ export default function Changelog() {
                 <span className="font-mono text-xs text-faint tabular-nums">{r.date}</span>
               </div>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
-              <ul className="mt-5 space-y-2.5">
-                {r.items.map((item) => (
-                  <li key={itemText(item)} className="flex gap-3 text-sm leading-relaxed text-muted">
-                    <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                    <span>{itemText(item)}</span>
-                  </li>
-                ))}
-              </ul>
+              <ItemList items={r.items} />
             </Reveal>
           </section>
         ))}
+
+        {older.length > 0 && (
+          <section className="border-t border-line/60 py-12">
+            <Reveal>
+              <h2 className="text-lg font-semibold tracking-tight text-faint">
+                {t('changelog.olderTitle')}
+              </h2>
+              <div className="mt-4 border-t border-line/60">
+                {older.map((r) => (
+                  <details key={r.version} className="group border-b border-line/60 py-4">
+                    <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">
+                      <span className="rounded-full border border-line bg-surface2/40 px-2.5 py-0.5 font-mono text-xs text-blue tabular-nums">
+                        v{r.version}
+                      </span>
+                      <span className="text-sm font-medium">{r.title}</span>
+                      <span className="font-mono text-xs text-faint tabular-nums">{r.date}</span>
+                      <span
+                        className="ml-auto font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
+                        aria-hidden="true"
+                      >
+                        +
+                      </span>
+                    </summary>
+                    <ItemList items={r.items} />
+                  </details>
+                ))}
+              </div>
+            </Reveal>
+          </section>
+        )}
 
         <section className="border-t border-line/60 py-16 text-center">
           <Reveal>
