@@ -380,6 +380,18 @@ describe('SettingsModal filename tokens', () => {
     )
   })
 
+  // With 22 fields the menu is a lookup list: alphabetical by the localized label
+  // is what lets the eye find one, and the order follows the UI language.
+  it('lists the token menu alphabetically by the localized field label', () => {
+    openNaming()
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    const labels = Array.from(
+      screen.getByTestId('field-insert-menu').querySelectorAll('[role="menuitem"] span:first-child'),
+    ).map((el) => el.textContent ?? '')
+    expect(labels.length).toBeGreaterThan(20)
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, 'en')))
+  })
+
   it('closes when the backdrop is clicked', () => {
     const onClose = vi.fn()
     render(

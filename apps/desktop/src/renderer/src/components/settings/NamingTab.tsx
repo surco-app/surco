@@ -55,7 +55,6 @@ function FormatField({
   hint,
   preview,
   previewTestId,
-  dropUp,
   onChange,
 }: {
   id: string
@@ -66,13 +65,19 @@ function FormatField({
   // The rendered sample, or undefined to omit the preview line (empty title format).
   preview: string | undefined
   previewTestId: string
-  // Passed through to the token menu: the title format sits at the bottom of the
-  // modal's scroll body, where a drop-down menu would clip.
-  dropUp?: boolean
   onChange: (value: string) => void
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Alphabetical by the LOCALIZED label: with 22 fields, the menu is a lookup list,
+  // and scanning it only works when the order matches the language on screen (the
+  // editor's insert menu instead mirrors the form's own field order).
+  const sources = TOKEN_KEYS.map((key) => ({
+    key,
+    label: tr(`fields.${key}`),
+    value: `{${key}}`,
+  })).sort((a, b) => a.label.localeCompare(b.label, i18n.language))
 
   return (
     <>
@@ -91,13 +96,8 @@ function FormatField({
         />
         <FieldInsertMenu
           fieldName={id}
-          sources={TOKEN_KEYS.map((key) => ({
-            key,
-            label: tr(`fields.${key}`),
-            value: `{${key}}`,
-          }))}
+          sources={sources}
           value=""
-          dropUp={dropUp}
           inputRef={inputRef}
           onChange={onChange}
         />
@@ -126,22 +126,39 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
   return (
     <>
       <FormatField
-        id="settings-filename-format"
-        label={tr('settings.filenameFormat')}
-        value={synced.filenameFormat}
-        placeholder="{artist} - {title}"
-        hint={
-          <p className="mt-2 text-xs text-fg-dim">
-            {tr('settings.filenameFolderHint')}{' '}
-            <span className="font-mono text-fg-muted">
-              {'{discogsReleaseId}/{artist} - {title}'}
-            </span>
-          </p>
+        id="settings-title-format"
+        label={tr('settings.titleFormat')}
+        value={synced.titleFormat}
+        placeholder="({trackNumber}) {title} ({year})"
+        hint={<p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>}
+        preview={
+          synced.titleFormat.trim() !== ''
+            ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
+            : undefined
         }
-        preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${synced.outputFormat}`}
-        previewTestId="settings-format-preview"
-        onChange={(v) => patch('filenameFormat', v)}
+        previewTestId="settings-title-format-preview"
+        onChange={(v) => patch('titleFormat', v)}
       />
+
+      <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+        <FormatField
+          id="settings-filename-format"
+          label={tr('settings.filenameFormat')}
+          value={synced.filenameFormat}
+          placeholder="{artist} - {title}"
+          hint={
+            <p className="mt-2 text-xs text-fg-dim">
+              {tr('settings.filenameFolderHint')}{' '}
+              <span className="font-mono text-fg-muted">
+                {'{discogsReleaseId}/{artist} - {title}'}
+              </span>
+            </p>
+          }
+          preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${synced.outputFormat}`}
+          previewTestId="settings-format-preview"
+          onChange={(v) => patch('filenameFormat', v)}
+        />
+      </div>
 
       <div className="mt-5 space-y-3 border-t border-[var(--color-line)] pt-5">
         <label className="flex cursor-pointer items-start gap-3">
@@ -181,23 +198,6 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
         </label>
       </div>
 
-      <div className="mt-5 border-t border-[var(--color-line)] pt-5">
-        <FormatField
-          id="settings-title-format"
-          label={tr('settings.titleFormat')}
-          value={synced.titleFormat}
-          placeholder="({trackNumber}) {title}"
-          hint={<p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>}
-          preview={
-            synced.titleFormat.trim() !== ''
-              ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
-              : undefined
-          }
-          previewTestId="settings-title-format-preview"
-          dropUp
-          onChange={(v) => patch('titleFormat', v)}
-        />
-      </div>
     </>
   )
 }
