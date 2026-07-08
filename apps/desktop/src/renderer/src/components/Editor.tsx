@@ -1,4 +1,4 @@
-import { Copy, Disc3, Eraser, Globe, Tag } from 'lucide-react'
+import { Copy, Disc3, Eraser, Globe, Tag, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -484,6 +484,20 @@ export const Editor = memo(function Editor({
     if (patches.length) onDeriveTags(patches)
   }
 
+  // Rewrites the selection's titles (the open track in single view) from the
+  // settings' title format — the header-button twin of the title menu's row, for
+  // the 200-track case where applying one by one is not an option. Rides the same
+  // undoable channel as the Tag button, so ⌘Z rolls the whole pass back.
+  function applyTitleFormatAll(): void {
+    if (!onDeriveTags || !titleFormat.trim()) return
+    const targets = isMulti ? (selectedTracks ?? []) : [item]
+    const patches = targets.flatMap((t) => {
+      const title = renderTitle(titleFormat, t.meta)
+      return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
+    })
+    if (patches.length) onDeriveTags(patches)
+  }
+
   // Empties every metadata field — the inverse of the fill controls (filename /
   // Discogs) — so a badly-labelled file can be retagged from scratch instead of
   // deleting fifteen values by hand. The blank comes from the metadata SSOT so a
@@ -661,6 +675,22 @@ export const Editor = memo(function Editor({
     </button>
   ) : null
 
+  // One-click "rewrite titles from the pattern" over the selection. Only present
+  // when a title format is configured — without one there is nothing to apply.
+  const titleFormatButton =
+    onDeriveTags && titleFormat.trim() !== '' ? (
+      <button
+        type="button"
+        data-testid="apply-title-format-btn"
+        aria-label={tr('editor.applyTitleFormat')}
+        onClick={applyTitleFormatAll}
+        className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+      >
+        <Type className="h-3.5 w-3.5" aria-hidden="true" />
+        <Tooltip label={tr('editor.applyTitleFormatHint')} align="end" />
+      </button>
+    ) : null
+
   // Hands the Settings-pattern name to the clipboard so the user can paste the track into a
   // search box (Google, Soulseek) to chase a better rip. Icon-only like its neighbours.
   const copyFilenameButton = (
@@ -772,6 +802,7 @@ export const Editor = memo(function Editor({
                 <div className="flex items-center gap-1.5">
                   {clearButton}
                   {deriveButton}
+                  {titleFormatButton}
                 </div>
               </div>
             }

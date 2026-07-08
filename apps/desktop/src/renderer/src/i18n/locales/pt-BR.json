@@ -386,6 +386,7 @@
     "caseUpper": "MAIÚSCULAS",
     "baseTitle": "Título base",
     "applyTitleFormat": "Formato do título",
+    "applyTitleFormatHint": "Reescreve os títulos das faixas selecionadas com o formato configurado",
     "deriveFromName": "Preencher do nome",
     "deriveFromNameHint": "Preenche os campos de metadados a partir do nome do arquivo",
     "clearMeta": "Limpar metadados",

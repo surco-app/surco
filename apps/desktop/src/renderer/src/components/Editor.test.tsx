@@ -2343,6 +2343,28 @@ describe('Editor insert from field', () => {
     expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
   })
 
+  // The header button is the bulk twin of the menu row: one click rewrites every
+  // selected title from the pattern (200 tracks in one pass), through the same
+  // undoable channel as the Tag button. Hidden when no format is configured.
+  it('applies the title format to the selection from the header button', () => {
+    const { onDeriveTags } = renderEditor(
+      { id: 't1', meta: { title: 'Action (Base)', trackNumber: 'B2' } },
+      'wav',
+      { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
+    )
+    fireEvent.click(screen.getByTestId('apply-title-format-btn'))
+    expect(onDeriveTags).toHaveBeenCalledWith([
+      { id: 't1', meta: { title: '(B2) Action (Base)' } },
+    ])
+  })
+
+  it('hides the title-format header button when no format is configured', () => {
+    renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    expect(screen.queryByTestId('apply-title-format-btn')).toBeNull()
+  })
+
   // Formatting needs no other filled field: with nothing to insert the trigger
   // stays and the menu offers only the case transforms.
   it('offers only the case transforms when no other visible field has a value', () => {
