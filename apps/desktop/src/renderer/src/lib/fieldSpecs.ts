@@ -29,12 +29,22 @@ export interface FieldSpec {
   cleanResult?: string
 }
 
-// The fields that never host the { } insert menu: the compilation checkbox is not
-// text, and genre/grouping are picked from their suggestion chips instead.
-const INSERT_EXCLUDED_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
-  'compilation',
-  'genre',
-  'grouping',
+// The free-text fields that host the { } insert menu — the ones where composing a
+// value out of other fields or fixing its case makes sense. Structured single
+// values (year, BPM, key, track numbers, ISRC, the Discogs id) stay out: they'd
+// swallow a pasted title whole. So do the chip-driven genre/grouping and the
+// compilation checkbox.
+const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
+  'title',
+  'artist',
+  'albumArtist',
+  'album',
+  'comment',
+  'mixName',
+  'remixArtist',
+  'composer',
+  'publisher',
+  'catalogNumber',
 ])
 
 export interface BuildFieldSpecsParams {
@@ -101,12 +111,10 @@ export function buildFieldSpecs({
             label: tr(`fields.${def.key}`),
             value: item.meta[def.key] ?? '',
             onChange: (v: string) => setField(def.key, v),
-            // Every text field hosts the { } menu except compilation (a checkbox
-            // flag, not text) and the chip-driven genre/grouping, whose values are
-            // picked from the suggestion chips rather than composed from other
-            // fields. The Field itself filters out the empty and the self entry.
+            // Only the free-text fields host the { } menu (see INSERT_TARGET_FIELDS);
+            // the Field itself filters out the empty and the self entry.
             insertSources:
-              !isMulti && !INSERT_EXCLUDED_FIELDS.has(def.key) ? insertSources : undefined,
+              !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             wide: def.wide,
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),

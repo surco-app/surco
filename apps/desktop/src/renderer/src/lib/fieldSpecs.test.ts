@@ -95,22 +95,34 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'key')?.suggestions).toEqual(['A minor'])
   })
 
-  it('exposes insert sources on every text field except the chip-driven ones and the compilation flag', () => {
-    // The { } menu is how any field borrows another field's value (the year into
-    // the title, the title into the comment…); gating it to a handful of fields
-    // made the rest look like they simply lacked the feature. compilation stays
-    // out — it is a checkbox flag, not text a value could be inserted into — and
-    // so do genre and grouping: their values are picked from the suggestion
-    // chips, so an insert trigger there is dead weight next to them.
+  it('exposes insert sources on the free-text fields only, never on structured or chip-driven ones', () => {
+    // The { } menu composes one field out of others and fixes text case — that
+    // only makes sense where the value IS free text (title, artist, comment,
+    // publisher…). Structured single values (year, BPM, key, track numbers,
+    // ISRC…) would happily swallow a pasted title, genre/grouping are picked
+    // from their suggestion chips, and compilation is a checkbox flag.
     const specs = buildFieldSpecs(
-      params({ visibleFields: ['title', 'bpm', 'year', 'genre', 'grouping', 'compilation'] }),
+      params({
+        visibleFields: [
+          'title',
+          'publisher',
+          'mixName',
+          'year',
+          'bpm',
+          'key',
+          'trackNumber',
+          'genre',
+          'grouping',
+          'compilation',
+        ],
+      }),
     )
-    expect(specs.find((s) => s.key === 'title')?.insertSources).toHaveLength(1)
-    expect(specs.find((s) => s.key === 'bpm')?.insertSources).toHaveLength(1)
-    expect(specs.find((s) => s.key === 'year')?.insertSources).toHaveLength(1)
-    expect(specs.find((s) => s.key === 'genre')?.insertSources).toBeUndefined()
-    expect(specs.find((s) => s.key === 'grouping')?.insertSources).toBeUndefined()
-    expect(specs.find((s) => s.key === 'compilation')?.insertSources).toBeUndefined()
+    for (const key of ['title', 'publisher', 'mixName']) {
+      expect(specs.find((s) => s.key === key)?.insertSources, key).toHaveLength(1)
+    }
+    for (const key of ['year', 'bpm', 'key', 'trackNumber', 'genre', 'grouping', 'compilation']) {
+      expect(specs.find((s) => s.key === key)?.insertSources, key).toBeUndefined()
+    }
   })
 })
 
