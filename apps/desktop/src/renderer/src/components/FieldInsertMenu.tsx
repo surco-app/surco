@@ -19,6 +19,11 @@ interface Props {
   // with the mix parenthetical stripped, or the title's when the album is empty).
   // The editor owns the cross-field fallback, so the menu just renders it when set.
   cleanResult?: string
+  // The field's value rebuilt from the settings' title format (title only), already
+  // resolved and only passed when it changes something. A one-shot rewrite on
+  // purpose: the pattern references the field itself, so applying it automatically
+  // (or twice) would stack the prefix.
+  formatResult?: string
   inputRef: React.RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
 }
@@ -37,6 +42,7 @@ export function FieldInsertMenu({
   sources,
   value,
   cleanResult,
+  formatResult,
   inputRef,
   onChange,
 }: Props): React.JSX.Element | null {
@@ -66,6 +72,15 @@ export function FieldInsertMenu({
   // so unlike the case rows it needs no self-filter.
   if (cleanResult)
     transforms.push({ key: 'clean', label: tr('editor.baseTitle'), result: cleanResult })
+
+  // The title-format rewrite leads the section: it is the row the pattern user came
+  // for, and like cleanResult it arrives pre-resolved and only when it changes something.
+  if (formatResult)
+    transforms.unshift({
+      key: 'title-format',
+      label: tr('editor.applyTitleFormat'),
+      result: formatResult,
+    })
 
   if (sources.length === 0 && transforms.length === 0) return null
 

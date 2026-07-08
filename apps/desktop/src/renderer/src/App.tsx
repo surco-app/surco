@@ -91,7 +91,7 @@ import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { renderOutputName } from './lib/outputName'
+import { renderOutputName, renderTitle } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1260,6 +1260,23 @@ export default function App(): React.JSX.Element {
     )
     setNotice(tr('notices.numberedTracks', { count: targets.length }))
   })
+  // Rewrites each selected title from the settings' title format — the same one-shot
+  // rebuild the title field's ⋯ menu offers, over the whole selection. Tracks whose
+  // rendered title is empty or unchanged are skipped; a prefix pattern re-run still
+  // stacks (the render differs each time), which matches mp3tag's converter and is
+  // why the action is undoable and reports how many titles it touched.
+  const applyTitleFormat = useStableCallback(() => {
+    const format = settings?.titleFormat ?? ''
+    if (!format.trim()) return
+    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const patches = targets.flatMap((t) => {
+      const title = renderTitle(format, t.meta)
+      return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
+    })
+    if (patches.length === 0) return
+    deriveTracksUndoable(patches)
+    setNotice(tr('notices.titleFormatted', { count: patches.length }))
+  })
   // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
   // silence would leave the user unsure whether anything was restored.
   const undoMeta = useStableCallback(() => {
@@ -1371,6 +1388,8 @@ export default function App(): React.JSX.Element {
       clearMeta,
       deriveTags,
       numberTracks,
+      applyTitleFormat,
+      titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
       canUndoMeta: metaUndo.canUndo,
       acceptReview,

@@ -96,6 +96,7 @@ export function MetadataForm({
                   onChange={f.onChange}
                   insertSources={f.insertSources}
                   cleanResult={f.cleanResult}
+                  formatResult={f.formatResult}
                   wide={f.wide}
                   invalid={f.invalid}
                   suggestions={f.suggestions}

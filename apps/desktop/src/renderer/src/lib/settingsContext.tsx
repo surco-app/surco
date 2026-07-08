@@ -28,6 +28,7 @@ export interface ResolvedSettings {
   replaceLowResCover: boolean
   autoApplyFilename: boolean
   filenameFormat: string
+  titleFormat: string
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
@@ -54,6 +55,7 @@ const DEFAULTS: ResolvedSettings = {
   replaceLowResCover: false,
   autoApplyFilename: false,
   filenameFormat: '{artist} - {title}',
+  titleFormat: '',
   groupingPresets: [],
   genrePresets: [],
   visibleFields: DEFAULT_FIELDS,
@@ -80,6 +82,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,
     autoApplyFilename: settings.autoApplyFilename ?? DEFAULTS.autoApplyFilename,
     filenameFormat: settings.filenameFormat ?? DEFAULTS.filenameFormat,
+    titleFormat: settings.titleFormat ?? DEFAULTS.titleFormat,
     groupingPresets: settings.groupingPresets ?? DEFAULTS.groupingPresets,
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,

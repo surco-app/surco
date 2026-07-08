@@ -16,6 +16,7 @@ interface FieldProps {
   multiSuggestions?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
+  formatResult?: string
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -33,6 +34,7 @@ export const Field = memo(function Field({
   multiSuggestions,
   insertSources,
   cleanResult,
+  formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   // A field never offers itself, and an empty field has nothing to insert.
@@ -41,7 +43,8 @@ export const Field = memo(function Field({
   // result, so on fields that host it (insertSources provided) it appears whenever
   // there is something to insert, text to format, OR a clean-up to apply.
   const hasMenu =
-    insertSources !== undefined && (insertable.length > 0 || value.trim() !== '' || !!cleanResult)
+    insertSources !== undefined &&
+    (insertable.length > 0 || value.trim() !== '' || !!cleanResult || !!formatResult)
   return (
     <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
@@ -80,6 +83,7 @@ export const Field = memo(function Field({
             sources={insertable}
             value={value}
             cleanResult={cleanResult}
+            formatResult={formatResult}
             inputRef={inputRef}
             onChange={onChange}
           />

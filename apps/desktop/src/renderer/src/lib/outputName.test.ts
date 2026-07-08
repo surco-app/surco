@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { renderOutputName } from './outputName'
+import { renderOutputName, renderTitle } from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -111,5 +111,29 @@ describe('renderOutputName', () => {
     expect(renderOutputName('{artist} - {title}', meta({ artist: 'AC/DC', title: 'TNT' }))).toBe(
       'AC-DC - TNT',
     )
+  })
+})
+
+describe('renderTitle', () => {
+  it('fills tokens and keeps slashes as plain text, unlike a filename', () => {
+    // A title is a tag value, not a path: "AC/DC" or "Action / Base" must survive
+    // verbatim, and a "/" in the pattern is just punctuation, never a folder.
+    const r = renderTitle(
+      '({trackNumber}) {title}',
+      meta({ trackNumber: 'A2', title: 'Action / Base' }),
+    )
+    expect(r).toBe('(A2) Action / Base')
+  })
+
+  it('drops the brackets and separators a blank field leaves behind', () => {
+    // The pattern is global but not every track has every field; "() Title" or a
+    // leading dash would look broken on the deck.
+    expect(renderTitle('({trackNumber}) {title}', meta({ title: 'Action' }))).toBe('Action')
+    expect(renderTitle('{trackNumber} - {title}', meta({ title: 'Action' }))).toBe('Action')
+  })
+
+  it('renders an empty pattern or all-blank fields to an empty string', () => {
+    expect(renderTitle('', meta({ title: 'Action' }))).toBe('')
+    expect(renderTitle('({trackNumber})', meta({}))).toBe('')
   })
 })

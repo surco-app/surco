@@ -32,6 +32,7 @@ const defaults: Settings = {
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
+  titleFormat: '',
   // Off by default: the metadata-derived name stays opt-in (the "Regenerate" button), so a
   // plain "load and convert" keeps the source file name until the user turns this on.
   autoApplyFilename: false,

@@ -38,6 +38,7 @@ const settings: Settings = {
   engineLibraryDir: '/music/Engine Library',
   engineDjPlaylist: 'Surco',
   filenameFormat: '',
+  titleFormat: '',
   autoApplyFilename: false,
   groupingPresets: [],
   genrePresets: [],

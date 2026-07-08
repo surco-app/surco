@@ -27,6 +27,7 @@ export interface FieldSpec {
   multiSuggestions?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
+  formatResult?: string
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -60,6 +61,9 @@ export interface BuildFieldSpecsParams {
   keyNotation: KeyNotation
   insertSources: InsertSource[]
   albumCleanResult: string | undefined
+  // The title rebuilt from the settings' title format, when that changes anything —
+  // offered as a whole-value rewrite in the title field's menu.
+  titleFormatResult: string | undefined
   tr: (key: string) => string
   setField: (key: keyof TrackMetadata, value: string) => void
   onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
@@ -84,6 +88,7 @@ export function buildFieldSpecs({
   keyNotation,
   insertSources,
   albumCleanResult,
+  titleFormatResult,
   tr,
   setField,
   onChangeAllMeta,
@@ -116,6 +121,7 @@ export function buildFieldSpecs({
             insertSources:
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
+            formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             wide: def.wide,
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:

@@ -167,6 +167,10 @@ export interface CommandDeps {
   deriveTags: () => void
   // Stamps 1..N (list order) onto the bulk scope's track numbers.
   numberTracks: () => void
+  // Rewrites the selection's titles from the settings' title format (one-shot).
+  applyTitleFormat: () => void
+  // Whether a title format is configured at all — the command is pointless without one.
+  titleFormatSet: boolean
   // Restores the tags the last batch operation (fill-all, find & replace, clear, paste,
   // derive) overwrote. Read lazily so the palette entry reflects the stack at open time.
   undoMeta: () => void
@@ -234,6 +238,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     clearMeta,
     deriveTags,
     numberTracks,
+    applyTitleFormat,
+    titleFormatSet,
     undoMeta,
     canUndoMeta,
     acceptReview,
@@ -285,6 +291,15 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('number-tracks'),
       enabled: bulkTracks.length > 1,
       run: numberTracks,
+    },
+    {
+      // Rewrites the selection's titles from the settings' title format — the bulk twin
+      // of the title field's ⋯ menu row. Needs a configured format and a selection.
+      id: 'apply-title-format',
+      title: tr('commands.applyTitleFormat'),
+      hint: hintFor('apply-title-format'),
+      enabled: !!selected && titleFormatSet,
+      run: applyTitleFormat,
     },
     {
       // Empties every metadata field on the current selection — the Editor's Eraser button.

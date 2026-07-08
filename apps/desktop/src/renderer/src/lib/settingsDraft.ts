@@ -13,6 +13,7 @@ export interface SyncedDraft {
   addToEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
+  titleFormat: string
   autoApplyFilename: boolean
   grouping: string
   genre: string
@@ -62,6 +63,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToEngineDj: s.addToEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,
+    titleFormat: s.titleFormat,
     autoApplyFilename: s.autoApplyFilename,
     grouping: s.groupingPresets.join(', '),
     genre: s.genrePresets.join(', '),

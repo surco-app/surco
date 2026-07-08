@@ -69,6 +69,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     engineLibraryDir: '/music/Engine Library',
     engineDjPlaylist: 'Surco',
     filenameFormat: '{artist} - {title}',
+    titleFormat: '',
     autoApplyFilename: false,
     groupingPresets: [],
     genrePresets: [],

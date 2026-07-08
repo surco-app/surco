@@ -87,6 +87,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     clearMeta: () => {},
     deriveTags: () => {},
     numberTracks: () => {},
+    applyTitleFormat: () => {},
+    titleFormatSet: false,
     undoMeta: () => {},
     canUndoMeta: () => false,
     acceptReview: () => {},
@@ -409,6 +411,22 @@ describe('buildCommands editor + theme entries', () => {
     expect(cmd.enabled).toBe(true)
     cmd.run()
     expect(toggleTheme).toHaveBeenCalledOnce()
+  })
+
+  // The title-format apply needs BOTH a selection to act on and a configured format —
+  // with either missing the command would be a silent no-op, so it greys out instead.
+  it('gates apply-title-format on a selection and a configured format, and runs it', () => {
+    const applyTitleFormat = vi.fn()
+    const noFormat = makeDeps({ applyTitleFormat, selected: track(), titleFormatSet: false })
+    expect(commandById(noFormat, 'apply-title-format').enabled).toBe(false)
+    const noSelection = makeDeps({ applyTitleFormat, selected: null, titleFormatSet: true })
+    expect(commandById(noSelection, 'apply-title-format').enabled).toBe(false)
+
+    const ready = makeDeps({ applyTitleFormat, selected: track(), titleFormatSet: true })
+    const cmd = commandById(ready, 'apply-title-format')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(applyTitleFormat).toHaveBeenCalledOnce()
   })
 
   // Clear-metadata and derive-from-filename act on the current selection, so both must be

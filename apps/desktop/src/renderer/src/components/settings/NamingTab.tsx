@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../../shared/types'
 import { FIELD_DEFS } from '../../lib/fields'
 import { insertToken } from '../../lib/insertToken'
-import { renderOutputName } from '../../lib/outputName'
+import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { Tooltip } from '../Tooltip'
@@ -143,6 +143,32 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           />
           <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
         </label>
+      </div>
+
+      <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+        <label
+          htmlFor="settings-title-format"
+          className="mb-1.5 block text-sm font-medium text-fg-muted"
+        >
+          {tr('settings.titleFormat')}
+        </label>
+        <input
+          id="settings-title-format"
+          data-testid="settings-title-format"
+          value={synced.titleFormat}
+          onChange={(e) => patch('titleFormat', e.target.value)}
+          placeholder="({trackNumber}) {title}"
+          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+        />
+        <p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>
+        {synced.titleFormat.trim() !== '' && (
+          <p className="mt-2 text-xs text-fg-dim">
+            {tr('settings.preview')}{' '}
+            <span data-testid="settings-title-format-preview" className="font-mono text-fg-muted">
+              {renderTitle(synced.titleFormat, SAMPLE_META) || '—'}
+            </span>
+          </p>
+        )}
       </div>
     </>
   )

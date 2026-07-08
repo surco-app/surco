@@ -29,7 +29,7 @@ import { isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { renderOutputName } from '../lib/outputName'
+import { renderOutputName, renderTitle } from '../lib/outputName'
 import { librarySourceOf } from '../lib/librarySource'
 import { isMacOS } from '../lib/platform'
 import { isLowResCover, formatKHz } from '../lib/quality'
@@ -169,6 +169,7 @@ export const Editor = memo(function Editor({
     replaceLowResCover,
     autoApplyFilename,
     filenameFormat,
+    titleFormat,
     groupingPresets,
     genrePresets,
     visibleFields,
@@ -466,6 +467,14 @@ export const Editor = memo(function Editor({
   const albumClean = stripParentheticals(albumCleanSource)
   const albumCleanResult = albumClean && albumClean !== albumCleanSource ? albumClean : undefined
 
+  // The title rebuilt from the settings' title format, for the title menu's one-shot
+  // rewrite. Only offered when a format is configured and the result differs; note a
+  // prefix pattern re-applied still differs (it stacks), so the row's preview showing
+  // that stacked result — plus ⌘Z — is what stands between the user and a double apply.
+  const titleFormatted = isMulti || !titleFormat.trim() ? '' : renderTitle(titleFormat, item.meta)
+  const titleFormatResult =
+    titleFormatted && titleFormatted !== (item.meta.title ?? '') ? titleFormatted : undefined
+
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
   function deriveFromNames(): void {
@@ -596,6 +605,7 @@ export const Editor = memo(function Editor({
         keyNotation,
         insertSources,
         albumCleanResult,
+        titleFormatResult,
         tr,
         setField,
         onChangeAllMeta,
@@ -613,6 +623,7 @@ export const Editor = memo(function Editor({
       keyNotation,
       insertSources,
       albumCleanResult,
+      titleFormatResult,
       tr,
       setField,
       onChangeAllMeta,

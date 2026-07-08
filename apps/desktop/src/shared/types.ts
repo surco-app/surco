@@ -110,6 +110,10 @@ export interface Settings {
   // inbox), created on first use. 'Surco' by default; a blank save restores it.
   engineDjPlaylist: string
   filenameFormat: string
+  // Pattern for rebuilding the title tag from other fields (e.g. "({trackNumber}) {title}").
+  // Empty = the feature is hidden. Applied only on demand, never automatically: the
+  // pattern references the title itself, so an automatic pass would stack prefixes.
+  titleFormat: string
   // When on, the output name is derived from filenameFormat automatically as metadata
   // changes, so the user never has to press "Regenerate"; a manual edit still wins. Off
   // by default: "load and convert" keeps the source file name until the user opts in.

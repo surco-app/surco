@@ -116,6 +116,7 @@ function renderEditor(
     replaceLowResCover?: boolean
     autoApplyFilename?: boolean
     filenameFormat?: string
+    titleFormat?: string
     outputBitDepth?: Settings['outputBitDepth']
     outputSampleRate?: Settings['outputSampleRate']
   } = {},
@@ -181,6 +182,7 @@ function renderEditor(
       replaceLowResCover: props.replaceLowResCover ?? false,
       autoApplyFilename: props.autoApplyFilename ?? false,
       filenameFormat: props.filenameFormat ?? '{artist} - {title}',
+      titleFormat: props.titleFormat ?? '',
       genrePresets: props.genrePresets ?? [],
       groupingPresets: [],
       visibleFields: props.visibleFields ?? [],
@@ -2309,6 +2311,36 @@ describe('Editor insert from field', () => {
     expect(onChange).toHaveBeenCalledWith({
       meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }),
     })
+  })
+
+  // The title-format row is the single-track twin of the ⌘K bulk apply: it rewrites
+  // the title from the settings pattern, previewing the exact result — and that
+  // preview is the safeguard: re-applying a prefix pattern stacks it, and the row
+  // shows the stacked outcome before the user commits.
+  it('rewrites the title from the settings title format via the ⋯ menu', () => {
+    const { onChange } = renderEditor(
+      { id: 't1', meta: { title: 'Action (Base)', trackNumber: 'B2' } },
+      'wav',
+      { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
+    )
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    fireEvent.click(screen.getByTestId('field-insert-option-title-format'))
+    expect(onChange).toHaveBeenCalledWith({
+      meta: expect.objectContaining({ title: '(B2) Action (Base)' }),
+    })
+  })
+
+  it('offers no title-format row when the pattern leaves the title as it is', () => {
+    // A no-op row ("apply" that changes nothing) would make the menu feel broken.
+    // Note this only catches exact no-ops: re-applying a prefix pattern to an
+    // already-formatted title DOES change it again (it stacks), and the row's
+    // preview showing that stacked result is the user's guard, plus ⌘Z.
+    renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
+      visibleFields: ['title'],
+      titleFormat: '{title}',
+    })
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
   })
 
   // Formatting needs no other filled field: with nothing to insert the trigger

@@ -49,6 +49,7 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     keyNotation: 'camelot',
     insertSources: [{ key: 'artist', label: 'Artist', value: 'X' }],
     albumCleanResult: undefined,
+    titleFormatResult: undefined,
     tr,
     setField: vi.fn(),
     onChangeAllMeta: vi.fn(),
@@ -93,6 +94,16 @@ describe('buildFieldSpecs (single mode)', () => {
     const detectedKey = { camelot: '8A', name: 'A minor' } as KeyResult
     const specs = buildFieldSpecs(params({ detectedKey, keyNotation: 'musical' }))
     expect(specs.find((s) => s.key === 'key')?.suggestions).toEqual(['A minor'])
+  })
+
+  it('hands the title-format proposal to the title spec only', () => {
+    // The ⋯ menu offers "apply the title format" as a whole-value rewrite, exactly
+    // like the case transforms; only the title composes itself from the pattern.
+    const specs = buildFieldSpecs(
+      params({ visibleFields: ['title', 'artist'], titleFormatResult: '(A2) Song' }),
+    )
+    expect(specs.find((s) => s.key === 'title')?.formatResult).toBe('(A2) Song')
+    expect(specs.find((s) => s.key === 'artist')?.formatResult).toBeUndefined()
   })
 
   it('exposes insert sources on the free-text fields only, never on structured or chip-driven ones', () => {
