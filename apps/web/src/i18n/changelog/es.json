@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.42",
+    "date": "8 de julio de 2026",
+    "title": "Etiquetas impecables en cualquier editor",
+    "items": [
+      {
+        "text": "Al convertir, Surco limpia las variantes de etiqueta que dejan otros editores (LABEL, ORGANIZATION, ALBUMARTIST2…): se acabaron el sello o el artista del álbum duplicados, y vaciar un campo ahora lo borra de verdad del archivo.",
+        "in": "0.42.0"
+      },
+      {
+        "text": "Los WAV se etiquetan en ID3v2.3, la versión que leen Mp3tag y compañía — y los archivos convertidos ya no llevan la marca ENCODER del codificador.",
+        "in": "0.42.0"
+      },
+      {
+        "text": "Nueva opción de carátula: ampliar las más pequeñas hasta el tamaño configurado. Con el recorte cuadrado activado, toda tu biblioteca sale con carátulas idénticas (por ejemplo 700×700).",
+        "in": "0.42.0"
+      },
+      {
+        "text": "El menú ⋯ para tomar el valor de otro campo o arreglar mayúsculas está ahora en todos los campos de texto: mix, remixer, compositor, sello y referencia incluidos.",
+        "in": "0.42.0"
+      }
+    ]
+  },
+  {
     "version": "0.41",
     "date": "8 de julio de 2026",
     "title": "Ediciones a salvo y conversiones más rápidas",

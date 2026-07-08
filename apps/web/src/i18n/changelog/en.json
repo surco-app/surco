@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.42",
+    "date": "July 8, 2026",
+    "title": "Tags that read clean in every editor",
+    "items": [
+      {
+        "text": "Conversions now clean up the tag variants other editors leave behind (LABEL, ORGANIZATION, ALBUMARTIST2…): no more duplicated label or album artist, and emptying a field now truly removes it from the file.",
+        "in": "0.42.0"
+      },
+      {
+        "text": "WAV files are tagged as ID3v2.3, the version Mp3tag and friends read — and converted files no longer carry the encoder's ENCODER stamp.",
+        "in": "0.42.0"
+      },
+      {
+        "text": "New artwork option: upscale smaller covers to your configured size. Combined with the square crop, your whole library comes out with identical covers (say, 700×700).",
+        "in": "0.42.0"
+      },
+      {
+        "text": "The ⋯ menu for borrowing another field's value or fixing text case is now on every free-text field: mix name, remixer, composer, label and catalog number included.",
+        "in": "0.42.0"
+      }
+    ]
+  },
+  {
     "version": "0.41",
     "date": "July 8, 2026",
     "title": "Crash-safe edits and faster conversions",
