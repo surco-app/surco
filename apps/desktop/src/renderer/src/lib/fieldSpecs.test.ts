@@ -95,10 +95,18 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'key')?.suggestions).toEqual(['A minor'])
   })
 
-  it('exposes insert sources only on free-text target fields', () => {
-    const specs = buildFieldSpecs(params({ visibleFields: ['title', 'bpm'] }))
+  it('exposes insert sources on every text field, but never on the compilation flag', () => {
+    // The { } menu is how any field borrows another field's value (the year into
+    // the title, the title into the comment…); gating it to a handful of fields
+    // made the rest look like they simply lacked the feature. compilation stays
+    // out — it is a checkbox flag, not text a value could be inserted into.
+    const specs = buildFieldSpecs(
+      params({ visibleFields: ['title', 'bpm', 'year', 'compilation'] }),
+    )
     expect(specs.find((s) => s.key === 'title')?.insertSources).toHaveLength(1)
-    expect(specs.find((s) => s.key === 'bpm')?.insertSources).toBeUndefined()
+    expect(specs.find((s) => s.key === 'bpm')?.insertSources).toHaveLength(1)
+    expect(specs.find((s) => s.key === 'year')?.insertSources).toHaveLength(1)
+    expect(specs.find((s) => s.key === 'compilation')?.insertSources).toBeUndefined()
   })
 })
 

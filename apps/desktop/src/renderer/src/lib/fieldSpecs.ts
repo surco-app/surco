@@ -29,15 +29,6 @@ export interface FieldSpec {
   cleanResult?: string
 }
 
-// The fields whose value can be pulled into another text field via the { } menu.
-const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
-  'title',
-  'artist',
-  'albumArtist',
-  'album',
-  'comment',
-])
-
 export interface BuildFieldSpecsParams {
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -102,8 +93,9 @@ export function buildFieldSpecs({
             label: tr(`fields.${def.key}`),
             value: item.meta[def.key] ?? '',
             onChange: (v: string) => setField(def.key, v),
-            insertSources:
-              !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
+            // Every text field hosts the { } menu (compilation is a checkbox flag,
+            // not text); the Field itself filters out the empty and the self entry.
+            insertSources: !isMulti && def.key !== 'compilation' ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             wide: def.wide,
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
