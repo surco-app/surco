@@ -26,6 +26,9 @@ interface Props {
   formatResult?: string
   inputRef: React.RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
+  // Lets the host react to the menu opening — Field hides its value tooltip while
+  // the menu is up, since both live in the same hover wrapper and would overlap.
+  onOpenChange?: (open: boolean) => void
 }
 
 // In-field actions menu: inserts the current value of another metadata field at
@@ -45,6 +48,7 @@ export function FieldInsertMenu({
   formatResult,
   inputRef,
   onChange,
+  onOpenChange,
 }: Props): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -53,9 +57,10 @@ export function FieldInsertMenu({
   const fromMouseRef = useRef(false)
 
   useEffect(() => {
+    onOpenChange?.(open)
     if (!open) return
     menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
-  }, [open])
+  }, [open, onOpenChange])
 
   // Only the transforms that change something: offering "UPPERCASE" on an
   // already-uppercase field would be a dead action that makes the menu feel

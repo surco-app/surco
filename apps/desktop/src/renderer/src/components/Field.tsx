@@ -1,5 +1,5 @@
 import type React from 'react'
-import { memo, useRef } from 'react'
+import { memo, useRef, useState } from 'react'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { Tooltip } from './Tooltip'
@@ -37,6 +37,7 @@ export const Field = memo(function Field({
   formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   // A field never offers itself, and an empty field has nothing to insert.
   const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
   // The menu also formats the field's own text and can offer a "without version"
@@ -75,8 +76,10 @@ export const Field = memo(function Field({
         {/* The input can't host the themed Tooltip as a child, so it lives on this wrapper
             (the Tooltip anchors to its parentElement): hovering the field still reveals the
             full value when it's clipped, now in the app's own tooltip rather than the
-            OS-native one. An empty field gets none — there's nothing to reveal. */}
-        {value && <Tooltip label={value} hoverOnly />}
+            OS-native one. An empty field gets none — there's nothing to reveal, and an
+            open ⋯ menu suppresses it: the menu sits inside this same wrapper, so the
+            value tooltip would float over its rows. */}
+        {value && !menuOpen && <Tooltip label={value} hoverOnly />}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}
@@ -86,6 +89,7 @@ export const Field = memo(function Field({
             formatResult={formatResult}
             inputRef={inputRef}
             onChange={onChange}
+            onOpenChange={setMenuOpen}
           />
         )}
       </span>

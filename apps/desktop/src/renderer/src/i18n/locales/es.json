@@ -385,7 +385,7 @@
     "caseLower": "minúsculas",
     "caseUpper": "MAYÚSCULAS",
     "baseTitle": "Título base",
-    "applyTitleFormat": "Formato del título",
+    "applyTitleFormat": "Formato",
     "applyTitleFormatHint": "Reescribe el título de las pistas seleccionadas con el formato configurado",
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",

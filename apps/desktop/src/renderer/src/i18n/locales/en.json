@@ -385,7 +385,7 @@
     "caseLower": "lowercase",
     "caseUpper": "UPPERCASE",
     "baseTitle": "Base title",
-    "applyTitleFormat": "Title format",
+    "applyTitleFormat": "Format",
     "applyTitleFormatHint": "Rewrite the selected tracks' titles from the configured format",
     "deriveFromName": "Fill from filename",
     "deriveFromNameHint": "Fill the metadata fields from the file name",

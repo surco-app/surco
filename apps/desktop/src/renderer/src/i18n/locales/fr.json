@@ -385,7 +385,7 @@
     "caseLower": "minuscules",
     "caseUpper": "MAJUSCULES",
     "baseTitle": "Titre de base",
-    "applyTitleFormat": "Format du titre",
+    "applyTitleFormat": "Format",
     "applyTitleFormatHint": "Réécrit les titres des pistes sélectionnées selon le format configuré",
     "deriveFromName": "Remplir depuis le nom",
     "deriveFromNameHint": "Remplit les métadonnées à partir du nom du fichier",
