@@ -29,6 +29,10 @@ interface Props {
   // Lets the host react to the menu opening — Field hides its value tooltip while
   // the menu is up, since both live in the same hover wrapper and would overlap.
   onOpenChange?: (open: boolean) => void
+  // Opens the menu above the trigger instead of below — for an input near the bottom
+  // of a scroll container (the settings' file name format), where dropping down
+  // clips against the container edge and adds a second scrollbar.
+  dropUp?: boolean
 }
 
 // In-field actions menu: inserts the current value of another metadata field at
@@ -49,6 +53,7 @@ export function FieldInsertMenu({
   inputRef,
   onChange,
   onOpenChange,
+  dropUp,
 }: Props): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -194,7 +199,9 @@ export function FieldInsertMenu({
             data-testid="field-insert-menu"
             aria-label={tr('editor.fieldActions')}
             onKeyDown={onMenuKeyDown}
-            className="animate-pop absolute top-full right-0 z-50 mt-1 max-h-64 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+            className={`animate-pop absolute right-0 z-50 max-h-64 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${
+              dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
+            }`}
           >
             {sources.map((s) => (
               <button
