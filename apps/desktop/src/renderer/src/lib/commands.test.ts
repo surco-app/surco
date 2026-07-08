@@ -123,6 +123,16 @@ describe('guideUrl', () => {
 })
 
 describe('filterCommands', () => {
+  // Spanish (and French, Portuguese…) command titles carry accents the user won't
+  // bother typing in a quick launcher: "titulo" must find "título", and an accented
+  // query must still find an unaccented title.
+  it('matches ignoring accents in both the query and the title', () => {
+    const cmds = [cmd('apply-title-format', 'Aplicar el formato del título a la selección')]
+    expect(filterCommands(cmds, 'titulo', {}).map((c) => c.id)).toEqual(['apply-title-format'])
+    expect(filterCommands(cmds, 'formáto', {}).map((c) => c.id)).toEqual(['apply-title-format'])
+  })
+
+
   it('returns every command when the query is empty, so the menu is browsable', () => {
     expect(filterCommands(commands, '').map((c) => c.id)).toEqual(['add', 'settings', 'all'])
   })

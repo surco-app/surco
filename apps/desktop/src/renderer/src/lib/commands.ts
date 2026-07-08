@@ -19,14 +19,23 @@ export interface Command {
 // like "Clear the list" leads over an earlier-declared "Clear metadata". Ties keep the
 // declarative order (stable sort), and an empty query is left untouched so the browsable
 // menu the user has memorized never reshuffles.
+// Lowercases and strips diacritics, so "titulo" finds "título" (and an accented
+// query still finds an unaccented title) — nobody types accents into a launcher.
+function fold(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export function filterCommands(
   commands: Command[],
   query: string,
   usage: Record<string, number> = {},
 ): Command[] {
-  const q = query.trim().toLowerCase()
+  const q = fold(query.trim())
   if (!q) return commands
-  const matches = commands.filter((c) => c.title.toLowerCase().includes(q))
+  const matches = commands.filter((c) => fold(c.title).includes(q))
   return matches
     .map((c, i) => ({ c, i }))
     .sort((a, b) => (usage[b.c.id] ?? 0) - (usage[a.c.id] ?? 0) || a.i - b.i)
@@ -56,11 +65,11 @@ export function filterTrackCommands(
   query: string,
   goToTrack: (id: string) => void,
 ): Command[] {
-  const q = query.trim().toLowerCase()
+  const q = fold(query.trim())
   if (!q) return []
   const out: Command[] = []
   for (const t of tracks) {
-    const haystack = `${t.meta.artist ?? ''} ${t.meta.title ?? ''} ${t.listLabel}`.toLowerCase()
+    const haystack = fold(`${t.meta.artist ?? ''} ${t.meta.title ?? ''} ${t.listLabel}`)
     if (!haystack.includes(q)) continue
     out.push({
       id: `goto:${t.id}`,
