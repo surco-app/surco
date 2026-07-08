@@ -7,10 +7,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), edit tags and metadata from Discogs and send to Apple Music or your Engine DJ (Denon) library in seconds — and catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), edit tags and metadata from Discogs and send to Apple Music or your Engine DJ (Denon) library in seconds — and catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco — Get your DJ tracks ready in seconds",
-    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV or FLAC (or a lighter MP3), tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV or FLAC, tag from Discogs, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
+    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), tag from Discogs and organize in seconds. And catch MP3s disguised as lossless.",
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV, FLAC or ALAC, tag from Discogs, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -62,8 +62,9 @@
         "title": "Convert",
         "replaces": "instead of a converter",
         "items": [
-          "AIFF, WAV, FLAC or MP3, any to any",
+          "AIFF, WAV, FLAC, ALAC or MP3, any to any",
           "Already in that format? Copied as-is, instantly",
+          "Quality your way: MP3 bitrate, bit depth and sample rate — or keep the source's",
           "Match the volume to one loudness or peak",
           "Re-export without touching Traktor cue points"
         ]
@@ -76,7 +77,8 @@
           "Fill artist, album, label, BPM and key from Discogs and Bandcamp",
           "Match a whole release by track length",
           "Bulk-edit and find-and-replace with regex",
-          "Pull the cover from Discogs or drop your own"
+          "Pull the cover from Discogs or drop your own",
+          "Your edits save themselves: recover the session even after a crash"
         ]
       },
       {
@@ -97,7 +99,7 @@
         "items": [
           "Send to Apple Music with tags and cover, even WAV",
           "Straight into your Engine DJ (Denon) library: cover, rating and playlist",
-          "Export the queue to rekordbox, Traktor or Serato",
+          "Export the queue to rekordbox, Traktor, Serato or M3U8",
           "Name with {artist} - {title} templates"
         ]
       }
@@ -119,6 +121,7 @@
   "stack": [
     "lossless AIFF",
     "lossless FLAC",
+    "lossless ALAC",
     "high-quality MP3",
     "ffmpeg included",
     "ID3v2.3",
@@ -160,7 +163,7 @@
     "withSurcoTime": "~1–2 s",
     "combo": "Convert + tag + Apple Music",
     "bullets": [
-      "lossless AIFF, WAV or FLAC, or MP3",
+      "lossless AIFF, WAV, FLAC or ALAC, or MP3",
       "Discogs metadata",
       "embedded cover art",
       "grouping and tags",
@@ -185,7 +188,7 @@
       },
       {
         "title": "Export and you're done",
-        "body": "Convert to AIFF, WAV, FLAC or MP3, check the spectrum and send the track to Apple Music or Engine DJ."
+        "body": "Convert to AIFF, WAV, FLAC, ALAC or MP3, check the spectrum and send the track to Apple Music or Engine DJ."
       }
     ]
   },
@@ -218,7 +221,7 @@
       },
       "convert": {
         "title": "Convert & file",
-        "desc": "To AIFF, WAV, FLAC or MP3 and straight into your Apple Music or Engine DJ library, in one click."
+        "desc": "To AIFF, WAV, FLAC, ALAC or MP3 and straight into your Apple Music or Engine DJ library, in one click."
       }
     }
   },
@@ -238,6 +241,7 @@
       "lossless AIFF",
       "lossless WAV",
       "lossless FLAC",
+      "lossless ALAC",
       "high-quality MP3"
     ],
     "copyright": "© 2026 Surco · getsurco.app",
@@ -282,7 +286,15 @@
       },
       {
         "q": "Which formats does it support?",
-        "a": "It converts between lossless AIFF, WAV and FLAC and high-quality MP3, any to any. It also reads M4A, AAC, OGG and OPUS."
+        "a": "It converts between lossless AIFF, WAV, FLAC and ALAC and MP3, any to any. The quality is yours to pick: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate — by default the source's are kept. It also reads M4A, AAC, OGG and OPUS."
+      },
+      {
+        "q": "What if the app closes mid-session?",
+        "a": "You lose nothing. Surco saves your unapplied edits on its own as you work, and on reopening it offers to restore the session with everything just as you left it — metadata, covers and matches included, even after the machine froze."
+      },
+      {
+        "q": "Which languages is it in?",
+        "a": "Spanish, English, German, French and Portuguese (Brazil). It follows your system language by default, and you can pin one in Settings."
       },
       {
         "q": "Which systems does it run on?",
@@ -316,8 +328,8 @@
           "No account, no subscription. Surco updates itself, so you'll always have the latest version without downloading again."
         ],
         "points": [
-          "Available for macOS (Apple Silicon and Intel) and Windows.",
-          "The welcome wizard sets up format, output folder, genres and visible fields.",
+          "Available for macOS (Apple Silicon and Intel) and Windows, in five languages.",
+          "The welcome wizard is just four steps; naming, genres and editor fields wait for you in Settings.",
           "You can change any setting later in Settings (⌘ ,)."
         ],
         "shot": "instalar-en.png",
@@ -331,9 +343,10 @@
           "Surco reads each file's tags, duration and cover art on the fly and shows them in the list instantly. The same file is never added twice."
         ],
         "points": [
-          "Formats: WAV, FLAC, AIFF, MP3, M4A, AAC, OGG, OPUS and more.",
-          "Drop whole folders: Surco walks them and adds every audio file it finds.",
-          "Tracks show up immediately; tags and cover art load in the background."
+          "Formats: WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG, OPUS and more.",
+          "Drop whole folders: Surco walks them and adds every audio file it finds — and tells you when new files show up in them later.",
+          "Tracks show up immediately; tags and cover art load in the background.",
+          "Closed the app? On launch it offers to reopen your last session — with your unapplied edits intact, even after an unexpected quit."
         ],
         "shot": "importar-en.png",
         "shotCaption": "Dragging and dropping tracks into the list."
@@ -364,7 +377,9 @@
           "Under BPM and key you'll see the value Surco detects from the audio itself — in Camelot or musical notation, per Settings — one click from applied.",
           "Only the fields you choose in Settings → Fields are shown, grouped into sections (Identity, Catalog, DJ and Order) so you stay oriented when many are on.",
           "Required fields turn red if you leave them empty.",
-          "The cover shows its real pixel dimensions so you can judge sharpness."
+          "The cover shows its real pixel dimensions so you can judge sharpness.",
+          "Copy and paste metadata —cover included— from one track to another via the context menu; ⌘Z undoes it whole.",
+          "Mystery track? A button searches Google with the file name already typed, and a command numbers the selection in list order (1, 2, 3…)."
         ],
         "shot": "editor-en.png",
         "shotCaption": "A track's metadata editor."
@@ -380,6 +395,7 @@
         "points": [
           "Green “good quality”: the sound reaches all the way up, nothing missing.",
           "Amber “suspect”: a sharp early cutoff — likely a re-encoded fake.",
+          "Save a PNG report of the spectrum —verdict and cutoff line included— to share when someone asks about that track.",
           "You can turn off the spectrum or loudness in Settings → Editor if you don't use them."
         ],
         "shot": "calidad-en.png",
@@ -411,7 +427,8 @@
         "points": [
           "It never steps on your work: already-matched tracks are skipped, your cover art is kept, and re-running it only fills the gaps.",
           "It probes rows as they scroll into view, and your manual searches always go first, so it never drains the request limit.",
-          "Filter the list by “Auto-matched” to review what it did, or run it on demand with “Auto-match all tracks”."
+          "Filter the list by “Auto-matched” to review what it did, or run it on demand with “Auto-match all tracks”.",
+          "The Activity panel shows the background work and explains every verdict: which signals matched and which candidates were ruled out."
         ],
         "shot": "automatch-en.png",
         "shotCaption": "The best match, flagged “Suggested” in the Discogs search."
@@ -451,13 +468,14 @@
         "id": "convertir",
         "title": "Convert the track",
         "body": [
-          "The button at the bottom of the editor converts the selected track. The dropdown next to it picks the format: AIFF, WAV or FLAC lossless, or MP3 at 320 kbps. If the track is already in that format, Surco copies it as-is instantly, without re-encoding.",
-          "In Settings → Conversion you choose the destination: an output folder, your Apple Music library, your Engine DJ (Denon) library, or overwrite the original in place. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+          "The button at the bottom of the editor converts the selected track. The dropdown next to it picks the format: AIFF, WAV, FLAC or ALAC lossless, or MP3. If the track is already in that format, Surco copies it as-is instantly, without re-encoding.",
+          "Quality lives in Settings → Conversion: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate — by default the source's are kept, with no needless re-encoding. Settings → Destination decides where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, or overwrite the original in place. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
         ],
         "points": [
-          "Formats: AIFF, WAV, FLAC (lossless) and MP3 320 kbps.",
+          "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
           "Re-exporting to the same format keeps Traktor cue points and beatgrid.",
-          "Normalization is off by default; it re-encodes the audio, so it's optional."
+          "Normalization is off by default; it re-encodes the audio, so it's optional.",
+          "After converting, send the originals to the trash in a single action."
         ],
         "shot": "convertir-en.png",
         "shotCaption": "The convert button and format choice."
@@ -471,6 +489,7 @@
         ],
         "points": [
           "Processes the whole queue at once; cancel mid-way if you need to.",
+          "Conversions run in parallel, spreading across your machine's cores.",
           "Uses current metadata only: it downloads nothing from Discogs in the batch."
         ],
         "shot": "lote-en.png",
@@ -480,14 +499,15 @@
         "id": "exportar",
         "title": "Take it to your decks",
         "body": [
-          "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) or your Engine DJ (Denon) library as you convert, or exports the whole queue as a rekordbox (.xml), Traktor (.nml) or Serato collection from the export modal (⌘⇧E).",
+          "Surco doesn't stop at converting: it sends tracks straight to your Apple Music library (on macOS) or your Engine DJ (Denon) library as you convert, or exports the whole queue as a rekordbox (.xml), Traktor (.nml), Serato collection or M3U8 playlist from the export modal (⌘⇧E).",
           "Tags and cover art travel inside the file, so your DJ software reads them with no extra steps."
         ],
         "points": [
           "To Apple Music in one click, during conversion.",
           "Export rekordbox (.xml) and Traktor (.nml) collections.",
           "Surco warns you if a track is already in your Apple Music library.",
-          "Edit a track later and Surco updates its Apple Music copy instead of duplicating it."
+          "Edit a track later and Surco updates its Apple Music copy instead of duplicating it.",
+          "If Apple Music already held an old copy of that song, Surco spots it when adding the new one and offers to remove it."
         ],
         "shot": "",
         "shotCaption": "Exporting to rekordbox or Traktor."
@@ -511,13 +531,14 @@
         "id": "ajustes",
         "title": "Tune it to your taste",
         "body": [
-          "Settings (⌘ ,) holds everything you don't touch day to day: the theme (light, dark or automatic), your Discogs token and auto-matching, the default format and destination, the name template, which fields you see and which are required, the maximum cover size and the shortcuts.",
+          "Settings (⌘ ,) holds everything you don't touch day to day: the language (Spanish, English, German, French or Portuguese), the theme (light, dark or automatic), your Discogs token and auto-matching, the default format, quality and destination, the name template, which fields you see and which are required, the maximum cover size and the shortcuts.",
           "Set it up once and Surco honors your choices on every track."
         ],
         "points": [
-          "General, Conversion, Filenames, Editor, Fields, Artwork and Shortcuts.",
+          "General, Search, Conversion, Destination, Filenames, Editor, Artwork, Fields, Shortcuts and Statistics.",
           "Define recurring genres and groupings so they show up as suggestions.",
           "Choose which fields to show and which to require, and reorder them to taste or hit “Auto-organize” to sort them into sections in one click.",
+          "The Statistics tab tallies your lifetime numbers —tracks loaded, converted, analyzed…— and generates an image ready to share.",
           "Point the settings folder at iCloud Drive or Dropbox to share your preferences across Macs; the Discogs token never leaves your machine."
         ],
         "shot": "ajustes-en.png",
