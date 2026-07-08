@@ -506,9 +506,9 @@ export default function App(): React.JSX.Element {
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment rows exist (the effect below). Accepting
   // routes through the same expand pipeline as a drop, so media access and metadata
-  // reads behave exactly like a fresh import. The ✕ and the countdown expiring are both
-  // an answer: they clear the stored session so the next launch doesn't re-ask about
-  // the very list the user already waved off.
+  // reads behave exactly like a fresh import. The ✕ and (for a paths-only session)
+  // the countdown expiring are both an answer: they clear the stored session so the
+  // next launch doesn't re-ask about the very list the user already waved off.
   const LAST_SESSION_PROMPT_TIMEOUT_MS = 6_000
   const lastSessionToastId = useRef<string | null>(null)
   const reopenLastSession = useStableCallback(async (session: SessionData) => {
@@ -530,15 +530,21 @@ export default function App(): React.JSX.Element {
   })
   const offerLastSession = useStableCallback((session: SessionData) => {
     if (session.paths.length === 0 || tracksRef.current.length > 0) return
+    // Two stakes, two behaviours: a paths-only session loses nothing when the offer
+    // ages out, so it keeps the countdown. Staged edits exist nowhere but in this
+    // saved session — expiring would destroy them, so the offer stays up until the
+    // user actually answers (Load, or the ✕ as a deliberate no).
+    const hasEdits = Object.keys(session.edits).length > 0
     lastSessionToastId.current = pushToast(store, {
       key: 'last-session',
       tone: 'neutral',
       testid: 'last-session',
       message: tr('lastSession.prompt', { count: session.paths.length }),
       action: { label: tr('lastSession.load'), onAction: () => void reopenLastSession(session) },
-      duration: LAST_SESSION_PROMPT_TIMEOUT_MS,
       onDismiss: declineLastSession,
-      onExpire: declineLastSession,
+      ...(hasEdits
+        ? {}
+        : { duration: LAST_SESSION_PROMPT_TIMEOUT_MS, onExpire: declineLastSession }),
     })
   })
   useEffect(() => {

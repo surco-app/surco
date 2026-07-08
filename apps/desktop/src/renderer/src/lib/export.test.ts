@@ -62,6 +62,17 @@ describe('exportedPatch', () => {
     expect(patch.fileName).toBeUndefined()
   })
 
+  // Converting writes the staged state into a file, so nothing is at risk anymore:
+  // re-stamping the disk snapshot is what makes the session store stop persisting
+  // this track and lets the reopen offer expire freely again.
+  it('marks the exported state as safely on disk', () => {
+    const t = track()
+    const patch = exportedPatch(t, { outputPath: '/out/a.mp3', inPlace: false })
+    expect(patch.diskSignature).toBe(trackSignature(t))
+    const musicOnly = exportedPatch(t, { outputPath: '', inPlace: false, addedToMusicOnly: true })
+    expect(musicOnly.diskSignature).toBe(trackSignature(t))
+  })
+
   it('records no file and marks the track added when it went to Apple Music only', () => {
     // "Apple Music only" removed the output-folder copy, so there is nothing to reveal:
     // the track must carry no outputPath and show as already in the library.

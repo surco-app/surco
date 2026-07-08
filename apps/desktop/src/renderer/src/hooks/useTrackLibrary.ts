@@ -2,6 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SessionEdit, TrackMetadata } from '../../../shared/types'
 import { mapWithConcurrency } from '../lib/concurrency'
+import { trackSignature } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
@@ -233,6 +234,11 @@ export function useTrackLibrary({
           cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
         listLabel: s.title || base.fileName,
         loadingMeta: false,
+        // The pure read IS the file's state: everything staged on top of this
+        // snapshot exists nowhere on disk, which is what the session store persists.
+        // Stamped before the restored overlay below, so restored edits keep counting
+        // as staged until they are actually converted.
+        diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
       }
       if (saved) Object.assign(patch, restoredPatch(saved))
       // A restored edit replaces the read wholesale (it was itself built on a read of
@@ -256,7 +262,13 @@ export function useTrackLibrary({
       // unreadable file is indistinguishable from a file that simply carries no tags.
       // A restored edit still applies — its metadata is better than the name parse,
       // and losing it to a transient read failure is exactly what the store prevents.
-      const patch: Partial<TrackItem> = { loadingMeta: false, metaReadFailed: true }
+      // The disk snapshot is the name-parse state the row fell back to, so edits
+      // typed on top of an unreadable file still count as staged.
+      const patch: Partial<TrackItem> = {
+        loadingMeta: false,
+        metaReadFailed: true,
+        diskSignature: trackSignature({ meta: base.meta }),
+      }
       if (saved) Object.assign(patch, restoredPatch(saved))
       setTracks((prev) =>
         prev.map((t) =>

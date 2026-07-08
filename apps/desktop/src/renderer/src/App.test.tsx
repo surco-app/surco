@@ -1809,10 +1809,11 @@ describe('App reopen last session', () => {
     await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
   })
 
-  // An unanswered launch offer must not park in the corner forever: like the
-  // new-tracks prompt it carries a duration, so the shared toast draws its
-  // countdown bar and retires the card on its own. Expiring counts as declining
-  // (same clearing as the ✕), so the next launch starts quiet.
+  // An unanswered launch offer for a paths-only session must not park in the corner
+  // forever: like the new-tracks prompt it carries a duration, so the shared toast
+  // draws its countdown bar and retires the card on its own. Expiring counts as
+  // declining (same clearing as the ✕), so the next launch starts quiet — safe here,
+  // because with no staged edits the countdown destroys nothing.
   it('auto-dismisses the offer with a visible countdown', async () => {
     setApi({
       getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
@@ -1820,6 +1821,22 @@ describe('App reopen last session', () => {
     await renderApp()
     await screen.findByTestId('last-session')
     expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
+  })
+
+  // With staged edits the expiry IS destructive: they exist nowhere but in the saved
+  // session, and a user who reopens after a crash and looks away for six seconds
+  // would lose everything. The offer must wait for an explicit answer — no countdown,
+  // no self-dismissal; only Load or the ✕ retire it.
+  it('keeps the offer up without a countdown when the session carries staged edits', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue({
+        paths: ['/music/a.wav'],
+        edits: { '/music/a.wav': { meta: { title: 'Staged' } } },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    expect(screen.queryByTestId('last-session-countdown')).toBeNull()
   })
 
   // If the user has already started importing, restoring the old list on top would mix
@@ -1867,6 +1884,22 @@ describe('App reopen last session', () => {
       },
       { timeout: 3000 },
     )
+    // The untouched second track restores identically from its own file, so it stays
+    // out of the map — its presence would make the reopen offer read as "there is
+    // work to lose" for a session that has none.
+    expect(saveLastSession.mock.calls.at(-1)?.[1]['/music/b.wav']).toBeUndefined()
+  })
+
+  // A session that was only loaded (nothing retagged) must save an empty edits map:
+  // that emptiness is the signal that lets the next launch's reopen offer keep its
+  // self-expiring countdown instead of demanding an answer.
+  it('saves no edits when nothing was retagged', async () => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
+    setApi({ saveLastSession })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(saveLastSession).toHaveBeenCalled(), { timeout: 3000 })
+    expect(saveLastSession.mock.calls.at(-1)?.[1]).toEqual({})
   })
 
   // Accepting the reopen offer must bring back the staged edits, not just the file

@@ -110,6 +110,12 @@ export interface TrackItem {
   // Snapshot of the editor (via trackSignature) taken when the track last
   // finished, so later edits flip it "stale" and bring back the convert button.
   processedSignature?: string
+  // Snapshot (via trackSignature) of the state some file already carries: stamped
+  // from the pure file read when the import lands and re-stamped when a conversion
+  // writes the tags out. The live state diverging from it means the user has staged
+  // work that exists nowhere on disk — exactly what the session store must persist
+  // and what makes the reopen offer refuse to expire on its own.
+  diskSignature?: string
   error?: string
   // Tracks a manual "add to Apple Music" run, independent of status so the track
   // stays 'done' while it adds. 'error' carries the reason in musicError.

@@ -20,6 +20,10 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       stage: undefined,
       processedSignature: trackSignature(track),
+      // The staged state was just written out (here, into the Apple Music copy), so
+      // nothing is at risk anymore: the session store stops persisting this track
+      // and the reopen offer may expire freely again.
+      diskSignature: trackSignature(track),
     }
   }
   return {
@@ -42,5 +46,9 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
     ...(result.addedToEngineDj && { engineDjAdded: true }),
     stage: undefined,
     processedSignature: trackSignature(track),
+    // The staged state now lives in the converted file, so nothing is at risk
+    // anymore: the session store stops persisting this track and the reopen offer
+    // may expire freely again.
+    diskSignature: trackSignature(track),
   }
 }

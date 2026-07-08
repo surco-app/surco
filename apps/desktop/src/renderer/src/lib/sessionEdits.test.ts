@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
+import { trackSignature } from './dirty'
 import { sessionEdits } from './sessionEdits'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
@@ -27,6 +28,9 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
       catalogNumber: '',
       remixArtist: '',
     },
+    // What the file itself carried at import: a different title, so the track above
+    // reads as edited unless a test overrides this to match.
+    diskSignature: trackSignature({ meta: { title: 'Disk' } as TrackItem['meta'] }),
     ...over,
   }
 }
@@ -35,7 +39,7 @@ describe('sessionEdits', () => {
   // The snapshot the crash recovery restores: everything editable, keyed by the
   // source path (the only identity that survives a relaunch — track ids are minted
   // fresh every import).
-  it('captures each track’s editable state keyed by its source path', () => {
+  it('captures each edited track’s state keyed by its source path', () => {
     const edits = sessionEdits([
       track(),
       track({ id: 'id-2', inputPath: '/music/b.wav', outputName: 'B1 - Other' }),
@@ -43,6 +47,23 @@ describe('sessionEdits', () => {
     expect(Object.keys(edits)).toEqual(['/music/a.wav', '/music/b.wav'])
     expect(edits['/music/a.wav'].meta.title).toBe('Edited')
     expect(edits['/music/b.wav'].outputName).toBe('B1 - Other')
+  })
+
+  // "Is there anything to lose?" is answered by the edits map alone: a track whose
+  // editable state still matches what the file carries restores identically from the
+  // file itself, so it stays out — an all-clean session saves an empty map, which is
+  // what lets the reopen offer keep its auto-expiring countdown.
+  it('skips tracks whose state matches the file on disk', () => {
+    const clean = track()
+    clean.diskSignature = trackSignature(clean)
+    expect(sessionEdits([clean])).toEqual({})
+  })
+
+  // A row whose disk snapshot never landed (the read failed before stamping) has
+  // nothing to compare against; counting it as edited would make every such save
+  // claim there is work to lose.
+  it('skips tracks with no disk snapshot', () => {
+    expect(sessionEdits([track({ diskSignature: undefined })])).toEqual({})
   })
 
   // Release art lives at a stable https URL, so it can come straight back after a
