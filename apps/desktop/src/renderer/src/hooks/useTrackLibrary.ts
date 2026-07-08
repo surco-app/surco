@@ -18,7 +18,7 @@ const READ_CONCURRENCY = 6
 // How long the "N new tracks" prompt stays up before dismissing itself. Long enough to
 // read and hit Load, short enough that an ignored prompt gets out of the way; timing out
 // declines the offer, exactly like the ✕. Exported so the toast's countdown bar matches.
-export const NEW_TRACKS_PROMPT_TIMEOUT_MS = 10_000
+export const NEW_TRACKS_PROMPT_TIMEOUT_MS = 6_000
 
 function newTrack(path: string): TrackItem {
   const { fileName, artist, title, query } = parseFileName(path)

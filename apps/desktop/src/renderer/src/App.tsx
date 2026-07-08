@@ -509,7 +509,7 @@ export default function App(): React.JSX.Element {
   // reads behave exactly like a fresh import. The ✕ and the countdown expiring are both
   // an answer: they clear the stored session so the next launch doesn't re-ask about
   // the very list the user already waved off.
-  const LAST_SESSION_PROMPT_TIMEOUT_MS = 10_000
+  const LAST_SESSION_PROMPT_TIMEOUT_MS = 6_000
   const lastSessionToastId = useRef<string | null>(null)
   const reopenLastSession = useStableCallback(async (session: SessionData) => {
     // Retire the prompt right here, not via the rows-exist effect below: the ref must
