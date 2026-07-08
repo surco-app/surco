@@ -641,7 +641,15 @@
   "palette": {
     "placeholder": "Cherche des morceaux ou lance une commande…",
     "tracks": "Morceaux",
-    "empty": "Aucun résultat"
+    "empty": "Aucun résultat",
+    "groups": {
+      "tags": "Métadonnées",
+      "convert": "Conversion et export",
+      "library": "Bibliothèque",
+      "playback": "Lecture",
+      "navigate": "Navigation",
+      "app": "Application"
+    }
   },
   "onboarding": {
     "welcomeTitle": "Bienvenue dans Surco",

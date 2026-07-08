@@ -22,8 +22,8 @@ function setup(overlayOpen: boolean): {
   const play = vi.fn()
   const stepTrack = vi.fn()
   const commands: Command[] = [
-    { id: 'toggle-language', title: '', enabled: true, run: language },
-    { id: 'play', title: '', enabled: true, run: play },
+    { id: 'toggle-language', title: '', enabled: true, group: 'app', run: language },
+    { id: 'play', title: '', enabled: true, group: 'playback', run: play },
   ]
   renderHook(() =>
     useKeyboardShortcuts({

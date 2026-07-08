@@ -641,7 +641,15 @@
   "palette": {
     "placeholder": "Busca pistas o ejecuta una acción…",
     "tracks": "Pistas",
-    "empty": "Sin resultados"
+    "empty": "Sin resultados",
+    "groups": {
+      "tags": "Metadatos",
+      "convert": "Convertir y exportar",
+      "library": "Biblioteca",
+      "playback": "Reproducción",
+      "navigate": "Navegación",
+      "app": "Aplicación"
+    }
   },
   "onboarding": {
     "welcomeTitle": "Te damos la bienvenida a Surco",

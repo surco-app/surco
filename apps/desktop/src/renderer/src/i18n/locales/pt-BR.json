@@ -641,7 +641,15 @@
   "palette": {
     "placeholder": "Busque faixas ou execute um comando…",
     "tracks": "Faixas",
-    "empty": "Sem resultados"
+    "empty": "Sem resultados",
+    "groups": {
+      "tags": "Metadados",
+      "convert": "Converter e exportar",
+      "library": "Biblioteca",
+      "playback": "Reprodução",
+      "navigate": "Navegação",
+      "app": "Aplicativo"
+    }
   },
   "onboarding": {
     "welcomeTitle": "Boas-vindas ao Surco",

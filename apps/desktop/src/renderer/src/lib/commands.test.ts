@@ -14,7 +14,7 @@ import {
 import { DONATE_URL } from './donate'
 
 function cmd(id: string, title: string): Command {
-  return { id, title, enabled: true, run: () => {} }
+  return { id, title, enabled: true, group: 'app', run: () => {} }
 }
 
 function track(overrides: Partial<TrackItem> = {}): TrackItem {
@@ -236,19 +236,19 @@ describe('runCommand', () => {
   // never fire no matter which surface invoked it.
   it('runs the matching command when it is enabled', () => {
     const run = vi.fn()
-    runCommand([{ id: 'add', title: '', enabled: true, run }], 'add')
+    runCommand([{ id: 'add', title: '', enabled: true, group: 'library', run }], 'add')
     expect(run).toHaveBeenCalledOnce()
   })
 
   it('never runs a disabled command', () => {
     const run = vi.fn()
-    runCommand([{ id: 'add', title: '', enabled: false, run }], 'add')
+    runCommand([{ id: 'add', title: '', enabled: false, group: 'library', run }], 'add')
     expect(run).not.toHaveBeenCalled()
   })
 
   it('does nothing for an unknown id', () => {
     const run = vi.fn()
-    runCommand([{ id: 'add', title: '', enabled: true, run }], 'missing')
+    runCommand([{ id: 'add', title: '', enabled: true, group: 'library', run }], 'missing')
     expect(run).not.toHaveBeenCalled()
   })
 })

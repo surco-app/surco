@@ -10,7 +10,7 @@ import { CommandPalette } from './CommandPalette'
 afterEach(cleanup)
 
 function cmd(over: Partial<Command> & { id: string }): Command {
-  return { title: over.id, enabled: true, run: () => {}, ...over }
+  return { title: over.id, enabled: true, group: 'app', run: () => {}, ...over }
 }
 
 function track(id: string, artist: string, title: string): TrackItem {
@@ -45,6 +45,27 @@ describe('CommandPalette', () => {
     } finally {
       proto.scrollIntoView = original
     }
+  })
+
+  // Raycast-style sections: 47 commands read as short labelled groups, ordered by
+  // everyday relevance (tag work first, app chrome last) regardless of build order.
+  it('groups the commands under section headers in the fixed group order', () => {
+    render(
+      <CommandPalette
+        commands={[
+          cmd({ id: 'help', group: 'app' }),
+          cmd({ id: 'fill-all', group: 'tags' }),
+          cmd({ id: 'export', group: 'convert' }),
+        ]}
+        onClose={() => {}}
+      />,
+    )
+    const headers = screen
+      .getAllByTestId('palette-group-header')
+      .map((el) => el.textContent)
+    expect(headers).toEqual(['Metadata', 'Convert & export', 'Application'])
+    const items = screen.getAllByTestId('palette-item').map((el) => el.textContent)
+    expect(items).toEqual(['fill-all', 'export', 'help'])
   })
 
   it('runs an enabled command and closes when its item is clicked', () => {

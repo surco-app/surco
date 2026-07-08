@@ -1,7 +1,12 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type Command, filterCommands, filterTrackCommands } from '../lib/commands'
+import {
+  COMMAND_GROUP_ORDER,
+  type Command,
+  filterCommands,
+  filterTrackCommands,
+} from '../lib/commands'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
@@ -33,9 +38,14 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const commandResults = filterCommands(commands, query, usage)
   const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
-  // One flat list keeps the index-based arrow/Enter navigation untouched; the track group
-  // simply starts at commandResults.length, where the "Tracks" heading is rendered.
-  const results = [...commandResults, ...trackResults]
+  // One flat list keeps the index-based arrow/Enter navigation untouched, but ordered
+  // by section (Raycast-style): each group's survivors stay in their filtered rank,
+  // groups follow the fixed everyday-relevance order, and the track jumps close the
+  // list as their own group. Headers render where the group changes.
+  const results = [
+    ...COMMAND_GROUP_ORDER.flatMap((g) => commandResults.filter((c) => c.group === g)),
+    ...trackResults,
+  ]
   const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
 
   useEffect(() => {
@@ -112,9 +122,12 @@ export function CommandPalette({
         )}
         {results.map((c, i) => (
           <div key={c.id}>
-            {i === commandResults.length && trackResults.length > 0 && (
-              <p className="px-3 pt-2 pb-1 text-[0.625rem] font-medium uppercase tracking-wide text-fg-dim">
-                {t('palette.tracks')}
+            {results[i - 1]?.group !== c.group && (
+              <p
+                data-testid="palette-group-header"
+                className="px-3 pt-2 pb-1 text-[0.625rem] font-medium uppercase tracking-wide text-fg-dim"
+              >
+                {c.group === 'tracks' ? t('palette.tracks') : t(`palette.groups.${c.group}`)}
               </p>
             )}
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row */}

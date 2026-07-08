@@ -641,7 +641,15 @@
   "palette": {
     "placeholder": "Search tracks or run a command…",
     "tracks": "Tracks",
-    "empty": "No results"
+    "empty": "No results",
+    "groups": {
+      "tags": "Metadata",
+      "convert": "Convert & export",
+      "library": "Library",
+      "playback": "Playback",
+      "navigate": "Navigation",
+      "app": "Application"
+    }
   },
   "onboarding": {
     "welcomeTitle": "Welcome to Surco",

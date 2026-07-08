@@ -6,11 +6,37 @@ import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
 import { suspectTracks } from './triage'
 
+// The palette's section for a command, Raycast-style: a fixed set of buckets so 47
+// commands read as six short lists instead of one wall. 'tracks' is reserved for the
+// go-to-track jumps filterTrackCommands builds.
+export type CommandGroup =
+  | 'tags'
+  | 'convert'
+  | 'library'
+  | 'playback'
+  | 'navigate'
+  | 'app'
+  | 'tracks'
+
+// The order the palette shows the sections in: everyday tag work first, app chrome last.
+export const COMMAND_GROUP_ORDER: CommandGroup[] = [
+  'tags',
+  'convert',
+  'library',
+  'playback',
+  'navigate',
+  'app',
+  'tracks',
+]
+
 export interface Command {
   id: string
   title: string
   hint?: string
   enabled: boolean
+  // Which palette section the command lists under. Required on purpose: a new
+  // command without a group would silently render ungrouped.
+  group: CommandGroup
   run: () => void
 }
 
@@ -75,6 +101,7 @@ export function filterTrackCommands(
       id: `goto:${t.id}`,
       title: trackLabel(t),
       enabled: true,
+      group: 'tracks',
       run: () => goToTrack(t.id),
     })
     if (out.length >= TRACK_RESULT_LIMIT) break
@@ -257,6 +284,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
   return [
     {
       id: 'add',
+      group: 'library',
       title: tr('commands.add'),
       hint: hintFor('add'),
       enabled: true,
@@ -264,6 +292,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'find-replace',
+      group: 'tags',
       title: tr('commands.findReplace'),
       hint: hintFor('find-replace'),
       enabled: tracks.length > 0,
@@ -271,6 +300,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'select-all',
+      group: 'library',
       title: tr('commands.selectAll'),
       hint: hintFor('select-all'),
       enabled: tracks.length > 0,
@@ -278,6 +308,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'fill-all',
+      group: 'tags',
       title: tr('commands.fillAll'),
       hint: hintFor('fill-all'),
       enabled: tracks.length > 0,
@@ -286,6 +317,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Fills tags from the file name for the current selection — the Editor's Tag button.
       id: 'derive-tags',
+      group: 'tags',
       title: tr('commands.deriveTags'),
       hint: hintFor('derive-tags'),
       enabled: !!selected,
@@ -296,6 +328,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // with no Discogs release to take positions from. Needs at least two tracks in
       // scope: numbering a single row has no order to express.
       id: 'number-tracks',
+      group: 'tags',
       title: tr('commands.numberTracks'),
       hint: hintFor('number-tracks'),
       enabled: bulkTracks.length > 1,
@@ -305,6 +338,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // Rewrites the selection's titles from the settings' title format — the bulk twin
       // of the title field's ⋯ menu row. Needs a configured format and a selection.
       id: 'apply-title-format',
+      group: 'tags',
       title: tr('commands.applyTitleFormat'),
       hint: hintFor('apply-title-format'),
       enabled: !!selected && titleFormatSet,
@@ -313,6 +347,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Empties every metadata field on the current selection — the Editor's Eraser button.
       id: 'clear-meta',
+      group: 'tags',
       title: tr('commands.clearMeta'),
       hint: hintFor('clear-meta'),
       enabled: !!selected,
@@ -322,6 +357,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // Rolls back the last batch tag operation — the escape hatch for a mistaken
       // fill-all, find & replace, clear, paste or derive.
       id: 'undo-meta',
+      group: 'tags',
       title: tr('commands.undoMeta'),
       hint: hintFor('undo-meta'),
       enabled: canUndoMeta(),
@@ -329,6 +365,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'prev',
+      group: 'navigate',
       title: tr('commands.prev'),
       hint: hintFor('prev'),
       enabled: visibleTracks.length > 1,
@@ -336,6 +373,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'next',
+      group: 'navigate',
       title: tr('commands.next'),
       hint: hintFor('next'),
       enabled: visibleTracks.length > 1,
@@ -345,6 +383,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // Home/End/PageUp/PageDown are fixed aliases (not in the rebind UI), so their hints
       // are the literal key glyphs rather than a binding looked up from the keymap.
       id: 'list-top',
+      group: 'navigate',
       title: tr('commands.listTop'),
       hint: '↖',
       enabled: visibleTracks.length > 1,
@@ -352,6 +391,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'list-bottom',
+      group: 'navigate',
       title: tr('commands.listBottom'),
       hint: '↘',
       enabled: visibleTracks.length > 1,
@@ -359,6 +399,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'list-page-up',
+      group: 'navigate',
       title: tr('commands.listPageUp'),
       hint: '⇞',
       enabled: visibleTracks.length > 1,
@@ -366,6 +407,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'list-page-down',
+      group: 'navigate',
       title: tr('commands.listPageDown'),
       hint: '⇟',
       enabled: visibleTracks.length > 1,
@@ -373,6 +415,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'play',
+      group: 'playback',
       title: tr('commands.play'),
       hint: hintFor('play'),
       enabled: !!selected,
@@ -380,6 +423,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'seek-back',
+      group: 'playback',
       title: tr('commands.seekBack'),
       hint: hintFor('seek-back'),
       enabled: playerVisible,
@@ -387,6 +431,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'seek-forward',
+      group: 'playback',
       title: tr('commands.seekForward'),
       hint: hintFor('seek-forward'),
       enabled: playerVisible,
@@ -394,6 +439,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'search',
+      group: 'library',
       title: tr('commands.search'),
       hint: hintFor('search'),
       enabled: tracks.length > 0,
@@ -402,6 +448,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Jump focus to the track list (the selected row).
       id: 'focus-list',
+      group: 'navigate',
       title: tr('commands.focusList'),
       hint: hintFor('focus-list'),
       enabled: visibleTracks.length > 0,
@@ -410,6 +457,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Jump focus to the Discogs matches column (first result, else the search box).
       id: 'focus-matches',
+      group: 'navigate',
       title: tr('commands.focusMatches'),
       hint: hintFor('focus-matches'),
       enabled: !!selected,
@@ -418,6 +466,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Jump focus to the editor column (the first metadata field).
       id: 'focus-editor',
+      group: 'navigate',
       title: tr('commands.focusEditor'),
       hint: hintFor('focus-editor'),
       enabled: !!selected,
@@ -425,6 +474,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'process-current',
+      group: 'convert',
       title: tr('commands.processCurrent'),
       hint: hintFor('process-current'),
       enabled: canProcessSelected,
@@ -445,6 +495,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // flip as the sweep commands, so a misfired run can be stopped from the palette
       // that started it (queued tracks bail; in-flight conversions finish).
       id: 'process-all',
+      group: 'convert',
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
       enabled: batching ? true : canProcessAll,
@@ -465,6 +516,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // the toolbar shows. The sweep works on the visible rows, so it's disabled once every
       // visible track is analyzed; changing the filter to reveal unanalysed rows re-enables it.
       id: 'analyze-quality',
+      group: 'library',
       title: tr('commands.analyzeQuality'),
       hint: hintFor('analyze-quality'),
       enabled: analysis ? true : !visibleTracks.every((t) => Boolean(t.spectrum)),
@@ -478,6 +530,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // step, instead of right-clicking each row. Scoped to the visible set, so a filter narrows
       // what it deletes; disabled when nothing visible is flagged, so it never fires on an empty set.
       id: 'trash-suspects',
+      group: 'library',
       title: tr('commands.trashSuspects'),
       hint: hintFor('trash-suspects'),
       enabled: suspectTracks(visibleTracks).length > 0,
@@ -487,6 +540,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // Sends the selection's files to the OS Trash after a confirm — the same flow as the
       // context menu's "Move to Trash", surfaced where the keyboard can reach it.
       id: 'trash-selected',
+      group: 'library',
       title: tr('commands.trashSelected'),
       hint: hintFor('trash-selected'),
       enabled: selectedTracksCount > 0 || !!selected,
@@ -497,6 +551,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // visible track, mirroring the toolbar button's disabled rule. Matches the visible rows
       // so an active filter narrows the sweep to what's shown.
       id: 'auto-match',
+      group: 'tags',
       title: tr('commands.autoMatch'),
       hint: hintFor('auto-match'),
       enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
@@ -510,6 +565,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // from the list — the keyboard-first alternative to opening the editor and clicking it.
       // Enabled only while the selection actually carries a pending suggestion.
       id: 'accept-review',
+      group: 'tags',
       title: tr('commands.acceptReview'),
       hint: hintFor('accept-review'),
       enabled: !!selected?.reviewMatch,
@@ -517,6 +573,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'export',
+      group: 'convert',
       title: tr('commands.export'),
       hint: hintFor('export'),
       enabled: tracks.length > 0,
@@ -524,6 +581,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'reveal',
+      group: 'library',
       title: tr('commands.reveal'),
       hint: hintFor('reveal'),
       enabled: !!selected?.outputPath,
@@ -534,6 +592,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // (multi-select hides it), so the command follows the same single-track rule.
       // Overwrite mode pins the name to the original, so renaming is disabled there too.
       id: 'rename',
+      group: 'convert',
       title: tr('commands.rename'),
       hint: hintFor('rename'),
       enabled: !!selected && selectedTracksCount <= 1 && !settings?.overwriteOriginal,
@@ -541,6 +600,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'add-apple-music',
+      group: 'convert',
       title: tr('commands.addAppleMusic'),
       hint: hintFor('add-apple-music'),
       enabled:
@@ -549,6 +609,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'remove',
+      group: 'library',
       title: tr('commands.remove'),
       hint: hintFor('remove'),
       enabled: !!selected,
@@ -556,12 +617,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'remove-all',
+      group: 'library',
       title: tr('commands.clearAll'),
       enabled: tracks.length > 0,
       run: askClearAll,
     },
     {
       id: 'settings',
+      group: 'app',
       title: tr('commands.settings'),
       hint: hintFor('settings'),
       enabled: true,
@@ -569,6 +632,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'shortcuts',
+      group: 'app',
       title: tr('commands.shortcuts'),
       hint: hintFor('shortcuts'),
       enabled: true,
@@ -576,6 +640,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'stats',
+      group: 'app',
       title: tr('commands.stats'),
       hint: hintFor('stats'),
       enabled: true,
@@ -583,6 +648,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'activity',
+      group: 'app',
       title: tr('commands.activity'),
       hint: hintFor('activity'),
       enabled: true,
@@ -593,6 +659,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // re-detects the language from the OS on every launch, so this is a per-session
       // override for trying the other translation.
       id: 'toggle-language',
+      group: 'app',
       title: tr('commands.toggleLanguage'),
       hint: hintFor('toggle-language'),
       enabled: true,
@@ -602,6 +669,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       // Rotates system → light → dark. Persisted, unlike the language toggle: the theme is
       // a real preference, and this is the palette twin of the Settings segmented control.
       id: 'toggle-theme',
+      group: 'app',
       title: tr('commands.toggleTheme'),
       hint: hintFor('toggle-theme'),
       enabled: true,
@@ -609,30 +677,35 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       id: 'help',
+      group: 'app',
       title: tr('commands.help'),
       enabled: true,
       run: openHelp,
     },
     {
       id: 'feedback',
+      group: 'app',
       title: tr('commands.feedback'),
       enabled: true,
       run: () => openFeedback(),
     },
     {
       id: 'guide',
+      group: 'app',
       title: tr('commands.guide'),
       enabled: true,
       run: () => window.open(guideUrl(i18n.language)),
     },
     {
       id: 'donate',
+      group: 'app',
       title: tr('commands.donate'),
       enabled: true,
       run: () => window.open(DONATE_URL),
     },
     {
       id: 'website',
+      group: 'app',
       title: tr('commands.website'),
       enabled: true,
       run: () => window.open('https://getsurco.app/'),
@@ -640,6 +713,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // A little joy on demand: the same corner-to-centre burst the donate nudge fires.
       id: 'confetti',
+      group: 'app',
       title: tr('commands.confetti'),
       enabled: true,
       run: fireConfetti,
