@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.43",
+    "date": "8 de julio de 2026",
+    "title": "Formato de título y paleta organizada",
+    "items": [
+      {
+        "text": "Formato de título configurable, al estilo coleccionista: define un patrón como ({trackNumber}) {title} ({year}) en Ajustes → Nombres y aplícalo cuando tú quieras — a una pista desde el menú ⋯ del campo título, o a toda la selección de golpe con el botón T del editor o la paleta de comandos. Nunca se aplica solo, y ⌘Z lo deshace.",
+        "in": "0.43.0"
+      },
+      {
+        "text": "La pestaña Nombres, rediseñada: el formato del título primero, y los dos formatos con el mismo menú ⋯ de los campos del editor para insertar {campos}, ordenados alfabéticamente y con vista previa en vivo.",
+        "in": "0.43.0"
+      },
+      {
+        "text": "La paleta de comandos (⌘K) agrupa las acciones en secciones — Metadatos, Convertir y exportar, Biblioteca… — y la búsqueda ya ignora los acentos: «titulo» encuentra «título».",
+        "in": "0.43.0"
+      }
+    ]
+  },
+  {
     "version": "0.42",
     "date": "8 de julio de 2026",
     "title": "Etiquetas impecables en cualquier editor",

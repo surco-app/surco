@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.43",
+    "date": "July 8, 2026",
+    "title": "Title patterns and an organized palette",
+    "items": [
+      {
+        "text": "Configurable title format, collectors' style: set a pattern like ({trackNumber}) {title} ({year}) in Settings → Naming and apply it when you choose — to one track from the title field's ⋯ menu, or to the whole selection at once with the editor's T button or the command palette. It never runs on its own, and ⌘Z undoes it.",
+        "in": "0.43.0"
+      },
+      {
+        "text": "The Naming tab, redesigned: the title format comes first, and both formats carry the editor fields' ⋯ menu for inserting {fields}, sorted alphabetically with a live preview.",
+        "in": "0.43.0"
+      },
+      {
+        "text": "The command palette (⌘K) groups actions into sections — Metadata, Convert & export, Library… — and search now ignores accents: “titulo” finds “título”.",
+        "in": "0.43.0"
+      }
+    ]
+  },
+  {
     "version": "0.42",
     "date": "July 8, 2026",
     "title": "Tags that read clean in every editor",
