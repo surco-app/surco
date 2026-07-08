@@ -199,7 +199,7 @@ export function FieldInsertMenu({
             data-testid="field-insert-menu"
             aria-label={tr('editor.fieldActions')}
             onKeyDown={onMenuKeyDown}
-            className={`animate-pop absolute right-0 z-50 max-h-64 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${
+            className={`animate-pop absolute right-0 z-50 max-h-48 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${
               dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
             }`}
           >
