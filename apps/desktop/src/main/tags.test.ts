@@ -74,6 +74,29 @@ function buildSeed(dir: string): string {
   return path
 }
 
+// A minimal valid RIFF/WAVE (PCM 16-bit mono, a few silent samples): enough
+// container for TagLib to open and add its "id3 " chunk to.
+function buildWavSeed(dir: string): string {
+  const fmt = Buffer.alloc(24)
+  fmt.write('fmt ', 0, 'latin1')
+  fmt.writeUInt32LE(16, 4)
+  fmt.writeUInt16LE(1, 8)
+  fmt.writeUInt16LE(1, 10)
+  fmt.writeUInt32LE(44100, 12)
+  fmt.writeUInt32LE(88200, 16)
+  fmt.writeUInt16LE(2, 20)
+  fmt.writeUInt16LE(16, 22)
+  const data = Buffer.concat([Buffer.from('data', 'latin1'), Buffer.alloc(4 + 200)])
+  data.writeUInt32LE(200, 4)
+  const body = Buffer.concat([Buffer.from('WAVE', 'latin1'), fmt, data])
+  const riff = Buffer.alloc(8)
+  riff.write('RIFF', 0, 'latin1')
+  riff.writeUInt32LE(body.length, 4)
+  const path = join(dir, 'seed.wav')
+  writeFileSync(path, Buffer.concat([riff, body]))
+  return path
+}
+
 function buildCover(dir: string): string {
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/1eQAAAAAElFTkSuQmCC',
@@ -149,6 +172,27 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     expect((f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).version).toBe(3)
     f.dispose()
+  })
+
+  // mp3tag reads a WAV's "id3 " chunk only when it holds ID3v2.3; the v2.4 tag we used
+  // to write there made every field invisible to it (while TagEditor and Finder coped),
+  // so users thought the conversion had produced an untagged file.
+  it('writes the WAV id3 chunk as ID3v2.3, the version mp3tag reads', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildWavSeed(dir)
+
+    writeTags(file, meta)
+
+    const f = TagFile.createFromPath(file)
+    expect((f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).version).toBe(3)
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+    // The raw chunk must really carry major version 3 — readers don't consult TagLib.
+    const bytes = readFileSync(file)
+    const chunk = bytes.indexOf(Buffer.from('id3 ', 'latin1'))
+    expect(chunk).toBeGreaterThan(-1)
+    expect(bytes.subarray(chunk + 8, chunk + 11).toString('latin1')).toBe('ID3')
+    expect(bytes[chunk + 11]).toBe(3)
   })
 
   // FLAC/WAV rips commonly carry a full date ("2024-03-01") in the tag the year field

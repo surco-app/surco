@@ -21,9 +21,11 @@ import {
 } from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
 
-// The ID3 containers we edit in place: forcing the global Id3v2Settings would also break
-// WAV (its RIFF "id3 " chunk requires v2.4), so the version is pinned per tag below.
-const ID3_V23 = new Set(['.mp3', '.aiff'])
+// Every ID3 container we write gets v2.3, pinned per tag rather than through the
+// global Id3v2Settings so a library upgrade can't silently change other tag kinds.
+// WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
+// v2.4 we used to leave there made Surco-tagged WAVs look empty in it.
+const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -205,9 +207,9 @@ export function writeTags(
     }
 
     const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
-    // Pin MP3/AIFF to ID3v2.3 so an in-place edit matches the ffmpeg conversion path
-    // (-id3v2_version 3) and stays readable on the CDJ/rekordbox/Serato setups that
-    // mishandle v2.4. WAV is left alone — its RIFF "id3 " chunk needs v2.4.
+    // Pin to ID3v2.3 so the tag matches the ffmpeg conversion path (-id3v2_version 3)
+    // and stays readable on the CDJ/rekordbox/Serato setups that mishandle v2.4 —
+    // and, for WAV, in mp3tag, which ignores a v2.4 "id3 " chunk entirely.
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
@@ -215,8 +217,8 @@ export function writeTags(
     // Same TXXX treatment for the Discogs release id — no standard frame either.
     setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
     // Original year has no TagLib property, so it rides the raw frame. The TDOR
-    // identifier is version-aware: it renders as TORY on the v2.3 tags pinned
-    // above and as TDOR on WAV's v2.4 chunk.
+    // identifier is version-aware: on the v2.3 tags pinned above it renders as
+    // TORY, its v2.3 predecessor.
     id3.removeFrames(Id3v2FrameIdentifiers.TDOR)
     if (meta.originalYear?.trim()) {
       const tory = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TDOR)
