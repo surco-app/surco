@@ -586,7 +586,7 @@
     "engineDjPlaylistHint": "Konvertierte Tracks landen in dieser Playlist deiner Bibliothek, zusätzlich zur Sammlung.",
     "appleMusicFlacNote": "Apple Music kann FLAC nicht abspielen, deshalb bleiben konvertierte Tracks im Ausgabeordner, solange FLAC dein Format ist.",
     "filenameFormat": "Dateinamen-Format",
-    "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf, mit denselben {Feldern} wie oben. Wird nur auf Wunsch angewendet — über das ⋯-Menü des Titelfelds oder die Befehlspalette — nie automatisch.",
+    "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf. Wird nur auf Wunsch angewendet — über das ⋯-Menü des Titelfelds oder die Befehlspalette — nie automatisch.",
     "titleFormat": "Titelformat",
     "autoApplyFilename": "Muster automatisch anwenden",
     "autoApplyFilenameHint": "Erzeugt den Namen beim Export aus den Metadaten, ohne „Neu erzeugen“ zu drücken. Eine manuelle Änderung gewinnt immer.",

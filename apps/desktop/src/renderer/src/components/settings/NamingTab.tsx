@@ -3,11 +3,10 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../../shared/types'
 import { FIELD_DEFS } from '../../lib/fields'
-import { insertToken } from '../../lib/insertToken'
 import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { Tooltip } from '../Tooltip'
+import { FieldInsertMenu } from '../FieldInsertMenu'
 
 // A representative track so the filename preview shows real-looking output
 // instead of empty braces, and every token has something to render. All values
@@ -38,6 +37,84 @@ const SAMPLE_META: TrackMetadata = {
   compilation: '1',
 }
 
+// Every metadata field is a legal {token}, including rating — it lives outside
+// FIELD_DEFS (the editor draws it as the stars row, not a text field), so it's
+// appended here rather than added to the registry.
+const TOKEN_KEYS = [...FIELD_DEFS.map((f) => f.key), 'rating']
+
+// One pattern editor — label, format input with the editor-style ⋯ token menu, and
+// a live preview — shared by the file name and the title format so both teach the
+// same tokens the same way. The menu reuses FieldInsertMenu with each field's
+// literal {token} as the insertable value; an empty `value` keeps its case
+// transforms self-filtered out, leaving a pure token list.
+function FormatField({
+  id,
+  label,
+  value,
+  placeholder,
+  hint,
+  preview,
+  previewTestId,
+  dropUp,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  placeholder: string
+  hint: React.ReactNode
+  // The rendered sample, or undefined to omit the preview line (empty title format).
+  preview: string | undefined
+  previewTestId: string
+  // Passed through to the token menu: the title format sits at the bottom of the
+  // modal's scroll body, where a drop-down menu would clip.
+  dropUp?: boolean
+  onChange: (value: string) => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-fg-muted">
+        {label}
+      </label>
+      <span className="group relative block">
+        <input
+          ref={inputRef}
+          id={id}
+          data-testid={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 pr-8 text-sm outline-none focus:border-[var(--color-accent)]"
+        />
+        <FieldInsertMenu
+          fieldName={id}
+          sources={TOKEN_KEYS.map((key) => ({
+            key,
+            label: tr(`fields.${key}`),
+            value: `{${key}}`,
+          }))}
+          value=""
+          dropUp={dropUp}
+          inputRef={inputRef}
+          onChange={onChange}
+        />
+      </span>
+      {hint}
+      {preview !== undefined && (
+        <p className="mt-3 text-xs text-fg-dim">
+          {tr('settings.preview')}{' '}
+          <span data-testid={previewTestId} className="font-mono text-fg-muted">
+            {preview}
+          </span>
+        </p>
+      )}
+    </>
+  )
+}
+
 interface Props {
   synced: SyncedDraft
   patch: PatchSynced
@@ -45,69 +122,28 @@ interface Props {
 
 export function NamingTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const formatRef = useRef<HTMLInputElement>(null)
-
-  // Drops the token where the caret last sat (or over the selection), then
-  // restores focus and caret past it so the user can keep typing separators.
-  function addToken(key: string): void {
-    const el = formatRef.current
-    const start = el?.selectionStart ?? synced.filenameFormat.length
-    const end = el?.selectionEnd ?? synced.filenameFormat.length
-    const { value, caret } = insertToken(synced.filenameFormat, start, end, key)
-    patch('filenameFormat', value)
-    requestAnimationFrame(() => {
-      el?.focus()
-      el?.setSelectionRange(caret, caret)
-    })
-  }
 
   return (
     <>
-      <label
-        htmlFor="settings-filename-format"
-        className="mb-1.5 block text-sm font-medium text-fg-muted"
-      >
-        {tr('settings.filenameFormat')}
-      </label>
-      <input
-        ref={formatRef}
+      <FormatField
         id="settings-filename-format"
-        data-testid="settings-filename-format"
+        label={tr('settings.filenameFormat')}
         value={synced.filenameFormat}
-        onChange={(e) => patch('filenameFormat', e.target.value)}
         placeholder="{artist} - {title}"
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+        hint={
+          <p className="mt-2 text-xs text-fg-dim">
+            {tr('settings.filenameFolderHint')}{' '}
+            <span className="font-mono text-fg-muted">
+              {'{discogsReleaseId}/{artist} - {title}'}
+            </span>
+          </p>
+        }
+        preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${synced.outputFormat}`}
+        previewTestId="settings-format-preview"
+        onChange={(v) => patch('filenameFormat', v)}
       />
-      <p className="mt-2 text-xs text-fg-dim">
-        {tr('settings.filenameFolderHint')}{' '}
-        <span className="font-mono text-fg-muted">{'{discogsReleaseId}/{artist} - {title}'}</span>
-      </p>
-      <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {/* Every metadata field is a legal {token}, including rating — it lives outside
-            FIELD_DEFS (the editor draws it as the stars row, not a text field), so it's
-            appended here rather than added to the registry. */}
-        {[...FIELD_DEFS.map((f) => f.key), 'rating'].map((key) => (
-          <button
-            key={key}
-            type="button"
-            data-testid={`settings-token-${key}`}
-            onClick={() => addToken(key)}
-            className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          >
-            {tr(`fields.${key}`)}
-            <Tooltip label={`{${key}}`} />
-          </button>
-        ))}
-      </div>
-      <p className="mt-3 mb-5 text-xs text-fg-dim">
-        {tr('settings.preview')}{' '}
-        <span data-testid="settings-format-preview" className="font-mono text-fg-muted">
-          {renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.{synced.outputFormat}
-        </span>
-      </p>
 
-      <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
+      <div className="mt-5 space-y-3 border-t border-[var(--color-line)] pt-5">
         <label className="flex cursor-pointer items-start gap-3">
           <input
             data-testid="settings-auto-apply-filename"
@@ -146,29 +182,21 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
       </div>
 
       <div className="mt-5 border-t border-[var(--color-line)] pt-5">
-        <label
-          htmlFor="settings-title-format"
-          className="mb-1.5 block text-sm font-medium text-fg-muted"
-        >
-          {tr('settings.titleFormat')}
-        </label>
-        <input
+        <FormatField
           id="settings-title-format"
-          data-testid="settings-title-format"
+          label={tr('settings.titleFormat')}
           value={synced.titleFormat}
-          onChange={(e) => patch('titleFormat', e.target.value)}
           placeholder="({trackNumber}) {title}"
-          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          hint={<p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>}
+          preview={
+            synced.titleFormat.trim() !== ''
+              ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
+              : undefined
+          }
+          previewTestId="settings-title-format-preview"
+          dropUp
+          onChange={(v) => patch('titleFormat', v)}
         />
-        <p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>
-        {synced.titleFormat.trim() !== '' && (
-          <p className="mt-2 text-xs text-fg-dim">
-            {tr('settings.preview')}{' '}
-            <span data-testid="settings-title-format-preview" className="font-mono text-fg-muted">
-              {renderTitle(synced.titleFormat, SAMPLE_META) || '—'}
-            </span>
-          </p>
-        )}
       </div>
     </>
   )

@@ -586,7 +586,7 @@
     "engineDjPlaylistHint": "Les morceaux convertis sont ajoutés à cette playlist de ta bibliothèque, en plus de la collection.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
-    "titleFormatHint": "Reconstruit le titre à partir des autres champs, avec les mêmes {champs} que ci-dessus. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
+    "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
     "titleFormat": "Format du titre",
     "autoApplyFilename": "Appliquer le modèle automatiquement",
     "autoApplyFilenameHint": "Compose le nom depuis les métadonnées à l'export, sans appuyer sur « Régénérer ». Une modification manuelle gagne toujours.",

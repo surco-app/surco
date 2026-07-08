@@ -24,6 +24,10 @@ interface Props {
   // purpose: the pattern references the field itself, so applying it automatically
   // (or twice) would stack the prefix.
   formatResult?: string
+  // Opens the menu above the trigger instead of below — for inputs near the bottom
+  // of a scroll container (the settings' title format), where dropping down would
+  // clip against the container edge.
+  dropUp?: boolean
   inputRef: React.RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
 }
@@ -43,6 +47,7 @@ export function FieldInsertMenu({
   value,
   cleanResult,
   formatResult,
+  dropUp,
   inputRef,
   onChange,
 }: Props): React.JSX.Element | null {
@@ -189,7 +194,9 @@ export function FieldInsertMenu({
             data-testid="field-insert-menu"
             aria-label={tr('editor.fieldActions')}
             onKeyDown={onMenuKeyDown}
-            className="animate-pop absolute top-full right-0 z-50 mt-1 max-h-64 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+            className={`animate-pop absolute right-0 z-50 max-h-64 min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${
+              dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
+            }`}
           >
             {sources.map((s) => (
               <button

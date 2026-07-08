@@ -327,23 +327,28 @@ describe('SettingsModal filename tokens', () => {
   // Rating is the one field outside FIELD_DEFS (the editor draws it as stars), but
   // every metadata field must be usable in the file name — e.g. {rating}/{artist}
   // sorts exports into per-rating folders.
-  it('offers a rating chip that inserts {rating}', () => {
+  it('offers a rating entry that inserts {rating}', () => {
     openNaming()
-    fireEvent.click(screen.getByTestId('settings-token-rating'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-rating'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{rating}')
   })
-  // The whole point of the feature: users who don't know the token names just
-  // click the field they want and it lands in the format.
-  it('inserts a token into the format when its chip is clicked', () => {
+  // The whole point of the feature: users who don't know the token names open the
+  // input's ⋯ menu — the same one the editor fields carry — pick the field they
+  // want, and its {token} lands in the format.
+  it('inserts a token into the format from the input ⋯ menu', () => {
     openNaming()
-    fireEvent.click(screen.getByTestId('settings-token-albumArtist'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-albumArtist'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{albumArtist}')
   })
 
   it('previews the rendered file name from the sample track', () => {
     openNaming()
-    fireEvent.click(screen.getByTestId('settings-token-artist'))
-    fireEvent.click(screen.getByTestId('settings-token-title'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-artist'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-title'))
     expect(screen.getByTestId('settings-format-preview')).toHaveTextContent(
       'Dj VixentTake me into the sky.aiff',
     )
@@ -358,6 +363,21 @@ describe('SettingsModal filename tokens', () => {
       fireEvent.change(format, { target: { value: `{${key}}` } })
       expect(screen.getByTestId('settings-format-preview')).not.toHaveTextContent('—')
     }
+  })
+
+  // The title format gets the same ⋯ token menu on its own input: the same fields,
+  // inserting into ITS caret — without it the user has to remember token names the
+  // filename input teaches by clicking.
+  it('inserts a token into the title format via its own ⋯ menu and previews it', () => {
+    openNaming()
+    fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-trackNumber'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-title'))
+    expect(screen.getByTestId('settings-title-format')).toHaveValue('{trackNumber}{title}')
+    expect(screen.getByTestId('settings-title-format-preview')).toHaveTextContent(
+      '03Take me into the sky',
+    )
   })
 
   it('closes when the backdrop is clicked', () => {
