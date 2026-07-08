@@ -29,6 +29,14 @@ export interface FieldSpec {
   cleanResult?: string
 }
 
+// The fields that never host the { } insert menu: the compilation checkbox is not
+// text, and genre/grouping are picked from their suggestion chips instead.
+const INSERT_EXCLUDED_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
+  'compilation',
+  'genre',
+  'grouping',
+])
+
 export interface BuildFieldSpecsParams {
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -93,9 +101,12 @@ export function buildFieldSpecs({
             label: tr(`fields.${def.key}`),
             value: item.meta[def.key] ?? '',
             onChange: (v: string) => setField(def.key, v),
-            // Every text field hosts the { } menu (compilation is a checkbox flag,
-            // not text); the Field itself filters out the empty and the self entry.
-            insertSources: !isMulti && def.key !== 'compilation' ? insertSources : undefined,
+            // Every text field hosts the { } menu except compilation (a checkbox
+            // flag, not text) and the chip-driven genre/grouping, whose values are
+            // picked from the suggestion chips rather than composed from other
+            // fields. The Field itself filters out the empty and the self entry.
+            insertSources:
+              !isMulti && !INSERT_EXCLUDED_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             wide: def.wide,
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
