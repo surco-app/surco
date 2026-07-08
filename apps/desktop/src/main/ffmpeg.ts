@@ -581,6 +581,11 @@ export function convertArgs(
   // ID3 flags are meaningless to the mp4 muxer; the m4a tags are finished by the
   // TagLib pass anyway (ffmpeg still maps the generic names it knows to iTunes atoms).
   if (!M4A_OUTPUT.test(output)) args.push('-write_id3v2', '1', '-id3v2_version', '3')
+  // Without bitexact every muxer stamps its own advert into the output — an ENCODER
+  // Vorbis comment on FLAC, a TSSE frame on MP3, ISFT on RIFF — which users read as
+  // metadata junk they never wrote. The flag only silences those stamps: the MP3
+  // Info/LAME gapless header survives (verified against ffmpeg 6.1.1).
+  args.push('-fflags', '+bitexact')
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.

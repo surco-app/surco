@@ -190,6 +190,17 @@ describe('convertArgs', () => {
     expect(args).toContain('TBPM=')
   })
 
+  it('marks the output bitexact so the muxer writes no ENCODER=Lavf… tag', () => {
+    // Verified against ffmpeg 6.1.1: without it every FLAC gains an ENCODER Vorbis
+    // comment and every MP3 a TSSE frame; with it both disappear while the MP3
+    // Info/LAME gapless header stays intact. Must sit after the input, where it
+    // acts as an output option.
+    const args = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, meta)
+    const i = args.indexOf('-fflags')
+    expect(i).toBeGreaterThan(args.indexOf('/in.wav'))
+    expect(args[i + 1]).toBe('+bitexact')
+  })
+
   it('clears the alias spellings other taggers use, so stale LABEL/ORGANIZATION/ALBUMARTIST2 comments stop shadowing the fields Surco writes', () => {
     // The reader falls back to these aliases, so a leftover LABEL from a previous
     // tagger resurfaced in the editor even after the user emptied the field — and
