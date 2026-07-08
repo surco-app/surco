@@ -38,20 +38,32 @@ export function summarize(releases) {
   return { total, perOs: [...perOs.entries()], perVersion }
 }
 
+// GitHub caps per_page at 100; past 100 releases a single request would drop
+// the oldest ones (and their download counts), so walk every page.
+async function fetchAllReleases() {
+  const releases = []
+  for (let page = 1; ; page++) {
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO}/releases?per_page=100&page=${page}`,
+      { headers: { Accept: 'application/vnd.github+json' } },
+    )
+    if (res.status === 403) {
+      console.error('GitHub rate limit alcanzado. Espera un rato o exporta GITHUB_TOKEN.')
+      process.exit(1)
+    }
+    if (!res.ok) {
+      console.error(`GitHub devolvió ${res.status}`)
+      process.exit(1)
+    }
+    const pageReleases = await res.json()
+    releases.push(...pageReleases)
+    if (pageReleases.length < 100) return releases
+  }
+}
+
 async function main() {
-  const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`, {
-    headers: { Accept: 'application/vnd.github+json' },
-  })
-  if (res.status === 403) {
-    console.error('GitHub rate limit alcanzado. Espera un rato o exporta GITHUB_TOKEN.')
-    process.exit(1)
-  }
-  if (!res.ok) {
-    console.error(`GitHub devolvió ${res.status}`)
-    process.exit(1)
-  }
-  const releases = await res.json()
-  if (!Array.isArray(releases) || releases.length === 0) {
+  const releases = await fetchAllReleases()
+  if (releases.length === 0) {
     console.log('Aún no hay releases publicados.')
     return
   }

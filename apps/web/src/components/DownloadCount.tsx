@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { countDownloads } from '../lib/downloads'
+import { countDownloads, fetchAllReleases } from '../lib/downloads'
 
 const REPO = 'vigosan/surco-releases'
 
@@ -14,11 +14,10 @@ export default function DownloadCount() {
 
   useEffect(() => {
     let cancelled = false
-    fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !Array.isArray(data)) return
-        setCount(countDownloads(data))
+    fetchAllReleases(REPO)
+      .then((releases) => {
+        if (cancelled) return
+        setCount(countDownloads(releases))
       })
       .catch(() => {})
     return () => {

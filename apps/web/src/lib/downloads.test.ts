@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { countDownloads, pickInstallerRelease } from './downloads'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { countDownloads, fetchAllReleases, pickInstallerRelease } from './downloads'
 
 describe('countDownloads', () => {
   // Only installers count. The release also carries .zip/.blockmap/.yml assets
@@ -57,5 +57,54 @@ describe('pickInstallerRelease', () => {
 
   it('returns undefined when no release carries the installer', () => {
     expect(pickInstallerRelease([{ tag_name: 'v0.1.0', assets: [] }], '.exe')).toBeUndefined()
+  })
+})
+
+describe('fetchAllReleases', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const release = (tag: string) => ({ tag_name: tag, assets: [] })
+  const page = (releases: unknown[]) =>
+    ({ ok: true, json: () => Promise.resolve(releases) }) as Response
+
+  // GitHub caps per_page at 100 and the repo already has 77 releases; once it
+  // crosses 100 a single request would silently drop the oldest releases —
+  // exactly the ones holding the early download counts.
+  it('follows pagination past the 100-release page size', async () => {
+    const first = Array.from({ length: 100 }, (_, i) => release(`v${i}`))
+    const second = [release('v100'), release('v101')]
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(page(first))
+      .mockResolvedValueOnce(page(second))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const releases = await fetchAllReleases('vigosan/surco-releases')
+
+    expect(releases).toHaveLength(102)
+    expect(fetchMock.mock.calls[1][0]).toContain('page=2')
+  })
+
+  it('stops after a single short page', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(page([release('v0')]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await fetchAllReleases('vigosan/surco-releases')).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // A failed later page must not yield a partial sum: undercounting silently is
+  // the same bug pagination fixes, so the whole fetch fails instead.
+  it('throws when any page fails', async () => {
+    const full = Array.from({ length: 100 }, (_, i) => release(`v${i}`))
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(page(full))
+      .mockResolvedValueOnce({ ok: false, status: 403 } as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchAllReleases('vigosan/surco-releases')).rejects.toThrow()
   })
 })

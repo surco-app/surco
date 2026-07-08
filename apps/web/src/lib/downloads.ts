@@ -27,6 +27,23 @@ export function countDownloads(releases: Release[]): number {
   )
 }
 
+// GitHub caps per_page at 100, so a single request stops seeing the oldest
+// releases (and their download counts) once the repo passes 100 of them. Walks
+// the pages until one comes back short. Throws on any failed page: a partial
+// list would silently undercount, which is the very bug this exists to avoid.
+export async function fetchAllReleases(repo: string): Promise<Release[]> {
+  const releases: Release[] = []
+  for (let pageNum = 1; ; pageNum++) {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/releases?per_page=100&page=${pageNum}`,
+    )
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
+    const pageReleases = (await res.json()) as Release[]
+    releases.push(...pageReleases)
+    if (pageReleases.length < 100) return releases
+  }
+}
+
 interface InstallerRelease {
   tag_name: string
   draft?: boolean
