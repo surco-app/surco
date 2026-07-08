@@ -27,6 +27,7 @@ const settings: Settings = {
   requiredFields: [],
   coverMaxSize: 1200,
   coverSquare: false,
+  coverUpscale: false,
   replaceLowResCover: false,
   mp3Quality: '320',
   outputBitDepth: 'source',

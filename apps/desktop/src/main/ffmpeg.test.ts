@@ -8,6 +8,7 @@ import {
   convertArgs,
   convertTmpPath,
   coverArgs,
+  coverFilter,
   cutoffFilter,
   formatMatchesInput,
   parseAstats,
@@ -659,6 +660,36 @@ describe('previewWavArgs', () => {
     expect(args[i + 1]).toBe('pcm_s24le')
     expect(args).toContain('-map')
     expect(args[args.indexOf('-map') + 1]).toBe('0:a')
+  })
+})
+
+describe('coverFilter', () => {
+  it('shrinks oversized art without ever enlarging by default', () => {
+    // The min() clamp is what keeps a 500px Discogs cover at 500px: blowing it up
+    // would invent pixels the user didn't ask for.
+    const vf = coverFilter({ maxSize: 1200, square: false, upscale: false })
+    expect(vf).toBe("scale='min(1200,iw)':'min(1200,ih)':force_original_aspect_ratio=decrease")
+  })
+
+  it('scales smaller art up to the target when upscale is on', () => {
+    // The opt-in for uniform library art (700×700 on every deck/grid): small covers
+    // are enlarged to the box, lanczos keeping the blow-up as clean as it can be.
+    const vf = coverFilter({ maxSize: 700, square: false, upscale: true })
+    expect(vf).toBe('scale=700:700:force_original_aspect_ratio=decrease:flags=lanczos')
+  })
+
+  it('center-crops to square before scaling, so square+upscale lands exactly on target×target', () => {
+    const vf = coverFilter({ maxSize: 700, square: true, upscale: true })
+    expect(vf).toBe(
+      "crop='min(iw,ih)':'min(iw,ih)',scale=700:700:force_original_aspect_ratio=decrease:flags=lanczos",
+    )
+  })
+
+  it('ignores upscale when no size limit is set, since there is no target to reach', () => {
+    // maxSize 0 means "no limit", which internally caps at 4000 — upscaling to that
+    // sentinel would quintuple most covers for nothing.
+    const vf = coverFilter({ maxSize: 0, square: false, upscale: true })
+    expect(vf).toBe("scale='min(4000,iw)':'min(4000,ih)':force_original_aspect_ratio=decrease")
   })
 })
 

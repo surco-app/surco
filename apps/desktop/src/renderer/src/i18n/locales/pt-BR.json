@@ -597,6 +597,7 @@
     "zeroPadTrack": "Nº da faixa com zero à esquerda (03)",
     "coverMaxSize": "Tamanho máximo da capa",
     "coverMaxHint": "px (0 = sem limite)",
+    "coverUpscale": "Ampliar capas menores até este tamanho",
     "coverSquare": "Cortar a capa em quadrado",
     "coverHint": "Aplicado ao embutir: reduz capas grandes e, se ativado, corta pelo centro para deixá-las quadradas.",
     "replaceLowRes": "Substituir capas de baixa resolução ao aplicar um release",

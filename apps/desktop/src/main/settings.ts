@@ -45,6 +45,7 @@ const defaults: Settings = {
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   coverMaxSize: 1200,
   coverSquare: false,
+  coverUpscale: false,
   replaceLowResCover: false,
   mp3Quality: '320',
   // Max fidelity by default: preserve the source's own bit depth and sample rate.

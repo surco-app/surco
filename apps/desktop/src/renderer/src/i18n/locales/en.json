@@ -597,6 +597,7 @@
     "zeroPadTrack": "Zero-pad track number (03)",
     "coverMaxSize": "Maximum artwork size",
     "coverMaxHint": "px (0 = no limit)",
+    "coverUpscale": "Upscale smaller artwork to this size",
     "coverSquare": "Crop artwork to square",
     "coverHint": "Applied on embed: shrinks large artwork and, if enabled, center-crops it to square.",
     "replaceLowRes": "Replace low-res covers when applying a release",

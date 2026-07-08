@@ -597,6 +597,7 @@
     "zeroPadTrack": "Nº de pista con cero delante (03)",
     "coverMaxSize": "Tamaño máximo de la carátula",
     "coverMaxHint": "px (0 = sin límite)",
+    "coverUpscale": "Ampliar las carátulas más pequeñas hasta este tamaño",
     "coverSquare": "Recortar la carátula a cuadrado",
     "coverHint": "Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro para dejarlas cuadradas.",
     "replaceLowRes": "Sustituir carátulas de baja resolución al aplicar un lanzamiento",

@@ -597,6 +597,7 @@
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
     "coverMaxSize": "Taille maximale de la pochette",
     "coverMaxHint": "px (0 = sans limite)",
+    "coverUpscale": "Agrandir les pochettes plus petites jusqu'à cette taille",
     "coverSquare": "Recadrer la pochette en carré",
     "coverHint": "Appliqué à l'intégration : réduit les grandes pochettes et, si activé, les recadre au centre pour les rendre carrées.",
     "replaceLowRes": "Remplacer les pochettes basse résolution en appliquant une release",

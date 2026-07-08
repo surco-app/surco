@@ -122,6 +122,10 @@ export interface Settings {
   requiredFields: string[]
   coverMaxSize: number
   coverSquare: boolean
+  // When on, covers smaller than coverMaxSize are scaled up to it on embed, so the
+  // library art lands uniform (with coverSquare: exactly coverMaxSize squared).
+  // Off by default: enlarging can't add real detail, so it's the user's call.
+  coverUpscale: boolean
   // When on, applying a release replaces an existing embedded cover if it's low-res,
   // upgrading to the release's larger image. Off by default so a present cover (even a
   // small one) is never swapped for a possibly-wrong release image without the user asking.

@@ -22,6 +22,7 @@ export interface SyncedDraft {
   requiredFields: string[]
   coverMaxSize: string
   coverSquare: boolean
+  coverUpscale: boolean
   replaceLowResCover: boolean
   mp3Quality: Settings['mp3Quality']
   outputBitDepth: Settings['outputBitDepth']
@@ -70,6 +71,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     requiredFields: s.requiredFields,
     coverMaxSize: String(s.coverMaxSize),
     coverSquare: s.coverSquare,
+    coverUpscale: s.coverUpscale,
     replaceLowResCover: s.replaceLowResCover,
     mp3Quality: s.mp3Quality,
     outputBitDepth: s.outputBitDepth,

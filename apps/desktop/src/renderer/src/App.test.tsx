@@ -78,6 +78,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     requiredFields: ['title', 'artist'],
     coverMaxSize: 1000,
     coverSquare: false,
+    coverUpscale: false,
     replaceLowResCover: false,
     mp3Quality: '320',
     outputBitDepth: 'source',

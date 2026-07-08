@@ -37,6 +37,17 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
         <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
       </div>
 
+      <label className="mb-5 flex cursor-pointer items-center gap-3">
+        <input
+          data-testid="settings-cover-upscale"
+          type="checkbox"
+          checked={synced.coverUpscale}
+          onChange={(e) => patch('coverUpscale', e.target.checked)}
+          className="h-4 w-4 accent-[var(--color-accent)]"
+        />
+        <span className="text-sm">{tr('settings.coverUpscale')}</span>
+      </label>
+
       <label className="flex cursor-pointer items-center gap-3">
         <input
           data-testid="settings-cover-square"

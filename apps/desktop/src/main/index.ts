@@ -772,6 +772,7 @@ function registerIpc(): void {
     const prepared = await prepareProcessedCover(job, {
       maxSize: settings.coverMaxSize,
       square: settings.coverSquare,
+      upscale: settings.coverUpscale,
     })
     if (!prepared) return null
     try {
@@ -797,6 +798,7 @@ function registerIpc(): void {
     const prepared = await prepareProcessedCover(src, {
       maxSize: settings.coverMaxSize,
       square: settings.coverSquare,
+      upscale: settings.coverUpscale,
     })
     return prepared?.path ?? null
   })
@@ -858,6 +860,7 @@ function registerIpc(): void {
     const prepared = await prepareProcessedCover(src, {
       maxSize: settings.coverMaxSize,
       square: settings.coverSquare,
+      upscale: settings.coverUpscale,
     })
     if (!prepared) return false
     try {

@@ -21,7 +21,7 @@ vi.mock('./tmp', () => ({ tmpName: (prefix: string, ext: string) => `${prefix}.$
 
 import { hasCoverSource, prepareProcessedCover } from './cover'
 
-const opts = { maxSize: 1000, square: true }
+const opts = { maxSize: 1000, square: true, upscale: false }
 
 beforeEach(() => {
   vi.clearAllMocks()

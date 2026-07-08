@@ -597,6 +597,7 @@
     "zeroPadTrack": "Track-Nummer mit führender Null (03)",
     "coverMaxSize": "Maximale Covergröße",
     "coverMaxHint": "px (0 = keine Grenze)",
+    "coverUpscale": "Kleinere Cover auf diese Größe vergrößern",
     "coverSquare": "Cover quadratisch zuschneiden",
     "coverHint": "Wird beim Einbetten angewendet: verkleinert große Cover und schneidet sie, falls aktiviert, mittig quadratisch zu.",
     "replaceLowRes": "Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen",

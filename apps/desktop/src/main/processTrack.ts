@@ -31,7 +31,7 @@ export interface ProcessTrackDeps {
   hasCoverSource: (job: CoverSource) => boolean
   prepareProcessedCover: (
     src: CoverSource,
-    opts: { maxSize: number; square: boolean },
+    opts: { maxSize: number; square: boolean; upscale: boolean },
   ) => Promise<PreparedCover | undefined>
   convertAudio: (
     input: string,
@@ -89,6 +89,7 @@ export async function runProcessTrack(
       prepared = await deps.prepareProcessedCover(job, {
         maxSize: settings.coverMaxSize,
         square: settings.coverSquare,
+        upscale: settings.coverUpscale,
       })
     }
     const coverPath = prepared?.path
@@ -190,7 +191,11 @@ export async function runProcessTrack(
         extracted = await deps
           .prepareProcessedCover(
             { coverFromFile: target },
-            { maxSize: settings.coverMaxSize, square: settings.coverSquare },
+            {
+              maxSize: settings.coverMaxSize,
+              square: settings.coverSquare,
+              upscale: settings.coverUpscale,
+            },
           )
           .catch(() => undefined)
       }

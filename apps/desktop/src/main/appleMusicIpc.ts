@@ -59,6 +59,7 @@ export function registerAppleMusicIpc(): void {
               prepared = await prepareProcessedCover(job, {
                 maxSize: settings.coverMaxSize,
                 square: settings.coverSquare,
+                upscale: settings.coverUpscale,
               })
             }
             return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
@@ -90,6 +91,7 @@ export function registerAppleMusicIpc(): void {
               prepared = await prepareProcessedCover(job, {
                 maxSize: settings.coverMaxSize,
                 square: settings.coverSquare,
+                upscale: settings.coverUpscale,
               })
             }
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)

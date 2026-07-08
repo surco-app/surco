@@ -2,7 +2,7 @@ import { unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { downloadCover } from './coverDownload'
-import { extractCoverFile, processCover } from './ffmpeg'
+import { type CoverProcessOpts, extractCoverFile, processCover } from './ffmpeg'
 import { tmpName } from './tmp'
 
 export interface CoverSource {
@@ -34,7 +34,7 @@ export function hasCoverSource(src: CoverSource): boolean {
 // dropped file is never touched, only material we wrote.
 export async function prepareProcessedCover(
   src: CoverSource,
-  opts: { maxSize: number; square: boolean },
+  opts: CoverProcessOpts,
 ): Promise<PreparedCover | undefined> {
   let coverPath = src.coverPath
   let tempCover: string | undefined

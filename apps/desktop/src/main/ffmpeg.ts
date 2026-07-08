@@ -982,13 +982,30 @@ export async function generateSpectrogram(input: string): Promise<string> {
   }
 }
 
-export async function processCover(
-  input: string,
-  opts: { maxSize: number; square: boolean },
-): Promise<string> {
+export interface CoverProcessOpts {
+  maxSize: number
+  square: boolean
+  upscale: boolean
+}
+
+// The -vf chain a cover embed runs through. By default the size cap only shrinks
+// (the min() clamp — enlarging would invent pixels nobody asked for); `upscale`
+// turns the cap into a target so smaller art is scaled up to it too, which with
+// `square` lands every cover on exactly target×target. Upscaling needs a target,
+// so it is ignored when maxSize is 0 ("no limit", internally the 4000 sentinel).
+// The square crop runs first: cropping after an upscale would cut away pixels the
+// scale just paid for and land below target.
+export function coverFilter(opts: CoverProcessOpts): string {
   const max = opts.maxSize > 0 ? opts.maxSize : 4000
-  const scale = `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
-  const vf = opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
+  const scale =
+    opts.upscale && opts.maxSize > 0
+      ? `scale=${max}:${max}:force_original_aspect_ratio=decrease:flags=lanczos`
+      : `scale='min(${max},iw)':'min(${max},ih)':force_original_aspect_ratio=decrease`
+  return opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
+}
+
+export async function processCover(input: string, opts: CoverProcessOpts): Promise<string> {
+  const vf = coverFilter(opts)
   const out = join(tmpdir(), tmpName('cover-proc', 'jpg'))
   await run(ffmpegPath, [
     '-hide_banner',
