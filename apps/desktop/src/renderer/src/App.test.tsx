@@ -167,7 +167,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
-    getLastSession: vi.fn().mockResolvedValue([]),
+    getLastSession: vi.fn().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onWindowFocus: () => () => {},
@@ -1765,7 +1765,9 @@ describe('App reopen last session', () => {
   // and metadata reads behave exactly like a fresh import.
   it('offers the previous session at launch and loads it on accept', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      getLastSession: vi
+        .fn()
+        .mockResolvedValue({ paths: ['/music/a.wav', '/music/b.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -1778,7 +1780,7 @@ describe('App reopen last session', () => {
   // press re-imported the same session and rained "already in the list" notices.
   it('dismisses the offer once accepted', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -1797,13 +1799,13 @@ describe('App reopen last session', () => {
   it('clears the stored session when the offer is dismissed with the ✕', async () => {
     const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
       saveLastSession,
     })
     await renderApp()
     await screen.findByTestId('last-session')
     fireEvent.click(screen.getByTestId('last-session-dismiss'))
-    await waitFor(() => expect(saveLastSession).toHaveBeenCalledWith([]))
+    await waitFor(() => expect(saveLastSession).toHaveBeenCalledWith([], {}))
     await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
   })
 
@@ -1813,7 +1815,7 @@ describe('App reopen last session', () => {
   // (same clearing as the ✕), so the next launch starts quiet.
   it('auto-dismisses the offer with a visible countdown', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -1824,7 +1826,7 @@ describe('App reopen last session', () => {
   // two sessions — the offer withdraws itself the moment rows exist.
   it('withdraws the offer once tracks arrive another way', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/old.wav']),
+      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/old.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -1837,9 +1839,77 @@ describe('App reopen last session', () => {
     setApi({ saveLastSession })
     await renderApp()
     await addTwoTracks()
-    await waitFor(() =>
-      expect(saveLastSession).toHaveBeenCalledWith(['/music/a.wav', '/music/b.wav']),
+    // The save is debounced (a burst of keystrokes must coalesce into one atomic
+    // write), so the assertion waits past the debounce window.
+    await waitFor(
+      () =>
+        expect(saveLastSession).toHaveBeenCalledWith(
+          ['/music/a.wav', '/music/b.wav'],
+          expect.any(Object),
+        ),
+      { timeout: 3000 },
     )
+  })
+
+  // The user feedback behind the edits payload: 400 rips retagged over hours but not
+  // yet converted, then the machine froze — every staged edit gone. What the user can
+  // change in the editor must ride along with the saved session.
+  it('saves staged edits with the session', async () => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
+    setApi({ saveLastSession })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Staged Title' } })
+    await waitFor(
+      () => {
+        const call = saveLastSession.mock.calls.at(-1)
+        expect(call?.[1]['/music/a.wav'].meta.title).toBe('Staged Title')
+      },
+      { timeout: 3000 },
+    )
+  })
+
+  // Accepting the reopen offer must bring back the staged edits, not just the file
+  // list: the restored metadata wins over the file's own tags (it is the newer truth
+  // the user hadn't applied yet), and the matched flag survives so the auto-match
+  // sweep doesn't re-probe and overwrite the restored values.
+  it('restores staged edits when the session is reopened', async () => {
+    setApi({
+      getLastSession: vi.fn().mockResolvedValue({
+        paths: ['/music/a.wav'],
+        edits: {
+          '/music/a.wav': {
+            meta: {
+              title: 'Staged Title',
+              artist: 'Staged Artist',
+              album: 'Staged Album',
+              albumArtist: 'Staged Artist',
+              year: '2020',
+              genre: '',
+              grouping: '',
+              comment: '',
+              trackNumber: 'A1',
+              discNumber: '',
+              bpm: '',
+              key: '',
+              publisher: '',
+              catalogNumber: '',
+              remixArtist: '',
+            },
+            matched: true,
+          },
+        },
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'Disk Title', artist: 'Disk Artist' }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Staged Title'),
+    )
+    expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('Staged Artist')
   })
 
   // The launch-time empty list must never be saved: it would wipe the stored session
@@ -1847,7 +1917,7 @@ describe('App reopen last session', () => {
   it('does not overwrite the stored session with the empty launch list', async () => {
     const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
       saveLastSession,
     })
     await renderApp()

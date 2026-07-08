@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TrackMetadata } from '../../../shared/types'
+import type { SessionEdit, TrackMetadata } from '../../../shared/types'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { parseFileName } from '../lib/filename'
 import { newTrackPaths } from '../lib/newTracks'
@@ -92,7 +92,7 @@ export interface TrackLibrary {
   // Live view for long-lived callbacks (sweeps, batch loops) that must read each
   // track at the moment of use rather than from a render snapshot.
   tracksRef: { readonly current: TrackItem[] }
-  addPaths: (paths: string[]) => Promise<void>
+  addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
   pickFiles: () => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
@@ -139,12 +139,25 @@ export function useTrackLibrary({
   const onRemoveRef = useRef(onRemove)
   onRemoveRef.current = onRemove
 
-  async function addPaths(paths: string[]): Promise<void> {
+  // Staged edits from the reopened session, waiting for their track's metadata read
+  // to land so the restore can be overlaid on top of the fresh file read. Keyed by
+  // source path and consumed (once) by loadTrackMeta.
+  const restoredEdits = useRef(new Map<string, SessionEdit>())
+
+  async function addPaths(paths: string[], restore?: Record<string, SessionEdit>): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
     const existing = new Set(tracksRef.current.map((t) => t.inputPath))
     const audio = paths.filter((p) => AUDIO_EXT.test(p))
     const fresh = audio.filter((p) => !existing.has(p))
+    // Only genuinely new rows restore: a path already in the list is a live track
+    // whose current state must not be clobbered by a stale saved edit.
+    if (restore) {
+      for (const path of fresh) {
+        const edit = restore[path]
+        if (edit) restoredEdits.current.set(path, edit)
+      }
+    }
     // Already-in-the-list audio files are skipped (re-dragging a folder is common);
     // report the count so App can surface it rather than the old silent no-op.
     const skipped = audio.length - fresh.length
@@ -180,8 +193,27 @@ export function useTrackLibrary({
     })
   }
 
+  // The fields of a reopened session's staged edit that overlay the fresh file read.
+  // The saved metadata wins over the file's own tags — it is the newer truth the user
+  // had staged but not applied when the last session ended.
+  function restoredPatch(saved: SessionEdit): Partial<TrackItem> {
+    const patch: Partial<TrackItem> = {}
+    if (saved.coverUrl || saved.coverRemoved) patch.coverUrl = saved.coverUrl
+    if (saved.coverPath) patch.coverPath = saved.coverPath
+    if (saved.coverRemoved) patch.coverRemoved = true
+    if (saved.outputName) patch.outputName = saved.outputName
+    if (saved.matched) patch.matched = true
+    if (saved.autoMatched) patch.autoMatched = true
+    if (saved.matchConfidence !== undefined) patch.matchConfidence = saved.matchConfidence
+    return patch
+  }
+
   async function loadTrackMeta(base: TrackItem): Promise<boolean> {
     const path = base.inputPath
+    // Consumed exactly once: a later start-over on the same path must rebuild from
+    // the file alone, not resurrect the restored edit.
+    const saved = restoredEdits.current.get(path)
+    restoredEdits.current.delete(path)
     try {
       const { tags, duration, cover } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
@@ -202,22 +234,41 @@ export function useTrackLibrary({
         listLabel: s.title || base.fileName,
         loadingMeta: false,
       }
+      if (saved) Object.assign(patch, restoredPatch(saved))
+      // A restored edit replaces the read wholesale (it was itself built on a read of
+      // this same file, plus everything the user staged since); the matched flag rides
+      // in the patch so the auto-match sweep skips the row instead of overwriting it.
+      const finalMeta = saved ? saved.meta : readMeta
       // The row is editable while the read runs, so merge instead of overwriting:
       // a field the user typed into meanwhile keeps the user's value, and the read
       // fills only what was left untouched.
       setTracks((prev) =>
         prev.map((t) =>
           t.id === base.id
-            ? { ...t, ...patch, meta: mergeReadMeta(base.meta, t.meta, readMeta) }
+            ? { ...t, ...patch, meta: mergeReadMeta(base.meta, t.meta, finalMeta) }
             : t,
         ),
       )
-      onMetaLoaded({ ...base, ...patch, meta: readMeta })
+      onMetaLoaded({ ...base, ...patch, meta: finalMeta })
       return true
     } catch {
       // The row survives on its file-name parse, but flagged: without the mark, an
       // unreadable file is indistinguishable from a file that simply carries no tags.
-      updateTrack(base.id, { loadingMeta: false, metaReadFailed: true })
+      // A restored edit still applies — its metadata is better than the name parse,
+      // and losing it to a transient read failure is exactly what the store prevents.
+      const patch: Partial<TrackItem> = { loadingMeta: false, metaReadFailed: true }
+      if (saved) Object.assign(patch, restoredPatch(saved))
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id === base.id
+            ? {
+                ...t,
+                ...patch,
+                meta: saved ? mergeReadMeta(base.meta, t.meta, saved.meta) : t.meta,
+              }
+            : t,
+        ),
+      )
       return false
     }
   }

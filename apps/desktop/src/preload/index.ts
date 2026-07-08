@@ -10,6 +10,8 @@ import type {
   SearchHints,
   SearchPriority,
   SearchProviderId,
+  SessionData,
+  SessionEdit,
   TrackProperties,
   WaveformResult,
 } from '../shared/types'
@@ -34,8 +36,9 @@ const api: Api = {
     return () => ipcRenderer.removeListener('folders:changed', listener)
   },
   unwatchFolders: (): Promise<void> => ipcRenderer.invoke('folders:unwatch'),
-  getLastSession: (): Promise<string[]> => ipcRenderer.invoke('session:get'),
-  saveLastSession: (paths: string[]): Promise<void> => ipcRenderer.invoke('session:set', paths),
+  getLastSession: (): Promise<SessionData> => ipcRenderer.invoke('session:get'),
+  saveLastSession: (paths: string[], edits: Record<string, SessionEdit>): Promise<void> =>
+    ipcRenderer.invoke('session:set', paths, edits),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   recordStat: (key, by) => ipcRenderer.send('stats:record', key, by),

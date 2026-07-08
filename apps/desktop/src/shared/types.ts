@@ -231,6 +231,34 @@ export interface TrackMetadata {
   compilation?: string
 }
 
+// One track's editable state, persisted alongside the session paths so a crash or
+// forced quit never loses metadata the user staged but hadn't converted yet. Keyed
+// by the track's source path in the session file and overlaid onto the fresh file
+// read when the next launch reopens the session.
+export interface SessionEdit {
+  meta: TrackMetadata
+  outputName?: string
+  // Only display URLs that survive a relaunch are stored: https release art. blob:
+  // previews die with the renderer and the embedded-art data: thumb re-derives from
+  // the file itself (persisting it would balloon the session file); blob-covered
+  // tracks keep their coverPath and get a fresh preview minted at load.
+  coverUrl?: string
+  coverPath?: string
+  coverRemoved?: boolean
+  // The match flags ride along so the auto-match sweep doesn't re-probe a restored
+  // track and overwrite the very metadata the restore just brought back.
+  matched?: boolean
+  autoMatched?: boolean
+  matchConfidence?: number
+}
+
+// What the session store round-trips: the loaded source paths (the reopen offer)
+// plus each track's staged edits.
+export interface SessionData {
+  paths: string[]
+  edits: Record<string, SessionEdit>
+}
+
 // A search hit normalized across providers. Discogs and Bandcamp fill what they
 // carry and leave the rest empty (Bandcamp has no format/catalog), so the list and
 // scoring stay provider-agnostic and a result only needs its `provider` to render

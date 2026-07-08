@@ -23,6 +23,8 @@ import type {
   SearchPriority,
   SearchProviderId,
   SearchResult,
+  SessionData,
+  SessionEdit,
   Settings,
   SpectrumResult,
   TrackMetadata,
@@ -40,9 +42,10 @@ export interface Api {
   onFoldersChanged: (cb: (root: string, files: string[]) => void) => () => void
   unwatchFolders: () => Promise<void>
   // The reopen-last-session pair: get returns the paths saved when the app last ran
-  // (already filtered to files that still exist); save records the current list.
-  getLastSession: () => Promise<string[]>
-  saveLastSession: (paths: string[]) => Promise<void>
+  // (already filtered to files that still exist) plus each track's staged edits;
+  // save records the current list and edits.
+  getLastSession: () => Promise<SessionData>
+  saveLastSession: (paths: string[], edits: Record<string, SessionEdit>) => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   // Fire-and-forget bump of one lifetime tally (Stats tab); main validates and persists.

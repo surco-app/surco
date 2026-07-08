@@ -25,6 +25,7 @@ import type {
   CoverExportJob,
   DockIconFrames,
   ProcessJob,
+  SessionEdit,
   Settings,
 } from '../shared/types'
 import { activity } from './activity'
@@ -510,10 +511,13 @@ function registerIpc(): void {
     }
   })
 
-  // The reopen-last-session pair: the renderer saves the loaded paths as the list
-  // changes and asks for them back at launch to offer restoring the previous crate.
+  // The reopen-last-session pair: the renderer saves the loaded paths and staged
+  // edits as they change and asks for them back at launch to offer restoring the
+  // previous crate — edits included, so a crash never loses unapplied metadata.
   ipcMain.handle('session:get', () => loadLastSession())
-  ipcMain.handle('session:set', (_e, paths: string[]) => saveLastSession(paths))
+  ipcMain.handle('session:set', (_e, paths: string[], edits: Record<string, SessionEdit>) =>
+    saveLastSession(paths, edits),
+  )
 
   ipcMain.handle('settings:getConfigDir', () => getConfigDir())
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())
