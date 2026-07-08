@@ -497,11 +497,21 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // clears the value the user emptied in the editor, which would otherwise resurface
   // from the source. Unmanaged frames (anything outside TAG_FIELDS) are still carried
   // over untouched. rating has no `id3`, so it stays preserve-on-empty (TagLib pass).
+  // Each field's read aliases are cleared too (LABEL, ORGANIZATION, ALBUMARTIST2…):
+  // the reader falls back to them, so a leftover from a previous tagger would both
+  // resurface in the editor after the user emptied the field and show up beside our
+  // key as a duplicate in other apps. ffmpeg folds a same-spelling key into the
+  // written one at read time regardless of case, so only differing spellings need
+  // the explicit clear — and the written name itself must be skipped, or the clear
+  // would wipe the value set two arguments earlier.
   return TAG_FIELDS.flatMap((field) => {
     if (!field.id3) return []
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
     const value = (meta[field.key] ?? '').trim()
-    return ['-metadata', `${name}=${value}`]
+    const clears = field.aliases
+      .filter((alias) => alias !== name.toLowerCase())
+      .flatMap((alias) => ['-metadata', `${alias}=`])
+    return ['-metadata', `${name}=${value}`, ...clears]
   })
 }
 

@@ -30,14 +30,19 @@ export const TAG_FIELDS: TagField[] = [
   { key: 'album', aliases: ['album'], id3: 'album' },
   {
     key: 'albumArtist',
-    aliases: ['album_artist', 'albumartist', 'album artist'],
+    aliases: ['album_artist', 'albumartist', 'album artist', 'albumartist2'],
     id3: 'album_artist',
   },
   { key: 'year', aliases: ['date', 'year'], id3: 'date' },
   { key: 'genre', aliases: ['genre'], id3: 'genre' },
   { key: 'grouping', aliases: ['grouping', 'content_group', 'tit1', 'grp1'], id3: 'grouping' },
   { key: 'comment', aliases: ['comment'], id3: 'comment' },
-  { key: 'trackNumber', aliases: ['track', 'tracknumber'], id3: 'track', parse: dropTotal },
+  {
+    key: 'trackNumber',
+    aliases: ['track', 'tracknumber', 'tracknum'],
+    id3: 'track',
+    parse: dropTotal,
+  },
   {
     key: 'discNumber',
     aliases: ['disc', 'tpos', 'disc_number', 'discnumber'],
@@ -53,7 +58,7 @@ export const TAG_FIELDS: TagField[] = [
   // The catalog number has no standard frame, so it rides the de-facto TXXX:CATALOGNUMBER.
   {
     key: 'catalogNumber',
-    aliases: ['catalognumber', 'catalog_number', 'catalogue', 'catalog'],
+    aliases: ['catalognumber', 'catalog_number', 'catalogue', 'catalog', 'labelno'],
     id3: 'CATALOGNUMBER',
   },
   {

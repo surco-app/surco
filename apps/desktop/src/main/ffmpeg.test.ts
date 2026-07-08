@@ -190,6 +190,33 @@ describe('convertArgs', () => {
     expect(args).toContain('TBPM=')
   })
 
+  it('clears the alias spellings other taggers use, so stale LABEL/ORGANIZATION/ALBUMARTIST2 comments stop shadowing the fields Surco writes', () => {
+    // The reader falls back to these aliases, so a leftover LABEL from a previous
+    // tagger resurfaced in the editor even after the user emptied the field — and
+    // other apps showed the field twice (their PUBLISHER next to ours).
+    const args = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, publisher: 'Kontor' })
+    expect(args).toContain('publisher=Kontor')
+    expect(args).toContain('label=')
+    expect(args).toContain('organization=')
+    expect(args).toContain('albumartist2=')
+    expect(args).toContain('labelno=')
+    expect(args).toContain('tracknum=')
+    expect(args).toContain('year=')
+  })
+
+  it('never emits a clearing entry for the key it just wrote', () => {
+    // The alias list contains the written name's own spelling (it is also a read
+    // alias); clearing it would wipe the value in the same command.
+    const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, { ...meta, bpm: '128', compilation: '1' })
+    expect(flac).toContain('BPM=128')
+    expect(flac).not.toContain('bpm=')
+    expect(flac).toContain('COMPILATION=1')
+    expect(flac).not.toContain('compilation=')
+    const mp3 = convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame', bitrate: '320k' }, { ...meta, bpm: '128' })
+    expect(mp3).toContain('TBPM=128')
+    expect(mp3).not.toContain('tbpm=')
+  })
+
   it('sets the audio bitrate right after the codec when one is given', () => {
     // an MP3 encode needs an explicit bitrate; a stream-copy must not carry one
     const args = convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame', bitrate: '320k' }, meta)
@@ -952,6 +979,20 @@ describe('tagsFromProbe', () => {
     expect(m.isrc).toBe('DEA449900124')
     expect(m.mixName).toBe('Club Mix')
     expect(m.originalYear).toBe('1998')
+  })
+
+  it('reads the label/catalog/track spellings legacy taggers wrote as fallbacks', () => {
+    // Real-world FLACs arrive with LABELNO/ALBUMARTIST2/TRACKNUM comments from older
+    // taggers; reading them keeps the editor from showing blank fields for data the
+    // file plainly carries (and the writer clears these same keys).
+    const m = tagsFromProbe({
+      format: {
+        tags: { LABELNO: 'KON123', ALBUMARTIST2: 'ATB', TRACKNUM: '7' },
+      },
+    })
+    expect(m.catalogNumber).toBe('KON123')
+    expect(m.albumArtist).toBe('ATB')
+    expect(m.trackNumber).toBe('7')
   })
 
   it('reads the compilation flag as set only when the tag is a literal 1', () => {
