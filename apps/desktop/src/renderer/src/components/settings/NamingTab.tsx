@@ -55,7 +55,6 @@ function FormatField({
   hint,
   preview,
   previewTestId,
-  dropUp,
   onChange,
 }: {
   id: string
@@ -66,9 +65,6 @@ function FormatField({
   // The rendered sample, or undefined to omit the preview line (empty title format).
   preview: string | undefined
   previewTestId: string
-  // For the bottom input: its menu opens upwards so it never clips against the
-  // modal's scroll edge.
-  dropUp?: boolean
   onChange: (value: string) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -102,7 +98,6 @@ function FormatField({
           fieldName={id}
           sources={sources}
           value=""
-          dropUp={dropUp}
           inputRef={inputRef}
           onChange={onChange}
         />
@@ -161,7 +156,6 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           }
           preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${synced.outputFormat}`}
           previewTestId="settings-format-preview"
-          dropUp
           onChange={(v) => patch('filenameFormat', v)}
         />
       </div>
