@@ -386,7 +386,7 @@
     "caseUpper": "GROSSSCHREIBUNG",
     "baseTitle": "Basistitel",
     "applyTitleFormat": "Format",
-    "applyTitleFormatHint": "Schreibt die Titel der ausgewählten Tracks nach dem konfigurierten Format neu",
+    "applyTitleFormatHint": "Titelformat auf die Auswahl anwenden",
     "deriveFromName": "Aus Dateinamen füllen",
     "deriveFromNameHint": "Füllt die Metadatenfelder aus dem Dateinamen",
     "clearMeta": "Metadaten löschen",

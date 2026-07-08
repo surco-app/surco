@@ -386,7 +386,7 @@
     "caseUpper": "MAJUSCULES",
     "baseTitle": "Titre de base",
     "applyTitleFormat": "Format",
-    "applyTitleFormatHint": "Réécrit les titres des pistes sélectionnées selon le format configuré",
+    "applyTitleFormatHint": "Appliquer le format du titre à la sélection",
     "deriveFromName": "Remplir depuis le nom",
     "deriveFromNameHint": "Remplit les métadonnées à partir du nom du fichier",
     "clearMeta": "Effacer les métadonnées",
