@@ -667,6 +667,10 @@
       "appleMusic": {
         "q": "O que faz “Adicionar ao Apple Music”?",
         "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após o processamento, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Geral."
+      },
+      "windows": {
+        "q": "Tem algo diferente no Windows?",
+        "a": "Quase tudo funciona exatamente igual: a conversão, a etiquetagem, a busca no Discogs e no Bandcamp, a análise de qualidade e a exportação para rekordbox, Traktor, Serato e Engine DJ.\n\nA única coisa que não existe no Windows é a integração com o Apple Music. O Surco controla o app Música da Apple via AppleScript, uma ponte de automação que só existe no macOS — o app do Apple Music para Windows não oferece nada equivalente —, então o destino, os botões e o selo de biblioteca do Apple Music simplesmente não aparecem.\n\nUm detalhe dos WAV que vale saber: o Surco grava as etiquetas dos WAV no chunk ID3 padrão, que os apps de DJ e editores como o Mp3tag leem sem problema, mas que o Explorador de Arquivos do Windows não consegue mostrar — um WAV convertido pode parecer sem etiquetas em uma pasta mesmo com todas elas lá. Com MP3 ou FLAC, o Explorador as mostra normalmente."
       }
     }
   },

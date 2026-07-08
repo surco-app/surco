@@ -667,6 +667,10 @@
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
         "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Allgemein abschalten."
+      },
+      "windows": {
+        "q": "Gibt es Unterschiede unter Windows?",
+        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs und Bandcamp, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
       }
     }
   },

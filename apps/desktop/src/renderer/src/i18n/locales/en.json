@@ -667,6 +667,10 @@
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
         "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → General."
+      },
+      "windows": {
+        "q": "Is anything different on Windows?",
+        "a": "Almost everything works exactly the same: conversion, tagging, Discogs and Bandcamp search, quality analysis, and the rekordbox, Traktor, Serato and Engine DJ exports.\n\nThe one piece that doesn't exist on Windows is the Apple Music integration. Surco drives Apple's Music app through AppleScript, an automation bridge that only exists on macOS — the Apple Music app for Windows offers nothing equivalent — so the Apple Music destination, buttons and library badge simply don't appear.\n\nOne WAV quirk worth knowing: Surco stores WAV tags in the standard ID3 chunk, which DJ apps and tag editors like Mp3tag read fine, but Windows Explorer can't display — a converted WAV can look untagged in a folder even though every tag is there. With MP3 or FLAC, Explorer shows them normally."
       }
     }
   },

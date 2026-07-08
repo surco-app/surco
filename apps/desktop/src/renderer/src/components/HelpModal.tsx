@@ -2,17 +2,22 @@ import { ChevronDown, X } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isMacOS, isWindows } from '../lib/platform'
 import { ModalShell } from './ModalShell'
 
 interface Props {
   onClose: () => void
 }
 
-const ITEMS = ['token', 'quality', 'format', 'appleMusic'] as const
+const ITEMS = ['token', 'quality', 'format'] as const
 
 export function HelpModal({ onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState<string | null>(ITEMS[0])
+  // The Apple Music FAQ describes a macOS-only integration, so off macOS it would
+  // document a feature the app doesn't offer; Windows instead gets an entry on
+  // what differs there (no Apple Music, WAV tags invisible to Explorer).
+  const items = [...ITEMS, ...(isMacOS() ? ['appleMusic'] : isWindows() ? ['windows'] : [])]
 
   return (
     <ModalShell
@@ -37,7 +42,7 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
       </div>
 
       <div className="-mx-2 overflow-y-auto px-2">
-        {ITEMS.map((id) => {
+        {items.map((id) => {
           const isOpen = open === id
           return (
             <div key={id} className="border-b border-[var(--color-line)] last:border-b-0">
