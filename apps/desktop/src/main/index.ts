@@ -947,7 +947,7 @@ function registerIpc(): void {
   // Lets the cover well show its paste affordance only when there's an image to paste.
   ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
 
-  registerShellIpc()
+  registerShellIpc(mediaAccess)
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
   // push below — without this handler the toast's "Restart" button rejects.
