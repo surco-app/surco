@@ -306,6 +306,24 @@ describe('autoMatchRelease stored release id', () => {
     expect(m?.tier).toBe('review')
     expect(api.search).not.toHaveBeenCalled()
   })
+
+  // The corroboration guard exists to keep a title-only hit from a TEXT SEARCH from
+  // writing another act's tags. A stored id carries no such risk: the id itself names
+  // the disc (a previous match or the user's own hand), so an exact-title hit on it —
+  // the everyday vinyl release that lists no durations — applies unattended instead of
+  // stalling as a review suggestion the sweep then never revisits.
+  it('applies an exact stored-release hit on confidence alone, without corroboration', async () => {
+    const api = {
+      search: vi.fn(),
+      // Exact title, but the release lists no durations, the file has no artist or
+      // catalog number — nothing beyond the title corroborates.
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [{ title: 'My Song', position: '1' }] })),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(1)
+    expect(m?.tier).toBe('high')
+    expect(api.search).not.toHaveBeenCalled()
+  })
 })
 
 describe('autoMatchRelease Bandcamp fallback', () => {

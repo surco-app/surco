@@ -187,10 +187,13 @@ export type AutoMatch = ProbeMatch
 
 // Tries the file's own stored release before any text search: loads it directly by id,
 // scores its tracklist the same way a probed search result would, and accepts anything
-// 'high' or 'review' — the id already names the right album, so the guard only needs to
-// find which track on it is this file, not corroborate the release itself. Returns
-// undefined on any failure (release deleted, load error, no acceptable track), letting
-// the caller fall back to a text search exactly as if there had been no stored id.
+// 'high' or 'review'. The tier comes from the raw confidence, NOT the corroboration
+// guard: that guard keeps a title-only TEXT-SEARCH hit from writing another act's tags,
+// but a stored id carries no such risk — the id itself names the disc (a previous match
+// or the user's own hand), so the only question left is which track on it is this file.
+// Demoting here stalled every no-durations vinyl as a review suggestion the sweep never
+// revisits. Returns undefined on any failure (release deleted, load error, no acceptable
+// track), letting the caller fall back to a text search exactly as if there were no id.
 async function matchStoredRelease(
   discogsReleaseId: string,
   target: TrackMatchTarget,
@@ -209,7 +212,7 @@ async function matchStoredRelease(
   if (!m) return undefined
   const catalogMatched = catalogNumberMatches(target.catalogNumber, rel)
   const confidence = catalogMatched ? boostForCatalogMatch(m.confidence) : m.confidence
-  const tier = corroboratedTier(confidence, target, rel, m.track, catalogMatched)
+  const tier = confidenceTier(confidence)
   const signals = matchSignals(target, rel, m.track, catalogMatched)
   onProbe?.({ result, confidence, tier })
   if (tier === 'low') return undefined
