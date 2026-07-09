@@ -7,6 +7,7 @@ import {
   autoMatchRelease,
   MAX_AUTO_PROBE,
   matchActivityReport,
+  type MatchCleanup,
   matchTargetOf,
   type ProbedCandidate,
   type SearchApi,
@@ -38,6 +39,9 @@ interface Params {
   // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
   searchProvidersRef: { readonly current: SearchProviderId[] }
+  // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
+  // editing the pattern applies to the next probe without restarting the sweep.
+  matchCleanupRef: { readonly current: MatchCleanup }
   // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
   // won or was suggested, why, and every candidate scored along the way.
   reportActivity: (report: LocalActivityReport) => void
@@ -67,6 +71,7 @@ export function useAutoMatch({
   updateTrack,
   libraryIndexRef,
   searchProvidersRef,
+  matchCleanupRef,
   reportActivity,
 }: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
@@ -111,10 +116,13 @@ export function useAutoMatch({
       // show the full trail — what was considered and rejected, not just the winner.
       const probes: ProbedCandidate[] = []
       const startedAt = performance.now()
+      const target = matchTargetOf(t, matchCleanupRef.current)
       const m = await autoMatchRelease(
         t.query,
-        matchTargetOf(t),
-        searchApiAt(priority, searchHintsOf(t.meta)),
+        target,
+        // The hint title rides the same undressed title the scorer uses, so the precise
+        // artist+title searches see "Sueño Latino", not the pattern-dressed tag.
+        searchApiAt(priority, { ...searchHintsOf(t.meta), title: target.title || t.meta.title }),
         MAX_AUTO_PROBE,
         (c) => probes.push(c),
       )
@@ -173,7 +181,7 @@ export function useAutoMatch({
       })
       window.api.recordStat(matchStatKey(m.release.provider))
     },
-    [searchApiAt, updateTrack, tracksRef, libraryIndexRef, reportActivity],
+    [searchApiAt, updateTrack, tracksRef, libraryIndexRef, matchCleanupRef, reportActivity],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an

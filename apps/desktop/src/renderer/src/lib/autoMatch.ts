@@ -3,6 +3,7 @@ import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../.
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
 import { keepCoverArg } from './coverSource'
+import { unformatTitle } from './outputName'
 import {
   bestMatch,
   boostForCatalogMatch,
@@ -36,14 +37,24 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
   )
 }
 
+// The user's search-hygiene settings the matcher cleans a title with before scoring —
+// threaded from Settings by the sweep and the editor alike so the two score identically.
+export interface MatchCleanup {
+  titleFormat?: string
+}
+
 // What the sweep reads off a track to score release candidates against it.
-export function matchTargetOf(track: TrackItem): TrackMatchTarget {
+export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): TrackMatchTarget {
+  // Undress the configured Naming pattern first: the app's own "(A2) Title (1998)"
+  // format must never bury its re-match — and the track number the pattern wrapped is
+  // recovered for the position signal when the file carries none of its own.
+  const un = cleanup.titleFormat ? unformatTitle(cleanup.titleFormat, track.meta.title) : undefined
   return {
     // Score against a cleaned title: a file whose title tag is really the whole (often
     // duplicated) file name would otherwise never reach the confidence bar.
-    title: cleanMatchTitle(track.meta.title),
+    title: cleanMatchTitle(un?.title ?? track.meta.title),
     durationSec: track.duration,
-    trackNumber: track.meta.trackNumber,
+    trackNumber: track.meta.trackNumber || un?.fields.trackNumber,
     artist: track.meta.artist,
     catalogNumber: track.meta.catalogNumber,
     year: track.meta.year,

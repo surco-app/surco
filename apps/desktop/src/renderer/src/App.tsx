@@ -78,7 +78,7 @@ import { nextLocale, resolveLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
-import { acceptReviewPatch, tracksToAutoMatch } from './lib/autoMatch'
+import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
 import { matchStatKey } from './lib/stats'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { changelogReleases } from './lib/changelog'
@@ -357,6 +357,10 @@ export default function App(): React.JSX.Element {
   // Live providers for the background sweep, read at probe time (Settings → Search).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
+  // Live title-cleanup settings for the sweep's scorer (the Naming pattern), read at
+  // probe time like the providers above.
+  const matchCleanupRef = useRef<MatchCleanup>({})
+  matchCleanupRef.current = { titleFormat: settings?.titleFormat }
   // Live view of the Apple Music library snapshot for the sweep, kept current below once
   // useTracksView has computed it (the sweep reads it at apply time, not at render).
   const libraryIndexRef = useRef<AppleMusicIndex | null>(null)
@@ -715,7 +719,14 @@ export default function App(): React.JSX.Element {
     forgetTrack: forgetAutoMatch,
     reset: resetAutoMatch,
     focusTrack: focusAutoMatch,
-  } = useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef, reportActivity })
+  } = useAutoMatch({
+    tracksRef,
+    updateTrack,
+    libraryIndexRef,
+    searchProvidersRef,
+    matchCleanupRef,
+    reportActivity,
+  })
 
   // Whatever row is selected jumps to the front of the auto-match sweep (and onto Discogs'
   // high-priority lane), so the track you're looking at resolves now instead of waiting its

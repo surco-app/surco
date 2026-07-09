@@ -1,9 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
-import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
-import { matchTargetOf, probeReleases } from '../lib/autoMatch'
+import { type MatchCleanup, matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
@@ -83,6 +82,9 @@ export function useDiscogsBrowser(
   // set independently, so trimming the displayed list never costs a suggestion. Defaults
   // high so callers that don't pass it (tests) keep their old behaviour.
   maxResults = 25,
+  // Title-cleanup settings (the Naming pattern), so the panel's ranking, hints and
+  // auto-probe score against the undressed title exactly like the sweep does.
+  cleanup: MatchCleanup = {},
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
@@ -146,7 +148,11 @@ export function useDiscogsBrowser(
         const result = resultFromRelease(rel)
         return { results: [result], direct: result as SearchResult | null }
       }
-      const hints = searchHintsOf(item.meta)
+      // The hint title is the same undressed title the scorer uses (matchTargetOf), so
+      // the precise artist+title searches see the bare track name, not the Naming
+      // pattern's "(A2) …" dressing.
+      const target = matchTargetOf(item, cleanup)
+      const hints = { ...searchHintsOf(item.meta), title: target.title || item.meta.title }
       // Query the enabled providers in parallel. One source failing (e.g. Bandcamp's
       // unofficial endpoint) must not sink the whole search, so surface an error only when
       // every provider failed — a partial failure still shows what did come back.
@@ -163,7 +169,7 @@ export function useDiscogsBrowser(
       // Merge and re-rank by how well each row matches the file, so the likeliest release —
       // from whichever provider — leads, instead of one source always sitting on top.
       const results = preRankResults(ok.flat(), {
-        title: cleanMatchTitle(item.meta.title),
+        title: target.title,
         artist: item.meta.artist,
       })
       return { results, direct: null as SearchResult | null }
@@ -230,7 +236,7 @@ export function useDiscogsBrowser(
     ;(async () => {
       const m = await probeReleases(
         data.results,
-        matchTargetOf(item),
+        matchTargetOf(item, cleanup),
         // 'review' is enough here: the probe only opens (highlights) the release for
         // the user's own click, it never writes anything.
         { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },

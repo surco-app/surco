@@ -48,6 +48,82 @@ export function renderTitle(format: string, meta: TrackMetadata): string {
 // renderTitle's cleanup untouched (it is neither bracket, separator nor space).
 const TITLE_SENTINEL = '\u0001'
 
+// What a recovered field must look like for the inverse match to accept it. Without a
+// shape, "{trackNumber} - {title}" would eat the first words of any dashed title
+// ("My Song - Remix" → trackNumber "My Song"); with it, only a plausible value counts:
+// a vinyl position ("A", "A2", "AA1"), a plain number ("01", "12"), a short year. Fields
+// with no entry (artist, album…) stay free-text, matched lazily.
+const FIELD_SHAPES: Record<string, string> = {
+  trackNumber: '(?:[A-Za-z]{1,2}\\d{0,3}|\\d{1,3})',
+  discNumber: '\\d{1,2}',
+  year: '\\d{2,4}',
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Every subset of the pattern's non-title tokens, largest first — one per way the
+// rendered title may have dropped a blank field's brackets. Largest first so the
+// fullest layout that matches wins and a shorter one can't shadow it.
+function subsetsBySizeDesc(items: string[]): string[][] {
+  const out: string[][] = []
+  for (let mask = (1 << items.length) - 1; mask >= 0; mask--) {
+    out.push(items.filter((_, i) => mask & (1 << i)))
+  }
+  return out.sort((a, b) => b.length - a.length)
+}
+
+// The inverse of renderTitle: given the configured pattern and a title tag that (maybe)
+// wears it, recover the bare {title} and the fields the pattern wrapped around it. This
+// is what lets the matcher score a "(A2) Sueño Latino (1998)" tag as "Sueño Latino" —
+// the pattern the app itself applied must never bury its own re-match. Each candidate
+// layout is rebuilt through renderTitle with sentinel values (so the blank-field hygiene
+// — dropped "()" pairs, collapsed separators — can never drift from the render side) and
+// tried as an anchored regex, fullest first; the all-blank layout collapses to just the
+// title, so an unformatted title matches that and comes back unchanged. Returns
+// undefined only when the pattern carries no {title} (nothing to recover) or no layout
+// matches at all.
+export function unformatTitle(
+  format: string,
+  title: string,
+): { title: string; fields: Partial<Record<string, string>> } | undefined {
+  const keys = [...new Set([...format.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))]
+  if (!keys.includes('title')) return undefined
+  const others = keys.filter((k) => k !== 'title')
+  // One control character per field, like TITLE_SENTINEL: they survive renderTitle's
+  // cleanup and can never collide with real tag text.
+  const sentinelOf = new Map(others.map((k, i) => [k, String.fromCharCode(2 + i)]))
+  for (const present of subsetsBySizeDesc(others)) {
+    const values: Record<string, string> = { title: TITLE_SENTINEL }
+    for (const k of present) values[k] = sentinelOf.get(k) as string
+    const layout = renderTitle(format, values as unknown as TrackMetadata)
+    if (!layout.includes(TITLE_SENTINEL)) continue
+    let pattern = escapeRegExp(layout)
+    for (const key of ['title', ...present]) {
+      const sentinel = key === 'title' ? TITLE_SENTINEL : (sentinelOf.get(key) as string)
+      const shape = key === 'title' ? '.+' : (FIELD_SHAPES[key] ?? '.+?')
+      const parts = pattern.split(sentinel)
+      // A token repeated in the pattern must match the same text everywhere, so the
+      // first occurrence captures and the rest backreference it.
+      pattern =
+        parts[0] +
+        parts
+          .slice(1)
+          .map((p, i) => (i === 0 ? `(?<${key}>${shape})` : `\\k<${key}>`) + p)
+          .join('')
+    }
+    const m = title.trim().match(new RegExp(`^${pattern}$`))
+    if (!m?.groups) continue
+    const bare = m.groups.title.trim()
+    if (!bare) continue
+    const fields: Partial<Record<string, string>> = {}
+    for (const k of present) if (m.groups[k]) fields[k] = m.groups[k]
+    return { title: bare, fields }
+  }
+  return undefined
+}
+
 // The per-track rename patches an "apply the title format" pass produces: one entry
 // per track whose rendered title is non-empty AND different from the current one.
 // A title that already carries the pattern's rendered prefix and suffix is treated

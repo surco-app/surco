@@ -53,8 +53,16 @@ function setup(
   const tracksRef = { current: tracks }
   const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
+  const matchCleanupRef = { current: {} }
   const { result } = renderHook(() =>
-    useAutoMatch({ tracksRef, updateTrack, libraryIndexRef, searchProvidersRef, reportActivity }),
+    useAutoMatch({
+      tracksRef,
+      updateTrack,
+      libraryIndexRef,
+      searchProvidersRef,
+      matchCleanupRef,
+      reportActivity,
+    }),
   )
   return { result, updateTrack, tracksRef, reportActivity }
 }

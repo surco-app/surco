@@ -451,6 +451,38 @@ describe('matchTargetOf', () => {
     } as TrackItem
     expect(matchTargetOf(t).title).toBe('Francesco Donadoni - Rock that sound')
   })
+
+  // The Naming pattern writes "(A2) Title (1998)" into the title tag; scoring against
+  // that dressed title buried the real one below the suggestion bar (the pattern's own
+  // words counted as title words). With the configured pattern the target undresses it
+  // — and recovers the track number it wrapped, for the position signal.
+  it('undresses a title the configured Naming pattern formatted', () => {
+    const t = {
+      duration: 211,
+      meta: { title: '(A2) Sueño Latino (1998)', trackNumber: '', artist: 'Artist' },
+    } as TrackItem
+    const target = matchTargetOf(t, { titleFormat: '({trackNumber}) {title} ({year})' })
+    expect(target.title).toBe('Sueño Latino')
+    expect(target.trackNumber).toBe('A2')
+  })
+
+  it('keeps the file\'s own track number over one recovered from the title', () => {
+    const t = {
+      duration: 211,
+      meta: { title: '(A2) Sueño Latino', trackNumber: 'B1', artist: 'Artist' },
+    } as TrackItem
+    const target = matchTargetOf(t, { titleFormat: '({trackNumber}) {title} ({year})' })
+    expect(target.trackNumber).toBe('B1')
+  })
+
+  it('still cleans the undressed title like any other', () => {
+    const t = {
+      duration: 211,
+      meta: { title: '(A2) Sueño Latino (Original Mix)', trackNumber: '' },
+    } as TrackItem
+    const target = matchTargetOf(t, { titleFormat: '({trackNumber}) {title}' })
+    expect(target.title).toBe('Sueño Latino')
+  })
 })
 
 describe('acceptReviewPatch', () => {

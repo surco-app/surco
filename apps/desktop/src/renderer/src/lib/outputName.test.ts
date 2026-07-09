@@ -6,6 +6,7 @@ import {
   renderTitle,
   titleFormatPatches,
   titleFormatSummary,
+  unformatTitle,
 } from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
@@ -141,6 +142,67 @@ describe('renderTitle', () => {
   it('renders an empty pattern or all-blank fields to an empty string', () => {
     expect(renderTitle('', meta({ title: 'Action' }))).toBe('')
     expect(renderTitle('({trackNumber})', meta({}))).toBe('')
+  })
+})
+
+describe('unformatTitle', () => {
+  const FORMAT = '({trackNumber}) {title} ({year})'
+
+  // The round-trip that broke re-matching: the title pattern wrote "(A2) X (1998)" into
+  // the tag, and the matcher then scored against that dressed title — its own prefix
+  // words buried the real one below the suggestion bar. Inverting the configured
+  // pattern recovers the bare title (and the fields it wrapped) for matching.
+  it('recovers the bare title and the wrapped fields from a formatted title', () => {
+    expect(unformatTitle(FORMAT, '(A2) Sueño Latino (1998)')).toEqual({
+      title: 'Sueño Latino',
+      fields: { trackNumber: 'A2', year: '1998' },
+    })
+  })
+
+  it('handles a field that was blank when the pattern was applied', () => {
+    // renderTitle drops the "()" a blank year leaves behind, so the tagged title is
+    // "(A2) X" — the inverse must accept that layout too, not demand the full pattern.
+    expect(unformatTitle(FORMAT, '(A2) Sueño Latino')).toEqual({
+      title: 'Sueño Latino',
+      fields: { trackNumber: 'A2' },
+    })
+  })
+
+  it('returns an unformatted title unchanged with no fields', () => {
+    expect(unformatTitle(FORMAT, 'Sueño Latino')).toEqual({
+      title: 'Sueño Latino',
+      fields: {},
+    })
+  })
+
+  it('keeps a dashed title intact instead of eating it as a track number', () => {
+    // "My Song - Remix" wears the "{trackNumber} - {title}" shape textually, but
+    // "My Song" is no track number — the field's shape guard must reject it so a
+    // legitimate dashed title never loses its first words.
+    expect(unformatTitle('{trackNumber} - {title}', 'My Song - Remix')).toEqual({
+      title: 'My Song - Remix',
+      fields: {},
+    })
+    expect(unformatTitle('{trackNumber} - {title}', 'A2 - Remix')).toEqual({
+      title: 'Remix',
+      fields: { trackNumber: 'A2' },
+    })
+  })
+
+  it('recovers vinyl and plain track numbers alike', () => {
+    expect(unformatTitle('({trackNumber}) {title}', '(12) Open Up')).toEqual({
+      title: 'Open Up',
+      fields: { trackNumber: '12' },
+    })
+    expect(unformatTitle('({trackNumber}) {title}', '(AA1) Open Up')).toEqual({
+      title: 'Open Up',
+      fields: { trackNumber: 'AA1' },
+    })
+  })
+
+  it('returns undefined when the pattern has no {title} to recover', () => {
+    expect(unformatTitle('({trackNumber})', '(A2) X')).toBeUndefined()
+    expect(unformatTitle('', 'X')).toBeUndefined()
   })
 })
 

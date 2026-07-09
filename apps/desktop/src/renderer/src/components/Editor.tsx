@@ -201,12 +201,15 @@ export const Editor = memo(function Editor({
   const { t: tr } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
+  // Memoized so the browser's probe closures don't churn identity on unrelated renders.
+  const matchCleanup = useMemo(() => ({ titleFormat }), [titleFormat])
   const browser = useDiscogsBrowser(
     item,
     tr,
     (query) => onChange({ query }),
     searchProviders,
     discogsMaxResults,
+    matchCleanup,
   )
   const { release, resolving: discogsResolving } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding
