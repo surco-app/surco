@@ -42,3 +42,17 @@ export function renderTitle(format: string, meta: TrackMetadata): string {
     .replace(/^[\s\-–·_]+|[\s\-–·_]+$/g, '')
     .trim()
 }
+
+// The per-track rename patches an "apply the title format" pass produces: one entry
+// per track whose rendered title is non-empty AND different from the current one.
+// Pure and shared by the editor's T button and the ⌘K command, so both can tell a
+// real pass from a no-op (empty pattern fields, or already applied) and say so.
+export function titleFormatPatches(
+  format: string,
+  tracks: { id: string; meta: TrackMetadata }[],
+): { id: string; meta: { title: string } }[] {
+  return tracks.flatMap((t) => {
+    const title = renderTitle(format, t.meta)
+    return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
+  })
+}

@@ -109,6 +109,7 @@
     "numberedTracks_one": "Numbered {{count}} track",
     "numberedTracks_other": "Numbered {{count}} tracks",
     "titleFormatted_other": "Formatted {{count}} titles",
+    "titleFormatNoChange": "The title format changed nothing — its fields are empty on these tracks, or it was already applied",
     "titleFormatted_one": "Formatted {{count}} title",
     "copiedPath": "Path copied",
     "copiedFilename": "File name copied",

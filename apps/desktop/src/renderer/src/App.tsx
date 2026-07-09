@@ -91,7 +91,7 @@ import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { renderOutputName, renderTitle } from './lib/outputName'
+import { renderOutputName, titleFormatPatches } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1269,11 +1269,14 @@ export default function App(): React.JSX.Element {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return
     const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
-    const patches = targets.flatMap((t) => {
-      const title = renderTitle(format, t.meta)
-      return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
-    })
-    if (patches.length === 0) return
+    const patches = titleFormatPatches(format, targets)
+    // A silent no-op reads as a broken button: when the pattern's fields are empty on
+    // these tracks (or it was already applied) the render equals the current title,
+    // so say exactly that instead of doing visibly nothing.
+    if (patches.length === 0) {
+      setNotice(tr('notices.titleFormatNoChange'))
+      return
+    }
     deriveTracksUndoable(patches)
     setNotice(tr('notices.titleFormatted', { count: patches.length }))
   })
@@ -1773,6 +1776,7 @@ export default function App(): React.JSX.Element {
                   onChangeAllMeta={onChangeAllMeta}
                   onApplyCoverAll={onApplyCoverAll}
                   onDeriveTags={deriveTracksUndoable}
+                  onApplyTitleFormat={applyTitleFormat}
                   onRecordUndo={recordMetaUndo}
                   onChange={onEditorChange}
                   onProcess={onProcessSelected}

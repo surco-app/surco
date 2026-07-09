@@ -109,6 +109,7 @@
     "numberedTracks_one": "{{count}} pista numerada",
     "numberedTracks_other": "{{count}} pistas numeradas",
     "titleFormatted_other": "{{count}} títulos formateados",
+    "titleFormatNoChange": "El formato del título no ha cambiado nada — sus campos están vacíos en estas pistas o ya estaba aplicado",
     "titleFormatted_one": "{{count}} título formateado",
     "copiedPath": "Ruta copiada",
     "copiedFilename": "Nombre de archivo copiado",

@@ -80,6 +80,10 @@ interface Props {
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  // Rewrites the selection's titles from the settings' title format — App owns it so
+  // the pass shares the ⌘K command's undo channel and its "changed n / changed
+  // nothing" notices; the editor's T button is just a second trigger for it.
+  onApplyTitleFormat?: () => void
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
   // overwrites them (derive is already recorded inside onDeriveTags).
   onRecordUndo?: (ids: string[]) => void
@@ -139,6 +143,7 @@ export const Editor = memo(function Editor({
   onChangeAllMeta,
   onApplyCoverAll,
   onDeriveTags,
+  onApplyTitleFormat,
   onRecordUndo,
   onChange,
   onProcess,
@@ -484,20 +489,6 @@ export const Editor = memo(function Editor({
     if (patches.length) onDeriveTags(patches)
   }
 
-  // Rewrites the selection's titles (the open track in single view) from the
-  // settings' title format — the header-button twin of the title menu's row, for
-  // the 200-track case where applying one by one is not an option. Rides the same
-  // undoable channel as the Tag button, so ⌘Z rolls the whole pass back.
-  function applyTitleFormatAll(): void {
-    if (!onDeriveTags || !titleFormat.trim()) return
-    const targets = isMulti ? (selectedTracks ?? []) : [item]
-    const patches = targets.flatMap((t) => {
-      const title = renderTitle(titleFormat, t.meta)
-      return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
-    })
-    if (patches.length) onDeriveTags(patches)
-  }
-
   // Empties every metadata field — the inverse of the fill controls (filename /
   // Discogs) — so a badly-labelled file can be retagged from scratch instead of
   // deleting fifteen values by hand. The blank comes from the metadata SSOT so a
@@ -678,12 +669,12 @@ export const Editor = memo(function Editor({
   // One-click "rewrite titles from the pattern" over the selection. Only present
   // when a title format is configured — without one there is nothing to apply.
   const titleFormatButton =
-    onDeriveTags && titleFormat.trim() !== '' ? (
+    onApplyTitleFormat && titleFormat.trim() !== '' ? (
       <button
         type="button"
         data-testid="apply-title-format-btn"
         aria-label={tr('editor.applyTitleFormat')}
-        onClick={applyTitleFormatAll}
+        onClick={onApplyTitleFormat}
         className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
       >
         <Type className="h-3.5 w-3.5" aria-hidden="true" />

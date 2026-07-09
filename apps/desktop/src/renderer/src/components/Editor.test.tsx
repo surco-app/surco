@@ -125,6 +125,7 @@ function renderEditor(
   onReencode: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
+  onApplyTitleFormat: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
   onRemoveOldMusicCopy: ReturnType<typeof vi.fn>
@@ -140,6 +141,7 @@ function renderEditor(
   const onReencode = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
+  const onApplyTitleFormat = vi.fn()
   const onFormatChange = vi.fn()
   const onTrashOriginal = vi.fn()
   const onRemoveOldMusicCopy = vi.fn()
@@ -160,6 +162,7 @@ function renderEditor(
       onReencode={onReencode}
       onFormatChange={onFormatChange}
       onDeriveTags={onDeriveTags}
+      onApplyTitleFormat={onApplyTitleFormat}
       onAddToAppleMusic={vi.fn()}
       onTrashOriginal={onTrashOriginal}
       onRemoveOldMusicCopy={onRemoveOldMusicCopy}
@@ -202,6 +205,7 @@ function renderEditor(
     onChange,
     onExportCollection,
     onDeriveTags,
+    onApplyTitleFormat,
     onFormatChange,
     onTrashOriginal,
     onRemoveOldMusicCopy,
@@ -2343,19 +2347,17 @@ describe('Editor insert from field', () => {
     expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
   })
 
-  // The header button is the bulk twin of the menu row: one click rewrites every
-  // selected title from the pattern (200 tracks in one pass), through the same
-  // undoable channel as the Tag button. Hidden when no format is configured.
-  it('applies the title format to the selection from the header button', () => {
-    const { onDeriveTags } = renderEditor(
+  // The header button is the bulk twin of the menu row: one click hands the whole
+  // pass to App's applyTitleFormat, which owns the undo channel and the "changed
+  // n / changed nothing" notices. Hidden when no format is configured.
+  it('triggers the title-format pass from the header button', () => {
+    const { onApplyTitleFormat } = renderEditor(
       { id: 't1', meta: { title: 'Action (Base)', trackNumber: 'B2' } },
       'wav',
       { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
     )
     fireEvent.click(screen.getByTestId('apply-title-format-btn'))
-    expect(onDeriveTags).toHaveBeenCalledWith([
-      { id: 't1', meta: { title: '(B2) Action (Base)' } },
-    ])
+    expect(onApplyTitleFormat).toHaveBeenCalledOnce()
   })
 
   it('hides the title-format header button when no format is configured', () => {

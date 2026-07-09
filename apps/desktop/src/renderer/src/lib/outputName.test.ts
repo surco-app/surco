@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { renderOutputName, renderTitle } from './outputName'
+import { renderOutputName, renderTitle, titleFormatPatches } from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -135,5 +135,27 @@ describe('renderTitle', () => {
   it('renders an empty pattern or all-blank fields to an empty string', () => {
     expect(renderTitle('', meta({ title: 'Action' }))).toBe('')
     expect(renderTitle('({trackNumber})', meta({}))).toBe('')
+  })
+})
+
+describe('titleFormatPatches', () => {
+  const track = (id: string, patch: Partial<TrackMetadata>) => ({ id, meta: meta(patch) })
+
+  it('builds one rename patch per track whose rendered title differs', () => {
+    const patches = titleFormatPatches('({trackNumber}) {title}', [
+      track('a', { title: 'Action', trackNumber: 'B2' }),
+      track('b', { title: '(A1) Open', trackNumber: '' }),
+    ])
+    expect(patches).toEqual([{ id: 'a', meta: { title: '(B2) Action' } }])
+  })
+
+  // The user-facing "why did nothing happen": with the pattern's fields empty the
+  // render equals the current title, so the caller can tell "no-op" apart and say so
+  // in a toast instead of silently doing nothing.
+  it('returns no patches when the pattern changes nothing', () => {
+    const patches = titleFormatPatches('({trackNumber}) {title}', [
+      track('a', { title: 'Stay With Me', trackNumber: '' }),
+    ])
+    expect(patches).toEqual([])
   })
 })
