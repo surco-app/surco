@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.44",
+    "date": "9 de julio de 2026",
+    "title": "Ve lo que gastas, en tu propio idioma",
+    "items": [
+      {
+        "text": "La pestaña Estadísticas ahora muestra el coste de conversión junto a lo que has donado, para que veas de un vistazo cómo se compara tu apoyo.",
+        "in": "0.44.0"
+      },
+      {
+        "text": "El menú nativo y los diálogos de la app ahora siguen el idioma que fijaste en Ajustes, en vez de usar el del sistema.",
+        "in": "0.44.0"
+      }
+    ]
+  },
+  {
     "version": "0.43",
     "date": "8 de julio de 2026",
     "title": "Formato de título y paleta organizada",

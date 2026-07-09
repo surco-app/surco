@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.44",
+    "date": "July 9, 2026",
+    "title": "See what you're spending, in your own language",
+    "items": [
+      {
+        "text": "The Stats tab now shows conversion cost next to what you've donated, so you can see at a glance how your support compares.",
+        "in": "0.44.0"
+      },
+      {
+        "text": "The app's native menu and dialogs now follow the language you pinned in Settings, instead of falling back to your system's locale.",
+        "in": "0.44.0"
+      }
+    ]
+  },
+  {
     "version": "0.43",
     "date": "July 8, 2026",
     "title": "Title patterns and an organized palette",
