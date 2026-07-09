@@ -51,6 +51,9 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
     deleteAppleMusic: vi.fn(async () => {}),
+    isPathReserved: vi.fn(() => false),
+    reservePath: vi.fn(),
+    releasePath: vi.fn(),
     ...overrides,
   }
 }
@@ -200,6 +203,36 @@ describe('runProcessTrack — output conflict', () => {
     await runProcessTrack(job({ previousOutputPath: '/out/Artist - Title.aiff' }), deps)
     expect(deps.confirmConflict).not.toHaveBeenCalled()
     expect(deps.convertAudio).toHaveBeenCalledOnce()
+  })
+
+  // A concurrent batch job resolved the same output name a moment ago and hasn't
+  // finished writing it yet, so existsSync is still false — the reservation is the
+  // only signal that a collision is coming.
+  it('treats a path another in-flight job reserved as a conflict too', async () => {
+    const deps = makeDeps({
+      isPathReserved: vi.fn((p: string) => p === '/out/Artist - Title.aiff'),
+    })
+    deps.confirmConflict = vi.fn(async () => 'keepBoth' as const)
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
+  })
+
+  it('releases the reservation once the job settles, success or failure', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job(), deps)
+    expect(deps.reservePath).toHaveBeenCalledWith('/out/Artist - Title.aiff')
+    expect(deps.releasePath).toHaveBeenCalledWith('/out/Artist - Title.aiff')
+
+    const failing = makeDeps({
+      convertAudio: vi.fn(async () => {
+        throw new Error('disk full')
+      }),
+    })
+    await expect(runProcessTrack(job(), failing)).rejects.toThrow('disk full')
+    expect(failing.reservePath).toHaveBeenCalledWith('/out/Artist - Title.aiff')
+    expect(failing.releasePath).toHaveBeenCalledWith('/out/Artist - Title.aiff')
   })
 })
 

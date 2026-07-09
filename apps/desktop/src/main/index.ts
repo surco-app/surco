@@ -45,6 +45,7 @@ import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
+import { createOutputReservations } from './outputReservations'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
@@ -91,6 +92,10 @@ const pendingFiles: string[] = []
 // protocol handler refuses anything not in here. Module-scoped because the
 // open-file event below can fire before the window (and registerIpc) exist.
 const mediaAccess = createMediaAccess()
+// Closes the race a concurrent batch opens: module-scoped so every process:track
+// call (each its own IPC invocation) shares one registry of output paths currently
+// being written.
+const outputReservations = createOutputReservations()
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
@@ -666,6 +671,9 @@ function registerIpc(): void {
       sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
       hasCoverSource,
       prepareProcessedCover,
+      isPathReserved: outputReservations.isReserved,
+      reservePath: outputReservations.reserve,
+      releasePath: outputReservations.release,
       convertAudio: (input, output, format, meta, coverPath, normalize, removeCover, force) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)

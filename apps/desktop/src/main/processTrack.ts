@@ -66,6 +66,12 @@ export interface ProcessTrackDeps {
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   confirmConflict: (outputName: string) => Promise<'overwrite' | 'keepBoth' | 'skip'>
+  // Closes the race a concurrent batch opens: two jobs resolving to the same output
+  // name both see existsSync() === false until one of them finishes writing, so a
+  // path claimed by an in-flight job counts as taken even before it exists on disk.
+  isPathReserved: (path: string) => boolean
+  reservePath: (path: string) => void
+  releasePath: (path: string) => void
   // Where a fresh library entry's file lives, and the rollback for an add that must
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
@@ -83,6 +89,9 @@ export async function runProcessTrack(
   // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
   // Apple Music add never leaves the temp conversion behind.
   let tmpDir: string | undefined
+  // The path reserved via deps.reservePath, if any — released in finally regardless
+  // of how the job ends.
+  let reserved: string | undefined
   try {
     if (deps.hasCoverSource(job)) {
       stage('cover')
@@ -116,6 +125,8 @@ export async function runProcessTrack(
       inPlace,
     )
     let target = outputPath
+    // musicOnly writes to a private tmpDir unique per job (via mkdtemp below), so it
+    // can't collide with another job and needs no reservation.
     if (musicOnly) {
       tmpDir = await deps.mkdtemp(join(tmpdir(), 'surco-'))
       target = join(tmpDir, basename(outputPath))
@@ -123,13 +134,24 @@ export async function runProcessTrack(
       isOutputConflict(
         outputPath,
         job.previousOutputPath,
-        deps.existsSync(outputPath),
+        deps.existsSync(outputPath) || deps.isPathReserved(outputPath),
         inPlace && (await deps.isSameFile(job.inputPath, outputPath)),
       )
     ) {
       const choice = await deps.confirmConflict(basename(outputPath))
       if (choice === 'skip') return { outputPath: '', inPlace, skipped: true }
-      if (choice === 'keepBoth') target = uniqueOutputPath(outputPath, deps.existsSync)
+      if (choice === 'keepBoth')
+        target = uniqueOutputPath(
+          outputPath,
+          (p) => deps.existsSync(p) || deps.isPathReserved(p),
+        )
+    }
+    // Claimed for the rest of the job — including the convertAudio write, which is
+    // exactly the window existsSync can't see yet (temp file + rename). Released in
+    // finally so a thrown error still frees it for the next job or retry.
+    if (!musicOnly) {
+      deps.reservePath(target)
+      reserved = target
     }
 
     // Create the target's folder (and any subfolders the file-name template asks for)
@@ -226,5 +248,6 @@ export async function runProcessTrack(
   } finally {
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })
+    if (reserved) deps.releasePath(reserved)
   }
 }
