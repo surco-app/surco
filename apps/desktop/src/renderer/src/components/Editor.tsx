@@ -26,6 +26,7 @@ import {
 import { matchTargetOf } from '../lib/autoMatch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { isStale } from '../lib/dirty'
+import { BULK_FIELDS } from '../lib/bulkEdit'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
@@ -592,6 +593,22 @@ export const Editor = memo(function Editor({
   const lossyOverwrite =
     overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
+  // One onChange per possible key, built once (setField/onChangeAllMeta never
+  // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
+  // memoized on this exact prop — closing over `key` inline inside
+  // buildFieldSpecs would hand every field a fresh onChange on every keystroke
+  // (fieldSpecs itself rebuilds every keystroke, since item.meta changed) and
+  // defeat that memo, re-rendering every visible field instead of just the one
+  // whose value moved.
+  const singleOnChange = useMemo(
+    () => new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)])),
+    [setField],
+  )
+  const bulkOnChange = useMemo(
+    () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
+    [onChangeAllMeta],
+  )
+
   // Built once per real input change. setField and tr are identity-stable, so a
   // keystroke only rebuilds the specs because item.meta changed — and the form's
   // memoized fields re-render just for the keys whose value actually moved.
@@ -613,8 +630,8 @@ export const Editor = memo(function Editor({
         albumCleanResult,
         titleFormatResult,
         tr,
-        setField,
-        onChangeAllMeta,
+        singleOnChange,
+        bulkOnChange,
       }),
     [
       isMulti,
@@ -631,8 +648,8 @@ export const Editor = memo(function Editor({
       albumCleanResult,
       titleFormatResult,
       tr,
-      setField,
-      onChangeAllMeta,
+      singleOnChange,
+      bulkOnChange,
     ],
   )
 

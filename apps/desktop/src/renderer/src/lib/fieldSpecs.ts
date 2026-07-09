@@ -65,8 +65,15 @@ export interface BuildFieldSpecsParams {
   // offered as a whole-value rewrite in the title field's menu.
   titleFormatResult: string | undefined
   tr: (key: string) => string
-  setField: (key: keyof TrackMetadata, value: string) => void
-  onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
+  // Pre-built per-key onChange, one map per mode — not setField/onChangeAllMeta
+  // themselves. Closing over `key` inline here (`(v) => setField(key, v)`) would
+  // hand every FieldSpec a fresh onChange on every call, even though setField
+  // itself never changes identity; Field.tsx is memoized on exactly this prop; a
+  // fresh one every render defeats that memo and re-renders every field on every
+  // keystroke. The maps are built once in Editor.tsx (see fieldOnChangeByKey) and
+  // reused across renders since setField/onChangeAllMeta are themselves stable.
+  singleOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
+  bulkOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
 }
 
 // The bulk and single forms render the same tree; only where a field's value comes
@@ -90,8 +97,8 @@ export function buildFieldSpecs({
   albumCleanResult,
   titleFormatResult,
   tr,
-  setField,
-  onChangeAllMeta,
+  singleOnChange,
+  bulkOnChange,
 }: BuildFieldSpecsParams): FieldSpec[] {
   return isMulti && selectedTracks
     ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
@@ -101,7 +108,7 @@ export function buildFieldSpecs({
           label: tr(`fields.${key}`),
           value: shared ?? '',
           placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
-          onChange: (v: string) => onChangeAllMeta?.({ [key]: v }),
+          onChange: bulkOnChange.get(key) ?? (() => {}),
           suggestions:
             key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
           multiSuggestions: key === 'grouping',
@@ -115,7 +122,7 @@ export function buildFieldSpecs({
             key: def.key,
             label: tr(`fields.${def.key}`),
             value: item.meta[def.key] ?? '',
-            onChange: (v: string) => setField(def.key, v),
+            onChange: singleOnChange.get(def.key) ?? (() => {}),
             // Only the free-text fields host the { } menu (see INSERT_TARGET_FIELDS);
             // the Field itself filters out the empty and the self entry.
             insertSources:
