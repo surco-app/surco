@@ -2,10 +2,10 @@
   {
     "version": "0.44",
     "date": "July 9, 2026",
-    "title": "See what you're spending, in your own language",
+    "title": "Sharper matches, in your own language",
     "items": [
       {
-        "text": "The Stats tab now shows conversion cost next to what you've donated, so you can see at a glance how your support compares.",
+        "text": "Auto-match now tries the release ID already stored on the file before falling back to a title search, landing on the right Discogs release more often.",
         "in": "0.44.0"
       },
       {

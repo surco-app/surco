@@ -2,10 +2,10 @@
   {
     "version": "0.44",
     "date": "9 de julio de 2026",
-    "title": "Ve lo que gastas, en tu propio idioma",
+    "title": "Coincidencias más precisas, en tu propio idioma",
     "items": [
       {
-        "text": "La pestaña Estadísticas ahora muestra el coste de conversión junto a lo que has donado, para que veas de un vistazo cómo se compara tu apoyo.",
+        "text": "El auto-match ahora prueba primero el ID de release ya guardado en el archivo antes de buscar por título, acertando con la edición correcta de Discogs más a menudo.",
         "in": "0.44.0"
       },
       {
