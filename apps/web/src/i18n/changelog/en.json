@@ -15,6 +15,10 @@
       {
         "text": "Fixed a crash on launch for Intel Macs.",
         "in": "0.44.1"
+      },
+      {
+        "text": "A file that already carries its Discogs release now opens straight to that exact disc — auto-match and the search panel stick to it instead of burying it in title-search results, and only fall back to a search when the stored release no longer fits.",
+        "in": "0.44.2"
       }
     ]
   },
