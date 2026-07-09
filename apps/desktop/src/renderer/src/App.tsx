@@ -91,7 +91,7 @@ import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { renderOutputName, titleFormatPatches } from './lib/outputName'
+import { emptyTitleFormatFields, renderOutputName, titleFormatPatches } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1269,11 +1269,18 @@ export default function App(): React.JSX.Element {
     if (!format.trim()) return
     const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
     const patches = titleFormatPatches(format, targets)
-    // A silent no-op reads as a broken button: when the pattern's fields are empty on
-    // these tracks (or it was already applied) the render equals the current title,
-    // so say exactly that instead of doing visibly nothing.
+    // A silent no-op reads as a broken button — say WHY nothing changed: name the
+    // pattern field that is empty on these tracks when that's the cause, else it
+    // means the titles already wear the format.
     if (patches.length === 0) {
-      setNotice(tr('notices.titleFormatNoChange'))
+      const missing = emptyTitleFormatFields(format, targets)
+      setNotice(
+        missing.length > 0
+          ? tr('notices.titleFormatMissing', {
+              fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+            })
+          : tr('notices.titleFormatApplied'),
+      )
       return
     }
     deriveTracksUndoable(patches)

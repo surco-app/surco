@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { renderOutputName, renderTitle, titleFormatPatches } from './outputName'
+import {
+  emptyTitleFormatFields,
+  renderOutputName,
+  renderTitle,
+  titleFormatPatches,
+} from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -177,5 +182,30 @@ describe('titleFormatPatches', () => {
       track('b', { title: 'Open (2026)', year: '2026' }),
     ])
     expect(patches).toEqual([{ id: 'a', meta: { title: 'Action (Base) (2026)' } }])
+  })
+})
+
+describe('emptyTitleFormatFields', () => {
+  const track = (id: string, patch: Partial<TrackMetadata>) => ({ id, meta: meta(patch) })
+
+  // The "why did nothing change" for the no-op toast: the pattern fields (other
+  // than {title}) that are empty on every selected track, in pattern order.
+  it('names the pattern fields that are empty on every track', () => {
+    const fields = emptyTitleFormatFields('({trackNumber}) {title} ({year})', [
+      track('a', { title: 'Stay With Me', trackNumber: '', year: '' }),
+    ])
+    expect(fields).toEqual(['trackNumber', 'year'])
+  })
+
+  it('does not name a field some track fills', () => {
+    const fields = emptyTitleFormatFields('({trackNumber}) {title}', [
+      track('a', { title: 'A', trackNumber: '' }),
+      track('b', { title: 'B', trackNumber: 'B2' }),
+    ])
+    expect(fields).toEqual([])
+  })
+
+  it('never names {title} itself', () => {
+    expect(emptyTitleFormatFields('{title}', [track('a', { title: '' })])).toEqual([])
   })
 })

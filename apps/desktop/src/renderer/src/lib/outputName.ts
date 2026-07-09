@@ -78,3 +78,20 @@ export function titleFormatPatches(
     return [{ id: t.id, meta: { title } }]
   })
 }
+
+// The pattern's {tokens} (minus {title}) that are empty on EVERY given track, in
+// pattern order — the concrete "why" behind a no-op apply, so the toast can name
+// the missing field ("Track No. is empty") instead of a generic "nothing changed".
+// {title} is the field being rebuilt, not an input the user could go fill.
+export function emptyTitleFormatFields(
+  format: string,
+  tracks: { id: string; meta: TrackMetadata }[],
+): string[] {
+  const keys = [...format.matchAll(/\{(\w+)\}/g)].map((m) => m[1])
+  return [...new Set(keys)].filter(
+    (key) =>
+      key !== 'title' &&
+      tracks.length > 0 &&
+      tracks.every((t) => !(t.meta as unknown as Record<string, string>)[key]?.trim()),
+  )
+}
