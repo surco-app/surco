@@ -109,7 +109,7 @@
     "numberedTracks_one": "{{count}} faixa numerada",
     "numberedTracks_other": "{{count}} faixas numeradas",
     "titleFormatted_other": "{{count}} títulos formatados",
-    "titleFormatNoChange": "O formato do título não mudou nada — seus campos estão vazios nessas faixas ou já estava aplicado",
+    "titleFormatNoChange": "O formato não muda nada aqui",
     "titleFormatted_one": "{{count}} título formatado",
     "copiedPath": "Caminho copiado",
     "copiedFilename": "Nome do arquivo copiado",

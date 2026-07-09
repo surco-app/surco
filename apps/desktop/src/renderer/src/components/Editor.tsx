@@ -29,7 +29,7 @@ import { isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { renderOutputName, renderTitle } from '../lib/outputName'
+import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { librarySourceOf } from '../lib/librarySource'
 import { isMacOS } from '../lib/platform'
 import { isLowResCover, formatKHz } from '../lib/quality'
@@ -473,12 +473,13 @@ export const Editor = memo(function Editor({
   const albumCleanResult = albumClean && albumClean !== albumCleanSource ? albumClean : undefined
 
   // The title rebuilt from the settings' title format, for the title menu's one-shot
-  // rewrite. Only offered when a format is configured and the result differs; note a
-  // prefix pattern re-applied still differs (it stacks), so the row's preview showing
-  // that stacked result — plus ⌘Z — is what stands between the user and a double apply.
-  const titleFormatted = isMulti || !titleFormat.trim() ? '' : renderTitle(titleFormat, item.meta)
+  // rewrite. titleFormatPatches carries the shared no-op rules: nothing to offer when
+  // the render is empty/unchanged OR the title already wears the pattern's prefix and
+  // suffix — so the row can never stack "(B2) (B2) …" on a second apply.
   const titleFormatResult =
-    titleFormatted && titleFormatted !== (item.meta.title ?? '') ? titleFormatted : undefined
+    isMulti || !titleFormat.trim()
+      ? undefined
+      : titleFormatPatches(titleFormat, [item])[0]?.meta.title
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.

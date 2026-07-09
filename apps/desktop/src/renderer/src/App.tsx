@@ -1262,9 +1262,8 @@ export default function App(): React.JSX.Element {
   })
   // Rewrites each selected title from the settings' title format — the same one-shot
   // rebuild the title field's ⋯ menu offers, over the whole selection. Tracks whose
-  // rendered title is empty or unchanged are skipped; a prefix pattern re-run still
-  // stacks (the render differs each time), which matches mp3tag's converter and is
-  // why the action is undoable and reports how many titles it touched.
+  // rendered title is empty, unchanged or already wearing the pattern are skipped
+  // (titleFormatPatches), so a double press never stacks the prefix.
   const applyTitleFormat = useStableCallback(() => {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return

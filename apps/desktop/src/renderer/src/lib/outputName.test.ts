@@ -158,4 +158,24 @@ describe('titleFormatPatches', () => {
     ])
     expect(patches).toEqual([])
   })
+
+  // Pressing the T button twice used to stack the prefix ("(B2) (B2) Action").
+  // A title that already carries the pattern's rendered prefix and suffix is
+  // treated as formatted and skipped — re-applying is idempotent.
+  it('skips a title the pattern already shaped, so re-applying never stacks', () => {
+    const patches = titleFormatPatches('({trackNumber}) {title}', [
+      track('a', { title: '(B2) Action', trackNumber: 'B2' }),
+    ])
+    expect(patches).toEqual([])
+  })
+
+  it('still patches when only part of the pattern is present', () => {
+    // "(B2)" appearing mid-title is not the pattern's prefix; only a real
+    // prefix+suffix match counts as already formatted.
+    const patches = titleFormatPatches('{title} ({year})', [
+      track('a', { title: 'Action (Base)', year: '2026' }),
+      track('b', { title: 'Open (2026)', year: '2026' }),
+    ])
+    expect(patches).toEqual([{ id: 'a', meta: { title: 'Action (Base) (2026)' } }])
+  })
 })

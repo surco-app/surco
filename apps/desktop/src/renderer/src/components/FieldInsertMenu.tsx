@@ -20,9 +20,8 @@ interface Props {
   // The editor owns the cross-field fallback, so the menu just renders it when set.
   cleanResult?: string
   // The field's value rebuilt from the settings' title format (title only), already
-  // resolved and only passed when it changes something. A one-shot rewrite on
-  // purpose: the pattern references the field itself, so applying it automatically
-  // (or twice) would stack the prefix.
+  // resolved and only passed when it changes something — a title already wearing
+  // the pattern gets no row, so a second apply can never stack the prefix.
   formatResult?: string
   inputRef: React.RefObject<HTMLInputElement | null>
   onChange: (value: string) => void

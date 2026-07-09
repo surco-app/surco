@@ -2336,13 +2336,22 @@ describe('Editor insert from field', () => {
 
   it('offers no title-format row when the pattern leaves the title as it is', () => {
     // A no-op row ("apply" that changes nothing) would make the menu feel broken.
-    // Note this only catches exact no-ops: re-applying a prefix pattern to an
-    // already-formatted title DOES change it again (it stacks), and the row's
-    // preview showing that stacked result is the user's guard, plus ⌘Z.
     renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
       visibleFields: ['title'],
       titleFormat: '{title}',
     })
+    fireEvent.click(screen.getByTestId('field-insert-title'))
+    expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
+  })
+
+  it('offers no title-format row when the title already wears the pattern', () => {
+    // Re-applying must never stack "(B2) (B2) …": an already-formatted title is a
+    // no-op for the row, the T button and the ⌘K command alike.
+    renderEditor(
+      { id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } },
+      'wav',
+      { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
+    )
     fireEvent.click(screen.getByTestId('field-insert-title'))
     expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
   })

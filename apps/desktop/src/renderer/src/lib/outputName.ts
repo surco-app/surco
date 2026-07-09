@@ -43,16 +43,38 @@ export function renderTitle(format: string, meta: TrackMetadata): string {
     .trim()
 }
 
+// Stands in for {title} when probing what a pattern wraps AROUND the title; a
+// control character so it can never collide with real tag text, and it passes
+// renderTitle's cleanup untouched (it is neither bracket, separator nor space).
+const TITLE_SENTINEL = '\u0001'
+
 // The per-track rename patches an "apply the title format" pass produces: one entry
 // per track whose rendered title is non-empty AND different from the current one.
-// Pure and shared by the editor's T button and the ⌘K command, so both can tell a
-// real pass from a no-op (empty pattern fields, or already applied) and say so.
+// A title that already carries the pattern's rendered prefix and suffix is treated
+// as formatted and skipped, so re-applying is idempotent — pressing the T button
+// twice must never stack "(B2) (B2) …". Pure and shared by the editor's T button,
+// the title menu's row and the ⌘K command, so every trigger agrees on what counts
+// as a no-op and the caller can say so instead of silently doing nothing.
 export function titleFormatPatches(
   format: string,
   tracks: { id: string; meta: TrackMetadata }[],
 ): { id: string; meta: { title: string } }[] {
   return tracks.flatMap((t) => {
+    const current = t.meta.title ?? ''
     const title = renderTitle(format, t.meta)
-    return title && title !== (t.meta.title ?? '') ? [{ id: t.id, meta: { title } }] : []
+    if (!title || title === current) return []
+    const wrapped = renderTitle(format, { ...t.meta, title: TITLE_SENTINEL })
+    const cut = wrapped.indexOf(TITLE_SENTINEL)
+    if (cut !== -1) {
+      const prefix = wrapped.slice(0, cut)
+      const suffix = wrapped.slice(cut + TITLE_SENTINEL.length)
+      const alreadyFormatted =
+        (prefix !== '' || suffix !== '') &&
+        current.length >= prefix.length + suffix.length &&
+        current.startsWith(prefix) &&
+        current.endsWith(suffix)
+      if (alreadyFormatted) return []
+    }
+    return [{ id: t.id, meta: { title } }]
   })
 }
