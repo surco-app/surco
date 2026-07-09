@@ -1,0 +1,27 @@
+# Weekly checks, but grouped so the noise stays at two PRs at most: Electron on
+# its own (its patch releases carry Chromium security fixes and should not wait
+# for a batch), everything else as one batch PR.
+#
+# NOTE: a PR that bumps `electron` only updates package.json — the pinned
+# `electronVersion` in apps/desktop/electron-builder.yml must be bumped by hand
+# in the same merge, or releases would bundle the old runtime.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      electron:
+        patterns:
+          - electron
+      npm-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - electron
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
