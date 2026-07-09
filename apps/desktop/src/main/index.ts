@@ -516,6 +516,14 @@ function registerIpc(): void {
     }
   })
 
+  // Renderer crashes forwarded into the shared log file, so a "the app went blank"
+  // report has something a user can attach. Validated like stats:record — this
+  // channel takes renderer input.
+  ipcMain.on('log:renderer', (_e, message: unknown, stack?: unknown) => {
+    if (typeof message !== 'string') return
+    log.error('[renderer]', message, typeof stack === 'string' ? stack : '')
+  })
+
   // The reopen-last-session pair: the renderer saves the loaded paths and staged
   // edits as they change and asks for them back at launch to offer restoring the
   // previous crate — edits included, so a crash never loses unapplied metadata.

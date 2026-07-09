@@ -24,6 +24,9 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     this.setState({ info: info.componentStack ?? '' })
     console.error(error, info.componentStack)
+    // console.error dies with the window; the log file is what a user can attach
+    // to a report, so the crash has to reach main too.
+    window.api.logError(error.message, `${error.stack ?? ''}${info.componentStack ?? ''}`)
   }
 
   render(): ReactNode {

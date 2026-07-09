@@ -121,6 +121,9 @@ export interface Api {
   openFile: (path: string) => Promise<string>
   trashFile: (path: string) => Promise<void>
   copyText: (text: string) => Promise<void>
+  // Fire-and-forget: renderer crashes land in main's log file, the only forensic
+  // artifact in an app with no telemetry.
+  logError: (message: string, stack?: string) => void
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
   loudness: (path: string) => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
