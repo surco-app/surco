@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.45",
+    "date": "9 de julio de 2026",
+    "title": "La búsqueda entiende tus títulos",
+    "items": [
+      {
+        "text": "Si usas un formato de título como «(A2) Título (1998)», el emparejado ahora lo reconoce: deshace tu propio patrón al buscar y puntuar, y una pista ya renombrada vuelve a encontrar su disco a la primera.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "Nuevo ajuste en Búsqueda: palabras a ignorar (por defecto «vinyl, rip»). Las firmas de rip y marcas en los títulos se ignoran al buscar y emparejar — tus tags no se modifican nunca.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "Una pista con su release de Discogs guardado ahora se auto-empareja directa cuando el título encaja, también en discos que no listan duraciones.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "El filtro de la lista ahora puede separar las pistas emparejadas por su fuente: Discogs o Bandcamp.",
+        "in": "0.45.0"
+      }
+    ]
+  },
+  {
     "version": "0.44",
     "date": "9 de julio de 2026",
     "title": "Coincidencias más precisas, en tu propio idioma",

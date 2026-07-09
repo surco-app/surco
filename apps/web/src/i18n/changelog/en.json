@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.45",
+    "date": "July 9, 2026",
+    "title": "Search that understands your titles",
+    "items": [
+      {
+        "text": "If you use a title format like “(A2) Title (1998)”, matching now recognizes it: your own pattern is undone when searching and scoring, so a renamed track finds its record on the first try.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "New Search setting: words to ignore (defaults to “vinyl, rip”). Rip signatures and watermarks in titles are skipped when searching and matching — your tags are never changed.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "A track that carries its saved Discogs release now auto-matches directly when the title fits, including records that list no durations.",
+        "in": "0.45.0"
+      },
+      {
+        "text": "The list filter can now split matched tracks by their source: Discogs or Bandcamp.",
+        "in": "0.45.0"
+      }
+    ]
+  },
+  {
     "version": "0.44",
     "date": "July 9, 2026",
     "title": "Sharper matches, in your own language",
