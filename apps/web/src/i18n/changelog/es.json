@@ -11,6 +11,10 @@
       {
         "text": "El menú nativo y los diálogos de la app ahora siguen el idioma que fijaste en Ajustes, en vez de usar el del sistema.",
         "in": "0.44.0"
+      },
+      {
+        "text": "Arreglado un cuelgue al abrir la app en Mac Intel.",
+        "in": "0.44.1"
       }
     ]
   },

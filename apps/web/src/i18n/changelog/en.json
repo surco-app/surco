@@ -11,6 +11,10 @@
       {
         "text": "The app's native menu and dialogs now follow the language you pinned in Settings, instead of falling back to your system's locale.",
         "in": "0.44.0"
+      },
+      {
+        "text": "Fixed a crash on launch for Intel Macs.",
+        "in": "0.44.1"
       }
     ]
   },
