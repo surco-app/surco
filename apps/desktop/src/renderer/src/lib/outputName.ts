@@ -95,3 +95,23 @@ export function emptyTitleFormatFields(
       tracks.every((t) => !(t.meta as unknown as Record<string, string>)[key]?.trim()),
   )
 }
+
+// Everything one "apply the title format" pass needs to report honestly: the
+// patches to apply, how many tracks were skipped (no-op: empty render, unchanged,
+// or already wearing the pattern), and — when nothing at all changed — which
+// pattern fields are empty on every track, as the concrete "why".
+export function titleFormatSummary(
+  format: string,
+  tracks: { id: string; meta: TrackMetadata }[],
+): {
+  patches: { id: string; meta: { title: string } }[]
+  skipped: number
+  missingFields: string[]
+} {
+  const patches = titleFormatPatches(format, tracks)
+  return {
+    patches,
+    skipped: tracks.length - patches.length,
+    missingFields: patches.length === 0 ? emptyTitleFormatFields(format, tracks) : [],
+  }
+}

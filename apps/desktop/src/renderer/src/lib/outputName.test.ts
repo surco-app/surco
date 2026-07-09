@@ -5,6 +5,7 @@ import {
   renderOutputName,
   renderTitle,
   titleFormatPatches,
+  titleFormatSummary,
 } from './outputName'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
@@ -207,5 +208,32 @@ describe('emptyTitleFormatFields', () => {
 
   it('never names {title} itself', () => {
     expect(emptyTitleFormatFields('{title}', [track('a', { title: '' })])).toEqual([])
+  })
+})
+
+describe('titleFormatSummary', () => {
+  const track = (id: string, patch: Partial<TrackMetadata>) => ({ id, meta: meta(patch) })
+
+  // One pass over a mixed selection: the caller needs the patches AND how many
+  // tracks were skipped, so the notice can say "formatted 1 of 3" instead of
+  // celebrating a full pass that silently left tracks out.
+  it('reports patches and skipped count over a mixed selection', () => {
+    const s = titleFormatSummary('({trackNumber}) {title}', [
+      track('a', { title: 'Action', trackNumber: 'B2' }),
+      track('b', { title: 'Open', trackNumber: '' }),
+      track('c', { title: '(A1) Close', trackNumber: 'A1' }),
+    ])
+    expect(s.patches).toEqual([{ id: 'a', meta: { title: '(B2) Action' } }])
+    expect(s.skipped).toBe(2)
+    expect(s.missingFields).toEqual([])
+  })
+
+  it('names the missing fields only when they are empty on every track', () => {
+    const s = titleFormatSummary('({trackNumber}) {title}', [
+      track('a', { title: 'Action', trackNumber: '' }),
+    ])
+    expect(s.patches).toEqual([])
+    expect(s.skipped).toBe(1)
+    expect(s.missingFields).toEqual(['trackNumber'])
   })
 })

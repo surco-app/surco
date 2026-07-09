@@ -91,7 +91,7 @@ import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { emptyTitleFormatFields, renderOutputName, titleFormatPatches } from './lib/outputName'
+import { renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1268,23 +1268,29 @@ export default function App(): React.JSX.Element {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return
     const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
-    const patches = titleFormatPatches(format, targets)
+    const { patches, skipped, missingFields } = titleFormatSummary(format, targets)
     // A silent no-op reads as a broken button — say WHY nothing changed: name the
-    // pattern field that is empty on these tracks when that's the cause, else it
-    // means the titles already wear the format.
+    // pattern field that is empty on these tracks when that's the cause (worded by
+    // track count, "this track" vs "these tracks"), else the titles already wear
+    // the format. And a partial pass must not celebrate as a full one: report how
+    // many tracks were left untouched.
     if (patches.length === 0) {
-      const missing = emptyTitleFormatFields(format, targets)
       setNotice(
-        missing.length > 0
+        missingFields.length > 0
           ? tr('notices.titleFormatMissing', {
-              fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+              fields: missingFields.map((key) => tr(`fields.${key}`)).join(', '),
+              count: targets.length,
             })
-          : tr('notices.titleFormatApplied'),
+          : tr('notices.titleFormatApplied', { count: targets.length }),
       )
       return
     }
     deriveTracksUndoable(patches)
-    setNotice(tr('notices.titleFormatted', { count: patches.length }))
+    setNotice(
+      skipped > 0
+        ? tr('notices.titleFormattedPartial', { count: patches.length, skipped })
+        : tr('notices.titleFormatted', { count: patches.length }),
+    )
   })
   // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
   // silence would leave the user unsure whether anything was restored.
