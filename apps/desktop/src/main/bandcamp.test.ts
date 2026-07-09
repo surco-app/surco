@@ -139,6 +139,35 @@ describe('search', () => {
   })
 })
 
+describe('getRelease — SSRF guard', () => {
+  // The renderer names this URL (it comes back from search results the user
+  // clicked, or could be forged by a compromised renderer), and a compromised
+  // renderer could point it at a cloud metadata service or an internal service
+  // instead of a real Bandcamp page. The trusted main process must refuse to
+  // fetch it before any network call, the same guard coverDownload.ts already
+  // applies to cover URLs.
+  it('refuses to fetch a loopback URL without ever calling fetch', async () => {
+    const fn = vi.fn()
+    vi.stubGlobal('fetch', fn)
+    await expect(getRelease('http://127.0.0.1:8080/admin')).rejects.toThrow()
+    expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('refuses to fetch a cloud metadata / link-local address', async () => {
+    const fn = vi.fn()
+    vi.stubGlobal('fetch', fn)
+    await expect(getRelease('http://169.254.169.254/latest/meta-data/')).rejects.toThrow()
+    expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('refuses a non-http(s) scheme', async () => {
+    const fn = vi.fn()
+    vi.stubGlobal('fetch', fn)
+    await expect(getRelease('file:///etc/passwd')).rejects.toThrow()
+    expect(fn).not.toHaveBeenCalled()
+  })
+})
+
 describe('getRelease', () => {
   const tralbum = {
     id: 99,

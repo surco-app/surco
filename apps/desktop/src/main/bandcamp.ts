@@ -1,6 +1,7 @@
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
+import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
 
 // Bandcamp has no public catalog API. Search rides the same autocomplete endpoint the
@@ -208,6 +209,10 @@ const releaseCache = new Map<string, Release>()
 // A Bandcamp release is addressed by its page URL (not a numeric id): the URL is the one
 // thing the autocomplete hands back that resolves to the full album/track data.
 export async function getRelease(url: string, priority?: SearchPriority): Promise<Release> {
+  // The renderer names this URL (a search result, or a compromised renderer
+  // forging one) and it reaches fetch from the trusted main process — the same
+  // SSRF primitive coverDownload.ts already guards against for cover art.
+  if (isBlockedFetchUrl(url)) throw new Error('URL de Bandcamp no permitida')
   const cached = releaseCache.get(url)
   if (cached) return cached
   return activity.track(
