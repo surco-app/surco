@@ -5,9 +5,12 @@ import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL } from '../../lib/donate'
 import {
+  formatEuroCents,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
   nextMilestone,
+  ROI_COST_CENTS,
+  ROI_DONATIONS_CENTS,
   timeSavedSeconds,
 } from '../../lib/stats'
 import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
@@ -77,12 +80,12 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
         <>
-          <p data-testid="stats-count" className="text-5xl font-semibold tabular-nums text-fg">
+          <p data-testid="stats-count" className="text-4xl font-semibold tabular-nums text-fg">
             {conversionCount}
           </p>
-          <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
+          <p className="mt-0.5 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
           {milestone !== null && (
-            <div data-testid="stats-milestone" className="mt-4 w-full max-w-xs">
+            <div data-testid="stats-milestone" className="mt-3 w-full max-w-xs">
               <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
                 <div
                   className="h-full rounded-full bg-[var(--color-accent)]"
@@ -100,12 +103,12 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </>
       )}
       {anyActivity ? (
-        <div className="mt-5 grid w-full max-w-xl grid-cols-5 gap-1.5">
+        <div className="mt-3 grid w-full max-w-xl grid-cols-5 gap-1.5">
           {CELLS.map(({ key, icon: Icon }) => (
             <div
               key={key}
               data-testid={`stats-${key}`}
-              className="rounded-lg border border-[var(--color-line)] px-1 py-2"
+              className="rounded-lg border border-[var(--color-line)] px-1 py-1.5"
             >
               <Icon size={14} className="mx-auto text-fg-dim" aria-hidden="true" />
               <p className="mt-1 text-lg font-semibold tabular-nums text-fg">{stats[key]}</p>
@@ -121,20 +124,58 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </p>
       )}
       {conversionCount > 0 && (
-        <>
-          <p data-testid="stats-time-saved" className="mt-5 text-lg text-fg">
-            {tr('settings.stats.timeSaved', {
-              time: formatTimeSaved(timeSavedSeconds(conversionCount)),
-            })}
-          </p>
-          <p className="mt-1 text-xs text-fg-dim">
+        <p data-testid="stats-time-saved" className="mt-3 text-sm text-fg">
+          {tr('settings.stats.timeSaved', {
+            time: formatTimeSaved(timeSavedSeconds(conversionCount)),
+          })}
+          <span className="text-fg-dim">
+            {' '}
+            (
             {tr('settings.stats.perTrack', {
               minutes: MANUAL_SECONDS_PER_CONVERSION / 60,
             })}
-          </p>
-        </>
+            )
+          </span>
+        </p>
       )}
-      <p className="mt-5 text-sm text-fg-muted">{tr('settings.stats.donate')}</p>
+
+      <div className="mt-4 w-full max-w-md border-t border-[var(--color-line)] pt-4">
+        <p className="text-xs font-medium text-fg-muted">{tr('settings.stats.roiTitle')}</p>
+        <div className="mt-2.5 space-y-2">
+          <div>
+            <div className="flex items-baseline justify-between text-xs text-fg-dim">
+              <span>{tr('settings.stats.roiCost')}</span>
+              <span data-testid="stats-roi-cost" className="tabular-nums text-fg">
+                {formatEuroCents(ROI_COST_CENTS)}
+              </span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
+              <div className="h-full w-full rounded-full bg-[var(--color-accent)]" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between text-xs text-fg-dim">
+              <span>{tr('settings.stats.roiDonations')}</span>
+              <span data-testid="stats-roi-donations" className="tabular-nums text-fg">
+                {formatEuroCents(ROI_DONATIONS_CENTS)}
+              </span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-good)]"
+                style={{
+                  width: `${Math.max(1, Math.min(100, (ROI_DONATIONS_CENTS / ROI_COST_CENTS) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p data-testid="stats-roi-donate" className="mt-3 max-w-md text-xs text-fg-muted">
+        {tr('settings.stats.roiDonate')}
+      </p>
+
       <div className="mt-3 flex items-center gap-2">
         <a
           data-testid="stats-donate"

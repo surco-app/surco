@@ -83,4 +83,21 @@ describe('StatsTab', () => {
     render(<StatsTab settings={withStats()} />)
     expect(screen.queryByTestId('stats-share')).toBeNull()
   })
+
+  // ROI shows what Surco cost to build against what it has received in donations —
+  // the ask in "donate" becomes a concrete progress bar instead of an abstract plea.
+  it('shows cost and donations progress bars', () => {
+    render(<StatsTab settings={withStats()} />)
+    expect(screen.getByTestId('stats-roi-cost')).toHaveTextContent('3200')
+    expect(screen.getByTestId('stats-roi-donations')).toHaveTextContent('0')
+    expect(screen.getByTestId('stats-roi-donate')).toBeInTheDocument()
+  })
+
+  // Present even in the empty state — ROI isn't tied to this install's own activity,
+  // it's project-wide, so it must survive alongside (not depend on) stats-empty.
+  it('shows the ROI section even with no activity yet', () => {
+    render(<StatsTab settings={withStats()} />)
+    expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('stats-roi-cost')).toBeInTheDocument()
+  })
 })

@@ -480,11 +480,14 @@
       "timeSaved": "Du hast rund {{time}} gespart",
       "perTrack": "≈ {{minutes}} Min. Handarbeit pro Track",
       "empty": "Noch nichts konvertiert. Sobald du loslegst, siehst du hier, wie viel Zeit dir Surco spart.",
-      "donate": "Wenn Surco dir Stunden spart, unterstütz die Entwicklung",
       "donateCta": "Mit PayPal spenden",
       "share": "Bild teilen",
       "shareTitle": "Meine Musik in Zahlen",
-      "shareFooter": "Erstellt mit Surco — getsurco.app"
+      "shareFooter": "Erstellt mit Surco — getsurco.app",
+      "roiTitle": "Kosten vs. Spenden",
+      "roiCost": "Geschätzte Baukosten",
+      "roiDonations": "Bisher gespendet",
+      "roiDonate": "Wenn Surco dir Zeit spart, unterstütz es — die Entwicklung kostet Geld"
     },
     "theme": "Erscheinungsbild",
     "themes": {
