@@ -21,17 +21,12 @@ import electronUpdater from 'electron-updater'
 import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
-import type {
-  CoverExportJob,
-  DockIconFrames,
-  ProcessJob,
-  SessionEdit,
-  Settings,
-} from '../shared/types'
+import type { CoverExportJob, ProcessJob, SessionEdit, Settings } from '../shared/types'
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
+import { parseDockFrames } from './dockFrames'
 import {
   addToAppleMusic,
   appleMusicEntryLocation,
@@ -472,9 +467,11 @@ function registerIpc(): void {
     e.returnValue = app.getVersion()
   })
 
-  ipcMain.on('dock:frames', (_e, payload: DockIconFrames) => {
-    dockResting = nativeImage.createFromDataURL(payload.resting)
-    dockFrames = payload.frames.map((frame) => nativeImage.createFromDataURL(frame))
+  ipcMain.on('dock:frames', (_e, payload: unknown) => {
+    const parsed = parseDockFrames(payload)
+    if (!parsed) return
+    dockResting = nativeImage.createFromDataURL(parsed.resting)
+    dockFrames = parsed.frames.map((frame) => nativeImage.createFromDataURL(frame))
     // Frames can land after the first play already started (they rasterize async),
     // so apply the current state instead of waiting for the next play/pause.
     syncDockAnimation()
