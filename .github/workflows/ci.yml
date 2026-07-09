@@ -22,15 +22,16 @@ jobs:
           node-version: 24
           cache: npm
 
-      # The same fresh-install dance the release uses: npm's optionalDependencies bug
-      # (npm/cli#4828) skips the platform rollup binary from a cross-OS lockfile, and
-      # ffmpeg-static's postinstall download from GitHub Releases intermittently 504s,
-      # so retry the whole install a few times.
+      # Lockfile-pinned install: the root package.json pins every platform's rollup
+      # binary into the lock (npm/cli#4828 would otherwise skip them cross-OS), so the
+      # build uses the exact committed dependency tree instead of resolving fresh from
+      # the registry. ffmpeg-static's postinstall download from GitHub Releases
+      # intermittently 504s, so retry the install a few times.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            rm -f package-lock.json && npm install && exit 0
-            echo "npm install failed (attempt $attempt), retrying in 15s..."
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
             sleep 15
           done
           exit 1

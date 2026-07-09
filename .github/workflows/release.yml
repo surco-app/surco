@@ -68,10 +68,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      # npm's optionalDependencies bug (npm/cli#4828) makes a lockfile-pinned
-      # install skip the platform-specific rollup binary when the lockfile was
-      # generated on another OS. Installing fresh lets npm resolve the right one
-      # for each runner (same workaround the web build uses on Vercel).
+      # Lockfile-pinned install: the shipped binaries must build from the exact
+      # committed dependency tree, not whatever the registry resolves on release
+      # day. The root package.json pins every platform's rollup binary into the
+      # lock (npm/cli#4828 would otherwise skip them cross-OS).
       # ffmpeg-static's postinstall downloads its binary from GitHub Releases,
       # which intermittently 504s. Retry the whole install a few times so a single
       # transient network failure doesn't kill the release.
@@ -79,8 +79,8 @@ jobs:
         shell: bash
         run: |
           for attempt in 1 2 3; do
-            rm -f package-lock.json && npm install && exit 0
-            echo "npm install failed (attempt $attempt), retrying in 15s..."
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
             sleep 15
           done
           exit 1
