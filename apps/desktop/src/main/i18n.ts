@@ -264,3 +264,12 @@ export function createMenuT(locale: string): (key: keyof MenuStrings) => string 
   const lang = pickMenuLang(locale)
   return (key) => strings[lang][key]
 }
+
+// The effective locale for the native menu and dialogs: a pinned language (Settings)
+// wins over the OS, matching resolveLocale's contract for the renderer UI
+// (i18n/locale.ts) — a user who sets Surco to Spanish expects the menu bar and
+// native dialogs (conflict prompts, Engine DJ quit, updater messages) to follow,
+// not stay on whatever language macOS itself is running in.
+export function resolveMenuLocale(pref: 'system' | MenuLang, systemLocale: string): string {
+  return pref === 'system' ? systemLocale : pref
+}

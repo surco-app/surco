@@ -42,7 +42,7 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { expandPaths } from './expand'
 import { convertAudio } from './ffmpeg'
-import { createMenuT } from './i18n'
+import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createActiveConversions } from './activeConversions'
 import { createMediaAccess } from './mediaAccess'
@@ -130,6 +130,13 @@ function sanitizeFilename(name: string): string {
     .trim()
 }
 
+// The locale every native menu/dialog string resolves against: a language pinned
+// in Settings wins over the OS, so "Surco in Spanish" means the menu bar and
+// native dialogs too, not just the renderer UI.
+function menuLocale(): string {
+  return resolveMenuLocale(getSettings().language, app.getLocale())
+}
+
 // The pending "Engine DJ is open — close it?" prompt, shared so a bulk conversion's
 // parallel tracks (each hitting the Engine add at once) raise ONE dialog and all wait
 // on the same answer. Cleared once settled: the next conversion re-checks the process,
@@ -142,7 +149,7 @@ let engineQuitPrompt: Promise<boolean> | null = null
 async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean> {
   if (!(await isEngineDjRunning())) return true
   engineQuitPrompt ??= (async () => {
-    const t = createMenuT(app.getLocale())
+    const t = createMenuT(menuLocale())
     const opts = {
       type: 'warning' as const,
       message: t('engineQuitMessage'),
@@ -167,7 +174,7 @@ async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean>
 let manualUpdateCheck = false
 
 function checkForUpdates(win: BrowserWindow): void {
-  const t = createMenuT(app.getLocale())
+  const t = createMenuT(menuLocale())
   if (!app.isPackaged) {
     dialog.showMessageBox(win, { type: 'info', message: t('updatesDevOnly') })
     return
@@ -180,7 +187,7 @@ function checkForUpdates(win: BrowserWindow): void {
 }
 
 function buildAppMenu(win: BrowserWindow): void {
-  const t = createMenuT(app.getLocale())
+  const t = createMenuT(menuLocale())
   // Every custom item triggers a command by id, the same registry the palette
   // and keyboard shortcuts use. Items whose accelerator is already owned by the
   // renderer keymap pass registerAccelerator:false so the shortcut shows in the
@@ -511,9 +518,10 @@ function registerIpc(): void {
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
     const next = saveSettings(sanitizeSettingsPatch(patch))
-    // Rebinding a shortcut changes the menu accelerators, so rebuild the menu from the
-    // freshly-saved overrides (buildAppMenu re-reads them via getSettings).
-    if (patch.shortcutOverrides !== undefined) {
+    // Rebinding a shortcut changes the menu accelerators, and pinning a language
+    // changes every menu label — both need the menu rebuilt from the freshly-saved
+    // settings (buildAppMenu re-reads shortcuts and menuLocale re-reads language).
+    if (patch.shortcutOverrides !== undefined || patch.language !== undefined) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
@@ -779,7 +787,7 @@ function registerIpc(): void {
       addToEngineDj: async (target, meta, coverPath) => {
         const win = BrowserWindow.fromWebContents(e.sender)
         if (!(await ensureEngineDjClosed(win))) {
-          throw new Error(createMenuT(app.getLocale())('engineOpenError'))
+          throw new Error(createMenuT(menuLocale())('engineOpenError'))
         }
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         return activity.track(
@@ -801,7 +809,7 @@ function registerIpc(): void {
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: async (outputName) => {
-        const t = createMenuT(app.getLocale())
+        const t = createMenuT(menuLocale())
         const win = BrowserWindow.fromWebContents(e.sender)
         const opts = {
           type: 'warning' as const,
@@ -1075,7 +1083,7 @@ app.whenReady().then(() => {
       if (!manualUpdateCheck) return
       manualUpdateCheck = false
       const target = liveWindow()
-      const opts = { type: 'info' as const, message: createMenuT(app.getLocale())('upToDate') }
+      const opts = { type: 'info' as const, message: createMenuT(menuLocale())('upToDate') }
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
     })
@@ -1091,7 +1099,7 @@ app.whenReady().then(() => {
       if (!manualUpdateCheck) return
       manualUpdateCheck = false
       const target = liveWindow()
-      const opts = { type: 'error' as const, message: createMenuT(app.getLocale())('updateError') }
+      const opts = { type: 'error' as const, message: createMenuT(menuLocale())('updateError') }
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
     })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMenuT, pickMenuLang } from './i18n'
+import { createMenuT, pickMenuLang, resolveMenuLocale } from './i18n'
 
 describe('pickMenuLang', () => {
   // The native menu lives in the main process, which has no access to the
@@ -50,5 +50,24 @@ describe('createMenuT', () => {
     expect(createMenuT('en')('faq')).toBe('Frequently Asked Questions')
     expect(createMenuT('es')('guide')).toBe('Guía de uso')
     expect(createMenuT('en')('guide')).toBe('User guide')
+  })
+})
+
+describe('resolveMenuLocale', () => {
+  // A user who pins a language in Settings expects the native menu and dialogs to
+  // follow it too — before this, every native surface read app.getLocale() (the
+  // OS language) directly, so a macOS-in-English user who set Surco to Spanish saw
+  // a Spanish UI with an English menu bar.
+  it('uses the pinned language regardless of the OS locale', () => {
+    expect(resolveMenuLocale('es', 'en-US')).toBe('es')
+    expect(resolveMenuLocale('en', 'es-ES')).toBe('en')
+    expect(resolveMenuLocale('de', 'fr-FR')).toBe('de')
+    expect(resolveMenuLocale('pt-BR', 'en-US')).toBe('pt-BR')
+  })
+
+  // 'system' (the default) is the one case that should still follow the OS —
+  // matching resolveLocale's contract in the renderer (i18n/locale.ts).
+  it('follows the OS locale when the preference is "system"', () => {
+    expect(resolveMenuLocale('system', 'de-DE')).toBe('de-DE')
   })
 })
