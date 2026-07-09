@@ -37,4 +37,24 @@ describe('createActiveConversions', () => {
     conversions.cancel('job1')
     expect(() => conversions.unregister('job1')).not.toThrow()
   })
+
+  // Quitting the whole app must not leave ffmpeg children orphaned to keep
+  // writing after the process that owns them is gone — will-quit calls this for
+  // every conversion still in flight.
+  it('kills every registered process on killAll and forgets them all', () => {
+    const conversions = createActiveConversions()
+    const killA = vi.fn()
+    const killB = vi.fn()
+    conversions.register('a', killA)
+    conversions.register('b', killB)
+    conversions.killAll()
+    expect(killA).toHaveBeenCalledWith('SIGTERM')
+    expect(killB).toHaveBeenCalledWith('SIGTERM')
+    expect(conversions.cancel('a')).toBe(false)
+  })
+
+  it('is a no-op when nothing is running', () => {
+    const conversions = createActiveConversions()
+    expect(() => conversions.killAll()).not.toThrow()
+  })
 })

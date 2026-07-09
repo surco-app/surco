@@ -43,12 +43,19 @@ export interface ProcessTrackDeps {
     removeCover?: boolean,
     forceReencode?: boolean,
     onChild?: (child: { kill: (signal: string) => void }) => void,
+    onTmp?: (path: string) => void,
   ) => Promise<{ normalizeSkipped: boolean }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
   // finally so a cancel after the job settles is a no-op.
   registerActiveConversion: (jobId: string, kill: (signal: string) => void) => void
   unregisterActiveConversion: (jobId: string) => void
+  // The trail a crash or force-quit mid-encode leaves for the next launch to
+  // sweep — trackTmp fires the instant convertAudio picks its temp path, untrackTmp
+  // once the job settles normally (convertAudio's own catch already deleted the
+  // file by then, so this just keeps the manifest honest).
+  trackTmp: (path: string) => void
+  untrackTmp: (path: string) => void
   recordConversion: () => void
   removeRenamedOriginal: (inputPath: string, target: string) => Promise<void>
   addToAppleMusic: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<string>
@@ -164,6 +171,7 @@ export async function runProcessTrack(
     // before writing; recursive so it's a no-op when the directory already exists.
     await deps.mkdir(dirname(target), { recursive: true })
     let normalizeSkipped: boolean
+    let tmpPath: string | undefined
     try {
       ;({ normalizeSkipped } = await deps.convertAudio(
         job.inputPath,
@@ -175,9 +183,17 @@ export async function runProcessTrack(
         job.removeCover,
         job.forceReencode,
         (child) => deps.registerActiveConversion(job.id, (signal) => child.kill(signal)),
+        (path) => {
+          tmpPath = path
+          deps.trackTmp(path)
+        },
       ))
     } finally {
       deps.unregisterActiveConversion(job.id)
+      // convertAudio's own catch already deleted the file on a normal failure —
+      // this only needs to keep the manifest honest so a later crash doesn't
+      // sweep a path that's already gone (harmless either way, but tidy).
+      if (tmpPath) deps.untrackTmp(tmpPath)
     }
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
     deps.recordConversion()

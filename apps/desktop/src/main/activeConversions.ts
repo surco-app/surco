@@ -10,6 +10,10 @@ export interface ActiveConversions {
   // Returns whether a process was actually killed, so the caller can tell a
   // real cancel from a no-op (job already done, or never started).
   cancel: (jobId: string) => boolean
+  // Quitting the whole app must not leave ffmpeg children orphaned to keep
+  // writing after the process that owns them is gone — will-quit calls this for
+  // every conversion still in flight.
+  killAll: () => void
 }
 
 export function createActiveConversions(): ActiveConversions {
@@ -23,6 +27,10 @@ export function createActiveConversions(): ActiveConversions {
       kill('SIGTERM')
       kills.delete(jobId)
       return true
+    },
+    killAll: () => {
+      for (const kill of kills.values()) kill('SIGTERM')
+      kills.clear()
     },
   }
 }

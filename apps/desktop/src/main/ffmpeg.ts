@@ -812,6 +812,10 @@ export async function convertAudio(
   // Never fired for the stream-copy shortcut (copyFile spawns nothing) or the
   // measurement passes (normalizeFilter) — only the real encode below.
   onChild?: (child: { kill: (signal: string) => void }) => void,
+  // Learns the temp path the instant it's chosen, before anything writes to it —
+  // the caller records it so a crash or force-quit before the rename/cleanup
+  // below still leaves a trail the next launch can sweep (see tmpManifest.ts).
+  onTmp?: (path: string) => void,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -856,6 +860,7 @@ export async function convertAudio(
   const audioFilter =
     [normalizeAf, dither ? DITHER_FILTER : undefined].filter(Boolean).join(',') || undefined
   const tmp = convertTmpPath(output, ext)
+  onTmp?.(tmp)
 
   try {
     if (codec === 'copy' && preservesCuesInPlace(ext)) {

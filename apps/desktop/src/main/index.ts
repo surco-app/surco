@@ -1,4 +1,4 @@
-import { createReadStream, existsSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, } from 'node:path'
@@ -47,6 +47,7 @@ import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createActiveConversions } from './activeConversions'
 import { createMediaAccess } from './mediaAccess'
 import { createOutputReservations } from './outputReservations'
+import { createTmpManifest } from './tmpManifest'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
@@ -100,6 +101,15 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+// The trail a crash or force-quit mid-encode leaves for the NEXT launch to sweep.
+// Always userData (never a user music folder), so a corrupt or stale manifest
+// only ever risks deleting paths this app itself wrote.
+const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp.json'), {
+  readFileSync: (p) => readFileSync(p, 'utf8'),
+  writeFileSync,
+  existsSync,
+  unlinkSync,
+})
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
@@ -687,7 +697,20 @@ function registerIpc(): void {
       releasePath: outputReservations.release,
       registerActiveConversion: activeConversions.register,
       unregisterActiveConversion: activeConversions.unregister,
-      convertAudio: (input, output, format, meta, coverPath, normalize, removeCover, force) => {
+      trackTmp: tmpManifest.track,
+      untrackTmp: tmpManifest.untrack,
+      convertAudio: (
+        input,
+        output,
+        format,
+        meta,
+        coverPath,
+        normalize,
+        removeCover,
+        force,
+        onChild,
+        onTmp,
+      ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
         // rather than threaded through every renderer job.
@@ -711,6 +734,8 @@ function registerIpc(): void {
                 flacCompression: s.flacCompression,
               },
               force,
+              onChild,
+              onTmp,
             ),
           { labelParams: { track } },
         )
@@ -983,6 +1008,9 @@ app.whenReady().then(() => {
   }
   // Bound the on-disk analysis cache once at launch, before any new entries land.
   void pruneAnalysisCache()
+  // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
+  // previous run, before any new conversion can add to the manifest.
+  tmpManifest.sweepOrphans()
   // Serve the local audio file ourselves with real HTTP range support: the
   // <audio> element seeks by re-requesting a byte range, and it only honours the
   // jump when the server answers 206 with Content-Range. Streaming the exact
@@ -1087,4 +1115,10 @@ app.on('window-all-closed', () => {
 // Previewing an AIFF (or a FLAC with broken art) leaves a transcoded copy in the
 // tmpdir that playback keeps re-serving, so it can only be deleted once the app is
 // done with it — sweep them on the way out rather than letting them pile up.
-app.on('will-quit', () => cleanupPlaybackTemps())
+// Quitting must not leave ffmpeg children orphaned to keep writing a .tmp file
+// after the app that owns them is gone; killAll's SIGTERM triggers convertAudio's
+// own catch, which deletes the tmp before the process actually exits.
+app.on('will-quit', () => {
+  activeConversions.killAll()
+  cleanupPlaybackTemps()
+})

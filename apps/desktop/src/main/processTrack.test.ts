@@ -56,6 +56,8 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     releasePath: vi.fn(),
     registerActiveConversion: vi.fn(),
     unregisterActiveConversion: vi.fn(),
+    trackTmp: vi.fn(),
+    untrackTmp: vi.fn(),
     ...overrides,
   }
 }
@@ -79,6 +81,7 @@ describe('runProcessTrack — plain conversion', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
       expect.any(Function),
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
@@ -132,6 +135,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       undefined,
       expect.any(Function),
+      expect.any(Function),
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -181,6 +185,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       expect.any(Function),
+      expect.any(Function),
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -199,6 +204,7 @@ describe('runProcessTrack — output conflict', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
       expect.any(Function),
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
@@ -277,6 +283,48 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
   })
 })
 
+describe('runProcessTrack — orphaned tmp trail', () => {
+  // convertAudio's own catch already deletes the tmp on a normal failure, so
+  // trackTmp/untrackTmp exist purely for the case that skips that catch entirely:
+  // the whole app quitting or crashing mid-encode. The manifest is what the next
+  // launch sweeps.
+  it('tracks the tmp path the instant convertAudio picks it, untracking it once the job settles', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async (...args: unknown[]) => {
+        const onTmp = args[9] as (path: string) => void
+        onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+        return { normalizeSkipped: false }
+      }),
+    })
+    await runProcessTrack(job(), deps)
+
+    expect(deps.trackTmp).toHaveBeenCalledWith('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+    expect(deps.untrackTmp).toHaveBeenCalledWith('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+  })
+
+  it('still untracks the tmp path when the encode throws', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async (...args: unknown[]) => {
+        const onTmp = args[9] as (path: string) => void
+        onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+        throw new Error('disk full')
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('disk full')
+    expect(deps.untrackTmp).toHaveBeenCalledWith('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+  })
+
+  it('never untracks when convertAudio never got as far as picking a tmp path', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async () => {
+        throw new Error('cover prep failed before any tmp existed')
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow()
+    expect(deps.untrackTmp).not.toHaveBeenCalled()
+  })
+})
+
 // The editor's explicit "Re-encode": same-format source, but the job carries
 // forceReencode — it must route to the output folder like a real conversion
 // (original untouched) and hand the flag to convertAudio so the copy shortcut
@@ -301,6 +349,7 @@ describe('runProcessTrack — forced re-encode', () => {
       undefined,
       true,
       expect.any(Function),
+      expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -323,6 +372,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
       expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
@@ -415,6 +465,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
       expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -572,6 +623,7 @@ describe('runProcessTrack — Apple Music only', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
       expect.any(Function),
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
