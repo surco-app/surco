@@ -1053,6 +1053,23 @@ describe('tagsFromProbe', () => {
     expect(m.trackNumber).toBe('7')
   })
 
+  // TAG_FIELDS documents "first non-empty wins" for a field's alias list (year's is
+  // ['date', 'year'], date first). A file passed between two taggers over its life can
+  // carry a blanked-out DATE comment left by one of them alongside a real YEAR value
+  // from another — the higher-priority alias existing-but-empty must not shadow real
+  // data sitting in the fallback.
+  it('skips an empty higher-priority alias and falls through to a non-empty fallback', () => {
+    const m = tagsFromProbe({ format: { tags: { DATE: '', YEAR: '1999' } } })
+    expect(m.year).toBe('1999')
+  })
+
+  // The inverse must still hold: when the higher-priority alias actually has data,
+  // it wins over the fallback even if that fallback exists too.
+  it('still prefers the higher-priority alias when both are present', () => {
+    const m = tagsFromProbe({ format: { tags: { DATE: '2001', YEAR: '1999' } } })
+    expect(m.year).toBe('2001')
+  })
+
   it('reads the compilation flag as set only when the tag is a literal 1', () => {
     // iTunes writes TCMP=1 when set; a 0 (or junk) must read as unset so the
     // checkbox never shows ticked for a file that isn't a compilation

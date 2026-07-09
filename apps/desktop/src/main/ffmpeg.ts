@@ -158,10 +158,19 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     data.format?.tags,
     ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
   ].filter((t): t is Record<string, unknown> => Boolean(t))
+  // First non-empty wins, in `names`' own priority order (see TAG_FIELDS) — not the
+  // order keys happen to appear in the source object. A file passed between taggers
+  // can carry a blanked-out higher-priority alias (e.g. an empty DATE) alongside a
+  // real value in a lower-priority fallback (YEAR); stopping at the first key that
+  // merely exists, empty or not, would shadow that real data with a blank field.
   const pick = (...names: string[]): string => {
-    for (const tags of sources) {
-      for (const [key, value] of Object.entries(tags)) {
-        if (names.includes(key.toLowerCase())) return String(value ?? '').trim()
+    for (const name of names) {
+      for (const tags of sources) {
+        for (const [key, value] of Object.entries(tags)) {
+          if (key.toLowerCase() !== name) continue
+          const trimmed = String(value ?? '').trim()
+          if (trimmed) return trimmed
+        }
       }
     }
     return ''
