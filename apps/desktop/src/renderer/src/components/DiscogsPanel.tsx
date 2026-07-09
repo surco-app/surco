@@ -1,6 +1,6 @@
 import { ChevronRight, ListFilter } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useRef } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -37,7 +37,12 @@ interface Props {
 // The Discogs column: the search box, its results, and the expanded release's
 // tracklist (or the album-match grid in multi-select). All search/release state lives
 // in the useDiscogsBrowser hook passed in as `browser`; this component is the view.
-export function DiscogsPanel({
+// Memoized so a keystroke in a metadata field (which doesn't touch any Discogs
+// state) skips reconciling the panel's results/tracklist subtree — useDiscogsBrowser
+// itself memoizes `browser` for this reason. Not a complete guarantee: matchedTrack/
+// matchTier still derive from the editor's library-verdict effect and can change
+// identity independently; this closes the browser-driven half of the re-renders.
+export const DiscogsPanel = memo(function DiscogsPanel({
   browser,
   matchedTrack,
   matchTier,
@@ -402,7 +407,7 @@ export function DiscogsPanel({
       />
     </>
   )
-}
+})
 
 function CollapsibleTracks({
   open,

@@ -441,4 +441,20 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.release?.id).toBe(123))
     expect(result.current.busy).toBe(false)
   })
+
+  // DiscogsPanel is memoized on the whole `browser` object (see DiscogsPanel.tsx):
+  // a re-render that touches none of this hook's own state — a keystroke in an
+  // unrelated metadata field re-renders the Editor that owns both — must hand back
+  // the exact same object, or that memo re-reconciles the results/tracklist subtree
+  // on every keystroke regardless.
+  it('returns the same object across a re-render that changes none of its state', async () => {
+    setApi()
+    const { result, rerender } = renderHook(
+      ({ tr: t }: { tr: (k: string) => string }) => useDiscogsBrowser(item(), t),
+      { wrapper: wrapper(), initialProps: { tr } },
+    )
+    const before = result.current
+    rerender({ tr })
+    expect(result.current).toBe(before)
+  })
 })

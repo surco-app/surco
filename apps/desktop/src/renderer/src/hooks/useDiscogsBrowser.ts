@@ -12,6 +12,18 @@ import type { TrackItem } from '../types'
 // Search fires this long after typing stops; Enter and the button fire at once.
 const DEBOUNCE_MS = 500
 
+// A stable empty array for when searchQuery.data is undefined (no search run yet, or
+// the query key changed and React Query hasn't refetched). `?? []` would allocate a
+// fresh array every render, which the results/providerCounts memos below depend on —
+// churning their identity even with no search in flight, and defeating DiscogsPanel's
+// memo on every unrelated Editor render (see DiscogsPanel.tsx).
+const EMPTY_RESULTS: SearchResult[] = []
+// Default for callers that don't pass `providers` (only tests today — Editor.tsx
+// always passes settings.searchProviders). A default *parameter* value like
+// `providers = ['discogs']` in the signature below would re-allocate on every call
+// that omits the argument, same failure mode as EMPTY_RESULTS above.
+const DEFAULT_PROVIDERS: SearchProviderId[] = ['discogs']
+
 export interface DiscogsBrowser {
   query: string
   setQuery: (q: string) => void
@@ -66,7 +78,7 @@ export function useDiscogsBrowser(
   // The catalog sources to search, from Settings. Results are merged and re-ranked, so
   // order is irrelevant. Defaults to Discogs so callers that don't pass it (tests) behave
   // as before.
-  providers: SearchProviderId[] = ['discogs'],
+  providers: SearchProviderId[] = DEFAULT_PROVIDERS,
   // How many ranked results to show, from Settings. The auto-match probe scans the full
   // set independently, so trimming the displayed list never costs a suggestion. Defaults
   // high so callers that don't pass it (tests) keep their old behaviour.
@@ -149,7 +161,7 @@ export function useDiscogsBrowser(
     },
     enabled: searchTerm.trim() !== '',
   })
-  const allResults = searchQuery.data?.results ?? []
+  const allResults = searchQuery.data?.results ?? EMPTY_RESULTS
   const providerCounts = useMemo(
     () => providerCountsOf(allResults, providers),
     [allResults, providers],
@@ -259,21 +271,42 @@ export function useDiscogsBrowser(
       ? errorMessage(releaseQuery.error, tr('editor.releaseError'))
       : ''
 
-  return {
-    query,
-    setQuery,
-    doSearch,
-    results,
-    providerCounts,
-    providerFilter,
-    setProviderFilter,
-    release,
-    openKey,
-    suggestedKey,
-    loading,
-    busy,
-    resolving,
-    error,
-    previewRelease,
-  }
+  // Memoized so the hook's own consumers (DiscogsPanel, wrapped in memo — see
+  // DiscogsPanel.tsx) don't reconcile on every Editor render: without this the
+  // return value is a fresh object literal every time, defeating that memo even
+  // though every field/callback inside it is itself already stable.
+  return useMemo(
+    () => ({
+      query,
+      setQuery,
+      doSearch,
+      results,
+      providerCounts,
+      providerFilter,
+      setProviderFilter,
+      release,
+      openKey,
+      suggestedKey,
+      loading,
+      busy,
+      resolving,
+      error,
+      previewRelease,
+    }),
+    [
+      query,
+      doSearch,
+      results,
+      providerCounts,
+      providerFilter,
+      release,
+      openKey,
+      suggestedKey,
+      loading,
+      busy,
+      resolving,
+      error,
+      previewRelease,
+    ],
+  )
 }
