@@ -1,5 +1,5 @@
 import { stat, unlink } from 'node:fs/promises'
-import { basename, dirname, extname, join } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { editsInPlace, formatExtension } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
@@ -10,6 +10,12 @@ import type { OutputFormat } from '../shared/types'
 // separator here; join() turns it into the OS one when the path is built.
 // index.ts's sanitizeFilename is the flat-name sibling (cover .jpg export), where "/"
 // is an illegal character, not a separator — the divergence is deliberate.
+//
+// A "." or ".." segment is dropped too, same as an empty one: the name is built from
+// a template filled with tag values (artist, album…), which can come from Discogs
+// metadata or a hand-edited field — untrusted text that reaches resolveOutputTarget's
+// join(outputDir, name). Left in, ".." would let a crafted tag walk the write target
+// out of outputDir entirely.
 export function sanitizeOutputName(name: string): string {
   return name
     .split('/')
@@ -19,7 +25,7 @@ export function sanitizeOutputName(name: string): string {
         .replace(/\s+/g, ' ')
         .trim(),
     )
-    .filter(Boolean)
+    .filter((segment) => segment && segment !== '.' && segment !== '..')
     .join('/')
 }
 
@@ -51,7 +57,19 @@ export function resolveOutputTarget(
   const inPlace =
     editsInPlace(format, inputPath, overwriteOriginal) && !(forceReencode && !overwriteOriginal)
   const dir = inPlace ? dirname(inputPath) : outputDir
-  return { outputPath: join(dir, `${name}.${formatExtension(format)}`), inPlace }
+  const outputPath = join(dir, `${name}.${formatExtension(format)}`)
+  // Defense in depth on top of sanitizeOutputName (the primary guard against a
+  // crafted tag's ".." walking the write target out of outputDir): only checked
+  // for the output-folder branch, where `name` came from a template filled with
+  // tag values. The in-place branch's dir comes from the real inputPath, which is
+  // already trusted, so it's exempt.
+  if (!inPlace) {
+    const rel = relative(outputDir, resolve(outputDir, outputPath))
+    if (rel.startsWith('..') || isAbsolute(rel)) {
+      throw new Error('El nombre de salida generaría una ruta fuera de la carpeta de destino')
+    }
+  }
+  return { outputPath, inPlace }
 }
 
 // Whether a conversion would clobber an unrelated file. Writing over an existing

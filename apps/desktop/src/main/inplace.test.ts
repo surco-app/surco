@@ -28,6 +28,20 @@ describe('sanitizeOutputName', () => {
   it('supports arbitrary folder depth', () => {
     expect(sanitizeOutputName('a/b/c/d/e')).toBe('a/b/c/d/e')
   })
+
+  // outputName is built from a template filled with tag values (artist, album…),
+  // which can come from Discogs metadata or a hand-edited field — untrusted text
+  // that reaches resolveOutputTarget's join(outputDir, name). A ".." segment
+  // would let a crafted tag walk the write target out of outputDir entirely
+  // (and removeRenamedOriginal would then delete whatever it clobbered).
+  it('strips ".." segments so a crafted tag can\'t escape the output folder', () => {
+    expect(sanitizeOutputName('../../etc/passwd')).toBe('etc/passwd')
+    expect(sanitizeOutputName('Artist/../../Title')).toBe('Artist/Title')
+  })
+
+  it('strips a bare "." segment too, same as an empty one', () => {
+    expect(sanitizeOutputName('./Artist/./Title')).toBe('Artist/Title')
+  })
 })
 
 describe('resolveOutputTarget', () => {
@@ -91,6 +105,16 @@ describe('resolveOutputTarget', () => {
       outputPath: '/out/song.m4a',
       inPlace: false,
     })
+  })
+
+  // sanitizeOutputName is the primary defense against a crafted tag walking the
+  // write target out of outputDir — this is defense in depth for the case that
+  // guard is ever bypassed or a future caller forgets it: resolveOutputTarget
+  // itself refuses to hand back a path outside outputDir.
+  it('refuses a name that would resolve outside outputDir even if unsanitized', () => {
+    expect(() =>
+      resolveOutputTarget('/music/song.wav', '../../etc/passwd', 'flac', '/out'),
+    ).toThrow()
   })
 })
 
