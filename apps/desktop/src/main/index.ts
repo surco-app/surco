@@ -31,6 +31,7 @@ import type {
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
+import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import {
   addToAppleMusic,
   appleMusicEntryLocation,
@@ -70,6 +71,9 @@ import { wireUpdateDelivery } from './updateDelivery'
 import { armUpdateRecheck } from './updateRecheck'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
+
+// At module load so even a throw during startup leaves a trace in the log file.
+installCrashGuards(process, log)
 
 // Must run before app ready: a privileged scheme can stream and respond to fetch,
 // which is what lets the renderer's <audio> element seek through a local file
@@ -338,6 +342,7 @@ function createWindow(): BrowserWindow {
   })
 
   win.on('ready-to-show', () => win.show())
+  wireRendererRecovery(win.webContents, log)
   // Stream background-work events (Discogs/Bandcamp searches, cover downloads,
   // conversions) to the renderer's activity panel. Detach on close so the emitter
   // never sends into a destroyed webContents.
