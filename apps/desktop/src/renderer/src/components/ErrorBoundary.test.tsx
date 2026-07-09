@@ -9,7 +9,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 afterEach(cleanup)
 
 beforeEach(() => {
-  ;(window as unknown as { api: unknown }).api = { logError: vi.fn() }
+  ;(window as unknown as { api: unknown }).api = { logError: vi.fn(), revealLog: vi.fn() }
 })
 
 function Bomb({ defused }: { defused?: boolean }): React.JSX.Element {
@@ -52,6 +52,22 @@ describe('ErrorBoundary', () => {
     )
     const { logError } = (window as unknown as { api: { logError: ReturnType<typeof vi.fn> } }).api
     expect(logError).toHaveBeenCalledWith('boom', expect.stringContaining('Bomb'))
+    silenced.mockRestore()
+  })
+
+  // The crash screen tells the user to report the error; the log file is what makes
+  // that report actionable, so it must be reachable right there.
+  it('reveals the log file from the crash screen', () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <ErrorBoundary>
+        <Bomb />
+      </ErrorBoundary>,
+    )
+    fireEvent.click(screen.getByTestId('reveal-log'))
+    const { revealLog } = (window as unknown as { api: { revealLog: ReturnType<typeof vi.fn> } })
+      .api
+    expect(revealLog).toHaveBeenCalledTimes(1)
     silenced.mockRestore()
   })
 })

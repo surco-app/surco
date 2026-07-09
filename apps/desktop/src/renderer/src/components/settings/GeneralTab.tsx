@@ -130,6 +130,17 @@ export function GeneralTab({
           ? tr('settings.cacheHint', { count: cacheStats.files, size: formatFileSize(cacheStats.bytes) })
           : tr('settings.cacheHintEmpty')}
       </p>
+
+      <span className="mb-1.5 block text-sm font-medium text-fg-muted">{tr('settings.log')}</span>
+      <button
+        type="button"
+        data-testid="settings-log-reveal"
+        onClick={() => window.api.revealLog()}
+        className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+      >
+        {tr('settings.logReveal')}
+      </button>
+      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.logHint')}</p>
     </>
   )
 }

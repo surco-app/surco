@@ -66,6 +66,14 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             {i18n.t('errorBoundary.report')}
           </button>
+          <button
+            type="button"
+            data-testid="reveal-log"
+            onClick={() => window.api.revealLog()}
+            className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
+          >
+            {i18n.t('errorBoundary.revealLog')}
+          </button>
         </div>
       </div>
     )

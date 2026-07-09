@@ -95,6 +95,7 @@ const api: Api = {
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
+  revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     ipcRenderer.invoke('audio:spectrogram', path, priority),
   loudness: (path: string): Promise<LoudnessResult | null> =>

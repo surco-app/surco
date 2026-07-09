@@ -509,6 +509,9 @@
     "cacheClear": "Vider le cache",
     "cacheHint": "Les spectrogrammes et les contrôles de qualité sont enregistrés sur disque pour que rouvrir ta bibliothèque soit instantané. {{count}} fichiers · {{size}}. Le vider oblige juste la prochaine ouverture à les recalculer.",
     "cacheHintEmpty": "Les spectrogrammes et les contrôles de qualité sont enregistrés sur disque pour que rouvrir ta bibliothèque soit instantané. Rien en cache pour l'instant.",
+    "log": "Journal d'erreurs",
+    "logReveal": "Afficher le fichier",
+    "logHint": "Si quelque chose échoue, les détails atterrissent dans ce fichier. Joins-le à ton rapport pour qu'il puisse être examiné.",
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Active Discogs ci-dessus pour configurer ces options.",
     "discogsToken": "Token Discogs",
@@ -642,7 +645,8 @@
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",
     "retry": "Réessayer",
-    "report": "Signaler cette erreur"
+    "report": "Signaler cette erreur",
+    "revealLog": "Afficher le journal"
   },
   "palette": {
     "placeholder": "Cherche des morceaux ou lance une commande…",

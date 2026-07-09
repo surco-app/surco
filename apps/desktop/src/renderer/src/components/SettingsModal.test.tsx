@@ -710,6 +710,25 @@ describe('SettingsModal analysis cache', () => {
     expect(await screen.findByDisplayValue('0 · 0 B')).toBeInTheDocument()
   })
 
+  // Without telemetry the log file is the only artifact a user can attach to a
+  // report, so Settings needs a discoverable way to reach it.
+  it('reveals the error log from the General tab', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const revealLog = vi.fn(async () => {})
+    api.revealLog = revealLog
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByTestId('settings-log-reveal'))
+    expect(revealLog).toHaveBeenCalledTimes(1)
+  })
+
   // An empty cache has nothing to clear, so the button is disabled — clicking it
   // would be a no-op that misleads the user into thinking something happened.
   it('disables the clear button when nothing is cached', async () => {

@@ -509,6 +509,9 @@
     "cacheClear": "Cache leeren",
     "cacheHint": "Spektrogramme und Qualitätsprüfungen werden auf der Festplatte gespeichert, damit sich deine Bibliothek sofort wieder öffnet. {{count}} Dateien · {{size}}. Leeren heißt nur, dass sie beim nächsten Öffnen neu berechnet werden.",
     "cacheHintEmpty": "Spektrogramme und Qualitätsprüfungen werden auf der Festplatte gespeichert, damit sich deine Bibliothek sofort wieder öffnet. Noch nichts im Cache.",
+    "log": "Fehlerprotokoll",
+    "logReveal": "Datei anzeigen",
+    "logHint": "Wenn etwas fehlschlägt, landen die Details in dieser Datei. Häng sie an deine Meldung an, damit der Fehler untersucht werden kann.",
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Aktivier Discogs oben, um das hier einzustellen.",
     "discogsToken": "Discogs-Token",
@@ -642,7 +645,8 @@
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",
     "retry": "Erneut versuchen",
-    "report": "Diesen Fehler melden"
+    "report": "Diesen Fehler melden",
+    "revealLog": "Protokoll anzeigen"
   },
   "palette": {
     "placeholder": "Tracks suchen oder einen Befehl ausführen…",

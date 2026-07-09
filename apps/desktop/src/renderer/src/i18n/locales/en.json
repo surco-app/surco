@@ -509,6 +509,9 @@
     "cacheClear": "Empty cache",
     "cacheHint": "Spectrograms and quality checks are saved to disk so reopening your library is instant. {{count}} files · {{size}}. Emptying it just makes the next open recompute them.",
     "cacheHintEmpty": "Spectrograms and quality checks are saved to disk so reopening your library is instant. Nothing cached yet.",
+    "log": "Error log",
+    "logReveal": "Show file",
+    "logHint": "If something fails, the details land in this file. Attach it to your report so it can be investigated.",
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Enable Discogs above to configure these.",
     "discogsToken": "Discogs token",
@@ -642,7 +645,8 @@
   "errorBoundary": {
     "title": "Something failed to render",
     "retry": "Retry",
-    "report": "Report this error"
+    "report": "Report this error",
+    "revealLog": "Show log file"
   },
   "palette": {
     "placeholder": "Search tracks or run a command…",

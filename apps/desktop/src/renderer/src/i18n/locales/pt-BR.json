@@ -509,6 +509,9 @@
     "cacheClear": "Esvaziar cache",
     "cacheHint": "Os espectrogramas e as verificações de qualidade são salvos em disco para reabrir sua biblioteca na hora. {{count}} arquivos · {{size}}. Esvaziar só faz a próxima abertura recalculá-los.",
     "cacheHintEmpty": "Os espectrogramas e as verificações de qualidade são salvos em disco para reabrir sua biblioteca na hora. Nada em cache ainda.",
+    "log": "Registro de erros",
+    "logReveal": "Mostrar arquivo",
+    "logHint": "Se algo falhar, os detalhes ficam neste arquivo. Anexe-o ao seu relato para que possa ser investigado.",
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Ative o Discogs acima para configurar isto.",
     "discogsToken": "Token do Discogs",
@@ -642,7 +645,8 @@
   "errorBoundary": {
     "title": "Algo falhou ao renderizar",
     "retry": "Tentar de novo",
-    "report": "Reportar este erro"
+    "report": "Reportar este erro",
+    "revealLog": "Mostrar registro"
   },
   "palette": {
     "placeholder": "Busque faixas ou execute um comando…",
