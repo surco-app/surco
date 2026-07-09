@@ -1,4 +1,4 @@
-import { cleanMatchTitle } from '../../../shared/searchClean'
+import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
@@ -41,18 +41,23 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
 // threaded from Settings by the sweep and the editor alike so the two score identically.
 export interface MatchCleanup {
   titleFormat?: string
+  ignoreWords?: string[]
 }
 
 // What the sweep reads off a track to score release candidates against it.
 export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): TrackMatchTarget {
-  // Undress the configured Naming pattern first: the app's own "(A2) Title (1998)"
+  // The user's junk phrases go first: a rip stamp can sit inside the Naming pattern's
+  // dressing ("(A2) Song rip crew (1998)"), where it would keep the pattern's suffix
+  // from lining up and sink the undressing below.
+  const stripped = stripIgnoredWords(track.meta.title, cleanup.ignoreWords ?? [])
+  // Undress the configured Naming pattern next: the app's own "(A2) Title (1998)"
   // format must never bury its re-match — and the track number the pattern wrapped is
   // recovered for the position signal when the file carries none of its own.
-  const un = cleanup.titleFormat ? unformatTitle(cleanup.titleFormat, track.meta.title) : undefined
+  const un = cleanup.titleFormat ? unformatTitle(cleanup.titleFormat, stripped) : undefined
   return {
     // Score against a cleaned title: a file whose title tag is really the whole (often
     // duplicated) file name would otherwise never reach the confidence bar.
-    title: cleanMatchTitle(un?.title ?? track.meta.title),
+    title: cleanMatchTitle(un?.title ?? stripped),
     durationSec: track.duration,
     trackNumber: track.meta.trackNumber || un?.fields.trackNumber,
     artist: track.meta.artist,

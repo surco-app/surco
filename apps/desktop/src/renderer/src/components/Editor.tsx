@@ -183,6 +183,7 @@ export const Editor = memo(function Editor({
     discogsFormats,
     discogsMaxResults,
     searchProviders,
+    searchIgnoreWords,
     showSpectrum,
     showLoudness,
     keyNotation,
@@ -202,7 +203,10 @@ export const Editor = memo(function Editor({
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
   // Memoized so the browser's probe closures don't churn identity on unrelated renders.
-  const matchCleanup = useMemo(() => ({ titleFormat }), [titleFormat])
+  const matchCleanup = useMemo(
+    () => ({ titleFormat, ignoreWords: searchIgnoreWords }),
+    [titleFormat, searchIgnoreWords],
+  )
   const browser = useDiscogsBrowser(
     item,
     tr,

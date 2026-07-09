@@ -529,6 +529,8 @@
     "discogsFormatsHint": "Limit Discogs results to these formats.",
     "maxResults": "Maximum results",
     "maxResultsHint": "How many search results to show. Fewer keeps the right release on screen instead of a long tail of compilations and reissues.",
+    "searchIgnoreWords": "Words to ignore in searches",
+    "searchIgnoreWordsHint": "Comma-separated words or phrases (rip stamps, watermarks) stripped from titles when searching and matching. Your tags are never changed.",
     "searchProviders": "Search sources",
     "searchProvidersHint": "Catalogs the editor searches. Discogs is curated; Bandcamp adds self-released material.",
     "provider": {

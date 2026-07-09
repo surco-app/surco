@@ -9,6 +9,7 @@ const settings: Settings = {
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
+  searchIgnoreWords: [],
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,
@@ -72,6 +73,18 @@ describe('pickSynced', () => {
 })
 
 describe('buildSettingsPatch', () => {
+  // The ignore phrases persist as an array but edit as one comma-joined text field,
+  // exactly like the presets — same seeding, same clean-up on save.
+  it('round-trips the search ignore words as comma text', () => {
+    const draft = pickSynced({ ...settings, searchIgnoreWords: ['rip djotas good', 'remaster'] })
+    expect(draft.searchIgnoreWords).toBe('rip djotas good, remaster')
+    const patch = buildSettingsPatch(
+      { ...draft, searchIgnoreWords: ' rip djotas good ,, remaster ,' },
+      local,
+    )
+    expect(patch.searchIgnoreWords).toEqual(['rip djotas good', 'remaster'])
+  })
+
   // Presets edit as free comma text; on save they must split back into clean arrays with
   // stray whitespace and empty entries (a trailing comma, a double comma) dropped.
   it('parses comma text back into trimmed, non-empty preset arrays', () => {

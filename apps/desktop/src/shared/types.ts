@@ -85,6 +85,10 @@ export interface Settings {
   // Which catalog sources the editor search queries. Discogs is the default; Bandcamp is
   // opt-in. Order is irrelevant — results are merged and re-ranked by match relevance.
   searchProviders: SearchProviderId[]
+  // Junk phrases (rip-crew stamps, pool watermarks) stripped from titles and queries
+  // before searching and scoring — no release ever carries them, so left in they sink
+  // both. User-curated in Settings → Search, edited as comma-separated text.
+  searchIgnoreWords: string[]
   outputDir: string
   outputFormat: OutputFormat
   addToAppleMusic: boolean

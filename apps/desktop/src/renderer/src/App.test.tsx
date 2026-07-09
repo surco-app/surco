@@ -76,6 +76,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     discogsFormats: [],
     discogsMaxResults: 10,
     searchProviders: ['discogs'],
+    searchIgnoreWords: [],
     outputDir: '',
     outputFormat: 'aiff',
     addToAppleMusic: false,

@@ -529,6 +529,8 @@
     "discogsFormatsHint": "Limita os resultados do Discogs a estes formatos.",
     "maxResults": "Máximo de resultados",
     "maxResultsHint": "Quantos resultados de busca mostrar. Menos mantém o release certo na tela em vez de uma fila longa de coletâneas e reedições.",
+    "searchIgnoreWords": "Palavras a ignorar nas buscas",
+    "searchIgnoreWordsHint": "Palavras ou frases separadas por vírgulas (assinaturas de rip, marcas d'água) removidas dos títulos ao buscar e emparelhar. Suas tags nunca são alteradas.",
     "searchProviders": "Fontes de busca",
     "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado; o Bandcamp adiciona material independente.",
     "provider": {

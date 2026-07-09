@@ -94,6 +94,24 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       </div>
 
       <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+        <label
+          htmlFor="settings-ignore-words"
+          className="mb-1.5 block text-sm font-medium text-fg-muted"
+        >
+          {tr('settings.searchIgnoreWords')}
+        </label>
+        <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchIgnoreWordsHint')}</p>
+        <input
+          id="settings-ignore-words"
+          data-testid="settings-ignore-words"
+          value={synced.searchIgnoreWords}
+          onChange={(e) => patch('searchIgnoreWords', e.target.value)}
+          placeholder="vinyl, rip"
+          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+        />
+      </div>
+
+      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
           {tr('settings.discogsSection')}
         </p>

@@ -29,6 +29,7 @@ const settings: Settings = {
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
+  searchIgnoreWords: [],
   outputDir: '/out',
   outputFormat: 'aiff',
   addToAppleMusic: false,

@@ -357,10 +357,13 @@ export default function App(): React.JSX.Element {
   // Live providers for the background sweep, read at probe time (Settings → Search).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
-  // Live title-cleanup settings for the sweep's scorer (the Naming pattern), read at
-  // probe time like the providers above.
+  // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
+  // user's junk phrases), read at probe time like the providers above.
   const matchCleanupRef = useRef<MatchCleanup>({})
-  matchCleanupRef.current = { titleFormat: settings?.titleFormat }
+  matchCleanupRef.current = {
+    titleFormat: settings?.titleFormat,
+    ignoreWords: settings?.searchIgnoreWords,
+  }
   // Live view of the Apple Music library snapshot for the sweep, kept current below once
   // useTracksView has computed it (the sweep reads it at apply time, not at render).
   const libraryIndexRef = useRef<AppleMusicIndex | null>(null)

@@ -49,6 +49,23 @@ export function stripParentheticals(query: string): string {
   return squeeze(query.replace(/\([^)]*\)/g, ' '))
 }
 
+// The user's own junk phrases (Settings → Search): rip-crew stamps ("rip djotas good"),
+// pool watermarks — words no release ever carries, so they sink both the free-text
+// search and the title score. Each phrase is removed wherever it appears, case-
+// insensitively and only as whole words (letters/digits can't continue on either side,
+// so "rip" never bites into "Tripping"). Never strips to nothing — a title that IS the
+// junk keeps it, matching the other cleaners' contract.
+export function stripIgnoredWords(text: string, phrases: string[]): string {
+  let out = text
+  for (const phrase of phrases) {
+    const p = phrase.trim()
+    if (!p) continue
+    const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'giu'), ' ')
+  }
+  return squeeze(out) || text
+}
+
 // A "presents"/"pres." credit names a side-alias ("Brian Cross pres. Fat Synth") that the
 // catalog files under the lead act ("Brian Cross & Fat Synth"); for free-text search the
 // alias is noise that drags the query onto unrelated compilations. Keep only the lead artist

@@ -47,6 +47,7 @@ const synced: SyncedDraft = {
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
+  searchIgnoreWords: '',
 }
 
 function renderTab(over: Partial<SyncedDraft> = {}) {

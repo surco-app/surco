@@ -493,6 +493,30 @@ describe('matchTargetOf', () => {
     expect(target.trackNumber).toBe('B1')
   })
 
+  // The rip stamp sits INSIDE the pattern's dressing ("(A2) Song rip crew (1998)"), so
+  // the phrases must go first — with them in place the pattern's suffix never lines up
+  // and the undressing would fail.
+  it('strips the ignore phrases before undressing the pattern', () => {
+    const t = {
+      duration: 211,
+      meta: { title: '(A2) Sueño Latino rip djotas good (1998)', trackNumber: '' },
+    } as TrackItem
+    const target = matchTargetOf(t, {
+      titleFormat: '({trackNumber}) {title} ({year})',
+      ignoreWords: ['rip djotas good'],
+    })
+    expect(target.title).toBe('Sueño Latino')
+    expect(target.trackNumber).toBe('A2')
+  })
+
+  it('strips the ignore phrases even with no pattern configured', () => {
+    const t = {
+      duration: 211,
+      meta: { title: 'Sueño Latino rip djotas good', trackNumber: '' },
+    } as TrackItem
+    expect(matchTargetOf(t, { ignoreWords: ['rip djotas good'] }).title).toBe('Sueño Latino')
+  })
+
   it('still cleans the undressed title like any other', () => {
     const t = {
       duration: 211,

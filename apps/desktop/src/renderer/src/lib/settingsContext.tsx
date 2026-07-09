@@ -36,6 +36,7 @@ export interface ResolvedSettings {
   discogsFormats: string[]
   discogsMaxResults: number
   searchProviders: SearchProviderId[]
+  searchIgnoreWords: string[]
   showSpectrum: boolean
   showLoudness: boolean
   keyNotation: KeyNotation
@@ -63,6 +64,7 @@ const DEFAULTS: ResolvedSettings = {
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   searchProviders: ['discogs'],
+  searchIgnoreWords: ['vinyl', 'rip'],
   showSpectrum: true,
   showLoudness: true,
   keyNotation: 'camelot',
@@ -90,6 +92,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     discogsFormats: settings.discogsFormats ?? DEFAULTS.discogsFormats,
     discogsMaxResults: settings.discogsMaxResults ?? DEFAULTS.discogsMaxResults,
     searchProviders: settings.searchProviders ?? DEFAULTS.searchProviders,
+    searchIgnoreWords: settings.searchIgnoreWords ?? DEFAULTS.searchIgnoreWords,
     showSpectrum: settings.showSpectrum ?? DEFAULTS.showSpectrum,
     showLoudness: settings.showLoudness ?? DEFAULTS.showLoudness,
     keyNotation: settings.keyNotation ?? DEFAULTS.keyNotation,

@@ -38,6 +38,7 @@ export interface SyncedDraft {
   discogsFormats: string[]
   discogsMaxResults: number
   searchProviders: Settings['searchProviders']
+  searchIgnoreWords: string
 }
 
 // Machine-local staged fields. A config-dir switch may adopt another machine's synced
@@ -57,6 +58,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     discogsFormats: s.discogsFormats,
     discogsMaxResults: s.discogsMaxResults,
     searchProviders: s.searchProviders,
+    searchIgnoreWords: s.searchIgnoreWords.join(', '),
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
@@ -103,7 +105,15 @@ const DEFAULT_COVER_MAX_SIZE = 1200
 // blank, and auto-match forced off when there's no token to run it. Pure so these
 // parse/clamp/gate rules are tested directly rather than only through the modal's Save.
 export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Partial<Settings> {
-  const { grouping, genre, coverMaxSize, filenameFormat, engineDjPlaylist, ...rest } = synced
+  const {
+    grouping,
+    genre,
+    coverMaxSize,
+    filenameFormat,
+    engineDjPlaylist,
+    searchIgnoreWords,
+    ...rest
+  } = synced
   const max = parseInt(coverMaxSize, 10)
   const token = local.token.trim()
   return {
@@ -115,6 +125,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
     genrePresets: splitPresets(genre),
+    searchIgnoreWords: splitPresets(searchIgnoreWords),
     coverMaxSize: Number.isFinite(max) && max >= 0 ? max : DEFAULT_COVER_MAX_SIZE,
     // Auto-match needs a token to run, so a token-less save can't leave it enabled.
     autoMatch: token !== '' && local.autoMatch,

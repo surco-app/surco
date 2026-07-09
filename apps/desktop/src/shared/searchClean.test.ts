@@ -1,5 +1,41 @@
 import { describe, expect, it } from 'vitest'
-import { cleanMatchTitle, dropLeadingCatalog } from './searchClean'
+import { cleanMatchTitle, dropLeadingCatalog, stripIgnoredWords } from './searchClean'
+
+describe('stripIgnoredWords', () => {
+  // Rip crews stamp their signature into the title tag ("Song rip djotas good"); no
+  // release ever carries those words, so they sink both the free-text search and the
+  // title score. The user lists their own junk phrases (Settings → Search) and every
+  // search/score sees the title without them.
+  it('removes a listed phrase wherever it appears, case-insensitively', () => {
+    expect(stripIgnoredWords('Sueño Latino RIP Djotas Good', ['rip djotas good'])).toBe(
+      'Sueño Latino',
+    )
+    expect(stripIgnoredWords('rip djotas good Sueño Latino', ['rip djotas good'])).toBe(
+      'Sueño Latino',
+    )
+  })
+
+  it('removes each listed phrase independently', () => {
+    expect(stripIgnoredWords('Song vinyl rip 320 remaster', ['vinyl rip', 'remaster'])).toBe(
+      'Song 320',
+    )
+  })
+
+  it('only removes whole words, never the inside of one', () => {
+    // "rip" inside "Tripping" (or "trip") is part of the title, not the junk stamp.
+    expect(stripIgnoredWords('Tripping', ['rip'])).toBe('Tripping')
+    expect(stripIgnoredWords('Round Trip', ['rip'])).toBe('Round Trip')
+  })
+
+  it('never strips a title down to nothing', () => {
+    expect(stripIgnoredWords('rip djotas good', ['rip djotas good'])).toBe('rip djotas good')
+  })
+
+  it('leaves text without the phrases untouched', () => {
+    expect(stripIgnoredWords('Sueño Latino', ['rip djotas good'])).toBe('Sueño Latino')
+    expect(stripIgnoredWords('Sueño Latino', [])).toBe('Sueño Latino')
+  })
+})
 
 describe('dropLeadingCatalog', () => {
   // A label/catalog code prefixed to a DJ-rip file name ("BL2-045 Artist - Title") survives

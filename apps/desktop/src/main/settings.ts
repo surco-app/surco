@@ -19,6 +19,9 @@ const defaults: Settings = {
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   // Search Discogs only by default; Bandcamp is opt-in (Settings → Search).
   searchProviders: ['discogs'],
+  // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
+  // biting into a real title word ("Tripping"), and the list is the user's to edit.
+  searchIgnoreWords: ['vinyl', 'rip'],
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
   addToAppleMusic: process.platform === 'darwin',
