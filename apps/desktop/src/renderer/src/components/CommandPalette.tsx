@@ -38,12 +38,17 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const commandResults = filterCommands(commands, query, usage)
   const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
-  // One flat list keeps the index-based arrow/Enter navigation untouched, but ordered
-  // by section (Raycast-style): each group's survivors stay in their filtered rank,
-  // groups follow the fixed everyday-relevance order, and the track jumps close the
-  // list as their own group. Headers render where the group changes.
+  // Raycast's split between browsing and looking up: with no query the palette is a
+  // catalog — sections in the fixed everyday-relevance order, headers where the
+  // group changes. A typed query is a lookup — matches rank flat by usage (the
+  // frecency filterCommands already applied), because a habitual command must lead
+  // no matter which section owns it. Track jumps close the list either way. One
+  // flat array keeps the index-based arrow/Enter navigation untouched.
+  const browsing = query.trim() === ''
   const results = [
-    ...COMMAND_GROUP_ORDER.flatMap((g) => commandResults.filter((c) => c.group === g)),
+    ...(browsing
+      ? COMMAND_GROUP_ORDER.flatMap((g) => commandResults.filter((c) => c.group === g))
+      : commandResults),
     ...trackResults,
   ]
   const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
@@ -122,7 +127,7 @@ export function CommandPalette({
         )}
         {results.map((c, i) => (
           <div key={c.id}>
-            {results[i - 1]?.group !== c.group && (
+            {(browsing || c.group === 'tracks') && results[i - 1]?.group !== c.group && (
               <p
                 data-testid="palette-group-header"
                 className="px-3 pt-2 pb-1 text-[0.625rem] font-medium uppercase tracking-wide text-fg-dim"

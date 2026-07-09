@@ -68,6 +68,26 @@ describe('CommandPalette', () => {
     expect(items).toEqual(['fill-all', 'export', 'help'])
   })
 
+  // Raycast's own split: sections organize the BROWSE view, but a typed query is a
+  // lookup — there the most-used match must lead regardless of its group, or the
+  // frecency learning is invisible ("Clear the list" stuck under another section).
+  it('drops the group order for a query, ranking matches flat by usage', () => {
+    render(
+      <CommandPalette
+        commands={[
+          cmd({ id: 'clear-meta', title: 'Clear metadata', group: 'tags' }),
+          cmd({ id: 'clear-list', title: 'Clear the list', group: 'library' }),
+        ]}
+        usage={{ 'clear-list': 3 }}
+        onClose={() => {}}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'clear' } })
+    const items = screen.getAllByTestId('palette-item').map((el) => el.textContent)
+    expect(items[0]).toContain('Clear the list')
+    expect(screen.queryAllByTestId('palette-group-header')).toHaveLength(0)
+  })
+
   it('runs an enabled command and closes when its item is clicked', () => {
     const run = vi.fn()
     const onClose = vi.fn()
