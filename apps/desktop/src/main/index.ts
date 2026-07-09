@@ -153,7 +153,10 @@ function checkForUpdates(win: BrowserWindow): void {
     return
   }
   manualUpdateCheck = true
-  electronUpdater.autoUpdater.checkForUpdates()
+  // checkForUpdates emits 'error' AND rejects with the same failure; the 'error'
+  // handler already surfaces it, so the rejection is swallowed instead of tripping
+  // the unhandledRejection guard on every offline check.
+  void electronUpdater.autoUpdater.checkForUpdates().catch(() => {})
 }
 
 function buildAppMenu(win: BrowserWindow): void {
@@ -1042,11 +1045,13 @@ app.whenReady().then(() => {
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
     })
-    updater.checkForUpdates()
+    // Rejections swallowed for the same reason as the manual check: the 'error'
+    // handler above already logs and surfaces every failure.
+    void updater.checkForUpdates().catch(() => {})
     // The launch probe alone missed every patch: they ship within the hour of their
     // minor, after users have already relaunched, and a running instance never asked
     // again. Re-checking on an interval keeps a long-lived session in the loop.
-    armUpdateRecheck(() => updater.checkForUpdates())
+    armUpdateRecheck(() => void updater.checkForUpdates().catch(() => {}))
   }
 
   app.on('activate', () => {
