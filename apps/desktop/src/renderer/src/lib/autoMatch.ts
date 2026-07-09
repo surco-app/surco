@@ -236,16 +236,15 @@ export async function autoMatchRelease(
   // A review-tier suggestion held while other options are still tried: a high match
   // anywhere outranks it, so it's only returned once nothing scores high.
   let review: AutoMatch | undefined
-  // A file already carrying a Discogs release id gets that exact release re-loaded first —
-  // no text search needed, so a re-tagged crate re-confirms its matches on the first try
-  // instead of re-running the fuzzy title search that found them originally. Only a 'high'
-  // verdict short-circuits the search below; a 'review' is held exactly like one the search
-  // would have surfaced, and a failure (release gone, no acceptable track on it) falls
-  // straight through to the normal search.
+  // A file already carrying a Discogs release id gets that exact release re-loaded, and if
+  // it holds a plausible track for this file, that's the answer — the id names the disc, so
+  // no title search or fallback source runs at all (searching anyway would surface other
+  // pressings next to a release we already know). A 'high' applies unattended and a 'review'
+  // comes back for a glance, same tiers as ever; only a dead end (release gone, no acceptable
+  // track on it) falls through to the normal search below.
   if (target.discogsReleaseId) {
     const stored = await matchStoredRelease(target.discogsReleaseId, target, api, onProbe)
-    if (stored?.tier === 'high') return stored
-    review ??= stored
+    if (stored) return stored
   }
   for (const provider of discogsFirst(api.providers ?? ['discogs'])) {
     // No duration to cross-check against → don't trust an uncurated catalog unattended.

@@ -290,10 +290,11 @@ describe('autoMatchRelease stored release id', () => {
     expect(api.search).toHaveBeenCalled()
   })
 
-  // A stored release that only reaches 'review' (nothing beyond the title corroborates it,
-  // same guard as a searched match) must not auto-apply — but a confident hit from the
-  // normal search still wins over it, exactly like a review found by search would.
-  it('prefers a high match from search over a review-tier stored release', async () => {
+  // The id names the disc — when it resolves to a plausible track (even one only worth a
+  // human glance), that IS the answer. Searching by title anyway would surface other
+  // pressings and Bandcamp noise next to a release we already know, exactly the clutter
+  // the stored id exists to avoid, so the search must not run at all.
+  it('returns the stored release as a review suggestion without ever searching', async () => {
     const api = {
       search: vi.fn().mockResolvedValue([searchResult(2)]),
       getRelease: vi.fn().mockImplementation((r: { id: number }) =>
@@ -301,20 +302,9 @@ describe('autoMatchRelease stored release id', () => {
       ),
     }
     const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
-    expect(m?.release.id).toBe(2)
-    expect(confidenceTier(m?.confidence ?? 0)).toBe('high')
-  })
-
-  // Nothing anywhere clears 'high': the stored release's review-tier verdict is the best on
-  // offer, so it comes back as the sweep's suggestion instead of nothing at all.
-  it('returns the stored release as a review suggestion when nothing scores high', async () => {
-    const api = {
-      search: vi.fn().mockResolvedValue([]),
-      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [REVIEW] })),
-    }
-    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
     expect(m?.release.id).toBe(1)
     expect(m?.tier).toBe('review')
+    expect(api.search).not.toHaveBeenCalled()
   })
 })
 
