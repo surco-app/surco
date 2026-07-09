@@ -454,6 +454,43 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // cancelBatchRef alone only stops tracks not yet started — a stalled network
+  // mount would leave an already-running conversion (and the whole batch) stuck
+  // forever. cancelBatch must also ask main to kill it by job id.
+  it('asks main to cancel every job in the run when cancelBatch fires mid-batch', async () => {
+    let releaseFirst: (v: { outputPath: string }) => void = () => {}
+    const processTrack = vi.fn().mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseFirst = resolve
+        }),
+    )
+    const cancelJob = vi.fn()
+    setApi({ processTrack, cancelJob })
+    // concurrency: 1 so 'b' is still queued (not yet started, no processTrack call
+    // for it) while 'a' is the one in flight — cancelBatch must still ask main to
+    // cancel both, since it can't tell from the renderer side which has started.
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn(), concurrency: 1 }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.processAll(tracks)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.cancelBatch())
+    expect(cancelJob).toHaveBeenCalledWith('a')
+    expect(cancelJob).toHaveBeenCalledWith('b')
+
+    releaseFirst({ outputPath: '/out/a.aiff' })
+    await act(async () => {
+      await run
+    })
+  })
+
   // A track removed while the batch runs was a user decision, not a conversion
   // failure: reporting "1 failed" sends the user hunting for an error row that
   // doesn't exist.
@@ -506,7 +543,7 @@ describe('useTrackProcessing', () => {
           }),
       )
       .mockResolvedValue(undefined)
-    setApi({ addToAppleMusic })
+    setApi({ addToAppleMusic, cancelJob: vi.fn() })
     const tracks = [
       track({ id: 'a', outputPath: '/out/a.aiff' }),
       track({ id: 'b', outputPath: '/out/b.aiff' }),

@@ -44,6 +44,7 @@ import { expandPaths } from './expand'
 import { convertAudio } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
+import { createActiveConversions } from './activeConversions'
 import { createMediaAccess } from './mediaAccess'
 import { createOutputReservations } from './outputReservations'
 import { keymapMenuClick } from './menuCommand'
@@ -96,6 +97,9 @@ const mediaAccess = createMediaAccess()
 // call (each its own IPC invocation) shares one registry of output paths currently
 // being written.
 const outputReservations = createOutputReservations()
+// Lets process:cancel reach an encode already in flight, not just ones not yet
+// started — module-scoped for the same reason as outputReservations above.
+const activeConversions = createActiveConversions()
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
@@ -664,6 +668,13 @@ function registerIpc(): void {
 
   registerAppleMusicIpc()
 
+  // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
+  // not yet started, so a stalled network mount would otherwise keep a batch (and
+  // the Cancel button) stuck until the app is force-quit.
+  ipcMain.on('process:cancel', (_e, jobId: unknown) => {
+    if (typeof jobId === 'string') activeConversions.cancel(jobId)
+  })
+
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {
       settings: getSettings(),
@@ -674,6 +685,8 @@ function registerIpc(): void {
       isPathReserved: outputReservations.isReserved,
       reservePath: outputReservations.reserve,
       releasePath: outputReservations.release,
+      registerActiveConversion: activeConversions.register,
+      unregisterActiveConversion: activeConversions.unregister,
       convertAudio: (input, output, format, meta, coverPath, normalize, removeCover, force) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)

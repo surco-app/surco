@@ -73,8 +73,18 @@ const execFileAsync = promisify(execFile)
 // no contention (machine otherwise idle) it still runs full speed, so sweep throughput
 // is unchanged. Best-effort: setPriority can lose a race with a child that exits
 // immediately, and Windows may deny it — a normal-priority decode is a fine fallback.
-const niceDecode = (file: string, args: string[], opts?: unknown) => {
-  const pending = execFileAsync(file, args, opts as never)
+// Cancel has no way to reach an already-running conversion otherwise: the caller
+// hands in this hook to learn the child the moment it spawns and register a way
+// to kill it (see activeConversions.ts). Not an execFile option — pulled out of
+// opts before the rest reaches execFileAsync, which would reject an unknown key.
+interface RunOpts {
+  onChild?: (child: { kill: (signal: string) => void }) => void
+  [key: string]: unknown
+}
+
+const niceDecode = (file: string, args: string[], opts?: RunOpts) => {
+  const { onChild, ...execOpts } = opts ?? {}
+  const pending = execFileAsync(file, args, execOpts as never)
   const pid = pending.child?.pid
   if (pid !== undefined) {
     try {
@@ -84,6 +94,10 @@ const niceDecode = (file: string, args: string[], opts?: unknown) => {
       // already exited or the OS denies it, the decode just runs at normal priority.
     }
   }
+  // ChildProcess.kill's real signature (NodeJS.Signals | number) is narrower than
+  // callers need to know about — activeConversions only ever passes 'SIGTERM',
+  // a valid Signals string at runtime, so the plain-string callback type stands.
+  if (pending.child) onChild?.(pending.child as unknown as { kill: (signal: string) => void })
   return pending
 }
 
@@ -95,7 +109,7 @@ const niceDecode = (file: string, args: string[], opts?: unknown) => {
 // non-zero exit just rethrows); repairWav returns null for any arg that isn't a
 // fixable WAV, so flags and output paths are skipped and only the source is copied.
 // The temp copy is deleted after the retry resolves.
-const run = (async (file: string, args: string[], opts?: unknown) => {
+const run = (async (file: string, args: string[], opts?: RunOpts) => {
   try {
     return await niceDecode(file, args, opts)
   } catch (err) {
@@ -113,7 +127,7 @@ const run = (async (file: string, args: string[], opts?: unknown) => {
     }
     throw err
   }
-}) as typeof execFileAsync
+}) as typeof execFileAsync & ((file: string, args: string[], opts?: RunOpts) => ReturnType<typeof execFileAsync>)
 
 // A stalled network mount (an SMB share that stops responding mid-read) makes an
 // ffmpeg/ffprobe decode block forever. Without a bound, the analysisLimiter slot — and
@@ -793,6 +807,11 @@ export async function convertAudio(
   removeCover?: boolean,
   quality?: Partial<ConversionQuality>,
   forceReencode?: boolean,
+  // Learns the encode's child process the moment it spawns, so a cancel can kill
+  // a conversion already in flight instead of only skipping ones not yet started.
+  // Never fired for the stream-copy shortcut (copyFile spawns nothing) or the
+  // measurement passes (normalizeFilter) — only the real encode below.
+  onChild?: (child: { kill: (signal: string) => void }) => void,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -854,6 +873,7 @@ export async function convertAudio(
     } else {
       await run(ffmpegPath, convertArgs(input, tmp, plan, meta, coverPath, audioFilter), {
         maxBuffer: 1024 * 1024 * 32,
+        onChild,
       })
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the

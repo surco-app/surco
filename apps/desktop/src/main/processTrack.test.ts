@@ -54,6 +54,8 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     isPathReserved: vi.fn(() => false),
     reservePath: vi.fn(),
     releasePath: vi.fn(),
+    registerActiveConversion: vi.fn(),
+    unregisterActiveConversion: vi.fn(),
     ...overrides,
   }
 }
@@ -77,6 +79,7 @@ describe('runProcessTrack — plain conversion', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -128,6 +131,7 @@ describe('runProcessTrack — cover handling', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -176,6 +180,7 @@ describe('runProcessTrack — output conflict', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -194,6 +199,7 @@ describe('runProcessTrack — output conflict', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -236,6 +242,41 @@ describe('runProcessTrack — output conflict', () => {
   })
 })
 
+describe('runProcessTrack — cancel reaches the running encode', () => {
+  // The only way a cancel button can kill an already-started conversion: main
+  // must know which child belongs to which job for exactly the window it runs.
+  it('registers the child under the job id and unregisters it once the job settles, success or failure', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async (...args: unknown[]) => {
+        const onChild = args[8] as (child: { kill: (s: string) => void }) => void
+        onChild({ kill: vi.fn() })
+        return { normalizeSkipped: false }
+      }),
+    })
+    await runProcessTrack(job(), deps)
+
+    expect(deps.registerActiveConversion).toHaveBeenCalledWith('job1', expect.any(Function))
+    expect(deps.unregisterActiveConversion).toHaveBeenCalledWith('job1')
+    // unregister must run after register, so a cancel firing exactly as the job
+    // settles can't be left registered forever.
+    const registerOrder = (deps.registerActiveConversion as ReturnType<typeof vi.fn>).mock
+      .invocationCallOrder[0]
+    const unregisterOrder = (deps.unregisterActiveConversion as ReturnType<typeof vi.fn>).mock
+      .invocationCallOrder[0]
+    expect(unregisterOrder).toBeGreaterThan(registerOrder)
+  })
+
+  it('still unregisters the job when the encode throws', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async () => {
+        throw new Error('killed by signal SIGTERM')
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('killed by signal')
+    expect(deps.unregisterActiveConversion).toHaveBeenCalledWith('job1')
+  })
+})
+
 // The editor's explicit "Re-encode": same-format source, but the job carries
 // forceReencode — it must route to the output folder like a real conversion
 // (original untouched) and hand the flag to convertAudio so the copy shortcut
@@ -259,6 +300,7 @@ describe('runProcessTrack — forced re-encode', () => {
       { mode: 'none' },
       undefined,
       true,
+      expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -281,6 +323,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
       '/in/song.wav',
@@ -372,6 +415,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.inPlace).toBe(false)
@@ -528,6 +572,7 @@ describe('runProcessTrack — Apple Music only', () => {
       { mode: 'none' },
       undefined,
       undefined,
+      expect.any(Function),
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
       '/tmp/surco-abc/Artist - Title.aiff',

@@ -89,6 +89,10 @@ export function useTrackProcessing({
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // Set by cancelBatch to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
+  // The ids the current run started with — cancelBatch also asks main to kill any
+  // of these whose encode is already in flight, since the flag above only stops
+  // ones not yet started (see main/activeConversions.ts).
+  const runningIdsRef = useRef<string[]>([])
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
   // processed, not from the closure's snapshot, or mid-batch edits never reach disk.
@@ -310,6 +314,7 @@ export function useTrackProcessing({
       const pinnedFormat = formatOverride ?? settings?.outputFormat
       const pinnedOverwrite = settings?.overwriteOriginal
       cancelBatchRef.current = false
+      runningIdsRef.current = ids
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
@@ -331,6 +336,7 @@ export function useTrackProcessing({
         })
       } finally {
         setBatching(false)
+        runningIdsRef.current = []
         // Same zeroing as addAllToAppleMusic: a finished batch must leave the pooled
         // top-bar fraction, or the bar sticks at 100% and skews every later sweep.
         setBatchProgress({ done: 0, total: 0 })
@@ -344,6 +350,9 @@ export function useTrackProcessing({
 
   const cancelBatch = useStableCallback((): void => {
     cancelBatchRef.current = true
+    // Killing a job that already finished is a documented no-op in main, so this
+    // can fire for every id the run started with without checking which are done.
+    for (const id of runningIdsRef.current) window.api.cancelJob(id)
   })
 
   return {

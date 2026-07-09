@@ -42,7 +42,13 @@ export interface ProcessTrackDeps {
     normalize?: NormalizeConfig,
     removeCover?: boolean,
     forceReencode?: boolean,
+    onChild?: (child: { kill: (signal: string) => void }) => void,
   ) => Promise<{ normalizeSkipped: boolean }>
+  // Lets a cancel reach the encode already in flight for this job, not just ones
+  // not yet started. Registered around the convertAudio call and unregistered in
+  // finally so a cancel after the job settles is a no-op.
+  registerActiveConversion: (jobId: string, kill: (signal: string) => void) => void
+  unregisterActiveConversion: (jobId: string) => void
   recordConversion: () => void
   removeRenamedOriginal: (inputPath: string, target: string) => Promise<void>
   addToAppleMusic: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<string>
@@ -157,16 +163,22 @@ export async function runProcessTrack(
     // Create the target's folder (and any subfolders the file-name template asks for)
     // before writing; recursive so it's a no-op when the directory already exists.
     await deps.mkdir(dirname(target), { recursive: true })
-    const { normalizeSkipped } = await deps.convertAudio(
-      job.inputPath,
-      target,
-      format,
-      job.meta,
-      coverPath,
-      job.normalize ?? settings.normalize,
-      job.removeCover,
-      job.forceReencode,
-    )
+    let normalizeSkipped: boolean
+    try {
+      ;({ normalizeSkipped } = await deps.convertAudio(
+        job.inputPath,
+        target,
+        format,
+        job.meta,
+        coverPath,
+        job.normalize ?? settings.normalize,
+        job.removeCover,
+        job.forceReencode,
+        (child) => deps.registerActiveConversion(job.id, (signal) => child.kill(signal)),
+      ))
+    } finally {
+      deps.unregisterActiveConversion(job.id)
+    }
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
     deps.recordConversion()
 
