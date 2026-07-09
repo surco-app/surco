@@ -139,14 +139,32 @@ function split(settings: Settings): { synced: Partial<Settings>; local: Partial<
   return { synced, local }
 }
 
+// stats and normalize are the two fixed-shape nested objects (every other object
+// field — shortcutOverrides, commandUsage — is an open Record the user populates
+// themselves, where a "missing" key is a legitimate empty state, not staleness).
+// A plain `{ ...defaults, ...local }` merges at the top level only: a settings.json
+// written by an older Surco that predates a new stats/normalize field has an object
+// present under that key, just missing the one field, so the shallow merge takes
+// the whole (incomplete) local object instead of filling the gap from defaults.
+// recordStat's `cur.stats[key] + n` then corrupts that field to NaN — which
+// JSON.stringifies to null, permanently bricking the counter on the next read.
+function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
+  return {
+    ...base,
+    ...patch,
+    stats: { ...base.stats, ...patch.stats },
+    normalize: { ...base.normalize, ...patch.normalize },
+  }
+}
+
 export function getSettings(): Settings {
   const local = readJson(localFile()) as Partial<Settings>
   const sf = syncedFile()
-  if (!sf) return { ...defaults, ...local }
+  if (!sf) return mergeSettings(defaults, local)
   // With a custom folder active, the local file only contributes its machine-bound
   // keys; everything else comes from the shared file so another Mac's edits win.
-  const { local: localOnly } = split({ ...defaults, ...local })
-  return { ...defaults, ...(readJson(sf) as Partial<Settings>), ...localOnly }
+  const { local: localOnly } = split(mergeSettings(defaults, local))
+  return mergeSettings(mergeSettings(defaults, readJson(sf) as Partial<Settings>), localOnly)
 }
 
 // Write-then-rename: a crash or full disk mid-write must never truncate the live

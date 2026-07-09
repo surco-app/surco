@@ -104,6 +104,45 @@ describe('sanitizeSettingsPatch', () => {
   })
 })
 
+describe('nested settings from an older install', () => {
+  const localFile = (): string => join(app.getPath('userData'), 'settings.json')
+
+  // getSettings' merge is `{ ...defaults, ...local }` — shallow at the top level.
+  // A settings.json written by an older Surco that predates a new stats key has an
+  // object present under "stats", just missing that one field, so the shallow merge
+  // takes the whole (incomplete) local object instead of filling the gap from
+  // defaults. cur.stats[newKey] then reads undefined, and recordStat's
+  // `cur.stats[key] + n` corrupts it to NaN — which JSON.stringifies to null,
+  // permanently bricking that counter for the user on the very next read.
+  it('fills a stats key an older settings.json never wrote, instead of leaving it undefined', () => {
+    writeFileSync(
+      localFile(),
+      JSON.stringify({ stats: { imported: 5, listened: 2, analyzed: 1 } }),
+    )
+    expect(getSettings().stats.discogsMatches).toBe(0)
+    expect(getSettings().stats.bandcampMatches).toBe(0)
+    expect(getSettings().stats.imported).toBe(5)
+  })
+
+  it('recordStat never produces NaN for a key a stale settings.json omitted', () => {
+    writeFileSync(localFile(), JSON.stringify({ stats: { imported: 5 } }))
+    recordStat('bandcampMatches', 3)
+    expect(getSettings().stats.bandcampMatches).toBe(3)
+    expect(Number.isNaN(getSettings().stats.bandcampMatches)).toBe(false)
+  })
+
+  // normalize is the other fixed-shape nested object (targetLufs/truePeakDb/peakDb);
+  // same shallow-merge exposure if a future field is added to it.
+  it('fills a normalize field an older settings.json never wrote', () => {
+    writeFileSync(localFile(), JSON.stringify({ normalize: { mode: 'peak' } }))
+    const normalize = getSettings().normalize
+    expect(normalize.mode).toBe('peak')
+    expect(normalize.targetLufs).toBe(-14)
+    expect(normalize.truePeakDb).toBe(-1)
+    expect(normalize.peakDb).toBe(-1)
+  })
+})
+
 describe('saveSettings atomicity', () => {
   // A crash or full disk mid-write must never truncate the live settings file:
   // getSettings' corrupt-file fallback would then silently reset every preference,
