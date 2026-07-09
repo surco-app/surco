@@ -159,6 +159,20 @@ function writeAtomic(path: string, value: unknown): void {
   renameSync(tmp, path)
 }
 
+// Keys a settings:set patch from the renderer must never carry directly: these are
+// internal tallies bumped only by recordStat/recordConversion, each with its own
+// validation (recordStat rejects NaN/negative amounts; stats:record allowlists the
+// key). A raw patch would bypass both — a compromised renderer, or a bug, could
+// zero out or inflate a user's lifetime stats in one call. commandUsage is exempt:
+// the command palette patches it directly and legitimately on every run.
+const INTERNAL_ONLY_KEYS = ['stats', 'conversionCount'] as const satisfies readonly (keyof Settings)[]
+
+export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Settings> {
+  const clean = { ...patch }
+  for (const key of INTERNAL_ONLY_KEYS) delete clean[key]
+  return clean
+}
+
 export function saveSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
   // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs

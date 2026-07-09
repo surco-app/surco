@@ -62,6 +62,7 @@ import {
   getSettings,
   recordConversion,
   recordStat,
+  sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
 } from './settings'
@@ -509,7 +510,7 @@ function registerIpc(): void {
 
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
-    const next = saveSettings(patch)
+    const next = saveSettings(sanitizeSettingsPatch(patch))
     // Rebinding a shortcut changes the menu accelerators, so rebuild the menu from the
     // freshly-saved overrides (buildAppMenu re-reads them via getSettings).
     if (patch.shortcutOverrides !== undefined) {

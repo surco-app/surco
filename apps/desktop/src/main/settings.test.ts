@@ -31,6 +31,7 @@ import {
   getSettings,
   recordConversion,
   recordStat,
+  sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
 } from './settings'
@@ -68,6 +69,38 @@ describe('recordStat', () => {
     recordStat('listened', -5)
     recordStat('listened', Number.NaN)
     expect(getSettings().stats.listened).toBe(before)
+  })
+})
+
+describe('sanitizeSettingsPatch', () => {
+  // stats and conversionCount are internal tallies bumped only by recordStat /
+  // recordConversion — no legitimate renderer caller patches them through
+  // settings:set. Left unguarded, that channel would let a compromised renderer
+  // (or a bug) overwrite them directly, bypassing recordStat's own validation
+  // (its NaN/negative guard) and the allowlist stats:record already enforces.
+  it('drops stats and conversionCount from a patch', () => {
+    const forgedStats = {
+      imported: 999,
+      listened: 999,
+      analyzed: 999,
+      discogsMatches: 999,
+      bandcampMatches: 999,
+    }
+    expect(
+      sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),
+    ).toEqual({ theme: 'dark' })
+  })
+
+  // commandUsage IS a legitimate renderer patch (the command palette bumps it on
+  // every run), so it must survive untouched.
+  it('keeps every other field, including commandUsage', () => {
+    const patch = { theme: 'dark' as const, commandUsage: { add: 3 } }
+    expect(sanitizeSettingsPatch(patch)).toEqual(patch)
+  })
+
+  it('is a no-op on a patch with nothing to strip', () => {
+    const patch = { theme: 'light' as const }
+    expect(sanitizeSettingsPatch(patch)).toEqual(patch)
   })
 })
 
