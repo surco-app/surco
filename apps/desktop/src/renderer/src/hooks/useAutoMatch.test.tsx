@@ -179,6 +179,43 @@ describe('useAutoMatch', () => {
     expect(result.current.matching).toBeNull()
   })
 
+  // A cancel followed by a fresh enqueue, both firing while the old pump's probe is
+  // still in flight: enqueue's own pumpAutoMatch() call sees matchingRef still true
+  // (the old pump hasn't reached its finally yet) and no-ops. When the old pump's
+  // finally does run, it must notice the queue was repopulated after the cancel and
+  // re-pump — not take the matchCancel-was-true branch and reset to idle, stranding
+  // the re-enqueued track with no pump watching it until the next scroll/select event.
+  it('re-pumps a track enqueued right after cancel instead of stranding it', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({
+      search,
+      getRelease: vi.fn(async () => {
+        await gate
+        return release
+      }),
+    })
+    const a = track('a')
+    const b = track('b')
+    const { result, tracksRef } = setup([a])
+
+    act(() => result.current.enqueueAutoMatch([a], false))
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
+
+    // Cancel while 'a's getRelease is still gated, then immediately re-enqueue 'b' —
+    // both before the old pump's finally has a chance to run.
+    act(() => result.current.cancelAutoMatch())
+    tracksRef.current = [a, b]
+    act(() => result.current.enqueueAutoMatch([b], false))
+
+    releaseGate()
+
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+  })
+
   // Whole-crate matching, visible-first: every imported track is enqueued (not gated), but
   // the rows on screen are probed before the rest so the part of the list in view resolves
   // first. Only 'b' is visible here, so it must be searched before 'a'.

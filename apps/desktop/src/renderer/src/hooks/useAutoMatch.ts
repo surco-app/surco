@@ -240,7 +240,15 @@ export function useAutoMatch({
       }
     } finally {
       matchingRef.current = false
-      if (matchCancel.current) {
+      // matchCancel can have been set and then the queue repopulated by an
+      // enqueueAutoMatch that fired while this pump was still finishing its
+      // in-flight probe (its own pumpAutoMatch() call saw matchingRef still true
+      // and no-opped) — that queue is real work, not a stale cancel to honor, so
+      // resume instead of resetting to idle and stranding it unwatched.
+      if (matchCancel.current && matchQueue.current.size > 0) {
+        matchCancel.current = false
+        void pumpAutoMatch()
+      } else if (matchCancel.current) {
         resetProgress()
       } else if (readyMatchTargets().length > 0) {
         // A track became ready in the instant the loop was exiting; pick it up.
