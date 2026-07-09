@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
@@ -115,9 +115,18 @@ export function useDiscogsBrowser(
   )
 
   // Typing commits the query 500ms after it stops; Enter and the button commit at
-  // once through doSearch.
+  // once through doSearch. Skipped on mount when the panel seeded searchTerm from a stored
+  // release id above: query still reads as item.query at that point (unchanged by the user),
+  // so without this guard the debounce's own first run would fire 500ms later and silently
+  // overwrite the seeded id with a text search — turning "open straight to this exact
+  // release" into a noisy title search the user never asked for.
+  const skipInitialDebounce = useRef(!!item.meta.discogsReleaseId)
   // biome-ignore lint/correctness/useExhaustiveDependencies: query is the trigger; the item/persist callback are read fresh at commit time, and depending on them would re-arm the debounce on every track edit.
   useEffect(() => {
+    if (skipInitialDebounce.current) {
+      skipInitialDebounce.current = false
+      return
+    }
     if (!query.trim()) return
     const id = setTimeout(() => {
       setSearchTerm(query)

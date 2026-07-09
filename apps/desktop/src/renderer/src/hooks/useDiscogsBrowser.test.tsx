@@ -372,6 +372,24 @@ describe('useDiscogsBrowser', () => {
     expect(search).not.toHaveBeenCalled()
   })
 
+  // The regression the first cut of the stored-id shortcut shipped with: the typing
+  // debounce arms on mount too (item.query is rarely empty), so 500ms after opening it
+  // overwrote the seeded id with item.query and ran the very text search the id was
+  // meant to skip — the panel flashed the right release, then buried it in candidates.
+  // The seed must survive the debounce window; only real typing may override it.
+  it('keeps the stored-id release once the mount debounce window has passed', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '1' }), tr),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.release?.id).toBe(1)
+    expect(search).not.toHaveBeenCalled()
+  })
+
   // A refined search is navigation state the user expects to survive a track flip;
   // the hook reports the committed term upward so the editor can store it on the
   // track, and the per-track remount then re-seeds the box (and the cached results).
