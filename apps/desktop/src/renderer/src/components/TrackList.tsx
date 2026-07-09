@@ -429,7 +429,13 @@ const TrackRow = memo(function TrackRow({
   )
 })
 
-export function TrackList({
+// Memoized so App re-renders (a toast, a progress tick, a modal open) that don't
+// touch the visible tracks skip re-mapping and re-diffing every row — the rows
+// themselves are already memoized (see TrackRow above), but without this the list
+// still re-ran its full render body on every App render. Relies on every function
+// prop below being stable (App/useTrackLibrary/useAutoMatch use useStableCallback
+// or a dependency-correct useCallback for all of them).
+export const TrackList = memo(function TrackList({
   tracks,
   selectedId,
   selectedIds,
@@ -570,4 +576,4 @@ export function TrackList({
       )}
     </>
   )
-}
+})

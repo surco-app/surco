@@ -766,20 +766,24 @@ export default function App(): React.JSX.Element {
   // unselected row), so its list actions — remove, trash — act on the whole selection
   // when the clicked row is part of it, matching what's highlighted, and fall back to the
   // single clicked row otherwise.
-  const menuTargets = useCallback(
+  // useStableCallback (not useCallback) on purpose: this depends on tracks/selectedIds,
+  // which change on every keystroke and every progress tick, so a plain useCallback
+  // gives removeFromList a fresh identity that often — breaking TrackRow's memo (it
+  // relies on a stable onRemove) and re-rendering every row on every edit.
+  const menuTargets = useStableCallback(
     (id: string): TrackItem[] =>
       selectedIds.includes(id) && selectedIds.length > 1
         ? tracks.filter((t) => selectedIds.includes(t.id))
         : tracks.filter((t) => t.id === id),
-    [tracks, selectedIds],
   )
 
-  const removeFromList = useCallback(
-    (id: string): void => {
-      for (const t of menuTargets(id)) removeTrack(t.id)
-    },
-    [menuTargets, removeTrack],
-  )
+  const removeFromList = useStableCallback((id: string): void => {
+    for (const t of menuTargets(id)) removeTrack(t.id)
+  })
+
+  const onTrashRow = useStableCallback((track: TrackItem): void => {
+    askTrash(menuTargets(track.id))
+  })
 
   function selectAll(): void {
     // Acts on the visible (filtered) rows, not the whole crate: a DJ who filters to MP3 and
@@ -1101,6 +1105,10 @@ export default function App(): React.JSX.Element {
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
+  // Toolbar is memoized so a keystroke in a metadata field doesn't re-render it;
+  // an inline arrow here would give onActivity a fresh identity every render and
+  // defeat that memo just like the other Toolbar handlers above.
+  const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
   const onApplyMatches = useStableCallback((patches: { id: string; patch: ReleaseMetaPatch }[]) => {
     for (const p of patches) updateTrack(p.id, { ...p.patch, matched: true })
   })
@@ -1494,7 +1502,7 @@ export default function App(): React.JSX.Element {
             onCancelBatch={cancelBatch}
             onPalette={onOpenPalette}
             onStats={onOpenStats}
-            onActivity={() => setActivityOpen((v) => !v)}
+            onActivity={onToggleActivity}
             activityRunning={activityRows.some((r) => r.status === 'running')}
             onSettings={onOpenSettings}
           />
@@ -1734,7 +1742,7 @@ export default function App(): React.JSX.Element {
                       onCopyPath={onCopyPath}
                       onPasteMeta={onPasteMeta}
                       canPasteMeta={copiedMeta !== null}
-                      onTrash={(track) => askTrash(menuTargets(track.id))}
+                      onTrash={onTrashRow}
                       scrollRootRef={listScrollRef}
                       onVisible={onTrackVisible}
                       rowRegistry={rowEls}

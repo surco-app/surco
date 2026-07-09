@@ -26,6 +26,22 @@ vi.mock('./components/Editor', async (importOriginal) => {
   })
   return { ...real, Editor: CountingEditor }
 })
+// Pass-through TrackList that counts renders — TrackList is already memo'd itself
+// (see TrackList.tsx), so wrapping the real (already-memoized) component in a
+// second counting memo pins the contract from the outside: App must hand it
+// stable props on a render that doesn't touch the visible tracks.
+const { trackListRenders } = vi.hoisted(() => ({ trackListRenders: { count: 0 } }))
+vi.mock('./components/TrackList', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./components/TrackList')>()
+  const { memo } = await import('react')
+  const CountingTrackList = memo(function CountingTrackList(
+    props: React.ComponentProps<typeof real.TrackList>,
+  ): React.JSX.Element {
+    trackListRenders.count++
+    return <real.TrackList {...props} />
+  })
+  return { ...real, TrackList: CountingTrackList }
+})
 vi.mock('./lib/triage', async (importOriginal) => {
   const real = await importOriginal<typeof import('./lib/triage')>()
   const sortTracks: typeof real.sortTracks = (tracks, sortBy, dir) => {
@@ -1325,6 +1341,23 @@ describe('App derived list stability', () => {
     fireEvent.click(screen.getByTestId('open-find-replace'))
     await screen.findByTestId('find-replace-find')
     expect(sortRuns.count).toBe(before)
+  })
+
+  // TrackList itself is memo'd (see TrackList.tsx), which only pays off if every
+  // prop App hands it — onRemove/onTrash included, both built from menuTargets —
+  // keeps one identity across an unrelated render. A find/replace modal touches
+  // none of the visible tracks, so it must skip re-rendering (and re-mapping every
+  // row of) the list entirely.
+  it('keeps the track list stable while an unrelated modal opens', async () => {
+    await renderApp()
+    await addTwoTracks()
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const before = trackListRenders.count
+    fireEvent.click(screen.getByTestId('open-find-replace'))
+    await screen.findByTestId('find-replace-find')
+    expect(trackListRenders.count).toBe(before)
   })
 })
 

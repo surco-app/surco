@@ -8,6 +8,7 @@ import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
+import { useStableCallback } from './useStableCallback'
 import type { TrackItem } from '../types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
@@ -290,7 +291,11 @@ export function useTrackLibrary({
   // edit, match and conversion state. The rebuilt track gets a fresh id so the editor
   // remounts and re-seeds its own state (the Discogs search box included) from the new
   // read; the selection swaps to the new id so the row stays open.
-  function startOverTrack(track: TrackItem): void {
+  // useStableCallback so this keeps one identity across renders — it's passed straight
+  // through to TrackList's memoized rows (see TrackList.tsx), and a plain function
+  // declaration here would recreate it on every render of this hook (i.e. every render
+  // of App), breaking that memo.
+  const startOverTrack = useStableCallback((track: TrackItem): void => {
     const base = { ...newTrack(track.inputPath), loadingMeta: true }
     onForget(track.id)
     setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
@@ -299,7 +304,7 @@ export function useTrackLibrary({
       anchor: s.anchor === track.id ? base.id : s.anchor,
     }))
     void loadTrackMeta(base)
-  }
+  })
 
   // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
   // reach us through the OS, not the renderer: the main process buffers any handed over
