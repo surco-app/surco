@@ -245,6 +245,79 @@ describe('autoMatchRelease', () => {
   })
 })
 
+describe('autoMatchRelease stored release id', () => {
+  // A file already carrying a Discogs release id gets that exact release loaded first, with
+  // no text search at all — the whole point of re-tagging an already-matched crate.
+  it('loads the stored release directly and never calls search', async () => {
+    const api = {
+      search: vi.fn(),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(1)
+    expect(api.getRelease).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'discogs', id: 1 }),
+    )
+    expect(api.search).not.toHaveBeenCalled()
+  })
+
+  // The stored release may no longer exist (deleted, network error) — the shortcut fails
+  // silently and the normal text search runs exactly as if there had been no stored id.
+  it('falls back to a text search when the stored release fails to load', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(2)]),
+      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
+        r.id === 1 ? Promise.reject(new Error('404')) : Promise.resolve(release(2, { tracklist: [HIGH] })),
+      ),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(2)
+    expect(api.search).toHaveBeenCalledWith('my song', 'discogs')
+  })
+
+  // The file may have drifted since it was tagged (edited by hand, wrong id) — a stored
+  // release whose tracklist no longer scores above 'low' isn't trusted either; the normal
+  // search still runs and can find the right release.
+  it('falls back to a text search when the stored release no longer matches', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(2)]),
+      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
+        Promise.resolve(r.id === 1 ? release(1, { tracklist: [LOW] }) : release(2, { tracklist: [HIGH] })),
+      ),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(2)
+    expect(api.search).toHaveBeenCalled()
+  })
+
+  // A stored release that only reaches 'review' (nothing beyond the title corroborates it,
+  // same guard as a searched match) must not auto-apply — but a confident hit from the
+  // normal search still wins over it, exactly like a review found by search would.
+  it('prefers a high match from search over a review-tier stored release', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([searchResult(2)]),
+      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
+        Promise.resolve(r.id === 1 ? release(1, { tracklist: [REVIEW] }) : release(2, { tracklist: [HIGH] })),
+      ),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(2)
+    expect(confidenceTier(m?.confidence ?? 0)).toBe('high')
+  })
+
+  // Nothing anywhere clears 'high': the stored release's review-tier verdict is the best on
+  // offer, so it comes back as the sweep's suggestion instead of nothing at all.
+  it('returns the stored release as a review suggestion when nothing scores high', async () => {
+    const api = {
+      search: vi.fn().mockResolvedValue([]),
+      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [REVIEW] })),
+    }
+    const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
+    expect(m?.release.id).toBe(1)
+    expect(m?.tier).toBe('review')
+  })
+})
+
 describe('autoMatchRelease Bandcamp fallback', () => {
   // Bandcamp-only releases (self-released, netlabels) aren't on Discogs, so when Discogs
   // comes up empty the sweep tries the fallback source and applies a confident match.
@@ -320,12 +393,16 @@ describe('tracksToAutoMatch', () => {
     expect(tracksToAutoMatch([track({ autoMatched: true })])).toHaveLength(0)
   })
 
-  it('skips tracks the user already tagged from a release, never clobbering their pick', () => {
+  // A track carrying a Discogs id but no matched/autoMatched flag hasn't actually been
+  // resolved this session (e.g. a re-imported crate) — the sweep still attempts it, and
+  // autoMatchRelease's stored-release shortcut re-confirms it directly instead of a text
+  // search finding it again.
+  it('still attempts a track that carries a Discogs id but isn’t flagged matched', () => {
     expect(
       tracksToAutoMatch([
         track({ meta: { title: 'Title', discogsReleaseId: '99' } as TrackItem['meta'] }),
       ]),
-    ).toHaveLength(0)
+    ).toHaveLength(1)
   })
 
   // A manual pick from a provider that writes no Discogs id (Bandcamp) is still a

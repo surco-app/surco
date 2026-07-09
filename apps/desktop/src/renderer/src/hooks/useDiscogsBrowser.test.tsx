@@ -32,8 +32,10 @@ function setApi(over: Record<string, unknown> = {}): void {
   }
 }
 
-function item(over: { query?: string; title?: string } = {}): TrackItem {
-  const meta = { title: over.title ?? '' } as TrackMetadata
+function item(
+  over: { query?: string; title?: string; discogsReleaseId?: string } = {},
+): TrackItem {
+  const meta = { title: over.title ?? '', discogsReleaseId: over.discogsReleaseId } as TrackMetadata
   return {
     id: 'a',
     inputPath: '/m/a.wav',
@@ -352,6 +354,20 @@ describe('useDiscogsBrowser', () => {
       wrapper: wrapper(),
     })
     act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  // A track already carrying a Discogs release id opens straight to it on mount — no
+  // debounce, no click, no text search — exactly like pasting the id, so re-tagging an
+  // already-matched crate re-confirms every track's release without a fresh search.
+  it('loads a release directly from the file’s stored Discogs id on mount', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '1' }), tr),
+      { wrapper: wrapper() },
+    )
     await waitFor(() => expect(result.current.release?.id).toBe(1))
     expect(search).not.toHaveBeenCalled()
   })

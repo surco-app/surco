@@ -80,6 +80,11 @@ export interface TrackMatchTarget {
   // a differing year must never penalise a match — it just floats the pressing that shares the
   // file's year ahead of an equally-relevant reissue so the right one is probed first.
   year?: string
+  // A Discogs release the file was tagged from before (an earlier match, or hand-entered).
+  // When present, autoMatchRelease tries loading this exact release before falling back to
+  // a text search — a re-tagged file finds its release again on the first try instead of
+  // re-running the fuzzy title/artist search that found it the first time.
+  discogsReleaseId?: string
 }
 
 export interface ScoredTrack {

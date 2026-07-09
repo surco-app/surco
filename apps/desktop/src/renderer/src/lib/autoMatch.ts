@@ -17,9 +17,11 @@ import {
 } from './release'
 
 // The tracks an auto-match sweep should attempt: those not already carrying a Discogs
-// match and holding the title plus search query a probe needs. Skipping tracks that
-// already have a release id (auto-filled earlier or matched by hand) means a re-run
-// only fills the gaps instead of re-tagging — and never clobbers the user's own pick.
+// match and holding the title plus search query a probe needs. Skipping tracks already
+// matched or under review means a re-run only fills the gaps instead of re-tagging — and
+// never clobbers the user's own pick. A track carrying a discogsReleaseId is still
+// attempted: autoMatchRelease tries that exact release first, so a re-run over an
+// already-tagged crate re-confirms it directly instead of skipping it outright.
 export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
   return tracks.filter(
     (t) =>
@@ -29,7 +31,6 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
       // glance; re-probing it on every sweep would churn the same call and overwrite that
       // pending state, so leave it until the user confirms or clears it.
       !t.matchReview &&
-      !t.meta.discogsReleaseId &&
       t.query.trim() !== '' &&
       t.meta.title.trim() !== '',
   )
@@ -46,6 +47,7 @@ export function matchTargetOf(track: TrackItem): TrackMatchTarget {
     artist: track.meta.artist,
     catalogNumber: track.meta.catalogNumber,
     year: track.meta.year,
+    discogsReleaseId: track.meta.discogsReleaseId,
   }
 }
 
@@ -172,6 +174,37 @@ export interface SearchApi {
 
 export type AutoMatch = ProbeMatch
 
+// Tries the file's own stored release before any text search: loads it directly by id,
+// scores its tracklist the same way a probed search result would, and accepts anything
+// 'high' or 'review' — the id already names the right album, so the guard only needs to
+// find which track on it is this file, not corroborate the release itself. Returns
+// undefined on any failure (release deleted, load error, no acceptable track), letting
+// the caller fall back to a text search exactly as if there had been no stored id.
+async function matchStoredRelease(
+  discogsReleaseId: string,
+  target: TrackMatchTarget,
+  api: SearchApi,
+  onProbe?: (candidate: ProbedCandidate) => void,
+): Promise<AutoMatch | undefined> {
+  const result: SearchResult = { provider: 'discogs', id: Number(discogsReleaseId), title: '' }
+  let rel: Release
+  let m: ReturnType<typeof bestMatch>
+  try {
+    rel = await api.getRelease(result)
+    m = bestMatch(rel.tracklist, target)
+  } catch {
+    return undefined
+  }
+  if (!m) return undefined
+  const catalogMatched = catalogNumberMatches(target.catalogNumber, rel)
+  const confidence = catalogMatched ? boostForCatalogMatch(m.confidence) : m.confidence
+  const tier = corroboratedTier(confidence, target, rel, m.track, catalogMatched)
+  const signals = matchSignals(target, rel, m.track, catalogMatched)
+  onProbe?.({ result, confidence, tier })
+  if (tier === 'low') return undefined
+  return { release: rel, track: m.track, confidence, tier, result, signals }
+}
+
 // A non-Discogs source must clear a higher confidence floor than Discogs' 'high' before
 // auto-applying: Bandcamp's catalog is uncurated (bootlegs, re-uploads, DJ sets that carry
 // the track's name), so a borderline-'high' title hit there is far likelier to be wrong.
@@ -200,9 +233,20 @@ export async function autoMatchRelease(
   onProbe?: (candidate: ProbedCandidate) => void,
 ): Promise<AutoMatch | undefined> {
   if (!query.trim() || !target.title.trim()) return undefined
-  // A review-tier suggestion from the curated source, held while the other sources are still
-  // tried: a high match anywhere outranks it, so it's only returned once nothing scores high.
+  // A review-tier suggestion held while other options are still tried: a high match
+  // anywhere outranks it, so it's only returned once nothing scores high.
   let review: AutoMatch | undefined
+  // A file already carrying a Discogs release id gets that exact release re-loaded first —
+  // no text search needed, so a re-tagged crate re-confirms its matches on the first try
+  // instead of re-running the fuzzy title search that found them originally. Only a 'high'
+  // verdict short-circuits the search below; a 'review' is held exactly like one the search
+  // would have surfaced, and a failure (release gone, no acceptable track on it) falls
+  // straight through to the normal search.
+  if (target.discogsReleaseId) {
+    const stored = await matchStoredRelease(target.discogsReleaseId, target, api, onProbe)
+    if (stored?.tier === 'high') return stored
+    review ??= stored
+  }
   for (const provider of discogsFirst(api.providers ?? ['discogs'])) {
     // No duration to cross-check against → don't trust an uncurated catalog unattended.
     if (provider !== 'discogs' && target.durationSec === undefined) continue

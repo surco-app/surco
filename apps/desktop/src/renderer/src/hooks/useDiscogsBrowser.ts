@@ -75,8 +75,10 @@ export function useDiscogsBrowser(
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
   // The committed search term — set by the debounce while typing, or at once on
-  // Enter/the button. Drives the search query key.
-  const [searchTerm, setSearchTerm] = useState('')
+  // Enter/the button. Drives the search query key. Seeded from the file's own stored
+  // release id (if any) so the panel opens straight to it, exactly like a pasted id —
+  // typing afterwards commits a new term and overrides it.
+  const [searchTerm, setSearchTerm] = useState(item.meta.discogsReleaseId ?? '')
   // Which result is expanded. Reading the release itself from the cache (below) keeps
   // a single source of truth that auto-open, preview and reopen all set.
   const [openResult, setOpenResult] = useState<SearchResult | null>(null)
