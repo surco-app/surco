@@ -15,6 +15,10 @@
       {
         "text": "La paleta de comandos (⌘K) agrupa las acciones en secciones — Metadatos, Convertir y exportar, Biblioteca… — y la búsqueda ya ignora los acentos: «titulo» encuentra «título».",
         "in": "0.43.0"
+      },
+      {
+        "text": "Aplicar el formato del título dos veces ya no duplica el prefijo, y la app siempre explica el resultado: cuántos títulos cambió, cuáles se saltó y qué campo vacío lo impidió.",
+        "in": "0.43.1"
       }
     ]
   },

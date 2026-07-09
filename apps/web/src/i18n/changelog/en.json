@@ -15,6 +15,10 @@
       {
         "text": "The command palette (⌘K) groups actions into sections — Metadata, Convert & export, Library… — and search now ignores accents: “titulo” finds “título”.",
         "in": "0.43.0"
+      },
+      {
+        "text": "Applying the title format twice no longer doubles the prefix, and the app always explains the outcome: how many titles changed, which were skipped and which empty field was in the way.",
+        "in": "0.43.1"
       }
     ]
   },
