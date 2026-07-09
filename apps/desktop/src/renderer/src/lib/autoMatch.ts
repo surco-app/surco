@@ -81,6 +81,7 @@ export function acceptReviewPatch(track: TrackItem): Partial<TrackItem> | undefi
     coverPath: patch.coverPath,
     matched: true,
     autoMatched: true,
+    matchProvider: rm.release.provider,
     matchReview: false,
     reviewMatch: undefined,
   }

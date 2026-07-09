@@ -552,6 +552,8 @@ describe('acceptReviewPatch', () => {
     expect(patch?.matched).toBe(true)
     expect(patch?.matchReview).toBe(false)
     expect(patch?.reviewMatch).toBeUndefined()
+    // Which catalog filled the row, for the list's per-provider match filter.
+    expect(patch?.matchProvider).toBe('discogs')
   })
 
   // No pending suggestion → nothing to accept, so the command that calls this stays a no-op

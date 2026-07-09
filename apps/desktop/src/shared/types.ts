@@ -262,6 +262,7 @@ export interface SessionEdit {
   matched?: boolean
   autoMatched?: boolean
   matchConfidence?: number
+  matchProvider?: SearchProviderId
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)

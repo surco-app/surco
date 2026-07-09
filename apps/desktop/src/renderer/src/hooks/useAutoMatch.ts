@@ -177,6 +177,7 @@ export function useAutoMatch({
         autoMatched: true,
         matched: true,
         matchConfidence: m.confidence,
+        matchProvider: m.release.provider,
         ...(resolvedOwned ? { inLibraryResolved: true } : {}),
       })
       window.api.recordStat(matchStatKey(m.release.provider))

@@ -29,9 +29,16 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
 // Quality is the spectrum verdict: the suspect (likely fake-lossless) rips, the ones that
 // passed as genuine lossless ('good'), or the ones still without a verdict ('unanalyzed').
 export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
-// Conversion/provenance: still pending conversion (status !== 'done') or filled by
-// auto-match — a different dimension from the quality verdict, so its own axis.
-export type ConversionFilter = 'unconverted' | 'automatched'
+// Conversion/provenance: still pending conversion (status !== 'done'), filled by
+// auto-match, or matched from a specific catalog — a different dimension from the
+// quality verdict, so its own axis. The per-provider buckets let a mixed-crate sweep
+// be reviewed source by source: a Bandcamp match carries no Discogs id or catalog
+// number, so those rows are the ones worth a separate eyeball.
+export type ConversionFilter =
+  | 'unconverted'
+  | 'automatched'
+  | 'matchedDiscogs'
+  | 'matchedBandcamp'
 // The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
 export type LibraryFilter = 'inLibrary' | 'notInLibrary'
 // The same song loaded as two files (see lib/duplicates); a single-value axis so it
@@ -81,6 +88,8 @@ export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
 
 function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
   if (filter === 'unconverted') return track.status !== 'done'
+  if (filter === 'matchedDiscogs') return track.matchProvider === 'discogs'
+  if (filter === 'matchedBandcamp') return track.matchProvider === 'bandcamp'
   return Boolean(track.autoMatched)
 }
 
@@ -194,6 +203,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   unanalyzed: number
   unconverted: number
   automatched: number
+  matchedDiscogs: number
+  matchedBandcamp: number
   inLibrary: number
   notInLibrary: number
   duplicates: number
@@ -203,6 +214,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   let unanalyzed = 0
   let unconverted = 0
   let automatched = 0
+  let matchedDiscogs = 0
+  let matchedBandcamp = 0
   let inLibrary = 0
   let notInLibrary = 0
   let duplicates = 0
@@ -213,6 +226,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
     if (t.autoMatched) automatched += 1
+    if (t.matchProvider === 'discogs') matchedDiscogs += 1
+    else if (t.matchProvider === 'bandcamp') matchedBandcamp += 1
     if (t.inLibrary === true) inLibrary += 1
     else if (t.inLibrary === false) notInLibrary += 1
     if (t.duplicate) duplicates += 1
@@ -223,6 +238,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     unanalyzed,
     unconverted,
     automatched,
+    matchedDiscogs,
+    matchedBandcamp,
     inLibrary,
     notInLibrary,
     duplicates,

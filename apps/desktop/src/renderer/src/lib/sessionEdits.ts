@@ -29,5 +29,6 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.matched) edit.matched = true
   if (track.autoMatched) edit.autoMatched = true
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence
+  if (track.matchProvider) edit.matchProvider = track.matchProvider
   return edit
 }

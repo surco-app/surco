@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleCheckBig,
+  Disc3,
   FileAudio,
   List,
   type LucideIcon,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
+  Store,
   Trash2,
   TriangleAlert,
   Copy as CopyIcon,
@@ -23,13 +25,18 @@ import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
 type QualityMode = 'unanalyzed' | 'suspect' | 'good'
-type ConversionMode = 'unconverted' | 'automatched'
+type ConversionMode = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
-const CONVERSION_MODES: ConversionMode[] = ['unconverted', 'automatched']
+const CONVERSION_MODES: ConversionMode[] = [
+  'unconverted',
+  'automatched',
+  'matchedDiscogs',
+  'matchedBandcamp',
+]
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 
@@ -42,6 +49,8 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
   automatched: Sparkles,
+  matchedDiscogs: Disc3,
+  matchedBandcamp: Store,
   inLibrary: Check,
   notInLibrary: Plus,
   duplicates: CopyIcon,
@@ -138,10 +147,11 @@ export function QualityFilterBar({
 
   // Conversion status and provenance, surfaced right under "All": "unconverted" is the
   // primary call to action (the whole backlog to convert), so it leads the buckets instead
-  // of trailing them. The auto-matched bucket joins only once something has been auto-filled,
-  // so the menu isn't padded with a permanently-empty filter.
+  // of trailing them. The auto-matched bucket joins only once something has been auto-filled
+  // — and each per-provider bucket only once that catalog has matched something — so the
+  // menu isn't padded with permanently-empty filters.
   const conversionSection: Mode[] = CONVERSION_MODES.filter(
-    (m) => m !== 'automatched' || tally.automatched > 0,
+    (m) => m === 'unconverted' || tally[m] > 0,
   )
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the

@@ -3,6 +3,7 @@ import type {
   ProcessStage,
   Release,
   ReleaseTrack,
+  SearchProviderId,
   SearchResult,
   SpectrumResult,
   TrackMetadata,
@@ -81,6 +82,10 @@ export interface TrackItem {
   // The confidence (0–1) of the auto-match applied (autoMatched) or suggested (matchReview),
   // so the row can surface how strong the match was. Undefined for hand-picked matches.
   matchConfidence?: number
+  // Which catalog the applied release came from (sweep, accepted review or a manual
+  // apply), so the list can filter matches by source. Cleared with `matched` when the
+  // metadata is cleared.
+  matchProvider?: SearchProviderId
   // Whether another loaded row shares this track's folded artist+title — the same song
   // as two files. Merged in at the App boundary (like spectrum/inLibrary) from a
   // whole-list scan, so the duplicates filter is a plain per-track predicate.

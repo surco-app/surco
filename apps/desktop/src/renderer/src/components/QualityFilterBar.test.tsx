@@ -16,6 +16,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   unanalyzed: 0,
   unconverted: 0,
   automatched: 0,
+  matchedDiscogs: 0,
+  matchedBandcamp: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -47,6 +49,31 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
 }
 
 describe('QualityFilterBar', () => {
+  // A sweep over a mixed crate fills rows from two catalogs; the per-provider buckets
+  // let each source be reviewed on its own (a Bandcamp match carries no Discogs id or
+  // catalog number). They join the menu only once a match from that catalog exists, so
+  // a Discogs-only user never sees a permanently-empty Bandcamp row.
+  it('lists a per-provider match bucket only once that catalog has matched something', () => {
+    renderBar({ tally: tally({ automatched: 3, matchedDiscogs: 2, matchedBandcamp: 1 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-matchedDiscogs')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-filter-matchedBandcamp')).toBeInTheDocument()
+  })
+
+  it('hides the per-provider buckets while nothing has matched from them', () => {
+    renderBar({ tally: tally({ automatched: 3 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-matchedDiscogs')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-matchedBandcamp')).toBeNull()
+  })
+
+  it('picking a provider bucket filters the conversion axis', () => {
+    const { onChange } = renderBar({ tally: tally({ matchedDiscogs: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-matchedDiscogs'))
+    expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'matchedDiscogs' }))
+  })
+
   // The whole reason for the dropdown: a wide crate's chips overflowed the narrow
   // sidebar, so the filters collapse into one control that can't run out of width.
   it('collapses the filters into a single trigger that opens the bucket list on click', () => {

@@ -76,6 +76,7 @@ describe('sessionEdits', () => {
         matched: true,
         autoMatched: true,
         matchConfidence: 0.92,
+        matchProvider: 'discogs',
       }),
     ])
     expect(edits['/music/a.wav']).toMatchObject({
@@ -83,6 +84,7 @@ describe('sessionEdits', () => {
       matched: true,
       autoMatched: true,
       matchConfidence: 0.92,
+      matchProvider: 'discogs',
     })
   })
 

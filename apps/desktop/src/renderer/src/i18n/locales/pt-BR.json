@@ -58,6 +58,8 @@
       "unanalyzed": "Sem análise",
       "unconverted": "Sem converter",
       "automatched": "Auto-associadas",
+      "matchedDiscogs": "Discogs",
+      "matchedBandcamp": "Bandcamp",
       "notInLibrary": "Fora do Apple Music",
       "notInLibraryEngine": "Fora do Engine DJ",
       "inLibrary": "No Apple Music",

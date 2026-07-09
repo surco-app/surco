@@ -163,6 +163,8 @@ describe('matchesFilter / qualityCounts', () => {
       unanalyzed: 2,
       unconverted: 4,
       automatched: 0,
+      matchedDiscogs: 0,
+      matchedBandcamp: 0,
       inLibrary: 0,
       notInLibrary: 0,
       duplicates: 0,
@@ -453,6 +455,25 @@ describe('automatched filter', () => {
 
   it('tallies the auto-matched tracks for its filter badge', () => {
     expect(qualityCounts(tracks).automatched).toBe(2)
+  })
+})
+
+describe('match-provider filter', () => {
+  const t = (id: string, matchProvider?: 'discogs' | 'bandcamp'): TrackItem =>
+    ({ id, status: 'idle', matchProvider }) as TrackItem
+  // Which catalog a match came from is worth filtering on its own: a Bandcamp match
+  // carries no Discogs id or catalog number, so the user may want to eyeball exactly
+  // those rows (or the Discogs ones) after a sweep over a mixed crate.
+  const tracks = [t('dg', 'discogs'), t('bc', 'bandcamp'), t('none')]
+
+  it('keeps only the tracks matched from the chosen catalog', () => {
+    expect(by(tracks, { conversion: 'matchedDiscogs' }).map((x) => x.id)).toEqual(['dg'])
+    expect(by(tracks, { conversion: 'matchedBandcamp' }).map((x) => x.id)).toEqual(['bc'])
+  })
+
+  it('tallies each provider for its filter badge', () => {
+    expect(qualityCounts(tracks).matchedDiscogs).toBe(1)
+    expect(qualityCounts(tracks).matchedBandcamp).toBe(1)
   })
 })
 

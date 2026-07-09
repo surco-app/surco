@@ -1123,9 +1123,12 @@ export default function App(): React.JSX.Element {
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
   const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
-  const onApplyMatches = useStableCallback((patches: { id: string; patch: ReleaseMetaPatch }[]) => {
-    for (const p of patches) updateTrack(p.id, { ...p.patch, matched: true })
-  })
+  const onApplyMatches = useStableCallback(
+    (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => {
+      for (const p of patches)
+        updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
+    },
+  )
   const onProcessAllSelected = useStableCallback((format: OutputFormat) =>
     askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined),
   )
@@ -1263,6 +1266,7 @@ export default function App(): React.JSX.Element {
         matched: false,
         matchReview: false,
         reviewMatch: undefined,
+        matchProvider: undefined,
         inLibraryResolved: false,
       })
   })

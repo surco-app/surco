@@ -8,6 +8,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   ReleaseTrack,
+  SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
@@ -71,7 +72,10 @@ interface Props {
   // the convert action to "convert all"; the right-hand editor still shows `item`, the
   // primary track. Undefined/length<=1 means the ordinary single-track editor.
   selectedTracks?: TrackItem[]
-  onApplyMatches?: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
+  onApplyMatches?: (
+    patches: { id: string; patch: ReleaseMetaPatch }[],
+    provider: SearchProviderId,
+  ) => void
   onProcessAll?: (format: OutputFormat) => void
   onAddAllToAppleMusic?: () => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
@@ -443,6 +447,7 @@ export const Editor = memo(function Editor({
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
+      matchProvider: release.provider,
     })
     window.api.recordStat(matchStatKey(release.provider))
     // Applying a release is the cue to verify the tags, so move focus to the first field:
@@ -510,7 +515,14 @@ export const Editor = memo(function Editor({
     // Clearing the tags un-matches the track, so the sweep may fill it again — including
     // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven
     // owned verdict so it re-resolves against whatever the retag matches.
-    else onChange({ meta: blank, matched: false, matchReview: false, inLibraryResolved: false })
+    else
+      onChange({
+        meta: blank,
+        matched: false,
+        matchReview: false,
+        matchProvider: undefined,
+        inLibraryResolved: false,
+      })
   }
 
   const stale = isStale(item)

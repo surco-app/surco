@@ -207,6 +207,7 @@ export function useTrackLibrary({
     if (saved.matched) patch.matched = true
     if (saved.autoMatched) patch.autoMatched = true
     if (saved.matchConfidence !== undefined) patch.matchConfidence = saved.matchConfidence
+    if (saved.matchProvider) patch.matchProvider = saved.matchProvider
     return patch
   }
 

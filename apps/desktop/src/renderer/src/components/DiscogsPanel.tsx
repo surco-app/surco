@@ -2,7 +2,7 @@ import { ChevronRight, ListFilter } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ReleaseTrack } from '../../../shared/types'
+import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import type { ReleaseMetaPatch } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
@@ -25,7 +25,9 @@ interface Props {
   hasToken: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
-  onApplyMatches: ((patches: { id: string; patch: ReleaseMetaPatch }[]) => void) | undefined
+  onApplyMatches:
+    | ((patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => void)
+    | undefined
   selectTrack: (track: ReleaseTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
   onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void

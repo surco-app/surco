@@ -2,7 +2,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Release, ReleaseTrack } from '../../../shared/types'
+import type { Release, ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
@@ -23,7 +23,9 @@ function trackLabel(track: ReleaseTrack): string {
 interface Props {
   files: TrackItem[]
   release: Release
-  onApply: (patches: { id: string; patch: ReleaseMetaPatch }[]) => void
+  // The release's provider rides along so the caller can stamp which catalog filled
+  // each row (the list's per-provider match filter reads it).
+  onApply: (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => void
 }
 
 // The per-file mapping under a chosen release: auto-assigns each selected file to a
@@ -82,7 +84,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
       ]
     })
     if (!patches.length) return
-    onApply(patches)
+    onApply(patches, release.provider)
     window.api.recordStat(matchStatKey(release.provider), patches.length)
     setJustApplied(true)
   }
