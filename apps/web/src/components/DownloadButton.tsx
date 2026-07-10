@@ -36,6 +36,7 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
   const [href, setHref] = useState<string | null>(null)
   const [intelHref, setIntelHref] = useState<string | null>(null)
   const [version, setVersion] = useState<string | null>(null)
+  const [settled, setSettled] = useState(false)
 
   useEffect(() => {
     if (os === 'other') return
@@ -57,6 +58,9 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
         }
       })
       .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setSettled(true)
+      })
     return () => {
       cancelled = true
     }
@@ -112,7 +116,15 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
         // min-h reserves one line so the row doesn't grow from empty (prerender) to
         // count+version once the releases fetch lands, which would shift the hero.
         <div className="mt-5 min-h-5 font-mono text-xs text-faint">
-          {!ready ? (
+          {!ready && !settled ? (
+            // The fetch is still in flight — a pulse placeholder, not the
+            // "unavailable" copy, which is reserved for a fetch that came back empty.
+            <span
+              data-testid="download-meta-loading"
+              aria-hidden="true"
+              className="inline-block h-3 w-44 max-w-full animate-pulse rounded bg-line align-middle"
+            />
+          ) : !ready ? (
             <p>{t('download.unavailable')}</p>
           ) : (
             <p className="flex flex-wrap items-center gap-x-2">

@@ -11,6 +11,7 @@ const REPO = 'vigosan/surco-releases'
 export default function DownloadCount() {
   const { t, i18n } = useTranslation()
   const [count, setCount] = useState<number | null>(null)
+  const [settled, setSettled] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -20,10 +21,25 @@ export default function DownloadCount() {
         setCount(countDownloads(releases))
       })
       .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setSettled(true)
+      })
     return () => {
       cancelled = true
     }
   }, [])
+
+  // While the paginated releases fetch is in flight, hold the count's slot with a
+  // pulse placeholder so the version next to it doesn't get shoved sideways when
+  // the number lands.
+  if (!settled)
+    return (
+      <span
+        data-testid="download-count-loading"
+        aria-hidden="true"
+        className="inline-block h-3 w-32 animate-pulse rounded bg-line align-middle"
+      />
+    )
 
   if (!count) return null
 
