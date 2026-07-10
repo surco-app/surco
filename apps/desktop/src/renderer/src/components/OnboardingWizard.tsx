@@ -39,6 +39,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
+  const [convertBesideOriginal, setConvertBesideOriginal] = useState(
+    settings.convertBesideOriginal,
+  )
   const [addToEngineDj, setAddToEngineDj] = useState(settings.addToEngineDj)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
@@ -60,6 +63,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         keepOutputCopy,
         overwriteOriginal,
         addToEngineDj,
+        convertBesideOriginal,
       }),
     )
   }
@@ -71,12 +75,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     outputFormat === 'flac',
     overwriteOriginal,
     addToEngineDj,
+    convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
     setKeepOutputCopy(next.keepOutputCopy)
     setOverwriteOriginal(next.overwriteOriginal)
+    setConvertBesideOriginal(next.convertBesideOriginal)
     setAddToEngineDj(next.addToEngineDj)
   }
 

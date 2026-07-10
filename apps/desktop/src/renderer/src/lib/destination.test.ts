@@ -6,6 +6,7 @@ describe('toDestination', () => {
     expect(toDestination(false, false, false, false)).toBe('folder')
     expect(toDestination(true, false, false, false)).toBe('appleMusic')
     expect(toDestination(false, false, false, true)).toBe('engineDj')
+    expect(toDestination(false, false, false, false, true)).toBe('beside')
   })
 
   // FLAC can't be added to Apple Music, so the choice falls back to the always-valid
@@ -24,7 +25,13 @@ describe('toDestination', () => {
   // other flag — including the FLAC pin and any library booleans left set.
   it('reports overwrite whenever the flag is set, regardless of the other booleans', () => {
     expect(toDestination(false, false, true, false)).toBe('overwrite')
-    expect(toDestination(true, true, true, true)).toBe('overwrite')
+    expect(toDestination(true, true, true, true, true)).toBe('overwrite')
+  })
+
+  // Beside-original writes a fresh file next to the source, so like Engine DJ it is
+  // FLAC-proof — the pin to the output folder must not eat the choice.
+  it('keeps beside-original while FLAC is the format', () => {
+    expect(toDestination(false, true, false, false, true)).toBe('beside')
   })
 })
 
@@ -35,12 +42,14 @@ describe('fromDestination', () => {
       keepOutputCopy: true,
       overwriteOriginal: false,
       addToEngineDj: false,
+      convertBesideOriginal: false,
     })
     expect(fromDestination('appleMusic')).toEqual({
       addToAppleMusic: true,
       keepOutputCopy: false,
       overwriteOriginal: false,
       addToEngineDj: false,
+      convertBesideOriginal: false,
     })
   })
 
@@ -52,6 +61,7 @@ describe('fromDestination', () => {
       keepOutputCopy: true,
       overwriteOriginal: false,
       addToEngineDj: true,
+      convertBesideOriginal: false,
     })
   })
 
@@ -63,6 +73,19 @@ describe('fromDestination', () => {
       keepOutputCopy: true,
       overwriteOriginal: true,
       addToEngineDj: false,
+      convertBesideOriginal: false,
+    })
+  })
+
+  // Beside-original is the non-destructive sibling of overwrite: a fresh copy next to
+  // the source, nothing added to any library, the original never touched.
+  it('sets only the beside flag for beside', () => {
+    expect(fromDestination('beside')).toEqual({
+      addToAppleMusic: false,
+      keepOutputCopy: true,
+      overwriteOriginal: false,
+      addToEngineDj: false,
+      convertBesideOriginal: true,
     })
   })
 
@@ -70,8 +93,11 @@ describe('fromDestination', () => {
   // what guarantees Settings and the wizard never drift apart.
   it('round-trips every choice', () => {
     for (const d of DESTINATIONS) {
-      const { addToAppleMusic, overwriteOriginal, addToEngineDj } = fromDestination(d)
-      expect(toDestination(addToAppleMusic, false, overwriteOriginal, addToEngineDj)).toBe(d)
+      const { addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal } =
+        fromDestination(d)
+      expect(
+        toDestination(addToAppleMusic, false, overwriteOriginal, addToEngineDj, convertBesideOriginal),
+      ).toBe(d)
     }
   })
 })

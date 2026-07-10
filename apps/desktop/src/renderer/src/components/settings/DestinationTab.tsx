@@ -38,6 +38,7 @@ export function DestinationTab({
     flacOnly,
     synced.overwriteOriginal,
     synced.addToEngineDj,
+    synced.convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
@@ -45,6 +46,7 @@ export function DestinationTab({
     patch('keepOutputCopy', next.keepOutputCopy)
     patch('overwriteOriginal', next.overwriteOriginal)
     patch('addToEngineDj', next.addToEngineDj)
+    patch('convertBesideOriginal', next.convertBesideOriginal)
   }
   return (
     <>

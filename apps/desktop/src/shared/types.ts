@@ -103,6 +103,11 @@ export interface Settings {
   // the format differs, in which case the old-extension original is removed. Mutually
   // exclusive with Apple Music: the file stays put, nothing is added to the library.
   overwriteOriginal: boolean
+  // When true, the conversion lands as a fresh file in the source's own folder and the
+  // original is never touched — the non-destructive sibling of overwriteOriginal. A
+  // same-format export takes a "(n)" name (like keep-both) instead of prompting or
+  // rewriting the source. Mutually exclusive with the other destinations (one radio).
+  convertBesideOriginal: boolean
   // When true, a successful conversion is also registered in the Engine DJ library
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.

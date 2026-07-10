@@ -592,10 +592,12 @@
       "folder": "Ausgabeordner",
       "appleMusic": "Apple Music",
       "engineDj": "Engine DJ",
+      "beside": "Neben dem Original",
       "overwrite": "Original überschreiben"
     },
     "destinationAppleMusicHint": "Fügt zu Apple Music hinzu, keine Kopie im Ausgabeordner.",
     "destinationEngineDjHint": "Registriert den Track in deiner Engine DJ-Bibliothek; die Datei bleibt im Ausgabeordner.",
+    "destinationBesideHint": "Schreibt die Konvertierung neben die Quelldatei, ohne sie je anzutasten; beim gleichen Format erhält die Kopie einen „(2)“-Namen.",
     "destinationOverwriteHint": "Überschreibt jede Quelldatei direkt; keine Ausgabekopie. Bei Formatwechsel wird das Original entfernt.",
     "engineLibraryDir": "Engine DJ-Bibliothek",
     "engineLibraryDirHint": "Surco schreibt in die Datenbank dieser Bibliothek. Schließ Engine DJ während der Konvertierung.",

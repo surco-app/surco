@@ -176,6 +176,7 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     addToEngineDj,
     overwriteOriginal,
+    convertBesideOriginal,
     replaceLowResCover,
     autoApplyFilename,
     filenameFormat,
@@ -198,7 +199,7 @@ export const Editor = memo(function Editor({
   // Which library the membership badge reads — the conversion destination's. Null
   // (folder/overwrite, or Apple Music off macOS) hides the badge entirely.
   const librarySource = librarySourceOf(
-    { addToAppleMusic, addToEngineDj, overwriteOriginal, outputFormat },
+    { addToAppleMusic, addToEngineDj, overwriteOriginal, convertBesideOriginal, outputFormat },
     isMacOS(),
   )
   const hasToken = discogsToken !== ''
@@ -565,8 +566,11 @@ export const Editor = memo(function Editor({
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
   // forces this for every format except ALAC, which always renders a fresh file
   // (see editsInPlace) — the shared helper keeps this warning honest against what
-  // resolveOutputTarget actually does.
-  const willEditInPlace = editsInPlace(format, item.inputPath, overwriteOriginal)
+  // resolveOutputTarget actually does. Beside-original never edits in place (a
+  // same-format export lands as a fresh "(n)" copy next to the source), so its rows
+  // must not carry the in-place rename warning.
+  const willEditInPlace =
+    !convertBesideOriginal && editsInPlace(format, item.inputPath, overwriteOriginal)
   // Same-format exports never touch the audio (metadata-only, by design), so when the
   // quality pins ask for something the source isn't, the honest move is an explicit
   // offer: a passive line naming the gap plus a "Re-encode" action — never a silent

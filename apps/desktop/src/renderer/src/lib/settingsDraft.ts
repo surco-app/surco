@@ -10,6 +10,7 @@ export interface SyncedDraft {
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   overwriteOriginal: boolean
+  convertBesideOriginal: boolean
   addToEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
@@ -62,6 +63,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
+    convertBesideOriginal: s.convertBesideOriginal,
     addToEngineDj: s.addToEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,

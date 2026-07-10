@@ -118,6 +118,8 @@ export async function runProcessTrack(
 
     stage('converting')
     const format = job.format ?? settings.outputFormat
+    const besideOriginal =
+      (settings.convertBesideOriginal ?? false) && !(job.overwriteOriginal ?? settings.overwriteOriginal)
     const { outputPath, inPlace } = resolveOutputTarget(
       job.inputPath,
       sanitizeOutputName(job.outputName),
@@ -125,6 +127,7 @@ export async function runProcessTrack(
       settings.outputDir,
       job.overwriteOriginal ?? settings.overwriteOriginal,
       job.forceReencode ?? false,
+      besideOriginal,
     )
     // "Apple Music only": the user wants the track in Apple Music and no copy left in
     // the output folder. Apple Music still imports a real path, so write the conversion
@@ -143,6 +146,19 @@ export async function runProcessTrack(
     if (musicOnly) {
       tmpDir = await deps.mkdtemp(join(tmpdir(), 'surco-'))
       target = join(tmpDir, basename(outputPath))
+    } else if (besideOriginal) {
+      // The mode's whole contract is "never touch an existing file", so a collision is
+      // resolved silently with the same "(n)" suffix keep-both uses — prompting would
+      // defeat the promise, overwriting would break it. Two exceptions shape `taken`:
+      // the track's own previous copy stays overwritable (a re-export must land back
+      // on its "(2)" instead of piling up "(3)", "(4)"…), and the source file is never
+      // a valid target — not even via a stale previousOutputPath pointing at it after
+      // a mode switch from overwrite.
+      const taken = (p: string): boolean =>
+        p !== job.previousOutputPath && (deps.existsSync(p) || deps.isPathReserved(p))
+      if ((await deps.isSameFile(job.inputPath, outputPath)) || taken(outputPath)) {
+        target = uniqueOutputPath(outputPath, (p) => p === job.inputPath || taken(p))
+      }
     } else if (
       isOutputConflict(
         outputPath,

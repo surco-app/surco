@@ -42,7 +42,11 @@ export interface OutputTarget {
 // `overwriteOriginal` forces the in-place path regardless of format — except ALAC,
 // which always renders fresh (see editsInPlace): the converted file replaces the
 // source in its own folder, and removeRenamedOriginal drops the old-extension
-// original afterwards. `name` is the already-sanitized base name.
+// original afterwards. `besideOriginal` is the non-destructive sibling: a fresh
+// file in the source's own folder, NEVER in place — inPlace false is what keeps
+// removeRenamedOriginal from unlinking the source, whatever the format (a
+// same-format target resolving to the source's own path is the caller's cue to
+// bump the name). `name` is the already-sanitized base name.
 export function resolveOutputTarget(
   inputPath: string,
   name: string,
@@ -50,7 +54,16 @@ export function resolveOutputTarget(
   outputDir: string,
   overwriteOriginal = false,
   forceReencode = false,
+  besideOriginal = false,
 ): OutputTarget {
+  // The dir comes from the real inputPath (trusted), like the in-place branch below,
+  // so the outputDir escape guard doesn't apply here either.
+  if (besideOriginal && !overwriteOriginal) {
+    return {
+      outputPath: join(dirname(inputPath), `${name}.${formatExtension(format)}`),
+      inPlace: false,
+    }
+  }
   // An explicit re-encode is a real conversion: it renders a fresh file into the
   // output folder and leaves the same-format original untouched — unless overwrite
   // mode already promises to rewrite the source where it lives.

@@ -5,6 +5,7 @@ const base = {
   addToAppleMusic: false,
   addToEngineDj: false,
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   outputFormat: 'aiff' as const,
 }
 
@@ -15,10 +16,13 @@ describe('librarySourceOf', () => {
     expect(librarySourceOf(base, true)).toBeNull()
   })
 
-  // Folder and overwrite land in no library; checking one would flag tracks the
-  // conversion will never put there.
-  it('reports no source for folder and overwrite destinations', () => {
+  // Folder, beside-original and overwrite land in no library; checking one would flag
+  // tracks the conversion will never put there.
+  it('reports no source for folder, beside and overwrite destinations', () => {
     expect(librarySourceOf({ ...base, overwriteOriginal: true, addToAppleMusic: true }, true)).toBeNull()
+    expect(
+      librarySourceOf({ ...base, convertBesideOriginal: true, addToAppleMusic: true }, true),
+    ).toBeNull()
   })
 
   // The Apple Music bridge only exists on macOS; the Engine database is plain SQLite

@@ -35,6 +35,7 @@ const settings: Settings = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
   engineDjPlaylist: 'Surco',

@@ -3,14 +3,18 @@ import { toDestination } from './destination'
 
 // Which library the "already owned" membership check reads: the destination's. A
 // conversion that lands in Apple Music checks Apple Music; one that lands in Engine DJ
-// checks the Engine database; folder/overwrite conversions land in no library, so
-// there is nothing meaningful to check and every membership surface hides.
+// checks the Engine database; folder/beside/overwrite conversions land in no library,
+// so there is nothing meaningful to check and every membership surface hides.
 export type LibrarySource = 'appleMusic' | 'engineDj' | null
 
 export function librarySourceOf(
   settings: Pick<
     Settings,
-    'addToAppleMusic' | 'addToEngineDj' | 'overwriteOriginal' | 'outputFormat'
+    | 'addToAppleMusic'
+    | 'addToEngineDj'
+    | 'overwriteOriginal'
+    | 'convertBesideOriginal'
+    | 'outputFormat'
   > | null,
   mac: boolean,
 ): LibrarySource {
@@ -20,6 +24,7 @@ export function librarySourceOf(
     settings.outputFormat === 'flac',
     settings.overwriteOriginal,
     settings.addToEngineDj,
+    settings.convertBesideOriginal,
   )
   // Engine DJ's database is plain SQLite on every platform; the Apple Music bridge
   // only exists on macOS.

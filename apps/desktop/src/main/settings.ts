@@ -30,6 +30,7 @@ const defaults: Settings = {
   // Off by default: exports produce a copy and never touch the source unless the user
   // opts into overwriting it.
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   addToEngineDj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),

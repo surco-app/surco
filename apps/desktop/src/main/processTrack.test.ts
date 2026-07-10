@@ -355,6 +355,91 @@ describe('runProcessTrack — forced re-encode', () => {
   })
 })
 
+describe('runProcessTrack — beside the original', () => {
+  // The mode's whole contract: a fresh file in the source's own folder and the
+  // original never touched — no in-place rewrite, no unlink, no prompt.
+  it('converts next to the source and leaves the original alone', async () => {
+    const deps = makeDeps({ settings: settings({ convertBesideOriginal: true }) })
+    const result = await runProcessTrack(job({ outputName: 'song' }), deps)
+
+    expect(deps.convertAudio).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/song.aiff',
+      'aiff',
+      {},
+      undefined,
+      { mode: 'none' },
+      undefined,
+      undefined,
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ outputPath: '/in/song.aiff', inPlace: false })
+  })
+
+  // Same extension resolves to the source's own path — the copy takes a "(n)" name
+  // silently (like keep-both), because prompting would defeat the mode's promise and
+  // overwriting the source would break it.
+  it('bumps a same-format copy to "(2)" instead of touching the source', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      existsSync: vi.fn((p: string) => p === '/in/song.wav'),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(deps.convertAudio).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/song (2).wav',
+      'wav',
+      {},
+      undefined,
+      { mode: 'none' },
+      undefined,
+      undefined,
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/in/song (2).wav')
+  })
+
+  // A re-export must not pile up "(3)", "(4)"… — the track's own previous copy is the
+  // one file the mode may overwrite, so the second run lands back on "(2)".
+  it('reuses its own previous copy on a re-export', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      existsSync: vi.fn((p: string) => p === '/in/song.wav' || p === '/in/song (2).wav'),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(
+      job({ outputName: 'song', format: 'wav', previousOutputPath: '/in/song (2).wav' }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/in/song (2).wav')
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
+  // A stale previousOutputPath can point at the source itself (an in-place run before
+  // the mode switch). The source is never a valid target here, whatever claims it.
+  it('never writes over the source, even when the previous output was the source', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      existsSync: vi.fn((p: string) => p === '/in/song.wav'),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(
+      job({ outputName: 'song', format: 'wav', previousOutputPath: '/in/song.wav' }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/in/song (2).wav')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+})
+
 describe('runProcessTrack — in-place rewrite', () => {
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({

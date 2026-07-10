@@ -59,6 +59,11 @@ export function DestinationPicker({
                   {tr('settings.destinationEngineDjHint')}
                 </span>
               )}
+              {d === 'beside' && (
+                <span className="block text-xs text-fg-dim">
+                  {tr('settings.destinationBesideHint')}
+                </span>
+              )}
               {d === 'overwrite' && (
                 <span className="block text-xs text-fg-dim">
                   {tr('settings.destinationOverwriteHint')}

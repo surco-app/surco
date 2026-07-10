@@ -22,6 +22,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: true,
       addToAppleMusic: true,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: false,
     })
@@ -33,6 +34,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: true,
       addToAppleMusic: true,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: false,
       hasSeenOnboarding: true,
@@ -50,6 +52,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: false,
       addToAppleMusic: true,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: true,
     })
@@ -74,6 +77,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: true,
       addToAppleMusic: false,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: true,
     })
@@ -90,6 +94,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: true,
       addToAppleMusic: false,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: true,
     })
@@ -108,6 +113,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: false,
       addToAppleMusic: true,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: false,
     })
@@ -126,6 +132,7 @@ describe('buildOnboardingPatch', () => {
       autoMatch: false,
       addToAppleMusic: false,
       overwriteOriginal: false,
+    convertBesideOriginal: false,
       addToEngineDj: true,
       keepOutputCopy: true,
     })

@@ -14,6 +14,8 @@ export interface OnboardingChoices {
   keepOutputCopy: boolean
   // Rewrites the source files in place instead of producing copies (destructive).
   overwriteOriginal: boolean
+  // Writes each conversion as a fresh file next to its source, original kept.
+  convertBesideOriginal: boolean
   // Registers converted tracks in the Engine DJ library; its folder and playlist keep
   // their defaults here, tunable later in Settings.
   addToEngineDj: boolean
@@ -42,6 +44,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     keepOutputCopy: choices.keepOutputCopy,
     overwriteOriginal: choices.overwriteOriginal,
     addToEngineDj: choices.addToEngineDj,
+    convertBesideOriginal: choices.convertBesideOriginal,
     hasSeenOnboarding: true,
   }
 }

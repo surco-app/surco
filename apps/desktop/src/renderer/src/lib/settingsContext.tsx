@@ -25,6 +25,7 @@ export interface ResolvedSettings {
   addToAppleMusic: boolean
   addToEngineDj: boolean
   overwriteOriginal: boolean
+  convertBesideOriginal: boolean
   replaceLowResCover: boolean
   autoApplyFilename: boolean
   filenameFormat: string
@@ -53,6 +54,7 @@ const DEFAULTS: ResolvedSettings = {
   addToAppleMusic: false,
   addToEngineDj: false,
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   replaceLowResCover: false,
   autoApplyFilename: false,
   filenameFormat: '{artist} - {title}',
@@ -81,6 +83,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
+    convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,
     autoApplyFilename: settings.autoApplyFilename ?? DEFAULTS.autoApplyFilename,
     filenameFormat: settings.filenameFormat ?? DEFAULTS.filenameFormat,

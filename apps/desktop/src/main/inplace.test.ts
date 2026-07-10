@@ -116,6 +116,40 @@ describe('resolveOutputTarget', () => {
       resolveOutputTarget('/music/song.wav', '../../etc/passwd', 'flac', '/out'),
     ).toThrow()
   })
+
+  // The "beside the original" destination: a fresh file in the source's own folder,
+  // never an in-place rewrite — inPlace false is what keeps removeRenamedOriginal
+  // from ever unlinking the source, whatever the format.
+  describe('beside-original mode', () => {
+    it('lands a conversion next to the source, original kept', () => {
+      expect(
+        resolveOutputTarget('/music/old.wav', 'old', 'flac', '/out', false, false, true),
+      ).toEqual({
+        outputPath: '/music/old.flac',
+        inPlace: false,
+      })
+    })
+
+    it('is never in place, even when the format matches the source', () => {
+      // Same extension resolves to the source's own path here; the caller bumps it to
+      // "old (2).wav" — what matters is inPlace false so the original survives.
+      expect(
+        resolveOutputTarget('/music/old.wav', 'old', 'wav', '/out', false, false, true),
+      ).toEqual({
+        outputPath: '/music/old.wav',
+        inPlace: false,
+      })
+    })
+
+    it('stays beside the source on a forced re-encode too', () => {
+      expect(
+        resolveOutputTarget('/music/old.flac', 'old', 'flac', '/out', false, true, true),
+      ).toEqual({
+        outputPath: '/music/old.flac',
+        inPlace: false,
+      })
+    })
+  })
 })
 
 describe('isOutputConflict', () => {

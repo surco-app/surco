@@ -19,6 +19,7 @@ const synced: SyncedDraft = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   addToEngineDj: false,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
@@ -95,6 +96,25 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
     expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
     expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
+  })
+
+  // "Next to the original" is the non-destructive sibling of overwrite: a fresh copy
+  // beside the source, nothing in any library — one radio choice like the rest, so a
+  // leftover boolean can't make the radio show one thing and the conversion do another.
+  it('stages beside-the-original as an exclusive destination choice', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-destination-beside'))
+    expect(patch).toHaveBeenCalledWith('convertBesideOriginal', true)
+    expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
+    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
+    expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
+  })
+
+  // Like Engine DJ, a fresh copy beside the source is FLAC-proof, so the FLAC pin
+  // that greys Apple Music out must not touch it.
+  it('keeps beside-the-original selectable while FLAC is the format', () => {
+    renderTab({ outputFormat: 'flac' })
+    expect(screen.getByTestId('settings-destination-beside')).toBeEnabled()
   })
 
   // The library folder only matters once conversions are actually registered there;

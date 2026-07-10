@@ -19,6 +19,7 @@ const synced: SyncedDraft = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
+  convertBesideOriginal: false,
   addToEngineDj: false,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
