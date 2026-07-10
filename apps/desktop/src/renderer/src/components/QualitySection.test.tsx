@@ -122,6 +122,48 @@ describe('QualitySection analysis gating', () => {
   })
 })
 
+// The before/after waveform pair is the visual half of "what did normalization
+// actually do": it can only exist once there IS an after, and an in-place export
+// rewrites the source — the pre-conversion peaks are gone, so a pair there would
+// show the same (new) file twice and read as "conversion changed nothing".
+describe('QualitySection before/after waveforms', () => {
+  function renderWithItem(over: Partial<TrackItem>): void {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={{ ...track(), ...over }}
+          showSpectrum={false}
+          showLoudness={false}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+  }
+
+  it('shows the pair once the track has a converted output', async () => {
+    renderWithItem({ outputPath: '/out/a.aiff', status: 'done' })
+    expect(await screen.findByTestId('waveform-compare')).toBeInTheDocument()
+  })
+
+  it('shows no pair before the track converts', async () => {
+    renderWithItem({})
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-compare')).not.toBeInTheDocument()
+  })
+
+  it('shows no pair for an in-place export that rewrote the source', async () => {
+    renderWithItem({ outputPath: '/music/a.flac', status: 'done' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-compare')).not.toBeInTheDocument()
+  })
+})
+
 // The caption under the spectrogram is the only place that explains the verdict, so
 // it must say WHY this file earned its colour — a generic one-liner reads the same
 // under a green badge and a red one, leaving "Bad quality" unjustified.

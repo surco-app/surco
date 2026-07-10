@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Bruit de fond",
     "loudnessNoiseHint": "Plancher de bruit (dB) — le niveau de fond ; plus bas, plus propre",
     "loudnessHelpTitle": "Qu'est-ce que ça veut dire ?",
+    "waveformBefore": "Avant",
+    "waveformAfter": "Après",
     "loudnessLufsHelp": "(LUFS) — le volume global perçu du morceau. Trop bas, il sonne plus faible que tes autres morceaux ; trop haut, il sonne écrasé.",
     "loudnessPeakHelp": "(dBTP) — l'instant le plus fort du signal. Au-dessus de 0, ça peut distordre (clipper) à la conversion ou à la lecture.",
     "loudnessRangeHelp": "(LU) — l'écart entre les passages doux et forts. Une plage très basse signale une grosse compression (la loudness war).",

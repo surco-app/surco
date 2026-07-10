@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Noise floor",
     "loudnessNoiseHint": "Noise floor (dB) — the background level; lower is cleaner",
     "loudnessHelpTitle": "What do these mean?",
+    "waveformBefore": "Before",
+    "waveformAfter": "After",
     "loudnessLufsHelp": "(LUFS) — how loud the track sounds overall. Too low and it plays quieter than your other tracks; too high and it sounds crushed.",
     "loudnessPeakHelp": "(dBTP) — the loudest instant of the signal. Above 0 it can distort (clip) when converted or played back.",
     "loudnessRangeHelp": "(LU) — how much the quiet and loud parts differ. A very low range means heavy compression (the loudness war).",

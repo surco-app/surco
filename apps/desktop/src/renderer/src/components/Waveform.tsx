@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useWaveform } from '../hooks/useWaveform'
-import { skeletonPeaks } from '../lib/waveform'
+import { drawWaveform, skeletonPeaks } from '../lib/waveform'
 
 // Fixed internal raster scaled by CSS to the container: the peak array is 2048
 // buckets, so ~half a bucket per device pixel at typical panel widths —
@@ -10,20 +10,6 @@ const CANVAS_W = 1200
 const CANVAS_H = 96
 
 const SKELETON_PEAKS = skeletonPeaks(80)
-
-function drawWaveform(canvas: HTMLCanvasElement, peaks: number[]): void {
-  const ctx = canvas.getContext('2d')
-  // jsdom (tests) has no 2D context; the scrub/playhead geometry is asserted via the DOM.
-  if (!ctx) return
-  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
-  const mid = CANVAS_H / 2
-  ctx.fillStyle = 'rgba(96, 165, 250, 0.8)'
-  const barW = CANVAS_W / peaks.length
-  for (let i = 0; i < peaks.length; i++) {
-    const h = Math.max(peaks[i] * (CANVAS_H / 2 - 2), 0.5)
-    ctx.fillRect(i * barW, mid - h, Math.max(barW - 0.5, 0.5), h * 2)
-  }
-}
 
 // The player's scrubbable waveform. Clicking or dragging seeks (onScrub gets the
 // position in seconds); the playhead follows playback while `active`.
