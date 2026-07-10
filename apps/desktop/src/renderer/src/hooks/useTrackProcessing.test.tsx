@@ -923,4 +923,31 @@ describe('useTrackProcessing', () => {
     expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['loudness', '/m/b.wav'])).toBeDefined()
   })
+
+  // A re-export replaces the file at the output path, so probes cached for it (the
+  // before/after comparison's waveform and loudness of the previous export) describe
+  // bytes that no longer exist. Without eviction, converting again with a new
+  // normalization shows the OLD output's wave and figures as "after" — or a blank
+  // strip pinned forever if the old query had errored.
+  it('evicts the output path’s cached probes after a regular conversion', async () => {
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
+    const client = new QueryClient()
+    client.setQueryData(['waveform', '/out/a.aiff'], { peaks: [1], durationSec: 1 })
+    client.setQueryData(['loudness', '/out/a.aiff'], { integrated: -9 })
+    client.setQueryData(['waveform', '/m/a.wav'], { peaks: [0.5], durationSec: 1 })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(client.getQueryData(['waveform', '/out/a.aiff'])).toBeUndefined()
+    expect(client.getQueryData(['loudness', '/out/a.aiff'])).toBeUndefined()
+    // The source file was not touched by a regular conversion — its probes stay.
+    expect(client.getQueryData(['waveform', '/m/a.wav'])).toBeDefined()
+  })
 })

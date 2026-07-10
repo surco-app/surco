@@ -208,13 +208,13 @@ export function useTrackProcessing({
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
         updateTrack(id, exportedPatch(track, result, normalizeOverride ?? settings?.normalize))
-        // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
-        // so any cached probe of it now describes the old bytes. Evict both paths (they
-        // differ when the rewrite also renamed) so the readouts measure the new file.
-        if (result.inPlace) {
-          removeAnalysisQueries(queryClient, track.inputPath)
-          removeAnalysisQueries(queryClient, result.outputPath)
-        }
+        // Every conversion replaces the file at the output path, so probes cached for
+        // it (the before/after comparison's waveform/loudness of a previous export)
+        // describe bytes that no longer exist — without eviction a re-export keeps
+        // showing the old output as "after". An in-place export additionally rewrote
+        // the source, so its (possibly different, when renamed) path is evicted too.
+        removeAnalysisQueries(queryClient, result.outputPath)
+        if (result.inPlace) removeAnalysisQueries(queryClient, track.inputPath)
         return 'converted'
       } catch (e) {
         const message = e instanceof Error ? cleanIpcError(e.message) : tr('editor.processError')
