@@ -372,6 +372,74 @@ describe('useDiscogsBrowser', () => {
     expect(search).not.toHaveBeenCalled()
   })
 
+  // The auto-match sweep can land while the panel is open: it writes the found release
+  // id onto the track, but the panel's search state seeds only on mount — so the user
+  // kept staring at the broad text-search candidates until they flipped to another track
+  // and back, which is when the remount finally showed the match. When the id appears
+  // mid-mount the panel must jump to that release, exactly as if the track were reopened.
+  it('jumps to the release when the stored id lands after mount', async () => {
+    setApi({ getRelease: vi.fn((id: number) => Promise.resolve({ ...release, id })) })
+    const { result, rerender } = renderHook(
+      ({ discogsReleaseId }: { discogsReleaseId?: string }) =>
+        useDiscogsBrowser(item({ query: 'some album', discogsReleaseId }), tr),
+      { wrapper: wrapper(), initialProps: {} as { discogsReleaseId?: string } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(result.current.release).toBeNull()
+
+    rerender({ discogsReleaseId: '55' })
+    await waitFor(() => expect(result.current.release?.id).toBe(55))
+  })
+
+  // But a search the user typed themselves is theirs: if the sweep's id lands while
+  // they are refining the query by hand, yanking the panel to the sweep's release
+  // would throw away what they were doing. Their committed term stays in charge.
+  it('keeps a user-typed search when the stored id lands after they typed', async () => {
+    const getRelease = vi.fn((id: number) => Promise.resolve({ ...release, id }))
+    setApi({ getRelease })
+    const { result, rerender } = renderHook(
+      ({ discogsReleaseId }: { discogsReleaseId?: string }) =>
+        useDiscogsBrowser(item({ query: 'some album', discogsReleaseId }), tr),
+      { wrapper: wrapper(), initialProps: {} as { discogsReleaseId?: string } },
+    )
+    act(() => result.current.setQuery('refined term'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+
+    rerender({ discogsReleaseId: '55' })
+    await act(() => new Promise((r) => setTimeout(r, 50)))
+    expect(result.current.release).toBeNull()
+    expect(getRelease).not.toHaveBeenCalled()
+  })
+
+  // Applying a track from the open release also stamps the id onto the file (see
+  // Editor.tsx selectTrack) — the one flow where the id landing is the panel's own
+  // doing. Jumping then would collapse the candidate list right after the user picked
+  // from it, losing the other results they may still want to try. The panel already
+  // shows that release open, so there is nothing to jump to: stay put.
+  it('keeps the candidate list when the landed id is the release already open', async () => {
+    const second = { ...searchResult, id: 2, title: 'Other Album' }
+    setApi({
+      search: vi.fn().mockResolvedValue([searchResult, second]),
+      getRelease: vi.fn((id: number) => Promise.resolve({ ...release, id })),
+    })
+    const { result, rerender } = renderHook(
+      ({ discogsReleaseId }: { discogsReleaseId?: string }) =>
+        useDiscogsBrowser(item({ query: 'some album', discogsReleaseId }), tr),
+      { wrapper: wrapper(), initialProps: {} as { discogsReleaseId?: string } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    act(() => result.current.previewRelease(searchResult))
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+
+    rerender({ discogsReleaseId: '1' })
+    await act(() => new Promise((r) => setTimeout(r, 50)))
+    expect(result.current.results).toHaveLength(2)
+    expect(result.current.release?.id).toBe(1)
+  })
+
   // The regression the first cut of the stored-id shortcut shipped with: the typing
   // debounce arms on mount too (item.query is rarely empty), so 500ms after opening it
   // overwrote the seeded id with item.query and ran the very text search the id was

@@ -116,6 +116,35 @@ export function useDiscogsBrowser(
     [queryClient],
   )
 
+  // Whether the user has taken over the search box this mount (typed in it). Read by
+  // the stored-id effect below: a match the sweep writes onto the track must not yank
+  // the panel away from a search the user is refining by hand. Hitting Search without
+  // editing doesn't count — that re-runs the same query the panel committed itself.
+  const userDroveSearch = useRef(false)
+  const setQueryTracked = useCallback((q: string) => {
+    userDroveSearch.current = true
+    setQuery(q)
+  }, [])
+
+  // The auto-match sweep can land while the panel is open: it writes the found release
+  // id onto the track, but searchTerm seeds from that id only on mount — so the panel
+  // kept showing the broad text-search candidates until the user flipped to another
+  // track and back. When the id appears mid-mount, re-seed to it exactly like the
+  // mount-time seed above (the box keeps showing item.query, same as a remount would).
+  const storedId = item.meta.discogsReleaseId ?? ''
+  const seenStoredId = useRef(storedId)
+  useEffect(() => {
+    const appeared = storedId !== '' && seenStoredId.current === ''
+    seenStoredId.current = storedId
+    if (!appeared || userDroveSearch.current) return
+    // An id matching the release already open is the panel's own doing — the user just
+    // applied a track from it (Editor's selectTrack stamps the id). Re-seeding then
+    // would collapse the candidate list right after they picked from it; the release
+    // is already on screen, so there is nothing to jump to.
+    if (openResult?.provider === 'discogs' && String(openResult.id) === storedId) return
+    setSearchTerm(storedId)
+  }, [storedId, openResult])
+
   // Typing commits the query 500ms after it stops; Enter and the button commit at
   // once through doSearch. Skipped on mount when the panel seeded searchTerm from a stored
   // release id above: query still reads as item.query at that point (unchanged by the user),
@@ -297,7 +326,7 @@ export function useDiscogsBrowser(
   return useMemo(
     () => ({
       query,
-      setQuery,
+      setQuery: setQueryTracked,
       doSearch,
       results,
       providerCounts,
@@ -314,6 +343,7 @@ export function useDiscogsBrowser(
     }),
     [
       query,
+      setQueryTracked,
       doSearch,
       results,
       providerCounts,
