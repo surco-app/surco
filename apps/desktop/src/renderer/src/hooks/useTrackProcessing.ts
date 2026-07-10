@@ -205,7 +205,9 @@ export function useTrackProcessing({
         // Converted, but the requested loudness normalization couldn't be measured, so the
         // file went out at its original level — tell the user rather than letting it pass.
         if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
-        updateTrack(id, exportedPatch(track, result))
+        // Record the config main actually applied — same fallback processTrack uses
+        // when the job carries none — so the stale check compares against reality.
+        updateTrack(id, exportedPatch(track, result, normalizeOverride ?? settings?.normalize))
         // An in-place export rewrote the source file — re-encoded, normalized, re-tagged —
         // so any cached probe of it now describes the old bytes. Evict both paths (they
         // differ when the rewrite also renamed) so the readouts measure the new file.

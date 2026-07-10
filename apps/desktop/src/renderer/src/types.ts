@@ -1,4 +1,5 @@
 import type {
+  NormalizeConfig,
   OutputFormat,
   ProcessStage,
   Release,
@@ -115,6 +116,10 @@ export interface TrackItem {
   // Snapshot of the editor (via trackSignature) taken when the track last
   // finished, so later edits flip it "stale" and bring back the convert button.
   processedSignature?: string
+  // The normalization the last export actually applied, so dialing a different
+  // target afterwards flips the track "stale" exactly like a metadata edit —
+  // re-normalizing must not require touching a tag to earn the Update button.
+  processedNormalize?: NormalizeConfig
   // Snapshot (via trackSignature) of the state some file already carries: stamped
   // from the pure file read when the import lands and re-stamped when a conversion
   // writes the tags out. The live state diverging from it means the user has staged

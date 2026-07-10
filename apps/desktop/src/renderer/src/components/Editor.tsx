@@ -27,7 +27,7 @@ import {
 import { matchTargetOf } from '../lib/autoMatch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
-import { isStale } from '../lib/dirty'
+import { isNormalizeStale, isStale } from '../lib/dirty'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
@@ -555,7 +555,10 @@ export const Editor = memo(function Editor({
       })
   }
 
-  const stale = isStale(item)
+  // Dialing a different normalization is an edit like any other: the file on disk
+  // no longer matches the editor, so the convert button must return as "Update" —
+  // Djotas's flow of re-applying another loudness without faking a tag edit.
+  const stale = isStale(item) || isNormalizeStale(item, normalizeCfg)
   // A stale track is done but edited since, so it shows the convert button again
   // (as "Update") rather than the done/reveal state.
   const done = item.status === 'done' && !stale

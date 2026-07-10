@@ -1,3 +1,4 @@
+import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 type SignatureFields = Pick<TrackItem, 'meta' | 'outputName' | 'coverUrl' | 'coverPath'>
@@ -22,5 +23,27 @@ export function isStale(track: TrackItem): boolean {
     track.status === 'done' &&
     track.processedSignature !== undefined &&
     track.processedSignature !== trackSignature(track)
+  )
+}
+
+// Only the knobs the active mode actually applies: the other mode's numbers are
+// inert, so touching them must not flag an update the export wouldn't change.
+function normalizeEffect(cfg: NormalizeConfig): string {
+  if (cfg.mode === 'loudness') return `loudness ${cfg.targetLufs} ${cfg.truePeakDb}`
+  if (cfg.mode === 'peak') return `peak ${cfg.peakDb}`
+  return 'none'
+}
+
+// The normalization half of staleness: dialing a different target after an export
+// must bring the Update button back exactly like a metadata edit — re-normalizing
+// must not require touching a tag first. Compared against the editor's live dial
+// (which isStale can't see), so the editor passes it in. A track converted before
+// the applied config was recorded is treated as fresh, like the missing-snapshot
+// case above.
+export function isNormalizeStale(track: TrackItem, current: NormalizeConfig): boolean {
+  return (
+    track.status === 'done' &&
+    track.processedNormalize !== undefined &&
+    normalizeEffect(track.processedNormalize) !== normalizeEffect(current)
   )
 }

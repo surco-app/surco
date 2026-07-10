@@ -1,4 +1,4 @@
-import type { ProcessResult } from '../../../shared/types'
+import type { NormalizeConfig, ProcessResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { parseFileName } from './filename'
@@ -8,7 +8,13 @@ import { parseFileName } from './filename'
 // at the new path; otherwise a later edit, re-export or playback would read the
 // deleted original. A real conversion leaves the source alone, so the track keeps
 // its inputPath/fileName and only records where the converted copy landed.
-export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<TrackItem> {
+// `normalize` is the config the export applied, recorded so a later dial change
+// flips the track stale (isNormalizeStale) and earns the Update button.
+export function exportedPatch(
+  track: TrackItem,
+  result: ProcessResult,
+  normalize?: NormalizeConfig,
+): Partial<TrackItem> {
   // "Apple Music only": no file was kept in the output folder, so the track records no
   // outputPath and is flagged added — the editor then shows the Apple-Music confirmation
   // instead of a "Show file" that would point at nothing.
@@ -20,6 +26,7 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       stage: undefined,
       processedSignature: trackSignature(track),
+      processedNormalize: normalize,
       // The staged state was just written out (here, into the Apple Music copy), so
       // nothing is at risk anymore: the session store stops persisting this track
       // and the reopen offer may expire freely again.
@@ -46,6 +53,7 @@ export function exportedPatch(track: TrackItem, result: ProcessResult): Partial<
     ...(result.addedToEngineDj && { engineDjAdded: true }),
     stage: undefined,
     processedSignature: trackSignature(track),
+    processedNormalize: normalize,
     // The staged state now lives in the converted file, so nothing is at risk
     // anymore: the session store stops persisting this track and the reopen offer
     // may expire freely again.

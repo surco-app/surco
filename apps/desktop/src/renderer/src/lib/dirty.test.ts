@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { isStale, trackSignature } from './dirty'
+import { isNormalizeStale, isStale, trackSignature } from './dirty'
 
 // A freshly converted track: its snapshot equals its own current values, so it is
 // non-stale by construction. Tests then spread an edit on top to diverge from it.
@@ -61,5 +62,48 @@ describe('isStale', () => {
 
   it('treats a done track with no snapshot as fresh rather than stale', () => {
     expect(isStale({ ...converted(), processedSignature: undefined })).toBe(false)
+  })
+})
+
+const cfg = (over: Partial<NormalizeConfig> = {}): NormalizeConfig => ({
+  mode: 'none',
+  targetLufs: -14,
+  truePeakDb: -1,
+  peakDb: -1,
+  ...over,
+})
+
+// Djotas's re-normalize flow: after exporting at one loudness, dialing in another
+// value must bring the Update button back — without it, applying a new target means
+// pretending to edit a tag or reloading the file.
+describe('isNormalizeStale', () => {
+  it('is false right after conversion, when the dial still matches the file', () => {
+    const applied = cfg({ mode: 'loudness', targetLufs: -14 })
+    const t = converted({ processedNormalize: applied })
+    expect(isNormalizeStale(t, applied)).toBe(false)
+  })
+
+  it('is true once the loudness target changes after conversion', () => {
+    const t = converted({ processedNormalize: cfg({ mode: 'loudness', targetLufs: -14 }) })
+    expect(isNormalizeStale(t, cfg({ mode: 'loudness', targetLufs: -9 }))).toBe(true)
+  })
+
+  it('is true when the mode changes after conversion', () => {
+    const t = converted({ processedNormalize: cfg() })
+    expect(isNormalizeStale(t, cfg({ mode: 'loudness' }))).toBe(true)
+  })
+
+  it('ignores the numbers of a mode that is not active', () => {
+    const t = converted({ processedNormalize: cfg({ peakDb: -1 }) })
+    expect(isNormalizeStale(t, cfg({ peakDb: -0.1 }))).toBe(false)
+  })
+
+  it('is never stale before a track is done', () => {
+    const t = converted({ status: 'idle', processedNormalize: cfg() })
+    expect(isNormalizeStale(t, cfg({ mode: 'peak' }))).toBe(false)
+  })
+
+  it('treats a track converted before the config was recorded as fresh', () => {
+    expect(isNormalizeStale(converted(), cfg({ mode: 'loudness' }))).toBe(false)
   })
 })

@@ -33,6 +33,14 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 }
 
 describe('exportedPatch', () => {
+  // The applied config is what a later dial change is compared against (see
+  // isNormalizeStale) — without it, re-normalizing never earns the Update button.
+  it('records the normalization the export applied', () => {
+    const normalize = { mode: 'loudness' as const, targetLufs: -9, truePeakDb: -1, peakDb: -1 }
+    const patch = exportedPatch(track(), { outputPath: '/out/a.aiff' }, normalize)
+    expect(patch.processedNormalize).toEqual(normalize)
+  })
+
   it('repoints the track at the new file after an in-place export', () => {
     // The original was rewritten and renamed, so the path we loaded from is gone.
     // A later edit/re-export/playback must read the new file, not the deleted one.

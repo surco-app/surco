@@ -1141,6 +1141,24 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('add-apple-music')).toBeInTheDocument()
   })
 
+  // Djotas's re-normalize flow: after exporting at one loudness, dialing another
+  // value must bring the Update button back on its own — without this, re-applying
+  // a new target meant faking a tag edit (or reloading the file) to convert again.
+  it('returns to the convert button when the normalization dial changes after export', () => {
+    const applied = { mode: 'loudness' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    renderEditor(
+      { id: 'a', status: 'done', outputPath: '/out/a.aiff', processedNormalize: applied },
+      'aiff',
+      { normalize: applied },
+    )
+    expect(screen.getByTestId('export-success')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Loudness normalization'))
+    fireEvent.click(screen.getByTestId('normalize-preset-club'))
+    expect(screen.queryByTestId('export-success')).not.toBeInTheDocument()
+    expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))
