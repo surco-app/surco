@@ -177,7 +177,7 @@ export function SettingsModal({
         role="tabpanel"
         id="settings-tabpanel"
         aria-labelledby={`settings-tab-${tab}`}
-        className="-mr-2 min-h-[280px] flex-1 overflow-y-auto pr-2"
+        className="-mr-2 min-h-[280px] flex-1 overflow-x-hidden overflow-y-auto pr-2"
       >
         {tab === 'general' && (
           <GeneralTab

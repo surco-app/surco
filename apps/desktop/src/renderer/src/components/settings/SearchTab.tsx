@@ -85,17 +85,25 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       {/* A one-value select doesn't need a full-width stacked block: the label and hint
           take the left, the control sits on the right, one row instead of three. */}
       <div className="mt-5 flex items-center justify-between gap-6 border-t border-[var(--color-line)] pt-4">
-        <div>
+        {/* The text side wraps (min-w-0) and the control side never shrinks: squeezed by
+            justify-between, the select used to give up 2px and poke past the panel,
+            summoning a horizontal scrollbar over the whole tab. */}
+        <div className="min-w-0">
           <p className="mb-1 text-sm font-medium text-fg-muted">{tr('settings.maxResults')}</p>
           <p className="text-xs text-fg-dim">{tr('settings.maxResultsHint')}</p>
         </div>
-        <Select
-          testid="settings-max-results"
-          label={tr('settings.maxResults')}
-          value={String(synced.discogsMaxResults)}
-          onChange={(v) => patch('discogsMaxResults', Number(v))}
-          options={DISCOGS_MAX_RESULTS_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
-        />
+        <div className="shrink-0">
+          <Select
+            testid="settings-max-results"
+            label={tr('settings.maxResults')}
+            value={String(synced.discogsMaxResults)}
+            onChange={(v) => patch('discogsMaxResults', Number(v))}
+            options={DISCOGS_MAX_RESULTS_OPTIONS.map((n) => ({
+              value: String(n),
+              label: String(n),
+            }))}
+          />
+        </div>
       </div>
 
       <div className="mt-5 border-t border-[var(--color-line)] pt-4">
