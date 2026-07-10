@@ -34,6 +34,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
+  const [outputDir, setOutputDir] = useState(settings.outputDir)
   const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
@@ -57,6 +58,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         discogsToken: token,
         searchProviders,
         outputFormat,
+        outputDir,
         showSpectrum,
         autoMatch,
         addToAppleMusic,
@@ -77,6 +79,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     addToEngineDj,
     convertBesideOriginal,
   )
+  async function changeDir(): Promise<void> {
+    const dir = await window.api.pickOutputDir()
+    if (dir) setOutputDir(dir)
+  }
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
@@ -229,6 +235,30 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     flacOnly={outputFormat === 'flac'}
                     testidPrefix="onboarding-destination"
                     radioName="onboarding-destination"
+                    details={{
+                      // WHERE the files land is the first thing a new user looks for
+                      // after converting — show it (and let them change it) right
+                      // under the choice it applies to, exactly like Settings.
+                      folder: (
+                        <div className="flex gap-2">
+                          <input
+                            data-testid="onboarding-output-dir"
+                            aria-label={tr('settings.outputDir')}
+                            value={outputDir}
+                            readOnly
+                            className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+                          />
+                          <button
+                            type="button"
+                            data-testid="onboarding-output-change"
+                            onClick={() => void changeDir()}
+                            className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                          >
+                            {tr('common.change')}
+                          </button>
+                        </div>
+                      ),
+                    }}
                   />
                   {isMac && outputFormat === 'flac' && (
                     <p className="mt-1.5 text-xs text-fg-dim">

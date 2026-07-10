@@ -117,6 +117,17 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(screen.getByTestId('settings-destination-beside')).toBeEnabled()
   })
 
+  // The output folder is a detail OF the "Output folder" choice, so it lives under
+  // that radio — floating above the group it read as an unrelated global path, and
+  // under Apple Music or overwrite (no folder copy) it would just mislead.
+  it('shows the output folder under its radio only while it is the destination', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-output')).toHaveValue('/out')
+    cleanup()
+    renderTab({ addToEngineDj: true })
+    expect(screen.queryByTestId('settings-output')).toBeNull()
+  })
+
   // The library folder only matters once conversions are actually registered there;
   // showing it under every destination would read as an unrelated global path.
   it('shows the Engine library folder only while Engine DJ is the destination', () => {

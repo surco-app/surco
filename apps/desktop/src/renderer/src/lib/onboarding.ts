@@ -6,6 +6,8 @@ export interface OnboardingChoices {
   // The catalogs the editor search queries (Discogs and/or Bandcamp).
   searchProviders: SearchProviderId[]
   outputFormat: OutputFormat
+  // Where folder-copy conversions land, changeable right under the destination radio.
+  outputDir: string
   showSpectrum: boolean
   autoMatch: boolean
   // The output destination, mirroring the Settings booleans (Apple Music is only offered
@@ -34,6 +36,7 @@ export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial
     discogsToken,
     searchProviders: choices.searchProviders,
     outputFormat: choices.outputFormat,
+    outputDir: choices.outputDir,
     showSpectrum: choices.showSpectrum,
     // Auto-match can only persist as on when its prerequisites are met (a source, plus a
     // Discogs token whenever Discogs is one), never just because the checkbox was left ticked.

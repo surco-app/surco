@@ -103,6 +103,28 @@ describe('OnboardingWizard destination', () => {
     )
   })
 
+  // The wizard's whole point is configuring the first conversion — and WHERE the files
+  // land is the first thing a new user will look for after it. The folder shows (and is
+  // changeable) right under its radio, exactly like Settings, and only for the choice
+  // it applies to.
+  it('shows the output folder under its radio and persists a changed one', async () => {
+    ;(window as unknown as { api: { pickOutputDir?: () => Promise<string> } }).api.pickOutputDir =
+      vi.fn(async () => '/dj/converted')
+    const onFinish = vi.fn()
+    openFormatStep(onFinish)
+    expect(screen.getByTestId('onboarding-output-dir')).toHaveValue('/out')
+    fireEvent.click(screen.getByTestId('onboarding-output-change'))
+    expect(await screen.findByTestId('onboarding-output-dir')).toHaveValue('/dj/converted')
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
+  })
+
+  it('hides the folder detail under destinations that keep no folder copy', () => {
+    openFormatStep()
+    fireEvent.click(screen.getByTestId('onboarding-destination-beside'))
+    expect(screen.queryByTestId('onboarding-output-dir')).toBeNull()
+  })
+
   // Apple Music can't ingest FLAC, so choosing it pins the destination to the always-valid
   // output folder and locks the Apple Music options out.
   it('pins the destination to the output folder and disables Apple Music for FLAC', () => {
