@@ -9,6 +9,47 @@ permissions:
   contents: write
 
 jobs:
+  # The same gate CI runs on every push, repeated here because the tag push and the
+  # branch push race as independent workflows: a red CI never stopped the binaries
+  # from shipping (v0.46.0 built while its CI run was failing). Nothing downstream —
+  # not even the draft release — starts until the suite is green on the tagged tree.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Lockfile-pinned install with retries, same as ci.yml (ffmpeg-static's
+      # postinstall download intermittently 504s).
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: Lint desktop
+        run: npm run lint -w apps/desktop
+
+      - name: Lint web
+        run: npm run lint -w apps/web
+
+      - name: Type-check desktop
+        run: npx tsc --build
+        working-directory: apps/desktop
+
+      - name: Build web
+        run: npm run build -w apps/web
+
+      - name: Test
+        run: npm test
+
   # The matrix jobs used to race electron-builder's find-or-create of the GitHub
   # release: when two finished the lookup at the same instant, each created its own
   # release on the tag and the assets split across duplicates (happened on v0.11.0)
@@ -27,6 +68,7 @@ jobs:
   # anti-race guarantee above holds — a draft bound to the tag is reused, not
   # duplicated.
   prepare:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       # The git tag lives in this source repo, not in surco-releases. Create the tag

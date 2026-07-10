@@ -667,16 +667,22 @@ describe('Editor Discogs loading skeleton', () => {
   // column's shape so the results don't pop into an area that looked idle.
   it('holds the results column with a skeleton while the search is in flight', async () => {
     let settle: (r: unknown[]) => void = () => {}
-    ;(window as unknown as { api: Record<string, unknown> }).api.search = vi.fn(
+    const search = vi.fn(
       () =>
         new Promise((res) => {
           settle = res
         }),
     )
+    ;(window as unknown as { api: Record<string, unknown> }).api.search = search
     renderEditor({ id: 'a', query: 'artist song' })
 
     expect(await screen.findByTestId('discogs-skeleton')).toBeInTheDocument()
 
+    // The skeleton can flip on a render tick before the query fn actually invokes the
+    // mock (React Query marks fetching first, runs the fn a task later). Settling in
+    // that gap fires the placeholder no-op and the real promise then hangs forever —
+    // the CI-only flake this wait closes.
+    await waitFor(() => expect(search).toHaveBeenCalled())
     settle([])
     await waitFor(() => expect(screen.queryByTestId('discogs-skeleton')).toBeNull())
   })
