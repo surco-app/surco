@@ -1,7 +1,9 @@
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
+import { formatDb } from '../lib/quality'
 import { drawWaveform, skeletonPeaks } from '../lib/waveform'
 
 // Half the player strip's raster: each strip sits in half the panel width, so the
@@ -25,6 +27,10 @@ function Strip({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { data: wave, isFetching } = useWaveform(path, enabled)
   const loading = isFetching && !wave
+  // The strip's own file's measurement — for the "after" strip that's the converted
+  // output, the figure that says what normalization actually applied. Shares the
+  // per-path loudness cache with the readout above, so the "before" is free.
+  const { data: loudness } = useTrackLoudness(path, enabled)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -33,8 +39,15 @@ function Strip({
 
   return (
     <div data-testid={testid}>
-      <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-        {label}
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+          {label}
+        </span>
+        {loudness && (
+          <span className="truncate text-[10px] tabular-nums text-fg-dim">
+            {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
+          </span>
+        )}
       </div>
       <div className="relative">
         <canvas
