@@ -23,6 +23,10 @@
       {
         "text": "Ajustes más claros: la carpeta de salida y los campos de Engine DJ viven bajo su opción de destino (también en el asistente de bienvenida, que ahora deja cambiar la carpeta), los detalles se despliegan con animación y activar la normalización lleva la vista a sus campos.",
         "in": "0.46.0"
+      },
+      {
+        "text": "Arreglado el ajuste «Máximo de resultados»: el selector salía recortado y forzaba una barra de scroll horizontal en la pestaña Búsqueda.",
+        "in": "0.46.1"
       }
     ]
   },

@@ -23,6 +23,10 @@
       {
         "text": "Clearer Settings: the output folder and the Engine DJ fields live under their destination choice (in the welcome wizard too, which now lets you change the folder), details unfold with an animation, and switching normalization on scrolls its fields into view.",
         "in": "0.46.0"
+      },
+      {
+        "text": "Fixed the “Maximum results” setting: the selector rendered clipped and forced a horizontal scrollbar onto the Search tab.",
+        "in": "0.46.1"
       }
     ]
   },
