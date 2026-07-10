@@ -123,7 +123,8 @@ describe('OnboardingWizard destination', () => {
   it('hides the folder detail under destinations that keep no folder copy', () => {
     openFormatStep()
     fireEvent.click(screen.getByTestId('onboarding-destination-beside'))
-    expect(screen.queryByTestId('onboarding-output-dir')).toBeNull()
+    // Kept mounted for the collapse animation; inert is what "hidden" means here.
+    expect(screen.getByTestId('onboarding-output-dir').closest('[inert]')).not.toBeNull()
   })
 
   // Apple Music can't ingest FLAC, so choosing it pins the destination to the always-valid

@@ -71,6 +71,50 @@ export function DestinationTab({
       </button>
     </div>
   )
+  // Engine DJ's fields nest under its radio exactly like the output folder does — the
+  // two destination details read as one pattern instead of one inline and one trailing
+  // the whole group.
+  const engineDetail = (
+    <div>
+      <label
+        htmlFor="settings-engine-library"
+        className="mb-1.5 block text-sm font-medium text-fg-muted"
+      >
+        {tr('settings.engineLibraryDir')}
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="settings-engine-library"
+          data-testid="settings-engine-library"
+          value={local.engineLibraryDir}
+          readOnly
+          className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+        />
+        <button
+          type="button"
+          onClick={onChangeEngineDir}
+          className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+        >
+          {tr('common.change')}
+        </button>
+      </div>
+      <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineLibraryDirHint')}</p>
+      <label
+        htmlFor="settings-engine-playlist"
+        className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
+      >
+        {tr('settings.engineDjPlaylist')}
+      </label>
+      <input
+        id="settings-engine-playlist"
+        data-testid="settings-engine-playlist"
+        value={synced.engineDjPlaylist}
+        onChange={(e) => patch('engineDjPlaylist', e.target.value)}
+        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm"
+      />
+      <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineDjPlaylistHint')}</p>
+    </div>
+  )
   return (
     <>
       <span className="mb-1.5 block text-sm font-medium text-fg-muted">
@@ -83,51 +127,10 @@ export function DestinationTab({
         flacOnly={flacOnly}
         testidPrefix="settings-destination"
         radioName="destination"
-        details={{ folder: folderDetail }}
+        details={{ folder: folderDetail, engineDj: engineDetail }}
       />
       {isMac && flacOnly && (
         <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
-      )}
-      {destination === 'engineDj' && (
-        <>
-          <label
-            htmlFor="settings-engine-library"
-            className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
-          >
-            {tr('settings.engineLibraryDir')}
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="settings-engine-library"
-              data-testid="settings-engine-library"
-              value={local.engineLibraryDir}
-              readOnly
-              className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-            />
-            <button
-              type="button"
-              onClick={onChangeEngineDir}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('common.change')}
-            </button>
-          </div>
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineLibraryDirHint')}</p>
-          <label
-            htmlFor="settings-engine-playlist"
-            className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
-          >
-            {tr('settings.engineDjPlaylist')}
-          </label>
-          <input
-            id="settings-engine-playlist"
-            data-testid="settings-engine-playlist"
-            value={synced.engineDjPlaylist}
-            onChange={(e) => patch('engineDjPlaylist', e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm"
-          />
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineDjPlaylistHint')}</p>
-        </>
       )}
     </>
   )

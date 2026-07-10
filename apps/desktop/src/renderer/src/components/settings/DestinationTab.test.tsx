@@ -124,19 +124,23 @@ describe('DestinationTab Engine DJ destination', () => {
   it('shows the output folder under its radio only while it is the destination', () => {
     renderTab()
     expect(screen.getByTestId('settings-output')).toHaveValue('/out')
+    expect(screen.getByTestId('settings-output').closest('[inert]')).toBeNull()
     cleanup()
+    // Kept mounted so the collapse can animate out; inert is what "hidden" means —
+    // no focus stop, no interaction — while the height/opacity transition runs.
     renderTab({ addToEngineDj: true })
-    expect(screen.queryByTestId('settings-output')).toBeNull()
+    expect(screen.getByTestId('settings-output').closest('[inert]')).not.toBeNull()
   })
 
   // The library folder only matters once conversions are actually registered there;
   // showing it under every destination would read as an unrelated global path.
-  it('shows the Engine library folder only while Engine DJ is the destination', () => {
+  it('shows the Engine library folder under its radio only while Engine DJ is the destination', () => {
     renderTab()
-    expect(screen.queryByTestId('settings-engine-library')).toBeNull()
+    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).not.toBeNull()
     cleanup()
     renderTab({ addToEngineDj: true })
     expect(screen.getByTestId('settings-engine-library')).toHaveValue('/music/Engine Library')
+    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).toBeNull()
   })
 
   // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
@@ -151,7 +155,7 @@ describe('DestinationTab Engine DJ destination', () => {
   // destination — editable, seeded from the setting, staged through the draft patch.
   it('shows the editable playlist field only while Engine DJ is the destination', () => {
     renderTab()
-    expect(screen.queryByTestId('settings-engine-playlist')).toBeNull()
+    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).not.toBeNull()
     cleanup()
     const patch = renderTab({ addToEngineDj: true })
     const field = screen.getByTestId('settings-engine-playlist')

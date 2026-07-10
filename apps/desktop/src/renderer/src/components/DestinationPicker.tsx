@@ -15,8 +15,11 @@ interface Props {
   testidPrefix: string
   radioName: string
   // Extra controls rendered under an option's row while it is the selected one — the
-  // output-folder field under 'folder', mirroring how Engine DJ reveals its own fields.
+  // output-folder field under 'folder', the library/playlist fields under 'engineDj'.
   // Rendered outside the <label> so clicking an input inside never toggles the radio.
+  // Kept mounted and collapsed (grid-rows 0fr + inert) rather than unmounted, so the
+  // reveal/hide can transition instead of popping; inert keeps the hidden inputs out
+  // of the tab order and the accessibility tree while they animate.
   details?: Partial<Record<Destination, React.ReactNode>>
 }
 
@@ -37,7 +40,7 @@ export function DestinationPicker({
       {destinations.map((d) => {
         const disabled = flacOnly && d === 'appleMusic'
         return (
-          <div key={d} className="flex flex-col gap-2">
+          <div key={d} className="flex flex-col">
             <label
               className={`flex items-start gap-3 ${
                 disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
@@ -76,7 +79,20 @@ export function DestinationPicker({
                 )}
               </span>
             </label>
-            {value === d && details?.[d] && <div className="pl-7">{details[d]}</div>}
+            {details?.[d] && (
+              <div
+                inert={value !== d || undefined}
+                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
+                  value === d ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                {/* The row's spacing lives INSIDE the overflow clip (pt-2, not the
+                    parent's gap), so a collapsed detail contributes zero height. */}
+                <div className="overflow-hidden">
+                  <div className="pt-2 pl-7">{details[d]}</div>
+                </div>
+              </div>
+            )}
           </div>
         )
       })}
