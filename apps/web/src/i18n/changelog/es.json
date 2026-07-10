@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.46",
+    "date": "10 de julio de 2026",
+    "title": "Tú decides dónde acaba cada conversión",
+    "items": [
+      {
+        "text": "Nuevo destino «Junto al original»: la conversión se escribe al lado del archivo fuente sin tocarlo nunca. Con el mismo formato, la copia toma un nombre «(2)» en vez de sobrescribir nada.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "El botón de convertir ahora también deja elegir el destino solo para esa conversión — carpeta, Apple Music, Engine DJ, junto al original o sobrescribir — sin cambiar tus Ajustes.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "Nueva opción para FLAC en macOS: mostrar las carátulas en el Finder y la Vista Previa, que normalmente no leen el arte de los FLAC.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "Tras exportar, si eliges otro formato en el menú, el botón lo anuncia — «Reexportar (FLAC)» — para que siempre sepas qué escribirá el siguiente clic.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "Ajustes más claros: la carpeta de salida y los campos de Engine DJ viven bajo su opción de destino (también en el asistente de bienvenida, que ahora deja cambiar la carpeta), los detalles se despliegan con animación y activar la normalización lleva la vista a sus campos.",
+        "in": "0.46.0"
+      }
+    ]
+  },
+  {
     "version": "0.45",
     "date": "9 de julio de 2026",
     "title": "La búsqueda entiende tus títulos",

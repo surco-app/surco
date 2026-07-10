@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.46",
+    "date": "July 10, 2026",
+    "title": "You decide where every conversion lands",
+    "items": [
+      {
+        "text": "New “Next to the original” destination: the conversion is written beside the source file without ever touching it. Same-format exports take a “(2)” name instead of overwriting anything.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "The convert button now also lets you pick the destination for just that conversion — folder, Apple Music, Engine DJ, next to the original or overwrite — without changing your Settings.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "New FLAC option on macOS: show covers in Finder and Quick Look, which normally don't read FLAC artwork.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "After an export, picking another format from the menu now shows on the button — “Re-export (FLAC)” — so you always know what the next click will write.",
+        "in": "0.46.0"
+      },
+      {
+        "text": "Clearer Settings: the output folder and the Engine DJ fields live under their destination choice (in the welcome wizard too, which now lets you change the folder), details unfold with an animation, and switching normalization on scrolls its fields into view.",
+        "in": "0.46.0"
+      }
+    ]
+  },
+  {
     "version": "0.45",
     "date": "July 9, 2026",
     "title": "Search that understands your titles",
