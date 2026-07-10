@@ -84,20 +84,21 @@ describe('StatsTab', () => {
     expect(screen.queryByTestId('stats-share')).toBeNull()
   })
 
-  // ROI shows what Surco cost to build against what it has received in donations —
-  // the ask in "donate" becomes a concrete progress bar instead of an abstract plea.
-  it('shows cost and donations progress bars', () => {
+  // The support line asks for help without itemizing what the app cost to build —
+  // publishing internal figures read as oversharing, so the cost/donations bars are
+  // deliberately gone and only the plea plus the donate button remain.
+  it('shows the support line without any cost figures', () => {
     render(<StatsTab settings={withStats()} />)
-    expect(screen.getByTestId('stats-roi-cost')).toHaveTextContent('3200')
-    expect(screen.getByTestId('stats-roi-donations')).toHaveTextContent('0')
     expect(screen.getByTestId('stats-roi-donate')).toBeInTheDocument()
+    expect(screen.queryByTestId('stats-roi-cost')).toBeNull()
+    expect(screen.queryByTestId('stats-roi-donations')).toBeNull()
   })
 
-  // Present even in the empty state — ROI isn't tied to this install's own activity,
-  // it's project-wide, so it must survive alongside (not depend on) stats-empty.
-  it('shows the ROI section even with no activity yet', () => {
+  // Present even in the empty state — the plea isn't tied to this install's own
+  // activity, so it must survive alongside (not depend on) stats-empty.
+  it('shows the support line even with no activity yet', () => {
     render(<StatsTab settings={withStats()} />)
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
-    expect(screen.getByTestId('stats-roi-cost')).toBeInTheDocument()
+    expect(screen.getByTestId('stats-roi-donate')).toBeInTheDocument()
   })
 })

@@ -5,12 +5,9 @@ import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL } from '../../lib/donate'
 import {
-  formatEuroCents,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
   nextMilestone,
-  ROI_COST_CENTS,
-  ROI_DONATIONS_CENTS,
   timeSavedSeconds,
 } from '../../lib/stats'
 import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
@@ -139,40 +136,10 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </p>
       )}
 
-      <div className="mt-4 w-full max-w-md border-t border-[var(--color-line)] pt-4">
-        <p className="text-xs font-medium text-fg-muted">{tr('settings.stats.roiTitle')}</p>
-        <div className="mt-2.5 space-y-2">
-          <div>
-            <div className="flex items-baseline justify-between text-xs text-fg-dim">
-              <span>{tr('settings.stats.roiCost')}</span>
-              <span data-testid="stats-roi-cost" className="tabular-nums text-fg">
-                {formatEuroCents(ROI_COST_CENTS)}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
-              <div className="h-full w-full rounded-full bg-[var(--color-accent)]" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between text-xs text-fg-dim">
-              <span>{tr('settings.stats.roiDonations')}</span>
-              <span data-testid="stats-roi-donations" className="tabular-nums text-fg">
-                {formatEuroCents(ROI_DONATIONS_CENTS)}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-field)]">
-              <div
-                className="h-full rounded-full bg-[var(--color-good)]"
-                style={{
-                  width: `${Math.max(1, Math.min(100, (ROI_DONATIONS_CENTS / ROI_COST_CENTS) * 100))}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p data-testid="stats-roi-donate" className="mt-3 max-w-md text-xs text-fg-muted">
+      <p
+        data-testid="stats-roi-donate"
+        className="mt-4 w-full max-w-md border-t border-[var(--color-line)] pt-4 text-xs text-fg-muted"
+      >
         {tr('settings.stats.roiDonate')}
       </p>
 

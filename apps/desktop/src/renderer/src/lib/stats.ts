@@ -34,16 +34,3 @@ export function nextMilestone(count: number): number | null {
 export function matchStatKey(provider: string): 'discogsMatches' | 'bandcampMatches' {
   return provider === 'bandcamp' ? 'bandcampMatches' : 'discogsMatches'
 }
-
-// Hardcoded MVP figures until the roios API (github.com/vigosan/roios) is wired up:
-// time + Claude + Apple Developer Program + domain, estimated as of July 2026.
-export const ROI_COST_CENTS = 320_000
-export const ROI_DONATIONS_CENTS = 0
-
-export function formatEuroCents(cents: number): string {
-  return (cents / 100).toLocaleString('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  })
-}
