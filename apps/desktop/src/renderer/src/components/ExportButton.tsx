@@ -86,6 +86,7 @@ export function ExportButton({
     withAppleMusic,
     withEngineDj,
     format: outputFormat.toUpperCase(),
+    exportedFormat: exportedFormat?.toUpperCase() ?? null,
   })
   const label = tr(labelSpec.key, labelSpec.options)
 

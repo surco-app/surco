@@ -9,6 +9,9 @@ export interface ExportLabelState {
   withEngineDj: boolean
   // Already uppercased for display ("AIFF").
   format: string
+  // What the last export actually produced (uppercased), null before any export. Lets
+  // the quiet re-export label name the pending format when the menu changed it.
+  exportedFormat?: string | null
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -21,7 +24,16 @@ export function exportButtonLabel(state: ExportLabelState): {
   options?: Record<string, unknown>
 } {
   if (state.processing) return { key: 'editor.processing' }
-  if (state.quiet) return { key: 'editor.reexport' }
+  // Picking a format from the menu only relabels the button, so after an export the
+  // label is the one place the pending format shows: "Re-export (FLAC)" over a WAV
+  // export says what the next click writes, while a matching format stays the plain
+  // "Re-export" instead of stating the obvious.
+  if (state.quiet) {
+    if (state.exportedFormat && state.format !== state.exportedFormat) {
+      return { key: 'editor.reexportAs', options: { format: state.format } }
+    }
+    return { key: 'editor.reexport' }
+  }
   if (state.count !== undefined) {
     return {
       key: state.withAppleMusic

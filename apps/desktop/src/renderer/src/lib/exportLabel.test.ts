@@ -37,4 +37,19 @@ describe('exportButtonLabel', () => {
       format: 'AIFF',
     })
   })
+
+  // After an export, picking a different format from the menu only relabels the button —
+  // so the label is the ONLY place the pending format is visible. A bare "Re-export"
+  // would export to FLAC while reading like a repeat of the WAV that just finished.
+  it('names the pending format on the re-export button when it differs from the exported one', () => {
+    const spec = exportButtonLabel({ ...base, quiet: true, format: 'FLAC', exportedFormat: 'WAV' })
+    expect(spec.key).toBe('editor.reexportAs')
+    expect(spec.options).toEqual({ format: 'FLAC' })
+  })
+
+  it('keeps the plain re-export label while the format matches what was exported', () => {
+    expect(
+      exportButtonLabel({ ...base, quiet: true, format: 'WAV', exportedFormat: 'WAV' }).key,
+    ).toBe('editor.reexport')
+  })
 })

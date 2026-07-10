@@ -359,6 +359,7 @@
     "addedToAppleMusicCount_other": "✓ {{count}} faixas adicionadas ao Apple Music",
     "showFile": "Mostrar arquivo",
     "reexport": "Reexportar",
+    "reexportAs": "Reexportar ({{format}})",
     "exportCollection": "Exportar para outro app de DJ…",
     "deleteOriginal": "Apagar arquivo original",
     "appleMusicAdd": "Adicionar ao Apple Music",
