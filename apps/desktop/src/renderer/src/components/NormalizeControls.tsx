@@ -77,6 +77,21 @@ export function NormalizeControls({ value, onChange }: Props): React.JSX.Element
   // into the field the user is about to tune.
   const lufsRef = useRef<HTMLInputElement>(null)
   const peakRef = useRef<HTMLInputElement>(null)
+  // Switching a mode on reveals the target fields BELOW the segmented control — at the
+  // bottom of a scrolling Settings tab they land under the fold, where the scrollbar
+  // moves but nothing visibly changes. Scroll the revealed block into view so the click
+  // shows its result. Only on a real change: mounting with a mode already active (the
+  // editor reopening a configured track) must not yank the view.
+  const detailRef = useRef<HTMLDivElement>(null)
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
+    }
+    if (value.mode !== 'none')
+      detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  }, [value.mode])
   const loudnessIsCustom = !LOUDNESS_PRESETS.some(
     (p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb,
   )
@@ -109,7 +124,7 @@ export function NormalizeControls({ value, onChange }: Props): React.JSX.Element
       </div>
 
       {value.mode === 'loudness' && (
-        <div className="mt-3 space-y-3">
+        <div ref={detailRef} className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-1.5">
             {LOUDNESS_PRESETS.map((p) => {
               const active = value.targetLufs === p.lufs && value.truePeakDb === p.tp
@@ -159,7 +174,7 @@ export function NormalizeControls({ value, onChange }: Props): React.JSX.Element
       )}
 
       {value.mode === 'peak' && (
-        <div className="mt-3 space-y-3">
+        <div ref={detailRef} className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-1.5">
             {PEAK_PRESETS.map((p) => (
               <button

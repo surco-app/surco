@@ -2,6 +2,8 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type React from 'react'
+import { useState } from 'react'
 import type { NormalizeConfig } from '../../../shared/types'
 import '../i18n'
 import { NormalizeControls } from './NormalizeControls'
@@ -9,6 +11,37 @@ import { NormalizeControls } from './NormalizeControls'
 afterEach(cleanup)
 
 const loudness: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+
+// The controls are a controlled component, so the reveal test drives them like the
+// Settings tab does: mode changes come back through onChange and re-render as value.
+function Harness({ initial }: { initial: NormalizeConfig }): React.JSX.Element {
+  const [value, setValue] = useState(initial)
+  return <NormalizeControls value={value} onChange={setValue} />
+}
+
+describe('NormalizeControls reveal', () => {
+  // Switching the mode on reveals the target fields BELOW the segmented control — at
+  // the bottom of a scrolling Settings tab they land under the fold, so the scrollbar
+  // moves but nothing visibly changes. Scrolling the revealed block into view is what
+  // makes the click feel like it did something.
+  it('scrolls the revealed fields into view when a mode is switched on', () => {
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    render(<Harness initial={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }} />)
+    expect(scroll).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
+    expect(scroll).toHaveBeenCalled()
+  })
+
+  // Mounting with a mode already active (the editor reopening a configured track, the
+  // Settings tab re-opening) is not a reveal — auto-scrolling there would yank the view.
+  it('does not scroll on mount when a mode is already active', () => {
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    render(<Harness initial={loudness} />)
+    expect(scroll).not.toHaveBeenCalled()
+  })
+})
 
 describe('NormalizeControls number input', () => {
   // Every meaningful value here is negative (-14 LUFS, -1 dBTP). A controlled number
