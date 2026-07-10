@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.47",
+    "date": "July 10, 2026",
+    "title": "See what normalization really does",
+    "items": [
+      {
+        "text": "New before/after comparison when converting: the source and converted waveforms, with each file's real loudness and peak figures.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Two ways to compare: side by side or overlaid, with a slider to fade one wave over the other and spot the difference.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Peak normalization can now remove DC offset and normalize each stereo channel independently, like in Audacity.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Change the normalization after exporting and the button offers “Update” again — no need to touch a tag.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Words to ignore in searches now also apply when re-running a search you had already made.",
+        "in": "0.47.0"
+      }
+    ]
+  },
+  {
     "version": "0.46",
     "date": "July 10, 2026",
     "title": "You decide where every conversion lands",

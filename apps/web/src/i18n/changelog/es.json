@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.47",
+    "date": "10 de julio de 2026",
+    "title": "Ve lo que la normalización hace de verdad",
+    "items": [
+      {
+        "text": "Nueva comparación antes/después al convertir: la onda del archivo original y la del convertido, con las medidas reales de volumen y pico de cada uno.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Dos vistas para comparar: lado a lado o superpuesta, con un deslizador para fundir una onda sobre la otra y cazar la diferencia.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "La normalización de pico ahora puede eliminar el desplazamiento DC y normalizar cada canal estéreo por separado, como en Audacity.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Cambia la normalización después de exportar y el botón volverá a ofrecer «Actualizar», sin tener que tocar los tags.",
+        "in": "0.47.0"
+      },
+      {
+        "text": "Las palabras a ignorar en búsquedas se aplican ahora también al repetir una búsqueda ya hecha.",
+        "in": "0.47.0"
+      }
+    ]
+  },
+  {
     "version": "0.46",
     "date": "10 de julio de 2026",
     "title": "Tú decides dónde acaba cada conversión",
