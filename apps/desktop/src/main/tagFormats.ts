@@ -1,4 +1,5 @@
 import { open } from 'node:fs/promises'
+import { leadingId3v2Size } from './id3Header'
 
 // A minimal random-access reader over a file region — the seam that lets the chunk
 // walking below run against an in-memory Buffer in tests and a real file handle in
@@ -33,7 +34,18 @@ export async function detectTagFormats(read: Reader, size: number): Promise<stri
     await walkRiff(read, size, found, 'be')
   } else if (magic === 'fLaC') {
     container = true
-    await walkFlac(read, size, found)
+    await walkFlac(read, size, found, 4)
+  } else {
+    // A "Finder covers" FLAC hides its fLaC marker behind the leading ID3v2 tag
+    // detected above; look right after it so the real container is still reported.
+    const skip = leadingId3v2Size(head)
+    if (skip > 0 && skip + 4 <= size) {
+      const after = await read(skip, 4)
+      if (after.length >= 4 && ascii(after, 0, 4) === 'fLaC') {
+        container = true
+        await walkFlac(read, size, found, skip + 4)
+      }
+    }
   }
 
   // ID3v1 lives in the last 128 bytes, but only as an MP3 convention — checking it on
@@ -76,8 +88,14 @@ async function walkRiff(
 
 // Walks FLAC's metadata block headers (4 bytes each: a flag/type byte then a 24-bit
 // big-endian length) until the last-block flag, looking for a VORBIS_COMMENT (type 4).
-async function walkFlac(read: Reader, size: number, found: Set<string>): Promise<void> {
-  let offset = 4
+// `start` sits just past the fLaC marker, wherever a leading ID3v2 tag put it.
+async function walkFlac(
+  read: Reader,
+  size: number,
+  found: Set<string>,
+  start: number,
+): Promise<void> {
+  let offset = start
   for (let guard = 0; offset + 4 <= size && guard < 128; guard++) {
     const header = await read(offset, 4)
     if (header.length < 4) break

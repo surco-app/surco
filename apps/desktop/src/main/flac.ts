@@ -1,4 +1,5 @@
 import { open } from 'node:fs/promises'
+import { leadingId3v2Size } from './id3Header'
 
 const MAGIC = 'fLaC'
 const PICTURE = 6
@@ -14,11 +15,18 @@ const PICTURE = 6
 export async function flacHasUnreadablePicture(filePath: string): Promise<boolean> {
   const fh = await open(filePath, 'r')
   try {
+    // A "Finder covers" FLAC starts with an ID3v2 tag before the fLaC marker; skip
+    // it, or the guard would silently no-op on exactly the files Surco writes.
+    const lead = Buffer.alloc(10)
+    const leadRead = (await fh.read(lead, 0, 10, 0)).bytesRead
+    if (leadRead < 4) return false
+    const skip = leadRead === 10 ? leadingId3v2Size(lead) : 0
+
     const header = Buffer.alloc(4)
-    if ((await fh.read(header, 0, 4, 0)).bytesRead < 4) return false
+    if ((await fh.read(header, 0, 4, skip)).bytesRead < 4) return false
     if (header.toString('latin1') !== MAGIC) return false
 
-    let pos = 4
+    let pos = skip + 4
     while (true) {
       if ((await fh.read(header, 0, 4, pos)).bytesRead < 4) return false
       const last = (header[0] & 0x80) !== 0

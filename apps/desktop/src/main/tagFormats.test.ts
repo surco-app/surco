@@ -107,6 +107,18 @@ describe('detectTagFormats', () => {
     expect(await detect(file)).toEqual(['Vorbis comment'])
   })
 
+  it('sees through the ID3v2 header a Finder-covers FLAC starts with', async () => {
+    // Surco (and other tools) prepend an ID3v2 tag to FLAC so macOS Finder shows the
+    // art; the real container still has to be reported, not just the ID3 envelope.
+    const file = Buffer.concat([
+      id3v2(3),
+      Buffer.from('fLaC'),
+      flacBlock(0, false, Buffer.alloc(34)),
+      flacBlock(4, true, Buffer.from('vendor')),
+    ])
+    expect(await detect(file)).toEqual(['ID3v2.3', 'Vorbis comment'])
+  })
+
   it('returns nothing for an untagged or unrecognized file', async () => {
     expect(await detect(Buffer.from('not audio at all'))).toEqual([])
   })

@@ -78,4 +78,22 @@ describe('flacHasUnreadablePicture', () => {
     paths.push(p)
     expect(await flacHasUnreadablePicture(p)).toBe(false)
   })
+
+  it('still flags the empty MIME behind the ID3v2 header a Finder-covers FLAC starts with', async () => {
+    // "ID3", v2.3, no flags, syncsafe size 0 — a minimal 10-byte header like the one
+    // Surco prepends so Finder shows the art; the real FLAC stream starts after it.
+    const id3 = Buffer.from([0x49, 0x44, 0x33, 3, 0, 0, 0, 0, 0, 0])
+    const p = join(dir, 'id3-empty-mime.flac')
+    await writeFile(
+      p,
+      Buffer.concat([
+        id3,
+        Buffer.from('fLaC', 'latin1'),
+        STREAMINFO,
+        block(6, pictureBody(''), true),
+      ]),
+    )
+    paths.push(p)
+    expect(await flacHasUnreadablePicture(p)).toBe(true)
+  })
 })
