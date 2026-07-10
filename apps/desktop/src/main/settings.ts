@@ -52,6 +52,8 @@ const defaults: Settings = {
   coverSquare: false,
   coverUpscale: false,
   replaceLowResCover: false,
+  // Off by default: the Finder-covers ID3 header is off-spec for FLAC, so it's opt-in.
+  flacFinderCovers: false,
   mp3Quality: '320',
   // Max fidelity by default: preserve the source's own bit depth and sample rate.
   outputBitDepth: 'source',

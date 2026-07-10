@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { isMacOS } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 
@@ -71,6 +72,22 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
         <span className="text-sm">{tr('settings.replaceLowRes')}</span>
       </label>
       <p className="mt-3 text-xs text-fg-dim">{tr('settings.replaceLowResHint')}</p>
+
+      {isMacOS() && (
+        <>
+          <label className="mt-5 flex cursor-pointer items-center gap-3">
+            <input
+              data-testid="settings-flac-finder-covers"
+              type="checkbox"
+              checked={synced.flacFinderCovers}
+              onChange={(e) => patch('flacFinderCovers', e.target.checked)}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <span className="text-sm">{tr('settings.flacFinderCovers')}</span>
+          </label>
+          <p className="mt-3 text-xs text-fg-dim">{tr('settings.flacFinderCoversHint')}</p>
+        </>
+      )}
     </>
   )
 }

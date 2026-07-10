@@ -627,6 +627,8 @@
     "coverHint": "Wird beim Einbetten angewendet: verkleinert große Cover und schneidet sie, falls aktiviert, mittig quadratisch zu.",
     "replaceLowRes": "Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen",
     "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten — ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
+    "flacFinderCovers": "FLAC-Cover im Finder anzeigen",
+    "flacFinderCoversHint": "Fügt konvertierten FLAC-Dateien einen ID3-Header hinzu, damit Finder und Übersicht das Cover anzeigen. Leicht abseits des Standards; Player sind nicht betroffen.",
     "showSpectrum": "Audiospektrum anzeigen",
     "showSpectrumHint": "Zeigt Spektrum und Qualitätsprüfung beim Bearbeiten eines Tracks. Wenn aus, entfällt die Analyse komplett.",
     "autoAnalyze": "Qualität beim Import analysieren",

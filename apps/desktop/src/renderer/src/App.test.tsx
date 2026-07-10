@@ -99,6 +99,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     coverSquare: false,
     coverUpscale: false,
     replaceLowResCover: false,
+    flacFinderCovers: false,
     mp3Quality: '320',
     outputBitDepth: 'source',
     outputSampleRate: 'source',

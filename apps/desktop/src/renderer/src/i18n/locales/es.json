@@ -627,6 +627,8 @@
     "coverHint": "Se aplica al embeber: reduce carátulas grandes y, si lo activas, recorta al centro para dejarlas cuadradas.",
     "replaceLowRes": "Sustituir carátulas de baja resolución al aplicar un lanzamiento",
     "replaceLowResHint": "Si está desactivado, siempre se conserva la carátula del archivo; una de baja resolución solo se avisa, nunca se cambia por la del lanzamiento.",
+    "flacFinderCovers": "Mostrar las carátulas de los FLAC en el Finder",
+    "flacFinderCoversHint": "Añade una cabecera ID3 a los FLAC convertidos para que el Finder y Vista Rápida muestren la carátula. Ligeramente fuera del estándar; no afecta a los reproductores.",
     "showSpectrum": "Mostrar el espectro de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
     "autoAnalyze": "Analizar la calidad al importar",
