@@ -79,4 +79,42 @@ describe('NormalizeSection before/after waveforms', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-compare')).not.toBeInTheDocument()
   })
+
+  // The pair lands at the bottom of a scrolling editor, below the fold — a user who
+  // just converted sees nothing change unless the result scrolls itself into view.
+  // Same reveal pattern as NormalizeControls' mode switch.
+  it('scrolls the pair into view when it appears after a conversion', () => {
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const ui = (item: TrackItem): React.ReactElement => (
+      <QueryClientProvider client={client}>
+        <NormalizeSection
+          value={cfg}
+          open
+          onToggle={vi.fn()}
+          onChange={vi.fn()}
+          item={item}
+          isMulti={false}
+        />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(ui(track()))
+    expect(scroll).not.toHaveBeenCalled()
+    rerender(ui(track({ outputPath: '/out/a.aiff', status: 'done' })))
+    expect(scroll).toHaveBeenCalled()
+  })
+
+  // Flipping back to an already-converted track remounts the editor with the pair
+  // present from the start — auto-scrolling there would yank the view for no event.
+  it('does not scroll on mount when the track was already converted', () => {
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    renderSection(track({ outputPath: '/out/a.aiff', status: 'done' }))
+    expect(scroll).not.toHaveBeenCalled()
+  })
 })

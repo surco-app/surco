@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
@@ -35,6 +36,19 @@ export function NormalizeSection({
   // source leaves no honest "before" to draw), and never in multi-select, where
   // `item` is just the anchor of the selection.
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
+  // The pair lands at the bottom of a scrolling editor: when it appears because a
+  // conversion just finished (not on mount — flipping back to a done track must not
+  // yank the view), scroll it into view or most users never see it. Same reveal
+  // pattern as NormalizeControls' mode switch.
+  const compareRef = useRef<HTMLDivElement>(null)
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
+    }
+    if (compare) compareRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  }, [compare])
   return (
     <div data-testid="editor-normalize" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -57,11 +71,13 @@ export function NormalizeSection({
           <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
           <NormalizeControls value={value} onChange={onChange} />
           {compare && item.outputPath && (
-            <WaveformCompare
-              inputPath={item.inputPath}
-              outputPath={item.outputPath}
-              enabled={settled}
-            />
+            <div ref={compareRef}>
+              <WaveformCompare
+                inputPath={item.inputPath}
+                outputPath={item.outputPath}
+                enabled={settled}
+              />
+            </div>
           )}
         </div>
       )}
