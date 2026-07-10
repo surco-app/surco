@@ -34,7 +34,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         {tr('settings.searchProviders')}
       </p>
       <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchProvidersHint')}</p>
-      <div className="mb-6 flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
+      <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
         {SEARCH_PROVIDERS.map((p) => (
           <label key={p} className="flex cursor-pointer items-center gap-2">
             <input
@@ -56,34 +56,39 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         ))}
       </div>
 
-      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-        <label
-          className={`flex items-center gap-3 ${
-            autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-          }`}
-        >
-          <input
-            data-testid="settings-auto-match"
-            type="checkbox"
-            checked={local.autoMatch && autoReady}
-            disabled={!autoReady}
-            onChange={(e) => patchLocal('autoMatch', e.target.checked)}
-            className="h-4 w-4 accent-[var(--color-accent)]"
-          />
-          <span className="text-sm">{tr('settings.autoMatch')}</span>
-        </label>
-        <p className="mt-1.5 text-xs text-fg-dim">
-          {synced.searchProviders.length === 0
-            ? tr('settings.autoMatchNeedsSource')
-            : autoReady
-              ? tr('settings.autoMatchHint')
-              : tr('settings.autoMatchNeedsToken')}
-        </p>
-      </div>
+      {/* Auto-match belongs with the sources it sweeps (its hint even names them), so it
+          shares their section instead of paying a whole separator of its own — one of the
+          cuts that let this tab fit without scrolling. */}
+      <label
+        className={`flex items-center gap-3 ${
+          autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+        }`}
+      >
+        <input
+          data-testid="settings-auto-match"
+          type="checkbox"
+          checked={local.autoMatch && autoReady}
+          disabled={!autoReady}
+          onChange={(e) => patchLocal('autoMatch', e.target.checked)}
+          className="h-4 w-4 accent-[var(--color-accent)]"
+        />
+        <span className="text-sm">{tr('settings.autoMatch')}</span>
+      </label>
+      <p className="mt-1.5 text-xs text-fg-dim">
+        {synced.searchProviders.length === 0
+          ? tr('settings.autoMatchNeedsSource')
+          : autoReady
+            ? tr('settings.autoMatchHint')
+            : tr('settings.autoMatchNeedsToken')}
+      </p>
 
-      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-        <p className="mb-1.5 text-sm font-medium text-fg-muted">{tr('settings.maxResults')}</p>
-        <p className="mb-3 text-xs text-fg-dim">{tr('settings.maxResultsHint')}</p>
+      {/* A one-value select doesn't need a full-width stacked block: the label and hint
+          take the left, the control sits on the right, one row instead of three. */}
+      <div className="mt-5 flex items-center justify-between gap-6 border-t border-[var(--color-line)] pt-4">
+        <div>
+          <p className="mb-1 text-sm font-medium text-fg-muted">{tr('settings.maxResults')}</p>
+          <p className="text-xs text-fg-dim">{tr('settings.maxResultsHint')}</p>
+        </div>
         <Select
           testid="settings-max-results"
           label={tr('settings.maxResults')}
@@ -93,14 +98,14 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         />
       </div>
 
-      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+      <div className="mt-5 border-t border-[var(--color-line)] pt-4">
         <label
           htmlFor="settings-ignore-words"
-          className="mb-1.5 block text-sm font-medium text-fg-muted"
+          className="mb-1 block text-sm font-medium text-fg-muted"
         >
           {tr('settings.searchIgnoreWords')}
         </label>
-        <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchIgnoreWordsHint')}</p>
+        <p className="mb-2.5 text-xs text-fg-dim">{tr('settings.searchIgnoreWordsHint')}</p>
         <input
           id="settings-ignore-words"
           data-testid="settings-ignore-words"
@@ -111,7 +116,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         />
       </div>
 
-      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+      <div className="mt-5 border-t border-[var(--color-line)] pt-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
           {tr('settings.discogsSection')}
         </p>
