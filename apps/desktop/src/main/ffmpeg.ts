@@ -825,6 +825,10 @@ export async function convertAudio(
   // the caller records it so a crash or force-quit before the rename/cleanup
   // below still leaves a trail the next launch can sweep (see tmpManifest.ts).
   onTmp?: (path: string) => void,
+  // macOS-only opt-in (Settings → Artwork): prepend the ID3v2 header that makes
+  // Finder show the cover on a FLAC output (see flacFinderCover.ts). The caller
+  // resolves the setting and the platform; this only sees the final verdict.
+  finderCovers?: boolean,
 ): Promise<{ normalizeSkipped: boolean }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -915,6 +919,11 @@ export async function convertAudio(
       else if (preservesCuesInPlace(ext))
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp })
     }
+    // Last touch before the rename so the header rides the same atomic landing.
+    // Only when there's a cover to show — the header exists solely for Finder's
+    // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
+    if (finderCovers && ext === '.flac' && coverPath && !removeCover)
+      await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath })
     await rename(tmp, output)
   } catch (e) {
     await unlink(tmp).catch(() => {})

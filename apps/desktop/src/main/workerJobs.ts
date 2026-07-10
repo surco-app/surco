@@ -1,4 +1,5 @@
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
@@ -23,6 +24,9 @@ export type WorkerJob =
       cueSource?: string
     }
   | { type: 'copyCueFrames'; source: string; dest: string }
+  // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
+  // off the main process's event loop like the other TagLib passes.
+  | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
 
 export type WorkerJobResult = BpmResult | KeyResult | number[] | null
 
@@ -39,6 +43,9 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult {
       return null
     case 'copyCueFrames':
       copyCueFrames(job.source, job.dest)
+      return null
+    case 'prependFlacId3':
+      prependFlacId3(job.file, job.meta, job.coverPath)
       return null
   }
 }
