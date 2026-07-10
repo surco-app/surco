@@ -69,11 +69,26 @@ export function stripIgnoredWords(text: string, phrases: string[]): string {
 // A "presents"/"pres." credit names a side-alias ("Brian Cross pres. Fat Synth") that the
 // catalog files under the lead act ("Brian Cross & Fat Synth"); for free-text search the
 // alias is noise that drags the query onto unrelated compilations. Keep only the lead artist
-// before the credit. Operates on an artist string (not the whole query, where the title sits
-// after the alias and would be eaten too); returns the input unchanged with no such credit,
-// and never strips to nothing.
+// before the credit. The Spanish catalog spells the same credit "presenta"/"presentan"
+// ("Chumi DJ Presenta Different") and Discogs files those under the lead act too. Operates
+// on an artist string (not the whole query, where the title sits after the alias and would
+// be eaten too); returns the input unchanged with no such credit, and never strips to nothing.
 export function dropPresentsAlias(artist: string): string {
-  return squeeze(artist.replace(/\s+(?:pres\.?|presents)\b.*$/i, '')) || artist
+  return squeeze(artist.replace(/\s+(?:pres\.?|presents|presenta|presentan)\b.*$/i, '')) || artist
+}
+
+// Rip stamps and uploader names glue themselves to the END of a title tag ("Dancing
+// Hearts Vicente") and sink every exact query. These are the progressively shorter
+// prefixes a precise, artist-pinned search retries with once the full title found
+// nothing: up to two trailing words dropped, never below one word, a parenthetical
+// shed whole first so it is never eaten token by token into a broken query.
+export function trailingWordDrops(title: string, maxDrops = 2): string[] {
+  const words = stripParentheticals(title).split(' ').filter(Boolean)
+  const out: string[] = []
+  for (let drop = 1; drop <= maxDrops && words.length - drop >= 1; drop++) {
+    out.push(words.slice(0, words.length - drop).join(' '))
+  }
+  return out
 }
 
 // DJ-pool / batch exports often append a track number and a repeat of the artist–title to

@@ -180,6 +180,24 @@ describe('buildSearchCandidates', () => {
     ).toBe('Brian Cross Secret')
   })
 
+  // The Spanish catalog spells the same credit "presenta"/"presentan" ("Chumi DJ
+  // Presenta Different") and Discogs files those releases under the lead act too —
+  // the case a Valencian crate hits constantly.
+  it('handles the Spanish "presenta"/"presentan" credits like "presents"', () => {
+    expect(
+      buildSearchCandidates('Chumi Dj Presenta Different Dancing Hearts', {
+        artist: 'Chumi Dj Presenta Different',
+        title: 'Dancing Hearts',
+      })[0],
+    ).toBe('Chumi Dj Dancing Hearts')
+    expect(
+      buildSearchCandidates('Los Residentes Presentan Happiness Track', {
+        artist: 'Los Residentes Presentan Happiness',
+        title: 'Track',
+      })[0],
+    ).toBe('Los Residentes Track')
+  })
+
   // "presents" spelled out is the same credit and gets the same treatment; an artist with
   // no such credit adds no extra candidate, so unrelated searches are untouched.
   it('handles spelled-out "presents" and leaves a credit-free artist alone', () => {

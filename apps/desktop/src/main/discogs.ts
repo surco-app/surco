@@ -1,4 +1,4 @@
-import { dropOriginalMarker, dropPresentsAlias } from '../shared/searchClean'
+import { dropOriginalMarker, dropPresentsAlias, trailingWordDrops } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { discogsLimiter } from './discogsLimiter'
@@ -240,6 +240,15 @@ export async function search(
         // tracklist field next — still the catalog's own fields, before free text.
         const byTrack = keep(await searchTracklist(artist, title, token, opts, priority))
         if (byTrack.length) return byTrack
+        // An uploader stamp glued to the END of the title ("Dancing Hearts Vicente")
+        // sinks every exact query, and the free-text fallbacks below then bury the
+        // panel in junk that a broad candidate returns. Retry the tracklist field
+        // with trailing words dropped — still artist-pinned, so the relaxed query
+        // stays precise, and a hit here preempts the noise entirely.
+        for (const shorter of trailingWordDrops(title)) {
+          const relaxed = keep(await searchTracklist(artist, shorter, token, opts, priority))
+          if (relaxed.length) return relaxed
+        }
       }
       let results: SearchResult[] = []
       // The catalog-number candidate keeps its place in the candidate order but runs on

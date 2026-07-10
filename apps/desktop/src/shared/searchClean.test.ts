@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanMatchTitle, dropLeadingCatalog, stripIgnoredWords } from './searchClean'
+import { cleanMatchTitle, dropLeadingCatalog, stripIgnoredWords, trailingWordDrops } from './searchClean'
 
 describe('stripIgnoredWords', () => {
   // Rip crews stamp their signature into the title tag ("Song rip djotas good"); no
@@ -89,5 +89,28 @@ describe('cleanMatchTitle', () => {
 
   it('leaves a clean title unchanged', () => {
     expect(cleanMatchTitle('Timewarp')).toBe('Timewarp')
+  })
+})
+
+describe('trailingWordDrops', () => {
+  // Rip stamps and uploader names glue themselves to the END of a title ("Dancing
+  // Hearts Vicente"): these are the progressively shorter prefixes a precise search
+  // retries with once the full title found nothing.
+  it('drops trailing words one at a time, up to two', () => {
+    expect(trailingWordDrops('Dancing Hearts Vicente')).toEqual([
+      'Dancing Hearts',
+      'Dancing',
+    ])
+  })
+
+  it('never drops below one word, so a short title yields fewer retries', () => {
+    expect(trailingWordDrops('Halcyon Days')).toEqual(['Halcyon'])
+    expect(trailingWordDrops('Halcyon')).toEqual([])
+  })
+
+  // A parenthetical would otherwise be dropped token by token into a broken query
+  // ("Song (Club" ) — strip it whole before slicing words.
+  it('sheds a parenthetical before dropping words', () => {
+    expect(trailingWordDrops('Acid Rain (Club Mix) Vicente')).toEqual(['Acid Rain', 'Acid'])
   })
 })

@@ -140,6 +140,26 @@ describe('search', () => {
     expect(second).not.toContain('&q=')
   })
 
+  // The Djotas case: an uploader stamp glued to the END of the title tag ("Dancing
+  // Hearts Vicente") sinks every exact query, and the free-text fallbacks then drown
+  // the panel in junk. Before falling to free text, retry the artist-pinned tracklist
+  // field with trailing words dropped — the stamp goes, the precise hit comes back.
+  it('retries the tracklist query dropping trailing title words before free text', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [] }), // artist + release_title (full title)
+      res(200, { results: [] }), // artist + track (full title, stamp included)
+      res(200, { results: [{ id: 31 }] }), // artist + track, last word dropped
+    ])
+    const out = await search('chumi dj dancing hearts', 'tok', undefined, {
+      artist: 'Chumi Dj',
+      title: 'Dancing Hearts Vicente',
+    })
+    expect(out).toEqual([{ id: 31, provider: 'discogs' }])
+    const third = fetchMock.mock.calls[2][0] as string
+    expect(third).toContain(`track=${encodeURIComponent('Dancing Hearts')}`)
+    expect(third).not.toContain('&q=')
+  })
+
   // The structured queries are precise but brittle — a mistyped artist in the tag returns
   // nothing. When both come up empty the client must still fall through to the free-text
   // candidates so a rough tag can still find the release.
