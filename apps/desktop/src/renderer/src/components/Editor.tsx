@@ -26,6 +26,7 @@ import {
 } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
 import { deriveTagPatches } from '../lib/deriveTags'
+import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isStale } from '../lib/dirty'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
@@ -101,6 +102,10 @@ interface Props {
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
   onFormatChange?: (format: OutputFormat) => void
+  // Reports the destination chosen in the split-button menu, mirroring onFormatChange:
+  // App pins it in a ref so every convert entry point sends this track where the
+  // button says, not where Settings points.
+  onDestinationChange?: (destination: Destination) => void
   // Reports the per-track normalization override so the keyboard convert shortcuts
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
@@ -154,6 +159,7 @@ export const Editor = memo(function Editor({
   onProcess,
   onReencode,
   onFormatChange,
+  onDestinationChange,
   onNormalizeChange,
   onAddToAppleMusic,
   onTrashOriginal,
@@ -196,12 +202,6 @@ export const Editor = memo(function Editor({
     outputBitDepth,
     outputSampleRate,
   } = useAppSettings()
-  // Which library the membership badge reads — the conversion destination's. Null
-  // (folder/overwrite, or Apple Music off macOS) hides the badge entirely.
-  const librarySource = librarySourceOf(
-    { addToAppleMusic, addToEngineDj, overwriteOriginal, convertBesideOriginal, outputFormat },
-    isMacOS(),
-  )
   const hasToken = discogsToken !== ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
@@ -235,6 +235,34 @@ export const Editor = memo(function Editor({
   // The Editor remounts per track (key={track.id}), so each track starts from the
   // default rather than inheriting the last track's pick.
   const [format, setFormat] = useState(outputFormat)
+  // The chosen destination, same one-shot contract as the format: seeded from the
+  // Settings booleans, updated only by the split-button menu, reset by the per-track
+  // remount, never written back to Settings.
+  const [destination, setDestination] = useState(() =>
+    toDestination(
+      addToAppleMusic,
+      outputFormat === 'flac',
+      overwriteOriginal,
+      addToEngineDj,
+      convertBesideOriginal,
+    ),
+  )
+  // The facets the picked destination means, replacing the raw Settings reads below
+  // so the in-place warnings, the button label and the membership badge all describe
+  // the conversion the button will actually run.
+  const picked = fromDestination(destination)
+  // Overwrite is deliberately not offered as a one-shot pick (rewriting sources is a
+  // Settings-level decision with its own confirmations); it stays listed only while
+  // it IS the configured destination, so the current choice is always visible.
+  const destinationChoices = DESTINATIONS.filter(
+    (d) => (d !== 'overwrite' || overwriteOriginal) && (d !== 'appleMusic' || isMacOS()),
+  )
+  // Which library the membership badge reads — the conversion destination's. Null
+  // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
+  const librarySource = librarySourceOf(
+    { ...picked, outputFormat: format },
+    isMacOS(),
+  )
   // Per-track normalization, seeded from the Settings default. Editing it both
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
@@ -245,6 +273,7 @@ export const Editor = memo(function Editor({
   // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
   useEffect(() => {
     onFormatChange?.(format)
+    onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
   }, [])
   // Natural pixel size of the shown artwork, read on load, so the user can tell
@@ -570,7 +599,7 @@ export const Editor = memo(function Editor({
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.
   const willEditInPlace =
-    !convertBesideOriginal && editsInPlace(format, item.inputPath, overwriteOriginal)
+    !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
   // Same-format exports never touch the audio (metadata-only, by design), so when the
   // quality pins ask for something the source isn't, the honest move is an explicit
   // offer: a passive line naming the gap plus a "Re-encode" action — never a silent
@@ -579,7 +608,7 @@ export const Editor = memo(function Editor({
   const qualityPinned = outputSampleRate !== 'source' || outputBitDepth !== 'source'
   const reencodeCandidate =
     !isMulti &&
-    !overwriteOriginal &&
+    !picked.overwriteOriginal &&
     qualityPinned &&
     format !== 'mp3' &&
     formatMatchesInput(format, item.inputPath)
@@ -614,7 +643,7 @@ export const Editor = memo(function Editor({
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
-    overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
+    picked.overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -932,8 +961,10 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           reencode={reencode}
           onReencode={() => onReencode?.(format)}
-          addToAppleMusic={addToAppleMusic}
-          addToEngineDj={addToEngineDj}
+          addToAppleMusic={picked.addToAppleMusic}
+          addToEngineDj={picked.addToEngineDj}
+          destination={destination}
+          destinations={destinationChoices}
           format={format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}
@@ -942,6 +973,17 @@ export const Editor = memo(function Editor({
           onSelectFormat={(f) => {
             setFormat(f)
             onFormatChange?.(f)
+            // Music can't ingest FLAC: picking it while Apple Music is the destination
+            // silently falls back to the output folder — the same pin Settings applies —
+            // and the button label updates to say so.
+            if (f === 'flac' && destination === 'appleMusic') {
+              setDestination('folder')
+              onDestinationChange?.('folder')
+            }
+          }}
+          onSelectDestination={(d) => {
+            setDestination(d)
+            onDestinationChange?.(d)
           }}
           onExportCollection={onExportCollection}
           onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}

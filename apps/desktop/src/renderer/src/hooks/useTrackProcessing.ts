@@ -11,6 +11,7 @@ import {
 } from '../lib/batch'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
+import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
@@ -55,11 +56,13 @@ export interface TrackProcessing {
     normalizeOverride?: NormalizeConfig,
     overwriteOverride?: boolean,
     forceReencode?: boolean,
+    destinationOverride?: Destination,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
+    destinationOverride?: Destination,
   ) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
   addAllToAppleMusic: (ids: string[]) => Promise<void>
@@ -116,6 +119,7 @@ export function useTrackProcessing({
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
       forceReencode?: boolean,
+      destinationOverride?: Destination,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -163,7 +167,13 @@ export function useTrackProcessing({
       const autoName = settings?.autoApplyFilename
         ? renderOutputName(settings.filenameFormat, meta)
         : ''
-      const overwriteOriginal = overwriteOverride ?? settings?.overwriteOriginal
+      // A destination override expands to the full facet set: main falls back to
+      // Settings per facet, so sending only the changed flag would mix the pick with
+      // whatever the settings say for the rest. The explicit overwrite pin still wins
+      // (a batch pinned it before the destination existed as an override).
+      const destination = destinationOverride ? fromDestination(destinationOverride) : undefined
+      const overwriteOriginal =
+        overwriteOverride ?? destination?.overwriteOriginal ?? settings?.overwriteOriginal
       const outputName = overwriteOriginal
         ? track.fileName
         : track.outputName?.trim() || autoName || track.fileName
@@ -177,7 +187,11 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           format: formatOverride,
           normalize: normalizeOverride,
-          overwriteOriginal: overwriteOverride,
+          overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
+          addToAppleMusic: destination?.addToAppleMusic,
+          keepOutputCopy: destination?.keepOutputCopy,
+          addToEngineDj: destination?.addToEngineDj,
+          convertBesideOriginal: destination?.convertBesideOriginal,
           forceReencode,
           previousOutputPath: track.outputPath,
           musicPersistentId: track.musicPersistentId,
@@ -302,6 +316,7 @@ export function useTrackProcessing({
       targets: TrackItem[],
       formatOverride?: OutputFormat,
       normalizeOverride?: NormalizeConfig,
+      destinationOverride?: Destination,
     ): Promise<void> => {
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
@@ -312,7 +327,10 @@ export function useTrackProcessing({
       // change mid-batch can't fork the run into another format or into unconfirmed
       // in-place rewrites. The rest (covers, destinations) stays live-read.
       const pinnedFormat = formatOverride ?? settings?.outputFormat
-      const pinnedOverwrite = settings?.overwriteOriginal
+      // A destination override IS the overwrite decision for the whole run (its facet
+      // set includes overwriteOriginal), so the setting-derived pin only applies when
+      // no destination was picked.
+      const pinnedOverwrite = destinationOverride ? undefined : settings?.overwriteOriginal
       cancelBatchRef.current = false
       runningIdsRef.current = ids
       setBatching(true)
@@ -329,7 +347,14 @@ export function useTrackProcessing({
         // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
         results = await mapWithConcurrency(ids, concurrency, async (id) => {
           if (cancelBatchRef.current) return 'skipped'
-          const outcome = await processOne(id, pinnedFormat, normalizeOverride, pinnedOverwrite)
+          const outcome = await processOne(
+            id,
+            pinnedFormat,
+            normalizeOverride,
+            pinnedOverwrite,
+            undefined,
+            destinationOverride,
+          )
           done += 1
           setBatchProgress({ done, total: ids.length })
           return outcome

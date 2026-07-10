@@ -3,6 +3,7 @@ import type { NormalizeConfig, OutputFormat, Settings, TrackMetadata } from '../
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
+import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
@@ -20,6 +21,7 @@ interface Params {
     targets: TrackItem[],
     format?: OutputFormat,
     normalize?: NormalizeConfig,
+    destination?: Destination,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
@@ -44,7 +46,12 @@ export interface ConfirmFlows {
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
-  askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
+  askConvertAll: (
+    targets: TrackItem[],
+    format?: OutputFormat,
+    normalize?: NormalizeConfig,
+    destination?: Destination,
+  ) => void
 }
 
 // The destructive/overwriting actions that confirm before firing: trash, delete original,
@@ -217,9 +224,15 @@ export function useConfirmFlows({
     targets: TrackItem[],
     format?: OutputFormat,
     normalize?: NormalizeConfig,
+    destination?: Destination,
   ): void {
-    if (!settings?.overwriteOriginal) {
-      void processAll(targets, format, normalize)
+    // The editor's one-shot destination pick decides whether this run rewrites
+    // sources; only without one does the live setting. An override away from
+    // overwrite needs no confirmation (the run only writes new files), and one
+    // back onto it must still ask.
+    const overwriting = destination ? destination === 'overwrite' : settings?.overwriteOriginal
+    if (!overwriting) {
+      void processAll(targets, format, normalize, destination)
       return
     }
     openConfirm({
@@ -230,7 +243,7 @@ export function useConfirmFlows({
       }),
       confirmLabel: tr('confirm.convertInPlaceConfirm'),
       destructive: true,
-      onConfirm: () => void processAll(targets, format, normalize),
+      onConfirm: () => void processAll(targets, format, normalize, destination),
     })
   }
 

@@ -3,6 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
+import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -30,6 +31,10 @@ interface ConvertFooterProps {
   onReencode?: () => void
   addToAppleMusic: boolean
   addToEngineDj: boolean
+  // The editor's one-shot destination pick and the choices its split-button menu
+  // offers, pre-filtered by the editor (platform, configured overwrite).
+  destination: Destination
+  destinations: readonly Destination[]
   format: OutputFormat
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
@@ -38,6 +43,7 @@ interface ConvertFooterProps {
   normalizeCfg: NormalizeConfig
   onOpenNormalize: () => void
   onSelectFormat: (format: OutputFormat) => void
+  onSelectDestination: (destination: Destination) => void
   // Pre-resolved by the editor: converts the selection in multi mode, the open track
   // in single, so the footer never forks on it.
   onProcess: (format: OutputFormat) => void
@@ -70,12 +76,15 @@ export function ConvertFooter({
   onReencode,
   addToAppleMusic,
   addToEngineDj,
+  destination,
+  destinations,
   format,
   exportedFormat,
   musicExt,
   normalizeCfg,
   onOpenNormalize,
   onSelectFormat,
+  onSelectDestination,
   onProcess,
   onAddToAppleMusic,
   onTrashOriginal,
@@ -228,9 +237,12 @@ export function ConvertFooter({
                 withEngineDj={false}
                 incomplete={false}
                 inPlace={false}
+                destination={destination}
+                destinations={destinations}
                 count={isMulti ? selectedCount : undefined}
                 onProcess={onProcess}
                 onSelectFormat={onSelectFormat}
+                onSelectDestination={onSelectDestination}
               />
             </div>
             {musicError && <p className="text-xs text-danger">{musicError}</p>}
@@ -266,9 +278,12 @@ export function ConvertFooter({
               incomplete={!isMulti && incomplete}
               incompleteReason={incompleteReason}
               inPlace={!isMulti && willEditInPlace}
+              destination={destination}
+              destinations={destinations}
               count={isMulti ? selectedCount : undefined}
               onProcess={onProcess}
               onSelectFormat={onSelectFormat}
+              onSelectDestination={onSelectDestination}
             />
           </>
         )}

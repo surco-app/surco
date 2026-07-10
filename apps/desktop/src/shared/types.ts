@@ -373,6 +373,14 @@ export interface ProcessJob {
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
   overwriteOriginal?: boolean
+  // The remaining destination facets, set together when the editor's split-button
+  // overrides where this conversion goes (a one-shot pick, never persisted to
+  // Settings). Each falls back to the live setting when undefined, like the
+  // overwriteOriginal pin above.
+  addToAppleMusic?: boolean
+  keepOutputCopy?: boolean
+  addToEngineDj?: boolean
+  convertBesideOriginal?: boolean
   // The editor's explicit "Re-encode" action: render a same-format source again
   // (applying the pinned bit depth/sample rate) into the output folder instead of
   // the metadata-only in-place update. Never set by bulk conversions.

@@ -564,6 +564,59 @@ describe('runProcessTrack — pinned overwrite', () => {
   })
 })
 
+describe('runProcessTrack — per-job destination', () => {
+  // The editor's split-button can send one conversion somewhere else without touching
+  // Settings. Like the overwrite pin, each destination facet rides the job and falls
+  // back to the live setting only when absent — otherwise a one-shot "this track to
+  // Engine DJ" would still convert to wherever Settings points.
+  it('honors a job that opts out of the configured Engine DJ registration', async () => {
+    const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
+    await runProcessTrack(job({ addToEngineDj: false }), deps)
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+  })
+
+  it('registers in Engine DJ when only the job asks for it', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: false }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+    })
+    await runProcessTrack(job({ addToEngineDj: true }), deps)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+  })
+
+  it('adds to Apple Music when only the job asks for it', async () => {
+    const deps = makeDeps({ platform: 'darwin', settings: settings({ addToAppleMusic: false }) })
+    await runProcessTrack(job({ addToAppleMusic: true }), deps)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+  })
+
+  it('skips the configured Apple Music add when the job opts out', async () => {
+    const deps = makeDeps({ platform: 'darwin', settings: settings({ addToAppleMusic: true }) })
+    await runProcessTrack(job({ addToAppleMusic: false }), deps)
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('converts beside the original when only the job asks for it', async () => {
+    const deps = makeDeps({ settings: settings({ convertBesideOriginal: false }) })
+    const result = await runProcessTrack(
+      job({ outputName: 'song', convertBesideOriginal: true }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/in/song.aiff')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  it('runs "Apple Music only" when the job asks for the add without the output copy', async () => {
+    const deps = makeDeps({ platform: 'darwin', settings: settings() })
+    const result = await runProcessTrack(
+      job({ addToAppleMusic: true, keepOutputCopy: false }),
+      deps,
+    )
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(result.outputPath).toBe('')
+  })
+})
+
 describe('runProcessTrack — Apple Music', () => {
   const mac = (over: Partial<Settings> = {}) =>
     makeDeps({ platform: 'darwin', settings: settings({ addToAppleMusic: true, ...over }) })

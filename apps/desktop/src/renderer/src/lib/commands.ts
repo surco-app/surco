@@ -2,6 +2,7 @@ import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/ty
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
+import type { Destination } from './destination'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
 import { suspectTracks } from './triage'
@@ -147,6 +148,7 @@ export interface CommandDeps {
   cancelBatch: () => void
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: OutputFormat | null }
+  editorDestinationRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
@@ -166,8 +168,19 @@ export interface CommandDeps {
   playerVisible: boolean
   // Nudge the playhead by ±seconds (the ←/→ shortcuts).
   seek: (delta: number) => void
-  processOne: (id: string, format?: OutputFormat, normalize?: NormalizeConfig) => unknown
-  askConvertAll: (targets: TrackItem[], format?: OutputFormat, normalize?: NormalizeConfig) => void
+  processOne: (
+    id: string,
+    format?: OutputFormat,
+    normalize?: NormalizeConfig,
+    forceReencode?: boolean,
+    destination?: Destination,
+  ) => unknown
+  askConvertAll: (
+    targets: TrackItem[],
+    format?: OutputFormat,
+    normalize?: NormalizeConfig,
+    destination?: Destination,
+  ) => void
   cancelAnalysis: () => void
   analyzeAllQuality: () => void
   cancelAutoMatch: () => void
@@ -236,6 +249,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     batching,
     cancelBatch,
     editorFormatRef,
+    editorDestinationRef,
     editorNormalizeRef,
     trackSearchRef,
     pickFiles,
@@ -484,6 +498,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
           selected.id,
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
+          undefined,
+          editorDestinationRef.current ?? undefined,
         )
         // Convert-and-advance: the conversion runs in the background, so move straight to
         // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
@@ -508,6 +524,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
             bulkTracks,
             editorFormatRef.current ?? undefined,
             editorNormalizeRef.current ?? undefined,
+            editorDestinationRef.current ?? undefined,
           )
       },
     },

@@ -85,6 +85,7 @@ import { changelogReleases } from './lib/changelog'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
+import type { Destination } from './lib/destination'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { isTypingTarget } from './lib/keymap'
@@ -399,6 +400,8 @@ export default function App(): React.JSX.Element {
   // seed on mount (it remounts per track), so this mirror is right by construction;
   // null only before any editor has mounted, falling back to the Settings default.
   const editorFormatRef = useRef<OutputFormat | null>(null)
+  // The destination picked in the editor's split-button menu, mirroring editorFormatRef.
+  const editorDestinationRef = useRef<Destination | null>(null)
   // Per-track normalization override picked in the editor, mirroring editorFormatRef.
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
 
@@ -940,6 +943,7 @@ export default function App(): React.JSX.Element {
   // shortcut then falls back to the Settings defaults.
   if (!selected) {
     editorFormatRef.current = null
+    editorDestinationRef.current = null
     editorNormalizeRef.current = null
   }
   // Filtering mints a new array per tracks change even when none of the SELECTED
@@ -1130,7 +1134,12 @@ export default function App(): React.JSX.Element {
     },
   )
   const onProcessAllSelected = useStableCallback((format: OutputFormat) =>
-    askConvertAll(selectedTracks, format, editorNormalizeRef.current ?? undefined),
+    askConvertAll(
+      selectedTracks,
+      format,
+      editorNormalizeRef.current ?? undefined,
+      editorDestinationRef.current ?? undefined,
+    ),
   )
   const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))
   const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
@@ -1193,24 +1202,40 @@ export default function App(): React.JSX.Element {
       format?: OutputFormat,
       normalize?: NormalizeConfig,
       forceReencode?: boolean,
+      destination?: Destination,
     ) => {
-      const outcome = await processOne(id, format, normalize, undefined, forceReencode)
+      const outcome = await processOne(id, format, normalize, undefined, forceReencode, destination)
       if (outcome === 'converted') void maybeShowDonateNudge()
       return outcome
     },
   )
   const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
     if (selected)
-      await convertSelected(selected.id, format, editorNormalizeRef.current ?? undefined)
+      await convertSelected(
+        selected.id,
+        format,
+        editorNormalizeRef.current ?? undefined,
+        undefined,
+        editorDestinationRef.current ?? undefined,
+      )
   })
   // The editor's explicit "Re-encode": a same-format source rendered again with the
   // pinned quality applied — the only path that sets forceReencode.
   const onReencodeSelected = useStableCallback(async (format: OutputFormat) => {
     if (selected)
-      await convertSelected(selected.id, format, editorNormalizeRef.current ?? undefined, true)
+      await convertSelected(
+        selected.id,
+        format,
+        editorNormalizeRef.current ?? undefined,
+        true,
+        editorDestinationRef.current ?? undefined,
+      )
   })
   const onFormatChange = useStableCallback((format: OutputFormat) => {
     editorFormatRef.current = format
+  })
+  const onDestinationChange = useStableCallback((destination: Destination) => {
+    editorDestinationRef.current = destination
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     editorNormalizeRef.current = n
@@ -1391,6 +1416,7 @@ export default function App(): React.JSX.Element {
       batching,
       cancelBatch,
       editorFormatRef,
+      editorDestinationRef,
       editorNormalizeRef,
       trackSearchRef,
       pickFiles: () => void pickFiles(),
@@ -1820,6 +1846,7 @@ export default function App(): React.JSX.Element {
                   onProcess={onProcessSelected}
                   onReencode={onReencodeSelected}
                   onFormatChange={onFormatChange}
+                  onDestinationChange={onDestinationChange}
                   onNormalizeChange={onNormalizeChange}
                   onAddToAppleMusic={onAddSelectedToAppleMusic}
                   onTrashOriginal={onTrashOriginal}

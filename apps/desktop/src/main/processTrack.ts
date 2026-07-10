@@ -118,8 +118,15 @@ export async function runProcessTrack(
 
     stage('converting')
     const format = job.format ?? settings.outputFormat
+    // Every destination facet prefers the job's pin over the live setting (see the
+    // ProcessJob comments): the editor's one-shot destination pick and the batch pin
+    // both ride the job, so a Settings change can't redirect a conversion in flight.
+    const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
+    const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
+    const addToEngineDj = job.addToEngineDj ?? settings.addToEngineDj
     const besideOriginal =
-      (settings.convertBesideOriginal ?? false) && !(job.overwriteOriginal ?? settings.overwriteOriginal)
+      (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
+      !(job.overwriteOriginal ?? settings.overwriteOriginal)
     const { outputPath, inPlace } = resolveOutputTarget(
       job.inputPath,
       sanitizeOutputName(job.outputName),
@@ -134,8 +141,8 @@ export async function runProcessTrack(
     // to a private temp dir (never the output folder — it can't collide with or clobber
     // anything there), hand it over, then remove it below.
     const musicOnly = isAppleMusicOnly(
-      settings.addToAppleMusic,
-      settings.keepOutputCopy,
+      addToAppleMusic,
+      keepOutputCopy,
       deps.platform,
       format,
       inPlace,
@@ -220,7 +227,7 @@ export async function runProcessTrack(
     // Music. Only when the user deleted the copy from the library does the fresh
     // file get imported, which also re-establishes the persistent ID.
     let musicPersistentId: string | undefined
-    if (shouldAddToAppleMusic(settings.addToAppleMusic, deps.platform, format)) {
+    if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
       musicPersistentId = job.musicPersistentId
         ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
@@ -246,7 +253,7 @@ export async function runProcessTrack(
     // registration throws and fails the job, like a failed Apple Music add — never a
     // silent "converted but not in the library".
     let addedToEngineDj: true | undefined
-    if (settings.addToEngineDj) {
+    if (addToEngineDj) {
       stage('engineDj')
       // Engine renders artwork from its own database, never from the file's tags, so
       // the row needs the image handed over: the job's processed cover when there is

@@ -358,6 +358,83 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
   })
 
+  // The split-button's one-shot destination pick must reach main as the job's own
+  // facets: main falls back to Settings for any facet the job omits, so a pick that
+  // sent only the changed flag would still convert half to the old destination.
+  it('expands a destination override into the full facet set on the job', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: { addToAppleMusic: true, keepOutputCopy: false } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a', undefined, undefined, undefined, undefined, 'engineDj')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addToAppleMusic: false,
+        keepOutputCopy: true,
+        addToEngineDj: true,
+        convertBesideOriginal: false,
+        overwriteOriginal: false,
+      }),
+    )
+  })
+
+  // Overriding to overwrite must behave exactly like the setting: the export lands
+  // back on the source's own name, not on a lingering custom outputName.
+  it('pins the export name to the original when the destination override is overwrite', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputName: 'custom name' })],
+          settings: { overwriteOriginal: false } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a', undefined, undefined, undefined, undefined, 'overwrite')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'a.wav', overwriteOriginal: true }),
+    )
+  })
+
+  // A batch run with a destination override pins it for every queued track — including
+  // overriding AWAY from configured overwrite: the pick said "new files this time", so
+  // no track in the run may rewrite its source.
+  it('pins the destination override across a batch over the overwrite setting', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' })
+    setApi({ processTrack })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks,
+          settings: { overwriteOriginal: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+          concurrency: 1,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks, undefined, undefined, 'folder')
+    })
+    expect(processTrack).toHaveBeenCalledTimes(2)
+    for (const call of processTrack.mock.calls) {
+      expect(call[0]).toMatchObject({ overwriteOriginal: false, convertBesideOriginal: false })
+    }
+  })
+
   // With auto-apply on, a track the user never renamed must still export under the pattern,
   // not the source file name — that's the whole point of the setting (no button press needed).
   it('derives the export name from the pattern when auto-apply is on and no manual name was set', async () => {

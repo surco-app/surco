@@ -347,6 +347,8 @@
     "convertNoMusic": "Convertir en {{format}}",
     "exportAgain": "Exporter à nouveau",
     "chooseFormat": "Choisir le format",
+    "menuFormat": "Format",
+    "menuDestination": "Destination",
     "update": "Mettre à jour",
     "updateMusic": "Mettre à jour + Apple Music",
     "processing": "Traitement…",

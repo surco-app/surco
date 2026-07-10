@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
+import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
@@ -33,8 +34,14 @@ interface ExportButtonProps {
   // that sits in the secondary row labelled "Re-export", rather than the prominent
   // accent button used to convert.
   quiet?: boolean
+  // The destination this conversion goes to and the picks on offer — the editor
+  // filters them (Apple Music off non-macOS, overwrite only when Settings chose it).
+  // Like the format, picking one only relabels the button for this track.
+  destination: Destination
+  destinations: readonly Destination[]
   onProcess: (format: OutputFormat) => void
   onSelectFormat: (format: OutputFormat) => void
+  onSelectDestination: (destination: Destination) => void
 }
 
 // A split button: the body exports in the currently chosen format (seeded from
@@ -56,8 +63,11 @@ export function ExportButton({
   inPlace,
   count,
   quiet,
+  destination,
+  destinations,
   onProcess,
   onSelectFormat,
+  onSelectDestination,
 }: ExportButtonProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -93,6 +103,11 @@ export function ExportButton({
   function pick(format: OutputFormat): void {
     setOpen(false)
     onSelectFormat(format)
+  }
+
+  function pickDestination(d: Destination): void {
+    setOpen(false)
+    onSelectDestination(d)
   }
 
   return (
@@ -138,6 +153,9 @@ export function ExportButton({
       {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
+          <p className="px-3 pt-1 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
+            {tr('editor.menuFormat')}
+          </p>
           {FORMATS.map((id) => (
             <button
               key={id}
@@ -153,6 +171,25 @@ export function ExportButton({
               {id === exportedFormat && (
                 <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
               )}
+            </button>
+          ))}
+          <p className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
+            {tr('editor.menuDestination')}
+          </p>
+          {destinations.map((d) => (
+            <button
+              key={d}
+              type="button"
+              data-testid={`process-destination-${d}`}
+              aria-current={d === destination ? 'true' : undefined}
+              // Music can't ingest FLAC — the same pin the Settings radio applies.
+              disabled={d === 'appleMusic' && outputFormat === 'flac'}
+              onClick={() => pickDestination(d)}
+              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+                d === destination ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
+            >
+              {tr(`settings.destinations.${d}`)}
             </button>
           ))}
         </div>
