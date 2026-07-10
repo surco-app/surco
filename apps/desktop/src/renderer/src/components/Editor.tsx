@@ -946,6 +946,8 @@ export const Editor = memo(function Editor({
               setNormalizeCfg(n)
               onNormalizeChange?.(n)
             }}
+            item={item}
+            isMulti={isMulti}
           />
         </div>
 

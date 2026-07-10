@@ -19,7 +19,6 @@ import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
 import { SpectrumLoading } from './SpectrumLoading'
 import { Tooltip } from './Tooltip'
-import { WaveformCompare } from './WaveformCompare'
 
 const qualityBadge: Record<Verdict, { className: string; label: string }> = {
   good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
@@ -214,17 +213,6 @@ export function QualitySection({
             ) : null)}
           {showLoudness && loudness && (
             <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
-          )}
-          {/* Only once there IS an after — and never for an in-place export, whose
-              rewritten source leaves no honest "before" to draw. The waveform is the
-              one full-length decode, so it waits for the selection to rest like the
-              loudness pass above. */}
-          {item.outputPath && item.outputPath !== item.inputPath && (
-            <WaveformCompare
-              inputPath={item.inputPath}
-              outputPath={item.outputPath}
-              enabled={settled}
-            />
           )}
         </div>
       )}
