@@ -417,6 +417,29 @@ describe('useDiscogsBrowser', () => {
     expect(onQueryCommitted).not.toHaveBeenCalled()
   })
 
+  // The ignore words are stripped in the main process, invisibly to this hook — so they
+  // must participate in the search's cache identity. Without that, the flow that motivates
+  // the setting silently breaks: search fails → user adds the offending word in Settings →
+  // comes back → the same term serves the pre-setting cached miss forever (the app's
+  // staleTime is Infinity), and the setting looks like it does nothing.
+  it('re-runs the search when the ignore words change instead of serving the stale miss', async () => {
+    const search = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([searchResult])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ ignoreWords }: { ignoreWords: string[] }) =>
+        useDiscogsBrowser(item({ query: 'chumi dj presenta' }), tr, undefined, ['discogs'], 25, {
+          ignoreWords,
+        }),
+      { wrapper: wrapper(), initialProps: { ignoreWords: [] as string[] } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
+    expect(result.current.results).toHaveLength(0)
+
+    rerender({ ignoreWords: ['presenta'] })
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+  })
+
   // A failed search (Discogs 429, a network blip) must be retryable from the button:
   // the term doesn't change, so the query key doesn't either, and without an explicit
   // refetch the error would stay on screen until the user edits the text.

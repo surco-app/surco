@@ -138,7 +138,11 @@ export function useDiscogsBrowser(
   }, [query])
 
   const searchQuery = useQuery({
-    queryKey: ['search', searchTerm, providers],
+    // The ignore words belong in the key even though the stripping happens in the main
+    // process: the term the user sees doesn't change when they add a word in Settings,
+    // and with staleTime Infinity the same key would keep serving the pre-setting miss —
+    // the exact search the setting was added to fix.
+    queryKey: ['search', searchTerm, providers, cleanup.ignoreWords ?? []],
     queryFn: async () => {
       // A pasted release id/URL loads that release directly instead of searching (Discogs
       // only — it's the one source with id-addressable releases).
