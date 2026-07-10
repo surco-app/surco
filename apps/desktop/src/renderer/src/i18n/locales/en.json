@@ -323,6 +323,7 @@
     "waveformAfter": "After",
     "waveformViewSide": "Side by side",
     "waveformViewOverlay": "Overlaid",
+    "waveformFade": "Fade between before and after",
     "loudnessLufsHelp": "(LUFS) — how loud the track sounds overall. Too low and it plays quieter than your other tracks; too high and it sounds crushed.",
     "loudnessPeakHelp": "(dBTP) — the loudest instant of the signal. Above 0 it can distort (clip) when converted or played back.",
     "loudnessRangeHelp": "(LU) — how much the quiet and loud parts differ. A very low range means heavy compression (the loudness war).",

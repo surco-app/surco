@@ -323,6 +323,7 @@
     "waveformAfter": "Après",
     "waveformViewSide": "Côte à côte",
     "waveformViewOverlay": "Superposée",
+    "waveformFade": "Fondu entre l'avant et l'après",
     "loudnessLufsHelp": "(LUFS) — le volume global perçu du morceau. Trop bas, il sonne plus faible que tes autres morceaux ; trop haut, il sonne écrasé.",
     "loudnessPeakHelp": "(dBTP) — l'instant le plus fort du signal. Au-dessus de 0, ça peut distordre (clipper) à la conversion ou à la lecture.",
     "loudnessRangeHelp": "(LU) — l'écart entre les passages doux et forts. Une plage très basse signale une grosse compression (la loudness war).",

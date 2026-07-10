@@ -323,6 +323,7 @@
     "waveformAfter": "Depois",
     "waveformViewSide": "Lado a lado",
     "waveformViewOverlay": "Sobreposta",
+    "waveformFade": "Transição entre antes e depois",
     "loudnessLufsHelp": "(LUFS): o quão alto a faixa soa no conjunto. Muito baixo e ela toca mais fraca que as suas outras faixas; muito alto e soa esmagada.",
     "loudnessPeakHelp": "(dBTP): o instante mais alto do sinal. Acima de 0 pode distorcer (clipar) ao converter ou reproduzir.",
     "loudnessRangeHelp": "(LU): o quanto as partes suaves e as fortes diferem. Uma variação muito baixa indica compressão pesada (a guerra do volume).",

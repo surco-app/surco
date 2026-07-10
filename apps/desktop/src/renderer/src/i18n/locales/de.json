@@ -323,6 +323,7 @@
     "waveformAfter": "Nachher",
     "waveformViewSide": "Nebeneinander",
     "waveformViewOverlay": "Überlagert",
+    "waveformFade": "Zwischen Vorher und Nachher überblenden",
     "loudnessLufsHelp": "(LUFS) — wie laut der Track insgesamt klingt. Zu niedrig, und er klingt leiser als deine anderen Tracks; zu hoch, und er klingt plattgedrückt.",
     "loudnessPeakHelp": "(dBTP) — der lauteste Moment des Signals. Über 0 kann er beim Konvertieren oder Abspielen verzerren (Clipping).",
     "loudnessRangeHelp": "(LU) — wie stark sich leise und laute Passagen unterscheiden. Ein sehr niedriger Wert bedeutet starke Kompression (der Loudness War).",

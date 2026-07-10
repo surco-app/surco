@@ -105,4 +105,23 @@ describe('WaveformCompare', () => {
     fireEvent.click(screen.getByTestId('waveform-view-side'))
     expect(screen.getByTestId('waveform-side')).toBeInTheDocument()
   })
+
+  // On barely-changed audio the two envelopes cover each other and the overlay reads
+  // as one wave — GitHub's onion-skin answer: a fade slider that crossfades the
+  // "after" layer over the "before", so scrubbing it makes the difference move.
+  it('offers an onion-skin fade slider in the overlaid view only', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
+    await screen.findByTestId('waveform-side')
+    expect(screen.queryByTestId('waveform-overlay-fade')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('waveform-view-overlay'))
+    const fade = screen.getByTestId('waveform-overlay-fade') as HTMLInputElement
+    expect(fade.value).toBe('0.5')
+    fireEvent.change(fade, { target: { value: '0' } })
+    expect(fade.value).toBe('0')
+  })
 })

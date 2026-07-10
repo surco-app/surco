@@ -107,25 +107,56 @@ function Strip({ wave, loading, color }: StripData & { color: string }): React.J
 }
 
 // GitHub-style image diff: both envelopes on one canvas, the source behind in grey
-// and the converted file over it in blue, so the applied gain reads directly as
-// how far the blue grows past (or hides behind) the grey.
+// and the converted file over it in blue. On barely-changed audio the two cover
+// each other, so an onion-skin fade slider crossfades the blue layer — scrubbing it
+// makes the difference move, which the eye catches where a static blend can't.
 function OverlayStrip({ before, after }: { before: StripData; after: StripData }): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [fade, setFade] = useState(0.5)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !before.wave || !after.wave) return
     drawWaveform(canvas, before.wave.peaks, { color: BEFORE_COLOR })
-    drawWaveform(canvas, after.wave.peaks, { color: AFTER_COLOR, clear: false })
-  }, [before.wave, after.wave])
+    drawWaveform(canvas, after.wave.peaks, {
+      color: `rgba(96, 165, 250, ${(0.9 * fade).toFixed(3)})`,
+      clear: false,
+    })
+  }, [before.wave, after.wave, fade])
   return (
-    <div data-testid="waveform-overlay" className="relative">
-      <canvas
-        ref={canvasRef}
-        width={OVERLAY_W}
-        height={CANVAS_H}
-        className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
-      />
-      {(before.loading || after.loading) && <Skeleton />}
+    <div data-testid="waveform-overlay">
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          width={OVERLAY_W}
+          height={CANVAS_H}
+          className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+        />
+        {(before.loading || after.loading) && <Skeleton />}
+      </div>
+      <div className="mt-1.5 flex items-center justify-center gap-2">
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: BEFORE_COLOR }}
+        />
+        <input
+          type="range"
+          data-testid="waveform-overlay-fade"
+          aria-label={tr('editor.waveformFade')}
+          min={0}
+          max={1}
+          step={0.01}
+          value={fade}
+          onChange={(e) => setFade(Number(e.target.value))}
+          className="player-volume-range h-1 w-32 cursor-pointer"
+        />
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: AFTER_COLOR }}
+        />
+      </div>
     </div>
   )
 }
