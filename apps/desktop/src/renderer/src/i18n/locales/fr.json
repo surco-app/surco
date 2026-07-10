@@ -631,7 +631,7 @@
     "replaceLowRes": "Remplacer les pochettes basse résolution en appliquant une release",
     "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée — une basse résolution est seulement signalée, jamais remplacée par l'image de la release.",
     "flacFinderCovers": "Afficher les pochettes FLAC dans le Finder",
-    "flacFinderCoversHint": "S'applique à la conversion : ajoute au fichier une seconde copie de la pochette que le Finder sait lire. Les lecteurs l'ignorent.",
+    "flacFinderCoversHint": "Le Finder ne sait pas lire la pochette des fichiers FLAC et affiche une icône générique. Cette option le contourne pour les fichiers convertis ; la lecture n'est pas affectée.",
     "showSpectrum": "Afficher le spectre audio",
     "showSpectrumHint": "Affiche le spectre et le contrôle de qualité à l'édition d'un morceau. Si désactivé, l'analyse est entièrement sautée.",
     "autoAnalyze": "Analyser la qualité à l'import",

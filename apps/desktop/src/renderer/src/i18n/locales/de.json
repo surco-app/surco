@@ -631,7 +631,7 @@
     "replaceLowRes": "Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen",
     "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten — ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
     "flacFinderCovers": "FLAC-Cover im Finder anzeigen",
-    "flacFinderCoversHint": "Gilt beim Konvertieren: fügt der Datei eine zweite Kopie des Covers hinzu, die der Finder lesen kann. Player ignorieren sie.",
+    "flacFinderCoversHint": "Der Finder kann das Cover in FLAC-Dateien nicht lesen und zeigt ein generisches Symbol. Diese Option umgeht das bei konvertierten Dateien; die Wiedergabe ist nicht betroffen.",
     "showSpectrum": "Audiospektrum anzeigen",
     "showSpectrumHint": "Zeigt Spektrum und Qualitätsprüfung beim Bearbeiten eines Tracks. Wenn aus, entfällt die Analyse komplett.",
     "autoAnalyze": "Qualität beim Import analysieren",

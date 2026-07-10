@@ -631,7 +631,7 @@
     "replaceLowRes": "Sustituir carátulas de baja resolución al aplicar un lanzamiento",
     "replaceLowResHint": "Si está desactivado, siempre se conserva la carátula del archivo; una de baja resolución solo se avisa, nunca se cambia por la del lanzamiento.",
     "flacFinderCovers": "Mostrar las carátulas de los FLAC en el Finder",
-    "flacFinderCoversHint": "Se aplica al convertir: añade al archivo una segunda copia de la carátula que el Finder sí sabe leer. Los reproductores la ignoran.",
+    "flacFinderCoversHint": "El Finder no sabe leer la carátula que llevan los FLAC, así que les pone un icono genérico. Esta opción lo evita en los archivos convertidos; la reproducción no se ve afectada.",
     "showSpectrum": "Mostrar el espectro de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
     "autoAnalyze": "Analizar la calidad al importar",
