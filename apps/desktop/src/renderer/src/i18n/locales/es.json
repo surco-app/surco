@@ -321,6 +321,8 @@
     "loudnessHelpTitle": "¿Qué significan?",
     "waveformBefore": "Antes",
     "waveformAfter": "Después",
+    "waveformViewSide": "Lado a lado",
+    "waveformViewOverlay": "Superpuesta",
     "loudnessLufsHelp": "(LUFS): lo fuerte que suena la pista en conjunto. Si es muy bajo, sonará más floja que tus otras pistas; si es muy alto, sonará aplastada.",
     "loudnessPeakHelp": "(dBTP): el instante más alto de la señal. Por encima de 0 puede distorsionar (clipping) al convertir o reproducir.",
     "loudnessRangeHelp": "(LU): cuánto se diferencian las partes suaves de las fuertes. Un rango muy bajo indica mucha compresión (la guerra del volumen).",

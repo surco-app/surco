@@ -1,86 +1,137 @@
+import { Columns2, Layers2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { LoudnessResult, WaveformResult } from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
 import { drawWaveform, skeletonPeaks } from '../lib/waveform'
+import { Tooltip } from './Tooltip'
 
-// Half the player strip's raster: each strip sits in half the panel width, so the
-// same buckets-per-pixel density holds without a resize observer.
+// Half the player strip's raster per side-by-side column (each sits in half the
+// panel width); the overlaid canvas spans the panel, so it gets the full raster.
 const CANVAS_W = 600
+const OVERLAY_W = 1200
 const CANVAS_H = 64
 
 const SKELETON_PEAKS = skeletonPeaks(40)
 
-function Strip({
-  label,
-  path,
-  enabled,
-  testid,
-}: {
-  label: string
-  path: string
-  enabled: boolean
-  testid: string
-}): React.JSX.Element {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+// The colour key the legends' dots repeat: the converted file keeps the player's
+// accent blue, the source goes muted so "louder than before" reads as blue fringes
+// growing past the grey in the overlaid view.
+const AFTER_COLOR = 'rgba(96, 165, 250, 0.8)'
+const BEFORE_COLOR = 'rgba(148, 163, 184, 0.7)'
+
+type CompareView = 'side' | 'overlay'
+
+interface StripData {
+  wave: WaveformResult | null | undefined
+  loading: boolean
+  loudness: LoudnessResult | null | undefined
+}
+
+// One file's decoded envelope plus its measurement — for the "after" side that's
+// the converted output, the figures that say what normalization actually applied.
+// Both share the per-path caches the player and the loudness readout warm.
+function useStripData(path: string, enabled: boolean): StripData {
   const { data: wave, isFetching } = useWaveform(path, enabled)
-  const loading = isFetching && !wave
-  // The strip's own file's measurement — for the "after" strip that's the converted
-  // output, the figure that says what normalization actually applied. Shares the
-  // per-path loudness cache with the readout above, so the "before" is free.
   const { data: loudness } = useTrackLoudness(path, enabled)
+  return { wave, loading: isFetching && !wave, loudness }
+}
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (canvas && wave) drawWaveform(canvas, wave.peaks)
-  }, [wave])
-
+function Legend({
+  testid,
+  color,
+  label,
+  loudness,
+}: {
+  testid: string
+  color: string
+  label: string
+  loudness: LoudnessResult | null | undefined
+}): React.JSX.Element {
   return (
-    <div data-testid={testid}>
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-          {label}
+    <span data-testid={testid} className="flex min-w-0 items-center gap-1.5 text-[10px]">
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: color }}
+      />
+      <span className="font-medium uppercase tracking-wider text-fg-dim">{label}</span>
+      {loudness && (
+        <span className="truncate tabular-nums text-fg-dim">
+          {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
         </span>
-        {loudness && (
-          <span className="truncate text-[10px] tabular-nums text-fg-dim">
-            {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
-          </span>
-        )}
-      </div>
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+      )}
+    </span>
+  )
+}
+
+function Skeleton(): React.JSX.Element {
+  return (
+    <div
+      data-testid="waveform-compare-loading"
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 flex items-center gap-px px-px animate-pulse opacity-50"
+    >
+      {SKELETON_PEAKS.map((amp, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, never-reordered bar strip
+          key={i}
+          className="flex-1 rounded-[1px] bg-[var(--color-line-strong)]"
+          style={{ height: `${amp * 100}%` }}
         />
-        {loading && (
-          <div
-            data-testid="waveform-compare-loading"
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex items-center gap-px px-px animate-pulse opacity-50"
-          >
-            {SKELETON_PEAKS.map((amp, i) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, never-reordered bar strip
-                key={i}
-                className="flex-1 rounded-[1px] bg-[var(--color-line-strong)]"
-                style={{ height: `${amp * 100}%` }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      ))}
     </div>
   )
 }
 
-// The source and converted peak envelopes side by side — the visual proof of what
-// normalization actually did to the file, next to the loudness figures it justifies.
-// Both strips read the same per-path waveform cache the player warms, so a track
-// already played draws its "before" instantly.
+function Strip({ wave, loading, color }: StripData & { color: string }): React.JSX.Element {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (canvas && wave) drawWaveform(canvas, wave.peaks, { color })
+  }, [wave, color])
+  return (
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_W}
+        height={CANVAS_H}
+        className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+      />
+      {loading && <Skeleton />}
+    </div>
+  )
+}
+
+// GitHub-style image diff: both envelopes on one canvas, the source behind in grey
+// and the converted file over it in blue, so the applied gain reads directly as
+// how far the blue grows past (or hides behind) the grey.
+function OverlayStrip({ before, after }: { before: StripData; after: StripData }): React.JSX.Element {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !before.wave || !after.wave) return
+    drawWaveform(canvas, before.wave.peaks, { color: BEFORE_COLOR })
+    drawWaveform(canvas, after.wave.peaks, { color: AFTER_COLOR, clear: false })
+  }, [before.wave, after.wave])
+  return (
+    <div data-testid="waveform-overlay" className="relative">
+      <canvas
+        ref={canvasRef}
+        width={OVERLAY_W}
+        height={CANVAS_H}
+        className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+      />
+      {(before.loading || after.loading) && <Skeleton />}
+    </div>
+  )
+}
+
+// The source and converted files compared — side by side or overlaid, the legends
+// (colour dot, label, measured figures) staying up in either view.
 export function WaveformCompare({
   inputPath,
   outputPath,
@@ -91,20 +142,54 @@ export function WaveformCompare({
   enabled: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [view, setView] = useState<CompareView>('side')
+  const before = useStripData(inputPath, enabled)
+  const after = useStripData(outputPath, enabled)
+  const viewButton = (id: CompareView, label: string, Icon: typeof Columns2): React.JSX.Element => (
+    <button
+      type="button"
+      data-testid={`waveform-view-${id}`}
+      aria-label={label}
+      aria-pressed={view === id}
+      onClick={() => setView(id)}
+      className={`press group relative flex h-5 w-6 items-center justify-center rounded ${
+        view === id ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-dim hover:text-fg'
+      }`}
+    >
+      <Icon className="h-3 w-3" aria-hidden="true" />
+      <Tooltip label={label} align="end" />
+    </button>
+  )
   return (
-    <div data-testid="waveform-compare" className="mt-3 grid grid-cols-2 gap-2">
-      <Strip
-        label={tr('editor.waveformBefore')}
-        path={inputPath}
-        enabled={enabled}
-        testid="waveform-before"
-      />
-      <Strip
-        label={tr('editor.waveformAfter')}
-        path={outputPath}
-        enabled={enabled}
-        testid="waveform-after"
-      />
+    <div data-testid="waveform-compare" className="mt-3">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+          <Legend
+            testid="waveform-before"
+            color={BEFORE_COLOR}
+            label={tr('editor.waveformBefore')}
+            loudness={before.loudness}
+          />
+          <Legend
+            testid="waveform-after"
+            color={AFTER_COLOR}
+            label={tr('editor.waveformAfter')}
+            loudness={after.loudness}
+          />
+        </div>
+        <div className="flex shrink-0 gap-0.5 rounded-md bg-[var(--color-field)] p-0.5">
+          {viewButton('side', tr('editor.waveformViewSide'), Columns2)}
+          {viewButton('overlay', tr('editor.waveformViewOverlay'), Layers2)}
+        </div>
+      </div>
+      {view === 'side' ? (
+        <div data-testid="waveform-side" className="grid grid-cols-2 gap-2">
+          <Strip {...before} color={BEFORE_COLOR} />
+          <Strip {...after} color={AFTER_COLOR} />
+        </div>
+      ) : (
+        <OverlayStrip before={before} after={after} />
+      )}
     </div>
   )
 }

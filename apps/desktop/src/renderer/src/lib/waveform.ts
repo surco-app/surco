@@ -1,15 +1,21 @@
 // Draws the mirrored peak-bar strip onto the canvas's own raster (scaled by CSS to
 // the container). Shared by the player's scrubbable strip and the editor's
 // before/after comparison so the two render the same envelope identically.
-export function drawWaveform(canvas: HTMLCanvasElement, peaks: number[]): void {
+// `clear: false` lets the comparison's overlaid view stack a second envelope on
+// top of the first instead of wiping it.
+export function drawWaveform(
+  canvas: HTMLCanvasElement,
+  peaks: number[],
+  opts: { color?: string; clear?: boolean } = {},
+): void {
   const ctx = canvas.getContext('2d')
   // jsdom (tests) has no 2D context; the strips assert their geometry via the DOM.
   if (!ctx) return
   const w = canvas.width
   const h = canvas.height
-  ctx.clearRect(0, 0, w, h)
+  if (opts.clear !== false) ctx.clearRect(0, 0, w, h)
   const mid = h / 2
-  ctx.fillStyle = 'rgba(96, 165, 250, 0.8)'
+  ctx.fillStyle = opts.color ?? 'rgba(96, 165, 250, 0.8)'
   const barW = w / peaks.length
   for (let i = 0; i < peaks.length; i++) {
     const bar = Math.max(peaks[i] * (h / 2 - 2), 0.5)

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
@@ -62,8 +62,8 @@ describe('WaveformCompare', () => {
 
   // Djotas's ask behind the whole block: after converting, the figures must be the
   // OUTPUT's real measurement, not the source's — that's how you know what
-  // normalization actually applied. Each strip carries its own file's numbers.
-  it('shows each file’s measured loudness under its strip', async () => {
+  // normalization actually applied. Each legend carries its own file's numbers.
+  it('shows each file’s measured loudness in its legend', async () => {
     const loudness = vi.fn(async (path: string) => ({
       integratedLufs: path === '/out/a.aiff' ? -9.2 : -21.8,
       truePeakDb: path === '/out/a.aiff' ? -0.8 : -18.1,
@@ -82,5 +82,27 @@ describe('WaveformCompare', () => {
     const after = screen.getByTestId('waveform-after')
     await waitFor(() => expect(before).toHaveTextContent('-21.8 LUFS · -18.1 dBTP'))
     expect(after).toHaveTextContent('-9.2 LUFS · -0.8 dBTP')
+  })
+
+  // GitHub-style image diff: besides side-by-side, an overlaid view draws both
+  // envelopes on one canvas so the gain difference reads directly — the legends
+  // (and their figures) stay up regardless of the view.
+  it('switches to an overlaid single canvas and back', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
+    expect(await screen.findByTestId('waveform-side')).toBeInTheDocument()
+    expect(screen.queryByTestId('waveform-overlay')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('waveform-view-overlay'))
+    expect(screen.getByTestId('waveform-overlay')).toBeInTheDocument()
+    expect(screen.queryByTestId('waveform-side')).not.toBeInTheDocument()
+    expect(screen.getByTestId('waveform-before')).toBeInTheDocument()
+    expect(screen.getByTestId('waveform-after')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('waveform-view-side'))
+    expect(screen.getByTestId('waveform-side')).toBeInTheDocument()
   })
 })
