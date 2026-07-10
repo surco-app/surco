@@ -629,7 +629,7 @@
     "replaceLowRes": "Substituir capas de baixa resolução ao aplicar um release",
     "replaceLowResHint": "Quando desativado, a capa do próprio arquivo é sempre mantida — uma de baixa resolução só é sinalizada, nunca trocada pela imagem do release.",
     "flacFinderCovers": "Mostrar capas de FLAC no Finder",
-    "flacFinderCoversHint": "Adiciona um cabeçalho ID3 aos arquivos FLAC convertidos para que o Finder e o Quick Look mostrem a capa. Levemente fora do padrão; os players não são afetados.",
+    "flacFinderCoversHint": "Aplica-se ao converter: adiciona ao arquivo uma segunda cópia da capa que o Finder consegue ler. Os players a ignoram.",
     "showSpectrum": "Mostrar o espectro de áudio",
     "showSpectrumHint": "Mostra o espectro e a verificação de qualidade ao editar uma faixa. Se desativar, a análise é pulada por completo.",
     "autoAnalyze": "Analisar a qualidade ao importar",

@@ -629,7 +629,7 @@
     "replaceLowRes": "Replace low-res covers when applying a release",
     "replaceLowResHint": "When off, your file's own cover is always kept — a low-res one is only flagged, never swapped for the release image.",
     "flacFinderCovers": "Show FLAC covers in Finder",
-    "flacFinderCoversHint": "Adds an ID3 header to converted FLAC files so Finder and Quick Look show the artwork. Slightly non-standard; players are unaffected.",
+    "flacFinderCoversHint": "Applies when converting: adds a second copy of the artwork to the file, one Finder can read. Players ignore it.",
     "showSpectrum": "Show audio spectrum",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
     "autoAnalyze": "Analyze quality on import",
