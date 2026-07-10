@@ -452,6 +452,8 @@
     "targetLufs": "Objetivo (LUFS)",
     "truePeak": "Pico real (dBTP)",
     "peakDb": "Pico (dBFS)",
+    "peakRemoveDc": "Eliminar desplazamiento DC (centrar en 0.0)",
+    "peakPerChannel": "Normalizar canales estéreo independientemente",
     "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3 y AIFF, pero se pierden en WAV y FLAC."
   },
   "settings": {

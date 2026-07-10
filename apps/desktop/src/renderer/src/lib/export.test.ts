@@ -37,7 +37,7 @@ describe('exportedPatch', () => {
   // isNormalizeStale) — without it, re-normalizing never earns the Update button.
   it('records the normalization the export applied', () => {
     const normalize = { mode: 'loudness' as const, targetLufs: -9, truePeakDb: -1, peakDb: -1 }
-    const patch = exportedPatch(track(), { outputPath: '/out/a.aiff' }, normalize)
+    const patch = exportedPatch(track(), { outputPath: '/out/a.aiff', inPlace: false }, normalize)
     expect(patch.processedNormalize).toEqual(normalize)
   })
 

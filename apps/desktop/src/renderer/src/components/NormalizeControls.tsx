@@ -209,6 +209,26 @@ export function NormalizeControls({ value, onChange }: Props): React.JSX.Element
             onChange={(n) => onChange({ ...value, peakDb: n })}
             inputRef={peakRef}
           />
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              data-testid="normalize-peak-remove-dc"
+              type="checkbox"
+              checked={value.peakRemoveDc === true}
+              onChange={(e) => onChange({ ...value, peakRemoveDc: e.target.checked })}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <span className="text-sm">{tr('normalize.peakRemoveDc')}</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              data-testid="normalize-peak-per-channel"
+              type="checkbox"
+              checked={value.peakPerChannel === true}
+              onChange={(e) => onChange({ ...value, peakPerChannel: e.target.checked })}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <span className="text-sm">{tr('normalize.peakPerChannel')}</span>
+          </label>
         </div>
       )}
 

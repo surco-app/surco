@@ -41,10 +41,13 @@ import {
 } from './hfShelf'
 import {
   limitedLoudnormFilter,
+  astatsArgs,
   loudnormArgs,
   loudnormFilter,
+  parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
+  peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
   volumedetectArgs,
@@ -757,6 +760,18 @@ export async function normalizeFilter(
 ): Promise<string | null> {
   if (cfg.mode === 'none') return null
   if (cfg.mode === 'peak') {
+    // The Audacity-style options (per-channel DC removal, independent channel
+    // gains) need per-channel figures volumedetect can't give, so they measure
+    // with astats instead. Same fact-about-the-file-alone caching as below.
+    if (cfg.peakRemoveDc || cfg.peakPerChannel) {
+      const channels = await cachedAnalysis('astats-channels-v1', input, async () => {
+        const { stderr } = await run(ffmpegPath, astatsArgs(input), {
+          maxBuffer: 1024 * 1024 * 16,
+        })
+        return parseAstatsChannels(stderr)
+      })
+      return channels === null ? null : peakChannelFilter(cfg, channels)
+    }
     // Peak mode is a constant-gain `volume` filter, which doesn't resample, so it
     // needs no rate restoration. The measured peak is a fact about the file alone,
     // so one namespace serves every target.

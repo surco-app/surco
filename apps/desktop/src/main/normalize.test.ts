@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../shared/types'
 import {
+  astatsArgs,
   limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
+  parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
+  peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
   volumeFilter,
@@ -184,5 +187,98 @@ describe('volumeFilter', () => {
   it('renders the gain as an ffmpeg volume filter in dB', () => {
     expect(volumeFilter(5)).toBe('volume=5dB')
     expect(volumeFilter(-3.2)).toBe('volume=-3.2dB')
+  })
+})
+
+// Real astats stderr shape: per-channel blocks first, then an Overall block whose
+// lines carry no "Channel:" header and must not leak into the last channel.
+const ASTATS_STEREO = `
+[Parsed_astats_0 @ 0x1] Channel: 1
+[Parsed_astats_0 @ 0x1] DC offset: 0.100000
+[Parsed_astats_0 @ 0x1] Min level: 0.037515
+[Parsed_astats_0 @ 0x1] Max level: 0.162485
+[Parsed_astats_0 @ 0x1] Peak level dB: -15.783565
+[Parsed_astats_0 @ 0x1] Channel: 2
+[Parsed_astats_0 @ 0x1] DC offset: 0.000000
+[Parsed_astats_0 @ 0x1] Min level: -0.031242
+[Parsed_astats_0 @ 0x1] Max level: 0.031242
+[Parsed_astats_0 @ 0x1] Peak level dB: -30.103000
+[Parsed_astats_0 @ 0x1] Overall
+[Parsed_astats_0 @ 0x1] DC offset: 0.050000
+[Parsed_astats_0 @ 0x1] Min level: -0.031242
+[Parsed_astats_0 @ 0x1] Max level: 0.162485
+`
+
+describe('astatsArgs', () => {
+  it('decodes to float before astats so levels come out linear, into a null muxer', () => {
+    const args = astatsArgs('/m/a.wav')
+    expect(args.join(' ')).toContain('aformat=sample_fmts=flt,astats')
+    expect(args.slice(-3)).toEqual(['-f', 'null', '-'])
+  })
+})
+
+describe('parseAstatsChannels', () => {
+  it('reads DC offset and min/max level per channel, ignoring the Overall block', () => {
+    expect(parseAstatsChannels(ASTATS_STEREO)).toEqual([
+      { dc: 0.1, min: 0.037515, max: 0.162485 },
+      { dc: 0, min: -0.031242, max: 0.031242 },
+    ])
+  })
+
+  it('returns null when astats printed nothing usable', () => {
+    expect(parseAstatsChannels('no stats here')).toBeNull()
+  })
+})
+
+const peak = (over: Partial<NormalizeConfig> = {}): NormalizeConfig => ({
+  mode: 'peak',
+  targetLufs: -14,
+  truePeakDb: -1,
+  peakDb: -1,
+  ...over,
+})
+
+describe('peakChannelFilter', () => {
+  // Audacity's "Normalize stereo channels independently": each channel gets the
+  // gain that puts ITS OWN peak on the target, instead of one shared gain.
+  it('gives each channel its own gain when normalizing channels independently', () => {
+    const f = peakChannelFilter(peak({ peakDb: 0, peakPerChannel: true }), [
+      { dc: 0, min: -0.5, max: 0.5 },
+      { dc: 0, min: -0.25, max: 0.25 },
+    ])
+    expect(f).toBe('aeval=exprs=val(0)*2.000000|val(1)*4.000000:c=same')
+  })
+
+  it('shares one gain from the loudest channel when channels stay linked', () => {
+    const f = peakChannelFilter(peak({ peakDb: 0 }), [
+      { dc: 0, min: -0.5, max: 0.5 },
+      { dc: 0, min: -0.25, max: 0.25 },
+    ])
+    expect(f).toBe('aeval=exprs=val(0)*2.000000|val(1)*2.000000:c=same')
+  })
+
+  // Audacity's "Remove DC offset": the mean is subtracted per channel BEFORE the
+  // gain is sized, so the headroom the offset was wasting becomes usable level.
+  it('subtracts each channel mean and sizes the gain on the centered extent', () => {
+    const f = peakChannelFilter(peak({ peakDb: 0, peakRemoveDc: true, peakPerChannel: true }), [
+      { dc: 0.1, min: 0.037515, max: 0.162485 },
+      { dc: 0, min: -0.25, max: 0.25 },
+    ])
+    // channel 1: extent max(|0.162485-0.1|, |0.037515-0.1|) = 0.062485 → gain 1/0.062485
+    expect(f).toBe('aeval=exprs=(val(0)-(0.100000))*16.003841|(val(1)-(0.000000))*4.000000:c=same')
+  })
+
+  it('respects the dB target', () => {
+    const f = peakChannelFilter(peak({ peakDb: -6.0206, peakPerChannel: true }), [
+      { dc: 0, min: -0.5, max: 0.5 },
+    ])
+    // -6.0206 dB ≈ 0.5 linear; peak already at 0.5 → unity gain
+    expect(f).toBe('aeval=exprs=val(0)*1.000000:c=same')
+  })
+
+  it('returns null when a channel is silent, so the caller skips normalization', () => {
+    expect(
+      peakChannelFilter(peak({ peakPerChannel: true }), [{ dc: 0, min: 0, max: 0 }]),
+    ).toBeNull()
   })
 })

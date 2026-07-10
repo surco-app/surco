@@ -30,7 +30,10 @@ export function isStale(track: TrackItem): boolean {
 // inert, so touching them must not flag an update the export wouldn't change.
 function normalizeEffect(cfg: NormalizeConfig): string {
   if (cfg.mode === 'loudness') return `loudness ${cfg.targetLufs} ${cfg.truePeakDb}`
-  if (cfg.mode === 'peak') return `peak ${cfg.peakDb}`
+  // The booleans coerced so a config saved before the options existed (undefined)
+  // reads identically to one with them off.
+  if (cfg.mode === 'peak')
+    return `peak ${cfg.peakDb} ${!!cfg.peakRemoveDc} ${!!cfg.peakPerChannel}`
   return 'none'
 }
 

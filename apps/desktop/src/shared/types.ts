@@ -65,6 +65,14 @@ export interface NormalizeConfig {
   truePeakDb: number
   // 'peak' mode: the dBFS the loudest sample is scaled to.
   peakDb: number
+  // 'peak' mode extras, matching Audacity's Normalize dialog. Optional so configs
+  // saved before they existed stay valid; absent reads as off.
+  // Subtract each channel's mean before sizing the gain, reclaiming the headroom
+  // a biased capture (a misaligned phono stage) wastes.
+  peakRemoveDc?: boolean
+  // Give each channel its own gain to the target instead of one shared gain —
+  // trades the stereo image for both channels peaking at the same level.
+  peakPerChannel?: boolean
 }
 
 export type KeyNotation = 'camelot' | 'musical'

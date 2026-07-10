@@ -452,6 +452,8 @@
     "targetLufs": "Ziel (LUFS)",
     "truePeak": "True Peak (dBTP)",
     "peakDb": "Peak (dBFS)",
+    "peakRemoveDc": "DC-Versatz entfernen (auf 0.0 zentrieren)",
+    "peakPerChannel": "Stereokanäle unabhängig normalisieren",
     "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3 und AIFF erhalten, gehen bei WAV und FLAC aber verloren."
   },
   "settings": {

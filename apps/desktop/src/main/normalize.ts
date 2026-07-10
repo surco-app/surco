@@ -131,3 +131,80 @@ export function peakGainDb(targetDb: number, maxVolumeDb: number): number {
 export function volumeFilter(gainDb: number): string {
   return `volume=${gainDb}dB`
 }
+
+// The per-channel measurement behind the Audacity-style peak options: astats
+// reports each channel's mean (DC offset) and sample extremes. Decoded to float
+// first — on integer formats astats prints raw code values (±32767-style), not
+// the normalized levels the gain math needs.
+export function astatsArgs(input: string): string[] {
+  return [
+    '-hide_banner',
+    '-nostats',
+    '-i',
+    input,
+    '-af',
+    'aformat=sample_fmts=flt,astats',
+    '-f',
+    'null',
+    '-',
+  ]
+}
+
+export interface ChannelStats {
+  dc: number
+  min: number
+  max: number
+}
+
+// Reads the per-channel blocks astats prints to stderr. The trailing Overall
+// block repeats the same field names with no "Channel:" header, so collection
+// stops there — its figures must not overwrite the last channel's.
+export function parseAstatsChannels(stderr: string): ChannelStats[] | null {
+  const channels: ChannelStats[] = []
+  let current: Partial<ChannelStats> | null = null
+  for (const line of stderr.split('\n')) {
+    if (/\bChannel:\s*\d+/.test(line)) {
+      current = {}
+      channels.push(current as ChannelStats)
+      continue
+    }
+    if (/\bOverall\b/.test(line)) break
+    if (!current) continue
+    const dc = line.match(/DC offset:\s*(-?[\d.]+)/)
+    if (dc) current.dc = Number(dc[1])
+    const min = line.match(/Min level:\s*(-?[\d.]+)/)
+    if (min) current.min = Number(min[1])
+    const max = line.match(/Max level:\s*(-?[\d.]+)/)
+    if (max) current.max = Number(max[1])
+  }
+  const complete = channels.every(
+    (c) => Number.isFinite(c.dc) && Number.isFinite(c.min) && Number.isFinite(c.max),
+  )
+  return channels.length > 0 && complete ? channels : null
+}
+
+// Audacity's Normalize, as one -af-compatible filter: aeval rewrites every channel
+// as (sample − mean) × gain, which a linear chain like channelsplit+amerge can't
+// express per channel. With peakRemoveDc the mean is subtracted BEFORE the gain is
+// sized, so the headroom a biased capture wastes becomes usable level; with
+// peakPerChannel each channel takes the gain to put ITS OWN peak on the target,
+// otherwise one shared gain (from the loudest channel) preserves the stereo image.
+// A silent channel has no extent to scale, so the whole filter bails (null) and the
+// caller skips normalization — the same contract as a failed measurement.
+export function peakChannelFilter(
+  cfg: NormalizeConfig,
+  channels: ChannelStats[],
+): string | null {
+  const removeDc = cfg.peakRemoveDc === true
+  const extents = channels.map((c) =>
+    removeDc ? Math.max(Math.abs(c.max - c.dc), Math.abs(c.min - c.dc)) : Math.max(Math.abs(c.max), Math.abs(c.min)),
+  )
+  if (extents.some((e) => e <= 0)) return null
+  const target = 10 ** (cfg.peakDb / 20)
+  const shared = target / Math.max(...extents)
+  const exprs = channels.map((c, i) => {
+    const gain = (cfg.peakPerChannel === true ? target / extents[i] : shared).toFixed(6)
+    return removeDc ? `(val(${i})-(${c.dc.toFixed(6)}))*${gain}` : `val(${i})*${gain}`
+  })
+  return `aeval=exprs=${exprs.join('|')}:c=same`
+}

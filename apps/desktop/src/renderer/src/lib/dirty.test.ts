@@ -98,6 +98,17 @@ describe('isNormalizeStale', () => {
     expect(isNormalizeStale(t, cfg({ peakDb: -0.1 }))).toBe(false)
   })
 
+  it('is true when a peak option (DC removal, independent channels) is toggled', () => {
+    const t = converted({ processedNormalize: cfg({ mode: 'peak' }) })
+    expect(isNormalizeStale(t, cfg({ mode: 'peak', peakRemoveDc: true }))).toBe(true)
+    expect(isNormalizeStale(t, cfg({ mode: 'peak', peakPerChannel: true }))).toBe(true)
+  })
+
+  it('treats a missing peak option as off, so old exports do not read as stale', () => {
+    const t = converted({ processedNormalize: cfg({ mode: 'peak' }) })
+    expect(isNormalizeStale(t, cfg({ mode: 'peak', peakRemoveDc: false }))).toBe(false)
+  })
+
   it('is never stale before a track is done', () => {
     const t = converted({ status: 'idle', processedNormalize: cfg() })
     expect(isNormalizeStale(t, cfg({ mode: 'peak' }))).toBe(false)

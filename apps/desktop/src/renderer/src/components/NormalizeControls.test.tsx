@@ -73,3 +73,32 @@ describe('NormalizeControls number input', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+// Djotas's Audacity habit, verbatim: peak to a target plus per-channel DC removal
+// and independent channel gains. They only make sense in peak mode — loudness
+// (loudnorm) has its own gating math — so the boxes live in the peak block alone.
+describe('NormalizeControls peak options', () => {
+  const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+
+  it('offers DC removal and independent channels in peak mode', () => {
+    const onChange = vi.fn()
+    render(<NormalizeControls value={peak} onChange={onChange} />)
+    fireEvent.click(screen.getByTestId('normalize-peak-remove-dc'))
+    expect(onChange).toHaveBeenCalledWith({ ...peak, peakRemoveDc: true })
+    fireEvent.click(screen.getByTestId('normalize-peak-per-channel'))
+    expect(onChange).toHaveBeenCalledWith({ ...peak, peakPerChannel: true })
+  })
+
+  it('shows the saved options as checked', () => {
+    render(
+      <NormalizeControls value={{ ...peak, peakRemoveDc: true }} onChange={vi.fn()} />,
+    )
+    expect(screen.getByTestId('normalize-peak-remove-dc')).toBeChecked()
+    expect(screen.getByTestId('normalize-peak-per-channel')).not.toBeChecked()
+  })
+
+  it('keeps the options out of loudness mode', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('normalize-peak-remove-dc')).not.toBeInTheDocument()
+  })
+})
