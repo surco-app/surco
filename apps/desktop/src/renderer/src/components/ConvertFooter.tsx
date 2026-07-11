@@ -269,6 +269,7 @@ export function ConvertFooter({
             )}
             <ExportButton
               status={isMulti ? 'idle' : item.status}
+              stage={isMulti ? undefined : item.stage}
               stale={!isMulti && stale}
               done={!isMulti && done}
               outputFormat={format}

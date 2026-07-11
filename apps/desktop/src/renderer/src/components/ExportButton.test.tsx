@@ -95,6 +95,32 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-destination-beside')).toBeEnabled()
   })
 
+  // While a track converts, the button mirrors the row in the track list: the
+  // current stage as its label and a fill marking where in the pipeline the export
+  // is — the same honest phase progress (STAGE_PROGRESS), not a fake percentage.
+  it('shows the stage label and its progress fill while processing', () => {
+    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="appleMusic" />)
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toBeDisabled()
+    expect(btn).toHaveTextContent('Adding to Apple Music…')
+    expect(screen.getByTestId('process-progress')).toHaveStyle({ width: '85%' })
+  })
+
+  it('names the picked format in the converting stage label', () => {
+    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Converting to AIFF…')
+    const width = screen.getByTestId('process-progress').style.width
+    expect(Number.parseFloat(width)).toBeCloseTo(55)
+  })
+
+  // The first progress event may not have landed yet: no stage, no fill — the
+  // button falls back to the generic processing label instead of an empty bar.
+  it('falls back to the plain processing label before the first stage lands', () => {
+    render(<ExportButton {...baseProps} incomplete={false} status="processing" />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Processing…')
+    expect(screen.queryByTestId('process-progress')).not.toBeInTheDocument()
+  })
+
   it('shows no blocked-reason tooltip once the convert is allowed', () => {
     vi.useFakeTimers()
     try {

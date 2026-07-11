@@ -2,9 +2,10 @@ import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat } from '../../../shared/types'
+import type { OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
+import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 
@@ -30,6 +31,10 @@ interface ExportButtonProps {
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
   count?: number
+  // The export phase the track is in while processing. With it, the button mirrors the
+  // track list's row: the stage as its label and a fill at that phase's progress mark.
+  // Absent until the first progress event lands (and always in multi/quiet uses).
+  stage?: ProcessStage
   // The demoted variant shown after a successful export: a bordered, muted control
   // that sits in the secondary row labelled "Re-export", rather than the prominent
   // accent button used to convert.
@@ -54,6 +59,7 @@ export function ExportButton({
   status,
   stale,
   done,
+  stage,
   outputFormat,
   exportedFormat,
   withAppleMusic,
@@ -98,7 +104,14 @@ export function ExportButton({
     format: outputFormat.toUpperCase(),
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
   })
-  const label = tr(labelSpec.key, labelSpec.options)
+  // The in-flight view mirrors the track list's row: the stage names what's
+  // happening, the fill below marks where in the pipeline it is (same keys, same
+  // STAGE_PROGRESS marks). Only for the prominent button — the quiet re-export
+  // variant never shows a processing state.
+  const liveStage = !quiet && processing ? stage : undefined
+  const label = liveStage
+    ? tr(`trackList.stage.${liveStage}`, { format: outputFormat.toUpperCase() })
+    : tr(labelSpec.key, labelSpec.options)
 
   function pick(format: OutputFormat): void {
     setOpen(false)
@@ -127,10 +140,22 @@ export function ExportButton({
         className={
           quiet
             ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
-            : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+            : liveStage
+              ? // The dimmed track + accent fill replace the usual disabled fade: the
+                // button reads as a progress bar, not as a greyed-out control.
+                'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-white disabled:pointer-events-none'
+              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
         }
       >
-        {label}
+        {liveStage && (
+          <span
+            data-testid="process-progress"
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500 animate-pulse"
+            style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
+          />
+        )}
+        <span className="relative">{label}</span>
       </button>
       <button
         type="button"
@@ -142,7 +167,11 @@ export function ExportButton({
         className={
           quiet
             ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
-            : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+            : liveStage
+              ? // Matches the body's progress-bar look, or the split button would read
+                // as half-faded while the fill keeps the body vivid.
+                'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)]/40 text-white disabled:pointer-events-none'
+              : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
         }
       >
         <ChevronDown
