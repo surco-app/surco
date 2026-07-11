@@ -25,17 +25,19 @@ export function previewPeaks(
   peaks: number[],
   cfg: NormalizeConfig,
   integratedLufs: number | null | undefined,
-): { peaks: number[]; limitDb: number } | null {
+): { peaks: number[]; limitDb: number; gainDb: number } | null {
   if (cfg.mode === 'peak') {
     const max = peaks.reduce((m, p) => (p > m ? p : m), 0)
     if (max <= 0) return null
-    const gain = 10 ** (cfg.peakDb / 20) / max
-    return { peaks: peaks.map((p) => p * gain), limitDb: cfg.peakDb }
+    const gainDb = cfg.peakDb - 20 * Math.log10(max)
+    const gain = 10 ** (gainDb / 20)
+    return { peaks: peaks.map((p) => p * gain), limitDb: cfg.peakDb, gainDb }
   }
   if (cfg.mode === 'loudness') {
     if (integratedLufs == null || !Number.isFinite(integratedLufs)) return null
-    const gain = 10 ** ((cfg.targetLufs - integratedLufs) / 20)
-    return { peaks: peaks.map((p) => p * gain), limitDb: cfg.truePeakDb }
+    const gainDb = cfg.targetLufs - integratedLufs
+    const gain = 10 ** (gainDb / 20)
+    return { peaks: peaks.map((p) => p * gain), limitDb: cfg.truePeakDb, gainDb }
   }
   return null
 }

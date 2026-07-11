@@ -6,6 +6,9 @@ import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
 interface Props {
   value: NormalizeConfig
   onChange: (next: NormalizeConfig) => void
+  // The editor's section shows the warning itself, below its waveform, so it can
+  // silence this inline copy; Settings keeps the default.
+  showCueWarning?: boolean
 }
 
 const MODES: NormalizeMode[] = ['none', 'loudness', 'peak']
@@ -71,7 +74,7 @@ function NumberField({
 // The normalization picker, shared by Settings (global default) and the Editor
 // (per-track override). Pure controlled component: it never reaches for ffmpeg or
 // settings, it just edits a NormalizeConfig.
-export function NormalizeControls({ value, onChange }: Props): React.JSX.Element {
+export function NormalizeControls({ value, onChange, showCueWarning = true }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Focus targets for the Custom chip, so picking "Custom" drops the caret straight
   // into the field the user is about to tune.
@@ -232,7 +235,7 @@ export function NormalizeControls({ value, onChange }: Props): React.JSX.Element
         </div>
       )}
 
-      {value.mode !== 'none' && (
+      {showCueWarning && value.mode !== 'none' && (
         <p className="mt-3 text-xs text-warn">{tr('normalize.cueWarning')}</p>
       )}
     </div>

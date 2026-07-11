@@ -445,6 +445,7 @@
   "normalize": {
     "title": "Loudness normalization",
     "hint": "Off by default. Match every track to a target loudness or peak. It re-encodes the audio, so it drops Traktor cue/beatgrid markers.",
+    "editorHint": "Match every track to a target loudness or peak.",
     "mode": {
       "none": "None",
       "loudness": "Loudness",

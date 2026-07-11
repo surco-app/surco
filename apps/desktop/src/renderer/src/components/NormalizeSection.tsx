@@ -61,7 +61,9 @@ export function NormalizeSection({
         open={open}
         onToggle={onToggle}
         right={
-          value.mode !== 'none' ? (
+          // Only while folded: open, the segmented control right below says the
+          // same thing, and showing both reads as two controls for one fact.
+          value.mode !== 'none' && !open ? (
             <span
               data-testid="normalize-active-badge"
               className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
@@ -73,8 +75,10 @@ export function NormalizeSection({
       />
       {open && (
         <div className="mt-3">
-          <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
-          <NormalizeControls value={value} onChange={onChange} />
+          <p className="mb-3 text-xs text-fg-dim">{tr('normalize.editorHint')}</p>
+          {/* The cue warning renders once, below the wave: inline it sat between the
+              dials and the preview, right where the eye travels while tuning. */}
+          <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
           {!isMulti && !compare && (
             <WaveformSolo inputPath={item.inputPath} enabled={settled} clipDb={clipDb} normalize={value} />
           )}
@@ -87,6 +91,11 @@ export function NormalizeSection({
                 clipDb={clipDb}
               />
             </div>
+          )}
+          {value.mode !== 'none' && (
+            <p data-testid="normalize-cue-warning" className="mt-3 text-xs text-warn">
+              {tr('normalize.cueWarning')}
+            </p>
           )}
         </div>
       )}

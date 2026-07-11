@@ -343,7 +343,7 @@ export function WaveformSolo({
           label={tr('editor.waveformSource')}
           loudness={source.loudness}
         />
-        {previewWave ? (
+        {previewWave && preview ? (
           <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
             <span
               aria-hidden="true"
@@ -357,6 +357,8 @@ export function WaveformSolo({
               {normalize.mode === 'loudness'
                 ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
                 : `${formatDb(normalize.peakDb)} dBFS`}
+              {/* The felt number: how hard this pushes, signed so up and down read apart. */}
+              {` · ${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
             </span>
           </span>
         ) : (

@@ -445,6 +445,7 @@
   "normalize": {
     "title": "Normalização de loudness",
     "hint": "Desativada por padrão. Iguala cada faixa a um loudness ou pico alvo. Recodifica o áudio, então perde os pontos de cue/beatgrid do Traktor.",
+    "editorHint": "Iguala cada faixa a um loudness ou pico alvo.",
     "mode": {
       "none": "Nenhuma",
       "loudness": "Loudness",

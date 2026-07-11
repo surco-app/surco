@@ -257,6 +257,8 @@ describe('WaveformSolo', () => {
     const legend = await screen.findByTestId('waveform-preview')
     expect(legend).toHaveTextContent('-14.0 LUFS')
     expect(legend).toHaveTextContent('-1.0 dBTP')
+    // The felt number: how hard the normalization pushes (-20 measured to -14).
+    expect(legend).toHaveTextContent('+6.0 dB')
   })
 
   it('shows no preview while normalization is off', async () => {

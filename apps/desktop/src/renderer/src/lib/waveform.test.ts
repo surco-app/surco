@@ -22,6 +22,7 @@ describe('previewPeaks', () => {
     // -20 LUFS to -14 LUFS = +6 dB ≈ ×1.995
     const out = previewPeaks([0.1, 0.2], cfg({ mode: 'loudness' }), -20)
     expect(out?.limitDb).toBe(-1)
+    expect(out?.gainDb).toBeCloseTo(6, 5)
     expect(out?.peaks[0]).toBeCloseTo(0.1995, 3)
     expect(out?.peaks[1]).toBeCloseTo(0.399, 3)
   })
@@ -34,6 +35,7 @@ describe('previewPeaks', () => {
   it('scales the loudest peak exactly to the peak target', () => {
     const out = previewPeaks([0.5, 0.25], cfg({ mode: 'peak', peakDb: 0 }), null)
     expect(out?.limitDb).toBe(0)
+    expect(out?.gainDb).toBeCloseTo(6.0206, 3)
     expect(out?.peaks[0]).toBeCloseTo(1, 5)
     expect(out?.peaks[1]).toBeCloseTo(0.5, 5)
   })

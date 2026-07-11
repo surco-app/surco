@@ -138,3 +138,60 @@ describe('NormalizeSection before/after waveforms', () => {
     expect(scroll).not.toHaveBeenCalled()
   })
 })
+
+describe('NormalizeSection layout', () => {
+  const loud: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+
+  function renderWith(over: { open?: boolean; value?: NormalizeConfig } = {}): ReturnType<typeof render> {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return render(
+      <QueryClientProvider client={client}>
+        <NormalizeSection
+          value={over.value ?? cfg}
+          open={over.open ?? true}
+          onToggle={vi.fn()}
+          onChange={vi.fn()}
+          item={track()}
+          isMulti={false}
+        />
+      </QueryClientProvider>,
+    )
+  }
+
+  // The badge exists so a FOLDED section still shows that the convert will
+  // normalize; open, the segmented control right below says the same thing, and
+  // showing both reads as two controls for one fact.
+  it('shows the active-mode badge only while folded', () => {
+    const first = renderWith({ open: false, value: loud })
+    expect(screen.getByTestId('normalize-active-badge')).toBeInTheDocument()
+    first.unmount()
+
+    renderWith({ open: true, value: loud })
+    expect(screen.queryByTestId('normalize-active-badge')).not.toBeInTheDocument()
+  })
+
+  // The cue warning used to sit between the dials and the wave — right where the
+  // eye travels from moving the target to seeing the preview. It closes the
+  // section as a footnote instead, and exactly once (the controls' inline copy is
+  // silenced here so the editor never shows it twice).
+  it('shows the cue warning once, below the waveform', async () => {
+    renderWith({ value: loud })
+    const warning = await screen.findByTestId('normalize-cue-warning')
+    expect(screen.getAllByText(/Re-encodes the audio/)).toHaveLength(1)
+    const strip = screen.getByTestId('waveform-strip')
+    expect(
+      strip.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('shows no cue warning while normalization is off', async () => {
+    renderWith({ value: cfg })
+    await screen.findByTestId('waveform-solo')
+    expect(screen.queryByTestId('normalize-cue-warning')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Re-encodes the audio/)).not.toBeInTheDocument()
+  })
+})
