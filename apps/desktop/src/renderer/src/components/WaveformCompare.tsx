@@ -7,7 +7,7 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
 import { formatTime } from '../lib/duration'
-import { CLIP_DB, clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
+import { clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
@@ -126,7 +126,16 @@ function Strip({
     const canvas = canvasRef.current
     if (!canvas || !wave) return
     if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
-    drawWaveform(canvas, wave.peaks, { color, clipDb, limitDb, marks, clear: !background })
+    // With no dB line dialed in, the red marks come from the decoder's true-clipping
+    // flags — drawWaveform only consults them when clipDb/limitDb are absent.
+    drawWaveform(canvas, wave.peaks, {
+      color,
+      clipDb,
+      clipped: wave.clipped,
+      limitDb,
+      marks,
+      clear: !background,
+    })
   }, [wave, color, clipDb, limitDb, marks, background, raster, zoom])
   // A zoom step re-anchors the scroller so the spot in the middle stays in the
   // middle — zooming in on a clip must not teleport the view away from it.
@@ -149,7 +158,7 @@ function Strip({
     return {
       time: formatTime(hover.ratio * wave.durationSec),
       db: formatDb(shown > 0 ? 20 * Math.log10(shown) : Number.NEGATIVE_INFINITY),
-      over: markDb !== undefined && amp > 10 ** (markDb / 20),
+      over: markDb !== undefined ? amp > 10 ** (markDb / 20) : marks && wave.clipped?.[idx] === true,
     }
   })()
   return (
@@ -222,12 +231,19 @@ function ClippedFlag({
   onToggle,
 }: {
   wave: WaveformResult | null | undefined
-  clipDb: number
+  // The ceiling the marks measure against; absent, the marks are the decoder's
+  // true-clipping flags instead.
+  clipDb?: number
   active: boolean
   onToggle: () => void
 }): React.JSX.Element | null {
   const { t: tr } = useTranslation()
-  if (!wave || clippedCount(wave.peaks, clipDb) === 0) return null
+  const count = !wave
+    ? 0
+    : clipDb !== undefined
+      ? clippedCount(wave.peaks, clipDb)
+      : (wave.clipped?.filter(Boolean).length ?? 0)
+  if (count === 0) return null
   return (
     <button
       type="button"
@@ -243,9 +259,10 @@ function ClippedFlag({
       <span
         className={`truncate font-medium tabular-nums ${active ? 'text-danger' : 'text-fg-dim'}`}
       >
-        {/* When the line IS digital clipping, "Peaks over -0.0 dB" says nothing:
-            call it what Audacity calls it. A real ceiling keeps its dB figure. */}
-        {clipDb >= CLIP_DB
+        {/* When the marks mean digital clipping — the decoder's flags, or the peak
+            preview's 0 dBFS line — call it what Audacity calls it; "Peaks over
+            -0.0 dB" says nothing. A real ceiling keeps its dB figure. */}
+        {clipDb === undefined || clipDb >= 0
           ? tr('editor.waveformClipping')
           : tr('editor.waveformClipped', { db: formatDb(clipDb) })}
       </span>
@@ -321,7 +338,9 @@ export function WaveformSolo({
 }: {
   inputPath: string
   enabled: boolean
-  clipDb: number
+  // The active mode's ceiling; absent (normalization off), the red marks are the
+  // decoder's true-clipping flags instead of any envelope threshold.
+  clipDb?: number
   normalize: NormalizeConfig
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -437,7 +456,8 @@ export function WaveformSolo({
         <Strip
           {...source}
           color={AFTER_COLOR}
-          clipDb={marks ? clipDb : undefined}
+          clipDb={clipDb}
+          marks={marks}
           raster={OVERLAY_W}
           zoom={zoom}
         />

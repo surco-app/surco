@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
@@ -58,7 +58,7 @@ import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { computePeaks, WAVEFORM_SAMPLE_RATE } from './waveform'
+import { computePeaks, createClipScan, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
@@ -1484,13 +1484,65 @@ function decodeWaveformPcm(input: string): Promise<Float32Array> {
   return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128 })
 }
 
+// True-clipping scan at the native rate and channel count. The 4 kHz waveform decode
+// can't see clipping: resampling smears the pinned flat tops and the mono downmix
+// averages a one-channel rail away — which is how near-ceiling masters used to paint
+// solid red while Audacity showed sparse marks. Streamed via spawn because a native
+// stereo decode of a long mix is gigabytes of f32, far past any exec buffer, while
+// the scan itself keeps only per-block flags.
+async function scanClippedBuckets(input: string): Promise<boolean[]> {
+  const { channels } = await probeAudio(input)
+  const scan = createClipScan(Math.max(1, channels))
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      ffmpegPath,
+      ['-hide_banner', '-loglevel', 'error', '-i', input, '-map', '0:a:0', '-f', 'f32le', '-'],
+      { stdio: ['ignore', 'pipe', 'ignore'], timeout: ANALYSIS_TIMEOUT_MS },
+    )
+    if (child.pid !== undefined) {
+      try {
+        setPriority(child.pid, osConstants.priority.PRIORITY_BELOW_NORMAL)
+      } catch {
+        // Same best-effort niceness as niceDecode: normal priority is a fine fallback.
+      }
+    }
+    // stdout chunks split at arbitrary byte offsets, so carry each chunk's tail bytes
+    // into the next before viewing as f32 — and copy out of Node's shared Buffer pool,
+    // whose offsets need not be 4-byte aligned (same dance as decodePcm).
+    let tail = Buffer.alloc(0)
+    child.stdout.on('data', (chunk: Buffer) => {
+      const data = tail.length > 0 ? Buffer.concat([tail, chunk]) : chunk
+      const usable = data.length - (data.length % 4)
+      tail = Buffer.from(data.subarray(usable))
+      if (usable === 0) return
+      const aligned = new Uint8Array(usable)
+      aligned.set(data.subarray(0, usable))
+      scan.push(new Float32Array(aligned.buffer))
+    })
+    child.on('error', reject)
+    child.on('close', (code) => {
+      if (code === 0) resolve(scan.finish())
+      else reject(new Error(`clip scan exited with code ${code}`))
+    })
+  })
+}
+
 export async function measureWaveform(input: string): Promise<WaveformResult | null> {
-  const samples = await decodeWaveformPcm(input)
+  // Best-effort clip marks: a failed scan only loses the red, never the strip.
+  const [samples, clipped] = await Promise.all([
+    decodeWaveformPcm(input),
+    scanClippedBuckets(input).catch(() => null),
+  ])
   // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
   // stream): null tells the UI "no waveform", distinct from a decode error.
   if (samples.length === 0) return null
+  const peaks = computePeaks(samples)
   return {
-    peaks: computePeaks(samples),
+    peaks,
     durationSec: samples.length / WAVEFORM_SAMPLE_RATE,
+    // The renderer indexes flags by peak bucket, so a mismatched length (a sub-second
+    // clip decodes to fewer buckets than the fixed scan grid) drops the marks instead
+    // of smearing them across the wrong bars.
+    clipped: clipped !== null && clipped.length === peaks.length ? clipped : undefined,
   }
 }

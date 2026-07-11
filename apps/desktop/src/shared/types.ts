@@ -547,6 +547,10 @@ export interface ProcessResult {
 export interface WaveformResult {
   peaks: number[]
   durationSec: number
+  // Per-bucket true digital clipping (a native-rate sample pinned at full scale,
+  // Audacity's MAX_AUDIO line) — the peaks alone can't tell clipping from loud, so
+  // the red marks read this. Absent when the scan failed: no marks, never guesses.
+  clipped?: boolean[]
 }
 
 export interface SpectrumResult {

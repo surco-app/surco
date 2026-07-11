@@ -6,7 +6,6 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionHeader } from './SectionHeader'
-import { CLIP_DB } from '../lib/waveform'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 interface Props {
@@ -38,10 +37,12 @@ export function NormalizeSection({
   // `item` is just the anchor of the selection.
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
   // The dB line the strips mark in red: the active mode's own ceiling, so the marks
-  // show exactly where the conversion will limit — or, with normalization off, true
-  // digital clipping (full scale), the same line Audacity's clip marks draw.
+  // show exactly where the conversion will limit. With normalization off there is no
+  // line at all — the strips fall back to the decoder's true-clipping flags, the
+  // per-sample scan that matches Audacity's marks (an envelope threshold cannot:
+  // hot masters ride the ceiling for whole sections without ever clipping).
   const clipDb =
-    value.mode === 'loudness' ? value.truePeakDb : value.mode === 'peak' ? value.peakDb : CLIP_DB
+    value.mode === 'loudness' ? value.truePeakDb : value.mode === 'peak' ? value.peakDb : undefined
   // The pair lands at the bottom of a scrolling editor: when it appears because a
   // conversion just finished (not on mount — flipping back to a done track must not
   // yank the view), scroll it into view or most users never see it. Same reveal

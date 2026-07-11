@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
-import { CLIP_DB, clippedCount, previewPeaks, skeletonPeaks } from './waveform'
+import { clippedCount, previewPeaks, skeletonPeaks } from './waveform'
 
 const cfg = (over: Partial<NormalizeConfig>): NormalizeConfig => ({
   mode: 'none',
@@ -61,14 +61,6 @@ describe('clippedCount', () => {
   it('counts only the peaks strictly above the dB ceiling', () => {
     // -1 dB ≈ 0.891 linear: 1.0 and 0.95 poke over, 0.891 sits at it, 0.5 is clear.
     expect(clippedCount([1, 0.95, 0.891, 0.5], -1)).toBe(2)
-  })
-
-  it('flags only full-scale buckets against the no-normalization clip line', () => {
-    // A loud master rides just under full scale for whole sections without ever
-    // clipping — Audacity leaves those clear, and so must we. Only buckets pinned
-    // at full scale mark: 1.0 and int16 full scale (32767/32768) do, while -0.1 dB
-    // (0.9886, the old line that painted hot masters solid red) stays clear.
-    expect(clippedCount([1, 32767 / 32768, 0.9886, 0.7], CLIP_DB)).toBe(2)
   })
 
   it('returns zero for a track that never reaches the ceiling', () => {

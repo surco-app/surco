@@ -6,7 +6,6 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
 import '../i18n'
-import { CLIP_DB } from '../lib/waveform'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
@@ -177,30 +176,48 @@ describe('WaveformSolo', () => {
     expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('-1')
   })
 
-  // With normalization off the line is true digital clipping, and a dB figure of
-  // "-0.0" would say nothing: the flag reads "Clipping" — the same thing Audacity's
-  // marks mean — and it only appears for buckets pinned at full scale.
-  it('labels the digital-clipping line as clipping', async () => {
+  // With normalization off there is no dB line at all: the marks come from the
+  // decoder's per-bucket true-clipping flags (native-rate samples pinned at full
+  // scale, Audacity's exact criterion) and the label reads "Clipping".
+  it('labels the decoded clipping flags as clipping', async () => {
     ;(window as unknown as { api: unknown }).api = {
-      waveform: vi.fn().mockResolvedValue(wave),
+      waveform: vi.fn().mockResolvedValue({
+        peaks: [0.1, 0.9, 0.4, 1],
+        durationSec: 60,
+        clipped: [false, false, false, true],
+      }),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(
-      <WaveformSolo inputPath="/m/a.wav" enabled clipDb={CLIP_DB} normalize={CFG_NONE} />,
-    )
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
     expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('Clipping')
   })
 
-  it('shows no clip flag for a hot master riding under full scale', async () => {
+  it('shows no clip flag for a hot master whose samples never pin full scale', async () => {
     ;(window as unknown as { api: unknown }).api = {
-      // 0.9886 (-0.1 dB) and 0.995 are hot but never pinned at full scale — loud
-      // mastering, not clipping. The old -0.1 dB line painted tracks like this red.
-      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9886, 0.995], durationSec: 60 }),
+      // The envelope rides near full scale — loud mastering — but the decoder found
+      // no pinned samples. Envelope thresholds painted tracks like this solid red;
+      // the flags say what actually clipped: nothing.
+      waveform: vi.fn().mockResolvedValue({
+        peaks: [0.9886, 0.995, 0.999],
+        durationSec: 60,
+        clipped: [false, false, false],
+      }),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(
-      <WaveformSolo inputPath="/m/a.wav" enabled clipDb={CLIP_DB} normalize={CFG_NONE} />,
-    )
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
+    await screen.findByTestId('waveform-solo')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
+  })
+
+  it('shows no clip flag when the decoder could not scan for clipping', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      // No `clipped` field at all (the scan failed): no honest data, no red — the
+      // envelope alone must never be promoted back into a clipping verdict.
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 1], durationSec: 60 }),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
     await screen.findByTestId('waveform-solo')
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()

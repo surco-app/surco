@@ -4,13 +4,6 @@ import type { NormalizeConfig } from '../../../shared/types'
 // can't read CSS variables, and the strips don't retheme either.
 const CLIP_COLOR = 'rgba(247, 118, 142, 0.95)'
 
-// The no-normalization clip line: true digital clipping, the same thing Audacity's
-// clip marks mean. It sits a hair under int16 full scale (32767/32768 ≈ -0.0003 dB)
-// so a bucket whose decoded max pins at full scale marks, while a loud master riding
-// just under the ceiling stays clear — hot masters spend entire sections above the
-// old -0.1 dB line without ever clipping, and it painted them solid red.
-export const CLIP_DB = -0.001
-
 // Peaks are absolute (1.0 = 0 dBFS, see main/waveform.ts), so a dB ceiling converts
 // straight to a linear amplitude. Strictly above: a normalized output sitting exactly
 // AT its ceiling is compliant, not clipping.
@@ -57,9 +50,11 @@ export function previewPeaks(
 // before/after comparison so the two render the same envelope identically.
 // `clear: false` lets the comparison's overlaid view stack a second envelope on
 // top of the first instead of wiping it. With `clipDb`, bars poking over that dB
-// ceiling paint red — where the track clips, or where a limiter will act. With
-// `limitDb` (the preview), bars are also CLAMPED at that line, so the strip shows
-// the limited outcome while the red still says "the limiter acted here". `marks:
+// ceiling paint red — where a limiter will act. With `limitDb` (the preview), bars
+// are also CLAMPED at that line, so the strip shows the limited outcome while the
+// red still says "the limiter acted here". With `clipped` (and no dB line), red
+// follows the decoder's per-bucket true-clipping flags instead — the envelope can't
+// tell a pinned sample from loud mastering, only the native-rate scan can. `marks:
 // false` keeps the clamp but paints everything the base color — the legend's
 // toggle switches the red off without un-limiting the drawn outcome.
 export function drawWaveform(
@@ -69,6 +64,7 @@ export function drawWaveform(
     color?: string
     clear?: boolean
     clipDb?: number
+    clipped?: boolean[]
     limitDb?: number
     marks?: boolean
   } = {},
@@ -88,7 +84,9 @@ export function drawWaveform(
       opts.marks !== false &&
       (limitLin !== null
         ? peaks[i] > limitLin
-        : opts.clipDb !== undefined && clipsOver(peaks[i], opts.clipDb))
+        : opts.clipDb !== undefined
+          ? clipsOver(peaks[i], opts.clipDb)
+          : opts.clipped?.[i] === true)
     const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
     const bar = Math.max(amp * (h / 2 - 2), 0.5)
     ctx.fillStyle = over ? CLIP_COLOR : baseColor
