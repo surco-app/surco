@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.49",
+    "date": "11 de julio de 2026",
+    "title": "Cada canal a la vista y picos de fiar",
+    "items": [
+      {
+        "text": "Nueva vista por canales: divide la onda del editor en dos carriles apilados, izquierdo y derecho, con un interruptor.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "Las marcas de saturación señalan ahora saturación real a escala completa, medida muestra a muestra sobre el audio original, como en Audacity.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "La búsqueda espera a leer los tags del archivo antes de lanzarse, en vez de adivinar a partir del nombre del fichero.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "Si el disco no aparece, la búsqueda reintenta sin el prefijo del DJ o solo con el artista principal antes de recurrir al título a secas.",
+        "in": "0.49.0"
+      }
+    ]
+  },
+  {
     "version": "0.48",
     "date": "11 de julio de 2026",
     "title": "Explora la onda y haz tuyo el editor",

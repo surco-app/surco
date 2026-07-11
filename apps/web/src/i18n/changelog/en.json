@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.49",
+    "date": "July 11, 2026",
+    "title": "See each channel, trust the peaks",
+    "items": [
+      {
+        "text": "New per-channel view: split the editor waveform into stacked left and right lanes with a toggle.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "Clipping marks now flag real full-scale clipping, measured sample by sample on the original audio, like Audacity.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "Search waits for the file's tags to load before firing, instead of guessing from the file name.",
+        "in": "0.49.0"
+      },
+      {
+        "text": "When the release doesn't show up, search retries without the DJ prefix or with just the lead act before falling back to the bare title.",
+        "in": "0.49.0"
+      }
+    ]
+  },
+  {
     "version": "0.48",
     "date": "July 11, 2026",
     "title": "Explore the wave and make the editor yours",
