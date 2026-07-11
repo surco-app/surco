@@ -646,6 +646,18 @@
     "showLoudnessHint": "Mesure le loudness intégré, le pic réel et la plage de loudness (EBU R128) à l'édition d'un morceau. Si désactivé, la mesure est entièrement sautée.",
     "keyNotation": "Notation de la tonalité",
     "keyNotationHint": "Comment la suggestion de tonalité détectée s'affiche sous le champ Tonalité. Camelot est ce que les logiciels DJ utilisent pour trier.",
+    "sections": {
+      "title": "Sections de l'éditeur",
+      "hint": "Choisissez les sections ouvertes au départ et leur ordre sous le formulaire de métadonnées.",
+      "form": "Métadonnées",
+      "properties": "Propriétés",
+      "quality": "Qualité audio",
+      "output": "Nom du fichier",
+      "normalize": "Normalisation du loudness",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "pinned": "Fixe"
+    },
     "keyNotations": {
       "camelot": "Camelot (8A)",
       "musical": "Musicale (Am)"

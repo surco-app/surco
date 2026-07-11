@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import type { Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import './i18n'
@@ -70,6 +71,7 @@ afterEach(cleanup)
 
 function settings(over: Partial<Settings> = {}): Settings {
   return {
+    editorSections: DEFAULT_EDITOR_SECTIONS,
     theme: 'system',
     language: 'system',
     discogsToken: '',

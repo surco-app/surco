@@ -1,3 +1,4 @@
+import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
 
 export type ThemePref = 'system' | 'light' | 'dark'
@@ -195,6 +196,9 @@ export interface Settings {
   // Default normalization applied to every conversion; mode 'none' (the default)
   // means conversions never touch loudness unless overridden per-track.
   normalize: NormalizeConfig
+  // The editor's sections in display order, each with its default fold state.
+  // Read through normalizeEditorSections so files from older versions stay valid.
+  editorSections: EditorSectionPref[]
   // Per-command keyboard shortcut overrides (command id → chord). Absent ids use the
   // default from SHORTCUT_DEFAULTS; an empty-array value unbinds the command.
   shortcutOverrides: Record<string, Chord>

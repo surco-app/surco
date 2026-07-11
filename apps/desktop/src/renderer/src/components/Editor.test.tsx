@@ -119,6 +119,7 @@ function renderEditor(
     titleFormat?: string
     outputBitDepth?: Settings['outputBitDepth']
     outputSampleRate?: Settings['outputSampleRate']
+    editorSections?: Settings['editorSections']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -197,6 +198,7 @@ function renderEditor(
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
       outputBitDepth: props.outputBitDepth ?? 'source',
       outputSampleRate: props.outputSampleRate ?? 'source',
+      ...(props.editorSections ? { editorSections: props.editorSections } : {}),
     },
   )
   return {
@@ -1157,6 +1159,34 @@ describe('Editor export control', () => {
     fireEvent.click(screen.getByTestId('normalize-preset-club'))
     expect(screen.queryByTestId('export-success')).not.toBeInTheDocument()
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+  })
+
+  // The section order below the metadata form is the user's (Settings → Editor): a DJ
+  // who tunes loudness before naming the file puts Normalization above File name, and
+  // the editor must honor that instead of hardcoding one editorial order.
+  it('renders the sections in the settings-configured order', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'normalize', open: false },
+        { id: 'quality', open: false },
+        { id: 'properties', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    const rendered = [
+      screen.getByTestId('editor-normalize'),
+      screen.getByText('Audio quality'),
+      screen.getByText('Properties'),
+      screen.getByText('File name'),
+    ]
+    for (let i = 0; i < rendered.length - 1; i++) {
+      expect(
+        rendered[i].compareDocumentPosition(rendered[i + 1]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
   })
 
   it('exports in the settings default format when the main button is clicked', () => {

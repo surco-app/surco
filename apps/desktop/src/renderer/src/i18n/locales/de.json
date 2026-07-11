@@ -646,6 +646,18 @@
     "showLoudnessHint": "Misst integrierte Loudness, True Peak und Loudness Range (EBU R128) beim Bearbeiten eines Tracks. Wenn aus, entfällt die Messung komplett.",
     "keyNotation": "Tonart-Notation",
     "keyNotationHint": "Wie der erkannte Tonart-Vorschlag unter dem Feld Tonart angezeigt wird. Camelot ist das, wonach DJ-Software sortiert.",
+    "sections": {
+      "title": "Editor-Bereiche",
+      "hint": "Wähle, welche Bereiche geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",
+      "form": "Metadaten",
+      "properties": "Eigenschaften",
+      "quality": "Audioqualität",
+      "output": "Dateiname",
+      "normalize": "Loudness-Normalisierung",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "pinned": "Fest"
+    },
     "keyNotations": {
       "camelot": "Camelot (8A)",
       "musical": "Musikalisch (Am)"

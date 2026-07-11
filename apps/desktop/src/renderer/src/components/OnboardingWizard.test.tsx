@@ -9,6 +9,7 @@ vi.hoisted(() => {
 })
 
 import i18n from '../i18n'
+import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { OnboardingWizard } from './OnboardingWizard'
 
@@ -59,6 +60,7 @@ const settings: Settings = {
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
+  editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
   hasSeenOnboarding: false,
   conversionCount: 0,

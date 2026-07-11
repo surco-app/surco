@@ -1,5 +1,5 @@
 import type React from 'react'
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
 import type {
   KeyNotation,
@@ -10,6 +10,12 @@ import type {
   SearchProviderId,
   Settings,
 } from '../../../shared/types'
+import {
+  DEFAULT_EDITOR_SECTIONS,
+  type EditorSectionPref,
+  normalizeEditorSections,
+} from '../../../shared/editorSections'
+import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
@@ -42,6 +48,8 @@ export interface ResolvedSettings {
   showLoudness: boolean
   keyNotation: KeyNotation
   normalize: NormalizeConfig
+  // Always complete and form-first, whatever an older settings.json stored.
+  editorSections: EditorSectionPref[]
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -71,6 +79,7 @@ const DEFAULTS: ResolvedSettings = {
   showLoudness: true,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  editorSections: DEFAULT_EDITOR_SECTIONS,
 }
 
 export function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -100,6 +109,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     showLoudness: settings.showLoudness ?? DEFAULTS.showLoudness,
     keyNotation: settings.keyNotation ?? DEFAULTS.keyNotation,
     normalize: settings.normalize ?? DEFAULTS.normalize,
+    editorSections: normalizeEditorSections(settings.editorSections),
   }
 }
 
@@ -118,6 +128,18 @@ export function SettingsProvider({
   children: React.ReactNode
 }): React.JSX.Element {
   const value = useMemo(() => resolveSettings(settings), [settings])
+  // Push the user's per-section fold defaults into the editor-sections store — for
+  // editors already mounted when settings finish loading, and again when the user
+  // edits them in Settings. Keyed to the list's content, not the settings identity:
+  // every save replaces the whole settings object, and reseeding on unrelated saves
+  // would wipe the session's ad-hoc folds.
+  const sectionsKey = JSON.stringify(value.editorSections)
+  const seeded = useRef<string | null>(null)
+  useEffect(() => {
+    if (seeded.current === sectionsKey) return
+    seeded.current = sectionsKey
+    seedEditorSections(value.editorSections)
+  }, [sectionsKey, value.editorSections])
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
 }
 

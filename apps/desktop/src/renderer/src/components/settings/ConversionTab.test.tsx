@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import '../../i18n'
 
@@ -46,6 +47,7 @@ const synced: SyncedDraft = {
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
+  editorSections: DEFAULT_EDITOR_SECTIONS,
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],

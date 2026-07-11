@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { buildSettingsPatch, type LocalDraft, pickSynced } from './settingsDraft'
 
@@ -47,6 +48,7 @@ const settings: Settings = {
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   shortcutOverrides: {},
+  editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
   hasSeenOnboarding: true,
   conversionCount: 0,

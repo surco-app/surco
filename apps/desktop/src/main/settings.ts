@@ -7,6 +7,7 @@ import {
   DEFAULT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
 } from '../shared/defaults'
+import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import type { Settings } from '../shared/types'
 
 const defaults: Settings = {
@@ -70,6 +71,7 @@ const defaults: Settings = {
   keyNotation: 'camelot',
   // Off by default: a conversion never changes loudness unless the user enables it.
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  editorSections: DEFAULT_EDITOR_SECTIONS,
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   conversionCount: 0,

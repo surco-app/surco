@@ -646,6 +646,18 @@
     "showLoudnessHint": "Measures integrated loudness, true peak and loudness range (EBU R128) while editing a track. When off, the measurement is skipped entirely.",
     "keyNotation": "Key notation",
     "keyNotationHint": "How the detected key suggestion is shown under the Key field. Camelot is what DJ software sorts by.",
+    "sections": {
+      "title": "Editor sections",
+      "hint": "Choose which sections start open and their order below the metadata form.",
+      "form": "Metadata",
+      "properties": "Properties",
+      "quality": "Audio quality",
+      "output": "File name",
+      "normalize": "Loudness normalization",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "pinned": "Fixed"
+    },
     "keyNotations": {
       "camelot": "Camelot (8A)",
       "musical": "Musical (Am)"

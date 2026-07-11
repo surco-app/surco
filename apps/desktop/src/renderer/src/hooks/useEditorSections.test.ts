@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { useEditorSections } from './useEditorSections'
+import { seedEditorSections, useEditorSections } from './useEditorSections'
 
 describe('useEditorSections', () => {
   // The editor remounts per track, so folding a section must outlive that remount —
@@ -28,5 +28,23 @@ describe('useEditorSections', () => {
   it('starts the normalize section open by default', () => {
     const { result } = renderHook(() => useEditorSections())
     expect(result.current.open.normalize).toBe(true)
+  })
+
+  // The per-section defaults are the user's (Settings → Editor). Settings load after
+  // the first editors can already be mounted, so the seed must reach live hooks —
+  // not only the next remount — or a fast first click would show stale defaults.
+  it('applies a settings seed to already-mounted editors', () => {
+    const { result } = renderHook(() => useEditorSections())
+    expect(result.current.open.properties).toBe(false)
+
+    act(() =>
+      seedEditorSections([
+        { id: 'properties', open: true },
+        { id: 'quality', open: false },
+      ]),
+    )
+    expect(result.current.open.properties).toBe(true)
+    expect(result.current.open.quality).toBe(false)
+    expect(result.current.open.form).toBe(true)
   })
 })

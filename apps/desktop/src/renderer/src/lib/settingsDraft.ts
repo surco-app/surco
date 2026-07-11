@@ -1,3 +1,4 @@
+import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 
 // The synced staged fields in their editable forms (presets as comma text, the cover cap
@@ -36,6 +37,7 @@ export interface SyncedDraft {
   autoAnalyze: boolean
   keyNotation: Settings['keyNotation']
   normalize: Settings['normalize']
+  editorSections: Settings['editorSections']
   shortcutOverrides: Settings['shortcutOverrides']
   discogsFormats: string[]
   discogsMaxResults: number
@@ -90,6 +92,9 @@ export function pickSynced(s: Settings): SyncedDraft {
     autoAnalyze: s.autoAnalyze,
     keyNotation: s.keyNotation,
     normalize: s.normalize,
+    // Normalized here so the Sections list always shows the complete, valid set even
+    // when the stored file predates a section (or was hand-edited).
+    editorSections: normalizeEditorSections(s.editorSections),
     shortcutOverrides: s.shortcutOverrides,
   }
 }

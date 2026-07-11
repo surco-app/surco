@@ -1,28 +1,40 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
+import {
+  DEFAULT_EDITOR_SECTIONS,
+  type EditorSectionId,
+  type EditorSectionPref,
+} from '../../../shared/editorSections'
 
-export type EditorSection = 'form' | 'properties' | 'quality' | 'output' | 'normalize'
+export type EditorSection = EditorSectionId
 
 // The editor is keyed by track (it remounts per row), which would reset every section's
 // collapsed state on each track switch. Holding it in a module-level store instead lets a
 // "fold this away for now" survive browsing the crate — the section stays closed (and, via
-// the analysis gating that reads `open`, stays unanalysed) until the user reopens it. This
-// is deliberately separate from the Settings toggles, which disable a feature outright.
-const DEFAULTS: Record<EditorSection, boolean> = {
-  form: true,
-  properties: false,
-  quality: true,
-  output: true,
-  // Open so the section's waveform (and its clipping peaks) shows without hunting
-  // for a fold — the wave is worth seeing even with normalization itself off.
-  normalize: true,
+// the analysis gating that reads `open`, stays unanalysed) until the user reopens it.
+// The store boots from the shared defaults and is re-seeded with the user's own
+// per-section preferences (Settings → Editor) once settings load — see seedEditorSections.
+function toRecord(prefs: EditorSectionPref[]): Record<EditorSection, boolean> {
+  return Object.fromEntries(prefs.map((p) => [p.id, p.open])) as Record<EditorSection, boolean>
 }
 
-let store: Record<EditorSection, boolean> = { ...DEFAULTS }
+let store: Record<EditorSection, boolean> = toRecord(DEFAULT_EDITOR_SECTIONS)
+
+// useSyncExternalStore plumbing, so a seed arriving after editors mounted (settings
+// load async) updates them live instead of waiting for the next track switch.
+const listeners = new Set<() => void>()
+function emit(): void {
+  for (const l of listeners) l()
+}
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
 
 // Test seam: the store outlives renders by design, so without this it would leak folded
 // state between tests. Resets it to defaults so each test starts clean.
 export function resetEditorSections(): void {
-  store = { ...DEFAULTS }
+  store = toRecord(DEFAULT_EDITOR_SECTIONS)
+  emit()
 }
 
 // The live folded state of a section, read outside React by the list's hover prefetch so
@@ -33,15 +45,22 @@ export function editorSectionOpen(section: EditorSection): boolean {
   return store[section]
 }
 
+// Applies the user's per-section defaults (Settings → Editor) over the store. Called
+// when settings load and when the user edits them — an explicit settings change is
+// the one event that may override this session's ad-hoc folds.
+export function seedEditorSections(prefs: EditorSectionPref[]): void {
+  store = { ...store, ...toRecord(prefs) }
+  emit()
+}
+
 export function useEditorSections(): {
   open: Record<EditorSection, boolean>
   setOpen: (section: EditorSection, open: boolean) => void
 } {
-  // Seed from the live store so a remount (track switch) inherits the last folded state.
-  const [open, setLocal] = useState(() => store)
+  const open = useSyncExternalStore(subscribe, () => store)
   const setOpen = useCallback((section: EditorSection, value: boolean): void => {
     store = { ...store, [section]: value }
-    setLocal(store)
+    emit()
   }, [])
   return { open, setOpen }
 }

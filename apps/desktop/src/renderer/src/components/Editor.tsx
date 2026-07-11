@@ -201,6 +201,7 @@ export const Editor = memo(function Editor({
     normalize,
     outputBitDepth,
     outputSampleRate,
+    editorSections,
   } = useAppSettings()
   const hasToken = discogsToken !== ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
@@ -886,72 +887,102 @@ export const Editor = memo(function Editor({
             />
           )}
 
-          {!isMulti && (
-            <PropertiesSection
-              item={item}
-              open={propertiesOpen}
-              onToggle={() => setSectionOpen('properties', !propertiesOpen)}
-            />
-          )}
-
-          {!isMulti && (showSpectrum || showLoudness) && (
-            <QualitySection
-              item={item}
-              showSpectrum={showSpectrum}
-              showLoudness={showLoudness}
-              open={spectrumOpen}
-              onToggle={() => setSectionOpen('quality', !spectrumOpen)}
-              onShowLoudnessHelp={onShowLoudnessHelp}
-            />
-          )}
-
-          {!isMulti && !overwriteOriginal && (
-            <OutputNameSection
-              item={item}
-              format={format}
-              defaultOutputName={defaultOutputName}
-              autoApply={autoApplyFilename}
-              willEditInPlace={willEditInPlace}
-              open={outputOpen}
-              onToggle={() => setSectionOpen('output', !outputOpen)}
-              onChangeName={(outputName) => onChange({ outputName })}
-              onRegenerateName={onRegenerateName}
-              onOpenRename={onOpenRename}
-            />
-          )}
-
-          {/* Overwrite mode pins the name to the original, so the File Name section is
-              replaced by a notice of what the export will do to the source file. */}
-          {!isMulti && overwriteOriginal && (
-            <div
-              data-testid="overwrite-notice"
-              className="mt-6 border-t border-[var(--color-line)] pt-5"
-            >
-              <p className="text-sm font-medium text-fg-muted">{tr('editor.overwriteTitle')}</p>
-              <p
-                className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
-                data-testid="overwrite-hint"
-              >
-                {lossyOverwrite
-                  ? tr('editor.overwriteLossyHint')
-                  : willEditInPlace
-                    ? tr('editor.overwriteHint')
-                    : tr('editor.overwriteAlacHint')}
-              </p>
-            </div>
-          )}
-
-          <NormalizeSection
-            value={normalizeCfg}
-            open={normalizeOpen}
-            onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
-            onChange={(n) => {
-              setNormalizeCfg(n)
-              onNormalizeChange?.(n)
-            }}
-            item={item}
-            isMulti={isMulti}
-          />
+          {/* The sections below the metadata form render in the user's order
+              (Settings → Editor); the form itself is the editor's fixed header. Each
+              section keeps its own visibility conditions, so reordering never makes
+              one appear where it wouldn't have. */}
+          {editorSections
+            .filter((s) => s.id !== 'form')
+            .map(({ id }) => {
+              switch (id) {
+                case 'properties':
+                  return (
+                    !isMulti && (
+                      <PropertiesSection
+                        key={id}
+                        item={item}
+                        open={propertiesOpen}
+                        onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                      />
+                    )
+                  )
+                case 'quality':
+                  return (
+                    !isMulti &&
+                    (showSpectrum || showLoudness) && (
+                      <QualitySection
+                        key={id}
+                        item={item}
+                        showSpectrum={showSpectrum}
+                        showLoudness={showLoudness}
+                        open={spectrumOpen}
+                        onToggle={() => setSectionOpen('quality', !spectrumOpen)}
+                        onShowLoudnessHelp={onShowLoudnessHelp}
+                      />
+                    )
+                  )
+                case 'output':
+                  // Overwrite mode pins the name to the original, so the File Name
+                  // section is replaced by a notice of what the export will do.
+                  if (!isMulti && overwriteOriginal) {
+                    return (
+                      <div
+                        key={id}
+                        data-testid="overwrite-notice"
+                        className="mt-6 border-t border-[var(--color-line)] pt-5"
+                      >
+                        <p className="text-sm font-medium text-fg-muted">
+                          {tr('editor.overwriteTitle')}
+                        </p>
+                        <p
+                          className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
+                          data-testid="overwrite-hint"
+                        >
+                          {lossyOverwrite
+                            ? tr('editor.overwriteLossyHint')
+                            : willEditInPlace
+                              ? tr('editor.overwriteHint')
+                              : tr('editor.overwriteAlacHint')}
+                        </p>
+                      </div>
+                    )
+                  }
+                  return (
+                    !isMulti && (
+                      <OutputNameSection
+                        key={id}
+                        item={item}
+                        format={format}
+                        defaultOutputName={defaultOutputName}
+                        autoApply={autoApplyFilename}
+                        willEditInPlace={willEditInPlace}
+                        open={outputOpen}
+                        onToggle={() => setSectionOpen('output', !outputOpen)}
+                        onChangeName={(outputName) => onChange({ outputName })}
+                        onRegenerateName={onRegenerateName}
+                        onOpenRename={onOpenRename}
+                      />
+                    )
+                  )
+                case 'normalize':
+                  return (
+                    <NormalizeSection
+                      key={id}
+                      value={normalizeCfg}
+                      open={normalizeOpen}
+                      onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
+                      onChange={(n) => {
+                        setNormalizeCfg(n)
+                        onNormalizeChange?.(n)
+                      }}
+                      item={item}
+                      isMulti={isMulti}
+                    />
+                  )
+                default:
+                  return null
+              }
+            })}
         </div>
 
         <ConvertFooter
