@@ -490,10 +490,20 @@ describe('WaveformSolo', () => {
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
     const toggle = await screen.findByTestId('waveform-split')
     expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    const canvas = (): HTMLCanvasElement => {
+      const el = screen.getByTestId('waveform-strip').querySelector('canvas')
+      if (!el) throw new Error('strip canvas missing')
+      return el
+    }
+    // Half the strip per lane would squash each channel to half the mono wave's
+    // size, so splitting grows the strip: every lane keeps a readable height.
+    expect(canvas().className).toContain('h-16')
     fireEvent.click(toggle)
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'true')
+    expect(canvas().className).toContain('h-24')
     fireEvent.click(screen.getByTestId('waveform-split'))
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'false')
+    expect(canvas().className).toContain('h-16')
   })
 
   it('hides the split toggle when the decoder shipped no channel lanes', async () => {

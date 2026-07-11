@@ -168,6 +168,9 @@ function Strip({
     const center = el.scrollLeft + el.clientWidth / 2
     el.scrollLeft = Math.max(0, center * factor - el.clientWidth / 2)
   }, [zoom])
+  // Splitting halves each channel's room, so the strip grows by half in return:
+  // every lane keeps roughly the mono wave's readable height, like Audacity's rows.
+  const splitActive = split && wave?.channels?.length === 2
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
@@ -204,8 +207,8 @@ function Strip({
         <canvas
           ref={canvasRef}
           width={raster * zoom}
-          height={CANVAS_H}
-          className="block h-16 w-full rounded-lg bg-[var(--color-field)]"
+          height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
+          className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-24' : 'h-16'}`}
         />
         {loading && <Skeleton />}
         {readout && hover && (
