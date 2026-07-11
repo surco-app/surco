@@ -34,10 +34,19 @@ describe('previewPeaks', () => {
 
   it('scales the loudest peak exactly to the peak target', () => {
     const out = previewPeaks([0.5, 0.25], cfg({ mode: 'peak', peakDb: 0 }), null)
-    expect(out?.limitDb).toBe(0)
     expect(out?.gainDb).toBeCloseTo(6.0206, 3)
     expect(out?.peaks[0]).toBeCloseTo(1, 5)
     expect(out?.peaks[1]).toBeCloseTo(0.5, 5)
+  })
+
+  // Peak mode's red line is digital clipping, not the target: scaling the loudest
+  // sample TO the target means nothing ever exceeds the target by construction, so
+  // marking against it could never show red. Against 0 dBFS the marks become the
+  // feedback that finds the optimal value — dial the target up, red appears where
+  // the output would clip, back off until it is gone.
+  it('marks the peak preview against digital clipping, not the target', () => {
+    expect(previewPeaks([0.5], cfg({ mode: 'peak', peakDb: -1 }), null)?.limitDb).toBe(0)
+    expect(previewPeaks([0.5], cfg({ mode: 'peak', peakDb: 1.8 }), null)?.limitDb).toBe(0)
   })
 
   it('returns null for a silent decode in peak mode', () => {

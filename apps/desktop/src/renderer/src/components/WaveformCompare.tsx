@@ -98,6 +98,7 @@ function Strip({
   color,
   clipDb,
   limitDb,
+  marks = true,
   background,
   raster = CANVAS_W,
   zoom = 1,
@@ -106,6 +107,8 @@ function Strip({
   clipDb?: number
   // The preview's limiter line: bars clamp to it and the clamped ones paint red.
   limitDb?: number
+  // The legend toggle: false keeps the limiter clamp but paints no red.
+  marks?: boolean
   // A second envelope drawn behind in the muted grey — the original under a preview.
   background?: WaveformResult | null
   raster?: number
@@ -123,8 +126,8 @@ function Strip({
     const canvas = canvasRef.current
     if (!canvas || !wave) return
     if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
-    drawWaveform(canvas, wave.peaks, { color, clipDb, limitDb, clear: !background })
-  }, [wave, color, clipDb, limitDb, background, raster, zoom])
+    drawWaveform(canvas, wave.peaks, { color, clipDb, limitDb, marks, clear: !background })
+  }, [wave, color, clipDb, limitDb, marks, background, raster, zoom])
   // A zoom step re-anchors the scroller so the spot in the middle stays in the
   // middle — zooming in on a clip must not teleport the view away from it.
   const prevZoom = useRef(zoom)
@@ -344,23 +347,35 @@ export function WaveformSolo({
           loudness={source.loudness}
         />
         {previewWave && preview ? (
-          <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
-            <span
-              aria-hidden="true"
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: AFTER_COLOR }}
+          <>
+            <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: AFTER_COLOR }}
+              />
+              <span className="font-medium uppercase tracking-wider text-fg-dim">
+                {tr('editor.waveformPreview')}
+              </span>
+              <span className="truncate tabular-nums text-fg-dim">
+                {normalize.mode === 'loudness'
+                  ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
+                  : `${formatDb(normalize.peakDb)} dBFS`}
+                {/* The felt number: how hard this pushes, signed so up and down read apart. */}
+                {` · ${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
+              </span>
+            </span>
+            {/* The same switch as the plain view, counting on the PREDICTED wave: it
+                appears while the dialed values push peaks over the mode's red line
+                (the loudness ceiling, or digital clipping for peak mode) — dial back
+                until it goes, and the optimal value found itself. */}
+            <ClippedFlag
+              wave={previewWave}
+              clipDb={preview.limitDb}
+              active={marks}
+              onToggle={() => setMarks((m) => !m)}
             />
-            <span className="font-medium uppercase tracking-wider text-fg-dim">
-              {tr('editor.waveformPreview')}
-            </span>
-            <span className="truncate tabular-nums text-fg-dim">
-              {normalize.mode === 'loudness'
-                ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
-                : `${formatDb(normalize.peakDb)} dBFS`}
-              {/* The felt number: how hard this pushes, signed so up and down read apart. */}
-              {` · ${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
-            </span>
-          </span>
+          </>
         ) : (
           <ClippedFlag
             wave={source.wave}
@@ -408,6 +423,7 @@ export function WaveformSolo({
           loading={source.loading}
           loudness={source.loudness}
           color={AFTER_COLOR}
+          marks={marks}
           limitDb={preview.limitDb}
           background={source.wave}
           raster={OVERLAY_W}

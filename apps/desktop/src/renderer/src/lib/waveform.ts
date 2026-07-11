@@ -31,7 +31,10 @@ export function previewPeaks(
     if (max <= 0) return null
     const gainDb = cfg.peakDb - 20 * Math.log10(max)
     const gain = 10 ** (gainDb / 20)
-    return { peaks: peaks.map((p) => p * gain), limitDb: cfg.peakDb, gainDb }
+    // The red line is digital clipping, not the target: scaling the loudest sample
+    // TO the target means nothing ever exceeds the target by construction. Against
+    // 0 dBFS the marks appear exactly when a past-full-scale target would clip.
+    return { peaks: peaks.map((p) => p * gain), limitDb: 0, gainDb }
   }
   if (cfg.mode === 'loudness') {
     if (integratedLufs == null || !Number.isFinite(integratedLufs)) return null
@@ -49,11 +52,19 @@ export function previewPeaks(
 // top of the first instead of wiping it. With `clipDb`, bars poking over that dB
 // ceiling paint red — where the track clips, or where a limiter will act. With
 // `limitDb` (the preview), bars are also CLAMPED at that line, so the strip shows
-// the limited outcome while the red still says "the limiter acted here".
+// the limited outcome while the red still says "the limiter acted here". `marks:
+// false` keeps the clamp but paints everything the base color — the legend's
+// toggle switches the red off without un-limiting the drawn outcome.
 export function drawWaveform(
   canvas: HTMLCanvasElement,
   peaks: number[],
-  opts: { color?: string; clear?: boolean; clipDb?: number; limitDb?: number } = {},
+  opts: {
+    color?: string
+    clear?: boolean
+    clipDb?: number
+    limitDb?: number
+    marks?: boolean
+  } = {},
 ): void {
   const ctx = canvas.getContext('2d')
   // jsdom (tests) has no 2D context; the strips assert their geometry via the DOM.
@@ -67,9 +78,10 @@ export function drawWaveform(
   const barW = w / peaks.length
   for (let i = 0; i < peaks.length; i++) {
     const over =
-      limitLin !== null
+      opts.marks !== false &&
+      (limitLin !== null
         ? peaks[i] > limitLin
-        : opts.clipDb !== undefined && clipsOver(peaks[i], opts.clipDb)
+        : opts.clipDb !== undefined && clipsOver(peaks[i], opts.clipDb))
     const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
     const bar = Math.max(amp * (h / 2 - 2), 0.5)
     ctx.fillStyle = over ? CLIP_COLOR : baseColor

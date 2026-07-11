@@ -204,6 +204,100 @@ describe('WaveformSolo', () => {
     expect(screen.getByTestId('waveform-clipped')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  // The same switch rides along in the previews, counting on the PREDICTED wave:
+  // dialing the loudness target up makes the flag (and its red marks) appear as
+  // peaks cross the true-peak ceiling — the feedback that finds the optimal value.
+  it('flags predicted peaks over the ceiling in the loudness preview', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      // +6 dB to -14: 0.9 and 1.0 scale past the -1 dBTP ceiling (0.891).
+      loudness: vi.fn().mockResolvedValue({
+        integratedLufs: -20,
+        truePeakDb: -8,
+        lra: 0,
+        channelBalanceDb: null,
+        dcOffset: null,
+        noiseFloorDb: null,
+        crestDb: null,
+      }),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      />,
+    )
+    const flag = await screen.findByTestId('waveform-clipped')
+    expect(flag).toHaveTextContent('-1')
+    expect(flag).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(flag)
+    expect(screen.getByTestId('waveform-clipped')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('shows no flag when the loudness preview stays under its ceiling', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      // -6 dB to -14: everything lands well under the ceiling.
+      loudness: vi.fn().mockResolvedValue({
+        integratedLufs: -8,
+        truePeakDb: 0,
+        lra: 0,
+        channelBalanceDb: null,
+        dcOffset: null,
+        noiseFloorDb: null,
+        crestDb: null,
+      }),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      />,
+    )
+    await screen.findByTestId('waveform-preview')
+    expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
+  })
+
+  // Peak mode marks against digital clipping: a target past 0 dBFS is the one way
+  // this mode can ruin a file, so red appearing is the "too far" signal.
+  it('flags a peak target past digital clipping in the peak preview', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: 1.8 }}
+      />,
+    )
+    const flag = await screen.findByTestId('waveform-clipped')
+    expect(flag).toHaveTextContent('0.0')
+  })
+
+  it('shows no flag for a peak target at or under full scale', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      />,
+    )
+    await screen.findByTestId('waveform-preview')
+    expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
+  })
+
   // Hovering the strip reads out the exact spot: the time under the cursor and that
   // bucket's level in dB — red when it pokes over the active ceiling — so a DJ can
   // pin down where a clip sits without converting or opening the player.
