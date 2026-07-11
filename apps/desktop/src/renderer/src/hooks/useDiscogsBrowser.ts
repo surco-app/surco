@@ -166,6 +166,23 @@ export function useDiscogsBrowser(
     return () => clearTimeout(id)
   }, [query])
 
+  // The track's own query firms up after mount: import seeds it from the file NAME and
+  // the tag read then rebuilds it as "artist title" — on a slow volume that read lands
+  // seconds after the editor opened, when the box has already committed the stale
+  // file-name guess and is showing its homonym noise. When the stored query changes
+  // under the panel and the user hasn't taken over the box, re-seed exactly as a
+  // remount would. With a stored-id release on screen the box text still follows, but
+  // no text search fires (the skip flag swallows the debounce run) — searching then
+  // would bury the exact release the id seed just opened.
+  const seenItemQuery = useRef(item.query)
+  useEffect(() => {
+    const changed = item.query !== seenItemQuery.current
+    seenItemQuery.current = item.query
+    if (!changed || userDroveSearch.current) return
+    if (storedId !== '') skipInitialDebounce.current = true
+    setQuery(item.query)
+  }, [item.query, storedId])
+
   const searchQuery = useQuery({
     // The ignore words belong in the key even though the stripping happens in the main
     // process: the term the user sees doesn't change when they add a word in Settings,

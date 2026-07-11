@@ -440,6 +440,59 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.release?.id).toBe(1)
   })
 
+  // The track's query firms up after mount: import seeds it from the file NAME ("I'm
+  // Ready") and the tag read rebuilds it as "artist title" — on a slow volume that lands
+  // seconds after the editor opened, when the box has already committed the stale guess
+  // and is showing its homonym noise. Re-seed and re-search exactly as a remount would.
+  it('re-seeds the box and re-runs the search when the track query firms up after mount', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ query }: { query: string }) => useDiscogsBrowser(item({ query }), tr),
+      { wrapper: wrapper(), initialProps: { query: "I'm Ready" } },
+    )
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(search.mock.calls.map((c) => c[0])).toContain("I'm Ready")
+
+    rerender({ query: "DJ Miguel Serna, Alex Cervera I'm Ready" })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.query).toBe("DJ Miguel Serna, Alex Cervera I'm Ready")
+    expect(search.mock.calls.map((c) => c[0])).toContain("DJ Miguel Serna, Alex Cervera I'm Ready")
+  })
+
+  // But once the user has taken over the box, the firmed-up query must not yank their
+  // refinement away mid-typing — same ownership rule as the stored-id landing.
+  it('keeps a user-typed query when the track query firms up after they typed', async () => {
+    setApi()
+    const { result, rerender } = renderHook(
+      ({ query }: { query: string }) => useDiscogsBrowser(item({ query }), tr),
+      { wrapper: wrapper(), initialProps: { query: "I'm Ready" } },
+    )
+    act(() => result.current.setQuery('refined term'))
+    rerender({ query: "DJ Miguel Serna, Alex Cervera I'm Ready" })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.query).toBe('refined term')
+  })
+
+  // With a stored-id release on screen, the firmed-up query only refreshes the box text
+  // (what a remount would show); firing a text search would bury the exact release the
+  // id seed just opened under candidates.
+  it('updates the box without a text search when the query firms up over a stored id', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ query }: { query: string }) =>
+        useDiscogsBrowser(item({ query, discogsReleaseId: '1' }), tr),
+      { wrapper: wrapper(), initialProps: { query: "I'm Ready" } },
+    )
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    rerender({ query: "DJ Miguel Serna, Alex Cervera I'm Ready" })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.query).toBe("DJ Miguel Serna, Alex Cervera I'm Ready")
+    expect(result.current.release?.id).toBe(1)
+    expect(search).not.toHaveBeenCalled()
+  })
+
   // The regression the first cut of the stored-id shortcut shipped with: the typing
   // debounce arms on mount too (item.query is rarely empty), so 500ms after opening it
   // overwrote the seeded id with item.query and ran the very text search the id was
