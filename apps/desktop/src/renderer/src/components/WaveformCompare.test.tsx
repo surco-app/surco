@@ -4,11 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WaveformResult } from '../../../shared/types'
+import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
 import '../i18n'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
+
+const CFG_NONE: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -19,6 +21,9 @@ beforeEach(() => {
   // jsdom has no 2D canvas context (it logs a not-implemented error and returns
   // null); the draw helper already handles null, so stub it to keep the noise out.
   HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
+  // jsdom implements no PointerEvent either; aliasing it to MouseEvent lets fireEvent
+  // carry clientX into the hover-readout handler (same trick as Waveform.test).
+  ;(window as unknown as { PointerEvent: typeof MouseEvent }).PointerEvent = window.MouseEvent
 })
 
 afterEach(() => {
@@ -141,7 +146,7 @@ describe('WaveformSolo', () => {
       crestDb: null,
     })
     ;(window as unknown as { api: unknown }).api = { waveform, loudness }
-    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
     const solo = await screen.findByTestId('waveform-solo')
     await waitFor(() => expect(solo).toHaveTextContent('-7.4 LUFS · 0.2 dBTP'))
     expect(waveform).toHaveBeenCalledWith('/m/a.wav')
@@ -153,7 +158,7 @@ describe('WaveformSolo', () => {
       waveform,
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled={false} clipDb={-1} />)
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled={false} clipDb={-1} normalize={CFG_NONE} />)
     await waitFor(() => expect(screen.getByTestId('waveform-solo')).toBeInTheDocument())
     expect(waveform).not.toHaveBeenCalled()
   })
@@ -167,7 +172,7 @@ describe('WaveformSolo', () => {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
     expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('-1')
   })
 
@@ -176,9 +181,112 @@ describe('WaveformSolo', () => {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.5, 0.4], durationSec: 60 }),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
     await screen.findByTestId('waveform-solo')
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
+  })
+
+  // The legend doubles as the switch: a click hides the red marks (a busy vinyl rip
+  // can be mostly red), another brings them back. The label stays up either way so
+  // the way back is obvious.
+  it('toggles the clip marks from the legend', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    const flag = await screen.findByTestId('waveform-clipped')
+    expect(flag).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(flag)
+    expect(screen.getByTestId('waveform-clipped')).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(screen.getByTestId('waveform-clipped'))
+    expect(screen.getByTestId('waveform-clipped')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // Hovering the strip reads out the exact spot: the time under the cursor and that
+  // bucket's level in dB — red when it pokes over the active ceiling — so a DJ can
+  // pin down where a clip sits without converting or opening the player.
+  it('reads out time and level under the cursor', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    const strip = await screen.findByTestId('waveform-strip')
+    // Hovering before the decode lands has nothing to read out; wait for the peaks.
+    await waitFor(() =>
+      expect(screen.queryByTestId('waveform-compare-loading')).not.toBeInTheDocument(),
+    )
+    strip.getBoundingClientRect = () =>
+      ({ left: 0, width: 200, top: 0, height: 48, right: 200, bottom: 48, x: 0, y: 0 }) as DOMRect
+    fireEvent.pointerMove(strip, { clientX: 150 })
+    const readout = screen.getByTestId('waveform-hover')
+    // 75% of 60 s = 0:45; bucket 3 of [0.1, 0.9, 0.4, 1] = 1.0 → 0.0 dB.
+    expect(readout).toHaveTextContent('0:45')
+    expect(readout).toHaveTextContent('0.0 dB')
+
+    fireEvent.pointerLeave(strip)
+    expect(screen.queryByTestId('waveform-hover')).not.toBeInTheDocument()
+  })
+
+  // With Loudness or Peak dialed in, the strip previews the outcome before any
+  // conversion: the original stays behind in grey, the predicted envelope draws in
+  // front, and the legend names the target it aims for.
+  it('previews the loudness outcome over the original once measured', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue({
+        integratedLufs: -20,
+        truePeakDb: -8,
+        lra: 0,
+        channelBalanceDb: null,
+        dcOffset: null,
+        noiseFloorDb: null,
+        crestDb: null,
+      }),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      />,
+    )
+    const legend = await screen.findByTestId('waveform-preview')
+    expect(legend).toHaveTextContent('-14.0 LUFS')
+    expect(legend).toHaveTextContent('-1.0 dBTP')
+  })
+
+  it('shows no preview while normalization is off', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    await screen.findByTestId('waveform-solo')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-preview')).not.toBeInTheDocument()
+  })
+
+  // The loudness preview needs the measurement; until it lands the strip stays the
+  // plain original rather than guessing a gain from nothing.
+  it('shows no loudness preview before the measurement lands', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(
+      <WaveformSolo
+        inputPath="/m/a.wav"
+        enabled
+        clipDb={-1}
+        normalize={{ mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
+      />,
+    )
+    await screen.findByTestId('waveform-solo')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-preview')).not.toBeInTheDocument()
   })
 })

@@ -1,12 +1,13 @@
 import { Columns2, Layers2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LoudnessResult, WaveformResult } from '../../../shared/types'
+import type { LoudnessResult, NormalizeConfig, WaveformResult } from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
-import { clippedCount, drawWaveform, skeletonPeaks } from '../lib/waveform'
+import { formatTime } from '../lib/duration'
+import { clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
@@ -92,15 +93,53 @@ function Strip({
   loading,
   color,
   clipDb,
+  limitDb,
+  background,
   raster = CANVAS_W,
-}: StripData & { color: string; clipDb?: number; raster?: number }): React.JSX.Element {
+}: StripData & {
+  color: string
+  clipDb?: number
+  // The preview's limiter line: bars clamp to it and the clamped ones paint red.
+  limitDb?: number
+  // A second envelope drawn behind in the muted grey — the original under a preview.
+  background?: WaveformResult | null
+  raster?: number
+}): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // The cursor's position over the strip, as a 0..1 ratio (for the bucket/time math)
+  // plus the raw x (for the readout's placement). Null while the pointer is away.
+  const [hover, setHover] = useState<{ x: number; ratio: number } | null>(null)
   useEffect(() => {
     const canvas = canvasRef.current
-    if (canvas && wave) drawWaveform(canvas, wave.peaks, { color, clipDb })
-  }, [wave, color, clipDb])
+    if (!canvas || !wave) return
+    if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
+    drawWaveform(canvas, wave.peaks, { color, clipDb, limitDb, clear: !background })
+  }, [wave, color, clipDb, limitDb, background])
+  const readout = ((): { time: string; db: string; over: boolean } | null => {
+    if (!hover || !wave || wave.peaks.length === 0) return null
+    const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
+    const amp = wave.peaks[idx]
+    const markDb = limitDb ?? clipDb
+    // The displayed level honors the preview's limiter, like the drawn bar does.
+    const shown = limitDb !== undefined ? Math.min(amp, 10 ** (limitDb / 20)) : amp
+    return {
+      time: formatTime(hover.ratio * wave.durationSec),
+      db: formatDb(shown > 0 ? 20 * Math.log10(shown) : Number.NEGATIVE_INFINITY),
+      over: markDb !== undefined && amp > 10 ** (markDb / 20),
+    }
+  })()
   return (
-    <div className="relative">
+    <div
+      data-testid="waveform-strip"
+      className="relative"
+      onPointerMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        if (rect.width === 0 || !wave) return
+        const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left))
+        setHover({ x, ratio: x / rect.width })
+      }}
+      onPointerLeave={() => setHover(null)}
+    >
       <canvas
         ref={canvasRef}
         width={raster}
@@ -108,35 +147,67 @@ function Strip({
         className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
       />
       {loading && <Skeleton />}
+      {readout && hover && (
+        <>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 w-px bg-fg/40"
+            style={{ left: hover.x }}
+          />
+          <span
+            data-testid="waveform-hover"
+            className={`pointer-events-none absolute -top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
+              readout.over ? 'text-danger' : 'text-fg-muted'
+            }`}
+            style={{
+              left: hover.x,
+              transform: `translateX(${hover.ratio > 0.85 ? '-100%' : hover.ratio < 0.15 ? '0' : '-50%'}) translateY(-100%)`,
+            }}
+          >
+            {readout.time} · {readout.db} dB
+          </span>
+        </>
+      )}
     </div>
   )
 }
 
 // The red counterpart to the legends' colour dots, shown only when the wave actually
 // pokes over the ceiling: it names the dB line the red bars mark, so the color isn't
-// a mystery — and a clean track never warns.
+// a mystery — and a clean track never warns. It doubles as the switch for the marks:
+// a busy vinyl rip can paint mostly red, so a click hides them, another brings them
+// back — the label stays up either way so the way back is obvious.
 function ClippedFlag({
   wave,
   clipDb,
+  active,
+  onToggle,
 }: {
   wave: WaveformResult | null | undefined
   clipDb: number
+  active: boolean
+  onToggle: () => void
 }): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   if (!wave || clippedCount(wave.peaks, clipDb) === 0) return null
   return (
-    <span
+    <button
+      type="button"
       data-testid="waveform-clipped"
-      className="flex min-w-0 items-center gap-1.5 text-[10px]"
+      aria-pressed={active}
+      onClick={onToggle}
+      className="press flex min-w-0 items-center gap-1.5 text-[10px]"
     >
       <span
         aria-hidden="true"
-        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-danger)]"
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-line-strong)]'}`}
       />
-      <span className="truncate font-medium tabular-nums text-danger">
+      <span
+        className={`truncate font-medium tabular-nums ${active ? 'text-danger' : 'text-fg-dim'}`}
+      >
         {tr('editor.waveformClipped', { db: formatDb(clipDb) })}
       </span>
-    </span>
+    </button>
   )
 }
 
@@ -197,30 +268,86 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
 
 // The source's wave alone, for before a conversion exists: the same strip, figures
 // and clip marks as the comparison, so the normalization controls above are tuned
-// against what the file actually looks like instead of blind.
+// against what the file actually looks like instead of blind. With Loudness or Peak
+// dialed in it goes one further: the original drops behind in grey and the predicted
+// post-normalization envelope draws in front — a preview of the dials' outcome.
 export function WaveformSolo({
   inputPath,
   enabled,
   clipDb,
+  normalize,
 }: {
   inputPath: string
   enabled: boolean
   clipDb: number
+  normalize: NormalizeConfig
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const source = useStripData(inputPath, enabled)
+  // The clip marks' switch (the ClippedFlag legend). Per-mount state: a track flip
+  // remounts the editor, and marks defaulting back on is the safe reading.
+  const [marks, setMarks] = useState(true)
+  const preview = useMemo(
+    () =>
+      source.wave
+        ? previewPeaks(source.wave.peaks, normalize, source.loudness?.integratedLufs)
+        : null,
+    [source.wave, normalize, source.loudness],
+  )
+  const previewWave =
+    preview && source.wave ? { peaks: preview.peaks, durationSec: source.wave.durationSec } : null
   return (
     <div data-testid="waveform-solo" className="mt-3">
       <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
         <Legend
           testid="waveform-source"
-          color={AFTER_COLOR}
+          color={previewWave ? BEFORE_COLOR : AFTER_COLOR}
           label={tr('editor.waveformSource')}
           loudness={source.loudness}
         />
-        <ClippedFlag wave={source.wave} clipDb={clipDb} />
+        {previewWave ? (
+          <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: AFTER_COLOR }}
+            />
+            <span className="font-medium uppercase tracking-wider text-fg-dim">
+              {tr('editor.waveformPreview')}
+            </span>
+            <span className="truncate tabular-nums text-fg-dim">
+              {normalize.mode === 'loudness'
+                ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
+                : `${formatDb(normalize.peakDb)} dBFS`}
+            </span>
+          </span>
+        ) : (
+          <ClippedFlag
+            wave={source.wave}
+            clipDb={clipDb}
+            active={marks}
+            onToggle={() => setMarks((m) => !m)}
+          />
+        )}
       </div>
-      <Strip {...source} color={AFTER_COLOR} clipDb={clipDb} raster={OVERLAY_W} />
+      {previewWave && preview ? (
+        <Strip
+          wave={previewWave}
+          loading={source.loading}
+          loudness={source.loudness}
+          color={AFTER_COLOR}
+          limitDb={preview.limitDb}
+          background={source.wave}
+          raster={OVERLAY_W}
+        />
+      ) : (
+        <Strip
+          {...source}
+          color={AFTER_COLOR}
+          clipDb={marks ? clipDb : undefined}
+          raster={OVERLAY_W}
+        />
+      )}
     </div>
   )
 }

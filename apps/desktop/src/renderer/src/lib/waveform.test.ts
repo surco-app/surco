@@ -1,5 +1,47 @@
 import { describe, expect, it } from 'vitest'
-import { clippedCount, skeletonPeaks } from './waveform'
+import type { NormalizeConfig } from '../../../shared/types'
+import { clippedCount, previewPeaks, skeletonPeaks } from './waveform'
+
+const cfg = (over: Partial<NormalizeConfig>): NormalizeConfig => ({
+  mode: 'none',
+  targetLufs: -14,
+  truePeakDb: -1,
+  peakDb: -1,
+  ...over,
+})
+
+// The pre-conversion preview: what the envelope would look like after normalizing,
+// computed from the decoded peaks and the measured loudness — a linear gain to the
+// target, drawn against the mode's own ceiling (the limiter line).
+describe('previewPeaks', () => {
+  it('returns null when normalization is off', () => {
+    expect(previewPeaks([0.5], cfg({}), -20)).toBeNull()
+  })
+
+  it('scales the envelope by the gain to the loudness target', () => {
+    // -20 LUFS to -14 LUFS = +6 dB ≈ ×1.995
+    const out = previewPeaks([0.1, 0.2], cfg({ mode: 'loudness' }), -20)
+    expect(out?.limitDb).toBe(-1)
+    expect(out?.peaks[0]).toBeCloseTo(0.1995, 3)
+    expect(out?.peaks[1]).toBeCloseTo(0.399, 3)
+  })
+
+  it('needs the loudness measurement for the loudness mode', () => {
+    expect(previewPeaks([0.5], cfg({ mode: 'loudness' }), null)).toBeNull()
+    expect(previewPeaks([0.5], cfg({ mode: 'loudness' }), Number.NEGATIVE_INFINITY)).toBeNull()
+  })
+
+  it('scales the loudest peak exactly to the peak target', () => {
+    const out = previewPeaks([0.5, 0.25], cfg({ mode: 'peak', peakDb: 0 }), null)
+    expect(out?.limitDb).toBe(0)
+    expect(out?.peaks[0]).toBeCloseTo(1, 5)
+    expect(out?.peaks[1]).toBeCloseTo(0.5, 5)
+  })
+
+  it('returns null for a silent decode in peak mode', () => {
+    expect(previewPeaks([0, 0], cfg({ mode: 'peak' }), null)).toBeNull()
+  })
+})
 
 describe('clippedCount', () => {
   // The red clip marks answer "where does this track poke over the ceiling", so the

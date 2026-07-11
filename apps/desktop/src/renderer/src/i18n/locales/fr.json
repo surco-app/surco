@@ -321,6 +321,7 @@
     "loudnessHelpTitle": "Qu'est-ce que ça veut dire ?",
     "waveformSource": "Original",
     "waveformClipped": "Crêtes au-dessus de {{db}} dB",
+    "waveformPreview": "Aperçu",
     "waveformBefore": "Avant",
     "waveformAfter": "Après",
     "waveformViewSide": "Côte à côte",

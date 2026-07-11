@@ -76,7 +76,7 @@ export function NormalizeSection({
           <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
           <NormalizeControls value={value} onChange={onChange} />
           {!isMulti && !compare && (
-            <WaveformSolo inputPath={item.inputPath} enabled={settled} clipDb={clipDb} />
+            <WaveformSolo inputPath={item.inputPath} enabled={settled} clipDb={clipDb} normalize={value} />
           )}
           {compare && item.outputPath && (
             <div ref={compareRef}>

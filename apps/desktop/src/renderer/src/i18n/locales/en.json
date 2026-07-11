@@ -321,6 +321,7 @@
     "loudnessHelpTitle": "What do these mean?",
     "waveformSource": "Original",
     "waveformClipped": "Peaks over {{db}} dB",
+    "waveformPreview": "Preview",
     "waveformBefore": "Before",
     "waveformAfter": "After",
     "waveformViewSide": "Side by side",
