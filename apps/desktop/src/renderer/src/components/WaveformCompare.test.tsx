@@ -270,6 +270,47 @@ describe('WaveformSolo', () => {
     expect(screen.queryByTestId('waveform-preview')).not.toBeInTheDocument()
   })
 
+  // rekordbox-style zoom: + stretches the strip inside a horizontal scroller so a
+  // clip can be pinned down bar by bar; − steps back; the ×N label resets. The
+  // envelope is still the decoded 2048 buckets — zoom widens them, it never re-reads.
+  it('zooms the strip in steps and scrolls horizontally', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    const strip = await screen.findByTestId('waveform-strip')
+    expect(strip).toHaveStyle({ width: '100%' })
+    expect(screen.getByTestId('waveform-zoom-out')).toBeDisabled()
+
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '200%' })
+
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '800%' })
+    expect(screen.getByTestId('waveform-zoom-in')).toBeDisabled()
+
+    fireEvent.click(screen.getByTestId('waveform-zoom-out'))
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '400%' })
+  })
+
+  it('resets the zoom from the factor label', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    await screen.findByTestId('waveform-strip')
+    expect(screen.getByTestId('waveform-zoom-reset')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    const reset = screen.getByTestId('waveform-zoom-reset')
+    expect(reset).toHaveTextContent('×4')
+    fireEvent.click(reset)
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '100%' })
+  })
+
   // The loudness preview needs the measurement; until it lands the strip stays the
   // plain original rather than guessing a gain from nothing.
   it('shows no loudness preview before the measurement lands', async () => {

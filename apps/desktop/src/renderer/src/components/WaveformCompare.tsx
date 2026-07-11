@@ -1,6 +1,6 @@
-import { Columns2, Layers2 } from 'lucide-react'
+import { Columns2, Layers2, ZoomIn, ZoomOut } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LoudnessResult, NormalizeConfig, WaveformResult } from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -17,6 +17,10 @@ const OVERLAY_W = 1200
 const CANVAS_H = 64
 
 const SKELETON_PEAKS = skeletonPeaks(40)
+
+// The deepest zoom step: ×8 across a 6-minute track puts ~2 s in the visible panel,
+// enough to pin a clip down; past that the 2048 decoded buckets have no more to show.
+const ZOOM_MAX = 8
 
 // The colour key the legends' dots repeat: the converted file keeps the player's
 // accent blue, the source goes muted so "louder than before" reads as blue fringes
@@ -96,6 +100,7 @@ function Strip({
   limitDb,
   background,
   raster = CANVAS_W,
+  zoom = 1,
 }: StripData & {
   color: string
   clipDb?: number
@@ -104,17 +109,33 @@ function Strip({
   // A second envelope drawn behind in the muted grey — the original under a preview.
   background?: WaveformResult | null
   raster?: number
+  // rekordbox-style stretch factor: the strip grows to zoom× the panel width inside
+  // a horizontal scroller. Still the same 2048 decoded buckets, just drawn wider.
+  zoom?: number
 }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   // The cursor's position over the strip, as a 0..1 ratio (for the bucket/time math)
   // plus the raw x (for the readout's placement). Null while the pointer is away.
   const [hover, setHover] = useState<{ x: number; ratio: number } | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: zoom/raster only feed the canvas width attribute in JSX, but changing that attribute wipes the bitmap — the effect must re-run to redraw at the new raster or the strip goes blank.
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !wave) return
     if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
     drawWaveform(canvas, wave.peaks, { color, clipDb, limitDb, clear: !background })
-  }, [wave, color, clipDb, limitDb, background])
+  }, [wave, color, clipDb, limitDb, background, raster, zoom])
+  // A zoom step re-anchors the scroller so the spot in the middle stays in the
+  // middle — zooming in on a clip must not teleport the view away from it.
+  const prevZoom = useRef(zoom)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || prevZoom.current === zoom) return
+    const factor = zoom / prevZoom.current
+    prevZoom.current = zoom
+    const center = el.scrollLeft + el.clientWidth / 2
+    el.scrollLeft = Math.max(0, center * factor - el.clientWidth / 2)
+  }, [zoom])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
@@ -129,45 +150,50 @@ function Strip({
     }
   })()
   return (
-    <div
-      data-testid="waveform-strip"
-      className="relative"
-      onPointerMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect()
-        if (rect.width === 0 || !wave) return
-        const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left))
-        setHover({ x, ratio: x / rect.width })
-      }}
-      onPointerLeave={() => setHover(null)}
-    >
-      <canvas
-        ref={canvasRef}
-        width={raster}
-        height={CANVAS_H}
-        className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
-      />
-      {loading && <Skeleton />}
-      {readout && hover && (
-        <>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 w-px bg-fg/40"
-            style={{ left: hover.x }}
-          />
-          <span
-            data-testid="waveform-hover"
-            className={`pointer-events-none absolute -top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
-              readout.over ? 'text-danger' : 'text-fg-muted'
-            }`}
-            style={{
-              left: hover.x,
-              transform: `translateX(${hover.ratio > 0.85 ? '-100%' : hover.ratio < 0.15 ? '0' : '-50%'}) translateY(-100%)`,
-            }}
-          >
-            {readout.time} · {readout.db} dB
-          </span>
-        </>
-      )}
+    <div ref={scrollRef} className={`rounded-lg ${zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}>
+      <div
+        data-testid="waveform-strip"
+        className="relative"
+        style={{ width: `${zoom * 100}%` }}
+        onPointerMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect()
+          if (rect.width === 0 || !wave) return
+          const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left))
+          setHover({ x, ratio: x / rect.width })
+        }}
+        onPointerLeave={() => setHover(null)}
+      >
+        <canvas
+          ref={canvasRef}
+          width={raster * zoom}
+          height={CANVAS_H}
+          className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+        />
+        {loading && <Skeleton />}
+        {readout && hover && (
+          <>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 w-px bg-fg/40"
+              style={{ left: hover.x }}
+            />
+            {/* Inside the strip, not above it: the scroller clips vertical overflow
+                when zoomed, and floating over the legends read as part of them. */}
+            <span
+              data-testid="waveform-hover"
+              className={`pointer-events-none absolute top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
+                readout.over ? 'text-danger' : 'text-fg-muted'
+              }`}
+              style={{
+                left: hover.x,
+                transform: `translateX(${hover.ratio > 0.85 ? 'calc(-100% - 6px)' : '6px'})`,
+              }}
+            >
+              {readout.time} · {readout.db} dB
+            </span>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -287,6 +313,9 @@ export function WaveformSolo({
   // The clip marks' switch (the ClippedFlag legend). Per-mount state: a track flip
   // remounts the editor, and marks defaulting back on is the safe reading.
   const [marks, setMarks] = useState(true)
+  // rekordbox-style zoom over the strip, ×1..×8 in doublings. Per-mount too: a new
+  // track starts at the full-width overview.
+  const [zoom, setZoom] = useState(1)
   const preview = useMemo(
     () =>
       source.wave
@@ -329,6 +358,38 @@ export function WaveformSolo({
             onToggle={() => setMarks((m) => !m)}
           />
         )}
+        <span className="ml-auto flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            data-testid="waveform-zoom-out"
+            aria-label={tr('editor.waveformZoomOut')}
+            disabled={zoom <= 1}
+            onClick={() => setZoom((z) => Math.max(1, z / 2))}
+            className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+          >
+            <ZoomOut className="h-3 w-3" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            data-testid="waveform-zoom-reset"
+            aria-label={tr('editor.waveformZoomReset')}
+            disabled={zoom <= 1}
+            onClick={() => setZoom(1)}
+            className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+          >
+            {`×${zoom}`}
+          </button>
+          <button
+            type="button"
+            data-testid="waveform-zoom-in"
+            aria-label={tr('editor.waveformZoomIn')}
+            disabled={zoom >= ZOOM_MAX}
+            onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
+            className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+          >
+            <ZoomIn className="h-3 w-3" aria-hidden="true" />
+          </button>
+        </span>
       </div>
       {previewWave && preview ? (
         <Strip
@@ -339,6 +400,7 @@ export function WaveformSolo({
           limitDb={preview.limitDb}
           background={source.wave}
           raster={OVERLAY_W}
+          zoom={zoom}
         />
       ) : (
         <Strip
@@ -346,6 +408,7 @@ export function WaveformSolo({
           color={AFTER_COLOR}
           clipDb={marks ? clipDb : undefined}
           raster={OVERLAY_W}
+          zoom={zoom}
         />
       )}
     </div>
