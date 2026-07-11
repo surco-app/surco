@@ -145,43 +145,39 @@ export function useDiscogsBrowser(
     setSearchTerm(storedId)
   }, [storedId, openResult])
 
-  // Typing commits the query 500ms after it stops; Enter and the button commit at
-  // once through doSearch. Skipped on mount when the panel seeded searchTerm from a stored
-  // release id above: query still reads as item.query at that point (unchanged by the user),
-  // so without this guard the debounce's own first run would fire 500ms later and silently
-  // overwrite the seeded id with a text search — turning "open straight to this exact
-  // release" into a noisy title search the user never asked for.
-  const skipInitialDebounce = useRef(!!item.meta.discogsReleaseId)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: query is the trigger; the item/persist callback are read fresh at commit time, and depending on them would re-arm the debounce on every track edit.
+  // Typing commits the query 500ms after it stops; Enter and the button commit at once
+  // through doSearch. Until the user takes over the box, two states hold the commit
+  // back: a tag read still in flight — the box holds the file-name guess the read is
+  // about to replace, so committing it would fire the very homonym search the re-seed
+  // below then has to redo, a noise flash plus a wasted provider call — and a stored
+  // release id driving the panel, where a text search would silently bury the exact
+  // release the id seed opened. The read landing re-arms the effect, which then commits
+  // the query the panel holds at that point.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: query and the tag-read hold are the triggers; the id/item/persist callback are read fresh at commit time, and depending on them would re-arm the debounce on every track edit.
   useEffect(() => {
-    if (skipInitialDebounce.current) {
-      skipInitialDebounce.current = false
-      return
-    }
+    if (!userDroveSearch.current && (item.loadingMeta || storedId !== '')) return
     if (!query.trim()) return
     const id = setTimeout(() => {
       setSearchTerm(query)
       if (query !== item.query) onQueryCommitted?.(query)
     }, DEBOUNCE_MS)
     return () => clearTimeout(id)
-  }, [query])
+  }, [query, item.loadingMeta])
 
   // The track's own query firms up after mount: import seeds it from the file NAME and
   // the tag read then rebuilds it as "artist title" — on a slow volume that read lands
-  // seconds after the editor opened, when the box has already committed the stale
-  // file-name guess and is showing its homonym noise. When the stored query changes
-  // under the panel and the user hasn't taken over the box, re-seed exactly as a
-  // remount would. With a stored-id release on screen the box text still follows, but
-  // no text search fires (the skip flag swallows the debounce run) — searching then
-  // would bury the exact release the id seed just opened.
+  // seconds after the editor opened. When the stored query changes under the panel and
+  // the user hasn't taken over the box, re-seed exactly as a remount would. With a
+  // stored-id release on screen the box text still follows, but no text search fires
+  // (the debounce above holds while the id drives the panel) — searching then would
+  // bury the exact release the id seed just opened.
   const seenItemQuery = useRef(item.query)
   useEffect(() => {
     const changed = item.query !== seenItemQuery.current
     seenItemQuery.current = item.query
     if (!changed || userDroveSearch.current) return
-    if (storedId !== '') skipInitialDebounce.current = true
     setQuery(item.query)
-  }, [item.query, storedId])
+  }, [item.query])
 
   const searchQuery = useQuery({
     // The ignore words belong in the key even though the stripping happens in the main

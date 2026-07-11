@@ -33,7 +33,12 @@ function setApi(over: Record<string, unknown> = {}): void {
 }
 
 function item(
-  over: { query?: string; title?: string; discogsReleaseId?: string } = {},
+  over: {
+    query?: string
+    title?: string
+    discogsReleaseId?: string
+    loadingMeta?: boolean
+  } = {},
 ): TrackItem {
   const meta = { title: over.title ?? '', discogsReleaseId: over.discogsReleaseId } as TrackMetadata
   return {
@@ -44,6 +49,7 @@ function item(
     query: over.query ?? '',
     meta,
     status: 'idle',
+    loadingMeta: over.loadingMeta,
   }
 }
 
@@ -438,6 +444,72 @@ describe('useDiscogsBrowser', () => {
     await act(() => new Promise((r) => setTimeout(r, 50)))
     expect(result.current.results).toHaveLength(2)
     expect(result.current.release?.id).toBe(1)
+  })
+
+  // While the tag read is in flight the box holds the file-name guess the read is about
+  // to replace; committing it would fire the very homonym search the re-seed then has to
+  // redo — a noise flash plus a wasted provider call. Hold the mount search until the
+  // read lands, then search once with the corrected query.
+  it('holds the mount search until the tag read lands, then searches the corrected query once', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const { rerender } = renderHook(
+      ({ query, loadingMeta }: { query: string; loadingMeta: boolean }) =>
+        useDiscogsBrowser(item({ query, loadingMeta }), tr),
+      { wrapper: wrapper(), initialProps: { query: "I'm Ready", loadingMeta: true } },
+    )
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(search).not.toHaveBeenCalled()
+
+    rerender({ query: "DJ Miguel Serna, Alex Cervera I'm Ready", loadingMeta: false })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(search.mock.calls.map((c) => c[0])).toEqual(["DJ Miguel Serna, Alex Cervera I'm Ready"])
+  })
+
+  // A file with no usable tags keeps its file-name query — the read landing must still
+  // release the held search, or the panel would sit idle forever.
+  it('searches the file-name query when the tag read lands without changing it', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const { rerender } = renderHook(
+      ({ loadingMeta }: { loadingMeta: boolean }) =>
+        useDiscogsBrowser(item({ query: "I'm Ready", loadingMeta }), tr),
+      { wrapper: wrapper(), initialProps: { loadingMeta: true } },
+    )
+    rerender({ loadingMeta: false })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(search.mock.calls.map((c) => c[0])).toEqual(["I'm Ready"])
+  })
+
+  // The box belongs to the user the moment they type: a term typed while the read is
+  // still in flight runs at once, not after the file finishes loading.
+  it('lets a user-typed search run while the tag read is still in flight', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: "I'm Ready", loadingMeta: true }), tr),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.setQuery('typed term'))
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(search.mock.calls.map((c) => c[0])).toEqual(['typed term'])
+  })
+
+  // A restored track carries its stored id through the read: the id view must survive
+  // the read landing, not get buried under the text search the landing releases.
+  it('keeps the stored-id release when the tag read lands on a restored track', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ loadingMeta }: { loadingMeta: boolean }) =>
+        useDiscogsBrowser(item({ query: "I'm Ready", discogsReleaseId: '1', loadingMeta }), tr),
+      { wrapper: wrapper(), initialProps: { loadingMeta: true } },
+    )
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    rerender({ loadingMeta: false })
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.release?.id).toBe(1)
+    expect(search).not.toHaveBeenCalled()
   })
 
   // The track's query firms up after mount: import seeds it from the file NAME ("I'm
