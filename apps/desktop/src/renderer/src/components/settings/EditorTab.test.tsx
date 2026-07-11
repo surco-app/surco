@@ -104,6 +104,28 @@ describe('EditorTab sections', () => {
     )
   })
 
+  // Same gesture as Settings → Fields: the grip arms a drag and dropping on another
+  // row lands the section there — one homogeneous reorder pattern across the app.
+  it('reorders by dragging a row onto another', () => {
+    const patch = renderTab()
+    const dt = { setData: vi.fn(), effectAllowed: '' }
+    fireEvent.mouseDown(screen.getByTestId('settings-section-grip-output'))
+    fireEvent.dragStart(screen.getByTestId('settings-section-row-output'), { dataTransfer: dt })
+    fireEvent.dragOver(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
+    expect(patch).toHaveBeenCalledWith(
+      'editorSections',
+      ['form', 'properties', 'quality', 'normalize', 'output'].map((id) =>
+        DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
+      ),
+    )
+  })
+
+  it('offers no grip on the pinned form row', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-section-grip-form')).not.toBeInTheDocument()
+  })
+
   // The metadata form is the editor's fixed header: it can't move, and the first
   // movable section can't climb above it — so their arrows must not exist/act.
   it('offers no arrows on the form row and no up arrow past it', () => {

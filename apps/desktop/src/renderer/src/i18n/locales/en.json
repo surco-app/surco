@@ -654,8 +654,7 @@
       "quality": "Audio quality",
       "output": "File name",
       "normalize": "Loudness normalization",
-      "moveUp": "Move up",
-      "moveDown": "Move down",
+      "open": "Open",
       "pinned": "Fixed"
     },
     "keyNotations": {
