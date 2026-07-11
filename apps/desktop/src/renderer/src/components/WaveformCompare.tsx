@@ -150,7 +150,13 @@ function Strip({
     }
   })()
   return (
-    <div ref={scrollRef} className={`rounded-lg ${zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}>
+    // overflow-y stays hidden in both states: anything poking past the strip's height
+    // (the hover chip at an edge) must be clipped, never grow a vertical scrollbar
+    // that jiggles the wave under the cursor.
+    <div
+      ref={scrollRef}
+      className={`overflow-y-hidden rounded-lg ${zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}
+    >
       <div
         data-testid="waveform-strip"
         className="relative"
@@ -181,7 +187,10 @@ function Strip({
                 when zoomed, and floating over the legends read as part of them. */}
             <span
               data-testid="waveform-hover"
-              className={`pointer-events-none absolute top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
+              // whitespace-nowrap keeps the chip one line at the strip's edges: an
+              // absolute element squeezed against its container's right edge wraps,
+              // grows taller than the strip, and used to force a vertical scrollbar.
+              className={`pointer-events-none absolute top-1 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
                 readout.over ? 'text-danger' : 'text-fg-muted'
               }`}
               style={{
