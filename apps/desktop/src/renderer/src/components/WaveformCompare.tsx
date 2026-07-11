@@ -14,7 +14,7 @@ import { Tooltip } from './Tooltip'
 // panel width); the overlaid canvas spans the panel, so it gets the full raster.
 const CANVAS_W = 600
 const OVERLAY_W = 1200
-const CANVAS_H = 64
+const CANVAS_H = 96
 
 const SKELETON_PEAKS = skeletonPeaks(40)
 
@@ -176,7 +176,7 @@ function Strip({
           ref={canvasRef}
           width={raster * zoom}
           height={CANVAS_H}
-          className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+          className="block h-16 w-full rounded-lg bg-[var(--color-field)]"
         />
         {loading && <Skeleton />}
         {readout && hover && (
@@ -277,7 +277,7 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
           ref={canvasRef}
           width={OVERLAY_W}
           height={CANVAS_H}
-          className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
+          className="block h-16 w-full rounded-lg bg-[var(--color-field)]"
         />
         {(before.loading || after.loading) && <Skeleton />}
       </div>
