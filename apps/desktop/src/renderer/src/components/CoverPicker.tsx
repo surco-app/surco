@@ -100,13 +100,16 @@ export function CoverPicker({
   const [coverDragging, setCoverDragging] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   // The artwork the file arrived with: its embedded cover, not whatever coverUrl
-  // happens to hold when the editor mounts (a release match may have already filled
-  // it). The picker lists it first so the user can step to the release's images and
-  // back; a file with no embedded art contributes no slot, so only the release's
-  // images appear.
-  const [originalCover] = useState<{ url?: string; path?: string }>(() => ({
-    url: item.embeddedCover,
-  }))
+  // happens to hold (a release match may have already filled it). The picker lists it
+  // first so the user can step to the release's images and back; a file with no
+  // embedded art contributes no slot, so only the release's images appear. Derived,
+  // not captured at mount: the metadata read fills embeddedCover asynchronously, and a
+  // picker opened before it lands would otherwise never grow the original's slot.
+  // Matches only ever touch coverUrl, so embeddedCover always is the file's own art.
+  const originalCover = useMemo<{ url?: string; path?: string }>(
+    () => ({ url: item.embeddedCover }),
+    [item.embeddedCover],
+  )
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 

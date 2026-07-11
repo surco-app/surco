@@ -313,6 +313,36 @@ describe('CoverPicker drag and counter', () => {
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
   })
 
+  // The metadata read fills embeddedCover asynchronously; clicking a row right after
+  // import mounts the picker before it lands. The original's slot must still appear once
+  // the read delivers it — captured only at mount, a one-image release left a single
+  // choice and no arrows, so the user couldn't step between their art and the release's.
+  it('adds the original slot when the embedded cover arrives after mount', () => {
+    const oneImageRelease = {
+      id: 3,
+      title: 'Album',
+      images: [{ uri: 'http://a/1.jpg' }],
+    } as unknown as React.ComponentProps<typeof CoverPicker>['release']
+    const props = {
+      isMulti: false,
+      selectedTracks: undefined,
+      release: oneImageRelease,
+      coverDims: null,
+      setCoverDims: vi.fn(),
+      onChange: vi.fn(),
+      onApplyCoverAll: vi.fn(),
+    }
+    const { rerender } = render(<CoverPicker item={item()} {...props} />)
+    expect(screen.queryByTestId('cover-image-picker')).not.toBeInTheDocument()
+    rerender(
+      <CoverPicker
+        item={item({ coverUrl: 'blob:original', embeddedCover: 'blob:original' })}
+        {...props}
+      />,
+    )
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/2')
+  })
+
   // The workflow the user relies on after applying a release: it keeps the file's own
   // cover rather than forcing the release art over it, and the arrows step from that
   // cover into the release's images — forward and back — so the release art is always one
