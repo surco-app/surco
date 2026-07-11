@@ -11,12 +11,14 @@ export interface EditorSectionPref {
   open: boolean
 }
 
+// The file name goes last: it names the output, so it reads best right above the
+// Convert button, with the audio sections (quality, normalization) grouped above it.
 export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
   { id: 'properties', open: false },
   { id: 'quality', open: true },
-  { id: 'output', open: true },
   { id: 'normalize', open: true },
+  { id: 'output', open: true },
 ]
 
 // Repairs a stored value into a complete, valid list: unknown/duplicate entries are

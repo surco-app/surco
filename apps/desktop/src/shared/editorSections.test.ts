@@ -15,7 +15,13 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
     ]
     const ids = normalizeEditorSections(stored).map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'output', 'normalize'])
+    expect(ids).toEqual(['form', 'quality', 'properties', 'normalize', 'output'])
+  })
+
+  // The file name is the output's name, so it reads best right above the Convert
+  // button — audio sections (quality, normalization) group together above it.
+  it('ships the file name as the last section by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.at(-1)?.id).toBe('output')
   })
 
   it('keeps the stored order and open flags for known sections', () => {
@@ -48,6 +54,6 @@ describe('normalizeEditorSections', () => {
       { id: 'quality', open: false },
     ] as unknown as Parameters<typeof normalizeEditorSections>[0]
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'output', 'normalize'])
+    expect(ids).toEqual(['form', 'quality', 'properties', 'normalize', 'output'])
   })
 })

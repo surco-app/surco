@@ -66,8 +66,8 @@ describe('EditorTab sections', () => {
       'settings-section-row-form',
       'settings-section-row-properties',
       'settings-section-row-quality',
-      'settings-section-row-output',
       'settings-section-row-normalize',
+      'settings-section-row-output',
     ])
   })
 
@@ -84,10 +84,10 @@ describe('EditorTab sections', () => {
 
   it('moves a section down one place', () => {
     const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-section-down-output'))
+    fireEvent.click(screen.getByTestId('settings-section-down-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'normalize', 'output'].map((id) =>
+      ['form', 'properties', 'normalize', 'quality', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -98,7 +98,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-up-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'output', 'normalize'].map((id) =>
+      ['form', 'quality', 'properties', 'normalize', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -115,7 +115,7 @@ describe('EditorTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'normalize', 'output'].map((id) =>
+      ['form', 'properties', 'quality', 'output', 'normalize'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -137,6 +137,6 @@ describe('EditorTab sections', () => {
 
   it('disables the last row’s down arrow', () => {
     renderTab()
-    expect(screen.getByTestId('settings-section-down-normalize')).toBeDisabled()
+    expect(screen.getByTestId('settings-section-down-output')).toBeDisabled()
   })
 })
