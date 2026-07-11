@@ -96,6 +96,52 @@ describe('loudnormFilter', () => {
   })
 })
 
+// ffmpeg hard-rejects loudnorm targets outside its documented ranges (I ∈ [-70, -5],
+// TP ∈ [-9, 0]) with "Value ... out of range", killing the whole conversion. The
+// settings fields are free-form numbers — a user who typed the ceiling as +2.6
+// (thinking headroom) crashed every normalization — so the targets must be clamped
+// where the filter strings are built.
+describe('loudnorm target clamping', () => {
+  const outOfRange: NormalizeConfig = {
+    mode: 'loudness',
+    targetLufs: -10.5,
+    truePeakDb: 2.6,
+    peakDb: -1,
+  }
+  const m = { inputI: -14.58, inputTp: -0.16, inputLra: 6.6, inputThresh: -24.79, targetOffset: -0.07 }
+
+  it('clamps a positive true-peak ceiling to 0 in the measurement pass', () => {
+    const filter = loudnormArgs('in.wav', outOfRange)[5]
+    expect(filter).toContain('TP=0')
+    expect(filter).toContain('I=-10.5')
+  })
+
+  it('clamps a positive true-peak ceiling to 0 in the second pass', () => {
+    expect(loudnormFilter(outOfRange, m)).toContain('TP=0')
+  })
+
+  it('clamps the integrated target into loudnorm range', () => {
+    const hot: NormalizeConfig = { mode: 'loudness', targetLufs: -3, truePeakDb: -12, peakDb: -1 }
+    const filter = loudnormArgs('in.wav', hot)[5]
+    expect(filter).toContain('I=-5')
+    expect(filter).toContain('TP=-9')
+  })
+
+  // alimiter's limit tops out at 1.0 (full scale); an unclamped +2.6 dBTP would feed
+  // it 1.35 and fail the same way.
+  it('caps the limiter at full scale when the ceiling was typed positive', () => {
+    expect(limitedLoudnormFilter(outOfRange, m)).toContain('alimiter=limit=1.000000')
+  })
+
+  // The reachability check must judge against the ceiling that will actually be
+  // enforced, or it would pick linear mode for a ceiling the filter won't honor.
+  it('judges reachability against the clamped ceiling', () => {
+    const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -13, truePeakDb: 2.6, peakDb: -1 }
+    // needs +1.58 dB; peak -0.16 + 1.58 = +1.42 — under the typed 2.6, over the real 0.
+    expect(reachesTargetLinearly(cfg, m)).toBe(false)
+  })
+})
+
 describe('reachesTargetLinearly', () => {
   // A constant gain hits the target only when the boost it needs keeps true peak under
   // the ceiling. A dynamic source with headroom to spare can be lifted linearly.

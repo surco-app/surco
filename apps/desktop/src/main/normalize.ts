@@ -5,6 +5,19 @@ import type { NormalizeConfig } from '../shared/types'
 // true-peak ceiling, which is plenty of control without inviting a bad LRA.
 const LOUDNORM_LRA = 11
 
+// ffmpeg hard-rejects loudnorm targets outside its documented ranges — I ∈ [-70, -5],
+// TP ∈ [-9, 0] — with "Value ... out of range", which kills the whole conversion.
+// The settings fields are free-form numbers (a user typed the ceiling as +2.6
+// thinking headroom and every normalization failed), so the targets are clamped
+// here, where the filters are built — which also sanitizes values already saved
+// in settings.json.
+function clampTargets(cfg: NormalizeConfig): { targetLufs: number; truePeakDb: number } {
+  return {
+    targetLufs: Math.min(-5, Math.max(-70, cfg.targetLufs)),
+    truePeakDb: Math.min(0, Math.max(-9, cfg.truePeakDb)),
+  }
+}
+
 export interface LoudnormMeasured {
   inputI: number
   inputTp: number
@@ -24,6 +37,7 @@ function measured(filter: string, prefilter?: string): string {
 // First pass: measure the source so the second pass can normalize accurately
 // (linear) instead of the default dynamic mode that pumps frame-by-frame.
 export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: string): string[] {
+  const { targetLufs, truePeakDb } = clampTargets(cfg)
   return [
     '-hide_banner',
     '-nostats',
@@ -31,7 +45,7 @@ export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: st
     input,
     '-af',
     measured(
-      `loudnorm=I=${cfg.targetLufs}:TP=${cfg.truePeakDb}:LRA=${LOUDNORM_LRA}:print_format=json`,
+      `loudnorm=I=${targetLufs}:TP=${truePeakDb}:LRA=${LOUDNORM_LRA}:print_format=json`,
       prefilter,
     ),
     '-f',
@@ -80,9 +94,10 @@ export function loudnormFilter(
   // constant gain can't change range), it is purely the linear/dynamic gate. Ceiled
   // for a margin against float equality; 50 is the parameter's documented maximum.
   const lra = Math.min(50, Math.max(LOUDNORM_LRA, Math.ceil(m.inputLra)))
+  const { targetLufs, truePeakDb } = clampTargets(cfg)
   const filter = [
-    `loudnorm=I=${cfg.targetLufs}`,
-    `TP=${cfg.truePeakDb}`,
+    `loudnorm=I=${targetLufs}`,
+    `TP=${truePeakDb}`,
     `LRA=${lra}`,
     `measured_I=${m.inputI}`,
     `measured_TP=${m.inputTp}`,
@@ -101,7 +116,8 @@ export function loudnormFilter(
 // the loud club target on most material — loudnorm would clamp the gain to protect the
 // ceiling and the track would come out several dB short, so we limit instead.
 export function reachesTargetLinearly(cfg: NormalizeConfig, m: LoudnormMeasured): boolean {
-  return m.inputTp + (cfg.targetLufs - m.inputI) <= cfg.truePeakDb
+  const { targetLufs, truePeakDb } = clampTargets(cfg)
+  return m.inputTp + (targetLufs - m.inputI) <= truePeakDb
 }
 
 // The unreachable case: apply the full gain that lands on the target, then hold the
@@ -116,8 +132,9 @@ export function limitedLoudnormFilter(
   m: LoudnormMeasured,
   sampleRate?: number,
 ): string {
-  const gain = `volume=${(cfg.targetLufs - m.inputI).toFixed(2)}dB`
-  const limit = 10 ** (cfg.truePeakDb / 20)
+  const { targetLufs, truePeakDb } = clampTargets(cfg)
+  const gain = `volume=${(targetLufs - m.inputI).toFixed(2)}dB`
+  const limit = 10 ** (truePeakDb / 20)
   const limiter = `alimiter=limit=${limit.toFixed(6)}:level=disabled`
   return sampleRate && sampleRate > 0
     ? `${gain},aresample=${sampleRate * 4},${limiter},aresample=${sampleRate}`
