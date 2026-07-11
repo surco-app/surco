@@ -444,7 +444,7 @@
   },
   "normalize": {
     "title": "Normalización de loudness",
-    "hint": "Desactivado por defecto. Iguala cada pista a un loudness o pico objetivo. Recodifica el audio, así que pierde los cue/beatgrid de Traktor.",
+    "hint": "Desactivado por defecto. Iguala cada pista a un loudness o pico objetivo.",
     "editorHint": "Iguala cada pista a una sonoridad o pico objetivo.",
     "mode": {
       "none": "Ninguna",

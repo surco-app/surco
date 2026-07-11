@@ -444,7 +444,7 @@
   },
   "normalize": {
     "title": "Normalisation du loudness",
-    "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible. Ré-encode l'audio, donc perd les points cue et le beatgrid de Traktor.",
+    "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
     "editorHint": "Aligne chaque piste sur une sonie ou une crête cible.",
     "mode": {
       "none": "Aucune",

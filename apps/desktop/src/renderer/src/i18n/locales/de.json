@@ -444,7 +444,7 @@
   },
   "normalize": {
     "title": "Loudness-Normalisierung",
-    "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Loudness oder einen Ziel-Peak an. Das Audio wird neu codiert, daher gehen Traktor-Cues und -Beatgrid verloren.",
+    "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Loudness oder einen Ziel-Peak an.",
     "editorHint": "Gleicht jeden Track an eine Ziel-Lautheit oder einen Zielpegel an.",
     "mode": {
       "none": "Keine",
