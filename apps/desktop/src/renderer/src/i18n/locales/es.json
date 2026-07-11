@@ -105,6 +105,7 @@
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
     "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
+    "declicked": "Reparados clicks en {{count}} muestras de «{{name}}».",
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir.",
     "copiedMeta": "Metadatos copiados",
     "pastedMeta": "Metadatos pegados",
@@ -444,6 +445,20 @@
     "compilation": "Recopilatorio",
     "rating": "Puntuación"
   },
+  "declick": {
+    "title": "Reparación de clicks de vinilo",
+    "hint": "Desactivado por defecto. Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
+    "editorHint": "Detecta los clicks y pops de la aguja y los repara durante la conversión.",
+    "mode": {
+      "off": "No",
+      "standard": "Estándar",
+      "strong": "Fuerte"
+    },
+    "modeHint": {
+      "standard": "Repara los clicks cortos de la aguja. Seguro para la mayoría del material.",
+      "strong": "Atrapa también pops largos y arañazos. Puede suavizar transitorios percusivos muy secos — revisa el resultado."
+    }
+  },
   "normalize": {
     "title": "Normalización de loudness",
     "hint": "Desactivado por defecto. Iguala cada pista a un loudness o pico objetivo.",
@@ -660,6 +675,7 @@
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "output": "Nombre del archivo",
+      "declick": "Reparación de clicks de vinilo",
       "normalize": "Normalización de loudness",
       "open": "Abierta",
       "pinned": "Fija"

@@ -42,6 +42,7 @@ const synced: SyncedDraft = {
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  declick: 'off',
   shortcutOverrides: {},
   discogsFormats: [],
   discogsMaxResults: 10,
@@ -66,6 +67,7 @@ describe('EditorTab sections', () => {
       'settings-section-row-form',
       'settings-section-row-properties',
       'settings-section-row-quality',
+      'settings-section-row-declick',
       'settings-section-row-normalize',
       'settings-section-row-output',
     ])
@@ -87,7 +89,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-down-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'normalize', 'quality', 'output'].map((id) =>
+      ['form', 'properties', 'declick', 'quality', 'normalize', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -98,7 +100,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-up-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'normalize', 'output'].map((id) =>
+      ['form', 'quality', 'properties', 'declick', 'normalize', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -115,7 +117,7 @@ describe('EditorTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'output', 'normalize'].map((id) =>
+      ['form', 'properties', 'quality', 'declick', 'output', 'normalize'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )

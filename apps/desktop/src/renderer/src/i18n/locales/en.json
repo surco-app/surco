@@ -105,6 +105,7 @@
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
+    "declicked": "Repaired clicks in {{count}} samples of “{{name}}”.",
     "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured.",
     "copiedMeta": "Metadata copied",
     "pastedMeta": "Metadata pasted",
@@ -444,6 +445,20 @@
     "compilation": "Compilation",
     "rating": "Rating"
   },
+  "declick": {
+    "title": "Vinyl click repair",
+    "hint": "Off by default. Detects stylus clicks and pops and interpolates them away during conversion.",
+    "editorHint": "Detect stylus clicks and pops and repair them during conversion.",
+    "mode": {
+      "off": "Off",
+      "standard": "Standard",
+      "strong": "Strong"
+    },
+    "modeHint": {
+      "standard": "Repairs the short clicks a stylus leaves. Safe for most material.",
+      "strong": "Also catches long pops and scratches. May soften sharp percussive transients — check the result."
+    }
+  },
   "normalize": {
     "title": "Loudness normalization",
     "hint": "Off by default. Match every track to a target loudness or peak.",
@@ -660,6 +675,7 @@
       "properties": "Properties",
       "quality": "Audio quality",
       "output": "File name",
+      "declick": "Vinyl click repair",
       "normalize": "Loudness normalization",
       "open": "Open",
       "pinned": "Fixed"

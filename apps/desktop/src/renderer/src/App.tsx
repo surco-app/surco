@@ -32,6 +32,7 @@ import { autoMatchAvailable } from '../../shared/autoMatch'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
@@ -404,6 +405,8 @@ export default function App(): React.JSX.Element {
   const editorDestinationRef = useRef<Destination | null>(null)
   // Per-track normalization override picked in the editor, mirroring editorFormatRef.
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
+  // Per-track click-repair override picked in the editor, mirroring editorNormalizeRef.
+  const editorDeclickRef = useRef<DeclickMode | null>(null)
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
   // would otherwise vanish into the devtools console — a failure indistinguishable
@@ -833,6 +836,9 @@ export default function App(): React.JSX.Element {
     updateTrack,
     onConversion: maybeShowDonateNudge,
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
+    // Only when the repair actually touched samples: a clean track reporting "0
+    // clicks" on every convert would train the user to ignore the notice.
+    onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast.
     onProcessError: (message) =>
@@ -945,6 +951,7 @@ export default function App(): React.JSX.Element {
     editorFormatRef.current = null
     editorDestinationRef.current = null
     editorNormalizeRef.current = null
+    editorDeclickRef.current = null
   }
   // Filtering mints a new array per tracks change even when none of the SELECTED
   // tracks changed (a progress tick on another row). Keeping the previous identity in
@@ -1139,6 +1146,7 @@ export default function App(): React.JSX.Element {
       format,
       editorNormalizeRef.current ?? undefined,
       editorDestinationRef.current ?? undefined,
+      editorDeclickRef.current ?? undefined,
     ),
   )
   const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))
@@ -1203,8 +1211,17 @@ export default function App(): React.JSX.Element {
       normalize?: NormalizeConfig,
       forceReencode?: boolean,
       destination?: Destination,
+      declick?: DeclickMode,
     ) => {
-      const outcome = await processOne(id, format, normalize, undefined, forceReencode, destination)
+      const outcome = await processOne(
+        id,
+        format,
+        normalize,
+        undefined,
+        forceReencode,
+        destination,
+        declick,
+      )
       if (outcome === 'converted') void maybeShowDonateNudge()
       return outcome
     },
@@ -1217,6 +1234,7 @@ export default function App(): React.JSX.Element {
         editorNormalizeRef.current ?? undefined,
         undefined,
         editorDestinationRef.current ?? undefined,
+        editorDeclickRef.current ?? undefined,
       )
   })
   // The editor's explicit "Re-encode": a same-format source rendered again with the
@@ -1229,6 +1247,7 @@ export default function App(): React.JSX.Element {
         editorNormalizeRef.current ?? undefined,
         true,
         editorDestinationRef.current ?? undefined,
+        editorDeclickRef.current ?? undefined,
       )
   })
   const onFormatChange = useStableCallback((format: OutputFormat) => {
@@ -1239,6 +1258,9 @@ export default function App(): React.JSX.Element {
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     editorNormalizeRef.current = n
+  })
+  const onDeclickChange = useStableCallback((d: DeclickMode) => {
+    editorDeclickRef.current = d
   })
   const onAddSelectedToAppleMusic = useStableCallback(() => {
     if (selected) void addTrackToAppleMusic(selected.id)
@@ -1418,6 +1440,7 @@ export default function App(): React.JSX.Element {
       editorFormatRef,
       editorDestinationRef,
       editorNormalizeRef,
+      editorDeclickRef,
       trackSearchRef,
       pickFiles: () => void pickFiles(),
       selectAll,
@@ -1848,6 +1871,7 @@ export default function App(): React.JSX.Element {
                   onFormatChange={onFormatChange}
                   onDestinationChange={onDestinationChange}
                   onNormalizeChange={onNormalizeChange}
+                  onDeclickChange={onDeclickChange}
                   onAddToAppleMusic={onAddSelectedToAppleMusic}
                   onTrashOriginal={onTrashOriginal}
                   onRemoveOldMusicCopy={onRemoveOldMusicCopy}

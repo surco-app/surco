@@ -1,4 +1,5 @@
 import type {
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
@@ -120,6 +121,9 @@ export interface TrackItem {
   // target afterwards flips the track "stale" exactly like a metadata edit —
   // re-normalizing must not require touching a tag to earn the Update button.
   processedNormalize?: NormalizeConfig
+  // The click repair the last export actually applied, same staleness contract
+  // as processedNormalize.
+  processedDeclick?: DeclickMode
   // Snapshot (via trackSignature) of the state some file already carries: stamped
   // from the pure file read when the import lands and re-stamped when a conversion
   // writes the tags out. The live state diverging from it means the user has staged

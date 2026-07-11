@@ -2,7 +2,14 @@
 // state (Settings → Editor). Lives in shared so the renderer and the persisted
 // default settings (main/settings) reference the same list and can never drift.
 
-export const EDITOR_SECTION_IDS = ['form', 'properties', 'quality', 'output', 'normalize'] as const
+export const EDITOR_SECTION_IDS = [
+  'form',
+  'properties',
+  'quality',
+  'output',
+  'declick',
+  'normalize',
+] as const
 export type EditorSectionId = (typeof EDITOR_SECTION_IDS)[number]
 
 export interface EditorSectionPref {
@@ -17,6 +24,9 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
   { id: 'properties', open: false },
   { id: 'quality', open: true },
+  // Click repair sits above normalization, matching the order the conversion
+  // applies them in (repair first, then size the gain on the repaired audio).
+  { id: 'declick', open: true },
   { id: 'normalize', open: true },
   { id: 'output', open: true },
 ]

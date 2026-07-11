@@ -1,4 +1,4 @@
-import type { NormalizeConfig } from '../../../shared/types'
+import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 type SignatureFields = Pick<TrackItem, 'meta' | 'outputName' | 'coverUrl' | 'coverPath'>
@@ -48,5 +48,16 @@ export function isNormalizeStale(track: TrackItem, current: NormalizeConfig): bo
     track.status === 'done' &&
     track.processedNormalize !== undefined &&
     normalizeEffect(track.processedNormalize) !== normalizeEffect(current)
+  )
+}
+
+// The click-repair half of staleness, same contract as isNormalizeStale: switching
+// the repair mode after an export must bring the Update button back, and a track
+// converted before the applied mode was recorded is treated as fresh.
+export function isDeclickStale(track: TrackItem, current: DeclickMode): boolean {
+  return (
+    track.status === 'done' &&
+    track.processedDeclick !== undefined &&
+    track.processedDeclick !== current
   )
 }

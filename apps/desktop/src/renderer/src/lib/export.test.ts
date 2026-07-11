@@ -41,6 +41,17 @@ describe('exportedPatch', () => {
     expect(patch.processedNormalize).toEqual(normalize)
   })
 
+  // Same contract for click repair (isDeclickStale reads it back).
+  it('records the click repair the export applied', () => {
+    const patch = exportedPatch(
+      track(),
+      { outputPath: '/out/a.aiff', inPlace: false },
+      undefined,
+      'standard',
+    )
+    expect(patch.processedDeclick).toBe('standard')
+  })
+
   it('repoints the track at the new file after an in-place export', () => {
     // The original was rewritten and renamed, so the path we loaded from is gone.
     // A later edit/re-export/playback must read the new file, not the deleted one.

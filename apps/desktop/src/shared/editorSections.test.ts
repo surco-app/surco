@@ -15,7 +15,7 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
     ]
     const ids = normalizeEditorSections(stored).map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'normalize', 'output'])
+    expect(ids).toEqual(['form', 'quality', 'properties', 'declick', 'normalize', 'output'])
   })
 
   // The file name is the output's name, so it reads best right above the Convert
@@ -32,7 +32,8 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
       { id: 'properties' as const, open: true },
     ]
-    expect(normalizeEditorSections(stored)).toEqual(stored)
+    // The one section this store predates (declick) is appended with its default.
+    expect(normalizeEditorSections(stored)).toEqual([...stored, { id: 'declick', open: true }])
   })
 
   // The metadata form is the editor's header (toolbar, Apple Music badge) — the one
@@ -54,6 +55,6 @@ describe('normalizeEditorSections', () => {
       { id: 'quality', open: false },
     ] as unknown as Parameters<typeof normalizeEditorSections>[0]
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'normalize', 'output'])
+    expect(ids).toEqual(['form', 'quality', 'properties', 'declick', 'normalize', 'output'])
   })
 })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { isNormalizeStale, isStale, trackSignature } from './dirty'
+import { isDeclickStale, isNormalizeStale, isStale, trackSignature } from './dirty'
 
 // A freshly converted track: its snapshot equals its own current values, so it is
 // non-stale by construction. Tests then spread an edit on top to diverge from it.
@@ -116,5 +116,26 @@ describe('isNormalizeStale', () => {
 
   it('treats a track converted before the config was recorded as fresh', () => {
     expect(isNormalizeStale(converted(), cfg({ mode: 'loudness' }))).toBe(false)
+  })
+})
+
+// Same flow for click repair: switching the mode after an export must bring the
+// Update button back, without pretending to edit a tag first.
+describe('isDeclickStale', () => {
+  it('is false right after conversion, when the pick still matches the file', () => {
+    expect(isDeclickStale(converted({ processedDeclick: 'standard' }), 'standard')).toBe(false)
+  })
+
+  it('is true once the mode changes after conversion', () => {
+    expect(isDeclickStale(converted({ processedDeclick: 'off' }), 'standard')).toBe(true)
+  })
+
+  it('is never stale before a track is done', () => {
+    const t = converted({ status: 'idle', processedDeclick: 'off' })
+    expect(isDeclickStale(t, 'strong')).toBe(false)
+  })
+
+  it('treats a track converted before the mode was recorded as fresh', () => {
+    expect(isDeclickStale(converted(), 'strong')).toBe(false)
   })
 })

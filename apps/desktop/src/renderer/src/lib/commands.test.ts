@@ -51,6 +51,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     editorFormatRef: { current: null },
     editorDestinationRef: { current: null },
     editorNormalizeRef: { current: null },
+    editorDeclickRef: { current: null },
     trackSearchRef: { current: null },
     pickFiles: () => {},
     selectAll: () => {},
@@ -265,7 +266,7 @@ describe('buildCommands convert-and-advance', () => {
       'process-current',
     )
     cmd.run()
-    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined, undefined, undefined)
+    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined, undefined, undefined, undefined)
     expect(moveSelection).toHaveBeenCalledWith(1)
   })
 })
@@ -532,7 +533,7 @@ describe('buildCommands bulk scope', () => {
       }),
       'process-all',
     ).run()
-    expect(askConvertAll).toHaveBeenCalledWith(bulk, undefined, undefined, undefined)
+    expect(askConvertAll).toHaveBeenCalledWith(bulk, undefined, undefined, undefined, undefined)
   })
 
   it('auto-matches the bulk scope, not the visible rows', () => {

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../../shared/types'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { DeclickControls } from '../DeclickControls'
 import { NormalizeControls } from '../NormalizeControls'
 import { SegmentedControl } from '../SegmentedControl'
 
@@ -95,6 +96,14 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.flacCompressionHint')}</p>
         </>
       )}
+
+      {/* Above normalization, matching the order the conversion applies them in:
+          repair the clicks first, then size the loudness/peak gain on the result. */}
+      <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
+        {tr('declick.title')}
+      </p>
+      <p className="mb-3 text-xs text-fg-dim">{tr('declick.hint')}</p>
+      <DeclickControls value={synced.declick} onChange={(d) => patch('declick', d)} />
 
       <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
         {tr('normalize.title')}

@@ -105,6 +105,7 @@
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
     "normalizeSkipped": "Die Loudness von „{{name}}“ konnte nicht gemessen werden — ohne Normalisierung konvertiert.",
+    "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",
     "qualityErrors": "{{count}} Datei(en) konnten nicht analysiert werden — bleiben ungemessen.",
     "copiedMeta": "Metadaten kopiert",
     "pastedMeta": "Metadaten eingefügt",
@@ -444,6 +445,20 @@
     "compilation": "Compilation",
     "rating": "Bewertung"
   },
+  "declick": {
+    "title": "Vinyl-Klick-Reparatur",
+    "hint": "Standardmäßig aus. Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
+    "editorHint": "Nadel-Klicks und -Knackser erkennen und bei der Konvertierung reparieren.",
+    "mode": {
+      "off": "Aus",
+      "standard": "Standard",
+      "strong": "Stark"
+    },
+    "modeHint": {
+      "standard": "Repariert die kurzen Klicks einer Nadel. Sicher für das meiste Material.",
+      "strong": "Erfasst auch lange Knackser und Kratzer. Kann harte perkussive Transienten abschwächen — Ergebnis prüfen."
+    }
+  },
   "normalize": {
     "title": "Loudness-Normalisierung",
     "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Loudness oder einen Ziel-Peak an.",
@@ -660,6 +675,7 @@
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "output": "Dateiname",
+      "declick": "Vinyl-Klick-Reparatur",
       "normalize": "Loudness-Normalisierung",
       "open": "Offen",
       "pinned": "Fest"

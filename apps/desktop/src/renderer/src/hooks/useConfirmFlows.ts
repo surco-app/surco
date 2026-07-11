@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig, OutputFormat, Settings, TrackMetadata } from '../../../shared/types'
+import type {
+  DeclickMode,
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
@@ -22,6 +28,7 @@ interface Params {
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
+    declick?: DeclickMode,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
@@ -51,6 +58,7 @@ export interface ConfirmFlows {
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
+    declick?: DeclickMode,
   ) => void
 }
 
@@ -225,6 +233,7 @@ export function useConfirmFlows({
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
+    declick?: DeclickMode,
   ): void {
     // The editor's one-shot destination pick decides whether this run rewrites
     // sources; only without one does the live setting. An override away from
@@ -232,7 +241,7 @@ export function useConfirmFlows({
     // back onto it must still ask.
     const overwriting = destination ? destination === 'overwrite' : settings?.overwriteOriginal
     if (!overwriting) {
-      void processAll(targets, format, normalize, destination)
+      void processAll(targets, format, normalize, destination, declick)
       return
     }
     openConfirm({
@@ -243,7 +252,7 @@ export function useConfirmFlows({
       }),
       confirmLabel: tr('confirm.convertInPlaceConfirm'),
       destructive: true,
-      onConfirm: () => void processAll(targets, format, normalize, destination),
+      onConfirm: () => void processAll(targets, format, normalize, destination, declick),
     })
   }
 

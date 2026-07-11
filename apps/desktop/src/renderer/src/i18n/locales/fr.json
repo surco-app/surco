@@ -105,6 +105,7 @@
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",
     "normalizeSkipped": "Impossible de mesurer le loudness de « {{name}} » — converti sans normalisation.",
+    "declicked": "Clics réparés dans {{count}} échantillons de « {{name}} ».",
     "qualityErrors": "Impossible d'analyser {{count}} fichier(s) — laissés sans mesure.",
     "copiedMeta": "Métadonnées copiées",
     "pastedMeta": "Métadonnées collées",
@@ -444,6 +445,20 @@
     "compilation": "Compilation",
     "rating": "Note"
   },
+  "declick": {
+    "title": "Réparation des clics de vinyle",
+    "hint": "Désactivé par défaut. Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
+    "editorHint": "Détecter les clics et craquements de la pointe et les réparer pendant la conversion.",
+    "mode": {
+      "off": "Non",
+      "standard": "Standard",
+      "strong": "Fort"
+    },
+    "modeHint": {
+      "standard": "Répare les clics courts laissés par la pointe. Sûr pour la plupart des morceaux.",
+      "strong": "Capte aussi les craquements longs et les rayures. Peut adoucir les transitoires percussifs très secs — vérifiez le résultat."
+    }
+  },
   "normalize": {
     "title": "Normalisation du loudness",
     "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
@@ -660,6 +675,7 @@
       "properties": "Propriétés",
       "quality": "Qualité audio",
       "output": "Nom du fichier",
+      "declick": "Réparation des clics de vinyle",
       "normalize": "Normalisation du loudness",
       "open": "Ouverte",
       "pinned": "Fixe"

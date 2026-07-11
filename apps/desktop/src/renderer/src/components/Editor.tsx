@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   ReleaseTrack,
@@ -27,7 +28,7 @@ import {
 import { matchTargetOf } from '../lib/autoMatch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
-import { isNormalizeStale, isStale } from '../lib/dirty'
+import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
@@ -55,6 +56,7 @@ import { DiscogsPanel } from './DiscogsPanel'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { MetadataForm } from './MetadataForm'
+import { DeclickSection } from './DeclickSection'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
@@ -110,6 +112,8 @@ interface Props {
   // Reports the per-track normalization override so the keyboard convert shortcuts
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
+  // Reports the per-track click-repair override, mirroring onNormalizeChange.
+  onDeclickChange?: (declick: DeclickMode) => void
   onAddToAppleMusic: () => void
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.
@@ -162,6 +166,7 @@ export const Editor = memo(function Editor({
   onFormatChange,
   onDestinationChange,
   onNormalizeChange,
+  onDeclickChange,
   onAddToAppleMusic,
   onTrashOriginal,
   onRemoveOldMusicCopy,
@@ -200,6 +205,7 @@ export const Editor = memo(function Editor({
     showLoudness,
     keyNotation,
     normalize,
+    declick,
     outputBitDepth,
     outputSampleRate,
     editorSections,
@@ -231,6 +237,7 @@ export const Editor = memo(function Editor({
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
+  const declickOpen = sectionOpen.declick
   const normalizeOpen = sectionOpen.normalize
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
@@ -268,6 +275,8 @@ export const Editor = memo(function Editor({
   // Per-track normalization, seeded from the Settings default. Editing it both
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
+  // Per-track click repair, same contract as normalizeCfg.
+  const [declickCfg, setDeclickCfg] = useState(declick)
   // Report the seeded picks up once on mount: App mirrors them in refs for the
   // keyboard convert shortcuts, and since this editor remounts per track, the mount
   // report IS the per-track reseed — one mechanism (the editor reporting) keeps the
@@ -277,6 +286,7 @@ export const Editor = memo(function Editor({
     onFormatChange?.(format)
     onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
+    onDeclickChange?.(declickCfg)
   }, [])
   // Natural pixel size of the shown artwork, read on load, so the user can tell
   // whether the Discogs cover is sharp enough or worth replacing. Null until loaded
@@ -578,7 +588,8 @@ export const Editor = memo(function Editor({
   // Dialing a different normalization is an edit like any other: the file on disk
   // no longer matches the editor, so the convert button must return as "Update" —
   // Djotas's flow of re-applying another loudness without faking a tag edit.
-  const stale = isStale(item) || isNormalizeStale(item, normalizeCfg)
+  const stale =
+    isStale(item) || isNormalizeStale(item, normalizeCfg) || isDeclickStale(item, declickCfg)
   // A stale track is done but edited since, so it shows the convert button again
   // (as "Update") rather than the done/reveal state.
   const done = item.status === 'done' && !stale
@@ -983,6 +994,19 @@ export const Editor = memo(function Editor({
                         onOpenRename={onOpenRename}
                       />
                     )
+                  )
+                case 'declick':
+                  return (
+                    <DeclickSection
+                      key={id}
+                      value={declickCfg}
+                      open={declickOpen}
+                      onToggle={() => setSectionOpen('declick', !declickOpen)}
+                      onChange={(d) => {
+                        setDeclickCfg(d)
+                        onDeclickChange?.(d)
+                      }}
+                    />
                   )
                 case 'normalize':
                   return (

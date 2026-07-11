@@ -37,6 +37,7 @@ export interface SyncedDraft {
   autoAnalyze: boolean
   keyNotation: Settings['keyNotation']
   normalize: Settings['normalize']
+  declick: Settings['declick']
   editorSections: Settings['editorSections']
   shortcutOverrides: Settings['shortcutOverrides']
   discogsFormats: string[]
@@ -92,6 +93,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     autoAnalyze: s.autoAnalyze,
     keyNotation: s.keyNotation,
     normalize: s.normalize,
+    declick: s.declick,
     // Normalized here so the Sections list always shows the complete, valid set even
     // when the stored file predates a section (or was hand-edited).
     editorSections: normalizeEditorSections(s.editorSections),

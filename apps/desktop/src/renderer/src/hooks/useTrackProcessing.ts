@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -37,6 +37,9 @@ interface Params {
   // Surfaced when a track converted without the requested loudness normalization (its
   // measurement failed), so the skip doesn't pass silently. Receives the track's label.
   onNormalizeSkipped?: (name: string) => void
+  // Surfaced when the click repair interpolated samples, with the count — the user's
+  // confirmation that the pass did real work. Not fired on a clean track (0 repaired).
+  onDeclicked?: (name: string, count: number) => void
   // Fired once after a convert-all run that produced at least one conversion — the
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
@@ -57,12 +60,14 @@ export interface TrackProcessing {
     overwriteOverride?: boolean,
     forceReencode?: boolean,
     destinationOverride?: Destination,
+    declickOverride?: DeclickMode,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
     destinationOverride?: Destination,
+    declickOverride?: DeclickMode,
   ) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
   addAllToAppleMusic: (ids: string[]) => Promise<void>
@@ -81,6 +86,7 @@ export function useTrackProcessing({
   settings,
   updateTrack,
   onNormalizeSkipped,
+  onDeclicked,
   onConversion,
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
@@ -120,6 +126,7 @@ export function useTrackProcessing({
       overwriteOverride?: boolean,
       forceReencode?: boolean,
       destinationOverride?: Destination,
+      declickOverride?: DeclickMode,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -187,6 +194,7 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           format: formatOverride,
           normalize: normalizeOverride,
+          declick: declickOverride,
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
           keepOutputCopy: destination?.keepOutputCopy,
@@ -205,9 +213,20 @@ export function useTrackProcessing({
         // Converted, but the requested loudness normalization couldn't be measured, so the
         // file went out at its original level — tell the user rather than letting it pass.
         if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
+        // Repaired clicks are the feature's visible proof-of-work, so the count is
+        // surfaced; a clean track stays quiet (see onDeclicked's contract).
+        if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
-        updateTrack(id, exportedPatch(track, result, normalizeOverride ?? settings?.normalize))
+        updateTrack(
+          id,
+          exportedPatch(
+            track,
+            result,
+            normalizeOverride ?? settings?.normalize,
+            declickOverride ?? settings?.declick,
+          ),
+        )
         // Every conversion replaces the file at the output path, so probes cached for
         // it (the before/after comparison's waveform/loudness of a previous export)
         // describe bytes that no longer exist — without eviction a re-export keeps
@@ -319,6 +338,7 @@ export function useTrackProcessing({
       formatOverride?: OutputFormat,
       normalizeOverride?: NormalizeConfig,
       destinationOverride?: Destination,
+      declickOverride?: DeclickMode,
     ): Promise<void> => {
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
@@ -356,6 +376,7 @@ export function useTrackProcessing({
             pinnedOverwrite,
             undefined,
             destinationOverride,
+            declickOverride,
           )
           done += 1
           setBatchProgress({ done, total: ids.length })

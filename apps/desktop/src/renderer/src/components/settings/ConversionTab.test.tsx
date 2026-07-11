@@ -46,6 +46,7 @@ const synced: SyncedDraft = {
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  declick: 'off',
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   discogsFormats: [],
@@ -59,6 +60,14 @@ function renderTab(over: Partial<SyncedDraft> = {}) {
   render(<ConversionTab synced={{ ...synced, ...over }} patch={patch} />)
   return patch
 }
+
+describe('ConversionTab click repair', () => {
+  it('stages the repair mode through the draft patch, whatever the format', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('declick-mode-standard'))
+    expect(patch).toHaveBeenCalledWith('declick', 'standard')
+  })
+})
 
 describe('ConversionTab MP3 quality', () => {
   // The encoder choice only means something while MP3 is the pick; surfacing it under

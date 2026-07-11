@@ -1,4 +1,4 @@
-import type { NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -150,6 +150,7 @@ export interface CommandDeps {
   editorFormatRef: { readonly current: OutputFormat | null }
   editorDestinationRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
+  editorDeclickRef: { readonly current: DeclickMode | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
@@ -174,12 +175,14 @@ export interface CommandDeps {
     normalize?: NormalizeConfig,
     forceReencode?: boolean,
     destination?: Destination,
+    declick?: DeclickMode,
   ) => unknown
   askConvertAll: (
     targets: TrackItem[],
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
+    declick?: DeclickMode,
   ) => void
   cancelAnalysis: () => void
   analyzeAllQuality: () => void
@@ -251,6 +254,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     editorFormatRef,
     editorDestinationRef,
     editorNormalizeRef,
+    editorDeclickRef,
     trackSearchRef,
     pickFiles,
     selectAll,
@@ -500,6 +504,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
           editorNormalizeRef.current ?? undefined,
           undefined,
           editorDestinationRef.current ?? undefined,
+          editorDeclickRef.current ?? undefined,
         )
         // Convert-and-advance: the conversion runs in the background, so move straight to
         // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
@@ -525,6 +530,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
             editorFormatRef.current ?? undefined,
             editorNormalizeRef.current ?? undefined,
             editorDestinationRef.current ?? undefined,
+            editorDeclickRef.current ?? undefined,
           )
       },
     },
