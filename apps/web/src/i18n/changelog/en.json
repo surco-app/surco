@@ -19,6 +19,14 @@
       {
         "text": "When the release doesn't show up, search retries without the DJ prefix or with just the lead act before falling back to the bare title.",
         "in": "0.49.0"
+      },
+      {
+        "text": "New vinyl click repair: an opt-in stage that detects stylus clicks and pops and repairs them during conversion, with two strengths and a count of repaired clicks.",
+        "in": "0.49.1"
+      },
+      {
+        "text": "Normalization no longer fails when the loudness target or peak ceiling was typed out of range — they are clamped to the values ffmpeg accepts.",
+        "in": "0.49.1"
       }
     ]
   },

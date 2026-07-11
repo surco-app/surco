@@ -19,6 +19,14 @@
       {
         "text": "Si el disco no aparece, la búsqueda reintenta sin el prefijo del DJ o solo con el artista principal antes de recurrir al título a secas.",
         "in": "0.49.0"
+      },
+      {
+        "text": "Nueva reparación de clicks de vinilo: una etapa opcional que detecta los clicks y pops de la aguja y los repara durante la conversión, con dos intensidades y recuento de clicks corregidos.",
+        "in": "0.49.1"
+      },
+      {
+        "text": "La normalización ya no falla si el objetivo de volumen o el techo de picos se escribieron fuera de rango: se ajustan a los valores que ffmpeg acepta.",
+        "in": "0.49.1"
       }
     ]
   },
