@@ -1,6 +1,7 @@
 import type { SearchHints } from '../shared/types'
 import {
   cleanQuery,
+  dropDjPrefix,
   dropEchoedVersion,
   dropOriginalMarker,
   dropPresentsAlias,
@@ -47,6 +48,16 @@ export function buildSearchCandidates(
   add(stripParentheticals(trimmed))
   add(cleaned)
   add(stripParentheticals(cleaned))
+  // A tag's "DJ " prefix where the catalog files the act bare ("DJ Miguel Serna, Alex
+  // Cervera" vs Bandcamp's "Miguel Serna, Alex Cervera") makes every full form above
+  // return nothing — Bandcamp's autocomplete needs all terms to match. Retry without the
+  // prefix before the bare title, whose homonym noise would end the candidate loop on the
+  // wrong releases. An act genuinely carrying the prefix (DJ Tieum) is unaffected: its
+  // full query already resolves, so the loop never reaches this candidate.
+  if (hints.artist && hints.title) {
+    const bare = dropDjPrefix(hints.artist)
+    if (bare !== hints.artist) add(cleanQuery(`${bare} ${hints.title}`))
+  }
   // Bandcamp has no catalog index, so the code matches dozens of unrelated releases and —
   // since the search loop keeps the first candidate that returns *anything* — would mask the
   // real release; callers searching it pass includeCatalog: false. Discogs (default) keeps it.

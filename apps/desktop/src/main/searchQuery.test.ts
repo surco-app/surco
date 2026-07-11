@@ -215,6 +215,39 @@ describe('buildSearchCandidates', () => {
     ).toEqual(['Some Artist Some Title', 'Some Title', 'Some Title Some Artist'])
   })
 
+  // The reported case: a file tagged "DJ Miguel Serna, Alex Cervera" where Bandcamp files
+  // the act bare ("Miguel Serna, Alex Cervera"). Its autocomplete needs every term to
+  // match, so the "DJ" token alone returns nothing — and the loop then degrades to the
+  // bare title, whose homonym noise ends the search on the wrong releases. Retry without
+  // the prefix after the full forms but before the bare title.
+  it('retries without a leading "DJ" prefix before falling back to the bare title', () => {
+    expect(
+      buildSearchCandidates("DJ Miguel Serna, Alex Cervera I'm Ready", {
+        artist: 'DJ Miguel Serna, Alex Cervera',
+        title: "I'm Ready",
+      }),
+    ).toEqual([
+      "DJ Miguel Serna, Alex Cervera I'm Ready",
+      "Miguel Serna, Alex Cervera I'm Ready",
+      "I'm Ready",
+      "I'm Ready DJ Miguel Serna, Alex Cervera",
+    ])
+  })
+
+  // An act genuinely named "DJ" gets no variant: dropping the word would search a
+  // different artist. And "DJ" alone must never strip to an empty artist.
+  it('adds no DJ-free variant when there is nothing after the prefix or no prefix at all', () => {
+    expect(
+      buildSearchCandidates('DJ Track', { artist: 'DJ', title: 'Track' }),
+    ).toEqual(['DJ Track', 'Track', 'Track DJ'])
+    expect(
+      buildSearchCandidates('Chumi Dj Dancing Hearts', {
+        artist: 'Chumi Dj',
+        title: 'Dancing Hearts',
+      }),
+    ).toEqual(['Chumi Dj Dancing Hearts', 'Dancing Hearts', 'Dancing Hearts Chumi Dj'])
+  })
+
   // The reported case: a self-referential version label that only echoes the title plus a
   // generic version word ("Sunshine (Sunshine Version)") drags Discogs onto unrelated
   // compilations, while the bare "Sevilla Sunshine" finds the single. Lead bare; the file's
