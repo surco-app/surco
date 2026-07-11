@@ -322,6 +322,7 @@
     "waveformSource": "Original",
     "waveformClipped": "Peaks over {{db}} dB",
     "waveformClipping": "Clipping",
+    "waveformSplit": "Split channels",
     "waveformPreview": "Preview",
     "waveformZoomIn": "Zoom in",
     "waveformZoomOut": "Zoom out",

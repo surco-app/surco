@@ -205,7 +205,9 @@ export function registerAudioIpc(): void {
       // only real envelopes are pinned.
       // 'high': the waveform is the one decode a user is actively waiting on (they
       // just hit play), so it jumps ahead of the editor's background passes.
-      return await cachedAnalysis('waveform', inputPath, () =>
+      // v2: results grew the per-channel lanes (WaveformResult.channels); entries
+      // cached before that would pin waves with no split view forever.
+      return await cachedAnalysis('waveform-v2', inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
           analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
         ),

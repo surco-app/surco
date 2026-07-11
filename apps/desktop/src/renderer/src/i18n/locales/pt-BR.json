@@ -322,6 +322,7 @@
     "waveformSource": "Original",
     "waveformClipped": "Picos acima de {{db}} dB",
     "waveformClipping": "Clipping",
+    "waveformSplit": "Separar canais",
     "waveformPreview": "Prévia",
     "waveformZoomIn": "Aproximar",
     "waveformZoomOut": "Afastar",

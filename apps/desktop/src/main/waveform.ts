@@ -46,39 +46,75 @@ export const CLIP_SAMPLE = 32767 / 32768
 // bucket edge stays far below what a strip pixel can show.
 const CLIP_SCAN_BLOCK = 512
 
-// Streaming detector for true digital clipping, fed interleaved f32 chunks straight
-// off ffmpeg's stdout. Tracks the absolute sample index across pushes so a frame torn
-// between two chunks keeps its channel phase, and marks per-channel — one pinned
-// channel is clipping even when the other is clean.
-export function createClipScan(
+// One channel's bucket-resolution wave: its own envelope and its own clip flags,
+// so the split L/R view draws each lane from that channel's truth alone.
+export interface ChannelWave {
+  peaks: number[]
+  clipped: boolean[]
+}
+
+// Streaming per-channel scanner fed interleaved f32 chunks straight off ffmpeg's
+// stdout. Tracks the absolute sample index across pushes so a frame torn between two
+// chunks keeps its channel phase. From the one native-rate pass it accumulates, per
+// channel and per block, both the max-abs envelope (the split view's lanes) and the
+// true-clipping flags — one pinned channel is clipping even when the other is clean,
+// so the merged flags OR the channels together.
+export function createChannelScan(
   channels: number,
   buckets = WAVEFORM_BUCKETS,
-): { push: (chunk: Float32Array) => void; finish: () => boolean[] } {
-  const blocks: boolean[] = []
+): {
+  push: (chunk: Float32Array) => void
+  finish: () => { clipped: boolean[]; channels: ChannelWave[] }
+} {
+  const blockMax: number[][] = Array.from({ length: channels }, () => [])
+  const blockClip: boolean[][] = Array.from({ length: channels }, () => [])
   let samples = 0
   return {
     push(chunk: Float32Array): void {
       for (let i = 0; i < chunk.length; i++) {
-        const v = chunk[i]
-        if (v >= CLIP_SAMPLE || v <= -CLIP_SAMPLE) {
-          blocks[Math.floor(Math.floor((samples + i) / channels) / CLIP_SCAN_BLOCK)] = true
-        }
+        const sample = samples + i
+        const ch = sample % channels
+        const block = Math.floor(Math.floor(sample / channels) / CLIP_SCAN_BLOCK)
+        const v = Math.abs(chunk[i])
+        if (v > (blockMax[ch][block] ?? 0)) blockMax[ch][block] = v
+        if (v >= CLIP_SAMPLE) blockClip[ch][block] = true
       }
       samples += chunk.length
     },
-    finish(): boolean[] {
+    finish(): { clipped: boolean[]; channels: ChannelWave[] } {
       const frames = Math.floor(samples / channels)
-      const flags = new Array<boolean>(buckets).fill(false)
-      if (frames === 0) return flags
-      for (let b = 0; b < blocks.length; b++) {
-        if (!blocks[b]) continue
-        const startFrame = b * CLIP_SCAN_BLOCK
-        const endFrame = Math.min(frames - 1, startFrame + CLIP_SCAN_BLOCK - 1)
-        const from = Math.min(buckets - 1, Math.floor((startFrame * buckets) / frames))
-        const to = Math.min(buckets - 1, Math.floor((endFrame * buckets) / frames))
-        for (let k = from; k <= to; k++) flags[k] = true
+      const perChannel: ChannelWave[] = []
+      for (let ch = 0; ch < channels; ch++) {
+        const peaks = new Array<number>(buckets).fill(0)
+        const clipped = new Array<boolean>(buckets).fill(false)
+        if (frames > 0) {
+          for (let b = 0; b < buckets; b++) {
+            // The bucket's frame range, mapped to the blocks that overlap it — the
+            // same integer-edge derivation as computePeaks so no tail is dropped.
+            const startFrame = Math.floor((b * frames) / buckets)
+            const endFrame = Math.max(startFrame, Math.floor(((b + 1) * frames) / buckets) - 1)
+            const from = Math.floor(startFrame / CLIP_SCAN_BLOCK)
+            const to = Math.floor(endFrame / CLIP_SCAN_BLOCK)
+            let max = 0
+            let clip = false
+            for (let k = from; k <= to; k++) {
+              const m = blockMax[ch][k]
+              if (m !== undefined && m > max) max = m
+              if (blockClip[ch][k]) clip = true
+            }
+            // Same clamp as computePeaks: hot lossy decodes overshoot ±1.0 and the
+            // renderer scales bars by peak × lane height.
+            peaks[b] = Math.min(max, 1)
+            clipped[b] = clip
+          }
+        }
+        perChannel.push({ peaks, clipped })
       }
-      return flags
+      const clipped = new Array<boolean>(buckets).fill(false)
+      for (let b = 0; b < buckets; b++) {
+        clipped[b] = perChannel.some((ch) => ch.clipped[b])
+      }
+      return { clipped, channels: perChannel }
     },
   }
 }

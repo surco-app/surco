@@ -10,6 +10,16 @@ import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
 
+const stereoWave: WaveformResult = {
+  peaks: [0.1, 0.9, 0.4, 1],
+  durationSec: 60,
+  clipped: [false, false, false, true],
+  channels: [
+    { peaks: [0.1, 0.9, 0.4, 1], clipped: [false, false, false, true] },
+    { peaks: [0.1, 0.2, 0.3, 0.4], clipped: [false, false, false, false] },
+  ],
+}
+
 const CFG_NONE: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
@@ -128,6 +138,20 @@ describe('WaveformCompare', () => {
     expect(fade.value).toBe('0.5')
     fireEvent.change(fade, { target: { value: '0' } })
     expect(fade.value).toBe('0')
+  })
+
+  // The comparison strips split into L/R lanes too — but only side by side; the
+  // overlaid view already stacks two envelopes, and four lanes would be unreadable.
+  it('offers the split-channels toggle in the side view only', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(stereoWave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
+    await screen.findByTestId('waveform-side')
+    expect(await screen.findByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(screen.getByTestId('waveform-view-overlay'))
+    expect(screen.queryByTestId('waveform-split')).not.toBeInTheDocument()
   })
 })
 
@@ -453,6 +477,35 @@ describe('WaveformSolo', () => {
     expect(reset).toHaveTextContent('×4')
     fireEvent.click(reset)
     expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '100%' })
+  })
+
+  // Audacity-style stacked L/R lanes: the decoder ships per-channel envelopes and
+  // clip flags for stereo files, and the toggle flips the strip between the mono
+  // overview and the two lanes — a clip that lives in one channel only reads there.
+  it('offers the split-channels toggle for stereo waves and flips it', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(stereoWave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
+    const toggle = await screen.findByTestId('waveform-split')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(toggle)
+    expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('waveform-split'))
+    expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('hides the split toggle when the decoder shipped no channel lanes', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      // A mono file, or a failed scan: nothing honest to split into lanes.
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
+    await screen.findByTestId('waveform-strip')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-split')).not.toBeInTheDocument()
   })
 
   // The loudness preview needs the measurement; until it lands the strip stays the

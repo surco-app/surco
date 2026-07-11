@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CLIP_SAMPLE, computePeaks, createClipScan, WAVEFORM_BUCKETS } from './waveform'
+import { CLIP_SAMPLE, computePeaks, createChannelScan, WAVEFORM_BUCKETS } from './waveform'
 
 describe('computePeaks', () => {
   it('reduces long PCM to exactly the requested bucket count', () => {
@@ -45,16 +45,16 @@ describe('computePeaks', () => {
   })
 })
 
-describe('createClipScan', () => {
+describe('createChannelScan', () => {
   it('flags the bucket holding a full-scale sample and leaves the rest clear', () => {
-    const scan = createClipScan(1, 16)
+    const scan = createChannelScan(1, 16)
     const chunk = new Float32Array(10240).fill(0.5)
     chunk[5000] = 1
     scan.push(chunk)
-    const flags = scan.finish()
-    expect(flags).toHaveLength(16)
-    expect(flags[Math.floor((5000 * 16) / 10240)]).toBe(true)
-    expect(flags.filter(Boolean)).toHaveLength(1)
+    const { clipped } = scan.finish()
+    expect(clipped).toHaveLength(16)
+    expect(clipped[Math.floor((5000 * 16) / 10240)]).toBe(true)
+    expect(clipped.filter(Boolean)).toHaveLength(1)
   })
 
   it('marks both int16 rails but not merely hot samples', () => {
@@ -62,11 +62,11 @@ describe('createClipScan', () => {
     // A master riding at 0.998 for a whole section is loud, not clipped — that
     // distinction is the entire point of scanning raw samples.
     const at = (v: number): boolean => {
-      const scan = createClipScan(1, 4)
+      const scan = createChannelScan(1, 4)
       const chunk = new Float32Array(4096).fill(0.1)
       chunk[100] = v
       scan.push(chunk)
-      return scan.finish()[0]
+      return scan.finish().clipped[0]
     }
     expect(at(32767 / 32768)).toBe(true)
     expect(at(-1)).toBe(true)
@@ -75,41 +75,74 @@ describe('createClipScan', () => {
     expect(at(-0.998)).toBe(false)
   })
 
-  it('sees a clip that lives in only one stereo channel', () => {
+  it('sees a clip that lives in only one stereo channel, and says which', () => {
     // The 4 kHz waveform decode downmixes to mono, and (L+R)/2 averages a pinned
     // channel away — exactly how the old marks missed real clipping. The scan reads
-    // interleaved samples per channel, so a one-channel rail still flags.
-    const scan = createClipScan(2, 8)
+    // interleaved samples per channel, so a one-channel rail still flags, and the
+    // per-channel flags let the split view mark only the lane that clipped.
+    const scan = createChannelScan(2, 8)
     const chunk = new Float32Array(16384).fill(0.2)
     chunk[9001] = -1
     scan.push(chunk)
-    const frame = Math.floor(9001 / 2)
-    expect(scan.finish()[Math.floor((frame * 8) / 8192)]).toBe(true)
+    const { clipped, channels } = scan.finish()
+    const bucket = Math.floor((Math.floor(9001 / 2) * 8) / 8192)
+    expect(clipped[bucket]).toBe(true)
+    expect(channels[1].clipped[bucket]).toBe(true)
+    expect(channels[0].clipped.some(Boolean)).toBe(false)
   })
 
   it('keeps frame accounting across chunks split mid-frame', () => {
     // ffmpeg's stdout chunks at arbitrary byte offsets, so a stereo frame can be
     // torn across two pushes; the running sample index must keep channel phase.
-    const scan = createClipScan(2, 8)
+    const scan = createChannelScan(2, 8)
     const first = new Float32Array(4097).fill(0.2)
     const second = new Float32Array(4095).fill(0.2)
     second[0] = 1
     scan.push(first)
     scan.push(second)
     const frame = Math.floor(4097 / 2)
-    expect(scan.finish()[Math.floor((frame * 8) / 4096)]).toBe(true)
+    expect(scan.finish().clipped[Math.floor((frame * 8) / 4096)]).toBe(true)
+  })
+
+  it('builds each channel its own envelope for the split view', () => {
+    // Audacity-style L/R lanes need per-channel peaks; the mono strip's envelope
+    // averages the channels, so a one-sided track would draw two identical lanes.
+    const scan = createChannelScan(2, 4)
+    const chunk = new Float32Array(8192)
+    for (let i = 0; i < chunk.length; i += 2) {
+      chunk[i] = 0.8
+      chunk[i + 1] = -0.2
+    }
+    scan.push(chunk)
+    const { channels } = scan.finish()
+    expect(channels).toHaveLength(2)
+    expect(channels[0].peaks.every((p) => Math.abs(p - 0.8) < 1e-6)).toBe(true)
+    expect(channels[1].peaks.every((p) => Math.abs(p - 0.2) < 1e-6)).toBe(true)
+  })
+
+  it('clamps channel peaks that overshoot full scale', () => {
+    // Same guard as computePeaks: the renderer scales bars by peak × height, so a
+    // hot lossy decode past ±1.0 must not draw outside its lane.
+    const scan = createChannelScan(1, 2)
+    scan.push(new Float32Array(2048).fill(1.4))
+    const { channels } = scan.finish()
+    expect(Math.max(...channels[0].peaks)).toBe(1)
   })
 
   it('defaults to the waveform bucket count and stays clear on silence', () => {
-    const scan = createClipScan(2)
+    const scan = createChannelScan(2)
     scan.push(new Float32Array(8192))
-    const flags = scan.finish()
-    expect(flags).toHaveLength(WAVEFORM_BUCKETS)
-    expect(flags.some(Boolean)).toBe(false)
+    const { clipped, channels } = scan.finish()
+    expect(clipped).toHaveLength(WAVEFORM_BUCKETS)
+    expect(clipped.some(Boolean)).toBe(false)
+    expect(channels[0].peaks).toHaveLength(WAVEFORM_BUCKETS)
   })
 
   it('returns all-clear for an empty decode', () => {
-    expect(createClipScan(2, 8).finish()).toEqual(new Array(8).fill(false))
+    const { clipped, channels } = createChannelScan(2, 8).finish()
+    expect(clipped).toEqual(new Array(8).fill(false))
+    expect(channels[0].peaks).toEqual(new Array(8).fill(0))
+    expect(channels[1].clipped).toEqual(new Array(8).fill(false))
   })
 
   it('exports the Audacity full-scale line for the scan threshold', () => {

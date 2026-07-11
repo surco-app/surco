@@ -58,7 +58,7 @@ import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { computePeaks, createClipScan, WAVEFORM_SAMPLE_RATE } from './waveform'
+import { type ChannelWave, computePeaks, createChannelScan, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
@@ -1484,15 +1484,18 @@ function decodeWaveformPcm(input: string): Promise<Float32Array> {
   return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128 })
 }
 
-// True-clipping scan at the native rate and channel count. The 4 kHz waveform decode
-// can't see clipping: resampling smears the pinned flat tops and the mono downmix
-// averages a one-channel rail away — which is how near-ceiling masters used to paint
-// solid red while Audacity showed sparse marks. Streamed via spawn because a native
-// stereo decode of a long mix is gigabytes of f32, far past any exec buffer, while
-// the scan itself keeps only per-block flags.
-async function scanClippedBuckets(input: string): Promise<boolean[]> {
+// Per-channel scan at the native rate and channel count: true-clipping flags plus
+// each channel's own envelope for the split L/R view. The 4 kHz waveform decode can
+// see neither — resampling smears the pinned flat tops and the mono downmix averages
+// a one-channel rail away — which is how near-ceiling masters used to paint solid
+// red while Audacity showed sparse marks. Streamed via spawn because a native stereo
+// decode of a long mix is gigabytes of f32, far past any exec buffer, while the scan
+// itself keeps only per-block accumulators.
+async function scanChannels(
+  input: string,
+): Promise<{ clipped: boolean[]; channels: ChannelWave[] }> {
   const { channels } = await probeAudio(input)
-  const scan = createClipScan(Math.max(1, channels))
+  const scan = createChannelScan(Math.max(1, channels))
   return new Promise((resolve, reject) => {
     const child = spawn(
       ffmpegPath,
@@ -1522,27 +1525,32 @@ async function scanClippedBuckets(input: string): Promise<boolean[]> {
     child.on('error', reject)
     child.on('close', (code) => {
       if (code === 0) resolve(scan.finish())
-      else reject(new Error(`clip scan exited with code ${code}`))
+      else reject(new Error(`channel scan exited with code ${code}`))
     })
   })
 }
 
 export async function measureWaveform(input: string): Promise<WaveformResult | null> {
-  // Best-effort clip marks: a failed scan only loses the red, never the strip.
-  const [samples, clipped] = await Promise.all([
+  // Best-effort clip marks and channel lanes: a failed scan only loses those,
+  // never the strip.
+  const [samples, scan] = await Promise.all([
     decodeWaveformPcm(input),
-    scanClippedBuckets(input).catch(() => null),
+    scanChannels(input).catch(() => null),
   ])
   // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
   // stream): null tells the UI "no waveform", distinct from a decode error.
   if (samples.length === 0) return null
   const peaks = computePeaks(samples)
+  // The renderer indexes the scan's arrays by peak bucket, so a mismatched length
+  // (a sub-second clip decodes to fewer buckets than the fixed scan grid) drops
+  // them instead of smearing marks across the wrong bars.
+  const aligned = scan !== null && scan.clipped.length === peaks.length
   return {
     peaks,
     durationSec: samples.length / WAVEFORM_SAMPLE_RATE,
-    // The renderer indexes flags by peak bucket, so a mismatched length (a sub-second
-    // clip decodes to fewer buckets than the fixed scan grid) drops the marks instead
-    // of smearing them across the wrong bars.
-    clipped: clipped !== null && clipped.length === peaks.length ? clipped : undefined,
+    clipped: aligned ? scan.clipped : undefined,
+    // Lanes only make sense as an L/R pair: mono has nothing to split and surround
+    // would need a different layout than two stacked lanes.
+    channels: aligned && scan.channels.length === 2 ? scan.channels : undefined,
   }
 }

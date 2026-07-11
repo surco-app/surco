@@ -1,4 +1,4 @@
-import { Columns2, Layers2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Columns2, Layers2, Rows2, ZoomIn, ZoomOut } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -99,6 +99,7 @@ function Strip({
   clipDb,
   limitDb,
   marks = true,
+  split = false,
   background,
   raster = CANVAS_W,
   zoom = 1,
@@ -109,6 +110,9 @@ function Strip({
   limitDb?: number
   // The legend toggle: false keeps the limiter clamp but paints no red.
   marks?: boolean
+  // Audacity-style stacked L/R lanes, one per decoded channel — only honored when
+  // the wave actually carries channel lanes, so a mono file stays a single wave.
+  split?: boolean
   // A second envelope drawn behind in the muted grey — the original under a preview.
   background?: WaveformResult | null
   raster?: number
@@ -128,15 +132,31 @@ function Strip({
     if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
     // With no dB line dialed in, the red marks come from the decoder's true-clipping
     // flags — drawWaveform only consults them when clipDb/limitDb are absent.
-    drawWaveform(canvas, wave.peaks, {
-      color,
-      clipDb,
-      clipped: wave.clipped,
-      limitDb,
-      marks,
-      clear: !background,
-    })
-  }, [wave, color, clipDb, limitDb, marks, background, raster, zoom])
+    const lanes = split && wave.channels?.length === 2 ? wave.channels : null
+    if (lanes) {
+      // Each lane is that channel's own envelope and clip flags, so a clip living
+      // in one channel only reads there — same as Audacity's two rows.
+      lanes.forEach((lane, i) => {
+        drawWaveform(canvas, lane.peaks, {
+          color,
+          clipDb,
+          clipped: lane.clipped,
+          marks,
+          clear: i === 0 && !background,
+          lane: { index: i, count: lanes.length },
+        })
+      })
+    } else {
+      drawWaveform(canvas, wave.peaks, {
+        color,
+        clipDb,
+        clipped: wave.clipped,
+        limitDb,
+        marks,
+        clear: !background,
+      })
+    }
+  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom])
   // A zoom step re-anchors the scroller so the spot in the middle stays in the
   // middle — zooming in on a clip must not teleport the view away from it.
   const prevZoom = useRef(zoom)
@@ -351,6 +371,9 @@ export function WaveformSolo({
   // rekordbox-style zoom over the strip, ×1..×8 in doublings. Per-mount too: a new
   // track starts at the full-width overview.
   const [zoom, setZoom] = useState(1)
+  // The split L/R view. Per-mount like the rest: the mono overview is the default
+  // reading and a track flip starts back there.
+  const [split, setSplit] = useState(false)
   const preview = useMemo(
     () =>
       source.wave
@@ -408,6 +431,23 @@ export function WaveformSolo({
           />
         )}
         <span className="ml-auto flex shrink-0 items-center gap-0.5">
+          {/* Audacity-style L/R lanes, only when the decoder shipped them (stereo
+              file, scan succeeded) and the strip shows the real wave — the preview's
+              predicted envelope is mono, so the toggle hides while it is up. */}
+          {!previewWave && source.wave?.channels?.length === 2 && (
+            <button
+              type="button"
+              data-testid="waveform-split"
+              aria-label={tr('editor.waveformSplit')}
+              aria-pressed={split}
+              onClick={() => setSplit((s) => !s)}
+              className={`press mr-1 flex h-5 w-5 items-center justify-center rounded ${
+                split ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-dim hover:text-fg'
+              }`}
+            >
+              <Rows2 className="h-3 w-3" aria-hidden="true" />
+            </button>
+          )}
           <button
             type="button"
             data-testid="waveform-zoom-out"
@@ -458,6 +498,7 @@ export function WaveformSolo({
           color={AFTER_COLOR}
           clipDb={clipDb}
           marks={marks}
+          split={split}
           raster={OVERLAY_W}
           zoom={zoom}
         />
@@ -481,6 +522,9 @@ export function WaveformCompare({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [view, setView] = useState<CompareView>('side')
+  // Split L/R lanes for the side-by-side strips. Not offered overlaid: that view
+  // already stacks two envelopes, and four lanes would be unreadable.
+  const [split, setSplit] = useState(false)
   const before = useStripData(inputPath, enabled)
   const after = useStripData(outputPath, enabled)
   const viewButton = (id: CompareView, label: string, Icon: typeof Columns2): React.JSX.Element => (
@@ -515,15 +559,32 @@ export function WaveformCompare({
             loudness={after.loudness}
           />
         </div>
-        <div className="flex shrink-0 gap-0.5 rounded-md bg-[var(--color-field)] p-0.5">
-          {viewButton('side', tr('editor.waveformViewSide'), Columns2)}
-          {viewButton('overlay', tr('editor.waveformViewOverlay'), Layers2)}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {view === 'side' &&
+            (before.wave?.channels?.length === 2 || after.wave?.channels?.length === 2) && (
+              <button
+                type="button"
+                data-testid="waveform-split"
+                aria-label={tr('editor.waveformSplit')}
+                aria-pressed={split}
+                onClick={() => setSplit((s) => !s)}
+                className={`press flex h-5 w-5 items-center justify-center rounded ${
+                  split ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-dim hover:text-fg'
+                }`}
+              >
+                <Rows2 className="h-3 w-3" aria-hidden="true" />
+              </button>
+            )}
+          <div className="flex shrink-0 gap-0.5 rounded-md bg-[var(--color-field)] p-0.5">
+            {viewButton('side', tr('editor.waveformViewSide'), Columns2)}
+            {viewButton('overlay', tr('editor.waveformViewOverlay'), Layers2)}
+          </div>
         </div>
       </div>
       {view === 'side' ? (
         <div data-testid="waveform-side" className="grid grid-cols-2 gap-2">
-          <Strip {...before} color={BEFORE_COLOR} clipDb={clipDb} />
-          <Strip {...after} color={AFTER_COLOR} clipDb={clipDb} />
+          <Strip {...before} color={BEFORE_COLOR} clipDb={clipDb} split={split} />
+          <Strip {...after} color={AFTER_COLOR} clipDb={clipDb} split={split} />
         </div>
       ) : (
         <OverlayStrip before={before} after={after} />

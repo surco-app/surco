@@ -551,6 +551,10 @@ export interface WaveformResult {
   // Audacity's MAX_AUDIO line) — the peaks alone can't tell clipping from loud, so
   // the red marks read this. Absent when the scan failed: no marks, never guesses.
   clipped?: boolean[]
+  // The same buckets per channel — envelope and clip flags — for the Audacity-style
+  // split L/R view. Present only for stereo files (mono has nothing to split);
+  // absent too when the scan failed, which hides the split toggle.
+  channels?: { peaks: number[]; clipped: boolean[] }[]
 }
 
 export interface SpectrumResult {

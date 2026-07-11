@@ -56,7 +56,9 @@ export function previewPeaks(
 // follows the decoder's per-bucket true-clipping flags instead — the envelope can't
 // tell a pinned sample from loud mastering, only the native-rate scan can. `marks:
 // false` keeps the clamp but paints everything the base color — the legend's
-// toggle switches the red off without un-limiting the drawn outcome.
+// toggle switches the red off without un-limiting the drawn outcome. `lane` confines
+// the mirrored wave to one horizontal slice of the canvas — the split L/R view is
+// two calls stacking Audacity-style lanes on the one raster.
 export function drawWaveform(
   canvas: HTMLCanvasElement,
   peaks: number[],
@@ -65,6 +67,7 @@ export function drawWaveform(
     clear?: boolean
     clipDb?: number
     clipped?: boolean[]
+    lane?: { index: number; count: number }
     limitDb?: number
     marks?: boolean
   } = {},
@@ -75,7 +78,8 @@ export function drawWaveform(
   const w = canvas.width
   const h = canvas.height
   if (opts.clear !== false) ctx.clearRect(0, 0, w, h)
-  const mid = h / 2
+  const laneH = opts.lane ? h / opts.lane.count : h
+  const mid = (opts.lane ? laneH * opts.lane.index : 0) + laneH / 2
   const baseColor = opts.color ?? 'rgba(96, 165, 250, 0.8)'
   const limitLin = opts.limitDb !== undefined ? 10 ** (opts.limitDb / 20) : null
   const barW = w / peaks.length
@@ -88,7 +92,7 @@ export function drawWaveform(
           ? clipsOver(peaks[i], opts.clipDb)
           : opts.clipped?.[i] === true)
     const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
-    const bar = Math.max(amp * (h / 2 - 2), 0.5)
+    const bar = Math.max(amp * (laneH / 2 - 2), 0.5)
     ctx.fillStyle = over ? CLIP_COLOR : baseColor
     ctx.fillRect(i * barW, mid - bar, Math.max(barW - 0.5, 0.5), bar * 2)
   }
