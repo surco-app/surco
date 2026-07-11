@@ -66,6 +66,7 @@
           "¿Ya en ese formato? Lo copia tal cual al instante",
           "Calidad a tu gusto: bitrate del MP3, bits y frecuencia — o los del original",
           "Iguala el volumen a un loudness o pico común",
+          "Tú eliges dónde cae cada una: una carpeta, junto al original, Apple Music o Engine DJ",
           "Reexporta sin tocar cue points ni beatgrid de Traktor"
         ]
       },
@@ -88,6 +89,7 @@
         "items": [
           "Dibuja el espectro y caza MP3 falsos antes de cabina",
           "Lectura por colores: LUFS, pico, dinámica y ruido",
+          "Forma de onda con zoom, clipping real en rojo y vista previa del resultado normalizado",
           "Detecta BPM y tonalidad del propio audio",
           "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
         ]
@@ -100,7 +102,7 @@
           "Envía a Apple Music con tags y carátula, hasta en WAV",
           "Directo a tu biblioteca de Engine DJ (Denon): carátula, rating y playlist",
           "Exporta la cola a rekordbox, Traktor, Serato o M3U8",
-          "Nombra con plantillas {artist} - {title}"
+          "Nombra archivos — y títulos — con plantillas {artist} - {title}"
         ]
       }
     ]
@@ -161,14 +163,14 @@
     "manualCaption": "saltando entre herramientas · repitiendo en cada pista",
     "withSurco": "Con Surco",
     "withSurcoTime": "~1–2 s",
-    "combo": "Convertir + etiquetar + Apple Music",
+    "combo": "Convertir + etiquetar + Apple Music o Engine DJ",
     "bullets": [
       "AIFF, WAV, FLAC o ALAC lossless, o MP3",
       "metadatos Discogs",
       "carátula embebida",
       "grouping y tags",
       "análisis de espectro",
-      "a Apple Music"
+      "a Apple Music o Engine DJ"
     ],
     "oneClick": "un clic · una pista lista",
     "footnote": "* Flujo a mano a modo de ejemplo; los pasos y herramientas varían según cada quien. Tiempos estimados."
@@ -289,6 +291,10 @@
         "a": "Convierte entre AIFF, WAV, FLAC y ALAC lossless y MP3, de cualquiera a cualquiera. La calidad la eliges tú: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo — por defecto se conservan las del original. Además lee M4A, AAC, OGG y OPUS."
       },
       {
+        "q": "¿Y los WAV rotos?",
+        "a": "Algunas descargas antiguas traen cabeceras WAV malformadas que atragantan a otras apps. Surco las repara sobre una copia temporal al leerlas —tu original no se toca— y la pista se reproduce, analiza y convierte con normalidad."
+      },
+      {
         "q": "¿Y si la app se cierra a mitad de faena?",
         "a": "No pierdes nada. Surco guarda solo tus ediciones sin aplicar mientras trabajas, y al reabrir te ofrece recuperar la sesión con todo tal y como lo dejaste — metadatos, carátulas y matches incluidos, incluso tras un cuelgue del equipo."
       },
@@ -311,7 +317,7 @@
   },
   "guide": {
     "metaTitle": "Cómo usar Surco — Guía paso a paso",
-    "metaDescription": "Guía completa de Surco: importar pistas, etiquetar desde Discogs, emparejar un disco entero, analizar el espectro, convertir y exportar a Apple Music, rekordbox o Traktor.",
+    "metaDescription": "Guía completa de Surco: importar pistas, etiquetar desde Discogs, emparejar un disco entero, analizar el espectro, convertir y exportar a Apple Music, Engine DJ, rekordbox o Traktor.",
     "kicker": "Guía",
     "title": "Cómo usar Surco",
     "lede": "De soltar tus pistas a tenerlas listas para pinchar. Esta guía recorre todo el flujo, paso a paso — sin prisa y sin saltarte nada.",
@@ -359,9 +365,10 @@
           "Pulsa Espacio para escuchar la pista seleccionada en el reproductor flotante antes de convertir. Arrastra el borde derecho para ensanchar la lista, o haz doble clic para ajustarla al nombre más largo."
         ],
         "points": [
-          "Filtros rápidos arriba: Todas, Sin analizar, Sospechosas, Buenas, Sin convertir y Auto-emparejadas.",
+          "Filtros rápidos arriba: Sospechosas, Buenas, Sin analizar, Sin convertir, Auto-emparejadas — también por fuente —, Duplicadas, y lo que está (o falta) en tu biblioteca de Apple Music o Engine DJ.",
           "Haz clic para seleccionar una pista; ⌘ (o Ctrl) + clic para sumar varias y Mayús + clic para un rango.",
-          "El icono ✦ marca las pistas que Surco rellenó solo desde Discogs."
+          "El icono ✦ marca las pistas que Surco rellenó solo desde Discogs.",
+          "El reproductor dibuja la forma de onda de la pista para saltar directo a cualquier parte, y la reproducción continua encadena la lista sola."
         ],
         "shot": "lista-es.png",
         "shotCaption": "La lista de pistas con filtros y estados."
@@ -379,6 +386,7 @@
           "Los campos obligatorios se marcan en rojo si los dejas vacíos.",
           "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida.",
           "Copia y pega los metadatos —carátula incluida— de una pista a otra desde el menú contextual; ⌘Z lo deshace entero.",
+          "El menú { } de cualquier campo de texto inserta el valor de otro campo justo donde tengas el cursor — sin reescribir lo que la pista ya sabe.",
           "¿Pista misteriosa? Un botón la busca en Google con el nombre del archivo ya escrito, y un comando numera la selección en orden de lista (1, 2, 3…)."
         ],
         "shot": "editor-es.png",
@@ -395,6 +403,7 @@
         "points": [
           "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada.",
           "Ámbar «sospechoso»: corte brusco antes de tiempo — probablemente un fake recomprimido.",
+          "La sección de loudness también dibuja la forma de onda: haz zoom a cualquier parte, ve el clipping real marcado en rojo y previsualiza cómo quedará la pista al normalizar — y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
           "Guarda un informe del espectro en PNG —con su veredicto y su línea de corte— para compartirlo cuando alguien te pregunte por esa pista.",
           "Puedes desactivar el espectro o el loudness en Ajustes → Editor si no los usas."
         ],
@@ -412,7 +421,9 @@
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es.",
           "Con un token y la opción activada, Surco auto-empareja las pistas nada más importarlas.",
-          "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa."
+          "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa.",
+          "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda y se ignoran al buscar y emparejar — tus tags no se tocan.",
+          "Con las dos fuentes activas, un filtro reduce la lista de resultados a solo Discogs o solo Bandcamp."
         ],
         "shot": "discogs-es.png",
         "shotCaption": "Buscar un disco y elegir la pista en Discogs."
@@ -459,7 +470,8 @@
         "points": [
           "Fichas para cada campo: título, artista, álbum, año, género, nº de pista…",
           "El separador / crea subcarpetas al exportar.",
-          "Opcional: recortar espacios y rellenar con cero los números de pista (03 en vez de 3)."
+          "Opcional: recortar espacios y rellenar con cero los números de pista (03 en vez de 3).",
+          "El título también tiene su formato, al estilo coleccionista: define un patrón como ({trackNumber}) {title} ({year}) y aplícalo cuando tú quieras — desde el menú ⋯ del campo título o la paleta de comandos, nunca automáticamente."
         ],
         "shot": "nombres-es.png",
         "shotCaption": "El constructor de plantillas de nombre en Ajustes."
@@ -469,7 +481,7 @@
         "title": "Convierte la pista",
         "body": [
           "El botón de abajo del editor convierte la pista seleccionada. El desplegable de su derecha elige el formato: AIFF, WAV, FLAC o ALAC sin pérdida, o MP3. Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar.",
-          "La calidad se ajusta en Ajustes → Conversión: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo — por defecto se conservan las del original, sin recodificados de más. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), o sobrescribir el original en su sitio. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+          "La calidad se ajusta en Ajustes → Conversión: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo — por defecto se conservan las del original, sin recodificados de más. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), junto al original — los exports al mismo formato toman un nombre «(2)», la fuente no se toca — o sobrescribir el original en su sitio. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3 — de 320 a 128 kbps, o VBR V0/V2.",
@@ -490,7 +502,8 @@
         "points": [
           "Procesa la cola entera de una; cancela a mitad si lo necesitas.",
           "Las conversiones van en paralelo, aprovechando los núcleos del equipo.",
-          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote."
+          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
+          "La flecha junto al botón de convertir cambia el formato y el destino solo para esa tanda — tus ajustes por defecto se quedan como estaban."
         ],
         "shot": "lote-es.png",
         "shotCaption": "Convertir toda la cola de una vez."
@@ -503,7 +516,7 @@
           "Los tags y la carátula viajan dentro del archivo, así que tu software de DJ los lee sin pasos extra."
         ],
         "points": [
-          "A Apple Music con un clic, durante la conversión.",
+          "A Apple Music o Engine DJ con un clic, durante la conversión.",
           "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
           "Surco te avisa si una pista ya está en tu biblioteca de Apple Music.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla.",
@@ -539,6 +552,7 @@
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
           "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto o pulsa «Auto-organizar» para ordenarlos por secciones de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida —pistas cargadas, convertidas, analizadas…— y genera una imagen lista para compartir.",
+          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, y una opción de macOS hace que el Finder muestre la carátula de los FLAC convertidos.",
           "Apunta la carpeta de configuración a iCloud Drive o Dropbox y comparte tus preferencias entre Macs; el token de Discogs nunca sale de tu máquina."
         ],
         "shot": "ajustes-es.png",
