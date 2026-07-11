@@ -77,14 +77,16 @@ export function dropPresentsAlias(artist: string): string {
   return squeeze(artist.replace(/\s+(?:pres\.?|presents|presenta|presentan)\b.*$/i, '')) || artist
 }
 
-// File tags often prefix the act with "DJ " where the catalog files it bare ("DJ Miguel
+// File tags often prefix an act with "DJ " where the catalog files it bare ("DJ Miguel
 // Serna, Alex Cervera" vs Bandcamp's "Miguel Serna, Alex Cervera"). Search that needs
 // every term to match (Bandcamp's autocomplete) then returns nothing at all for the full
-// query. Drop only a LEADING "DJ " token so a fallback candidate can retry bare; an act
-// whose name ends in it ("Chumi DJ") or is just "DJ" stays intact — dropping mid-name
-// would search a different artist, and the cleaners never strip to nothing.
+// query. Drop the token at the START of each comma/&-separated act — applied metadata
+// carries it mid-string too ("Miguel Serna, DJ Alex Cervera") — so a fallback candidate
+// can retry bare. An act whose name ends in it ("Chumi DJ") or is just "DJ" stays
+// intact: dropping mid-name would search a different artist, and the cleaners never
+// strip to nothing.
 export function dropDjPrefix(artist: string): string {
-  return squeeze(artist.replace(/^dj\s+/i, '')) || artist
+  return squeeze(artist.replace(/(^|[,&]\s*)dj\s+/gi, '$1')) || artist
 }
 
 // Rip stamps and uploader names glue themselves to the END of a title tag ("Dancing

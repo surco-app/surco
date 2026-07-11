@@ -51,12 +51,16 @@ export function buildSearchCandidates(
   // A tag's "DJ " prefix where the catalog files the act bare ("DJ Miguel Serna, Alex
   // Cervera" vs Bandcamp's "Miguel Serna, Alex Cervera") makes every full form above
   // return nothing — Bandcamp's autocomplete needs all terms to match. Retry without the
-  // prefix before the bare title, whose homonym noise would end the candidate loop on the
-  // wrong releases. An act genuinely carrying the prefix (DJ Tieum) is unaffected: its
-  // full query already resolves, so the loop never reaches this candidate.
+  // prefix, then with the lead act alone (a comma-separated credit often lists acts the
+  // catalog doesn't), before the bare title whose homonym noise would end the candidate
+  // loop on the wrong releases. An act genuinely carrying the prefix (DJ Tieum) is
+  // unaffected: its full query already resolves, so the loop never reaches these. Only
+  // commas split acts — "&" joins duos the catalog files whole ("Simon & Garfunkel").
   if (hints.artist && hints.title) {
     const bare = dropDjPrefix(hints.artist)
     if (bare !== hints.artist) add(cleanQuery(`${bare} ${hints.title}`))
+    const lead = bare.split(',')[0].trim()
+    if (lead && lead !== bare) add(cleanQuery(`${lead} ${hints.title}`))
   }
   // Bandcamp has no catalog index, so the code matches dozens of unrelated releases and —
   // since the search loop keeps the first candidate that returns *anything* — would mask the

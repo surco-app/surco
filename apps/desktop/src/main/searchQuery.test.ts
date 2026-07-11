@@ -219,7 +219,7 @@ describe('buildSearchCandidates', () => {
   // the act bare ("Miguel Serna, Alex Cervera"). Its autocomplete needs every term to
   // match, so the "DJ" token alone returns nothing — and the loop then degrades to the
   // bare title, whose homonym noise ends the search on the wrong releases. Retry without
-  // the prefix after the full forms but before the bare title.
+  // the prefix, then with the lead act alone, after the full forms but before the bare title.
   it('retries without a leading "DJ" prefix before falling back to the bare title', () => {
     expect(
       buildSearchCandidates("DJ Miguel Serna, Alex Cervera I'm Ready", {
@@ -229,13 +229,56 @@ describe('buildSearchCandidates', () => {
     ).toEqual([
       "DJ Miguel Serna, Alex Cervera I'm Ready",
       "Miguel Serna, Alex Cervera I'm Ready",
+      "Miguel Serna I'm Ready",
       "I'm Ready",
       "I'm Ready DJ Miguel Serna, Alex Cervera",
     ])
   })
 
+  // The same credit sits mid-string once metadata is applied ("Miguel Serna, DJ Alex
+  // Cervera") — each comma/&-separated act can carry its own "DJ " prefix, and any one
+  // of them still sinks Bandcamp's all-terms match. Strip it per act, not just up front.
+  it('drops a "DJ" prefix from every act, not only the first', () => {
+    expect(
+      buildSearchCandidates("Miguel Serna, DJ Alex Cervera I'm Ready", {
+        artist: 'Miguel Serna, DJ Alex Cervera',
+        title: "I'm Ready",
+      }),
+    ).toEqual([
+      "Miguel Serna, DJ Alex Cervera I'm Ready",
+      "Miguel Serna, Alex Cervera I'm Ready",
+      "Miguel Serna I'm Ready",
+      "I'm Ready",
+      "I'm Ready Miguel Serna, DJ Alex Cervera",
+    ])
+  })
+
+  // A multi-act credit often lists acts the catalog doesn't ("Artist, Someone Else"); the
+  // lead act + title is the search a person would type next, so try it before the bare
+  // title whose homonyms would end the loop. Only commas split acts: "&" joins duos that
+  // catalogs file whole ("Simon & Garfunkel"), so it must not spawn a bogus lead act.
+  it('falls back to the lead act + title for a comma-separated credit, but never splits on "&"', () => {
+    expect(
+      buildSearchCandidates('Some Artist, Someone Else Some Title', {
+        artist: 'Some Artist, Someone Else',
+        title: 'Some Title',
+      }),
+    ).toEqual([
+      'Some Artist, Someone Else Some Title',
+      'Some Artist Some Title',
+      'Some Title',
+      'Some Title Some Artist, Someone Else',
+    ])
+    expect(
+      buildSearchCandidates('Simon & Garfunkel Some Title', {
+        artist: 'Simon & Garfunkel',
+        title: 'Some Title',
+      }),
+    ).toEqual(['Simon & Garfunkel Some Title', 'Some Title', 'Some Title Simon & Garfunkel'])
+  })
+
   // An act genuinely named "DJ" gets no variant: dropping the word would search a
-  // different artist. And "DJ" alone must never strip to an empty artist.
+  // different artist. A trailing "Dj" is part of the name ("Chumi Dj"), never stripped.
   it('adds no DJ-free variant when there is nothing after the prefix or no prefix at all', () => {
     expect(
       buildSearchCandidates('DJ Track', { artist: 'DJ', title: 'Track' }),
