@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Ruido de fondo",
     "loudnessNoiseHint": "Suelo de ruido (dB): el nivel de fondo; cuanto más bajo, más limpio",
     "loudnessHelpTitle": "¿Qué significan?",
+    "waveformSource": "Original",
+    "waveformClipped": "Picos sobre {{db}} dB",
     "waveformBefore": "Antes",
     "waveformAfter": "Después",
     "waveformViewSide": "Lado a lado",

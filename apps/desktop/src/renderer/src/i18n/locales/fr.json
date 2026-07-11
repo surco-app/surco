@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Bruit de fond",
     "loudnessNoiseHint": "Plancher de bruit (dB) — le niveau de fond ; plus bas, plus propre",
     "loudnessHelpTitle": "Qu'est-ce que ça veut dire ?",
+    "waveformSource": "Original",
+    "waveformClipped": "Crêtes au-dessus de {{db}} dB",
     "waveformBefore": "Avant",
     "waveformAfter": "Après",
     "waveformViewSide": "Côte à côte",

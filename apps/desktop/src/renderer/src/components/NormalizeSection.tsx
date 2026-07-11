@@ -6,7 +6,7 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionHeader } from './SectionHeader'
-import { WaveformCompare } from './WaveformCompare'
+import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 interface Props {
   value: NormalizeConfig
@@ -36,6 +36,11 @@ export function NormalizeSection({
   // source leaves no honest "before" to draw), and never in multi-select, where
   // `item` is just the anchor of the selection.
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
+  // The dB line the strips mark in red: the active mode's own ceiling, so the marks
+  // show exactly where the conversion will limit — or, with normalization off, plain
+  // digital clipping (-0.1 dB catches full-scale buckets the decode rounds down).
+  const clipDb =
+    value.mode === 'loudness' ? value.truePeakDb : value.mode === 'peak' ? value.peakDb : -0.1
   // The pair lands at the bottom of a scrolling editor: when it appears because a
   // conversion just finished (not on mount — flipping back to a done track must not
   // yank the view), scroll it into view or most users never see it. Same reveal
@@ -70,12 +75,16 @@ export function NormalizeSection({
         <div className="mt-3">
           <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
           <NormalizeControls value={value} onChange={onChange} />
+          {!isMulti && !compare && (
+            <WaveformSolo inputPath={item.inputPath} enabled={settled} clipDb={clipDb} />
+          )}
           {compare && item.outputPath && (
             <div ref={compareRef}>
               <WaveformCompare
                 inputPath={item.inputPath}
                 outputPath={item.outputPath}
                 enabled={settled}
+                clipDb={clipDb}
               />
             </div>
           )}

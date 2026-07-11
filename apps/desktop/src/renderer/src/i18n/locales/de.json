@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Grundrauschen",
     "loudnessNoiseHint": "Grundrauschen (dB) — der Hintergrundpegel; je niedriger, desto sauberer",
     "loudnessHelpTitle": "Was bedeuten die Werte?",
+    "waveformSource": "Original",
+    "waveformClipped": "Spitzen über {{db}} dB",
     "waveformBefore": "Vorher",
     "waveformAfter": "Nachher",
     "waveformViewSide": "Nebeneinander",

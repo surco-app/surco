@@ -1153,7 +1153,7 @@ describe('Editor export control', () => {
     )
     expect(screen.getByTestId('export-success')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('Loudness normalization'))
+    // The normalize section now starts open, so its dials are directly reachable.
     fireEvent.click(screen.getByTestId('normalize-preset-club'))
     expect(screen.queryByTestId('export-success')).not.toBeInTheDocument()
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()

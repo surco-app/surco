@@ -80,6 +80,26 @@ describe('NormalizeSection before/after waveforms', () => {
     expect(screen.queryByTestId('waveform-compare')).not.toBeInTheDocument()
   })
 
+  // Before a conversion exists the section still shows the source's own waveform, so
+  // the controls aren't tuned blind: the wave (and its clipping peaks) is what the
+  // normalization decision is about.
+  it('shows the source waveform alone before the track converts', async () => {
+    renderSection(track())
+    expect(await screen.findByTestId('waveform-solo')).toBeInTheDocument()
+  })
+
+  it('replaces the solo waveform with the pair once converted', async () => {
+    renderSection(track({ outputPath: '/out/a.aiff', status: 'done' }))
+    expect(await screen.findByTestId('waveform-compare')).toBeInTheDocument()
+    expect(screen.queryByTestId('waveform-solo')).not.toBeInTheDocument()
+  })
+
+  it('shows no solo waveform in multi-select', async () => {
+    renderSection(track(), true)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-solo')).not.toBeInTheDocument()
+  })
+
   // The pair lands at the bottom of a scrolling editor, below the fold — a user who
   // just converted sees nothing change unless the result scrolls itself into view.
   // Same reveal pattern as NormalizeControls' mode switch.

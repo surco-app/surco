@@ -6,7 +6,7 @@ import type { LoudnessResult, WaveformResult } from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
-import { drawWaveform, skeletonPeaks } from '../lib/waveform'
+import { clippedCount, drawWaveform, skeletonPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
@@ -87,22 +87,56 @@ function Skeleton(): React.JSX.Element {
   )
 }
 
-function Strip({ wave, loading, color }: StripData & { color: string }): React.JSX.Element {
+function Strip({
+  wave,
+  loading,
+  color,
+  clipDb,
+  raster = CANVAS_W,
+}: StripData & { color: string; clipDb?: number; raster?: number }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const canvas = canvasRef.current
-    if (canvas && wave) drawWaveform(canvas, wave.peaks, { color })
-  }, [wave, color])
+    if (canvas && wave) drawWaveform(canvas, wave.peaks, { color, clipDb })
+  }, [wave, color, clipDb])
   return (
     <div className="relative">
       <canvas
         ref={canvasRef}
-        width={CANVAS_W}
+        width={raster}
         height={CANVAS_H}
         className="block h-12 w-full rounded-lg bg-[var(--color-field)]"
       />
       {loading && <Skeleton />}
     </div>
+  )
+}
+
+// The red counterpart to the legends' colour dots, shown only when the wave actually
+// pokes over the ceiling: it names the dB line the red bars mark, so the color isn't
+// a mystery — and a clean track never warns.
+function ClippedFlag({
+  wave,
+  clipDb,
+}: {
+  wave: WaveformResult | null | undefined
+  clipDb: number
+}): React.JSX.Element | null {
+  const { t: tr } = useTranslation()
+  if (!wave || clippedCount(wave.peaks, clipDb) === 0) return null
+  return (
+    <span
+      data-testid="waveform-clipped"
+      className="flex min-w-0 items-center gap-1.5 text-[10px]"
+    >
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-danger)]"
+      />
+      <span className="truncate font-medium tabular-nums text-danger">
+        {tr('editor.waveformClipped', { db: formatDb(clipDb) })}
+      </span>
+    </span>
   )
 }
 
@@ -161,16 +195,48 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
   )
 }
 
+// The source's wave alone, for before a conversion exists: the same strip, figures
+// and clip marks as the comparison, so the normalization controls above are tuned
+// against what the file actually looks like instead of blind.
+export function WaveformSolo({
+  inputPath,
+  enabled,
+  clipDb,
+}: {
+  inputPath: string
+  enabled: boolean
+  clipDb: number
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const source = useStripData(inputPath, enabled)
+  return (
+    <div data-testid="waveform-solo" className="mt-3">
+      <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+        <Legend
+          testid="waveform-source"
+          color={AFTER_COLOR}
+          label={tr('editor.waveformSource')}
+          loudness={source.loudness}
+        />
+        <ClippedFlag wave={source.wave} clipDb={clipDb} />
+      </div>
+      <Strip {...source} color={AFTER_COLOR} clipDb={clipDb} raster={OVERLAY_W} />
+    </div>
+  )
+}
+
 // The source and converted files compared — side by side or overlaid, the legends
 // (colour dot, label, measured figures) staying up in either view.
 export function WaveformCompare({
   inputPath,
   outputPath,
   enabled,
+  clipDb,
 }: {
   inputPath: string
   outputPath: string
   enabled: boolean
+  clipDb?: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [view, setView] = useState<CompareView>('side')
@@ -215,8 +281,8 @@ export function WaveformCompare({
       </div>
       {view === 'side' ? (
         <div data-testid="waveform-side" className="grid grid-cols-2 gap-2">
-          <Strip {...before} color={BEFORE_COLOR} />
-          <Strip {...after} color={AFTER_COLOR} />
+          <Strip {...before} color={BEFORE_COLOR} clipDb={clipDb} />
+          <Strip {...after} color={AFTER_COLOR} clipDb={clipDb} />
         </div>
       ) : (
         <OverlayStrip before={before} after={after} />

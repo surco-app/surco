@@ -6,7 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
 import '../i18n'
-import { WaveformCompare } from './WaveformCompare'
+import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
 
@@ -123,5 +123,62 @@ describe('WaveformCompare', () => {
     expect(fade.value).toBe('0.5')
     fireEvent.change(fade, { target: { value: '0' } })
     expect(fade.value).toBe('0')
+  })
+})
+
+// The pre-conversion view: the source's wave alone, with the same measured figures,
+// so the normalization controls are tuned against what the file actually looks like.
+describe('WaveformSolo', () => {
+  it('decodes the source and shows its measured figures', async () => {
+    const waveform = vi.fn().mockResolvedValue(wave)
+    const loudness = vi.fn().mockResolvedValue({
+      integratedLufs: -7.4,
+      truePeakDb: 0.2,
+      lra: 0,
+      channelBalanceDb: null,
+      dcOffset: null,
+      noiseFloorDb: null,
+      crestDb: null,
+    })
+    ;(window as unknown as { api: unknown }).api = { waveform, loudness }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    const solo = await screen.findByTestId('waveform-solo')
+    await waitFor(() => expect(solo).toHaveTextContent('-7.4 LUFS · 0.2 dBTP'))
+    expect(waveform).toHaveBeenCalledWith('/m/a.wav')
+  })
+
+  it('does not decode while disabled', async () => {
+    const waveform = vi.fn().mockResolvedValue(wave)
+    ;(window as unknown as { api: unknown }).api = {
+      waveform,
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled={false} clipDb={-1} />)
+    await waitFor(() => expect(screen.getByTestId('waveform-solo')).toBeInTheDocument())
+    expect(waveform).not.toHaveBeenCalled()
+  })
+
+  // Djotas's peaks: the strip marks where the wave pokes over the active ceiling in
+  // red, and the legend names the ceiling so the marks aren't a mystery color. No
+  // clipping peak, no legend — a clean track must not warn.
+  it('flags peaks over the ceiling in the legend', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      // 1.0 and 0.9 poke over -1 dB (0.891); the label carries the ceiling value.
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('-1')
+  })
+
+  it('shows no clip flag when the wave stays under the ceiling', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.5, 0.4], durationSec: 60 }),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} />)
+    await screen.findByTestId('waveform-solo')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
   })
 })

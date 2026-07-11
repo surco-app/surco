@@ -12,8 +12,9 @@ const DEFAULTS: Record<EditorSection, boolean> = {
   properties: false,
   quality: true,
   output: true,
-  // Normalization is off for most users, so it starts folded like Properties.
-  normalize: false,
+  // Open so the section's waveform (and its clipping peaks) shows without hunting
+  // for a fold — the wave is worth seeing even with normalization itself off.
+  normalize: true,
 }
 
 let store: Record<EditorSection, boolean> = { ...DEFAULTS }

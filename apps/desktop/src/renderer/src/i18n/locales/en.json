@@ -319,6 +319,8 @@
     "loudnessNoiseLabel": "Noise floor",
     "loudnessNoiseHint": "Noise floor (dB) — the background level; lower is cleaner",
     "loudnessHelpTitle": "What do these mean?",
+    "waveformSource": "Original",
+    "waveformClipped": "Peaks over {{db}} dB",
     "waveformBefore": "Before",
     "waveformAfter": "After",
     "waveformViewSide": "Side by side",
