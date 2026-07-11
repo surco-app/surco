@@ -321,6 +321,7 @@
     "loudnessHelpTitle": "What do these mean?",
     "waveformSource": "Original",
     "waveformClipped": "Peaks over {{db}} dB",
+    "waveformClipping": "Clipping",
     "waveformPreview": "Preview",
     "waveformZoomIn": "Zoom in",
     "waveformZoomOut": "Zoom out",

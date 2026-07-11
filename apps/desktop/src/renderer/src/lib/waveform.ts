@@ -4,6 +4,13 @@ import type { NormalizeConfig } from '../../../shared/types'
 // can't read CSS variables, and the strips don't retheme either.
 const CLIP_COLOR = 'rgba(247, 118, 142, 0.95)'
 
+// The no-normalization clip line: true digital clipping, the same thing Audacity's
+// clip marks mean. It sits a hair under int16 full scale (32767/32768 ≈ -0.0003 dB)
+// so a bucket whose decoded max pins at full scale marks, while a loud master riding
+// just under the ceiling stays clear — hot masters spend entire sections above the
+// old -0.1 dB line without ever clipping, and it painted them solid red.
+export const CLIP_DB = -0.001
+
 // Peaks are absolute (1.0 = 0 dBFS, see main/waveform.ts), so a dB ceiling converts
 // straight to a linear amplitude. Strictly above: a normalized output sitting exactly
 // AT its ceiling is compliant, not clipping.

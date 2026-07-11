@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
 import '../i18n'
+import { CLIP_DB } from '../lib/waveform'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
@@ -176,6 +177,35 @@ describe('WaveformSolo', () => {
     expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('-1')
   })
 
+  // With normalization off the line is true digital clipping, and a dB figure of
+  // "-0.0" would say nothing: the flag reads "Clipping" — the same thing Audacity's
+  // marks mean — and it only appears for buckets pinned at full scale.
+  it('labels the digital-clipping line as clipping', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(
+      <WaveformSolo inputPath="/m/a.wav" enabled clipDb={CLIP_DB} normalize={CFG_NONE} />,
+    )
+    expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('Clipping')
+  })
+
+  it('shows no clip flag for a hot master riding under full scale', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      // 0.9886 (-0.1 dB) and 0.995 are hot but never pinned at full scale — loud
+      // mastering, not clipping. The old -0.1 dB line painted tracks like this red.
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9886, 0.995], durationSec: 60 }),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(
+      <WaveformSolo inputPath="/m/a.wav" enabled clipDb={CLIP_DB} normalize={CFG_NONE} />,
+    )
+    await screen.findByTestId('waveform-solo')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('waveform-clipped')).not.toBeInTheDocument()
+  })
+
   it('shows no clip flag when the wave stays under the ceiling', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.5, 0.4], durationSec: 60 }),
@@ -278,7 +308,8 @@ describe('WaveformSolo', () => {
       />,
     )
     const flag = await screen.findByTestId('waveform-clipped')
-    expect(flag).toHaveTextContent('0.0')
+    // The peak preview's line IS digital clipping, so it carries the same wording.
+    expect(flag).toHaveTextContent('Clipping')
   })
 
   it('shows no flag for a peak target at or under full scale', async () => {

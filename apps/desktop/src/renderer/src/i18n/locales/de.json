@@ -321,6 +321,7 @@
     "loudnessHelpTitle": "Was bedeuten die Werte?",
     "waveformSource": "Original",
     "waveformClipped": "Spitzen über {{db}} dB",
+    "waveformClipping": "Clipping",
     "waveformPreview": "Vorschau",
     "waveformZoomIn": "Vergrößern",
     "waveformZoomOut": "Verkleinern",

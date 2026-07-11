@@ -321,6 +321,7 @@
     "loudnessHelpTitle": "Qu'est-ce que ça veut dire ?",
     "waveformSource": "Original",
     "waveformClipped": "Crêtes au-dessus de {{db}} dB",
+    "waveformClipping": "Écrêtage",
     "waveformPreview": "Aperçu",
     "waveformZoomIn": "Zoomer",
     "waveformZoomOut": "Dézoomer",

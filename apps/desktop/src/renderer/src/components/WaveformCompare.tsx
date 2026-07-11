@@ -7,7 +7,7 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
 import { formatTime } from '../lib/duration'
-import { clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
+import { CLIP_DB, clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
@@ -243,7 +243,11 @@ function ClippedFlag({
       <span
         className={`truncate font-medium tabular-nums ${active ? 'text-danger' : 'text-fg-dim'}`}
       >
-        {tr('editor.waveformClipped', { db: formatDb(clipDb) })}
+        {/* When the line IS digital clipping, "Peaks over -0.0 dB" says nothing:
+            call it what Audacity calls it. A real ceiling keeps its dB figure. */}
+        {clipDb >= CLIP_DB
+          ? tr('editor.waveformClipping')
+          : tr('editor.waveformClipped', { db: formatDb(clipDb) })}
       </span>
     </button>
   )
