@@ -13,16 +13,27 @@ export interface LoudnormMeasured {
   targetOffset: number
 }
 
+// Prepends the click-repair stage (when active) to a measurement's own filter, so
+// every gain below is sized on the audio the conversion will actually encode — a
+// near-full-scale click would otherwise anchor a peak measurement and leave the
+// whole track several dB short of its target.
+function measured(filter: string, prefilter?: string): string {
+  return prefilter ? `${prefilter},${filter}` : filter
+}
+
 // First pass: measure the source so the second pass can normalize accurately
 // (linear) instead of the default dynamic mode that pumps frame-by-frame.
-export function loudnormArgs(input: string, cfg: NormalizeConfig): string[] {
+export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: string): string[] {
   return [
     '-hide_banner',
     '-nostats',
     '-i',
     input,
     '-af',
-    `loudnorm=I=${cfg.targetLufs}:TP=${cfg.truePeakDb}:LRA=${LOUDNORM_LRA}:print_format=json`,
+    measured(
+      `loudnorm=I=${cfg.targetLufs}:TP=${cfg.truePeakDb}:LRA=${LOUDNORM_LRA}:print_format=json`,
+      prefilter,
+    ),
     '-f',
     'null',
     '-',
@@ -114,8 +125,18 @@ export function limitedLoudnormFilter(
 }
 
 // Peak mode: a single decode to find the loudest sample.
-export function volumedetectArgs(input: string): string[] {
-  return ['-hide_banner', '-nostats', '-i', input, '-af', 'volumedetect', '-f', 'null', '-']
+export function volumedetectArgs(input: string, prefilter?: string): string[] {
+  return [
+    '-hide_banner',
+    '-nostats',
+    '-i',
+    input,
+    '-af',
+    measured('volumedetect', prefilter),
+    '-f',
+    'null',
+    '-',
+  ]
 }
 
 export function parseMaxVolume(stderr: string): number | null {
@@ -136,14 +157,14 @@ export function volumeFilter(gainDb: number): string {
 // reports each channel's mean (DC offset) and sample extremes. Decoded to float
 // first — on integer formats astats prints raw code values (±32767-style), not
 // the normalized levels the gain math needs.
-export function astatsArgs(input: string): string[] {
+export function astatsArgs(input: string, prefilter?: string): string[] {
   return [
     '-hide_banner',
     '-nostats',
     '-i',
     input,
     '-af',
-    'aformat=sample_fmts=flt,astats',
+    measured('aformat=sample_fmts=flt,astats', prefilter),
     '-f',
     'null',
     '-',

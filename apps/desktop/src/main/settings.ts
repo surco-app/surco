@@ -71,6 +71,8 @@ const defaults: Settings = {
   keyNotation: 'camelot',
   // Off by default: a conversion never changes loudness unless the user enables it.
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  // Off by default: a conversion never repairs clicks unless the user enables it.
+  declick: 'off',
   editorSections: DEFAULT_EDITOR_SECTIONS,
   shortcutOverrides: {},
   hasSeenOnboarding: false,

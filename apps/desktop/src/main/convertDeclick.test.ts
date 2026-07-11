@@ -1,0 +1,123 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({ app: { isPackaged: false } }))
+
+import type { TrackMetadata } from '../shared/types'
+import { convertAudio } from './ffmpeg'
+
+const FF = ffmpegStatic as unknown as string
+const dir = mkdtempSync(join(tmpdir(), 'surco-declick-'))
+const src = join(dir, 'in.wav')
+
+const meta: TrackMetadata = {
+  title: 'Crackle',
+  artist: 'Dust',
+  album: '',
+  albumArtist: '',
+  year: '',
+  genre: '',
+  grouping: '',
+  comment: '',
+  trackNumber: '',
+  discNumber: '',
+  bpm: '',
+  key: '',
+  publisher: '',
+  catalogNumber: '',
+  remixArtist: '',
+}
+
+// Decodes the whole file to float and reads the absolute peak, so the assertions
+// measure real samples instead of parsing volumedetect's stderr prose.
+function peakOf(file: string): number {
+  const raw = execFileSync(FF, ['-v', 'error', '-i', file, '-f', 'f32le', '-'], {
+    maxBuffer: 1024 * 1024 * 64,
+  })
+  const s = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4)
+  let max = 0
+  for (let i = 0; i < s.length; i++) {
+    const a = Math.abs(s[i])
+    if (a > max) max = a
+  }
+  return max
+}
+
+beforeAll(() => {
+  // What a vinyl rip's clicks look like: a -12 dB sine with a ~2-sample near-full-scale
+  // impulse every half second (the parentheses keep aevalsrc's commas out of the
+  // filtergraph separator). The clicks ARE the file's peak — exactly the shape that
+  // fools a peak-normalize gain.
+  execFileSync(FF, [
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'aevalsrc=0.25*sin(2*PI*440*t)+if(lt(mod(t\\,0.5)\\,0.00004)\\,0.9\\,0):s=44100:d=4',
+    '-c:a',
+    'pcm_s16le',
+    src,
+  ])
+})
+
+// End-to-end through the real convertAudio pipeline and the bundled ffmpeg: the unit
+// tests assert the planned filter strings, this asserts the samples ffmpeg writes.
+describe('convertAudio declick', () => {
+  it('repairs stylus clicks and reports the repaired-sample count', async () => {
+    const out = join(dir, 'out.wav')
+    const result = await convertAudio(
+      src,
+      out,
+      'wav',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'standard',
+    )
+    // The 0.9 impulses are gone, leaving the 0.25 sine as the true peak — and the
+    // same-format source was re-encoded (a stream copy would have kept the clicks).
+    expect(peakOf(out)).toBeLessThan(0.3)
+    expect(result.declickedSamples).toBeGreaterThan(0)
+  }, 30000)
+
+  it('sizes a peak-normalize gain on the repaired audio, not the click peak', async () => {
+    const out = join(dir, 'out-normalized.wav')
+    await convertAudio(
+      src,
+      out,
+      'wav',
+      meta,
+      undefined,
+      { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'standard',
+    )
+    // Measured through the click (peak ~0 dB) the gain would be ~-1 dB and the sine
+    // would land near 0.22; measured on the repaired audio (-12 dB) it boosts the
+    // sine to the -1 dBFS target (~0.89).
+    const peak = peakOf(out)
+    expect(peak).toBeGreaterThan(0.6)
+    expect(peak).toBeLessThan(0.95)
+  }, 30000)
+
+  it('reports nothing when declick is off, so "not run" stays distinct from "0 repaired"', async () => {
+    const out = join(dir, 'out-off.flac')
+    const result = await convertAudio(src, out, 'flac', meta)
+    expect(result.declickedSamples).toBeUndefined()
+  }, 30000)
+})

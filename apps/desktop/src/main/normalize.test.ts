@@ -11,6 +11,7 @@ import {
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
+  volumedetectArgs,
   volumeFilter,
 } from './normalize'
 
@@ -159,6 +160,19 @@ describe('loudnormArgs', () => {
     // measurement only: decode to a null muxer, no file written
     expect(args.slice(-3)).toEqual(['-f', 'null', '-'])
   })
+
+  it('measures through the prefilter, so the gain is sized on the repaired audio', () => {
+    const args = loudnormArgs('/in.aiff', loudness, 'adeclick')
+    expect(args.join(' ')).toContain('-af adeclick,loudnorm=I=-14')
+  })
+})
+
+describe('volumedetectArgs', () => {
+  it('measures through the prefilter, so the peak is the repaired audio, not a click', () => {
+    const args = volumedetectArgs('/in.aiff', 'adeclick')
+    expect(args.join(' ')).toContain('-af adeclick,volumedetect')
+    expect(args.slice(-3)).toEqual(['-f', 'null', '-'])
+  })
 })
 
 describe('parseMaxVolume', () => {
@@ -214,6 +228,11 @@ describe('astatsArgs', () => {
     const args = astatsArgs('/m/a.wav')
     expect(args.join(' ')).toContain('aformat=sample_fmts=flt,astats')
     expect(args.slice(-3)).toEqual(['-f', 'null', '-'])
+  })
+
+  it('measures through the prefilter, so channel extremes exclude repaired clicks', () => {
+    const args = astatsArgs('/m/a.wav', 'adeclick')
+    expect(args.join(' ')).toContain('adeclick,aformat=sample_fmts=flt,astats')
   })
 })
 

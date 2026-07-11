@@ -76,6 +76,17 @@ export interface NormalizeConfig {
   peakPerChannel?: boolean
 }
 
+// Optional vinyl click/pop repair applied during conversion (ffmpeg's adeclick,
+// autoregressive interpolation of impulsive noise). 'off' is the default so audio
+// is never altered unless the user opts in. 'standard' uses the filter's defaults,
+// which fully repair typical 1-2 sample stylus clicks; 'strong' raises the AR order,
+// sensitivity and burst fusion for long pops the defaults leave behind (calibrated
+// empirically: a 9-sample near-full-scale burst survives defaults, a=8:t=1:b=10
+// removes it completely). Applied before any normalization filter, so a gain
+// calculation is never anchored to a click's false peak. Forces a re-encode, like
+// normalization.
+export type DeclickMode = 'off' | 'standard' | 'strong'
+
 export type KeyNotation = 'camelot' | 'musical'
 
 export interface Settings {
@@ -196,6 +207,9 @@ export interface Settings {
   // Default normalization applied to every conversion; mode 'none' (the default)
   // means conversions never touch loudness unless overridden per-track.
   normalize: NormalizeConfig
+  // Default vinyl click repair applied to every conversion; 'off' (the default)
+  // means conversions never touch the audio unless overridden per-track.
+  declick: DeclickMode
   // The editor's sections in display order, each with its default fold state.
   // Read through normalizeEditorSections so files from older versions stay valid.
   editorSections: EditorSectionPref[]
@@ -381,6 +395,9 @@ export interface ProcessJob {
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.
   normalize?: NormalizeConfig
+  // Per-track click-repair override; falls back to the Settings default when
+  // undefined. Captured when the conversion starts, like normalize.
+  declick?: DeclickMode
   // Overwrite-original pinned when the batch started; falls back to the live setting
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
@@ -524,6 +541,10 @@ export interface ProcessResult {
   // True when the user chose to skip a conflicting export: nothing was written, so
   // the renderer leaves the track untouched rather than marking it done.
   skipped?: boolean
+  // How many audio samples the click repair interpolated, parsed from adeclick's
+  // end-of-stream report. Absent when declick was off (a stream copy can't run it);
+  // 0 means the filter ran and found the track already clean.
+  declickedSamples?: number
   // True when loudness normalization was requested but its measurement pass failed, so
   // the file was converted without it. The renderer surfaces a notice so the user knows
   // the loudness target wasn't applied, rather than the skip passing silently.

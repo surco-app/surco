@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type {
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
@@ -44,7 +45,8 @@ export interface ProcessTrackDeps {
     forceReencode?: boolean,
     onChild?: (child: { kill: (signal: string) => void }) => void,
     onTmp?: (path: string) => void,
-  ) => Promise<{ normalizeSkipped: boolean }>
+    declick?: DeclickMode,
+  ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
   // finally so a cancel after the job settles is a no-op.
@@ -194,9 +196,10 @@ export async function runProcessTrack(
     // before writing; recursive so it's a no-op when the directory already exists.
     await deps.mkdir(dirname(target), { recursive: true })
     let normalizeSkipped: boolean
+    let declickedSamples: number | undefined
     let tmpPath: string | undefined
     try {
-      ;({ normalizeSkipped } = await deps.convertAudio(
+      ;({ normalizeSkipped, declickedSamples } = await deps.convertAudio(
         job.inputPath,
         target,
         format,
@@ -210,6 +213,7 @@ export async function runProcessTrack(
           tmpPath = path
           deps.trackTmp(path)
         },
+        job.declick ?? settings.declick,
       ))
     } finally {
       deps.unregisterActiveConversion(job.id)
@@ -290,12 +294,20 @@ export async function runProcessTrack(
         addedToMusicOnly: true,
         musicPersistentId,
         normalizeSkipped,
+        declickedSamples,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
     // as the track's new source after an in-place rename — so let surco:// serve it.
     deps.allowMedia(target)
-    return { outputPath: target, inPlace, musicPersistentId, normalizeSkipped, addedToEngineDj }
+    return {
+      outputPath: target,
+      inPlace,
+      musicPersistentId,
+      normalizeSkipped,
+      declickedSamples,
+      addedToEngineDj,
+    }
   } finally {
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })

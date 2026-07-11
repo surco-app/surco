@@ -9,6 +9,7 @@ import type {
   BpmResult,
   ConversionQuality,
   CoverRead,
+  DeclickMode,
   KeyResult,
   LoudnessResult,
   MetaRead,
@@ -21,6 +22,7 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
+import { declickFilter, parseDeclickedSamples } from './declick'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -757,15 +759,24 @@ export async function normalizeFilter(
   input: string,
   cfg: NormalizeConfig,
   sampleRate?: number,
+  // The click-repair stage the conversion will run before this filter. Threaded into
+  // every measurement so the gain is sized on the repaired audio — a full-scale click
+  // would otherwise anchor the peak/true-peak reading and leave the track short of its
+  // target. The measurement changes with it, so it also suffixes each cache namespace.
+  declick?: DeclickMode,
 ): Promise<string | null> {
   if (cfg.mode === 'none') return null
+  const prefilter = declickFilter(declick ?? 'off') ?? undefined
+  // Repaired audio is a different measurement input, so each mode gets its own cache
+  // entry; the bare namespace stays untouched for declick-off conversions.
+  const ns = (base: string): string => (prefilter ? `${base}-declick-${declick}` : base)
   if (cfg.mode === 'peak') {
     // The Audacity-style options (per-channel DC removal, independent channel
     // gains) need per-channel figures volumedetect can't give, so they measure
     // with astats instead. Same fact-about-the-file-alone caching as below.
     if (cfg.peakRemoveDc || cfg.peakPerChannel) {
-      const channels = await cachedAnalysis('astats-channels-v1', input, async () => {
-        const { stderr } = await run(ffmpegPath, astatsArgs(input), {
+      const channels = await cachedAnalysis(ns('astats-channels-v1'), input, async () => {
+        const { stderr } = await run(ffmpegPath, astatsArgs(input, prefilter), {
           maxBuffer: 1024 * 1024 * 16,
         })
         return parseAstatsChannels(stderr)
@@ -775,8 +786,8 @@ export async function normalizeFilter(
     // Peak mode is a constant-gain `volume` filter, which doesn't resample, so it
     // needs no rate restoration. The measured peak is a fact about the file alone,
     // so one namespace serves every target.
-    const max = await cachedAnalysis('volumedetect-v1', input, async () => {
-      const { stderr } = await run(ffmpegPath, volumedetectArgs(input), {
+    const max = await cachedAnalysis(ns('volumedetect-v1'), input, async () => {
+      const { stderr } = await run(ffmpegPath, volumedetectArgs(input, prefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
       return parseMaxVolume(stderr)
@@ -787,10 +798,10 @@ export async function normalizeFilter(
   // them, so the key carries both — same file, different target re-measures. The
   // fixed LRA is baked into the version suffix: bump it if LOUDNORM_LRA changes.
   const measured = await cachedAnalysis(
-    `loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}`,
+    ns(`loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}`),
     input,
     async () => {
-      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg), {
+      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg, prefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
       return parseLoudnorm(stderr)
@@ -844,7 +855,10 @@ export async function convertAudio(
   // Finder show the cover on a FLAC output (see flacFinderCover.ts). The caller
   // resolves the setting and the platform; this only sees the final verdict.
   finderCovers?: boolean,
-): Promise<{ normalizeSkipped: boolean }> {
+  // Vinyl click repair, applied ahead of the normalize/dither stages so any gain
+  // below is sized on the repaired audio. Forces a re-encode like normalize.
+  declick?: DeclickMode,
+): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
   // output path) overwrites it atomically instead of failing with ffmpeg's
@@ -853,6 +867,7 @@ export async function convertAudio(
   // filter only ever rides the encode path — planConversion is told to skip the
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
+  const declickAf = declickFilter(declick ?? 'off') ?? undefined
   // The loudnorm sampleRate read and planConversion's PCM-width read probe the same
   // file, so share one probe between them instead of spawning ffprobe twice per
   // normalized AIFF/WAV conversion.
@@ -868,27 +883,33 @@ export async function convertAudio(
       ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
       : undefined
   const normalizeAf = normalizing
-    ? ((await normalizeFilter(input, normalize, sampleRate)) ?? undefined)
+    ? ((await normalizeFilter(input, normalize, sampleRate, declick)) ?? undefined)
     : undefined
   // Normalization was asked for but its measurement pass failed (normalizeFilter returned
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
   const normalizeSkipped = normalizing && normalizeAf === undefined
+  // Declick alters the samples exactly like a normalize filter, so it forces the
+  // same re-encode: a stream copy would emit the untouched source.
   const plan = await planConversion(
     input,
     format,
     probeOnce,
-    normalizing,
+    normalizing || declickAf !== undefined,
     quality,
     forceReencode ?? false,
   )
   const { codec, dither, ext } = plan
-  // The dither stage runs after the normalize filter, right where the float chain is
-  // quantized back to 16 bits.
+  // Click repair runs first — the gains below were measured through it — and the
+  // dither stage last, right where the float chain is quantized back to 16 bits.
   const audioFilter =
-    [normalizeAf, dither ? DITHER_FILTER : undefined].filter(Boolean).join(',') || undefined
+    [declickAf, normalizeAf, dither ? DITHER_FILTER : undefined].filter(Boolean).join(',') ||
+    undefined
   const tmp = convertTmpPath(output, ext)
   onTmp?.(tmp)
+  // adeclick reports its repaired-sample total on the encode's stderr; undefined
+  // when declick is off so "not run" and "ran, found 0" stay distinct upstream.
+  let declickedSamples: number | undefined
 
   try {
     if (codec === 'copy' && preservesCuesInPlace(ext)) {
@@ -904,10 +925,15 @@ export async function convertAudio(
       await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
       await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
     } else {
-      await run(ffmpegPath, convertArgs(input, tmp, plan, meta, coverPath, audioFilter), {
-        maxBuffer: 1024 * 1024 * 32,
-        onChild,
-      })
+      const { stderr } = await run(
+        ffmpegPath,
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter),
+        {
+          maxBuffer: 1024 * 1024 * 32,
+          onChild,
+        },
+      )
+      if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
@@ -944,7 +970,7 @@ export async function convertAudio(
     await unlink(tmp).catch(() => {})
     throw e
   }
-  return { normalizeSkipped }
+  return { normalizeSkipped, declickedSamples }
 }
 
 // The renderer's <audio> element decodes WAV/FLAC/MP3 but not AIFF, so an AIFF
