@@ -1937,9 +1937,10 @@ describe('Editor track preselection', () => {
   })
 
   // Clicking a row applies its metadata, and the row must read as picked afterwards.
-  // The suggestion highlight alone can't carry that: a vinyl rip whose real length
-  // misses Discogs' printed duration zeroes the duration signal and drops the score
-  // below the review tier — so the user's own deliberate pick showed no mark at all.
+  // The suggestion highlight alone can't carry that: a rip whose real length misses
+  // Discogs' printed duration by more than even the proportional window (here half a
+  // minute — an edited-down rip) zeroes the duration signal and drops the score below
+  // the review tier — so the user's own deliberate pick showed no mark at all.
   // The applied row is derived from the tags the file now carries, not from the score.
   it('keeps the applied row marked when the fuzzy match is too weak to suggest it', async () => {
     withDiscogs()
@@ -1952,7 +1953,7 @@ describe('Editor track preselection', () => {
           { position: 'A2', title: 'Track Two (Remix)', duration: '6:40' },
         ],
       })
-    renderEditor({ id: 'a', duration: 408, meta: { title: 'Track One', trackNumber: 'A1' } })
+    renderEditor({ id: 'a', duration: 390, meta: { title: 'Track One', trackNumber: 'A1' } })
     const rows = await loadTracklist()
     const applied = rows.find((r) => r.textContent?.includes('Track One'))
     const other = rows.find((r) => r.textContent?.includes('Track Two (Remix)'))

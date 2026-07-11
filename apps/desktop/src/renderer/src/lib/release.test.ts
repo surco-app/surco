@@ -10,6 +10,7 @@ import {
   confidenceTier,
   corroboratedTier,
   coverOf,
+  durationProximitySec,
   joinArtists,
   matchSignals,
   preRankResults,
@@ -224,6 +225,48 @@ describe('scoreTrack', () => {
     const slow = scoreTrack({ position: 'A1', title: 'Acid', duration: '3:00' }, target)
     const fast = scoreTrack({ position: 'A2', title: 'Acid', duration: '5:58' }, target)
     expect(fast).toBeGreaterThan(slow)
+  })
+
+  // Vinyl rips drift proportionally (turntable pitch, trimmed lead-in/out) and Discogs'
+  // printed duration is often approximate, so the miss window grows with the track. The
+  // real case this encodes: a 6:48 rip of a cut printed as 7:02 — 14s apart, ~3% of a
+  // 7-minute side — scored 0 on duration under the flat 8s window and the exact
+  // title+position match sank below the review tier, so the user's own track drew no
+  // suggestion at all.
+  it('still suggests a 7-minute track whose rip drifts 14s from the printed duration', () => {
+    const s = scoreTrack(
+      { position: 'A1', title: 'To Da Beat', duration: '7:02' },
+      { title: 'To Da Beat', trackNumber: 'A1', durationSec: 408 },
+    )
+    expect(confidenceTier(s)).toBe('review')
+  })
+
+  // The same absolute drift on a short edit is version-sized: 14s against a 3:30 cut is
+  // how a radio edit differs from the next mix, so the proportional window must not
+  // stretch enough to excuse it.
+  it('still rejects a 14s drift on a 3:30 track as a different cut', () => {
+    const s = scoreTrack(
+      { position: 'A1', title: 'Acid', duration: '3:30' },
+      { title: 'Acid', trackNumber: 'A1', durationSec: 224 },
+    )
+    expect(confidenceTier(s)).toBe('low')
+  })
+
+  // The window is capped: on an hour-long mix 4% would be minutes, wide enough to accept
+  // a neighbouring version — half a minute apart must still read as a different track.
+  it('caps the proportional window so a long mix does not accept a 30s drift', () => {
+    const s = scoreTrack(
+      { position: 'A1', title: '', duration: '60:00' },
+      { title: '', durationSec: 3630 },
+    )
+    expect(s).toBe(0)
+  })
+
+  // durationProximitySec is shared with the Apple Music library matcher, which compares
+  // two measured second counts — no printed-duration slack applies there, so the bare
+  // helper keeps the flat window.
+  it('keeps the flat window when comparing two measured durations', () => {
+    expect(durationProximitySec(408, 422)).toBe(0)
   })
 
   it('matches on track position when the file carries a track number', () => {

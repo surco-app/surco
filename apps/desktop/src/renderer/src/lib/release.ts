@@ -111,9 +111,17 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 
 // A file's probed length and Discogs' rounded "m:ss" rarely agree to the second,
 // so treat anything within DURATION_EXACT_SEC as a perfect hit and fade linearly
-// to nothing by DURATION_MISS_SEC, past which it's a different track.
+// to nothing by the miss window, past which it's a different track.
 const DURATION_EXACT_SEC = 2
 const DURATION_MISS_SEC = 8
+// Against Discogs' printed duration the miss window grows with the track: vinyl rips
+// drift proportionally (turntable pitch, trimmed lead-in/out) and the printed figure is
+// often approximate — a real 6:48 rip of a cut listed as 7:02 (~3% on a 7-minute side)
+// scored 0 under the flat window and its exact title+position match sank below the
+// review tier. 4% keeps a 14s drift on a short edit rejected (version-sized there) and
+// the cap keeps an hour-long mix from accepting a neighbouring version minutes apart.
+const DURATION_MISS_FRACTION = 0.04
+const DURATION_MISS_MAX_SEC = 20
 
 // Whether `needle`'s words appear as a contiguous run inside `haystack`'s — containment
 // at word level. A raw substring check would let a title hide inside another word
@@ -154,13 +162,19 @@ export function titleSimilarity(target: string, candidate: string): number {
 }
 
 // How close two lengths are, 1 (within DURATION_EXACT_SEC) fading linearly to 0 (past
-// DURATION_MISS_SEC). Shared by the Discogs scorer (which parses an "m:ss" string first)
-// and the Apple Music library matcher (which compares two probed second counts).
-export function durationProximitySec(aSec: number, bSec: number): number {
+// missSec). Shared by the Discogs scorer (which parses an "m:ss" string first and
+// passes its proportional window) and the Apple Music library matcher, which compares
+// two probed second counts — both measured, so no printed-duration slack applies and
+// it keeps the flat default.
+export function durationProximitySec(
+  aSec: number,
+  bSec: number,
+  missSec: number = DURATION_MISS_SEC,
+): number {
   const delta = Math.abs(aSec - bSec)
   if (delta <= DURATION_EXACT_SEC) return 1
-  if (delta >= DURATION_MISS_SEC) return 0
-  return (DURATION_MISS_SEC - delta) / (DURATION_MISS_SEC - DURATION_EXACT_SEC)
+  if (delta >= missSec) return 0
+  return (missSec - delta) / (missSec - DURATION_EXACT_SEC)
 }
 
 function durationProximity(
@@ -169,7 +183,11 @@ function durationProximity(
 ): number | undefined {
   const trackSec = parseDuration(trackDuration)
   if (trackSec === undefined) return undefined
-  return durationProximitySec(localSec, trackSec)
+  const missSec = Math.min(
+    Math.max(DURATION_MISS_SEC, trackSec * DURATION_MISS_FRACTION),
+    DURATION_MISS_MAX_SEC,
+  )
+  return durationProximitySec(localSec, trackSec, missSec)
 }
 
 function positionMatch(trackNumber: string, position: string): number | undefined {
