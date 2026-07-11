@@ -35,6 +35,7 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { librarySourceOf } from '../lib/librarySource'
 import { isMacOS } from '../lib/platform'
+import { splitPosition } from '../lib/position'
 import { isLowResCover, formatKHz } from '../lib/quality'
 import {
   bestMatch,
@@ -335,6 +336,24 @@ export const Editor = memo(function Editor({
   // 'low' is too weak to trust, so it points at nothing — otherwise loading an
   // unrelated release still badges whichever mix shares an incidental word.
   const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
+
+  // The tracklist entry the file's tags currently spell out — the row selectTrack applied
+  // (or its session-restored equivalent). Derived from the meta rather than stored so it
+  // survives remounts and clears the moment the user edits the title away. Deliberately
+  // independent of the fuzzy suggestion above: an honest pick can score below the review
+  // tier (a vinyl rip whose length misses Discogs' printed duration zeroes that signal),
+  // and the user's own click must stay marked regardless.
+  const appliedTrack = useMemo(
+    () =>
+      item.meta.title
+        ? release?.tracklist.find(
+            (t) =>
+              t.title === item.meta.title &&
+              splitPosition(t.position).track === item.meta.trackNumber,
+          )
+        : undefined,
+    [release, item.meta.title, item.meta.trackNumber],
+  )
 
   // The canonical artist/title of the confidently-suggested release. The file's own tag is
   // often messier than the spelling the user searched for, and the library is keyed by the
@@ -792,6 +811,7 @@ export const Editor = memo(function Editor({
         browser={browser}
         matchedTrack={matchedTrack}
         matchTier={matchTier}
+        appliedTrack={appliedTrack}
         hasToken={hasToken}
         isMulti={isMulti}
         selectedTracks={selectedTracks}

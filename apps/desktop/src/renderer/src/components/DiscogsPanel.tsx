@@ -22,6 +22,11 @@ interface Props {
   // badge a random mix and invite the user to apply the wrong one.
   matchedTrack: ReleaseTrack | undefined
   matchTier: 'high' | 'review' | 'low' | undefined
+  // The entry the file's tags currently spell out — the user's applied pick. Kept apart
+  // from the suggestion: a deliberate pick must stay highlighted even when the fuzzy
+  // score is too weak to suggest anything (e.g. a rip whose length misses the printed
+  // duration), while the badge stays the matcher's own verdict.
+  appliedTrack: ReleaseTrack | undefined
   hasToken: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -48,6 +53,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   browser,
   matchedTrack,
   matchTier,
+  appliedTrack,
   hasToken,
   isMulti,
   selectedTracks,
@@ -349,10 +355,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                               key={`${t.position}-${t.title}`}
                               type="button"
                               data-testid="discogs-track"
-                              aria-current={t === matchedTrack ? 'true' : undefined}
+                              aria-current={
+                                t === appliedTrack || t === matchedTrack ? 'true' : undefined
+                              }
                               onClick={() => selectTrack(t)}
                               className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
-                                t === matchedTrack ? 'bg-[var(--color-accent-soft)]' : ''
+                                t === appliedTrack || t === matchedTrack
+                                  ? 'bg-[var(--color-accent-soft)]'
+                                  : ''
                               }`}
                             >
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">

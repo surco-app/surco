@@ -1936,6 +1936,32 @@ describe('Editor track preselection', () => {
     )
   })
 
+  // Clicking a row applies its metadata, and the row must read as picked afterwards.
+  // The suggestion highlight alone can't carry that: a vinyl rip whose real length
+  // misses Discogs' printed duration zeroes the duration signal and drops the score
+  // below the review tier — so the user's own deliberate pick showed no mark at all.
+  // The applied row is derived from the tags the file now carries, not from the score.
+  it('keeps the applied row marked when the fuzzy match is too weak to suggest it', async () => {
+    withDiscogs()
+    ;(window as unknown as { api: { getRelease: unknown } }).api.getRelease = vi
+      .fn()
+      .mockResolvedValue({
+        ...release,
+        tracklist: [
+          { position: 'A1', title: 'Track One', duration: '7:02' },
+          { position: 'A2', title: 'Track Two (Remix)', duration: '6:40' },
+        ],
+      })
+    renderEditor({ id: 'a', duration: 408, meta: { title: 'Track One', trackNumber: 'A1' } })
+    const rows = await loadTracklist()
+    const applied = rows.find((r) => r.textContent?.includes('Track One'))
+    const other = rows.find((r) => r.textContent?.includes('Track Two (Remix)'))
+    // The weak score suppresses the suggestion badge, but the applied mark stays.
+    expect(screen.queryByTestId('track-confidence')).toBeNull()
+    expect(applied).toHaveAttribute('aria-current', 'true')
+    expect(other).not.toHaveAttribute('aria-current')
+  })
+
   // A weak match — one incidental shared word — is "too weak to trust", so it must
   // neither preselect a row nor show a badge. Otherwise loading an unrelated release
   // still badges a random mix and invites the user to apply the wrong one.
