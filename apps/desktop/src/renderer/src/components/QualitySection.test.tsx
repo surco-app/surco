@@ -175,11 +175,29 @@ describe('QualitySection verdict caption', () => {
     }
   })
 
-  it('explains a good verdict as a full lossless spectrum', async () => {
+  // A full-band good verdict is already said twice on screen — the green badge and
+  // the cutoff chip on the spectrogram — so the caption would be the third telling.
+  // It stays reserved for verdicts that need justifying (warn/bad/processed/genuine).
+  it('shows no caption for a plain full-band good verdict', async () => {
     renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
+    await screen.findByTestId('quality-badge')
     expect(
-      await screen.findByText(i18n.t('editor.qualityCaptionGood', { cutoff: '21.0 kHz' })),
-    ).toBeInTheDocument()
+      screen.queryByText(i18n.t('editor.qualityCaptionGood', { cutoff: '21.0 kHz' })),
+    ).not.toBeInTheDocument()
+  })
+
+  // The report action lives in the section header as a quiet icon — a rare action on
+  // its own bordered row cost a full row of height under an already-tall spectrogram.
+  it('offers the report from the header, above the spectrogram', async () => {
+    renderSection(
+      { image: 'data:image/png;base64,x', cutoffHz: 21000, sampleRateHz: 44100, processed: false },
+      '/m/a.flac',
+    )
+    const button = await screen.findByTestId('quality-save-report')
+    const spectrogram = screen.getByTestId('spectrogram')
+    expect(
+      button.compareDocumentPosition(spectrogram) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('flags regenerated highs with a Reprocessed badge, not Bad quality over cutoff boilerplate', async () => {

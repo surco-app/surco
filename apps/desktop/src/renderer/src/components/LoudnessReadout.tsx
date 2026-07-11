@@ -119,7 +119,9 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
     <div data-testid="loudness-readout" className="mt-3 space-y-3">
       {groups.map((group, gi) => (
         <div key={group.id}>
-          <div className="mb-1.5 flex items-center justify-between">
+          {/* The help sits right against the label it explains — pushed to the far
+              edge it read as help for the whole section, not for these figures. */}
+          <div className="mb-1.5 flex items-center gap-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
               {group.label}
             </span>
@@ -132,7 +134,7 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
                 className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <Info className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={tr('editor.loudnessHelpTitle')} align="end" />
+                <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />
               </button>
             )}
           </div>

@@ -154,15 +154,32 @@ export function QualitySection({
         open={open}
         onToggle={onToggle}
         right={
-          verdict && (
-            <span
-              data-testid="quality-badge"
-              data-transcode={transcoded || undefined}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${transcoded ? 'bg-danger/15 text-danger' : qualityBadge[verdict].className}`}
-            >
-              {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
-            </span>
-          )
+          <div className="flex items-center gap-1.5">
+            {/* A rare action as a quiet header icon: on its own bordered row it cost
+                a full row of height under an already-tall spectrogram. */}
+            {open && spectrum && verdict && (
+              <button
+                type="button"
+                data-testid="quality-save-report"
+                aria-label={tr('editor.saveQualityReport')}
+                onClick={() => void saveReport()}
+                disabled={savingReport}
+                className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-60"
+              >
+                <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
+                <Tooltip label={tr('editor.saveQualityReport')} align="end" />
+              </button>
+            )}
+            {verdict && (
+              <span
+                data-testid="quality-badge"
+                data-transcode={transcoded || undefined}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${transcoded ? 'bg-danger/15 text-danger' : qualityBadge[verdict].className}`}
+              >
+                {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
+              </span>
+            )}
+          </div>
         }
       />
       {open && (
@@ -182,11 +199,16 @@ export function QualitySection({
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} />
-                {spectrum.cutoffHz !== null && captionKey && (
-                  <p className="mt-2 text-xs text-fg-dim">
-                    {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
-                  </p>
-                )}
+                {/* Only when the verdict needs justifying: a full-band good file is
+                    already said twice (green badge, cutoff chip), so its caption
+                    would be the third telling of the same fact. */}
+                {spectrum.cutoffHz !== null &&
+                  captionKey &&
+                  captionKey !== 'editor.qualityCaptionGood' && (
+                    <p className="mt-2 text-xs text-fg-dim">
+                      {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
+                    </p>
+                  )}
                 {/* Orthogonal to the codec verdict: the bandwidth claim, not the
                     fidelity. Shown amber so a green "good" badge over an upsampled
                     file doesn't read as a clean bill of hi-res. */}
@@ -194,20 +216,6 @@ export function QualitySection({
                   <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
                     {tr('editor.qualityUpsampled')}
                   </p>
-                )}
-                {verdict && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      data-testid="quality-save-report"
-                      onClick={() => void saveReport()}
-                      disabled={savingReport}
-                      className="press flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60"
-                    >
-                      <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
-                      {tr('editor.saveQualityReport')}
-                    </button>
-                  </div>
                 )}
               </>
             ) : null)}
