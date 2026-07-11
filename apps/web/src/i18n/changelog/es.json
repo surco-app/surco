@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.48",
+    "date": "11 de julio de 2026",
+    "title": "Explora la onda y haz tuyo el editor",
+    "items": [
+      {
+        "text": "La sección de volumen muestra la onda del tema desde el principio, con los picos de saturación marcados y una previsualización de cómo quedará tras normalizar.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "Explora la onda de cerca: un lector al pasar el cursor, zoom por pasos al estilo rekordbox con desplazamiento horizontal, y un interruptor que señala los picos que saturarían con el ajuste actual.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "Las secciones del editor son tuyas: reordénalas arrastrando y elige cuáles empiezan plegadas, desde Ajustes → Editor.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "El panel de Discogs salta directo al disco emparejado, sin tener que volver a seleccionar el tema.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "La búsqueda encuentra el disco aunque el título arrastre sellos de rip al final o créditos tipo «presenta».",
+        "in": "0.48.0"
+      },
+      {
+        "text": "El botón de convertir refleja las etapas de la conversión, igual que la fila del tema.",
+        "in": "0.48.0"
+      }
+    ]
+  },
+  {
     "version": "0.47",
     "date": "10 de julio de 2026",
     "title": "Ve lo que la normalización hace de verdad",

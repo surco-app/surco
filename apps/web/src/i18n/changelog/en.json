@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.48",
+    "date": "July 11, 2026",
+    "title": "Explore the wave and make the editor yours",
+    "items": [
+      {
+        "text": "The loudness section shows the track's waveform from the start, with clipping peaks marked and a preview of how it will look after normalizing.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "Explore the wave up close: a readout under the cursor, rekordbox-style stepped zoom with horizontal scroll, and a toggle that flags the peaks that would clip with the current setting.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "The editor sections are yours: drag to reorder them and pick which start folded, from Settings → Editor.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "The Discogs panel jumps straight to the matched release, without reselecting the track.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "Search finds the release even when the title drags trailing rip stamps or “presenta” credits.",
+        "in": "0.48.0"
+      },
+      {
+        "text": "The convert button mirrors the conversion's stages, just like the track row.",
+        "in": "0.48.0"
+      }
+    ]
+  },
+  {
     "version": "0.47",
     "date": "July 10, 2026",
     "title": "See what normalization really does",
