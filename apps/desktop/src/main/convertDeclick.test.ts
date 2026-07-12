@@ -90,6 +90,41 @@ describe('convertAudio declick', () => {
     expect(result.declickedSamples).toBeGreaterThan(0)
   }, 30000)
 
+  it('repairs long pops in strong mode that the standard defaults leave behind', async () => {
+    // ~9-sample bursts: adeclick's defaults detect but cannot fuse them into one
+    // repairable burst, so they survive standard mode — the exact gap the strong
+    // preset (max burst fusion) exists for.
+    const pops = join(dir, 'in-pops.wav')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'aevalsrc=0.25*sin(2*PI*440*t)+if(lt(mod(t\\,0.5)\\,0.0002)\\,0.9\\,0):s=44100:d=4',
+      '-c:a',
+      'pcm_s16le',
+      pops,
+    ])
+    const out = join(dir, 'out-pops.wav')
+    const result = await convertAudio(
+      pops,
+      out,
+      'wav',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'strong',
+    )
+    expect(peakOf(out)).toBeLessThan(0.3)
+    expect(result.declickedSamples).toBeGreaterThan(0)
+  }, 30000)
+
   it('sizes a peak-normalize gain on the repaired audio, not the click peak', async () => {
     const out = join(dir, 'out-normalized.wav')
     await convertAudio(

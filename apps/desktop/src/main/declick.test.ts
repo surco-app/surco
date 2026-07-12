@@ -10,8 +10,11 @@ describe('declickFilter', () => {
     expect(declickFilter('standard')).toBe('adeclick')
   })
 
-  it('raises order/sensitivity/burst for long pops in strong mode', () => {
-    expect(declickFilter('strong')).toBe('adeclick=a=8:t=1:b=10')
+  it('maxes burst fusion for long pops in strong mode, never touching the threshold', () => {
+    // t=1/t=1.5 flag a large share of any dense mix as clicks and the per-window
+    // interpolation cost explodes past realtime — conversions looked hung. Burst
+    // fusion alone repairs the long pops, so the threshold must stay at default.
+    expect(declickFilter('strong')).toBe('adeclick=b=10')
   })
 })
 

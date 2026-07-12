@@ -2,15 +2,19 @@ import type { DeclickMode } from '../shared/types'
 
 // The -af stage for each click-repair mode. 'standard' is adeclick's own defaults
 // (window 55 ms, AR order 2%, threshold 2, burst 2), which fully repair the 1-2
-// sample impulses a stylus click leaves. 'strong' raises the AR order, lowers the
-// detection threshold to its floor and maxes burst fusion for the long pops the
-// defaults miss — calibrated against synthetic 9-sample near-full-scale bursts,
-// which survive the defaults untouched and vanish under a=8:t=1:b=10. The window
-// stays at its default: shrinking it (w=20) made the strong preset WORSE, not
-// better, so it is deliberately not part of the preset.
+// sample impulses a stylus click leaves. 'strong' maxes burst fusion for the long
+// pops the defaults miss — calibrated against synthetic 9-sample near-full-scale
+// bursts, which survive the defaults untouched and vanish under b=10 alone.
+// Two knobs are deliberately NOT part of the preset:
+// - threshold: t=1 (or 1.5) reads a large share of any dense mix as clicks, and
+//   the per-window AR interpolation cost explodes past realtime — 30 s of pink
+//   noise wouldn't finish in 60 s, so real conversions looked hung forever.
+//   Detection at the default threshold already catches the long pops; only the
+//   fusion of their samples into one repairable burst was missing.
+// - window: shrinking it (w=20) made the repair WORSE, not better.
 export function declickFilter(mode: DeclickMode): string | null {
   if (mode === 'standard') return 'adeclick'
-  if (mode === 'strong') return 'adeclick=a=8:t=1:b=10'
+  if (mode === 'strong') return 'adeclick=b=10'
   return null
 }
 
