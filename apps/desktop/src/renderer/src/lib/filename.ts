@@ -14,7 +14,10 @@ export interface ParsedName {
 // a number rather than part of the artist, and the cleaned artist + title feed the
 // Discogs search query.
 export function parseFileName(path: string): ParsedName {
-  const base = path.split('/').pop() ?? path
+  // Both separators: this runs in the renderer on raw OS paths, and Windows sends
+  // backslashes — splitting on '/' alone left the whole route as the track's label
+  // and search query there.
+  const base = path.split(/[/\\]/).pop() ?? path
   const fileName = base.replace(/\.[^.]+$/, '')
 
   // Detection runs on the name WITH its extension: deriveTags strips the extension

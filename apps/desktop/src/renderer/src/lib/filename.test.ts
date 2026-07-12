@@ -54,4 +54,12 @@ describe('parseFileName', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
   })
+
+  // Windows paths arrive with backslashes; splitting on '/' alone left the whole
+  // route as the track's label and search query (reported by a Windows user twice).
+  it('strips a backslashed Windows directory the same way', () => {
+    const r = parseFileName('C:\\Users\\Djotas\\Música\\Chumi Dj - Open Your Eyes.wav')
+    expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
+    expect(r.query).toBe('Chumi Dj Open Your Eyes')
+  })
 })

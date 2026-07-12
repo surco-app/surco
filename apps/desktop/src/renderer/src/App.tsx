@@ -619,7 +619,8 @@ export default function App(): React.JSX.Element {
   // countdown bar — the expiry that counts is the hook's, which remembers the declined files.
   useEffect(() => {
     if (!pendingNew) return
-    const folder = pendingNew.root.split('/').pop() || pendingNew.root
+    // Both separators — the watcher root is a raw OS path, backslashed on Windows.
+    const folder = pendingNew.root.split(/[/\\]/).pop() || pendingNew.root
     const id = pushToast(store, {
       key: 'new-tracks',
       tone: 'neutral',
