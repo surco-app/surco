@@ -469,6 +469,21 @@
     "estimate": "Estimated audible clicks in this track: ~{{count}}",
     "estimateNone": "No audible clicks detected in this track."
   },
+  "trim": {
+    "title": "Silence trim",
+    "hint": "Cuts lead-in and run-out silence during conversion. Drag the handles on the wave to adjust the exact cut.",
+    "summaryNone": "Off",
+    "cutsLabel": "Cuts",
+    "cutStart": "{{seconds}} from the start",
+    "cutEnd": "{{seconds}} from the end",
+    "detected": "Detected silence: {{parts}}",
+    "nothing": "No leading or trailing silence detected.",
+    "apply": "Trim detected silence",
+    "clear": "Reset",
+    "cueWarning": "Re-encodes the audio and shifts any saved DJ cues and beatgrid by the trimmed amount.",
+    "handleStart": "Trim start",
+    "handleEnd": "Trim end"
+  },
   "normalize": {
     "title": "Loudness normalization",
     "hint": "Off by default. Match every track to a target loudness or peak.",
@@ -685,6 +700,7 @@
       "properties": "Properties",
       "quality": "Audio quality",
       "output": "File name",
+      "trim": "Silence trim",
       "declick": "Vinyl click repair",
       "normalize": "Loudness normalization",
       "open": "Open",

@@ -63,6 +63,7 @@ import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
+import { TrimSection } from './TrimSection'
 
 interface Props {
   item: TrackItem
@@ -237,6 +238,7 @@ export const Editor = memo(function Editor({
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
+  const trimOpen = sectionOpen.trim
   const declickOpen = sectionOpen.declick
   const normalizeOpen = sectionOpen.normalize
   // The chosen export format, seeded from the Settings default. The format menu
@@ -1001,6 +1003,22 @@ export const Editor = memo(function Editor({
                         onChangeName={(outputName) => onChange({ outputName })}
                         onRegenerateName={onRegenerateName}
                         onOpenRename={onOpenRename}
+                      />
+                    )
+                  )
+                case 'trim':
+                  // The trim lives on the track (exact per-track seconds), so it has
+                  // no multi-select story: the anchor's handles would misrepresent
+                  // every other selected track's silence.
+                  return (
+                    !isMulti && (
+                      <TrimSection
+                        key={id}
+                        value={item.trim}
+                        open={trimOpen}
+                        onToggle={() => setSectionOpen('trim', !trimOpen)}
+                        onChange={(trim) => onChange({ trim })}
+                        inputPath={item.inputPath}
                       />
                     )
                   )

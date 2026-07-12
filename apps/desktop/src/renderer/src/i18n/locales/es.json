@@ -469,6 +469,21 @@
     "estimate": "Clicks audibles estimados en esta pista: ~{{count}}",
     "estimateNone": "Sin clicks audibles detectados en esta pista."
   },
+  "trim": {
+    "title": "Recorte de silencio",
+    "hint": "Recorta el silencio inicial y final durante la conversión. Arrastra las asas sobre la onda para ajustar el corte exacto.",
+    "summaryNone": "No",
+    "cutsLabel": "Recorta",
+    "cutStart": "{{seconds}} del inicio",
+    "cutEnd": "{{seconds}} del final",
+    "detected": "Silencio detectado: {{parts}}",
+    "nothing": "No se detecta silencio al inicio ni al final.",
+    "apply": "Recortar el silencio detectado",
+    "clear": "Restablecer",
+    "cueWarning": "Recodifica el audio y desplaza los cues y el beatgrid guardados tanto como el recorte.",
+    "handleStart": "Inicio del recorte",
+    "handleEnd": "Final del recorte"
+  },
   "normalize": {
     "title": "Normalización de loudness",
     "hint": "Desactivado por defecto. Iguala cada pista a un loudness o pico objetivo.",
@@ -685,6 +700,7 @@
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "output": "Nombre del archivo",
+      "trim": "Recorte de silencio",
       "declick": "Reparación de clicks de vinilo",
       "normalize": "Normalización de loudness",
       "open": "Abierta",

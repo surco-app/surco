@@ -14,7 +14,9 @@ import { WaveformSkeleton } from './WaveformSkeleton'
 // Half the player strip's raster per side-by-side column (each sits in half the
 // panel width); the overlaid canvas spans the panel, so it gets the full raster.
 const CANVAS_W = 600
-const OVERLAY_W = 1200
+// Exported (with the strip and its blue) for the trim section, whose full-width
+// wave must read as the same instrument as the loudness preview's.
+export const OVERLAY_W = 1200
 const CANVAS_H = 96
 
 // The deepest zoom step: ×8 across a 6-minute track puts ~2 s in the visible panel,
@@ -24,7 +26,7 @@ const ZOOM_MAX = 8
 // The colour key the legends' dots repeat: the converted file keeps the player's
 // accent blue, the source goes muted so "louder than before" reads as blue fringes
 // growing past the grey in the overlaid view.
-const AFTER_COLOR = 'rgba(96, 165, 250, 0.8)'
+export const AFTER_COLOR = 'rgba(96, 165, 250, 0.8)'
 const BEFORE_COLOR = 'rgba(148, 163, 184, 0.7)'
 
 type CompareView = 'side' | 'overlay'
@@ -72,7 +74,7 @@ function Legend({
   )
 }
 
-function Strip({
+export function Strip({
   wave,
   loading,
   color,
@@ -83,6 +85,7 @@ function Strip({
   background,
   raster = CANVAS_W,
   zoom = 1,
+  children,
 }: StripData & {
   color: string
   clipDb?: number
@@ -99,6 +102,9 @@ function Strip({
   // rekordbox-style stretch factor: the strip grows to zoom× the panel width inside
   // a horizontal scroller. Still the same 2048 decoded buckets, just drawn wider.
   zoom?: number
+  // Overlay rendered inside the zoomed strip, so children positioned by percent
+  // (the trim section's shades and handles) track the wave through zoom and scroll.
+  children?: React.ReactNode
 }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -217,6 +223,7 @@ function Strip({
             </span>
           </>
         )}
+        {children}
       </div>
     </div>
   )

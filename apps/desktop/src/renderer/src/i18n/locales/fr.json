@@ -469,6 +469,21 @@
     "estimate": "Clics audibles estimés dans ce morceau : ~{{count}}",
     "estimateNone": "Aucun clic audible détecté dans ce morceau."
   },
+  "trim": {
+    "title": "Rognage du silence",
+    "hint": "Coupe le silence au début et à la fin pendant la conversion. Faites glisser les poignées sur l'onde pour ajuster la coupe exacte.",
+    "summaryNone": "Non",
+    "cutsLabel": "Coupe",
+    "cutStart": "{{seconds}} au début",
+    "cutEnd": "{{seconds}} à la fin",
+    "detected": "Silence détecté : {{parts}}",
+    "nothing": "Aucun silence détecté au début ou à la fin.",
+    "apply": "Rogner le silence détecté",
+    "clear": "Réinitialiser",
+    "cueWarning": "Ré-encode l'audio et décale les points cue et le beatgrid enregistrés de la durée rognée.",
+    "handleStart": "Début du rognage",
+    "handleEnd": "Fin du rognage"
+  },
   "normalize": {
     "title": "Normalisation du loudness",
     "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
@@ -685,6 +700,7 @@
       "properties": "Propriétés",
       "quality": "Qualité audio",
       "output": "Nom du fichier",
+      "trim": "Rognage du silence",
       "declick": "Réparation des clics de vinyle",
       "normalize": "Normalisation du loudness",
       "open": "Ouverte",

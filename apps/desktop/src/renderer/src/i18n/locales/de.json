@@ -469,6 +469,21 @@
     "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
     "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt."
   },
+  "trim": {
+    "title": "Stille kürzen",
+    "hint": "Schneidet Stille am Anfang und Ende bei der Konvertierung ab. Die Griffe auf der Wellenform ziehen, um den Schnitt genau anzupassen.",
+    "summaryNone": "Aus",
+    "cutsLabel": "Schneidet",
+    "cutStart": "{{seconds}} am Anfang",
+    "cutEnd": "{{seconds}} am Ende",
+    "detected": "Stille erkannt: {{parts}}",
+    "nothing": "Keine Stille am Anfang oder Ende erkannt.",
+    "apply": "Erkannte Stille abschneiden",
+    "clear": "Zurücksetzen",
+    "cueWarning": "Codiert das Audio neu und verschiebt gespeicherte DJ-Cues und das Beatgrid um den gekürzten Betrag.",
+    "handleStart": "Schnittanfang",
+    "handleEnd": "Schnittende"
+  },
   "normalize": {
     "title": "Loudness-Normalisierung",
     "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Loudness oder einen Ziel-Peak an.",
@@ -685,6 +700,7 @@
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "output": "Dateiname",
+      "trim": "Stille kürzen",
       "declick": "Vinyl-Klick-Reparatur",
       "normalize": "Loudness-Normalisierung",
       "open": "Offen",
