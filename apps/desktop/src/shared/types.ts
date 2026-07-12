@@ -83,16 +83,8 @@ export interface NormalizeConfig {
 // burst fusion that also repairs long pops. Applied before any normalization
 // filter, so a gain calculation is never anchored to a click's false peak. Forces
 // a re-encode, like normalization.
-export type DeclickMode = 'off' | 'standard' | 'strong'
+export type DeclickMode = 'off' | 'soft' | 'standard' | 'strong'
 
-// The full repair configuration: the mode plus a detection sensitivity (1..5,
-// 5 = adeclick's own default and the safe maximum — see shared/declick.ts for the
-// threshold mapping and why it never goes below the default). Read through
-// normalizeDeclick so 0.49-0.50 settings files (a bare mode string) stay valid.
-export interface DeclickConfig {
-  mode: DeclickMode
-  sensitivity: number
-}
 
 export type KeyNotation = 'camelot' | 'musical'
 
@@ -216,7 +208,7 @@ export interface Settings {
   normalize: NormalizeConfig
   // Default vinyl click repair applied to every conversion; 'off' (the default)
   // means conversions never touch the audio unless overridden per-track.
-  declick: DeclickConfig
+  declick: DeclickMode
   // The editor's sections in display order, each with its default fold state.
   // Read through normalizeEditorSections so files from older versions stay valid.
   editorSections: EditorSectionPref[]
@@ -404,7 +396,7 @@ export interface ProcessJob {
   normalize?: NormalizeConfig
   // Per-track click-repair override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like normalize.
-  declick?: DeclickConfig
+  declick?: DeclickMode
   // Overwrite-original pinned when the batch started; falls back to the live setting
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.

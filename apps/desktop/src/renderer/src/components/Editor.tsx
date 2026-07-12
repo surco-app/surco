@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
-  DeclickConfig,
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   ReleaseTrack,
@@ -113,7 +113,7 @@ interface Props {
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
   // Reports the per-track click-repair override, mirroring onNormalizeChange.
-  onDeclickChange?: (declick: DeclickConfig) => void
+  onDeclickChange?: (declick: DeclickMode) => void
   onAddToAppleMusic: () => void
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.

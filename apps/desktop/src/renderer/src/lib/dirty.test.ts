@@ -119,39 +119,24 @@ describe('isNormalizeStale', () => {
   })
 })
 
-// Same flow for click repair: switching the mode after an export must bring the
-// Update button back, without pretending to edit a tag first.
-const dcfg = (mode: 'off' | 'standard' | 'strong', sensitivity = 5) => ({ mode, sensitivity })
-
+// Same flow for click repair: switching the intensity after an export must bring
+// the Update button back, without pretending to edit a tag first.
 describe('isDeclickStale', () => {
   it('is false right after conversion, when the pick still matches the file', () => {
-    expect(isDeclickStale(converted({ processedDeclick: dcfg('standard') }), dcfg('standard'))).toBe(
-      false,
-    )
+    expect(isDeclickStale(converted({ processedDeclick: 'standard' }), 'standard')).toBe(false)
   })
 
-  it('is true once the mode changes after conversion', () => {
-    expect(isDeclickStale(converted({ processedDeclick: dcfg('off') }), dcfg('standard'))).toBe(true)
-  })
-
-  it('is true once the sensitivity changes on an active mode', () => {
-    expect(
-      isDeclickStale(converted({ processedDeclick: dcfg('standard', 5) }), dcfg('standard', 3)),
-    ).toBe(true)
-  })
-
-  it('ignores the sensitivity while the repair is off — an inert dial is not an edit', () => {
-    expect(isDeclickStale(converted({ processedDeclick: dcfg('off', 5) }), dcfg('off', 2))).toBe(
-      false,
-    )
+  it('is true once the intensity changes after conversion', () => {
+    expect(isDeclickStale(converted({ processedDeclick: 'off' }), 'standard')).toBe(true)
+    expect(isDeclickStale(converted({ processedDeclick: 'standard' }), 'soft')).toBe(true)
   })
 
   it('is never stale before a track is done', () => {
-    const t = converted({ status: 'idle', processedDeclick: dcfg('off') })
-    expect(isDeclickStale(t, dcfg('strong'))).toBe(false)
+    const t = converted({ status: 'idle', processedDeclick: 'off' })
+    expect(isDeclickStale(t, 'strong')).toBe(false)
   })
 
-  it('treats a track converted before the config was recorded as fresh', () => {
-    expect(isDeclickStale(converted(), dcfg('strong'))).toBe(false)
+  it('treats a track converted before the mode was recorded as fresh', () => {
+    expect(isDeclickStale(converted(), 'strong')).toBe(false)
   })
 })

@@ -82,10 +82,33 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', sensitivity: 5 },
+      'standard',
     )
     // The 0.9 impulses are gone, leaving the 0.25 sine as the true peak — and the
     // same-format source was re-encoded (a stream copy would have kept the clicks).
+    expect(peakOf(out)).toBeLessThan(0.3)
+    expect(result.declickedSamples).toBeGreaterThan(0)
+  }, 30000)
+
+  it('still repairs stylus clicks at the gentle step', async () => {
+    // Gentle raises the detection threshold to touch less music; near-full-scale
+    // clicks must stay well above it, or the step would be a placebo.
+    const out = join(dir, 'out-soft.wav')
+    const result = await convertAudio(
+      src,
+      out,
+      'wav',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'soft',
+    )
     expect(peakOf(out)).toBeLessThan(0.3)
     expect(result.declickedSamples).toBeGreaterThan(0)
   }, 30000)
@@ -119,7 +142,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'strong', sensitivity: 5 },
+      'strong',
     )
     expect(peakOf(out)).toBeLessThan(0.3)
     expect(result.declickedSamples).toBeGreaterThan(0)
@@ -140,7 +163,7 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', sensitivity: 5 },
+      'standard',
     )
     // Measured through the click (peak ~0 dB) the gain would be ~-1 dB and the sine
     // would land near 0.22; measured on the repaired audio (-12 dB) it boosts the
@@ -163,7 +186,7 @@ describe('convertAudio declick', () => {
 describe('renderDeclickRemoved', () => {
   it('renders an excerpt that is silence plus the removed clicks', async () => {
     const out = join(dir, 'removed.wav')
-    const result = await renderDeclickRemoved(src, out, { mode: 'standard', sensitivity: 5 })
+    const result = await renderDeclickRemoved(src, out, 'standard')
     expect(result?.path).toBe(out)
     // The clicky source's excerpt must report its clicks — the caption the UI
     // shows so near-silence reads as "clean", not as a broken render.
@@ -185,7 +208,7 @@ describe('renderDeclickRemoved', () => {
   }, 30000)
 
   it('renders nothing when the mode is off', async () => {
-    expect(await renderDeclickRemoved(src, join(dir, 'no.wav'), { mode: 'off', sensitivity: 5 })).toBeNull()
+    expect(await renderDeclickRemoved(src, join(dir, 'no.wav'), 'off')).toBeNull()
   }, 30000)
 })
 

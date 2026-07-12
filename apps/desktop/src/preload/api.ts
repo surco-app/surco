@@ -10,7 +10,7 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
-  DeclickConfig,
+  DeclickMode,
   DockIconFrames,
   KeyResult,
   LifetimeStats,
@@ -142,7 +142,7 @@ export interface Api {
   // or the render failed.
   declickPreview: (
     path: string,
-    cfg: DeclickConfig,
+    mode: DeclickMode,
   ) => Promise<{ path: string; share: number | null } | null>
   // Estimated audible clicks in the track (Surco's own event detector, first eight
   // minutes), for the repair section's readout. null when the estimate failed.

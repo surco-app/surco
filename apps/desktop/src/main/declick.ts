@@ -1,5 +1,5 @@
 import { declickFilter } from '../shared/declick'
-import type { DeclickConfig } from '../shared/types'
+import type { DeclickMode } from '../shared/types'
 
 // How much audio the "hear what gets removed" audition renders. Long enough to
 // catch several clicks at vinyl density, short enough that even the strong preset
@@ -24,10 +24,10 @@ export function previewWindow(durationSec: number | null): { start: number; leng
 export function declickRemovedArgs(
   input: string,
   output: string,
-  cfg: DeclickConfig,
+  mode: DeclickMode,
   window: { start: number; length: number },
 ): string[] | null {
-  const filter = declickFilter(cfg)
+  const filter = declickFilter(mode)
   if (!filter) return null
   // -nostats (not -loglevel error): the render's caller reads adeclick's info-level
   // "Detected clicks" line back off stderr to caption the audition with a count.

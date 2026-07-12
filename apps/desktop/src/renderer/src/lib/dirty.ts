@@ -1,4 +1,4 @@
-import type { DeclickConfig, NormalizeConfig } from '../../../shared/types'
+import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 type SignatureFields = Pick<TrackItem, 'meta' | 'outputName' | 'coverUrl' | 'coverPath'>
@@ -51,20 +51,13 @@ export function isNormalizeStale(track: TrackItem, current: NormalizeConfig): bo
   )
 }
 
-// Only the knobs the active mode applies, like normalizeEffect: with the repair
-// off, the sensitivity is inert, so touching it must not flag an update.
-function declickEffect(cfg: DeclickConfig): string {
-  return cfg.mode === 'off' ? 'off' : `${cfg.mode} ${cfg.sensitivity}`
-}
-
 // The click-repair half of staleness, same contract as isNormalizeStale: switching
-// the repair mode (or its sensitivity) after an export must bring the Update button
-// back, and a track converted before the applied config was recorded is treated as
-// fresh.
-export function isDeclickStale(track: TrackItem, current: DeclickConfig): boolean {
+// the intensity after an export must bring the Update button back, and a track
+// converted before the applied mode was recorded is treated as fresh.
+export function isDeclickStale(track: TrackItem, current: DeclickMode): boolean {
   return (
     track.status === 'done' &&
     track.processedDeclick !== undefined &&
-    declickEffect(track.processedDeclick) !== declickEffect(current)
+    track.processedDeclick !== current
   )
 }

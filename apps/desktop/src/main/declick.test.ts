@@ -30,7 +30,7 @@ describe('declickRemovedArgs', () => {
     const args = declickRemovedArgs(
       '/in.wav',
       '/out.wav',
-      { mode: 'strong', sensitivity: 5 },
+      'strong',
       { start: 140, length: 20 },
     )
     expect(args?.join(' ')).toContain(
@@ -46,7 +46,7 @@ describe('declickRemovedArgs', () => {
       declickRemovedArgs(
         '/in.wav',
         '/out.wav',
-        { mode: 'off', sensitivity: 5 },
+        'off',
         { start: 0, length: 20 },
       ),
     ).toBeNull()

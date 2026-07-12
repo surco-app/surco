@@ -1,4 +1,4 @@
-import type { DeclickConfig, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -150,7 +150,7 @@ export interface CommandDeps {
   editorFormatRef: { readonly current: OutputFormat | null }
   editorDestinationRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
-  editorDeclickRef: { readonly current: DeclickConfig | null }
+  editorDeclickRef: { readonly current: DeclickMode | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
@@ -175,14 +175,14 @@ export interface CommandDeps {
     normalize?: NormalizeConfig,
     forceReencode?: boolean,
     destination?: Destination,
-    declick?: DeclickConfig,
+    declick?: DeclickMode,
   ) => unknown
   askConvertAll: (
     targets: TrackItem[],
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickConfig,
+    declick?: DeclickMode,
   ) => void
   cancelAnalysis: () => void
   analyzeAllQuality: () => void

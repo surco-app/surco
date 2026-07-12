@@ -451,10 +451,12 @@
     "editorHint": "Detect stylus clicks and pops and repair them during conversion.",
     "mode": {
       "off": "Off",
+      "soft": "Gentle",
       "standard": "Standard",
       "strong": "Strong"
     },
     "modeHint": {
+      "soft": "Touches as little music as possible — for delicate material where the audition reveals bites. Clicks still repair.",
       "standard": "Repairs the short clicks a stylus leaves. Safe for most material.",
       "strong": "Also catches long pops and scratches. May soften sharp percussive transients — check the result."
     },
@@ -467,8 +469,6 @@
     "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone.",
     "estimate": "Estimated audible clicks in this track: ~{{count}}",
     "estimateNone": "No audible clicks detected in this track.",
-    "sensitivity": "Sensitivity",
-    "sensitivityHint": "Lower it if the audition reveals bites on the music — detection touches less, clicks still repair.",
     "applied": "Applied filter:"
   },
   "normalize": {

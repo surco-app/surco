@@ -451,10 +451,12 @@
     "editorHint": "Nadel-Klicks und -Knackser erkennen und bei der Konvertierung reparieren.",
     "mode": {
       "off": "Aus",
+      "soft": "Sanft",
       "standard": "Standard",
       "strong": "Stark"
     },
     "modeHint": {
+      "soft": "Berührt so wenig Musik wie möglich — für empfindliches Material, bei dem die Hörprobe Bisse zeigt. Klicks werden weiter repariert.",
       "standard": "Repariert die kurzen Klicks einer Nadel. Sicher für das meiste Material.",
       "strong": "Erfasst auch lange Knackser und Kratzer. Kann harte perkussive Transienten abschwächen — Ergebnis prüfen."
     },
@@ -467,8 +469,6 @@
     "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen.",
     "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
     "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt.",
-    "sensitivity": "Empfindlichkeit",
-    "sensitivityHint": "Senken, wenn die Hörprobe Bisse in der Musik zeigt — die Erkennung greift weniger ein, Klicks werden weiter repariert.",
     "applied": "Angewendeter Filter:"
   },
   "normalize": {

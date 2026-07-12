@@ -156,7 +156,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', sensitivity: 5 },
+      'standard',
     )
     // Clicks repaired, then the linear gain: the 0.9 impulses would have survived
     // as ~0.9×gain — anything near that means the chain ran out of order.
@@ -185,7 +185,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'strong', sensitivity: 5 },
+      'strong',
     )
     expect(result.declickedSamples).toBeGreaterThan(0)
     // The limiter holds the ceiling (-1 dBFS ≈ 0.891) while the gain pushes toward
@@ -225,7 +225,7 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      { mode: 'standard', sensitivity: 5 },
+      'standard',
     )
     const [left, right] = channelStats(out)
     // Each channel lands its own peak on -1 dBFS (0.891), centered on zero — and
@@ -263,7 +263,7 @@ describe('convertAudio declick × normalize', () => {
         undefined,
         undefined,
         undefined,
-        { mode: 'standard', sensitivity: 5 },
+        'standard',
       )
     }
     // Click-anchored: gain ≈ −1 dB, the sine stays near 0.22 and only the surviving

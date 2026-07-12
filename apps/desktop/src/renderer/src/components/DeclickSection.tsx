@@ -3,17 +3,17 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
-import type { DeclickConfig } from '../../../shared/types'
+import type { DeclickMode } from '../../../shared/types'
 import { useClickCount } from '../hooks/useClickCount'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
 
 interface Props {
-  value: DeclickConfig
+  value: DeclickMode
   open: boolean
   onToggle: () => void
-  onChange: (config: DeclickConfig) => void
+  onChange: (config: DeclickMode) => void
   // The track the audition renders from; the button hides in multi-select, where
   // the anchor track's excerpt would misrepresent the rest of the selection.
   inputPath: string
@@ -88,17 +88,17 @@ export function DeclickSection({
         onToggle={onToggle}
         // Off is stated in the dim summary; active modes speak through the accent
         // badge instead, so the state renders exactly once either way.
-        summary={value.mode === 'off' ? tr('declick.mode.off') : undefined}
+        summary={value === 'off' ? tr('declick.mode.off') : undefined}
         summaryTestId="declick-summary"
         right={
           // Only while folded: open, the segmented control right below says the
           // same thing, and showing both reads as two controls for one fact.
-          value.mode !== 'off' && !open ? (
+          value !== 'off' && !open ? (
             <span
               data-testid="declick-active-badge"
               className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
             >
-              {tr(`declick.mode.${value.mode}`)}
+              {tr(`declick.mode.${value}`)}
             </span>
           ) : undefined
         }
@@ -117,7 +117,7 @@ export function DeclickSection({
             </p>
           )}
           <DeclickControls value={value} onChange={onChange} />
-          {value.mode !== 'off' && !isMulti && (
+          {value !== 'off' && !isMulti && (
             <div className="mt-3">
               <button
                 type="button"
@@ -157,7 +157,7 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value.mode !== 'off' && (
+          {value !== 'off' && (
             <p data-testid="declick-cue-warning" className="mt-3 text-xs text-warn">
               {tr('normalize.cueWarning')}
             </p>

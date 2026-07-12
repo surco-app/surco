@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type {
-  DeclickConfig,
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   Settings,
@@ -28,7 +28,7 @@ interface Params {
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickConfig,
+    declick?: DeclickMode,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
@@ -58,7 +58,7 @@ export interface ConfirmFlows {
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickConfig,
+    declick?: DeclickMode,
   ) => void
 }
 
@@ -233,7 +233,7 @@ export function useConfirmFlows({
     format?: OutputFormat,
     normalize?: NormalizeConfig,
     destination?: Destination,
-    declick?: DeclickConfig,
+    declick?: DeclickMode,
   ): void {
     // The editor's one-shot destination pick decides whether this run rewrites
     // sources; only without one does the live setting. An override away from

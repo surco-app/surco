@@ -107,7 +107,7 @@ const api: Api = {
   key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
   waveform: (path: string): Promise<WaveformResult | null> =>
     ipcRenderer.invoke('audio:waveform', path),
-  declickPreview: (path, cfg) => ipcRenderer.invoke('audio:declickPreview', path, cfg),
+  declickPreview: (path, mode) => ipcRenderer.invoke('audio:declickPreview', path, mode),
   clicks: (path: string): Promise<number | null> => ipcRenderer.invoke('audio:clicks', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),

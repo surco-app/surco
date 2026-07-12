@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
 import type {
-  DeclickConfig,
+  DeclickMode,
   KeyNotation,
   NormalizeConfig,
   OutputBitDepth,
@@ -50,7 +50,7 @@ export interface ResolvedSettings {
   showLoudness: boolean
   keyNotation: KeyNotation
   normalize: NormalizeConfig
-  declick: DeclickConfig
+  declick: DeclickMode
   // Always complete and form-first, whatever an older settings.json stored.
   editorSections: EditorSectionPref[]
 }

@@ -24,7 +24,7 @@ import {
   renderDeclickRemoved,
   tagsFromProbe,
 } from './ffmpeg'
-import type { DeclickConfig } from '../shared/types'
+import type { DeclickMode } from '../shared/types'
 import { previewTempPath } from './playback'
 import { recordStat } from './settings'
 
@@ -244,10 +244,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // would remove, served back through surco:// (hence the allowMedia). Not cached —
   // the render is a couple of seconds and the renderer replays the same temp WAV
   // until the track or the mode changes. 'high': the user is actively waiting on it.
-  ipcMain.handle('audio:declickPreview', async (_e, inputPath: string, cfg: DeclickConfig) => {
+  ipcMain.handle('audio:declickPreview', async (_e, inputPath: string, mode: DeclickMode) => {
     try {
       const out = await analysisLimiter.run(
-        () => renderDeclickRemoved(inputPath, previewTempPath('wav'), cfg),
+        () => renderDeclickRemoved(inputPath, previewTempPath('wav'), mode),
         'high',
       )
       if (out) allowMedia(out.path)

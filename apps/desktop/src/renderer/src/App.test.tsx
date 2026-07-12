@@ -115,7 +115,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     continuousPlayback: false,
     keyNotation: 'camelot',
     normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-    declick: { mode: 'off', sensitivity: 5 },
+    declick: 'off',
     shortcutOverrides: {},
     commandUsage: {},
     hasSeenOnboarding: true,

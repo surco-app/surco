@@ -451,10 +451,12 @@
     "editorHint": "Detectar os clicks e estalos da agulha e repará-los durante a conversão.",
     "mode": {
       "off": "Não",
+      "soft": "Suave",
       "standard": "Padrão",
       "strong": "Forte"
     },
     "modeHint": {
+      "soft": "Toca o mínimo possível da música — para material delicado onde a prévia revela mordidas. Os clicks continuam sendo reparados.",
       "standard": "Repara os clicks curtos da agulha. Seguro para a maioria do material.",
       "strong": "Captura também estalos longos e arranhões. Pode suavizar transientes percussivos secos — confira o resultado."
     },
@@ -467,8 +469,6 @@
     "auditionShare": "O reparo tocaria {{percent}}% deste trecho. Em um rip limpo isso fica bem abaixo de 1% — se você ouvir música na prévia, deixe esta faixa em paz.",
     "estimate": "Clicks audíveis estimados nesta faixa: ~{{count}}",
     "estimateNone": "Nenhum click audível detectado nesta faixa.",
-    "sensitivity": "Sensibilidade",
-    "sensitivityHint": "Reduza se a prévia revelar mordidas na música — a detecção toca menos e os clicks continuam sendo reparados.",
     "applied": "Filtro aplicado:"
   },
   "normalize": {

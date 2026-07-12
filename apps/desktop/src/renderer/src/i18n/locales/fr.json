@@ -451,10 +451,12 @@
     "editorHint": "Détecter les clics et craquements de la pointe et les réparer pendant la conversion.",
     "mode": {
       "off": "Non",
+      "soft": "Doux",
       "standard": "Standard",
       "strong": "Fort"
     },
     "modeHint": {
+      "soft": "Touche le moins de musique possible — pour les morceaux délicats où l’écoute révèle des morsures. Les clics se réparent toujours.",
       "standard": "Répare les clics courts laissés par la pointe. Sûr pour la plupart des morceaux.",
       "strong": "Capte aussi les craquements longs et les rayures. Peut adoucir les transitoires percussifs très secs — vérifiez le résultat."
     },
@@ -467,8 +469,6 @@
     "auditionShare": "La réparation toucherait {{percent}}% de cet extrait. Sur un rip propre, c’est bien moins de 1% — si vous entendez de la musique, laissez ce morceau tranquille.",
     "estimate": "Clics audibles estimés dans ce morceau : ~{{count}}",
     "estimateNone": "Aucun clic audible détecté dans ce morceau.",
-    "sensitivity": "Sensibilité",
-    "sensitivityHint": "Baissez-la si l’écoute révèle des morsures sur la musique — la détection touche moins, les clics se réparent toujours.",
     "applied": "Filtre appliqué :"
   },
   "normalize": {

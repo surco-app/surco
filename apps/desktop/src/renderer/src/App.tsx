@@ -32,7 +32,7 @@ import { autoMatchAvailable } from '../../shared/autoMatch'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
-  DeclickConfig,
+  DeclickMode,
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
@@ -406,7 +406,7 @@ export default function App(): React.JSX.Element {
   // Per-track normalization override picked in the editor, mirroring editorFormatRef.
   const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
   // Per-track click-repair override picked in the editor, mirroring editorNormalizeRef.
-  const editorDeclickRef = useRef<DeclickConfig | null>(null)
+  const editorDeclickRef = useRef<DeclickMode | null>(null)
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
   // would otherwise vanish into the devtools console — a failure indistinguishable
@@ -1212,7 +1212,7 @@ export default function App(): React.JSX.Element {
       normalize?: NormalizeConfig,
       forceReencode?: boolean,
       destination?: Destination,
-      declick?: DeclickConfig,
+      declick?: DeclickMode,
     ) => {
       const outcome = await processOne(
         id,
@@ -1260,7 +1260,7 @@ export default function App(): React.JSX.Element {
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     editorNormalizeRef.current = n
   })
-  const onDeclickChange = useStableCallback((d: DeclickConfig) => {
+  const onDeclickChange = useStableCallback((d: DeclickMode) => {
     editorDeclickRef.current = d
   })
   const onAddSelectedToAppleMusic = useStableCallback(() => {
