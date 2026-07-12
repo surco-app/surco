@@ -461,7 +461,10 @@
     "audition": "Escuchar lo que se eliminará",
     "auditionBusy": "Preparando…",
     "auditionStop": "Detener",
-    "auditionFailed": "No se pudo generar la escucha."
+    "auditionFailed": "No se pudo generar la escucha.",
+    "auditionHint": "Reproduce 20 segundos del centro de esta pista con solo el ruido que la reparación quitaría. Si se oye casi silencio, la música queda intacta.",
+    "auditionCount": "Clicks encontrados en este extracto: {{count}} muestras.",
+    "auditionClean": "Sin clicks en este extracto — la reparación lo dejaría intacto."
   },
   "normalize": {
     "title": "Normalización de loudness",

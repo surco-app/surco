@@ -461,7 +461,10 @@
     "audition": "Ouvir o que será removido",
     "auditionBusy": "Preparando…",
     "auditionStop": "Parar",
-    "auditionFailed": "Não foi possível gerar a prévia."
+    "auditionFailed": "Não foi possível gerar a prévia.",
+    "auditionHint": "Toca 20 segundos do meio desta faixa com apenas o ruído que o reparo removeria. Quase silêncio significa que a música fica intacta.",
+    "auditionCount": "Clicks encontrados neste trecho: {{count}} amostras.",
+    "auditionClean": "Nenhum click neste trecho — o reparo o deixaria intacto."
   },
   "normalize": {
     "title": "Normalização de loudness",

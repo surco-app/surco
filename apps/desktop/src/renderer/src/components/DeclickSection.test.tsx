@@ -23,7 +23,7 @@ beforeEach(() => {
     },
   )
   ;(window as unknown as { api: unknown }).api = {
-    declickPreview: vi.fn().mockResolvedValue('/tmp/removed.wav'),
+    declickPreview: vi.fn().mockResolvedValue({ path: '/tmp/removed.wav', samples: 234 }),
   }
 })
 
@@ -103,6 +103,28 @@ describe('DeclickSection', () => {
     })
     expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'strong')
     expect(play).toHaveBeenCalled()
+  })
+
+  // The near-silence the audition plays is baffling without a caption ("is this an
+  // example?" — real user feedback): the excerpt's count states the verdict outright.
+  it('captions the audition with the excerpt’s click count', async () => {
+    render(section({ value: 'standard' }))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('declick-audition'))
+    })
+    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent('234')
+  })
+
+  it('states a clean excerpt outright instead of showing a bare zero', async () => {
+    ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockResolvedValue({
+      path: '/tmp/removed.wav',
+      samples: 0,
+    })
+    render(section({ value: 'standard' }))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('declick-audition'))
+    })
+    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent(/No clicks found/)
   })
 
   // A failed render must say so — a button that silently does nothing reads as

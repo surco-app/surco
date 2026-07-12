@@ -233,7 +233,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         () => renderDeclickRemoved(inputPath, previewTempPath('wav'), mode),
         'high',
       )
-      if (out) allowMedia(out)
+      if (out) allowMedia(out.path)
       return out
     } catch (err) {
       log.error('audio:declickPreview failed', err)

@@ -49,10 +49,11 @@ export function declickRemovedArgs(
 ): string[] | null {
   const filter = declickFilter(mode)
   if (!filter) return null
+  // -nostats (not -loglevel error): the render's caller reads adeclick's info-level
+  // "Detected clicks" line back off stderr to caption the audition with a count.
   return [
     '-hide_banner',
-    '-loglevel',
-    'error',
+    '-nostats',
     '-y',
     '-ss',
     String(window.start),

@@ -461,7 +461,10 @@
     "audition": "Hear what gets removed",
     "auditionBusy": "Rendering…",
     "auditionStop": "Stop",
-    "auditionFailed": "Could not render the audition."
+    "auditionFailed": "Could not render the audition.",
+    "auditionHint": "Plays 20 seconds from the middle of this track with only the noise the repair would remove. Near-silence means the music is untouched.",
+    "auditionCount": "Clicks found in this excerpt: {{count}} samples.",
+    "auditionClean": "No clicks found in this excerpt — the repair would leave it untouched."
   },
   "normalize": {
     "title": "Loudness normalization",

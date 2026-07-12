@@ -37,6 +37,10 @@ export function DeclickSection({
   // element. Stopped when the mode changes or the section unmounts — the render no
   // longer matches the dials, and an orphaned element would keep playing clicks.
   const [audition, setAudition] = useState<Audition>('idle')
+  // The rendered excerpt's repaired-sample count (null until a render lands): the
+  // caption that tells the user the near-silence they hear is "your track is clean",
+  // not a broken button — the confusion the first release of this shipped with.
+  const [samples, setSamples] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a mode change invalidates the playing render, so the cleanup must fire on it.
   useEffect(() => {
@@ -44,6 +48,7 @@ export function DeclickSection({
       audioRef.current?.pause()
       audioRef.current = null
       setAudition('idle')
+      setSamples(null)
     }
   }, [value])
   const audit = async (): Promise<void> => {
@@ -54,12 +59,13 @@ export function DeclickSection({
       return
     }
     setAudition('rendering')
-    const path = await window.api.declickPreview(inputPath, value)
-    if (!path) {
+    const preview = await window.api.declickPreview(inputPath, value)
+    if (!preview) {
       setAudition('failed')
       return
     }
-    const audio = new Audio(mediaUrl(path))
+    setSamples(preview.samples)
+    const audio = new Audio(mediaUrl(preview.path))
     audioRef.current = audio
     audio.onended = () => setAudition('idle')
     setAudition('playing')
@@ -114,6 +120,17 @@ export function DeclickSection({
                       : 'declick.audition',
                 )}
               </button>
+              {/* What the button plays is not obvious ("is this an example?"), so it
+                  is spelled out — and once rendered, the excerpt's count turns the
+                  near-silence from confusing into the verdict it actually is. */}
+              <p className="mt-2 text-xs text-fg-dim">{tr('declick.auditionHint')}</p>
+              {samples !== null && audition !== 'failed' && (
+                <p data-testid="declick-audition-count" className="mt-1 text-xs text-fg-muted">
+                  {samples > 0
+                    ? tr('declick.auditionCount', { count: samples })
+                    : tr('declick.auditionClean')}
+                </p>
+              )}
               {audition === 'failed' && (
                 <p data-testid="declick-audition-failed" className="mt-2 text-xs text-warn">
                   {tr('declick.auditionFailed')}
