@@ -7,6 +7,7 @@ export const EDITOR_SECTION_IDS = [
   'properties',
   'quality',
   'output',
+  'trim',
   'declick',
   'normalize',
 ] as const
@@ -28,10 +29,12 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
   { id: 'properties', open: false },
   { id: 'quality', open: true },
-  // Click repair sits above normalization, matching the order the conversion
-  // applies them in (repair first, then size the gain on the repaired audio).
-  // Folded by default: it's the rare-use section (most rips are clean), and the
-  // fold badge still surfaces an active mode.
+  // The audio sections read in the order the conversion applies them: trim the
+  // silence first, repair clicks on what remains, then size the gain on the
+  // repaired audio. Trim and click repair ship folded — they're the rare-use
+  // sections (most rips need neither), and the fold badge still surfaces an
+  // active state.
+  { id: 'trim', open: false },
   { id: 'declick', open: false },
   { id: 'normalize', open: true },
   { id: 'output', open: true },
