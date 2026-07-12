@@ -28,6 +28,16 @@ function isHidden(name: string): boolean {
   return name.startsWith('.')
 }
 
+// Surco's own conversion temps ("name.tmp-xxxxxxxx.ext", see convertTmpPath) are
+// written beside the output and renamed over it when done. New temps are also
+// dot-prefixed (hidden), but Windows shows dotfiles and older versions wrote them
+// visible, so the pattern is skipped explicitly too — without it, watching an
+// output folder surfaces the half-written temp as a "new track" that vanishes on
+// the rename, leaving a ghost row where every analysis fails.
+function isConversionTemp(name: string): boolean {
+  return /\.tmp-[0-9a-f]{8}\.[^.]+$/i.test(name)
+}
+
 // Drag-and-drop hands us whatever the user dropped — files *and* folders. A
 // dropped folder arrives as a single path that the renderer's extension filter
 // silently discards, so here we replace each directory with the audio files it
@@ -45,7 +55,8 @@ export async function expandPaths(paths: string[]): Promise<string[]> {
       const info = await stat(p).catch(() => null)
       if (!info) return []
       if (info.isDirectory()) return collectAudio(p)
-      return isHidden(basename(p)) ? [] : [p]
+      const name = basename(p)
+      return isHidden(name) || isConversionTemp(name) ? [] : [p]
     }),
   )
   return expanded.flat()
@@ -55,7 +66,7 @@ export async function collectAudio(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   const nested = await Promise.all(
     entries.map(async (entry) => {
-      if (isHidden(entry.name)) return []
+      if (isHidden(entry.name) || isConversionTemp(entry.name)) return []
       const full = join(dir, entry.name)
       if (entry.isDirectory()) return collectAudio(full)
       return AUDIO_EXTS.has(extname(entry.name).toLowerCase()) ? [full] : []

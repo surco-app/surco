@@ -51,10 +51,12 @@ describe('convertTmpPath', () => {
 
   // The rename over the final output is only atomic within one volume, and ffmpeg
   // picks its muxer from the target's extension — so the temp must stay in the
-  // output's own directory and keep the real extension last.
-  it('stays beside the output and keeps the extension last', () => {
+  // output's own directory and keep the real extension last. Dot-prefixed so
+  // Finder, Surco's own folder watcher and any other app watching the output
+  // folder (rekordbox auto-import) never see the half-written file at all.
+  it('stays beside the output, hidden, and keeps the extension last', () => {
     const tmp = convertTmpPath('/out/song.aiff', '.aiff')
-    expect(tmp).toMatch(/^\/out\/song\.tmp-[0-9a-f]+\.aiff$/)
+    expect(tmp).toMatch(/^\/out\/\.song\.tmp-[0-9a-f]+\.aiff$/)
   })
 
   it('matches the extension case-insensitively, like planConversion input handling', () => {

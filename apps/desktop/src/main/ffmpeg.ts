@@ -2,7 +2,7 @@ import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag } from '../shared/rating'
 import type {
@@ -828,9 +828,17 @@ export async function normalizeFilter(
 // metadata resolves to the same output name would otherwise share one deterministic
 // temp path — both ffmpeg processes writing it at once, corruption landing as a
 // "successful" conversion. Beside the output (same volume, so the rename stays atomic)
-// and with the real extension last (ffmpeg picks its muxer from it).
+// and with the real extension last (ffmpeg picks its muxer from it). Dot-prefixed so
+// nothing watching the folder — Finder, Surco's own new-tracks watcher, another
+// app's auto-import — ever sees the half-written file; expand.ts additionally skips
+// the ".tmp-xxxxxxxx" pattern for Windows and for temps left by older versions.
 export function convertTmpPath(output: string, ext: string): string {
-  return output.replace(new RegExp(`\\${ext}$`, 'i'), `.tmp-${randomUUID().slice(0, 8)}${ext}`)
+  const dir = dirname(output)
+  const name = basename(output).replace(
+    new RegExp(`\\${ext}$`, 'i'),
+    `.tmp-${randomUUID().slice(0, 8)}${ext}`,
+  )
+  return join(dir, `.${name}`)
 }
 
 // The TPDF-dithered requantization a reduction to 16 bits needs: swresample only

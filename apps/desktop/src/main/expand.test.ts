@@ -39,6 +39,18 @@ describe('expandPaths', () => {
     )
   })
 
+  // A conversion writes "name.tmp-xxxxxxxx.ext" beside the output and renames it
+  // when done. The folder watcher walks with the same collector as imports, so
+  // without this skip an in-flight conversion surfaces its own temp as a "new
+  // track" — which then vanishes on the rename, leaving a ghost row where every
+  // analysis fails (reported from a NAS-watched folder).
+  it('never ingests Surco’s own conversion temps, dropped or found', async () => {
+    await writeFile(join(dir, 'song.tmp-81f09e8f.wav'), '')
+    await writeFile(join(dir, 'song.wav'), '')
+    expect(await expandPaths([dir])).toEqual([join(dir, 'song.wav')])
+    expect(await expandPaths([join(dir, 'song.tmp-81f09e8f.wav')])).toEqual([])
+  })
+
   it('skips non-audio files inside a dropped folder', async () => {
     // A folder usually holds cover.jpg, notes.txt, etc.; those must not become tracks.
     await writeFile(join(dir, 'song.mp3'), '')
