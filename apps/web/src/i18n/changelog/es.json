@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.51",
+    "date": "12 de julio de 2026",
+    "title": "Clicks bajo control",
+    "items": [
+      {
+        "text": "La reparación de clicks estima cuántos clicks audibles tiene la pista antes de convertir.",
+        "in": "0.51.0"
+      },
+      {
+        "text": "Intensidad de reparación en tres niveles — Suave, Estándar y Fuerte — en un único control, junto a la escucha previa de lo que se eliminará.",
+        "in": "0.51.0"
+      }
+    ]
+  },
+  {
     "version": "0.50",
     "date": "12 de julio de 2026",
     "title": "Escucha la reparación y lee el editor de un vistazo",

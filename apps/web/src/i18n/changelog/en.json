@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.51",
+    "date": "July 12, 2026",
+    "title": "Clicks under control",
+    "items": [
+      {
+        "text": "Click repair now estimates how many audible clicks a track carries before you convert.",
+        "in": "0.51.0"
+      },
+      {
+        "text": "Three repair intensities — Gentle, Standard and Strong — in a single control, next to the hear-what-gets-removed audition.",
+        "in": "0.51.0"
+      }
+    ]
+  },
+  {
     "version": "0.50",
     "date": "July 12, 2026",
     "title": "Hear the repair, read the editor at a glance",
