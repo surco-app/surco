@@ -448,7 +448,6 @@
   "declick": {
     "title": "Vinyl click repair",
     "hint": "Off by default. Detects stylus clicks and pops and interpolates them away during conversion.",
-    "editorHint": "Detect stylus clicks and pops and repair them during conversion.",
     "mode": {
       "off": "Off",
       "soft": "Gentle",
@@ -456,9 +455,9 @@
       "strong": "Strong"
     },
     "modeHint": {
-      "soft": "Touches as little music as possible — for delicate material where the audition reveals bites. Clicks still repair.",
-      "standard": "Repairs the short clicks a stylus leaves. Safe for most material.",
-      "strong": "Also catches long pops and scratches. May soften sharp percussive transients — check the result."
+      "soft": "The lightest touch, for delicate material.",
+      "standard": "Repairs short stylus clicks.",
+      "strong": "Also catches long pops; may soften sharp transients."
     },
     "audition": "Hear what gets removed",
     "auditionBusy": "Rendering…",
@@ -468,8 +467,7 @@
     "auditionClean": "The repair would touch nothing in this excerpt.",
     "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone.",
     "estimate": "Estimated audible clicks in this track: ~{{count}}",
-    "estimateNone": "No audible clicks detected in this track.",
-    "applied": "Applied filter:"
+    "estimateNone": "No audible clicks detected in this track."
   },
   "normalize": {
     "title": "Loudness normalization",

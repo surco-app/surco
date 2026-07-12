@@ -30,18 +30,17 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
       {value !== 'off' && (
-        <>
-          <p data-testid="declick-mode-hint" className="mt-2 text-xs text-fg-dim">
-            {tr(`declick.modeHint.${value}`)}
-          </p>
-          {/* The exact ffmpeg stage the conversion will run — built by the same
-              shared function main uses, so it can never lie. */}
+        // One line, two facts: the step's trade-off, and the exact ffmpeg stage the
+        // conversion will run — built by the same shared function main uses, so it
+        // can never lie.
+        <p data-testid="declick-mode-hint" className="mt-2 text-xs text-fg-dim">
+          {tr(`declick.modeHint.${value}`)}
           {filter && (
-            <p data-testid="declick-applied" className="mt-2 font-mono text-[11px] text-fg-faint">
-              {tr('declick.applied')} {filter}
-            </p>
+            <span data-testid="declick-applied" className="ml-2 font-mono text-[11px] text-fg-faint">
+              · {filter}
+            </span>
           )}
-        </>
+        </p>
       )}
     </div>
   )

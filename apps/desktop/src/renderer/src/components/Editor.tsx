@@ -1017,6 +1017,7 @@ export const Editor = memo(function Editor({
                       }}
                       inputPath={item.inputPath}
                       isMulti={isMulti}
+                      format={format}
                     />
                   )
                 case 'normalize':

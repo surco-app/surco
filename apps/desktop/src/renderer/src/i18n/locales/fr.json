@@ -448,7 +448,6 @@
   "declick": {
     "title": "Réparation des clics de vinyle",
     "hint": "Désactivé par défaut. Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
-    "editorHint": "Détecter les clics et craquements de la pointe et les réparer pendant la conversion.",
     "mode": {
       "off": "Non",
       "soft": "Doux",
@@ -456,9 +455,9 @@
       "strong": "Fort"
     },
     "modeHint": {
-      "soft": "Touche le moins de musique possible — pour les morceaux délicats où l’écoute révèle des morsures. Les clics se réparent toujours.",
-      "standard": "Répare les clics courts laissés par la pointe. Sûr pour la plupart des morceaux.",
-      "strong": "Capte aussi les craquements longs et les rayures. Peut adoucir les transitoires percussifs très secs — vérifiez le résultat."
+      "soft": "La touche la plus légère, pour les morceaux délicats.",
+      "standard": "Répare les clics courts de la pointe.",
+      "strong": "Capte aussi les craquements longs ; peut adoucir les transitoires."
     },
     "audition": "Écouter ce qui sera supprimé",
     "auditionBusy": "Préparation…",
@@ -468,8 +467,7 @@
     "auditionClean": "La réparation ne toucherait rien dans cet extrait.",
     "auditionShare": "La réparation toucherait {{percent}}% de cet extrait. Sur un rip propre, c’est bien moins de 1% — si vous entendez de la musique, laissez ce morceau tranquille.",
     "estimate": "Clics audibles estimés dans ce morceau : ~{{count}}",
-    "estimateNone": "Aucun clic audible détecté dans ce morceau.",
-    "applied": "Filtre appliqué :"
+    "estimateNone": "Aucun clic audible détecté dans ce morceau."
   },
   "normalize": {
     "title": "Normalisation du loudness",

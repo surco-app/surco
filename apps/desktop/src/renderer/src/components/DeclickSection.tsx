@@ -3,11 +3,17 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
-import type { DeclickMode } from '../../../shared/types'
+import type { DeclickMode, OutputFormat } from '../../../shared/types'
 import { useClickCount } from '../hooks/useClickCount'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
+import { Tooltip } from './Tooltip'
+
+// The formats whose re-encode carries the Traktor cue/beatgrid frame over (see
+// convertAudio's copyCueFrames): converting to these loses nothing, so the amber
+// cue warning would be pure noise there.
+const CUES_SURVIVE: OutputFormat[] = ['mp3', 'aiff']
 
 interface Props {
   value: DeclickMode
@@ -18,6 +24,9 @@ interface Props {
   // the anchor track's excerpt would misrepresent the rest of the selection.
   inputPath: string
   isMulti: boolean
+  // The export format the convert button will use — the cue warning only shows for
+  // the formats that actually drop the cues.
+  format: OutputFormat
 }
 
 type Audition = 'idle' | 'rendering' | 'playing' | 'failed'
@@ -32,6 +41,7 @@ export function DeclickSection({
   onChange,
   inputPath,
   isMulti,
+  format,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The RX-style counter: Surco's own audible-click estimate for the whole track
@@ -105,8 +115,8 @@ export function DeclickSection({
       />
       {open && (
         <div className="mt-3">
-          <p className="mb-3 text-xs text-fg-dim">{tr('declick.editorHint')}</p>
-          {/* The estimate speaks the user's language (events, not samples) and is
+          {/* No intro line — the section title already says what this is. The
+              estimate speaks the user's language (events, not samples) and is
               deliberately worded "audible": clicks buried under loud passages mask
               from the detector much as they mask from the ear. */}
           {!isMulti && typeof clicks === 'number' && (
@@ -138,11 +148,11 @@ export function DeclickSection({
                       ? 'declick.auditionBusy'
                       : 'declick.audition',
                 )}
+                {/* What the button plays is not obvious ("is this an example?"), so
+                    the explanation lives on hover instead of as a standing paragraph
+                    — the rendered share caption below is the inline feedback. */}
+                <Tooltip label={tr('declick.auditionHint')} />
               </button>
-              {/* What the button plays is not obvious ("is this an example?"), so it
-                  is spelled out — and once rendered, the excerpt's touched share
-                  turns the audition into a verdict the user can weigh by ear. */}
-              <p className="mt-2 text-xs text-fg-dim">{tr('declick.auditionHint')}</p>
               {share !== null && audition !== 'failed' && (
                 <p data-testid="declick-audition-count" className="mt-1 text-xs text-fg-muted">
                   {share > 0
@@ -157,7 +167,7 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value !== 'off' && (
+          {value !== 'off' && !CUES_SURVIVE.includes(format) && (
             <p data-testid="declick-cue-warning" className="mt-3 text-xs text-warn">
               {tr('normalize.cueWarning')}
             </p>

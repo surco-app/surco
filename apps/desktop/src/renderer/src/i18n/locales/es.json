@@ -448,7 +448,6 @@
   "declick": {
     "title": "Reparación de clicks de vinilo",
     "hint": "Desactivado por defecto. Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
-    "editorHint": "Detecta los clicks y pops de la aguja y los repara durante la conversión.",
     "mode": {
       "off": "No",
       "soft": "Suave",
@@ -456,9 +455,9 @@
       "strong": "Fuerte"
     },
     "modeHint": {
-      "soft": "Toca la mínima música posible — para material delicado donde la escucha revela mordiscos. Los clicks se siguen reparando.",
-      "standard": "Repara los clicks cortos de la aguja. Seguro para la mayoría del material.",
-      "strong": "Atrapa también pops largos y arañazos. Puede suavizar transitorios percusivos muy secos — revisa el resultado."
+      "soft": "El toque mínimo, para material delicado.",
+      "standard": "Repara los clicks cortos de la aguja.",
+      "strong": "Atrapa también pops largos; puede suavizar transitorios."
     },
     "audition": "Escuchar lo que se eliminará",
     "auditionBusy": "Preparando…",
@@ -468,8 +467,7 @@
     "auditionClean": "La reparación no tocaría nada en este extracto.",
     "auditionShare": "La reparación tocaría el {{percent}}% de este extracto. En un rip limpio suele ser bastante menos del 1% — si oyes música en la escucha, deja esta pista en paz.",
     "estimate": "Clicks audibles estimados en esta pista: ~{{count}}",
-    "estimateNone": "Sin clicks audibles detectados en esta pista.",
-    "applied": "Filtro aplicado:"
+    "estimateNone": "Sin clicks audibles detectados en esta pista."
   },
   "normalize": {
     "title": "Normalización de loudness",

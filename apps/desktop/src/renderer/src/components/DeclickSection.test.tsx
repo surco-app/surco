@@ -41,6 +41,7 @@ function section(over: Partial<React.ComponentProps<typeof DeclickSection>> = {}
         onChange={() => {}}
         inputPath="/in/track.wav"
         isMulti={false}
+        format="wav"
         {...over}
       />
     </QueryClientProvider>
@@ -74,13 +75,16 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
   })
 
-  // The repair forces a re-encode (dropping cues on WAV/FLAC like normalization), so
-  // the warning must appear exactly when a mode is active.
-  it('warns about the re-encode only when a mode is active', () => {
-    const { rerender } = render(section({ value: 'off' }))
+  // The re-encode drops the Traktor cues only on the formats that can't carry them
+  // back, so the amber line shows exactly when a mode is active AND the chosen
+  // format actually loses something — anywhere else it's noise.
+  it('warns about dropped cues only when the format actually drops them', () => {
+    const { rerender } = render(section({ value: 'off', format: 'wav' }))
     expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
-    rerender(section({ value: 'strong' }))
+    rerender(section({ value: 'strong', format: 'wav' }))
     expect(screen.getByTestId('declick-cue-warning')).toBeInTheDocument()
+    rerender(section({ value: 'strong', format: 'aiff' }))
+    expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
   })
 
   it('reports mode picks up through onChange', () => {

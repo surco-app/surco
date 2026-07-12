@@ -448,7 +448,6 @@
   "declick": {
     "title": "Vinyl-Klick-Reparatur",
     "hint": "Standardmäßig aus. Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
-    "editorHint": "Nadel-Klicks und -Knackser erkennen und bei der Konvertierung reparieren.",
     "mode": {
       "off": "Aus",
       "soft": "Sanft",
@@ -456,9 +455,9 @@
       "strong": "Stark"
     },
     "modeHint": {
-      "soft": "Berührt so wenig Musik wie möglich — für empfindliches Material, bei dem die Hörprobe Bisse zeigt. Klicks werden weiter repariert.",
-      "standard": "Repariert die kurzen Klicks einer Nadel. Sicher für das meiste Material.",
-      "strong": "Erfasst auch lange Knackser und Kratzer. Kann harte perkussive Transienten abschwächen — Ergebnis prüfen."
+      "soft": "Der leichteste Eingriff, für empfindliches Material.",
+      "standard": "Repariert kurze Nadel-Klicks.",
+      "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."
     },
     "audition": "Anhören, was entfernt wird",
     "auditionBusy": "Wird erstellt…",
@@ -468,8 +467,7 @@
     "auditionClean": "Die Reparatur würde in diesem Ausschnitt nichts berühren.",
     "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen.",
     "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
-    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt.",
-    "applied": "Angewendeter Filter:"
+    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt."
   },
   "normalize": {
     "title": "Loudness-Normalisierung",
