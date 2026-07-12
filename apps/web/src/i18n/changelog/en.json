@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.52",
+    "date": "July 12, 2026",
+    "title": "Silence, trimmed",
+    "items": [
+      {
+        "text": "New Silence trim section: cuts lead-in and run-out silence during conversion. Surco detects it and suggests the cut on the waveform, and you fine-tune the exact edges with two handles — with zoom and arrow-key nudging.",
+        "in": "0.52.0"
+      }
+    ]
+  },
+  {
     "version": "0.51",
     "date": "July 12, 2026",
     "title": "Clicks under control",

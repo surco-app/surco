@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.52",
+    "date": "12 de julio de 2026",
+    "title": "Fuera silencios",
+    "items": [
+      {
+        "text": "Nueva sección Recorte de silencio: elimina el silencio del inicio y del final al convertir. Surco lo detecta y lo propone sobre la forma de onda, y tú afinas el corte exacto con dos asas — con zoom y ajuste fino con las flechas del teclado.",
+        "in": "0.52.0"
+      }
+    ]
+  },
+  {
     "version": "0.51",
     "date": "12 de julio de 2026",
     "title": "Clicks bajo control",
