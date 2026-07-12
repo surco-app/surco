@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +22,8 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
   const setSections = (next: EditorSectionPref[]): void => patch('editorSections', next)
   const toggleOpen = (id: EditorSectionPref['id']): void =>
     setSections(sections.map((s) => (s.id === id ? { ...s, open: !s.open } : s)))
+  const toggleHidden = (id: EditorSectionPref['id']): void =>
+    setSections(sections.map((s) => (s.id === id ? { ...s, hidden: s.hidden !== true } : s)))
   const move = (index: number, delta: -1 | 1): void => {
     const next = [...sections]
     const [row] = next.splice(index, 1)
@@ -179,15 +181,42 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
                       aria-hidden="true"
                     />
                   )}
-                  <span className="truncate">{tr(`settings.sections.${section.id}`)}</span>
+                  <span className={`truncate ${section.hidden ? 'text-fg-dim line-through' : ''}`}>
+                    {tr(`settings.sections.${section.id}`)}
+                  </span>
                 </span>
                 <div className="flex shrink-0 items-center gap-1">
+                  {/* Hidden removes the section from the editor entirely; the form has no
+                      toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
+                      default means nothing for a section that never renders. */}
+                  {movable && (
+                    <button
+                      type="button"
+                      data-testid={`settings-section-hide-${section.id}`}
+                      aria-pressed={section.hidden === true}
+                      aria-label={tr(
+                        section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
+                      )}
+                      title={tr(
+                        section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
+                      )}
+                      onClick={() => toggleHidden(section.id)}
+                      className="rounded px-1.5 py-0.5 text-fg-muted hover:text-fg"
+                    >
+                      {section.hidden ? (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      )}
+                    </button>
+                  )}
                   <button
                     type="button"
                     data-testid={`settings-section-open-${section.id}`}
                     aria-pressed={section.open}
+                    disabled={section.hidden === true}
                     onClick={() => toggleOpen(section.id)}
-                    className={`mr-1 rounded px-2 py-0.5 text-xs ${
+                    className={`mr-1 rounded px-2 py-0.5 text-xs disabled:opacity-25 ${
                       section.open
                         ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                         : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'

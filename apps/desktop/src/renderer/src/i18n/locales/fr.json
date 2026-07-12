@@ -678,6 +678,8 @@
       "declick": "Réparation des clics de vinyle",
       "normalize": "Normalisation du loudness",
       "open": "Ouverte",
+      "show": "Afficher la section dans l’éditeur",
+      "hide": "Masquer la section de l’éditeur",
       "pinned": "Fixe"
     },
     "keyNotations": {

@@ -16,6 +16,10 @@ export interface EditorSectionPref {
   id: EditorSectionId
   // Whether the section starts unfolded when the app launches.
   open: boolean
+  // Whether the section is removed from the editor entirely (Settings → Editor).
+  // Optional so files saved before it existed stay valid; absent reads as shown.
+  // The form can never carry it — it's the editor itself.
+  hidden?: boolean
 }
 
 // The file name goes last: it names the output, so it reads best right above the
@@ -26,7 +30,9 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'quality', open: true },
   // Click repair sits above normalization, matching the order the conversion
   // applies them in (repair first, then size the gain on the repaired audio).
-  { id: 'declick', open: true },
+  // Folded by default: it's the rare-use section (most rips are clean), and the
+  // fold badge still surfaces an active mode.
+  { id: 'declick', open: false },
   { id: 'normalize', open: true },
   { id: 'output', open: true },
 ]
@@ -45,5 +51,11 @@ export function normalizeEditorSections(value: EditorSectionPref[] | undefined):
   return [
     ...merged.filter((s) => s.id === 'form'),
     ...merged.filter((s) => s.id !== 'form'),
-  ].map((s) => ({ id: s.id, open: s.open }))
+  ].map((s) => ({
+    id: s.id,
+    open: s.open,
+    // hidden survives the repair, except on the form — hiding it would blank the
+    // whole editor, so a hand-edited flag there is dropped rather than honored.
+    ...(s.hidden === true && s.id !== 'form' ? { hidden: true } : {}),
+  }))
 }

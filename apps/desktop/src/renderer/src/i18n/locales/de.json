@@ -678,6 +678,8 @@
       "declick": "Vinyl-Klick-Reparatur",
       "normalize": "Loudness-Normalisierung",
       "open": "Offen",
+      "show": "Abschnitt im Editor anzeigen",
+      "hide": "Abschnitt im Editor ausblenden",
       "pinned": "Fest"
     },
     "keyNotations": {

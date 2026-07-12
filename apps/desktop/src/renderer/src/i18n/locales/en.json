@@ -678,6 +678,8 @@
       "declick": "Vinyl click repair",
       "normalize": "Loudness normalization",
       "open": "Open",
+      "show": "Show section in the editor",
+      "hide": "Hide section from the editor",
       "pinned": "Fixed"
     },
     "keyNotations": {

@@ -1189,6 +1189,22 @@ describe('Editor export control', () => {
     }
   })
 
+  // A hidden section is removed from the editor entirely, not just folded — the
+  // Settings eye toggle is how a DJ drops sections they never use (e.g. Properties).
+  it('skips sections hidden in the settings', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'properties', open: false, hidden: true },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    expect(screen.queryByText('Properties')).not.toBeInTheDocument()
+    expect(screen.getByTestId('editor-normalize')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))

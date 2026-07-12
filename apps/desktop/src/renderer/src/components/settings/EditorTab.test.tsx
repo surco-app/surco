@@ -128,6 +128,33 @@ describe('EditorTab sections', () => {
     expect(screen.queryByTestId('settings-section-grip-form')).not.toBeInTheDocument()
   })
 
+  // Sections the user never touches (e.g. Properties) can be removed from the editor
+  // entirely, not just folded — the eye toggle stages the hidden flag.
+  it('patches the hidden flag when the eye is toggled', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-section-hide-properties'))
+    expect(patch).toHaveBeenCalledWith(
+      'editorSections',
+      DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'properties' ? { ...s, hidden: true } : s,
+      ),
+    )
+  })
+
+  it('quiets the open pill while a section is hidden — a fold default means nothing then', () => {
+    renderTab({
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'properties' ? { ...s, hidden: true } : s,
+      ),
+    })
+    expect(screen.getByTestId('settings-section-open-properties')).toBeDisabled()
+  })
+
+  it('offers no hide toggle on the form row — it is the editor itself', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-section-hide-form')).not.toBeInTheDocument()
+  })
+
   // The metadata form is the editor's fixed header: it can't move, and the first
   // movable section can't climb above it — so their arrows must not exist/act.
   it('offers no arrows on the form row and no up arrow past it', () => {

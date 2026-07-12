@@ -33,7 +33,31 @@ describe('normalizeEditorSections', () => {
       { id: 'properties' as const, open: true },
     ]
     // The one section this store predates (declick) is appended with its default.
-    expect(normalizeEditorSections(stored)).toEqual([...stored, { id: 'declick', open: true }])
+    expect(normalizeEditorSections(stored)).toEqual([...stored, { id: 'declick', open: false }])
+  })
+
+  // Click repair is the rare-use section (most rips are clean), so it ships folded —
+  // the fold badge still shows when a mode is active.
+  it('ships click repair folded by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'declick')?.open).toBe(false)
+  })
+
+  // A hidden section stays hidden across the repair — losing the flag would resurface
+  // sections the user explicitly removed from the editor.
+  it('keeps the hidden flag for known sections', () => {
+    const stored = [
+      { id: 'form' as const, open: true },
+      { id: 'properties' as const, open: false, hidden: true },
+    ]
+    const props = normalizeEditorSections(stored).find((s) => s.id === 'properties')
+    expect(props).toEqual({ id: 'properties', open: false, hidden: true })
+  })
+
+  // The metadata form is the editor itself — a hand-edited file must not be able to
+  // blank the whole panel by hiding it.
+  it('never lets the metadata form be hidden', () => {
+    const stored = [{ id: 'form' as const, open: true, hidden: true }]
+    expect(normalizeEditorSections(stored)[0]).toEqual({ id: 'form', open: true })
   })
 
   // The metadata form is the editor's header (toolbar, Apple Music badge) — the one

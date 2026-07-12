@@ -923,7 +923,7 @@ export const Editor = memo(function Editor({
               section keeps its own visibility conditions, so reordering never makes
               one appear where it wouldn't have. */}
           {editorSections
-            .filter((s) => s.id !== 'form')
+            .filter((s) => s.id !== 'form' && s.hidden !== true)
             .map(({ id }) => {
               switch (id) {
                 case 'properties':
