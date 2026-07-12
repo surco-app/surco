@@ -47,6 +47,9 @@ export function OutputNameSection({
         title={tr('editor.outputName')}
         open={open}
         onToggle={onToggle}
+        // The exact name the export will write, verifiable without unfolding.
+        summary={`${item.outputName ?? defaultOutputName}.${formatExtension(format)}`}
+        summaryTestId="output-name-summary"
         right={
           <span className="flex items-center gap-1.5">
             {!autoApply && (

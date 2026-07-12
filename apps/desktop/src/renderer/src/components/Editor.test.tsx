@@ -1205,6 +1205,23 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('editor-normalize')).toBeInTheDocument()
   })
 
+  // With the form folded, the header states whose tags these are — artist and
+  // title — so a fully folded editor still reads as a track, not a stack of
+  // anonymous headers.
+  it('summarizes artist and title in the metadata header while folded', () => {
+    renderEditor({ id: 'a', meta: { artist: 'Critical Mass', title: 'In Your Eyes' } }, 'wav', {
+      editorSections: [
+        { id: 'form', open: false },
+        { id: 'properties', open: false },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    expect(screen.getByTestId('form-summary')).toHaveTextContent('Critical Mass — In Your Eyes')
+    expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))

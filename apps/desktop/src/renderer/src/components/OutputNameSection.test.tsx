@@ -70,4 +70,29 @@ describe('OutputNameSection', () => {
     expect(screen.queryByTestId('regenerate-output-name')).not.toBeInTheDocument()
     expect(screen.getByTestId('customize-output-name')).toBeInTheDocument()
   })
+
+  // The name is the very thing a DJ wants to verify before converting — the folded
+  // header must show what the export will write without making them open the section.
+  it('summarizes the resolved output name in the header while folded', () => {
+    render(
+      <OutputNameSection
+        item={{ ...item, outputName: 'A1. In Your Eyes' }}
+        format="aiff"
+        defaultOutputName="a"
+        autoApply={false}
+        willEditInPlace={false}
+        open={false}
+        onToggle={vi.fn()}
+        onChangeName={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onOpenRename={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('output-name-summary')).toHaveTextContent('A1. In Your Eyes.aiff')
+  })
+
+  it('drops the summary once the section is open — the field below shows the name', () => {
+    renderSection(false)
+    expect(screen.queryByTestId('output-name-summary')).not.toBeInTheDocument()
+  })
 })

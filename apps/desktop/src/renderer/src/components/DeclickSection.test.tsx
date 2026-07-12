@@ -23,6 +23,23 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
   })
 
+  // A folded section that shows nothing is indistinguishable from one never looked
+  // at — the header must state "Off" so the folded column stays scannable.
+  it('summarizes the off state in the header while folded', () => {
+    const { rerender } = render(
+      <DeclickSection value="off" open={false} onToggle={() => {}} onChange={() => {}} />,
+    )
+    expect(screen.getByTestId('declick-summary')).toHaveTextContent('Off')
+    // Open, the segmented control below already says it.
+    rerender(<DeclickSection value="off" open onToggle={() => {}} onChange={() => {}} />)
+    expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
+    // Active, the accent badge is the state — a second "Standard" would be noise.
+    rerender(
+      <DeclickSection value="standard" open={false} onToggle={() => {}} onChange={() => {}} />,
+    )
+    expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
+  })
+
   // The repair forces a re-encode (dropping cues on WAV/FLAC like normalization), so
   // the warning must appear exactly when a mode is active.
   it('warns about the re-encode only when a mode is active', () => {

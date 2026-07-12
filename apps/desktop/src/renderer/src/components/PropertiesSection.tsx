@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -6,6 +5,7 @@ import { formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { PropertiesReadout } from './PropertiesReadout'
+import { SectionHeader } from './SectionHeader'
 
 interface Props {
   item: TrackItem
@@ -44,21 +44,13 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
     : ''
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={tr('editor.propertiesTitle')}
-        aria-expanded={open}
-        className="flex w-full items-center gap-1.5 text-left text-xs text-fg-dim hover:text-fg-muted"
-      >
-        <ChevronRight
-          aria-hidden="true"
-          className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
-        />
-        <span data-testid="properties-summary" className="truncate tabular-nums">
-          {summary || tr('editor.propertiesTitle')}
-        </span>
-      </button>
+      <SectionHeader
+        title={tr('editor.propertiesTitle')}
+        open={open}
+        onToggle={onToggle}
+        summary={summary || undefined}
+        summaryTestId="properties-summary"
+      />
       {open &&
         (properties ? (
           <PropertiesReadout

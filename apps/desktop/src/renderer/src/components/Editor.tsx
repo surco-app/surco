@@ -843,6 +843,14 @@ export const Editor = memo(function Editor({
             }
             open={formOpen}
             onToggle={() => setSectionOpen('form', !formOpen)}
+            // Folded, the header still says whose tags these are; multi-select's
+            // title already counts the selection, so no digest is added there.
+            summary={
+              !isMulti
+                ? [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || undefined
+                : undefined
+            }
+            summaryTestId="form-summary"
             right={
               <div className="flex items-center gap-3">
                 {/* Badge first, button last: the badge appears once the snapshot resolves

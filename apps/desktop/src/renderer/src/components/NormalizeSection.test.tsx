@@ -162,6 +162,33 @@ describe('NormalizeSection layout', () => {
     )
   }
 
+  // Folded and off, the header used to show nothing at all — "off" and "never
+  // looked at it" were the same pixels. The dim summary states the off mode, and
+  // when a mode is active it carries the figures the badge alone omits: what the
+  // conversion will actually target.
+  it('summarizes the off state in the header while folded', () => {
+    renderWith({ open: false, value: cfg })
+    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('None')
+  })
+
+  it('summarizes the loudness figures in the header while folded', () => {
+    renderWith({ open: false, value: loud })
+    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('-14 LUFS · -1 dBTP')
+  })
+
+  it('summarizes the peak ceiling in the header while folded', () => {
+    renderWith({
+      open: false,
+      value: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -0.1 },
+    })
+    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('-0.1 dB')
+  })
+
+  it('drops the summary once the section is open', () => {
+    renderWith({ open: true, value: loud })
+    expect(screen.queryByTestId('normalize-summary')).not.toBeInTheDocument()
+  })
+
   // The badge exists so a FOLDED section still shows that the convert will
   // normalize; open, the segmented control right below says the same thing, and
   // showing both reads as two controls for one fact.

@@ -62,6 +62,17 @@ export function NormalizeSection({
         title={tr('normalize.title')}
         open={open}
         onToggle={onToggle}
+        // The badge names the active mode; the summary carries what it omits — the
+        // figures the conversion will target — and states "None" when off, so the
+        // folded header never reads blank.
+        summary={
+          value.mode === 'loudness'
+            ? `${value.targetLufs} LUFS · ${value.truePeakDb} dBTP`
+            : value.mode === 'peak'
+              ? `${value.peakDb} dB`
+              : tr('normalize.mode.none')
+        }
+        summaryTestId="normalize-summary"
         right={
           // Only while folded: open, the segmented control right below says the
           // same thing, and showing both reads as two controls for one fact.

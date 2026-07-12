@@ -22,6 +22,10 @@ export function DeclickSection({ value, open, onToggle, onChange }: Props): Reac
         title={tr('declick.title')}
         open={open}
         onToggle={onToggle}
+        // Off is stated in the dim summary; active modes speak through the accent
+        // badge instead, so the state renders exactly once either way.
+        summary={value === 'off' ? tr('declick.mode.off') : undefined}
+        summaryTestId="declick-summary"
         right={
           // Only while folded: open, the segmented control right below says the
           // same thing, and showing both reads as two controls for one fact.
