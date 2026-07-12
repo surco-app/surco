@@ -25,14 +25,11 @@ describe('DeclickControls', () => {
     expect(screen.getByTestId('declick-mode-hint')).toBeInTheDocument()
   })
 
-  // The transparency line: the exact ffmpeg stage, built by the same shared function
-  // the conversion uses, so what the user reads is what runs.
-  it('shows the exact applied filter for the current step', () => {
-    const { rerender } = render(<DeclickControls value="soft" onChange={() => {}} />)
-    expect(screen.getByTestId('declick-applied')).toHaveTextContent('adeclick=t=4')
-    rerender(<DeclickControls value="strong" onChange={() => {}} />)
-    expect(screen.getByTestId('declick-applied')).toHaveTextContent('adeclick=b=4')
-    rerender(<DeclickControls value="off" onChange={() => {}} />)
+  // No raw ffmpeg strings in the UI — the ladder labels are the whole vocabulary a
+  // user needs (the filter mapping lives in shared/declick.ts for the tests).
+  it('never surfaces the underlying filter string', () => {
+    render(<DeclickControls value="strong" onChange={() => {}} />)
     expect(screen.queryByTestId('declick-applied')).not.toBeInTheDocument()
+    expect(screen.queryByText(/adeclick/)).not.toBeInTheDocument()
   })
 })

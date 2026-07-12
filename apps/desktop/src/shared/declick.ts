@@ -1,8 +1,6 @@
 // The click-repair intensity ladder and its one translation into an ffmpeg filter.
-// Lives in shared because the renderer shows the exact applied filter string under
-// the control (the "what values am I applying" transparency line) and main builds
-// the conversion with it — one definition, so the shown string can never drift
-// from the executed one.
+// Lives in shared next to normalizeDeclick, which both processes read: main repairs
+// stored settings with it and the renderer resolves the settings context through it.
 import type { DeclickMode } from './types'
 
 export const DEFAULT_DECLICK: DeclickMode = 'off'
