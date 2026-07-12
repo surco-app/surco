@@ -85,6 +85,18 @@ export interface NormalizeConfig {
 // a re-encode, like normalization.
 export type DeclickMode = 'off' | 'soft' | 'standard' | 'strong'
 
+// Optional leading/trailing silence trim ("top and tail"), applied during
+// conversion ahead of click repair and normalization. Absolute seconds into the
+// source: audio before startSec and after endSec is cut. Either bound alone is
+// valid — an absent startSec keeps the head, an absent endSec keeps the tail.
+// The user confirms the exact seconds in the editor (the auto-detection only
+// suggests), so the conversion cuts deterministically instead of re-detecting.
+// Forces a re-encode, like normalization.
+export interface TrimRange {
+  startSec?: number
+  endSec?: number
+}
+
 
 export type KeyNotation = 'camelot' | 'musical'
 
@@ -397,6 +409,9 @@ export interface ProcessJob {
   // Per-track click-repair override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like normalize.
   declick?: DeclickMode
+  // The silence trim the user confirmed in the editor. No Settings fallback —
+  // the exact seconds only exist per track, so it rides the job or not at all.
+  trim?: TrimRange
   // Overwrite-original pinned when the batch started; falls back to the live setting
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.

@@ -18,12 +18,14 @@ import type {
   TrackMetadata,
   Mp3Quality,
   TrackProperties,
+  TrimRange,
   WaveformResult,
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { countClicks } from './clickDetect'
 import { declickFilter } from '../shared/declick'
+import { trimFilter } from '../shared/trim'
 import {
   declickRemovedArgs,
   parseDeclickedSamples,
@@ -771,12 +773,21 @@ export async function normalizeFilter(
   // would otherwise anchor the peak/true-peak reading and leave the track short of its
   // target. The measurement changes with it, so it also suffixes each cache namespace.
   declick?: DeclickMode,
+  // The silence trim the conversion will run first, threaded in for the same reason:
+  // a loud needle-drop in a trimmed-away head would otherwise anchor the reading.
+  trim?: TrimRange,
 ): Promise<string | null> {
   if (cfg.mode === 'none') return null
-  const prefilter = declickFilter(declick ?? 'off') ?? undefined
-  // Repaired audio is a different measurement input, so each mode gets its own cache
-  // entry; the bare namespace stays untouched for declick-off conversions.
-  const ns = (base: string): string => (prefilter ? `${base}-declick-${declick}` : base)
+  const trimAf = trimFilter(trim) ?? undefined
+  const declickAf = declickFilter(declick ?? 'off') ?? undefined
+  const prefilter = [trimAf, declickAf].filter(Boolean).join(',') || undefined
+  // Trimmed or repaired audio is a different measurement input, so each combination
+  // gets its own cache entry; the bare namespace stays untouched for plain conversions.
+  const ns = (base: string): string => {
+    const trimmed = trimAf ? `-trim-${trim?.startSec ?? 0}-${trim?.endSec ?? 'end'}` : ''
+    const declicked = declickAf ? `-declick-${declick}` : ''
+    return `${base}${trimmed}${declicked}`
+  }
   if (cfg.mode === 'peak') {
     // The Audacity-style options (per-channel DC removal, independent channel
     // gains) need per-channel figures volumedetect can't give, so they measure
@@ -873,6 +884,9 @@ export async function convertAudio(
   // Vinyl click repair, applied ahead of the normalize/dither stages so any gain
   // below is sized on the repaired audio. Forces a re-encode like normalize.
   declick?: DeclickMode,
+  // Leading/trailing silence trim, the first filter stage: the seconds the user
+  // confirmed in the editor, cut exactly. Forces a re-encode like normalize.
+  trim?: TrimRange,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -882,6 +896,7 @@ export async function convertAudio(
   // filter only ever rides the encode path — planConversion is told to skip the
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
+  const trimAf = trimFilter(trim) ?? undefined
   const declickAf = declickFilter(declick ?? 'off') ?? undefined
   // The loudnorm sampleRate read and planConversion's PCM-width read probe the same
   // file, so share one probe between them instead of spawning ffprobe twice per
@@ -898,28 +913,30 @@ export async function convertAudio(
       ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
       : undefined
   const normalizeAf = normalizing
-    ? ((await normalizeFilter(input, normalize, sampleRate, declick)) ?? undefined)
+    ? ((await normalizeFilter(input, normalize, sampleRate, declick, trim)) ?? undefined)
     : undefined
   // Normalization was asked for but its measurement pass failed (normalizeFilter returned
   // null), so the conversion proceeds un-normalized rather than failing outright — the
   // caller surfaces this so the user knows the loudness target wasn't actually applied.
   const normalizeSkipped = normalizing && normalizeAf === undefined
-  // Declick alters the samples exactly like a normalize filter, so it forces the
-  // same re-encode: a stream copy would emit the untouched source.
+  // Trim and declick alter the samples exactly like a normalize filter, so they
+  // force the same re-encode: a stream copy would emit the untouched source.
   const plan = await planConversion(
     input,
     format,
     probeOnce,
-    normalizing || declickAf !== undefined,
+    normalizing || declickAf !== undefined || trimAf !== undefined,
     quality,
     forceReencode ?? false,
   )
   const { codec, dither, ext } = plan
-  // Click repair runs first — the gains below were measured through it — and the
-  // dither stage last, right where the float chain is quantized back to 16 bits.
+  // The trim runs first (every later stage works on the kept audio only), click
+  // repair next — the gains below were measured through both — and the dither
+  // stage last, right where the float chain is quantized back to 16 bits.
   const audioFilter =
-    [declickAf, normalizeAf, dither ? DITHER_FILTER : undefined].filter(Boolean).join(',') ||
-    undefined
+    [trimAf, declickAf, normalizeAf, dither ? DITHER_FILTER : undefined]
+      .filter(Boolean)
+      .join(',') || undefined
   const tmp = convertTmpPath(output, ext)
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined

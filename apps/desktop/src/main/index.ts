@@ -720,6 +720,7 @@ function registerIpc(): void {
         onChild,
         onTmp,
         declick,
+        trim,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -751,6 +752,7 @@ function registerIpc(): void {
               // the Finder header would be pure downside.
               s.flacFinderCovers && process.platform === 'darwin',
               declick,
+              trim,
             ),
           { labelParams: { track } },
         )

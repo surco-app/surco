@@ -85,6 +85,7 @@ describe('runProcessTrack — plain conversion', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -114,6 +115,15 @@ describe('runProcessTrack — plain conversion', () => {
     await runProcessTrack(job({ declick: 'strong' }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
     expect(call[10]).toEqual('strong')
+  })
+
+  // Unlike declick, trim has no settings default — it only exists as the per-track
+  // range the user confirmed in the editor, so it rides the job or not at all.
+  it('threads the job’s silence trim through to the encoder', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job({ trim: { startSec: 1.5, endSec: 200 } }), deps)
+    const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(call[11]).toEqual({ startSec: 1.5, endSec: 200 })
   })
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
@@ -156,6 +166,7 @@ describe('runProcessTrack — cover handling', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -207,6 +218,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -228,6 +240,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -373,6 +386,7 @@ describe('runProcessTrack — forced re-encode', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -397,6 +411,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -426,6 +441,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -485,6 +501,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
       '/in/song.wav',
@@ -579,6 +596,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.inPlace).toBe(false)
@@ -791,6 +809,7 @@ describe('runProcessTrack — Apple Music only', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
       '/tmp/surco-abc/Artist - Title.aiff',

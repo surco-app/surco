@@ -9,6 +9,7 @@ import type {
   ProcessStage,
   Settings,
   TrackMetadata,
+  TrimRange,
 } from '../shared/types'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
@@ -46,6 +47,7 @@ export interface ProcessTrackDeps {
     onChild?: (child: { kill: (signal: string) => void }) => void,
     onTmp?: (path: string) => void,
     declick?: DeclickMode,
+    trim?: TrimRange,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -214,6 +216,7 @@ export async function runProcessTrack(
           deps.trackTmp(path)
         },
         job.declick ?? settings.declick,
+        job.trim,
       ))
     } finally {
       deps.unregisterActiveConversion(job.id)
