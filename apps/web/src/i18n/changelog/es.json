@@ -27,6 +27,10 @@
       {
         "text": "La normalización ya no falla si el objetivo de volumen o el techo de picos se escribieron fuera de rango: se ajustan a los valores que ffmpeg acepta.",
         "in": "0.49.1"
+      },
+      {
+        "text": "La reparación de clicks en modo Fuerte ya no se queda colgada al convertir: corre a toda velocidad con la misma eficacia contra los pops largos.",
+        "in": "0.49.2"
       }
     ]
   },

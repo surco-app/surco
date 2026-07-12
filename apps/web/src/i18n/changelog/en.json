@@ -27,6 +27,10 @@
       {
         "text": "Normalization no longer fails when the loudness target or peak ceiling was typed out of range — they are clamped to the values ffmpeg accepts.",
         "in": "0.49.1"
+      },
+      {
+        "text": "Strong click repair no longer stalls the conversion: it runs at full speed with the same effect on long pops.",
+        "in": "0.49.2"
       }
     ]
   },
