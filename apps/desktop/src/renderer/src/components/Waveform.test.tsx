@@ -94,7 +94,8 @@ describe('Waveform', () => {
 
   it('marks the strip as loading while the peaks decode', async () => {
     // The decode shows a placeholder so the few seconds it takes read as "loading",
-    // not a broken, empty player.
+    // not a broken, empty player — drawn through the same canvas raster as the real
+    // strip so it previews the wave to come instead of a row of blocks.
     setWaveformPending()
     renderWithQuery(
       <Waveform
@@ -105,7 +106,7 @@ describe('Waveform', () => {
         onScrub={vi.fn()}
       />,
     )
-    expect(await screen.findByTestId('waveform-loading')).toBeInTheDocument()
+    expect((await screen.findByTestId('waveform-loading')).tagName).toBe('CANVAS')
   })
 
   it('shows the playhead at the playback position only while this track is active', async () => {

@@ -1,15 +1,14 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useWaveform } from '../hooks/useWaveform'
-import { drawWaveform, skeletonPeaks } from '../lib/waveform'
+import { drawWaveform } from '../lib/waveform'
+import { WaveformSkeleton } from './WaveformSkeleton'
 
 // Fixed internal raster scaled by CSS to the container: the peak array is 2048
 // buckets, so ~half a bucket per device pixel at typical panel widths —
 // resolution-independent enough without a resize observer.
 const CANVAS_W = 1200
 const CANVAS_H = 96
-
-const SKELETON_PEAKS = skeletonPeaks(80)
 
 // The player's scrubbable waveform. Clicking or dragging seeks (onScrub gets the
 // position in seconds); the playhead follows playback while `active`.
@@ -88,25 +87,7 @@ export function Waveform({
         height={CANVAS_H}
         className="block h-12 w-full bg-black/15"
       />
-      {loading && (
-        // A pulsing fake waveform — bars of varied height, centred and mirrored like
-        // the real peaks to come — reads as "decoding this track", where the old
-        // equal-bar gradient looked like a placeholder graphic stamped on the player.
-        <div
-          data-testid="waveform-loading"
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center gap-px px-px animate-pulse opacity-50"
-        >
-          {SKELETON_PEAKS.map((amp, i) => (
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, never-reordered bar strip
-              key={i}
-              className="flex-1 rounded-[1px] bg-[var(--color-line-strong)]"
-              style={{ height: `${amp * 100}%` }}
-            />
-          ))}
-        </div>
-      )}
+      {loading && <WaveformSkeleton testid="waveform-loading" />}
       {playheadSec !== null && durationSec > 0 && (
         <div
           data-testid="waveform-playhead"
