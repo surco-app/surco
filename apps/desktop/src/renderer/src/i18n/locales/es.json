@@ -457,7 +457,11 @@
     "modeHint": {
       "standard": "Repara los clicks cortos de la aguja. Seguro para la mayoría del material.",
       "strong": "Atrapa también pops largos y arañazos. Puede suavizar transitorios percusivos muy secos — revisa el resultado."
-    }
+    },
+    "audition": "Escuchar lo que se eliminará",
+    "auditionBusy": "Preparando…",
+    "auditionStop": "Detener",
+    "auditionFailed": "No se pudo generar la escucha."
   },
   "normalize": {
     "title": "Normalización de loudness",

@@ -457,7 +457,11 @@
     "modeHint": {
       "standard": "Répare les clics courts laissés par la pointe. Sûr pour la plupart des morceaux.",
       "strong": "Capte aussi les craquements longs et les rayures. Peut adoucir les transitoires percussifs très secs — vérifiez le résultat."
-    }
+    },
+    "audition": "Écouter ce qui sera supprimé",
+    "auditionBusy": "Préparation…",
+    "auditionStop": "Arrêter",
+    "auditionFailed": "Impossible de générer l’écoute."
   },
   "normalize": {
     "title": "Normalisation du loudness",

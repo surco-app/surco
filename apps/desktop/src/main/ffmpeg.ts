@@ -22,7 +22,12 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { declickFilter, parseDeclickedSamples } from './declick'
+import {
+  declickFilter,
+  declickRemovedArgs,
+  parseDeclickedSamples,
+  previewWindow,
+} from './declick'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -992,6 +997,23 @@ export function previewWavArgs(input: string, output: string, codec: string): st
     codec,
     output,
   ]
+}
+
+// Renders the 20 s "hear what gets removed" audition for the given repair mode into
+// `output`: a WAV holding only what the repair would take out (declickRemovedArgs).
+// null when the mode is off — nothing would be removed, nothing to audition. The
+// caller owns the output path (a quit-swept preview temp). Timed out like the
+// analysis reads: it's an interactive request, and a stalled mount must drop it
+// rather than wedge the button forever.
+export async function renderDeclickRemoved(
+  input: string,
+  output: string,
+  mode: DeclickMode,
+): Promise<string | null> {
+  const args = declickRemovedArgs(input, output, mode, previewWindow(await probeDuration(input)))
+  if (!args) return null
+  await run(ffmpegPath, args, { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS })
+  return output
 }
 
 // Transcodes an AIFF into a WAV the player can decode, preserving the source bit

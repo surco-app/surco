@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, renderDeclickRemoved } from './ffmpeg'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-declick-'))
@@ -154,5 +154,33 @@ describe('convertAudio declick', () => {
     const out = join(dir, 'out-off.flac')
     const result = await convertAudio(src, out, 'flac', meta)
     expect(result.declickedSamples).toBeUndefined()
+  }, 30000)
+})
+
+// The "hear what gets removed" audition: the render must isolate the clicks — a
+// difference that still carried the music would defeat its whole purpose (judging
+// whether the repair eats transients).
+describe('renderDeclickRemoved', () => {
+  it('renders an excerpt that is silence plus the removed clicks', async () => {
+    const out = join(dir, 'removed.wav')
+    expect(await renderDeclickRemoved(src, out, 'standard')).toBe(out)
+    const raw = execFileSync(FF, ['-v', 'error', '-i', out, '-f', 'f32le', '-'], {
+      maxBuffer: 1024 * 1024 * 64,
+    })
+    const s = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4)
+    let loud = 0
+    let quiet = 0
+    for (let i = 0; i < s.length; i++) {
+      const a = Math.abs(s[i])
+      if (a > 0.4) loud++
+      else if (a < 0.02) quiet++
+    }
+    // The sine cancels (nearly all samples fall to silence); the clicks survive.
+    expect(quiet / s.length).toBeGreaterThan(0.9)
+    expect(loud).toBeGreaterThan(0)
+  }, 30000)
+
+  it('renders nothing when the mode is off', async () => {
+    expect(await renderDeclickRemoved(src, join(dir, 'no.wav'), 'off')).toBeNull()
   }, 30000)
 })

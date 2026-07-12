@@ -20,8 +20,11 @@ import {
   probeProperties,
   readMeta,
   readTags,
+  renderDeclickRemoved,
   tagsFromProbe,
 } from './ffmpeg'
+import type { DeclickMode } from '../shared/types'
+import { previewTempPath } from './playback'
 import { recordStat } from './settings'
 
 // Reports one quality probe to the activity log, grouped under its track so a sweep's
@@ -40,7 +43,9 @@ function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Pr
 // (spectrogram, loudness, properties, bpm, key, waveform). Self-contained — these handlers
 // depend only on the ffmpeg helpers, the analysis cache/limiter and the stats tally, never
 // on any window or session state — so they live apart from the stateful handlers in index.ts.
-export function registerAudioIpc(): void {
+// allowMedia is the one exception: the declick audition renders a temp WAV the renderer
+// must stream back through surco://, and the allowlist lives with the protocol in index.ts.
+export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
       return await readTags(inputPath)
@@ -214,6 +219,24 @@ export function registerAudioIpc(): void {
       )
     } catch (err) {
       log.error('audio:waveform failed', err)
+      return null
+    }
+  })
+
+  // The declick audition: a 20 s excerpt holding only what the chosen repair mode
+  // would remove, served back through surco:// (hence the allowMedia). Not cached —
+  // the render is a couple of seconds and the renderer replays the same temp WAV
+  // until the track or the mode changes. 'high': the user is actively waiting on it.
+  ipcMain.handle('audio:declickPreview', async (_e, inputPath: string, mode: DeclickMode) => {
+    try {
+      const out = await analysisLimiter.run(
+        () => renderDeclickRemoved(inputPath, previewTempPath('wav'), mode),
+        'high',
+      )
+      if (out) allowMedia(out)
+      return out
+    } catch (err) {
+      log.error('audio:declickPreview failed', err)
       return null
     }
   })

@@ -1015,6 +1015,8 @@ export const Editor = memo(function Editor({
                         setDeclickCfg(d)
                         onDeclickChange?.(d)
                       }}
+                      inputPath={item.inputPath}
+                      isMulti={isMulti}
                     />
                   )
                 case 'normalize':

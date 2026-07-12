@@ -457,7 +457,11 @@
     "modeHint": {
       "standard": "Repara os clicks curtos da agulha. Seguro para a maioria do material.",
       "strong": "Captura também estalos longos e arranhões. Pode suavizar transientes percussivos secos — confira o resultado."
-    }
+    },
+    "audition": "Ouvir o que será removido",
+    "auditionBusy": "Preparando…",
+    "auditionStop": "Parar",
+    "auditionFailed": "Não foi possível gerar a prévia."
   },
   "normalize": {
     "title": "Normalização de loudness",

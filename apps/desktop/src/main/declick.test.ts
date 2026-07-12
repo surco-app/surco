@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { declickFilter, parseDeclickedSamples } from './declick'
+import {
+  declickFilter,
+  declickRemovedArgs,
+  parseDeclickedSamples,
+  PREVIEW_SECONDS,
+  previewWindow,
+} from './declick'
 
 describe('declickFilter', () => {
   it('returns no filter when off, so a plain conversion stays untouched', () => {
@@ -16,6 +22,36 @@ describe('declickFilter', () => {
     // realtime). b=4 is the lowest value that still repairs them (b=3 does not) and
     // stays bounded, so anything above it is a hang report waiting to happen.
     expect(declickFilter('strong')).toBe('adeclick=b=4')
+  })
+})
+
+describe('previewWindow', () => {
+  it('centers the excerpt on the middle of a long track', () => {
+    expect(previewWindow(300)).toEqual({ start: 150 - PREVIEW_SECONDS / 2, length: PREVIEW_SECONDS })
+  })
+
+  it('takes a short track whole from the start', () => {
+    expect(previewWindow(12)).toEqual({ start: 0, length: PREVIEW_SECONDS })
+  })
+
+  it('treats an unknown duration like a short track, never seeking blind', () => {
+    expect(previewWindow(null)).toEqual({ start: 0, length: PREVIEW_SECONDS })
+  })
+})
+
+describe('declickRemovedArgs', () => {
+  it('renders the difference between the source and its repair — the removed clicks alone', () => {
+    const args = declickRemovedArgs('/in.wav', '/out.wav', 'strong', { start: 140, length: 20 })
+    expect(args?.join(' ')).toContain(
+      '[0:a]asplit=2[a][b];[a]adeclick=b=4,volume=-1[inv];[b][inv]amix=inputs=2:normalize=0[d]',
+    )
+    // Input-side seek so the excerpt decodes fast, and a WAV the <audio> element plays.
+    expect(args?.join(' ')).toContain('-ss 140 -t 20 -i /in.wav')
+    expect(args?.slice(-2)).toEqual(['pcm_s16le', '/out.wav'])
+  })
+
+  it('has nothing to render when the repair is off', () => {
+    expect(declickRemovedArgs('/in.wav', '/out.wav', 'off', { start: 0, length: 20 })).toBeNull()
   })
 })
 

@@ -41,6 +41,13 @@ function trackedTempPath(deps: PlaybackDeps, ext: string): string {
   return out
 }
 
+// Temp home for one-shot audition renders (the declick "hear what gets removed"
+// preview): registered in the same quit sweep as the playback transcodes, since
+// they share the lifecycle — small WAVs that must survive replays and die at quit.
+export function previewTempPath(ext: string): string {
+  return trackedTempPath(defaultDeps, ext)
+}
+
 // Deletes the session's temp transcodes; wired to app 'will-quit'. Synchronous on
 // purpose: quit won't wait for async unlinks. Crash leftovers fall to the OS tmpdir
 // purge instead. The cache is cleared too so a sweep mid-session (tests) can't serve

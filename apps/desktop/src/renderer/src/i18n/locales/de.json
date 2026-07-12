@@ -457,7 +457,11 @@
     "modeHint": {
       "standard": "Repariert die kurzen Klicks einer Nadel. Sicher für das meiste Material.",
       "strong": "Erfasst auch lange Knackser und Kratzer. Kann harte perkussive Transienten abschwächen — Ergebnis prüfen."
-    }
+    },
+    "audition": "Anhören, was entfernt wird",
+    "auditionBusy": "Wird erstellt…",
+    "auditionStop": "Stopp",
+    "auditionFailed": "Die Hörprobe konnte nicht erstellt werden."
   },
   "normalize": {
     "title": "Loudness-Normalisierung",

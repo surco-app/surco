@@ -10,6 +10,7 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
+  DeclickMode,
   DockIconFrames,
   KeyResult,
   LifetimeStats,
@@ -135,6 +136,10 @@ export interface Api {
   bpm: (path: string) => Promise<BpmResult | null>
   key: (path: string) => Promise<KeyResult | null>
   waveform: (path: string) => Promise<WaveformResult | null>
+  // Renders the "hear what gets removed" audition: a temp WAV holding only what the
+  // given repair mode would take out of the track, playable through surco://. null
+  // when the mode is off or the render failed.
+  declickPreview: (path: string, mode: DeclickMode) => Promise<string | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   // Tags, duration and cover from a single round-trip, for the import path.

@@ -978,7 +978,7 @@ function registerIpc(): void {
     }
   })
 
-  registerAudioIpc()
+  registerAudioIpc((path) => mediaAccess.allow(path))
 }
 
 app.setName('Surco')

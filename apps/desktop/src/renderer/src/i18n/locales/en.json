@@ -457,7 +457,11 @@
     "modeHint": {
       "standard": "Repairs the short clicks a stylus leaves. Safe for most material.",
       "strong": "Also catches long pops and scratches. May soften sharp percussive transients — check the result."
-    }
+    },
+    "audition": "Hear what gets removed",
+    "auditionBusy": "Rendering…",
+    "auditionStop": "Stop",
+    "auditionFailed": "Could not render the audition."
   },
   "normalize": {
     "title": "Loudness normalization",
