@@ -30,7 +30,11 @@
       },
       {
         "text": "Strong click repair no longer stalls the conversion: it runs at full speed with the same effect on long pops.",
-        "in": "0.49.2"
+        "in": "0.49.3"
+      },
+      {
+        "text": "On Windows, the track list and search read the file name instead of the full path.",
+        "in": "0.49.3"
       }
     ]
   },
