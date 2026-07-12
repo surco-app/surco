@@ -466,7 +466,10 @@
     "auditionClean": "O reparo não tocaria nada neste trecho.",
     "auditionShare": "O reparo tocaria {{percent}}% deste trecho. Em um rip limpo isso fica bem abaixo de 1% — se você ouvir música na prévia, deixe esta faixa em paz.",
     "estimate": "Clicks audíveis estimados nesta faixa: ~{{count}}",
-    "estimateNone": "Nenhum click audível detectado nesta faixa."
+    "estimateNone": "Nenhum click audível detectado nesta faixa.",
+    "sensitivity": "Sensibilidade",
+    "sensitivityHint": "Reduza se a prévia revelar mordidas na música — a detecção toca menos e os clicks continuam sendo reparados.",
+    "applied": "Filtro aplicado:"
   },
   "normalize": {
     "title": "Normalização de loudness",

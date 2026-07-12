@@ -12,7 +12,7 @@ function settings(overrides: Partial<Settings> = {}): Settings {
     addToAppleMusic: false,
     keepOutputCopy: true,
     normalize: { mode: 'none' },
-    declick: 'off',
+    declick: { mode: 'off', sensitivity: 5 },
     ...overrides,
   } as Settings
 }
@@ -84,7 +84,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -108,10 +108,12 @@ describe('runProcessTrack — plain conversion', () => {
   })
 
   it('prefers the job’s click-repair override over the settings default', async () => {
-    const deps = makeDeps({ settings: settings({ declick: 'standard' }) })
-    await runProcessTrack(job({ declick: 'strong' }), deps)
+    const deps = makeDeps({
+      settings: settings({ declick: { mode: 'standard', sensitivity: 5 } }),
+    })
+    await runProcessTrack(job({ declick: { mode: 'strong', sensitivity: 3 } }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(call[10]).toBe('strong')
+    expect(call[10]).toEqual({ mode: 'strong', sensitivity: 3 })
   })
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
@@ -153,7 +155,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -204,7 +206,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -225,7 +227,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -370,7 +372,7 @@ describe('runProcessTrack — forced re-encode', () => {
       true,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -394,7 +396,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -423,7 +425,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -482,7 +484,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
       '/in/song.wav',
@@ -576,7 +578,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.inPlace).toBe(false)
@@ -788,7 +790,7 @@ describe('runProcessTrack — Apple Music only', () => {
       undefined,
       expect.any(Function),
       expect.any(Function),
-      'off',
+      { mode: 'off', sensitivity: 5 },
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
       '/tmp/surco-abc/Artist - Title.aiff',

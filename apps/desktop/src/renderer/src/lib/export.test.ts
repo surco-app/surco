@@ -47,9 +47,9 @@ describe('exportedPatch', () => {
       track(),
       { outputPath: '/out/a.aiff', inPlace: false },
       undefined,
-      'standard',
+      { mode: 'standard', sensitivity: 5 },
     )
-    expect(patch.processedDeclick).toBe('standard')
+    expect(patch.processedDeclick).toEqual({ mode: 'standard', sensitivity: 5 })
   })
 
   it('repoints the track at the new file after an in-place export', () => {

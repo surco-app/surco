@@ -1,5 +1,5 @@
 import type {
-  DeclickMode,
+  DeclickConfig,
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
@@ -123,7 +123,7 @@ export interface TrackItem {
   processedNormalize?: NormalizeConfig
   // The click repair the last export actually applied, same staleness contract
   // as processedNormalize.
-  processedDeclick?: DeclickMode
+  processedDeclick?: DeclickConfig
   // Snapshot (via trackSignature) of the state some file already carries: stamped
   // from the pure file read when the import lands and re-stamped when a conversion
   // writes the tags out. The live state diverging from it means the user has staged

@@ -1,8 +1,9 @@
 import type React from 'react'
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
+import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
 import type {
-  DeclickMode,
+  DeclickConfig,
   KeyNotation,
   NormalizeConfig,
   OutputBitDepth,
@@ -49,7 +50,7 @@ export interface ResolvedSettings {
   showLoudness: boolean
   keyNotation: KeyNotation
   normalize: NormalizeConfig
-  declick: DeclickMode
+  declick: DeclickConfig
   // Always complete and form-first, whatever an older settings.json stored.
   editorSections: EditorSectionPref[]
 }
@@ -81,7 +82,7 @@ const DEFAULTS: ResolvedSettings = {
   showLoudness: true,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  declick: 'off',
+  declick: DEFAULT_DECLICK,
   editorSections: DEFAULT_EDITOR_SECTIONS,
 }
 
@@ -112,7 +113,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     showLoudness: settings.showLoudness ?? DEFAULTS.showLoudness,
     keyNotation: settings.keyNotation ?? DEFAULTS.keyNotation,
     normalize: settings.normalize ?? DEFAULTS.normalize,
-    declick: settings.declick ?? DEFAULTS.declick,
+    declick: normalizeDeclick(settings.declick),
     editorSections: normalizeEditorSections(settings.editorSections),
   }
 }

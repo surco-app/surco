@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type {
-  DeclickMode,
+  DeclickConfig,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
@@ -45,7 +45,7 @@ export interface ProcessTrackDeps {
     forceReencode?: boolean,
     onChild?: (child: { kill: (signal: string) => void }) => void,
     onTmp?: (path: string) => void,
-    declick?: DeclickMode,
+    declick?: DeclickConfig,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in

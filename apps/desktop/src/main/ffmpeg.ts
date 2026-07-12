@@ -9,7 +9,7 @@ import type {
   BpmResult,
   ConversionQuality,
   CoverRead,
-  DeclickMode,
+  DeclickConfig,
   KeyResult,
   LoudnessResult,
   MetaRead,
@@ -23,8 +23,8 @@ import type {
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { countClicks } from './clickDetect'
+import { declickFilter } from '../shared/declick'
 import {
-  declickFilter,
   declickRemovedArgs,
   parseDeclickedSamples,
   parseDeclickedShare,
@@ -770,13 +770,14 @@ export async function normalizeFilter(
   // every measurement so the gain is sized on the repaired audio — a full-scale click
   // would otherwise anchor the peak/true-peak reading and leave the track short of its
   // target. The measurement changes with it, so it also suffixes each cache namespace.
-  declick?: DeclickMode,
+  declick?: DeclickConfig,
 ): Promise<string | null> {
   if (cfg.mode === 'none') return null
-  const prefilter = declickFilter(declick ?? 'off') ?? undefined
+  const prefilter = declick ? (declickFilter(declick) ?? undefined) : undefined
   // Repaired audio is a different measurement input, so each mode gets its own cache
   // entry; the bare namespace stays untouched for declick-off conversions.
-  const ns = (base: string): string => (prefilter ? `${base}-declick-${declick}` : base)
+  const ns = (base: string): string =>
+    prefilter ? `${base}-declick-${declick?.mode}-s${declick?.sensitivity}` : base
   if (cfg.mode === 'peak') {
     // The Audacity-style options (per-channel DC removal, independent channel
     // gains) need per-channel figures volumedetect can't give, so they measure
@@ -864,7 +865,7 @@ export async function convertAudio(
   finderCovers?: boolean,
   // Vinyl click repair, applied ahead of the normalize/dither stages so any gain
   // below is sized on the repaired audio. Forces a re-encode like normalize.
-  declick?: DeclickMode,
+  declick?: DeclickConfig,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -874,7 +875,7 @@ export async function convertAudio(
   // filter only ever rides the encode path — planConversion is told to skip the
   // stream-copy shortcuts when normalizing.
   const normalizing = normalize !== undefined && normalize.mode !== 'none'
-  const declickAf = declickFilter(declick ?? 'off') ?? undefined
+  const declickAf = declick ? (declickFilter(declick) ?? undefined) : undefined
   // The loudnorm sampleRate read and planConversion's PCM-width read probe the same
   // file, so share one probe between them instead of spawning ffprobe twice per
   // normalized AIFF/WAV conversion.
@@ -1012,9 +1013,9 @@ export function previewWavArgs(input: string, output: string, codec: string): st
 export async function renderDeclickRemoved(
   input: string,
   output: string,
-  mode: DeclickMode,
+  cfg: DeclickConfig,
 ): Promise<{ path: string; share: number | null } | null> {
-  const args = declickRemovedArgs(input, output, mode, previewWindow(await probeDuration(input)))
+  const args = declickRemovedArgs(input, output, cfg, previewWindow(await probeDuration(input)))
   if (!args) return null
   const { stderr } = await run(ffmpegPath, args, {
     maxBuffer: 1024 * 1024 * 16,

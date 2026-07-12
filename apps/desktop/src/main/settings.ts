@@ -7,6 +7,7 @@ import {
   DEFAULT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
 } from '../shared/defaults'
+import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import type { Settings } from '../shared/types'
 
@@ -72,7 +73,7 @@ const defaults: Settings = {
   // Off by default: a conversion never changes loudness unless the user enables it.
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   // Off by default: a conversion never repairs clicks unless the user enables it.
-  declick: 'off',
+  declick: DEFAULT_DECLICK,
   editorSections: DEFAULT_EDITOR_SECTIONS,
   shortcutOverrides: {},
   hasSeenOnboarding: false,
@@ -164,6 +165,9 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     ...patch,
     stats: { ...base.stats, ...patch.stats },
     normalize: { ...base.normalize, ...patch.normalize },
+    // Not a spread-merge like the two above: a 0.49-0.50 file stores declick as a
+    // bare mode string, which normalizeDeclick upgrades (and repairs) instead.
+    declick: normalizeDeclick(patch.declick ?? base.declick),
   }
 }
 

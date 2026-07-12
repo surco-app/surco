@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  declickFilter,
   declickRemovedArgs,
   parseDeclickedSamples,
   parseDeclickedShare,
@@ -8,23 +7,9 @@ import {
   previewWindow,
 } from './declick'
 
-describe('declickFilter', () => {
-  it('returns no filter when off, so a plain conversion stays untouched', () => {
-    expect(declickFilter('off')).toBeNull()
-  })
-
-  it('uses adeclick defaults for standard clicks', () => {
-    expect(declickFilter('standard')).toBe('adeclick')
-  })
-
-  it('uses the minimal burst fusion that repairs long pops in strong mode', () => {
-    // Burst fusion is the one knob that repairs long pops, and its cost explodes on
-    // dense music (b=10 never finished 10 s of a club track; b=6 ran slower than
-    // realtime). b=4 is the lowest value that still repairs them (b=3 does not) and
-    // stays bounded, so anything above it is a hang report waiting to happen.
-    expect(declickFilter('strong')).toBe('adeclick=b=4')
-  })
-})
+// declickFilter itself (modes, sensitivity mapping, safety clamps) is covered in
+// shared/declick.test.ts — it moved to shared so the renderer can show the exact
+// applied filter string.
 
 describe('previewWindow', () => {
   it('centers the excerpt on the middle of a long track', () => {
@@ -42,7 +27,12 @@ describe('previewWindow', () => {
 
 describe('declickRemovedArgs', () => {
   it('renders the difference between the source and its repair — the removed clicks alone', () => {
-    const args = declickRemovedArgs('/in.wav', '/out.wav', 'strong', { start: 140, length: 20 })
+    const args = declickRemovedArgs(
+      '/in.wav',
+      '/out.wav',
+      { mode: 'strong', sensitivity: 5 },
+      { start: 140, length: 20 },
+    )
     expect(args?.join(' ')).toContain(
       '[0:a]asplit=2[a][b];[a]adeclick=b=4,volume=-1[inv];[b][inv]amix=inputs=2:normalize=0[d]',
     )
@@ -52,7 +42,14 @@ describe('declickRemovedArgs', () => {
   })
 
   it('has nothing to render when the repair is off', () => {
-    expect(declickRemovedArgs('/in.wav', '/out.wav', 'off', { start: 0, length: 20 })).toBeNull()
+    expect(
+      declickRemovedArgs(
+        '/in.wav',
+        '/out.wav',
+        { mode: 'off', sensitivity: 5 },
+        { start: 0, length: 20 },
+      ),
+    ).toBeNull()
   })
 })
 

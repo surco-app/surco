@@ -59,7 +59,7 @@ const settings: Settings = {
   continuousPlayback: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  declick: 'off',
+  declick: { mode: 'off', sensitivity: 5 },
   shortcutOverrides: {},
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},

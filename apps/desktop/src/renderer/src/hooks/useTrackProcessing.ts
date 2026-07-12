@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickConfig, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -60,14 +60,14 @@ export interface TrackProcessing {
     overwriteOverride?: boolean,
     forceReencode?: boolean,
     destinationOverride?: Destination,
-    declickOverride?: DeclickMode,
+    declickOverride?: DeclickConfig,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
     formatOverride?: OutputFormat,
     normalizeOverride?: NormalizeConfig,
     destinationOverride?: Destination,
-    declickOverride?: DeclickMode,
+    declickOverride?: DeclickConfig,
   ) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
   addAllToAppleMusic: (ids: string[]) => Promise<void>
@@ -126,7 +126,7 @@ export function useTrackProcessing({
       overwriteOverride?: boolean,
       forceReencode?: boolean,
       destinationOverride?: Destination,
-      declickOverride?: DeclickMode,
+      declickOverride?: DeclickConfig,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -338,7 +338,7 @@ export function useTrackProcessing({
       formatOverride?: OutputFormat,
       normalizeOverride?: NormalizeConfig,
       destinationOverride?: Destination,
-      declickOverride?: DeclickMode,
+      declickOverride?: DeclickConfig,
     ): Promise<void> => {
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and

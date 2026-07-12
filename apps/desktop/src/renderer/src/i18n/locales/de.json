@@ -466,7 +466,10 @@
     "auditionClean": "Die Reparatur würde in diesem Ausschnitt nichts berühren.",
     "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen.",
     "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
-    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt."
+    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt.",
+    "sensitivity": "Empfindlichkeit",
+    "sensitivityHint": "Senken, wenn die Hörprobe Bisse in der Musik zeigt — die Erkennung greift weniger ein, Klicks werden weiter repariert.",
+    "applied": "Angewendeter Filter:"
   },
   "normalize": {
     "title": "Loudness-Normalisierung",
