@@ -155,6 +155,16 @@ describe('EditorTab sections', () => {
     expect(screen.queryByTestId('settings-section-hide-form')).not.toBeInTheDocument()
   })
 
+  // The eye's hint must come from the app's styled Tooltip, not the OS-grey native
+  // title box that clashes with the theme.
+  it('hints the eye with the styled tooltip, not a native title', () => {
+    renderTab()
+    const eye = screen.getByTestId('settings-section-hide-properties')
+    expect(eye).not.toHaveAttribute('title')
+    fireEvent.focusIn(eye)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Hide section from the editor')
+  })
+
   // The metadata form is the editor's fixed header: it can't move, and the first
   // movable section can't climb above it — so their arrows must not exist/act.
   it('offers no arrows on the form row and no up arrow past it', () => {

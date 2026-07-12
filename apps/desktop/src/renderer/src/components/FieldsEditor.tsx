@@ -64,7 +64,6 @@ export function FieldsEditor({
           <button
             type="button"
             data-testid="auto-organize-fields"
-            title={tr('settings.autoOrganizeHint')}
             onClick={autoOrganize}
             className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
               organized
@@ -78,6 +77,7 @@ export function FieldsEditor({
               <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
             )}
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
+            <Tooltip label={tr('settings.autoOrganizeHint')} />
           </button>
         </div>
         <div className="space-y-1.5">

@@ -98,6 +98,16 @@ describe('FieldsEditor', () => {
     expect(onChangeRequired).not.toHaveBeenCalled()
   })
 
+  // The hint must come from the app's styled Tooltip, not the OS-grey native title
+  // box that clashes with the theme.
+  it('hints auto-organize with the styled tooltip, not a native title', () => {
+    setup()
+    const btn = screen.getByTestId('auto-organize-fields')
+    expect(btn).not.toHaveAttribute('title')
+    fireEvent.focusIn(btn)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Reorder shown fields by group')
+  })
+
   // Reordering a list that scrolls (and may already be tidy) gives no visible sign it ran,
   // so the button confirms in place: it flips to a done label, then reverts on its own.
   it('confirms in the button after auto-organizing, then reverts', () => {

@@ -6,6 +6,7 @@ import type { EditorSectionPref } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
+import { Tooltip } from '../Tooltip'
 
 interface Props {
   synced: SyncedDraft
@@ -197,9 +198,6 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
                       aria-label={tr(
                         section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
                       )}
-                      title={tr(
-                        section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
-                      )}
                       onClick={() => toggleHidden(section.id)}
                       className="rounded px-1.5 py-0.5 text-fg-muted hover:text-fg"
                     >
@@ -208,6 +206,11 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
                       ) : (
                         <Eye className="h-4 w-4" aria-hidden="true" />
                       )}
+                      <Tooltip
+                        label={tr(
+                          section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
+                        )}
+                      />
                     </button>
                   )}
                   <button
