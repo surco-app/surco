@@ -55,12 +55,17 @@ describe('WaveformCompare', () => {
     expect(waveform).toHaveBeenCalledWith('/m/a.wav')
   })
 
-  it('shows a decoding skeleton per strip while the peaks are pending', async () => {
+  // The placeholder must be drawn through the same canvas raster as the real strips
+  // (thin mirrored bars), so it previews the wave to come instead of reading as a
+  // blocky graphic stamped over the panel.
+  it('shows a canvas-drawn decoding skeleton per strip while the peaks are pending', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockReturnValue(new Promise<WaveformResult>(() => {})),
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
-    expect(await screen.findAllByTestId('waveform-compare-loading')).toHaveLength(2)
+    const skeletons = await screen.findAllByTestId('waveform-compare-loading')
+    expect(skeletons).toHaveLength(2)
+    for (const skeleton of skeletons) expect(skeleton.tagName).toBe('CANVAS')
   })
 
   // The full-length decode is the heaviest analysis; a folded-away section must not

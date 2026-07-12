@@ -16,7 +16,13 @@ const CANVAS_W = 600
 const OVERLAY_W = 1200
 const CANVAS_H = 96
 
-const SKELETON_PEAKS = skeletonPeaks(40)
+// Enough buckets that each bar lands ~1px on the 600px raster — the placeholder
+// gets the real strips' thin dense lines instead of a row of wide blocks.
+const SKELETON_PEAKS = skeletonPeaks(400)
+
+// The legends' muted grey, dimmed — hardcoded like the strips' blue/grey because
+// the canvas raster can't read CSS variables.
+const SKELETON_COLOR = 'rgba(148, 163, 184, 0.35)'
 
 // The deepest zoom step: ×8 across a 6-minute track puts ~2 s in the visible panel,
 // enough to pin a clip down; past that the 2048 decoded buckets have no more to show.
@@ -73,22 +79,22 @@ function Legend({
   )
 }
 
+// Drawn through the same drawWaveform raster as the real strips, so the stand-in
+// shares the wave-to-come's geometry: thin bars mirrored around the centre line.
 function Skeleton(): React.JSX.Element {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (canvas) drawWaveform(canvas, SKELETON_PEAKS, { color: SKELETON_COLOR })
+  }, [])
   return (
-    <div
+    <canvas
+      ref={canvasRef}
       data-testid="waveform-compare-loading"
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 flex items-center gap-px px-px animate-pulse opacity-50"
-    >
-      {SKELETON_PEAKS.map((amp, i) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, never-reordered bar strip
-          key={i}
-          className="flex-1 rounded-[1px] bg-[var(--color-line-strong)]"
-          style={{ height: `${amp * 100}%` }}
-        />
-      ))}
-    </div>
+      width={CANVAS_W}
+      height={CANVAS_H}
+      className="pointer-events-none absolute inset-0 h-full w-full animate-pulse"
+    />
   )
 }
 
