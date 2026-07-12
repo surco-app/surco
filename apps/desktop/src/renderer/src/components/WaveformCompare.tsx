@@ -7,22 +7,15 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
 import { formatTime } from '../lib/duration'
-import { clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from '../lib/waveform'
+import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
+import { WaveformSkeleton } from './WaveformSkeleton'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
 // panel width); the overlaid canvas spans the panel, so it gets the full raster.
 const CANVAS_W = 600
 const OVERLAY_W = 1200
 const CANVAS_H = 96
-
-// Enough buckets that each bar lands ~1px on the 600px raster — the placeholder
-// gets the real strips' thin dense lines instead of a row of wide blocks.
-const SKELETON_PEAKS = skeletonPeaks(400)
-
-// The legends' muted grey, dimmed — hardcoded like the strips' blue/grey because
-// the canvas raster can't read CSS variables.
-const SKELETON_COLOR = 'rgba(148, 163, 184, 0.35)'
 
 // The deepest zoom step: ×8 across a 6-minute track puts ~2 s in the visible panel,
 // enough to pin a clip down; past that the 2048 decoded buckets have no more to show.
@@ -76,25 +69,6 @@ function Legend({
         </span>
       )}
     </span>
-  )
-}
-
-// Drawn through the same drawWaveform raster as the real strips, so the stand-in
-// shares the wave-to-come's geometry: thin bars mirrored around the centre line.
-function Skeleton(): React.JSX.Element {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (canvas) drawWaveform(canvas, SKELETON_PEAKS, { color: SKELETON_COLOR })
-  }, [])
-  return (
-    <canvas
-      ref={canvasRef}
-      data-testid="waveform-compare-loading"
-      width={CANVAS_W}
-      height={CANVAS_H}
-      className="pointer-events-none absolute inset-0 h-full w-full animate-pulse"
-    />
   )
 }
 
@@ -216,7 +190,7 @@ function Strip({
           height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
           className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-24' : 'h-16'}`}
         />
-        {loading && <Skeleton />}
+        {loading && <WaveformSkeleton testid="waveform-compare-loading" />}
         {readout && hover && (
           <>
             <span
@@ -325,7 +299,7 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
           height={CANVAS_H}
           className="block h-16 w-full rounded-lg bg-[var(--color-field)]"
         />
-        {(before.loading || after.loading) && <Skeleton />}
+        {(before.loading || after.loading) && <WaveformSkeleton testid="waveform-compare-loading" />}
       </div>
       <div className="mt-1.5 flex items-center justify-center gap-2">
         <span
