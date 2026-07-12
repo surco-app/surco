@@ -464,7 +464,9 @@
     "auditionFailed": "Could not render the audition.",
     "auditionHint": "Plays 20 seconds from the middle of this track with only the noise the repair would remove. Near-silence means the music is untouched.",
     "auditionClean": "The repair would touch nothing in this excerpt.",
-    "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone."
+    "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone.",
+    "estimate": "Estimated audible clicks in this track: ~{{count}}",
+    "estimateNone": "No audible clicks detected in this track."
   },
   "normalize": {
     "title": "Loudness normalization",
@@ -868,7 +870,8 @@
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nFlagged for review: confidence below the auto-apply bar (85 %).\nCandidates probed:\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nFlagged for review: only the title matches; no independent signal (duration, artist, catalog #) corroborates it.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoneDetail": "No candidate reached the minimum confidence.\nCandidates probed:\n{{candidates}}",
-    "autoMatchNoCandidates": "The search returned no candidates to probe."
+    "autoMatchNoCandidates": "The search returned no candidates to probe.",
+    "probeClicks": "Counting clicks"
   },
   "fieldGroups": {
     "identity": "Identity",

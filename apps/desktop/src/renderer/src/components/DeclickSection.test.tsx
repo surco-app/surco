@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -10,9 +11,11 @@ afterEach(cleanup)
 
 const play = vi.fn()
 const pause = vi.fn()
+let client: QueryClient
 beforeEach(() => {
   play.mockReset().mockResolvedValue(undefined)
   pause.mockReset()
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   // jsdom has no audio pipeline; the audition only needs play/pause/onended.
   vi.stubGlobal(
     'Audio',
@@ -24,20 +27,23 @@ beforeEach(() => {
   )
   ;(window as unknown as { api: unknown }).api = {
     declickPreview: vi.fn().mockResolvedValue({ path: '/tmp/removed.wav', share: 0.005 }),
+    clicks: vi.fn().mockResolvedValue(23),
   }
 })
 
 function section(over: Partial<React.ComponentProps<typeof DeclickSection>> = {}): React.JSX.Element {
   return (
-    <DeclickSection
-      value="off"
-      open
-      onToggle={() => {}}
-      onChange={() => {}}
-      inputPath="/in/track.wav"
-      isMulti={false}
-      {...over}
-    />
+    <QueryClientProvider client={client}>
+      <DeclickSection
+        value="off"
+        open
+        onToggle={() => {}}
+        onChange={() => {}}
+        inputPath="/in/track.wav"
+        isMulti={false}
+        {...over}
+      />
+    </QueryClientProvider>
   )
 }
 
@@ -137,5 +143,26 @@ describe('DeclickSection', () => {
       fireEvent.click(screen.getByTestId('declick-audition'))
     })
     expect(screen.getByTestId('declick-audition-failed')).toBeInTheDocument()
+  })
+
+  // The RX-style counter: an event estimate in the user's language, shown once the
+  // selection has rested (useSettled's 400 ms — hence the findBy timeout).
+  it('shows the estimated audible clicks once the selection settles', async () => {
+    render(section())
+    const estimate = await screen.findByTestId('declick-estimate', {}, { timeout: 1500 })
+    expect(estimate).toHaveTextContent('~23')
+    expect(window.api.clicks).toHaveBeenCalledWith('/in/track.wav')
+  })
+
+  it('states a clean track outright instead of showing a bare zero', async () => {
+    ;(window.api.clicks as ReturnType<typeof vi.fn>).mockResolvedValue(0)
+    render(section())
+    const estimate = await screen.findByTestId('declick-estimate', {}, { timeout: 1500 })
+    expect(estimate).toHaveTextContent(/No audible clicks/)
+  })
+
+  it('never counts for a multi-selection — the anchor track would misrepresent it', () => {
+    render(section({ isMulti: true }))
+    expect(screen.queryByTestId('declick-estimate')).not.toBeInTheDocument()
   })
 })

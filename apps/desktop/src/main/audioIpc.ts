@@ -8,6 +8,7 @@ import {
   analyzeCutoff,
   analyzeShelf,
   buildSpectrum,
+  countTrackClicks,
   extractCover,
   extractCoverDataUrl,
   generateSpectrogram,
@@ -149,6 +150,22 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       )
     } catch (err) {
       log.error('audio:loudness failed', err)
+      return null
+    }
+  })
+
+  // The repair section's "estimated audible clicks" readout: Surco's own event
+  // detector (clickDetect.ts), cached like every per-path probe. 'low': it renders
+  // a dim caption, never something the user sits waiting on.
+  ipcMain.handle('audio:clicks', async (_e, inputPath: string) => {
+    try {
+      return await cachedAnalysis('clickcount-v1', inputPath, () =>
+        probe('activity.probeClicks', inputPath, () =>
+          analysisLimiter.run(() => countTrackClicks(inputPath), 'low'),
+        ),
+      )
+    } catch (err) {
+      log.error('audio:clicks failed', err)
       return null
     }
   })

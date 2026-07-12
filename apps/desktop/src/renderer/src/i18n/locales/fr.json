@@ -464,7 +464,9 @@
     "auditionFailed": "Impossible de générer l’écoute.",
     "auditionHint": "Joue 20 secondes du milieu de ce morceau avec seulement le bruit que la réparation retirerait. Un quasi-silence signifie que la musique reste intacte.",
     "auditionClean": "La réparation ne toucherait rien dans cet extrait.",
-    "auditionShare": "La réparation toucherait {{percent}}% de cet extrait. Sur un rip propre, c’est bien moins de 1% — si vous entendez de la musique, laissez ce morceau tranquille."
+    "auditionShare": "La réparation toucherait {{percent}}% de cet extrait. Sur un rip propre, c’est bien moins de 1% — si vous entendez de la musique, laissez ce morceau tranquille.",
+    "estimate": "Clics audibles estimés dans ce morceau : ~{{count}}",
+    "estimateNone": "Aucun clic audible détecté dans ce morceau."
   },
   "normalize": {
     "title": "Normalisation du loudness",
@@ -868,7 +870,8 @@
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ vérifier : la confiance n'atteint pas le seuil d'application automatique (85 %).\nCandidats sondés :\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ vérifier : seul le titre correspond ; aucun signal indépendant (durée, artiste, nº de catalogue) ne le corrobore.\nCandidats sondés :\n{{candidates}}",
     "autoMatchNoneDetail": "Aucun candidat n'a atteint la confiance minimale.\nCandidats sondés :\n{{candidates}}",
-    "autoMatchNoCandidates": "La recherche n'a renvoyé aucun candidat à sonder."
+    "autoMatchNoCandidates": "La recherche n'a renvoyé aucun candidat à sonder.",
+    "probeClicks": "Comptage des clics"
   },
   "fieldGroups": {
     "identity": "Identité",

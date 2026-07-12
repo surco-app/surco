@@ -22,6 +22,7 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
+import { countClicks } from './clickDetect'
 import {
   declickFilter,
   declickRemovedArgs,
@@ -1432,6 +1433,20 @@ const SHELF_SAMPLE_RATE = 44100
 function decodeShelfPcm(input: string): Promise<Float32Array> {
   // 44.1 kHz × 240 s mono ≈ 42 MB, hence the 64 MB ceiling.
   return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64 })
+}
+
+// Estimated audible clicks for the editor's repair section (see clickDetect.ts).
+// Native rate, mono: a stylus click is 1-9 samples wide, so any downsample smears it
+// away. Capped at eight minutes — beyond a typical vinyl side; the count is worded
+// as an estimate — bounding the buffer at ~85 MB. One O(n) pass, no FFT, so unlike
+// bpm/key/shelf it runs inline instead of shipping the buffer to the worker.
+export async function countTrackClicks(input: string): Promise<number> {
+  const pcm = await decodePcm(input, {
+    sampleRate: SHELF_SAMPLE_RATE,
+    seconds: 480,
+    maxBufferMb: 96,
+  })
+  return countClicks(pcm, SHELF_SAMPLE_RATE)
 }
 
 // Two signals the biquad codec-lowpass pass is blind to, both read off the same flat

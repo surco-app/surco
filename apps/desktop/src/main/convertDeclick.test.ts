@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertAudio, renderDeclickRemoved } from './ffmpeg'
+import { convertAudio, countTrackClicks, renderDeclickRemoved } from './ffmpeg'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-declick-'))
@@ -186,5 +186,13 @@ describe('renderDeclickRemoved', () => {
 
   it('renders nothing when the mode is off', async () => {
     expect(await renderDeclickRemoved(src, join(dir, 'no.wav'), 'off')).toBeNull()
+  }, 30000)
+})
+
+// The repair section's counter, through the real decode: the fixture carries one
+// click every half second, and the estimate must count events, not samples.
+describe('countTrackClicks', () => {
+  it('counts the fixture’s clicks exactly', async () => {
+    expect(await countTrackClicks(src)).toBe(8)
   }, 30000)
 })

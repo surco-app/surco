@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
 import type { DeclickMode } from '../../../shared/types'
+import { useClickCount } from '../hooks/useClickCount'
+import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
 
@@ -32,6 +34,11 @@ export function DeclickSection({
   isMulti,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // The RX-style counter: Surco's own audible-click estimate for the whole track
+  // (see clickDetect.ts). Waits for the selection to rest like the other per-track
+  // analyses, and only runs while the section is open on a single track.
+  const settled = useSettled(SELECTION_SETTLE_MS)
+  const { data: clicks } = useClickCount(inputPath, open && !isMulti && settled)
   // The "hear what gets removed" audition (RX's "output clicks only"): a 20 s render
   // of exactly what the active mode would take out, played once through a local
   // element. Stopped when the mode changes or the section unmounts — the render no
@@ -99,6 +106,16 @@ export function DeclickSection({
       {open && (
         <div className="mt-3">
           <p className="mb-3 text-xs text-fg-dim">{tr('declick.editorHint')}</p>
+          {/* The estimate speaks the user's language (events, not samples) and is
+              deliberately worded "audible": clicks buried under loud passages mask
+              from the detector much as they mask from the ear. */}
+          {!isMulti && typeof clicks === 'number' && (
+            <p data-testid="declick-estimate" className="mb-3 text-xs text-fg-muted">
+              {clicks > 0
+                ? tr('declick.estimate', { count: clicks })
+                : tr('declick.estimateNone')}
+            </p>
+          )}
           <DeclickControls value={value} onChange={onChange} />
           {value !== 'off' && !isMulti && (
             <div className="mt-3">

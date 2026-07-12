@@ -22,6 +22,7 @@ export const ANALYSIS_QUERY_KEYS = [
   'bpm',
   'key',
   'waveform',
+  'clicks',
 ] as const
 
 export function removeAnalysisQueries(client: QueryClient, inputPath: string): void {

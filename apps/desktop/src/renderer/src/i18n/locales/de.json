@@ -464,7 +464,9 @@
     "auditionFailed": "Die Hörprobe konnte nicht erstellt werden.",
     "auditionHint": "Spielt 20 Sekunden aus der Mitte dieses Tracks — nur mit dem Rauschen, das die Reparatur entfernen würde. Fast-Stille heißt: die Musik bleibt unberührt.",
     "auditionClean": "Die Reparatur würde in diesem Ausschnitt nichts berühren.",
-    "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen."
+    "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen.",
+    "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
+    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt."
   },
   "normalize": {
     "title": "Loudness-Normalisierung",
@@ -868,7 +870,8 @@
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: Konfidenz unter der Schwelle für automatisches Anwenden (85 %).\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: nur der Titel stimmt überein; kein unabhängiges Signal (Dauer, Künstler, Katalognr.) bestätigt ihn.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
-    "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen."
+    "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen.",
+    "probeClicks": "Klicks werden gezählt"
   },
   "fieldGroups": {
     "identity": "Identität",

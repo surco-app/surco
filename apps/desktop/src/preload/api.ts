@@ -144,6 +144,9 @@ export interface Api {
     path: string,
     mode: DeclickMode,
   ) => Promise<{ path: string; share: number | null } | null>
+  // Estimated audible clicks in the track (Surco's own event detector, first eight
+  // minutes), for the repair section's readout. null when the estimate failed.
+  clicks: (path: string) => Promise<number | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   // Tags, duration and cover from a single round-trip, for the import path.
