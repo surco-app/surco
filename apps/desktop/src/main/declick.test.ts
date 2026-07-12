@@ -10,11 +10,12 @@ describe('declickFilter', () => {
     expect(declickFilter('standard')).toBe('adeclick')
   })
 
-  it('maxes burst fusion for long pops in strong mode, never touching the threshold', () => {
-    // t=1/t=1.5 flag a large share of any dense mix as clicks and the per-window
-    // interpolation cost explodes past realtime — conversions looked hung. Burst
-    // fusion alone repairs the long pops, so the threshold must stay at default.
-    expect(declickFilter('strong')).toBe('adeclick=b=10')
+  it('uses the minimal burst fusion that repairs long pops in strong mode', () => {
+    // Burst fusion is the one knob that repairs long pops, and its cost explodes on
+    // dense music (b=10 never finished 10 s of a club track; b=6 ran slower than
+    // realtime). b=4 is the lowest value that still repairs them (b=3 does not) and
+    // stays bounded, so anything above it is a hang report waiting to happen.
+    expect(declickFilter('strong')).toBe('adeclick=b=4')
   })
 })
 

@@ -2,19 +2,22 @@ import type { DeclickMode } from '../shared/types'
 
 // The -af stage for each click-repair mode. 'standard' is adeclick's own defaults
 // (window 55 ms, AR order 2%, threshold 2, burst 2), which fully repair the 1-2
-// sample impulses a stylus click leaves. 'strong' maxes burst fusion for the long
-// pops the defaults miss — calibrated against synthetic 9-sample near-full-scale
-// bursts, which survive the defaults untouched and vanish under b=10 alone.
-// Two knobs are deliberately NOT part of the preset:
-// - threshold: t=1 (or 1.5) reads a large share of any dense mix as clicks, and
-//   the per-window AR interpolation cost explodes past realtime — 30 s of pink
-//   noise wouldn't finish in 60 s, so real conversions looked hung forever.
-//   Detection at the default threshold already catches the long pops; only the
-//   fusion of their samples into one repairable burst was missing.
-// - window: shrinking it (w=20) made the repair WORSE, not better.
+// sample impulses a stylus click leaves. 'strong' raises burst fusion to the
+// MINIMUM that also repairs the long pops the defaults miss (synthetic 9-sample
+// near-full-scale bursts: b=3 leaves them, b=4 removes them completely).
+//
+// The cost calibration matters more than the repair one, because adeclick's
+// detector flags 7-17% of any dense club mix as "clicks" (percussive transients)
+// and fusion chains those detections into long bursts whose AR interpolation
+// explodes superlinearly. Measured on 10 s of a real club track: defaults 0.4 s,
+// b=4 1.7 s (stable across excerpts and 96 kHz/24-bit), b=6 5.1 s (slower than
+// realtime), b=10 never finished — users reported "hung" conversions twice, first
+// for t=1 (which inflates detection itself) and then for b=10. So: never lower
+// the threshold, never raise fusion above this minimum, and leave the window
+// alone (w=20 made the repair worse).
 export function declickFilter(mode: DeclickMode): string | null {
   if (mode === 'standard') return 'adeclick'
-  if (mode === 'strong') return 'adeclick=b=10'
+  if (mode === 'strong') return 'adeclick=b=4'
   return null
 }
 
