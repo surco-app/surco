@@ -54,6 +54,13 @@ describe('isStale', () => {
     expect(isStale({ ...converted(), coverUrl: 'https://example.com/new.jpg' })).toBe(true)
   })
 
+  // The trim lives on the track (unlike the declick/normalize dials), so it rides the
+  // signature: dragging a handle after an export must bring the Update button back —
+  // and, through the same signature in hasStagedEdits, get the edit into session.json.
+  it('is true when the silence trim changes after conversion', () => {
+    expect(isStale({ ...converted(), trim: { startSec: 1.2 } })).toBe(true)
+  })
+
   it('is never stale before a track is done, since those states already show a convert button', () => {
     for (const status of ['idle', 'processing', 'error'] as TrackStatus[]) {
       expect(isStale(converted({ status }))).toBe(false)

@@ -309,6 +309,9 @@ export interface SessionEdit {
   autoMatched?: boolean
   matchConfidence?: number
   matchProvider?: SearchProviderId
+  // The staged silence trim — seconds the user confirmed on the waveform but
+  // hadn't converted yet, exactly the kind of edit this store exists to save.
+  trim?: TrimRange
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)

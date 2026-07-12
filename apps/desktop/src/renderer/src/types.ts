@@ -9,6 +9,7 @@ import type {
   SearchResult,
   SpectrumResult,
   TrackMetadata,
+  TrimRange,
 } from '../../shared/types'
 
 export type TrackStatus = 'idle' | 'processing' | 'done' | 'error'
@@ -107,6 +108,10 @@ export interface TrackItem {
   // to false (a clear-meta drops it so a retag re-resolves).
   inLibraryResolved?: boolean
   outputName?: string
+  // The silence trim staged in the editor (the seconds the user confirmed on the
+  // waveform). On the track — not an editor dial — so it rides trackSignature:
+  // editing it flips a done track stale and gets it saved into session.json.
+  trim?: TrimRange
   status: TrackStatus
   stage?: ProcessStage
   // The format this track is being / was last converted to, captured when the

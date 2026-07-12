@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
+import { normalizeTrim } from '../shared/trim'
 import type { SessionData, SessionEdit } from '../shared/types'
 
 // The last-loaded track paths plus each track's staged (not yet converted) edits, so
@@ -48,6 +49,12 @@ function sanitizeEdit(raw: unknown, previews: Map<string, string | undefined>): 
     const preview = previews.get(edit.coverPath)
     if (preview) edit.coverUrl = preview
   }
+  // A malformed trim (hand-edited, or an inverted range) would make atrim emit an
+  // empty stream at the next conversion — repair it to "no trim" here so every
+  // consumer downstream can trust the shape.
+  const trim = normalizeTrim(edit.trim)
+  if (trim) edit.trim = trim
+  else delete edit.trim
   return edit
 }
 

@@ -78,6 +78,19 @@ describe('session store', () => {
     expect(loadLastSession().edits).toEqual({ [kept]: staged })
   })
 
+  // session.json is hand-editable: an inverted trim range would make atrim emit an
+  // empty stream at the next conversion, so the load repairs it to "no trim" while a
+  // valid staged range comes back exactly as saved.
+  it('round-trips a staged silence trim and repairs a malformed one', () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    saveLastSession([kept], { [kept]: edit({ trim: { startSec: 3.2, endSec: 200 } }) })
+    expect(loadLastSession().edits[kept].trim).toEqual({ startSec: 3.2, endSec: 200 })
+    saveLastSession([kept], { [kept]: edit({ trim: { startSec: 10, endSec: 5 } }) })
+    expect(loadLastSession().edits[kept].trim).toBeUndefined()
+  })
+
   // An edit whose track dropped out of the offer (file gone) has nothing to restore
   // onto; keeping it would only grow the file forever.
   it('drops edits for paths that no longer exist', () => {

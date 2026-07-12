@@ -80,6 +80,29 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'processing' }))
   })
 
+  // The trim rides the track (persisted, per-track), not a convert-time override:
+  // every entry point — single convert, ⌘⏎, convert all — must send the staged
+  // range without knowing it exists.
+  it('sends the track’s staged silence trim with the job', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', trim: { startSec: 3.2, endSec: 200 } })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ trim: { startSec: 3.2, endSec: 200 } }),
+    )
+  })
+
   // Normalization was requested but its measurement failed, so the file converted at its
   // original level. The user must be told, named by the track, rather than the skip
   // passing silently and the file landing un-normalized without warning.
