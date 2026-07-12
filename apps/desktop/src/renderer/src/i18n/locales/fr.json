@@ -463,8 +463,8 @@
     "auditionStop": "Arrêter",
     "auditionFailed": "Impossible de générer l’écoute.",
     "auditionHint": "Joue 20 secondes du milieu de ce morceau avec seulement le bruit que la réparation retirerait. Un quasi-silence signifie que la musique reste intacte.",
-    "auditionCount": "Clics trouvés dans cet extrait : {{count}} échantillons.",
-    "auditionClean": "Aucun clic dans cet extrait — la réparation le laisserait intact."
+    "auditionClean": "La réparation ne toucherait rien dans cet extrait.",
+    "auditionShare": "La réparation toucherait {{percent}}% de cet extrait. Sur un rip propre, c’est bien moins de 1% — si vous entendez de la musique, laissez ce morceau tranquille."
   },
   "normalize": {
     "title": "Normalisation du loudness",

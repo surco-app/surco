@@ -85,3 +85,19 @@ export function parseDeclickedSamples(stderr: string): number | null {
   }
   return found ? total : null
 }
+
+// The touched fraction of the stream (0..1), for the audition caption. A share
+// reads honestly where a raw sample count doesn't: on clean dense music the
+// detector fires on percussive transients (measured 6-10% on club tracks), and
+// "111,919 samples" sounds like a broken file while "6% — listen and judge"
+// invites exactly the check the audition exists for. Zero-total flush lines are
+// skipped; null when no real report appeared.
+export function parseDeclickedShare(stderr: string): number | null {
+  let touched = 0
+  let total = 0
+  for (const m of stderr.matchAll(/Detected clicks in (\d+) of (\d+) samples/g)) {
+    touched += Number(m[1])
+    total += Number(m[2])
+  }
+  return total > 0 ? touched / total : null
+}

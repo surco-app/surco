@@ -463,8 +463,8 @@
     "auditionStop": "Stop",
     "auditionFailed": "Could not render the audition.",
     "auditionHint": "Plays 20 seconds from the middle of this track with only the noise the repair would remove. Near-silence means the music is untouched.",
-    "auditionCount": "Clicks found in this excerpt: {{count}} samples.",
-    "auditionClean": "No clicks found in this excerpt — the repair would leave it untouched."
+    "auditionClean": "The repair would touch nothing in this excerpt.",
+    "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone."
   },
   "normalize": {
     "title": "Loudness normalization",

@@ -23,7 +23,7 @@ beforeEach(() => {
     },
   )
   ;(window as unknown as { api: unknown }).api = {
-    declickPreview: vi.fn().mockResolvedValue({ path: '/tmp/removed.wav', samples: 234 }),
+    declickPreview: vi.fn().mockResolvedValue({ path: '/tmp/removed.wav', share: 0.005 }),
   }
 })
 
@@ -106,25 +106,26 @@ describe('DeclickSection', () => {
   })
 
   // The near-silence the audition plays is baffling without a caption ("is this an
-  // example?" — real user feedback): the excerpt's count states the verdict outright.
-  it('captions the audition with the excerpt’s click count', async () => {
+  // example?" — real user feedback): the touched share states the verdict outright,
+  // as a fraction — a raw sample count on clean dense music reads as "broken file".
+  it('captions the audition with the excerpt’s touched share', async () => {
     render(section({ value: 'standard' }))
     await act(async () => {
       fireEvent.click(screen.getByTestId('declick-audition'))
     })
-    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent('234')
+    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent('0.5%')
   })
 
   it('states a clean excerpt outright instead of showing a bare zero', async () => {
     ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockResolvedValue({
       path: '/tmp/removed.wav',
-      samples: 0,
+      share: 0,
     })
     render(section({ value: 'standard' }))
     await act(async () => {
       fireEvent.click(screen.getByTestId('declick-audition'))
     })
-    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent(/No clicks found/)
+    expect(screen.getByTestId('declick-audition-count')).toHaveTextContent(/touch nothing/)
   })
 
   // A failed render must say so — a button that silently does nothing reads as

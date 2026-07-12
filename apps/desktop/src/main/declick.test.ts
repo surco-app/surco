@@ -3,6 +3,7 @@ import {
   declickFilter,
   declickRemovedArgs,
   parseDeclickedSamples,
+  parseDeclickedShare,
   PREVIEW_SECONDS,
   previewWindow,
 } from './declick'
@@ -80,5 +81,30 @@ describe('parseDeclickedSamples', () => {
     expect(
       parseDeclickedSamples('[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 441000 samples (0%).'),
     ).toBe(0)
+  })
+})
+
+describe('parseDeclickedShare', () => {
+  it('reads the touched share of the stream, for the audition caption', () => {
+    expect(
+      parseDeclickedShare(
+        '[Parsed_adeclick_0 @ 0x1] Detected clicks in 111919 of 1764000 samples (6.34461%).',
+      ),
+    ).toBeCloseTo(111919 / 1764000)
+  })
+
+  it('ignores the empty flush line the filter sometimes prints first', () => {
+    const stderr = [
+      '[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 0 samples (nan%).',
+      '[Parsed_adeclick_0 @ 0x1] Detected clicks in 234 of 441000 samples (0.05%).',
+    ].join('\n')
+    expect(parseDeclickedShare(stderr)).toBeCloseTo(234 / 441000)
+  })
+
+  it('returns null when the filter reported nothing usable', () => {
+    expect(parseDeclickedShare('size= 861kB')).toBeNull()
+    expect(
+      parseDeclickedShare('[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 0 samples (nan%).'),
+    ).toBeNull()
   })
 })

@@ -463,8 +463,8 @@
     "auditionStop": "Parar",
     "auditionFailed": "Não foi possível gerar a prévia.",
     "auditionHint": "Toca 20 segundos do meio desta faixa com apenas o ruído que o reparo removeria. Quase silêncio significa que a música fica intacta.",
-    "auditionCount": "Clicks encontrados neste trecho: {{count}} amostras.",
-    "auditionClean": "Nenhum click neste trecho — o reparo o deixaria intacto."
+    "auditionClean": "O reparo não tocaria nada neste trecho.",
+    "auditionShare": "O reparo tocaria {{percent}}% deste trecho. Em um rip limpo isso fica bem abaixo de 1% — se você ouvir música na prévia, deixe esta faixa em paz."
   },
   "normalize": {
     "title": "Normalização de loudness",

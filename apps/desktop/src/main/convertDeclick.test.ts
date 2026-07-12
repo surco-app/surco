@@ -167,7 +167,7 @@ describe('renderDeclickRemoved', () => {
     expect(result?.path).toBe(out)
     // The clicky source's excerpt must report its clicks — the caption the UI
     // shows so near-silence reads as "clean", not as a broken render.
-    expect(result?.samples).toBeGreaterThan(0)
+    expect(result?.share).toBeGreaterThan(0)
     const raw = execFileSync(FF, ['-v', 'error', '-i', out, '-f', 'f32le', '-'], {
       maxBuffer: 1024 * 1024 * 64,
     })

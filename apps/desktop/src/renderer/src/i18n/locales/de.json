@@ -463,8 +463,8 @@
     "auditionStop": "Stopp",
     "auditionFailed": "Die Hörprobe konnte nicht erstellt werden.",
     "auditionHint": "Spielt 20 Sekunden aus der Mitte dieses Tracks — nur mit dem Rauschen, das die Reparatur entfernen würde. Fast-Stille heißt: die Musik bleibt unberührt.",
-    "auditionCount": "Klicks in diesem Ausschnitt: {{count}} Samples.",
-    "auditionClean": "Keine Klicks in diesem Ausschnitt — die Reparatur würde ihn unberührt lassen."
+    "auditionClean": "Die Reparatur würde in diesem Ausschnitt nichts berühren.",
+    "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen."
   },
   "normalize": {
     "title": "Loudness-Normalisierung",

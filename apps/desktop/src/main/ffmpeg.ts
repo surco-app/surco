@@ -26,6 +26,7 @@ import {
   declickFilter,
   declickRemovedArgs,
   parseDeclickedSamples,
+  parseDeclickedShare,
   previewWindow,
 } from './declick'
 import {
@@ -1001,9 +1002,9 @@ export function previewWavArgs(input: string, output: string, codec: string): st
 
 // Renders the 20 s "hear what gets removed" audition for the given repair mode into
 // `output`: a WAV holding only what the repair would take out (declickRemovedArgs),
-// plus the excerpt's repaired-sample count off adeclick's stderr — the RX-style
-// caption that tells the user whether the near-silence they hear means "clean rip"
-// or "nothing rendered". null when the mode is off — nothing would be removed,
+// plus the excerpt's touched share off adeclick's stderr — the RX-style caption
+// that tells the user whether the near-silence they hear means "clean rip" or
+// "nothing rendered". null when the mode is off — nothing would be removed,
 // nothing to audition. The caller owns the output path (a quit-swept preview temp).
 // Timed out like the analysis reads: it's an interactive request, and a stalled
 // mount must drop it rather than wedge the button forever.
@@ -1011,14 +1012,14 @@ export async function renderDeclickRemoved(
   input: string,
   output: string,
   mode: DeclickMode,
-): Promise<{ path: string; samples: number | null } | null> {
+): Promise<{ path: string; share: number | null } | null> {
   const args = declickRemovedArgs(input, output, mode, previewWindow(await probeDuration(input)))
   if (!args) return null
   const { stderr } = await run(ffmpegPath, args, {
     maxBuffer: 1024 * 1024 * 16,
     timeout: ANALYSIS_TIMEOUT_MS,
   })
-  return { path: output, samples: parseDeclickedSamples(String(stderr)) }
+  return { path: output, share: parseDeclickedShare(String(stderr)) }
 }
 
 // Transcodes an AIFF into a WAV the player can decode, preserving the source bit
