@@ -268,10 +268,7 @@ export const Editor = memo(function Editor({
   )
   // Which library the membership badge reads — the conversion destination's. Null
   // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
-  const librarySource = librarySourceOf(
-    { ...picked, outputFormat: format },
-    isMacOS(),
-  )
+  const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
   // Per-track normalization, seeded from the Settings default. Editing it both
   // updates the control and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(normalize)
@@ -666,9 +663,7 @@ export const Editor = memo(function Editor({
             .join(' / '),
           target: [
             rateMismatch ? formatKHz(Number(outputSampleRate)) : '',
-            depthMismatch
-              ? tr('editor.propBitDepthValue', { bits: Number(outputBitDepth) })
-              : '',
+            depthMismatch ? tr('editor.propBitDepthValue', { bits: Number(outputBitDepth) }) : '',
           ]
             .filter(Boolean)
             .join(' / '),
@@ -862,7 +857,9 @@ export const Editor = memo(function Editor({
                     className="inline-flex items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
                   >
                     <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
+                    {tr(
+                      librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary',
+                    )}
                   </span>
                 )}
                 {!isMulti && inLibrary === 'no' && (
@@ -893,21 +890,25 @@ export const Editor = memo(function Editor({
                 {/* Two pairs, one divider: copy/search act on the file NAME (read-only,
                     hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS.
                     Each pair packs tighter (gap-1.5) than the row (gap-3) so the
-                    grouping reads at a glance. */}
-                {!isMulti && (
+                    grouping reads at a glance. All of them act on the fields below,
+                    so they fold with the section — only the library badge (state,
+                    not action) stays on a folded header. */}
+                {formOpen && !isMulti && (
                   <div className="flex items-center gap-1.5">
                     {copyFilenameButton}
                     {searchWebButton}
                   </div>
                 )}
-                {!isMulti && (
+                {formOpen && !isMulti && (
                   <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
                 )}
-                <div className="flex items-center gap-1.5">
-                  {clearButton}
-                  {deriveButton}
-                  {titleFormatButton}
-                </div>
+                {formOpen && (
+                  <div className="flex items-center gap-1.5">
+                    {clearButton}
+                    {deriveButton}
+                    {titleFormatButton}
+                  </div>
+                )}
               </div>
             }
           />

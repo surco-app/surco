@@ -95,4 +95,25 @@ describe('OutputNameSection', () => {
     renderSection(false)
     expect(screen.queryByTestId('output-name-summary')).not.toBeInTheDocument()
   })
+
+  // Regenerate and the pencil act on the name field below — folded, they fold too;
+  // the header keeps only the summary of what will be written.
+  it('hides the name actions while folded', () => {
+    render(
+      <OutputNameSection
+        item={item}
+        format="aiff"
+        defaultOutputName="a"
+        autoApply={false}
+        willEditInPlace={false}
+        open={false}
+        onToggle={vi.fn()}
+        onChangeName={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onOpenRename={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('regenerate-output-name')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('customize-output-name')).not.toBeInTheDocument()
+  })
 })

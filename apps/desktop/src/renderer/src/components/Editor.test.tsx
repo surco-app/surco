@@ -1222,6 +1222,28 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
   })
 
+  // The header's icon actions (copy name, search web, clear, derive) all act on the
+  // fields below — folded, there is nothing on screen they refer to, so they fold
+  // with the section instead of floating next to the summary.
+  it('hides the metadata header actions while the form is folded', () => {
+    renderEditor({ id: 'a', meta: { artist: 'A', title: 'T' } }, 'wav', {
+      editorSections: [
+        { id: 'form', open: false },
+        { id: 'properties', open: false },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    expect(screen.queryByTestId('clear-meta-btn')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('derive-btn')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('copy-filename-btn')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('search-web-btn')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
+    expect(screen.getByTestId('clear-meta-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))
