@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.50",
+    "date": "July 12, 2026",
+    "title": "Hear the repair, read the editor at a glance",
+    "items": [
+      {
+        "text": "Click repair can now be auditioned before converting: it plays 20 seconds from the middle of the track with only the noise it would remove — near-silence means the music stays untouched — along with the share of the excerpt it would touch.",
+        "in": "0.50.0"
+      },
+      {
+        "text": "Folded editor sections now summarize their state: artist and title, the file name that will be written, the normalization targets or a plain “Off” — and their buttons fold with them.",
+        "in": "0.50.0"
+      },
+      {
+        "text": "Editor sections can now be hidden entirely from Settings → Editor, and click repair starts folded.",
+        "in": "0.50.0"
+      }
+    ]
+  },
+  {
     "version": "0.49",
     "date": "July 11, 2026",
     "title": "See each channel, trust the peaks",

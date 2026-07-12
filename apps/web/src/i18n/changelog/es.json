@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.50",
+    "date": "12 de julio de 2026",
+    "title": "Escucha la reparación y lee el editor de un vistazo",
+    "items": [
+      {
+        "text": "La reparación de clicks ahora se deja escuchar antes de convertir: una audición reproduce 20 segundos del centro de la pista con solo el ruido que se quitaría — si suena casi a silencio, la música queda intacta — junto al porcentaje del extracto que tocaría.",
+        "in": "0.50.0"
+      },
+      {
+        "text": "Las secciones plegadas del editor resumen ahora su estado: artista y título, el nombre de archivo que se escribirá, los objetivos de normalización o un simple «No» — y sus botones se pliegan con ellas.",
+        "in": "0.50.0"
+      },
+      {
+        "text": "Las secciones del editor también pueden ocultarse del todo desde Ajustes → Editor, y la reparación de clicks empieza plegada.",
+        "in": "0.50.0"
+      }
+    ]
+  },
+  {
     "version": "0.49",
     "date": "11 de julio de 2026",
     "title": "Cada canal a la vista y picos de fiar",
