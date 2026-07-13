@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.53",
+    "date": "July 13, 2026",
+    "title": "Surgical precision",
+    "items": [
+      {
+        "text": "Deep zoom on the waveforms: pinch the trackpad (or ⌘+wheel) to dive up to ×256 anchored under the cursor. Surco re-decodes the visible window at full fidelity — real detail, not blocks — with a time ruler and taller strips.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Finer silence trimming: scissors on the wave itself to apply each cut, click the wave to place the nearest handle, a magnet that snaps to where the music actually starts, and buttons to check each cut by ear.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Analysis results now live as pills on each section's header — detected silence, measured LUFS and peaks, estimated clicks — readable at a glance.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Bulk actions over the selection: trim every track's detected silence and regenerate their file names from metadata, each in one click.",
+        "in": "0.53.0"
+      }
+    ]
+  },
+  {
     "version": "0.52",
     "date": "July 12, 2026",
     "title": "Silence, trimmed",

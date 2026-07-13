@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.53",
+    "date": "13 de julio de 2026",
+    "title": "Precisión de cirujano",
+    "items": [
+      {
+        "text": "Zoom profundo en las ondas: pellizca el trackpad (o ⌘+rueda) para acercarte hasta ×256 anclado al cursor. Surco re-decodifica la ventana visible con fidelidad total — detalle real, no bloques — con regla de tiempo y gráficas más altas.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Recorte de silencio más fino: tijeras sobre la propia onda para aplicar cada corte, clic en la onda para colocar el asa más cercana, imán al inicio real de la música y botones para comprobar cada corte de oído.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Los resultados de los análisis viven ahora en píldoras en la cabecera de cada sección — silencio detectado, LUFS y picos medidos, clicks estimados — visibles de un vistazo.",
+        "in": "0.53.0"
+      },
+      {
+        "text": "Acciones en lote sobre la selección: recorta el silencio detectado de todas las pistas y regenera sus nombres de archivo desde los metadatos, cada una en un clic.",
+        "in": "0.53.0"
+      }
+    ]
+  },
+  {
     "version": "0.52",
     "date": "12 de julio de 2026",
     "title": "Fuera silencios",
