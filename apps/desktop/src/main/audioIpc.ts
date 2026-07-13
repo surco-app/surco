@@ -2,7 +2,7 @@ import { basename } from 'node:path'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { activity } from './activity'
-import { cachedAnalysis } from './analysisCache'
+import { cachedAnalysis, dropAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import {
   analyzeCutoff,
@@ -203,8 +203,11 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:beatgrid', async (_e, inputPath: string) => {
+  ipcMain.handle('audio:beatgrid', async (_e, inputPath: string, fresh?: boolean) => {
     try {
+      // The Grid section's Auto: the user explicitly asked to redo the analysis,
+      // so the cached verdict (possibly from an older detector) must not serve.
+      if (fresh) await dropAnalysis('beatgrid-v2', inputPath)
       // Same caching contract as audio:bpm: a null (beatless material) is a
       // real measurement and is cached; only a decode error retries. Its own
       // namespace rather than a bump of 'bpm': old cached BpmResults carry no

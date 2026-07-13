@@ -19,6 +19,7 @@ import {
   analysisCacheStats,
   cachedAnalysis,
   clearAnalysisCache,
+  dropAnalysis,
   pruneAnalysisCache,
 } from './analysisCache'
 
@@ -136,6 +137,19 @@ describe('cachedAnalysis', () => {
     // First (ok:false) not cached → recomputed; second (ok:true) cached → third served.
     expect(compute).toHaveBeenCalledTimes(2)
   })
+  // The Grid section's Auto: the user explicitly asked to redo an analysis, so
+  // the pinned entry must be forgotten — same key, next call recomputes.
+  it('recomputes after dropAnalysis forgets the entry', async () => {
+    const src = join(app.getPath('userData'), 'redo.wav')
+    await writeFile(src, 'bytes')
+    const compute = vi.fn().mockResolvedValueOnce({ v: 1 }).mockResolvedValueOnce({ v: 2 })
+    expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 1 })
+    expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 1 })
+    await dropAnalysis('redo-ns', src)
+    expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 2 })
+    expect(compute).toHaveBeenCalledTimes(2)
+  })
+
 })
 
 describe('clearAnalysisCache', () => {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BeatgridResult, WaveformResult } from '../../../shared/types'
@@ -203,20 +203,29 @@ describe('GridSection grid', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  // "Auto": one click back to the detected grid, exactly like the trim's reset —
-  // undefined means "use detected", so the suggestion shows again.
-  it('resets to the detected grid from the Auto button', async () => {
+  // "Auto" is the re-run-the-machine button: it drops whatever was staged AND
+  // redoes the analysis bypassing the cache — a stale verdict from an older
+  // detector must not be what "see if it fixes itself" returns.
+  it('resets to a FRESH detection from the Auto button', async () => {
     const onChange = vi.fn()
+    const probe = vi.fn().mockResolvedValue(detected)
+    ;(window as unknown as { api: { beatgrid: unknown } }).api.beatgrid = probe
     render(section({ value: { bpm: 128, anchorSec: 0.5 }, onChange }))
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     fireEvent.click(screen.getByTestId('grid-reset'))
     expect(onChange).toHaveBeenCalledWith(undefined)
+    await waitFor(() => expect(probe).toHaveBeenCalledWith('/in/track.wav', true))
   })
 
-  it('offers no Auto button before anything is staged', async () => {
+  // The flagged-for-review flow: nothing is staged, the user just wants the
+  // detection redone — the button must be there without touching the grid first.
+  it('offers Auto on a bare detection too', async () => {
+    const probe = vi.fn().mockResolvedValue(detected)
+    ;(window as unknown as { api: { beatgrid: unknown } }).api.beatgrid = probe
     render(section())
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-    expect(screen.queryByTestId('grid-reset')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('grid-reset'))
+    await waitFor(() => expect(probe).toHaveBeenCalledWith('/in/track.wav', true))
   })
 
   // Real strips are hundreds of px wide; jsdom rects are 0×0, which would land

@@ -10,6 +10,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type React from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
@@ -141,6 +142,23 @@ export function GridSection({
   function nudge(deltaSec: number): void {
     if (!shown) return
     commit({ ...shown, anchorSec: shown.anchorSec + deltaSec })
+  }
+
+  // "Auto": drop whatever was staged AND redo the analysis from scratch — the
+  // cached detection is deliberately skipped, so a grid computed by an older
+  // detector (or one the user distrusts) gets a genuinely fresh verdict rather
+  // than the same cached answer back.
+  const queryClient = useQueryClient()
+  const [reprobing, setReprobing] = useState(false)
+  async function autoDetect(): Promise<void> {
+    if (value) onChange(undefined)
+    setReprobing(true)
+    try {
+      const fresh = await window.api.beatgrid(inputPath, true)
+      queryClient.setQueryData(['beatgrid', inputPath], fresh)
+    } finally {
+      setReprobing(false)
+    }
   }
 
   // The BPM field edits as text and commits on blur/Enter, so a half-typed
@@ -374,15 +392,16 @@ export function GridSection({
                     </button>
                   </>
                 )}
-                {value && (
+                {(value || shown) && (
                   <button
                     type="button"
                     data-testid="grid-reset"
                     aria-label={tr('grid.resetHint')}
-                    onClick={() => onChange(undefined)}
-                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
+                    disabled={reprobing}
+                    onClick={autoDetect}
+                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
                   >
-                    <Wand2 className="h-3 w-3" aria-hidden="true" />
+                    <Wand2 className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`} aria-hidden="true" />
                     {tr('grid.reset')}
                   </button>
                 )}

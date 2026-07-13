@@ -135,7 +135,7 @@ export interface Api {
   loudness: (path: string) => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string) => Promise<BpmResult | null>
-  beatgrid: (path: string) => Promise<BeatgridResult | null>
+  beatgrid: (path: string, fresh?: boolean) => Promise<BeatgridResult | null>
   key: (path: string) => Promise<KeyResult | null>
   waveform: (path: string) => Promise<WaveformResult | null>
   // A slice of the track re-decoded at full waveform fidelity, for the strips'
