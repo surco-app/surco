@@ -35,23 +35,24 @@ describe('normalizeEditorSections', () => {
     // The sections this store predates (trim, declick) are appended with their defaults.
     expect(normalizeEditorSections(stored)).toEqual([
       ...stored,
-      { id: 'trim', open: false },
+      { id: 'trim', open: true },
       { id: 'declick', open: false },
     ])
   })
 
-  // The audio sections follow the order the conversion applies them in: trim the
-  // silence first, repair clicks on what remains, then size the gain on the repaired
-  // audio — so reading the editor top-to-bottom reads the processing chain.
-  it('orders trim before declick before normalize by default', () => {
+  // The list reads as the workflow: judge the file first (quality's verdict, ahead
+  // of the passive properties), then the audio surgery in the order the conversion
+  // applies it — so reading the editor top-to-bottom reads the processing chain.
+  it('orders quality first and the audio chain in processing order by default', () => {
     const ids = DEFAULT_EDITOR_SECTIONS.map((s) => s.id)
-    expect(ids).toEqual(['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'output'])
+    expect(ids).toEqual(['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'])
   })
 
-  // Like click repair, silence trim is opt-in per track — it ships folded and the
-  // fold badge surfaces an active trim.
-  it('ships silence trim folded by default', () => {
-    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'trim')?.open).toBe(false)
+  // Open by default: the detection pill only appears once the section has analyzed,
+  // and the wave decode is shared with the loudness strip's — so the "this rip has
+  // silence" finding surfaces without costing an extra pass.
+  it('ships silence trim open by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'trim')?.open).toBe(true)
   })
 
   // Click repair is the rare-use section (most rips are clean), so it ships folded —

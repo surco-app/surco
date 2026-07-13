@@ -25,16 +25,21 @@ export interface EditorSectionPref {
 
 // The file name goes last: it names the output, so it reads best right above the
 // Convert button, with the audio sections (quality, normalization) grouped above it.
+// The list reads as the workflow: identify (the pinned form), judge the file
+// (quality's go/no-go verdict, ahead of the passive properties), then the audio
+// surgery in the order the conversion applies it — trim the silence first, repair
+// clicks on what remains, size the gain on the repaired audio — and the name last.
 export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
-  { id: 'properties', open: false },
   { id: 'quality', open: true },
-  // The audio sections read in the order the conversion applies them: trim the
-  // silence first, repair clicks on what remains, then size the gain on the
-  // repaired audio. Trim and click repair ship folded — they're the rare-use
-  // sections (most rips need neither), and the fold badge still surfaces an
-  // active state.
-  { id: 'trim', open: false },
+  // Reference figures, consulted when the quality verdict raises an eyebrow.
+  { id: 'properties', open: false },
+  // Open: its detection pill only appears once the section has analyzed, and the
+  // wave decode is shared with the loudness strip's — opening it costs nothing
+  // extra while surfacing the "this rip has silence" finding by default.
+  { id: 'trim', open: true },
+  // Folded: the rare-use section (most rips are clean), and its click estimate is
+  // its own expensive pass; the fold badge still surfaces an active mode.
   { id: 'declick', open: false },
   { id: 'normalize', open: true },
   { id: 'output', open: true },

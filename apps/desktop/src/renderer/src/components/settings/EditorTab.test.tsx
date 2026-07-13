@@ -65,8 +65,8 @@ describe('EditorTab sections', () => {
     const rows = screen.getAllByTestId(/^settings-section-row-/)
     expect(rows.map((r) => r.dataset.testid)).toEqual([
       'settings-section-row-form',
-      'settings-section-row-properties',
       'settings-section-row-quality',
+      'settings-section-row-properties',
       'settings-section-row-trim',
       'settings-section-row-declick',
       'settings-section-row-normalize',
@@ -90,7 +90,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-down-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'trim', 'quality', 'declick', 'normalize', 'output'].map((id) =>
+      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -98,10 +98,10 @@ describe('EditorTab sections', () => {
 
   it('moves a section up one place', () => {
     const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-section-up-quality'))
+    fireEvent.click(screen.getByTestId('settings-section-up-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map((id) =>
+      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'output'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -118,7 +118,7 @@ describe('EditorTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'trim', 'declick', 'output', 'normalize'].map((id) =>
+      ['form', 'quality', 'properties', 'trim', 'declick', 'output', 'normalize'].map((id) =>
         DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -172,7 +172,7 @@ describe('EditorTab sections', () => {
     renderTab()
     expect(screen.queryByTestId('settings-section-up-form')).not.toBeInTheDocument()
     expect(screen.queryByTestId('settings-section-down-form')).not.toBeInTheDocument()
-    expect(screen.getByTestId('settings-section-up-properties')).toBeDisabled()
+    expect(screen.getByTestId('settings-section-up-quality')).toBeDisabled()
   })
 
   it('disables the last row’s down arrow', () => {
