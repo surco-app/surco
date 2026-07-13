@@ -7,7 +7,7 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { detectTrim } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
-import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX } from './WaveformCompare'
+import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
 // A handle can never cross to within a second of the other: a trim that eats the
 // whole track is always a mistake, and the floor keeps the handles grabbable.
@@ -254,7 +254,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                     onClick={() => setZoom(1)}
                     className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                   >
-                    {`×${zoom}`}
+                    {zoomLabel(zoom)}
                   </button>
                   <button
                     type="button"
@@ -275,6 +275,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 color={AFTER_COLOR}
                 raster={OVERLAY_W}
                 zoom={zoom}
+                onZoomChange={setZoom}
               >
                 {wave && durationSec > 0 && (
                   <div ref={overlayRef} className="absolute inset-0">

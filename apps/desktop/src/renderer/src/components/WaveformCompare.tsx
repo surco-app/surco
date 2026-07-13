@@ -6,7 +6,7 @@ import type { LoudnessResult, NormalizeConfig, WaveformResult } from '../../../s
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
 import { formatDb } from '../lib/quality'
-import { formatTime } from '../lib/duration'
+import { formatTime, timeTicks } from '../lib/duration'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 import { WaveformSkeleton } from './WaveformSkeleton'
@@ -25,6 +25,12 @@ const CANVAS_H = 96
 // zoomed canvas raster (OVERLAY_W × zoom = 38 400 px) under the browser's ~65k
 // per-dimension canvas limit.
 export const ZOOM_MAX = 32
+
+// The ×N chip's text: pinch zoom makes the factor continuous, so round to what
+// the eye needs — tenths under ×10, whole steps above ("×3.4", "×27").
+export function zoomLabel(zoom: number): string {
+  return `×${zoom >= 10 ? Math.round(zoom) : Number(zoom.toFixed(1))}`
+}
 
 // The colour key the legends' dots repeat: the converted file keeps the player's
 // accent blue, the source goes muted so "louder than before" reads as blue fringes
@@ -88,6 +94,7 @@ export function Strip({
   background,
   raster = CANVAS_W,
   zoom = 1,
+  onZoomChange,
   children,
 }: StripData & {
   color: string
@@ -103,8 +110,12 @@ export function Strip({
   background?: WaveformResult | null
   raster?: number
   // rekordbox-style stretch factor: the strip grows to zoom× the panel width inside
-  // a horizontal scroller. Still the same 2048 decoded buckets, just drawn wider.
+  // a horizontal scroller. Still the same decoded buckets, just drawn wider.
   zoom?: number
+  // Enables trackpad pinch (and ⌘/Ctrl+wheel) zoom over the strip, anchored at the
+  // cursor: the spot under the pointer stays put, DAW-style, instead of the view
+  // re-centering. The parent owns the zoom state, so the strip only reports.
+  onZoomChange?: (zoom: number) => void
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -146,17 +157,52 @@ export function Strip({
       })
     }
   }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom])
-  // A zoom step re-anchors the scroller so the spot in the middle stays in the
-  // middle — zooming in on a clip must not teleport the view away from it.
+  // A zoom step re-anchors the scroller so the spot the user is working on stays
+  // put: at the cursor for a pinch/wheel zoom (anchorRef, set by the handler
+  // below), at the middle for a button step — zooming must never teleport the
+  // view away from the clip or cut being inspected.
   const prevZoom = useRef(zoom)
+  const anchorRef = useRef<{ ratio: number; viewX: number } | null>(null)
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el || prevZoom.current === zoom) return
     const factor = zoom / prevZoom.current
     prevZoom.current = zoom
+    const anchor = anchorRef.current
+    anchorRef.current = null
+    if (anchor) {
+      el.scrollLeft = Math.max(0, anchor.ratio * el.clientWidth * zoom - anchor.viewX)
+      return
+    }
     const center = el.scrollLeft + el.clientWidth / 2
     el.scrollLeft = Math.max(0, center * factor - el.clientWidth / 2)
   }, [zoom])
+  // Trackpad pinch (ctrlKey wheel) and ⌘+wheel zoom the strip continuously,
+  // anchored under the cursor. A native non-passive listener because React binds
+  // onWheel passively at the root, which silently ignores the preventDefault that
+  // keeps the pinch from zooming the whole window.
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !onZoomChange) return
+    const onWheel = (e: WheelEvent): void => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const current = zoomRef.current
+      const next = Math.min(ZOOM_MAX, Math.max(1, current * Math.exp(-e.deltaY * 0.01)))
+      if (next === current) return
+      const rect = el.getBoundingClientRect()
+      const viewX = e.clientX - rect.left
+      anchorRef.current = {
+        ratio: rect.width === 0 ? 0 : (el.scrollLeft + viewX) / (rect.width * current),
+        viewX,
+      }
+      onZoomChange(next)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [onZoomChange])
   // Splitting halves each channel's room, so the strip grows by half in return:
   // every lane keeps roughly the mono wave's readable height, like Audacity's rows.
   const splitActive = split && wave?.channels?.length === 2
@@ -195,11 +241,31 @@ export function Strip({
       >
         <canvas
           ref={canvasRef}
-          width={raster * zoom}
+          width={Math.round(raster * zoom)}
           height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
           className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-24' : 'h-16'}`}
         />
         {loading && <WaveformSkeleton testid="waveform-compare-loading" />}
+        {/* The ruler appears with the zoom: at ×1 the strip is an overview and ticks
+            are clutter, but zoomed in, "where am I in the track" needs answering
+            without dragging the hover chip around. Percent-positioned, so the ticks
+            ride the zoomed width and scroll with the wave. */}
+        {zoom > 1 && wave && (
+          <div
+            data-testid="waveform-ruler"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0"
+          >
+            {timeTicks(wave.durationSec, zoom).map((t) => (
+              <span key={t.sec} className="absolute bottom-0" style={{ left: `${t.pct}%` }}>
+                <span className="absolute bottom-0 h-2 w-px bg-[var(--color-line-strong)]" />
+                <span className="absolute bottom-0.5 pl-1 text-[9px] leading-none tabular-nums text-fg-dim">
+                  {t.label}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
         {readout && hover && (
           <>
             <span
@@ -459,7 +525,7 @@ export function WaveformSolo({
             onClick={() => setZoom(1)}
             className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
           >
-            {`×${zoom}`}
+            {zoomLabel(zoom)}
           </button>
           <button
             type="button"
@@ -484,6 +550,7 @@ export function WaveformSolo({
           background={source.wave}
           raster={OVERLAY_W}
           zoom={zoom}
+          onZoomChange={setZoom}
         />
       ) : (
         <Strip
@@ -494,6 +561,7 @@ export function WaveformSolo({
           split={split}
           raster={OVERLAY_W}
           zoom={zoom}
+          onZoomChange={setZoom}
         />
       )}
     </div>

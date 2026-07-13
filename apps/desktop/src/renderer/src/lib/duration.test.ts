@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTime, parseDuration } from './duration'
+import { formatTime, parseDuration, timeTicks } from './duration'
 
 describe('formatTime', () => {
   it('pads the seconds to two digits so 1:05 never reads as 1:5', () => {
@@ -49,5 +49,32 @@ describe('parseDuration', () => {
     expect(parseDuration(undefined)).toBeUndefined()
     expect(parseDuration('')).toBeUndefined()
     expect(parseDuration('?')).toBeUndefined()
+  })
+})
+
+describe('timeTicks', () => {
+  // The zoomed strip's ruler: ticks must land often enough to read a position at a
+  // glance but never so dense the labels collide — the step widens with the visible
+  // window (durationSec / zoom), snapping to clock-friendly intervals.
+  it('spaces ticks to the visible window, on clock-friendly steps', () => {
+    // 6-minute track, no zoom: whole minutes.
+    const atOne = timeTicks(360, 1)
+    expect(atOne.map((t) => t.sec)).toEqual([60, 120, 180, 240, 300])
+    expect(atOne[0].label).toBe('1:00')
+    // ×32 puts ~11 s in the panel: seconds-level ticks.
+    const deep = timeTicks(360, 32)
+    expect(deep[0].sec).toBe(2)
+    expect(deep[1].sec).toBe(4)
+    expect(deep.at(-1)?.sec).toBe(358)
+  })
+
+  it('places each tick as a percent of the whole strip', () => {
+    const [first] = timeTicks(100, 1)
+    expect(first.sec).toBe(15)
+    expect(first.pct).toBe(15)
+  })
+
+  it('returns nothing for an empty decode', () => {
+    expect(timeTicks(0, 8)).toEqual([])
   })
 })

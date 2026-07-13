@@ -486,6 +486,38 @@ describe('WaveformSolo', () => {
     expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '100%' })
   })
 
+  // Trackpad pinch (a ctrlKey wheel in the browser's eyes) zooms the strip
+  // continuously without reaching for the buttons — the DAW muscle memory. A plain
+  // wheel must NOT zoom: it stays the scroller's horizontal pan.
+  it('pinch-zooms the strip and ignores plain wheel scrolling', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    const strip = await screen.findByTestId('waveform-strip')
+    const scroller = strip.parentElement as HTMLElement
+    fireEvent.wheel(scroller, { deltaY: -100, ctrlKey: true })
+    // exp(100 × 0.01) ≈ 2.72 — the label rounds the continuous factor to tenths.
+    expect(screen.getByTestId('waveform-zoom-reset')).toHaveTextContent('×2.7')
+    fireEvent.wheel(scroller, { deltaY: -100 })
+    expect(screen.getByTestId('waveform-zoom-reset')).toHaveTextContent('×2.7')
+  })
+
+  // Zoomed in, "where am I in the track" needs an answer without dragging the hover
+  // chip around — the ruler appears with the zoom and stays out of the ×1 overview.
+  it('shows the time ruler only while zoomed', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(wave),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    await screen.findByTestId('waveform-strip')
+    expect(screen.queryByTestId('waveform-ruler')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('waveform-ruler')).toBeInTheDocument()
+  })
+
   // Audacity-style stacked L/R lanes: the decoder ships per-channel envelopes and
   // clip flags for stereo files, and the toggle flips the strip between the mono
   // overview and the two lanes — a clip that lives in one channel only reads there.

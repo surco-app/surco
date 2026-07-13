@@ -11,6 +11,29 @@ export function formatTime(seconds: number): string {
   return `${m}:${ss}`
 }
 
+// Clock-friendly ruler intervals: the steps a DJ reads without arithmetic.
+const TICK_STEPS_SEC = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600]
+
+// The zoomed waveform strip's ruler: tick positions (as a percent of the whole
+// strip, so they ride the zoomed width) with m:ss labels. The step follows the
+// visible window — durationSec / zoom ≈ what fits in the panel — aiming for a
+// tick every ~eighth of it, snapped up to the next clock-friendly interval so
+// labels stay sparse enough to read. Edges are skipped: 0:00 and the end would
+// crowd the strip's corners with what the player readout already says.
+export function timeTicks(
+  durationSec: number,
+  zoom: number,
+): { sec: number; pct: number; label: string }[] {
+  if (!Number.isFinite(durationSec) || durationSec <= 0) return []
+  const target = durationSec / zoom / 8
+  const step = TICK_STEPS_SEC.find((s) => s >= target) ?? TICK_STEPS_SEC[TICK_STEPS_SEC.length - 1]
+  const ticks: { sec: number; pct: number; label: string }[] = []
+  for (let sec = step; sec < durationSec; sec += step) {
+    ticks.push({ sec, pct: (sec / durationSec) * 100, label: formatTime(sec) })
+  }
+  return ticks
+}
+
 // Parses a Discogs track length ("5:47", or "1:01:01" for a long mix) into
 // seconds — the inverse of formatTime — so a release's track length can be
 // compared against the file's probed duration. Returns undefined for an absent
