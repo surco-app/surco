@@ -10,6 +10,7 @@ export const EDITOR_SECTION_IDS = [
   'trim',
   'declick',
   'normalize',
+  'grid',
 ] as const
 export type EditorSectionId = (typeof EDITOR_SECTION_IDS)[number]
 
@@ -42,6 +43,10 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   // its own expensive pass; the fold badge still surfaces an active mode.
   { id: 'declick', open: false },
   { id: 'normalize', open: true },
+  // Folded: DJ-export prep rather than part of every conversion, and opening it
+  // costs a wave decode plus the beatgrid probe. After the audio chain — it
+  // annotates the result, it doesn't process audio.
+  { id: 'grid', open: false },
   { id: 'output', open: true },
 ]
 

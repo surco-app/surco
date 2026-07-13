@@ -70,6 +70,7 @@ describe('EditorTab sections', () => {
       'settings-section-row-trim',
       'settings-section-row-declick',
       'settings-section-row-normalize',
+      'settings-section-row-grid',
       'settings-section-row-output',
     ])
   })
@@ -79,9 +80,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-open-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      DEFAULT_EDITOR_SECTIONS.map((s) =>
-        s.id === 'properties' ? { ...s, open: true } : s,
-      ),
+      DEFAULT_EDITOR_SECTIONS.map((s) => (s.id === 'properties' ? { ...s, open: true } : s)),
     )
   })
 
@@ -90,8 +89,8 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-down-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'output'].map((id) =>
-        DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
+      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'grid', 'output'].map(
+        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
   })
@@ -101,8 +100,8 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-up-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'output'].map((id) =>
-        DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
+      ['form', 'properties', 'quality', 'trim', 'declick', 'normalize', 'grid', 'output'].map(
+        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
   })
@@ -118,8 +117,8 @@ describe('EditorTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'trim', 'declick', 'output', 'normalize'].map((id) =>
-        DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
+      ['form', 'quality', 'properties', 'trim', 'declick', 'output', 'normalize', 'grid'].map(
+        (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
   })
@@ -136,9 +135,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-hide-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      DEFAULT_EDITOR_SECTIONS.map((s) =>
-        s.id === 'properties' ? { ...s, hidden: true } : s,
-      ),
+      DEFAULT_EDITOR_SECTIONS.map((s) => (s.id === 'properties' ? { ...s, hidden: true } : s)),
     )
   })
 

@@ -63,6 +63,7 @@ import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
+import { GridSection } from './GridSection'
 import { TrimSection } from './TrimSection'
 
 interface Props {
@@ -245,6 +246,7 @@ export const Editor = memo(function Editor({
   const trimOpen = sectionOpen.trim
   const declickOpen = sectionOpen.declick
   const normalizeOpen = sectionOpen.normalize
+  const gridOpen = sectionOpen.grid
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
@@ -1085,6 +1087,20 @@ export const Editor = memo(function Editor({
                       isMulti={isMulti}
                       format={format}
                     />
+                  )
+                case 'grid':
+                  // One track's grid says nothing about another's: no multi story,
+                  // like properties.
+                  return (
+                    !isMulti && (
+                      <GridSection
+                        key={id}
+                        value={item.beatgrid}
+                        open={gridOpen}
+                        onToggle={() => setSectionOpen('grid', !gridOpen)}
+                        inputPath={item.inputPath}
+                      />
+                    )
                   )
                 case 'normalize':
                   return (

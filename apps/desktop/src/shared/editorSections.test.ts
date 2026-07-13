@@ -15,7 +15,16 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
     ]
     const ids = normalizeEditorSections(stored).map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'])
+    expect(ids).toEqual([
+      'form',
+      'quality',
+      'properties',
+      'trim',
+      'declick',
+      'normalize',
+      'grid',
+      'output',
+    ])
   })
 
   // The file name is the output's name, so it reads best right above the Convert
@@ -32,11 +41,13 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
       { id: 'properties' as const, open: true },
     ]
-    // The sections this store predates (trim, declick) are appended with their defaults.
+    // The sections this store predates (trim, declick, grid) are appended with
+    // their defaults.
     expect(normalizeEditorSections(stored)).toEqual([
       ...stored,
       { id: 'trim', open: true },
       { id: 'declick', open: false },
+      { id: 'grid', open: false },
     ])
   })
 
@@ -45,7 +56,16 @@ describe('normalizeEditorSections', () => {
   // applies it — so reading the editor top-to-bottom reads the processing chain.
   it('orders quality first and the audio chain in processing order by default', () => {
     const ids = DEFAULT_EDITOR_SECTIONS.map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'])
+    expect(ids).toEqual([
+      'form',
+      'quality',
+      'properties',
+      'trim',
+      'declick',
+      'normalize',
+      'grid',
+      'output',
+    ])
   })
 
   // Open by default: the detection pill only appears once the section has analyzed,
@@ -59,6 +79,13 @@ describe('normalizeEditorSections', () => {
   // the fold badge still shows when a mode is active.
   it('ships click repair folded by default', () => {
     expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'declick')?.open).toBe(false)
+  })
+
+  // The beatgrid is DJ-export prep rather than part of every conversion, and opening
+  // it costs a wave decode plus a DSP probe — folded, like click repair, with the
+  // fold badge carrying an active grid.
+  it('ships the beatgrid folded by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'grid')?.open).toBe(false)
   })
 
   // A hidden section stays hidden across the repair — losing the flag would resurface
@@ -98,6 +125,15 @@ describe('normalizeEditorSections', () => {
       { id: 'quality', open: false },
     ] as unknown as Parameters<typeof normalizeEditorSections>[0]
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
-    expect(ids).toEqual(['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'])
+    expect(ids).toEqual([
+      'form',
+      'quality',
+      'properties',
+      'trim',
+      'declick',
+      'normalize',
+      'grid',
+      'output',
+    ])
   })
 })
