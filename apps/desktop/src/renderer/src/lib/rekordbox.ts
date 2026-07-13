@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { exportAnchorSec } from './beatgrid'
 
 // Builds a rekordbox-importable collection XML (DJ_PLAYLISTS v1) from the loaded
 // tracks, plus a single "Surco" playlist referencing them all. rekordbox imports each
@@ -43,6 +44,7 @@ export function buildRekordboxXml(tracks: TrackItem[]): string {
     // file the DJ will actually play, not the pre-conversion source.
     const path = t.outputPath ?? t.inputPath
     const m = t.meta
+    const grid = t.beatgrid
     const attrs: [string, string][] = [
       ['TrackID', String(i + 1)],
       ['Name', m.title || t.fileName],
@@ -51,7 +53,9 @@ export function buildRekordboxXml(tracks: TrackItem[]): string {
       ['Genre', m.genre],
       ['Kind', kindFromPath(path)],
       ['TotalTime', t.duration !== undefined ? String(Math.round(t.duration)) : ''],
-      ['AverageBpm', m.bpm],
+      // The grid's tempo IS the track's tempo once the user confirmed it; a
+      // stale free-text tag must not contradict the grid rekordbox will draw.
+      ['AverageBpm', grid ? grid.bpm.toFixed(2) : m.bpm],
       ['Tonality', m.key],
       ['TrackNumber', m.trackNumber],
       ['Year', m.year],
@@ -61,7 +65,17 @@ export function buildRekordboxXml(tracks: TrackItem[]): string {
       .filter(([, value]) => value !== '')
       .map(([key, value]) => `${key}="${escapeXml(value)}"`)
       .join(' ')
-    return `    <TRACK ${rendered}/>`
+    if (!grid) return `    <TRACK ${rendered}/>`
+    // The staged beatgrid, as rekordbox's grid structure: Inizio = seconds to
+    // the first beat, one TEMPO node = a constant grid. Battito pins the anchor
+    // to beat 1 of a 4/4 bar — Surco detects no downbeats, so this is the same
+    // assumption the section's visual downbeat count makes.
+    const inizio = exportAnchorSec(t) ?? 0
+    return [
+      `    <TRACK ${rendered}>`,
+      `      <TEMPO Inizio="${inizio.toFixed(3)}" Bpm="${grid.bpm.toFixed(2)}" Metro="4/4" Battito="1"/>`,
+      '    </TRACK>',
+    ].join('\n')
   })
   const playlistTracks = tracks.map((_t, i) => `      <TRACK Key="${i + 1}"></TRACK>`).join('\n')
   return [

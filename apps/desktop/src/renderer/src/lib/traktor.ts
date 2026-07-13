@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { exportAnchorSec } from './beatgrid'
 
 // Builds a Traktor collection (.nml) from the loaded tracks, plus a single "Surco"
 // playlist. Like the rekordbox export it's a bridge file the user imports — Traktor
@@ -75,9 +76,20 @@ export function buildTraktorNml(tracks: TrackItem[]): string {
         ['FILETYPE', KINDS[ext] ?? ext],
       ])}></INFO>`,
     )
-    const bpm = Number(m.bpm)
+    // The grid's tempo outranks the free-text tag once a grid is staged: the
+    // TEMPO spaces the very grid the CUE_V2 marker below anchors.
+    const bpm = t.beatgrid ? t.beatgrid.bpm : Number(m.bpm)
     if (Number.isFinite(bpm) && bpm > 0) {
       entries.push(`      <TEMPO BPM="${bpm.toFixed(6)}" BPM_QUALITY="100.000000"></TEMPO>`)
+    }
+    if (t.beatgrid) {
+      // TYPE="4" is Traktor's grid marker; START is in milliseconds. Traktor may
+      // still show the grid unlocked — LOCK on the ENTRY is unverified against a
+      // real Traktor and stays a possible follow-up.
+      const startMs = (exportAnchorSec(t) ?? 0) * 1000
+      entries.push(
+        `      <CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="${startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>`,
+      )
     }
     entries.push('    </ENTRY>')
     playlist.push(

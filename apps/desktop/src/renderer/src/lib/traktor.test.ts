@@ -12,6 +12,8 @@ const track = (
     fileName: over.fileName ?? 'x.wav',
     duration: over.duration,
     outputPath: over.outputPath,
+    beatgrid: over.beatgrid,
+    trim: over.trim,
     meta: {
       title: '',
       artist: '',
@@ -96,5 +98,48 @@ describe('buildTraktorNml', () => {
   it('escapes XML metacharacters in attribute values', () => {
     const out = buildTraktorNml([track({ id: 'a', meta: { title: 'Tom & "Jerry" <mix>' } })])
     expect(out).toContain('TITLE="Tom &amp; &quot;Jerry&quot; &lt;mix&gt;"')
+  })
+})
+
+// The staged beatgrid travels as Traktor's grid marker: a CUE_V2 with TYPE="4"
+// whose START (milliseconds) anchors the grid the sibling TEMPO's BPM spaces.
+describe('buildTraktorNml beatgrid', () => {
+  it('emits a TYPE 4 grid marker with a millisecond START', () => {
+    const out = buildTraktorNml([
+      track({ id: 'a', beatgrid: { bpm: 128, anchorSec: 0.052 }, meta: { title: 'A' } }),
+    ])
+    expect(out).toContain(
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="52.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>',
+    )
+    expect(out).toContain('<TEMPO BPM="128.000000"')
+  })
+
+  // The grid's tempo IS the track's tempo once the user confirmed it; a stale
+  // free-text tag must not space the grid differently than the marker anchors it.
+  it('prefers the grid bpm over the bpm tag in TEMPO', () => {
+    const out = buildTraktorNml([
+      track({ id: 'a', beatgrid: { bpm: 128, anchorSec: 0 }, meta: { bpm: '90' } }),
+    ])
+    expect(out).toContain('<TEMPO BPM="128.000000"')
+    expect(out).not.toContain('BPM="90.000000"')
+  })
+
+  it('emits no grid marker without a grid', () => {
+    const out = buildTraktorNml([track({ id: 'a', meta: { bpm: '90' } })])
+    expect(out).not.toContain('CUE_V2')
+  })
+
+  // The grid is stored in original-file seconds; a converted output had the
+  // trimmed head cut off, so the marker shifts back by it.
+  it('offsets the marker by the trimmed head on a converted track', () => {
+    const out = buildTraktorNml([
+      track({
+        id: 'a',
+        beatgrid: { bpm: 120, anchorSec: 2 },
+        trim: { startSec: 1.5 },
+        outputPath: '/out/a.aiff',
+      }),
+    ])
+    expect(out).toContain('TYPE="4" START="500.000000"')
   })
 })
