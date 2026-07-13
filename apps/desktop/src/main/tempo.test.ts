@@ -125,15 +125,13 @@ describe('detectBeatgrid', () => {
     expect(result?.anchorSec).toBeLessThan(0.25 + ANCHOR_TOL)
   })
 
-  it('anchors an unshifted train at phase zero, possibly wrapped', () => {
-    // Phase is circular: "at zero" and "a hair under one period" are the same
-    // grid, and frame quantization can land the estimate on either side.
+  it('anchors an unshifted train at zero, never wrapped to the period end', () => {
+    // Phase is circular, so a beat sitting exactly at the file start can
+    // estimate a hair early and fold to just under one period — which the UI
+    // then reads as "first beat at 0.41 s" while the user stares at an audible
+    // hit at zero. Within a frame of the wrap point the anchor must be zero.
     const result = detectBeatgrid(clickTrain(120, 30), SR)
-    const period = 60 / 120
-    const anchor = result?.anchorSec ?? Number.NaN
-    const nearZero = anchor < ANCHOR_TOL
-    const nearWrap = anchor > period - ANCHOR_TOL && anchor < period
-    expect(nearZero || nearWrap).toBe(true)
+    expect(result?.anchorSec ?? Number.NaN).toBeLessThan(ANCHOR_TOL)
   })
 
   it('anchors a non-round tempo', () => {
@@ -155,6 +153,34 @@ describe('detectBeatgrid', () => {
       expect(anchor).toBeGreaterThanOrEqual(0)
       expect(anchor).toBeLessThan(60 / (result?.bpm ?? Number.NaN))
     }
+  })
+
+  // The trance failure mode: an off-beat bass stab louder (in full-band flux)
+  // than the kick pulled the phase fold onto the off-beat — the grid then sat
+  // exactly half a period off every kick (seen on a real 138 BPM remix, ~210 ms
+  // constant error). The beat lives in the kick's LOW band, so the fold must
+  // listen there.
+  it('anchors on the kick, not on a louder off-beat stab', () => {
+    const bpm = 138
+    const seconds = 30
+    const samples = new Float32Array(Math.floor(SR * seconds))
+    const period = (60 / bpm) * SR
+    for (let beat = 0; beat * period < samples.length; beat++) {
+      const kick = Math.round(beat * period)
+      for (let i = 0; i < 400 && kick + i < samples.length; i++) {
+        samples[kick + i] += 0.7 * Math.sin((2 * Math.PI * 60 * i) / SR) * (1 - i / 400)
+      }
+      const stab = Math.round((beat + 0.5) * period)
+      for (let i = 0; i < 200 && stab + i < samples.length; i++) {
+        samples[stab + i] += 1.0 * Math.sin((2 * Math.PI * 3000 * i) / SR) * (1 - i / 200)
+      }
+    }
+    const result = detectBeatgrid(samples, SR)
+    const gridPeriod = 60 / (result?.bpm ?? bpm)
+    const anchor = result?.anchorSec ?? Number.NaN
+    // Kicks sit at phase zero; wrapped-to-period counts as zero too.
+    const phaseError = Math.min(anchor, gridPeriod - anchor)
+    expect(phaseError).toBeLessThan(ANCHOR_TOL * 2)
   })
 
   it('refuses whatever detectBpm refuses', () => {
