@@ -46,6 +46,11 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(
     () => null,
   ) as unknown as typeof HTMLCanvasElement.prototype.getContext
+  // jsdom implements no PointerEvent either; aliasing it to MouseEvent lets
+  // fireEvent carry clientX into the drag handlers (same trick as
+  // WaveformCompare.test) — without it clientX arrives undefined and the drag
+  // math turns NaN.
+  ;(window as unknown as { PointerEvent: typeof MouseEvent }).PointerEvent = window.MouseEvent
   client = createQueryClient()
   ;(window as unknown as { api: unknown }).api = {
     beatgrid: vi.fn().mockResolvedValue(detected),
@@ -194,6 +199,67 @@ describe('GridSection grid', () => {
     render(section())
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     expect(screen.queryByTestId('grid-reset')).not.toBeInTheDocument()
+  })
+
+  // Real strips are hundreds of px wide; jsdom rects are 0×0, which would land
+  // every press "on" a line. A fixed rect gives the grab tests real geometry:
+  // 6000 px over 60 s → a beat every 50 px at 120 BPM.
+  function stubOverlayRect(): void {
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 6000,
+      bottom: 100,
+      width: 6000,
+      height: 100,
+      toJSON: () => ({}),
+    })) as unknown as typeof HTMLElement.prototype.getBoundingClientRect
+  }
+
+  // Grabbing a beat line and dragging slides the whole grid — the rekordbox
+  // gesture — and commits once, on release.
+  it('slides the phase by dragging a beat line', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // At 100 px/s the 0.25 s beat sits at 25 px; press on it, drag one beat (50 px) right.
+    fireEvent.pointerDown(overlay, { clientX: 25, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 75, pointerId: 1 })
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const grid = onChange.mock.calls[0][0]
+    expect(grid.bpm).toBe(120)
+    expect(grid.anchorSec).toBeCloseTo(0.75, 2)
+  })
+
+  // A press on empty wave must stay inert: dragging there used to shift the
+  // phase, so panning or a stray click while zooming moved the grid unnoticed.
+  it('ignores presses away from any beat line', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // 50 px sits 25 px from the beats at 25 and 75 px — well past the grab radius.
+    fireEvent.pointerDown(overlay, { clientX: 50, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 110, pointerId: 1 })
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // Trackpad clicks wobble a pixel or two; that wobble must not commit a
+  // milliseconds-off grid on every click near a line.
+  it('does not commit a sub-threshold wobble on a beat line', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.pointerDown(overlay, { clientX: 25, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 26, pointerId: 1 })
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   // The audition must start ON a beat: hearing the click land on the transient

@@ -501,7 +501,7 @@
   },
   "grid": {
     "title": "Beatgrid",
-    "hint": "Coloca uma grade de beats sobre a onda para os exports DJ. Arraste a onda para alinhar a grade com as batidas.",
+    "hint": "Coloca uma grade de beats sobre a onda para os exports DJ. Segure uma linha da grade para deslizá-la até as batidas.",
     "summaryNone": "Não",
     "detected": "Detectado {{bpm}} BPM",
     "nothing": "Nenhum beat estável detectado.",

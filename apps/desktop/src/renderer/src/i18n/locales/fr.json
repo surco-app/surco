@@ -501,7 +501,7 @@
   },
   "grid": {
     "title": "Beatgrid",
-    "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Faites glisser l'onde pour aligner la grille sur les temps.",
+    "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Saisissez une ligne de la grille pour l'aligner sur les temps.",
     "summaryNone": "Non",
     "detected": "{{bpm}} BPM détecté",
     "nothing": "Aucun beat stable détecté.",

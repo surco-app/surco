@@ -51,6 +51,14 @@ describe('gridLines', () => {
   it('returns nothing without a duration', () => {
     expect(gridLines({ bpm: 128, anchorSec: 0 }, 0, FULL)).toEqual([])
   })
+
+  // With a NaN anchor the loop's `sec > toSec` exit is false forever and the
+  // line array grows until the renderer dies of OOM — a NaN must draw nothing.
+  it('refuses non-finite grids instead of allocating forever', () => {
+    expect(gridLines({ bpm: 128, anchorSec: Number.NaN }, 60, FULL)).toEqual([])
+    expect(gridLines({ bpm: Number.NaN, anchorSec: 0 }, 60, FULL)).toEqual([])
+    expect(gridLines({ bpm: 0, anchorSec: 0 }, 60, FULL)).toEqual([])
+  })
 })
 
 function track(over: Partial<TrackItem>): Pick<TrackItem, 'beatgrid' | 'trim' | 'outputPath'> {

@@ -15,6 +15,14 @@ import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCo
 // The fine correction: about the detector's own resolution, so one press fixes
 // the largest error a correct detection leaves behind.
 const NUDGE_SEC = 0.01
+// How close (px) a grab must land to a beat line to pick the grid up. Farther
+// presses do nothing: a drag on empty wave used to shift the phase, so panning
+// or a stray click while zooming moved the grid without the user noticing.
+const GRAB_PX = 8
+// A press must travel this far before it counts as a drag: trackpad clicks
+// wobble a pixel or two, and committing that wobble nudged the grid by a few
+// milliseconds on every click.
+const DRAG_THRESHOLD_PX = 3
 // How much the audition plays from the first visible beat: four bars at house
 // tempo — enough to hear whether the clicks ride the transients, short enough
 // to stay a check instead of a listen.
@@ -29,8 +37,8 @@ interface Props {
 }
 
 // The per-track beatgrid for the DJ exports: a constant-tempo grid drawn over
-// the wave, lined up with the beats by dragging the wave (phase), dragging the
-// anchor handle (absolute), nudging, or typing the BPM. The detection only
+// the wave, lined up with the beats by grabbing a beat line (phase), dragging
+// the anchor handle (absolute), nudging, or typing the BPM. The detection only
 // suggests — it shows as the live grid until the user touches anything, and
 // what the exports carry is whatever grid the track stores.
 export function GridSection({
@@ -54,7 +62,9 @@ export function GridSection({
   // release, so a drag doesn't spray staleness/session updates per pixel.
   const [draft, setDraft] = useState<Beatgrid | null>(null)
   const dragging = useRef<
-    { mode: 'anchor' } | { mode: 'phase'; fromSec: number; fromAnchor: number } | null
+    | { mode: 'anchor' }
+    | { mode: 'phase'; fromSec: number; fromAnchor: number; fromClientX: number; armed: boolean }
+    | null
   >(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const shown = draft ?? value ?? detected ?? undefined
@@ -90,10 +100,24 @@ export function GridSection({
       setDraft({ ...shown, anchorSec: secondsAt(clientX) })
       return
     }
-    // Dragging anywhere on the wave shifts the phase: the grid follows the
-    // finger, folded back onto the same grid if it crosses zero.
+    // Arm only past the wobble threshold; then the grabbed beat line follows
+    // the finger, folded back onto the same grid if it crosses zero.
+    if (!drag.armed && Math.abs(clientX - drag.fromClientX) < DRAG_THRESHOLD_PX) return
+    drag.armed = true
     const raw = drag.fromAnchor + (secondsAt(clientX) - drag.fromSec)
     setDraft({ ...shown, anchorSec: raw < 0 ? snapAnchor(raw, shown.bpm) : raw })
+  }
+
+  // Distance (px) from a press to the nearest beat of the shown grid — the
+  // pick-up test for the phase drag.
+  function distToBeatPx(clientX: number): number {
+    const el = overlayRef.current
+    if (!el || !shown || durationSec === 0) return Number.POSITIVE_INFINITY
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0) return Number.POSITIVE_INFINITY
+    const period = 60 / shown.bpm
+    const phase = (((secondsAt(clientX) - shown.anchorSec) % period) + period) % period
+    return Math.min(phase, period - phase) * (rect.width / durationSec)
   }
 
   function release(): void {
@@ -320,7 +344,9 @@ export function GridSection({
                       className="press inline-flex shrink-0 items-center gap-1 text-[10px] text-fg-dim hover:text-fg"
                     >
                       {auditing ? (
-                        <Square className="h-3 w-3" aria-hidden="true" />
+                        // Filled: the hollow square read as a broken checkbox,
+                        // not a stop control.
+                        <Square className="h-3 w-3 fill-current" aria-hidden="true" />
                       ) : (
                         <Volume2 className="h-3 w-3" aria-hidden="true" />
                       )}
@@ -385,12 +411,18 @@ export function GridSection({
                   <div
                     ref={overlayRef}
                     data-testid="grid-overlay"
-                    className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
+                    className="absolute inset-0 touch-none"
                     onPointerDown={(e) => {
+                      // Only a press ON a beat line picks the grid up — empty
+                      // wave stays inert, so a stray click or a pan gesture
+                      // while zooming can't shift the phase by accident.
+                      if (distToBeatPx(e.clientX) > GRAB_PX) return
                       dragging.current = {
                         mode: 'phase',
                         fromSec: secondsAt(e.clientX),
                         fromAnchor: shown.anchorSec,
+                        fromClientX: e.clientX,
+                        armed: false,
                       }
                       e.currentTarget.setPointerCapture?.(e.pointerId)
                     }}
@@ -398,13 +430,17 @@ export function GridSection({
                     onPointerUp={release}
                     onPointerCancel={release}
                   >
+                    {/* Amber, not the wave's accent blue: the lines sit ON the
+                        wave, and same-hue lines disappeared into a busy mix. */}
                     {lines.map((line) => (
                       <span
                         key={line.sec}
                         data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
                         aria-hidden="true"
-                        className={`pointer-events-none absolute w-px ${
-                          line.downbeat ? 'inset-y-0 bg-accent/70' : 'inset-y-2 bg-accent/30'
+                        className={`pointer-events-none absolute w-px cursor-ew-resize ${
+                          line.downbeat
+                            ? 'inset-y-0 bg-[var(--color-warn)]'
+                            : 'inset-y-2 bg-[var(--color-warn)]/45'
                         }`}
                         style={{ left: `${line.pct}%` }}
                       />
@@ -447,11 +483,11 @@ export function GridSection({
                     >
                       <span
                         aria-hidden="true"
-                        className="absolute inset-y-0 left-1/2 w-px bg-accent"
+                        className="absolute inset-y-0 left-1/2 w-px bg-[var(--color-warn)]"
                       />
                       <span
                         aria-hidden="true"
-                        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent"
+                        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-[var(--color-warn)]"
                       />
                     </div>
                   </div>

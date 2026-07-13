@@ -501,7 +501,7 @@
   },
   "grid": {
     "title": "Beatgrid",
-    "hint": "Legt ein Beatgrid über die Wellenform für die DJ-Exporte. Die Wellenform ziehen, um das Grid auf die Schläge auszurichten.",
+    "hint": "Legt ein Beatgrid über die Wellenform für die DJ-Exporte. Eine Beat-Linie greifen und auf die Schläge ziehen.",
     "summaryNone": "Aus",
     "detected": "{{bpm}} BPM erkannt",
     "nothing": "Kein stabiler Beat erkannt.",

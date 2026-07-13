@@ -27,6 +27,9 @@ export function gridLines(
 ): GridLine[] {
   if (durationSec <= 0) return []
   const period = 60 / grid.bpm
+  // A NaN anywhere in the beat math makes `sec > toSec` false forever and the
+  // loop below allocates until the renderer dies — refuse to draw instead.
+  if (!Number.isFinite(period) || !Number.isFinite(grid.anchorSec)) return []
   const spanSec = Math.max(0, (view.to - view.from) * durationSec)
   let stride = 1
   while (spanSec / period / stride > MAX_LINES) stride *= 2

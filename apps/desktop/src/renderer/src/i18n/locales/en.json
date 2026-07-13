@@ -501,7 +501,7 @@
   },
   "grid": {
     "title": "Beatgrid",
-    "hint": "Lays a beat grid over the wave for the DJ exports. Drag the wave to line the grid up with the beats.",
+    "hint": "Lays a beat grid over the wave for the DJ exports. Grab a beat line to slide the grid onto the beats.",
     "summaryNone": "Off",
     "detected": "Detected {{bpm}} BPM",
     "nothing": "No steady beat detected.",
