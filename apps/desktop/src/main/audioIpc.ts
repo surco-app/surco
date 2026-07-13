@@ -209,9 +209,11 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // real measurement and is cached; only a decode error retries. Its own
       // namespace rather than a bump of 'bpm': old cached BpmResults carry no
       // anchor and could never be told apart from a grid, while the BPM chip
-      // keeps its cache untouched.
+      // keeps its cache untouched. v2: results grew the review signals
+      // (phaseAmbiguity/phaseMargin); v1 entries would pin grids the triage
+      // could never flag.
       return await cachedAnalysis(
-        'beatgrid-v1',
+        'beatgrid-v2',
         inputPath,
         () =>
           probe('activity.probeBeatgrid', inputPath, () =>

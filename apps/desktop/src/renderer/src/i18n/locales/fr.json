@@ -66,6 +66,7 @@
       "inLibraryEngine": "Dans Engine DJ",
       "duplicates": "Doublons",
       "silence": "Silence à rogner",
+      "grid": "Grille à vérifier",
       "clipping": "Clipping",
       "trashSuspects_one": "Mettre le fichier suspect à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers suspects à la corbeille"
@@ -506,6 +507,7 @@
     "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Saisissez une ligne de la grille pour l'aligner sur les temps.",
     "summaryNone": "Non",
     "detected": "{{bpm}} BPM détecté",
+    "review": "Vérifiez la grille à l'oreille",
     "nothing": "Aucun beat stable détecté.",
     "bpmLabel": "BPM",
     "half": "Diviser le BPM par deux",

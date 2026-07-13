@@ -127,4 +127,17 @@ describe('useTracksView', () => {
     // Same wave, but the trim is staged: nothing left to retouch on the silence axis.
     expect(result.current.tracksView[1].audioIssues).toEqual({ silence: false, clipping: true })
   })
+
+  // The grid triage fact rides the same passive observation: a coin-flip
+  // detection flags the track — unless the user already confirmed a grid by
+  // hand, which IS the review.
+  it('derives the grid-to-review fact from a cached coin-flip detection', () => {
+    const client = new QueryClient()
+    const coinFlip = { bpm: 128, confidence: 0.8, anchorSec: 0.1, phaseAmbiguity: 1, phaseMargin: 1 }
+    client.setQueryData(['beatgrid', '/music/a.wav'], coinFlip)
+    client.setQueryData(['beatgrid', '/music/b.wav'], coinFlip)
+    const { result } = setup([track('a'), track('b', {}, { beatgrid: { bpm: 128, anchorSec: 0.1 } })], client)
+    expect(result.current.tracksView[0].gridReview).toBe(true)
+    expect(result.current.tracksView[1].gridReview).toBeUndefined()
+  })
 })

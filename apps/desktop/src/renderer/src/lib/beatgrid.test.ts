@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { BeatgridResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { exportAnchorSec, gridLines } from './beatgrid'
+import { beatgridNeedsReview, exportAnchorSec, gridLines } from './beatgrid'
 
 const FULL = { from: 0, to: 1 }
 
@@ -58,6 +59,43 @@ describe('gridLines', () => {
     expect(gridLines({ bpm: 128, anchorSec: Number.NaN }, 60, FULL)).toEqual([])
     expect(gridLines({ bpm: Number.NaN, anchorSec: 0 }, 60, FULL)).toEqual([])
     expect(gridLines({ bpm: 0, anchorSec: 0 }, 60, FULL)).toEqual([])
+  })
+})
+
+describe('beatgridNeedsReview', () => {
+  const grid = (over: Partial<BeatgridResult>): BeatgridResult => ({
+    bpm: 128,
+    confidence: 0.8,
+    anchorSec: 0.25,
+    phaseAmbiguity: 0.1,
+    phaseMargin: 5,
+    ...over,
+  })
+
+  it('trusts a confident, unambiguous grid', () => {
+    expect(beatgridNeedsReview(grid({}))).toBe(false)
+  })
+
+  // The real calibration case: heavy sidechain makes the attacks tie, but the
+  // kick side's low-band energy wins decisively — the grid is right, so
+  // flagging it would drown the filter in every pumping trance track.
+  it('trusts an ambiguous grid whose energy vote was decisive', () => {
+    expect(beatgridNeedsReview(grid({ phaseAmbiguity: 1, phaseMargin: 1.9 }))).toBe(false)
+  })
+
+  // Two equal hit trains half a period apart: nothing broke the tie, the beat
+  // choice is a coin flip — exactly what an ear must settle.
+  it('flags a coin flip the energy could not break', () => {
+    expect(beatgridNeedsReview(grid({ phaseAmbiguity: 1, phaseMargin: 1.0 }))).toBe(true)
+  })
+
+  it('flags a shaky tempo outright', () => {
+    expect(beatgridNeedsReview(grid({ confidence: 0.27 }))).toBe(true)
+  })
+
+  it('never flags a track with no detection', () => {
+    expect(beatgridNeedsReview(null)).toBe(false)
+    expect(beatgridNeedsReview(undefined)).toBe(false)
   })
 })
 

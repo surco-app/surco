@@ -679,6 +679,13 @@ export interface BeatgridResult {
   bpm: number
   confidence: number
   anchorSec: number
+  // How coin-flip the beat-vs-off-beat choice was, for the "grid to review"
+  // triage. phaseAmbiguity is the rival phase's attack evidence relative to the
+  // chosen one (0 = no rival, 1 = identical); phaseMargin is how decisively the
+  // low-band energy vote favored the chosen side (>1 = kick side won). A grid
+  // is suspect when the attacks tie AND the energy can't break the tie.
+  phaseAmbiguity: number
+  phaseMargin: number
 }
 
 // Musical key detected from the audio (chromagram × Krumhansl profiles in

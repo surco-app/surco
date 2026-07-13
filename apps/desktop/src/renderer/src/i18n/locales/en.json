@@ -66,6 +66,7 @@
       "inLibraryEngine": "In Engine DJ",
       "duplicates": "Duplicates",
       "silence": "Silence to trim",
+      "grid": "Grid to review",
       "clipping": "Clipping",
       "trashSuspects_one": "Move the suspect file to Trash",
       "trashSuspects_other": "Move the {{count}} suspect files to Trash"
@@ -506,6 +507,7 @@
     "hint": "Lays a beat grid over the wave for the DJ exports. Grab a beat line to slide the grid onto the beats.",
     "summaryNone": "Off",
     "detected": "Detected {{bpm}} BPM",
+    "review": "Check the grid by ear",
     "nothing": "No steady beat detected.",
     "bpmLabel": "BPM",
     "half": "Halve the BPM",

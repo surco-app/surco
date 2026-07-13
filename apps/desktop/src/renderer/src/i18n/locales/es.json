@@ -66,6 +66,7 @@
       "inLibraryEngine": "En Engine DJ",
       "duplicates": "Duplicadas",
       "silence": "Silencio por recortar",
+      "grid": "Grid por revisar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover el archivo sospechoso a la papelera",
       "trashSuspects_other": "Mover los {{count}} archivos sospechosos a la papelera"
@@ -506,6 +507,7 @@
     "hint": "Coloca una rejilla de beats sobre la onda para los exports DJ. Agarra una línea de la rejilla para deslizarla hasta los golpes.",
     "summaryNone": "No",
     "detected": "Detectado {{bpm}} BPM",
+    "review": "Revisa el grid a oído",
     "nothing": "No se detecta un beat estable.",
     "bpmLabel": "BPM",
     "half": "Mitad de BPM",

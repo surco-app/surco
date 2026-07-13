@@ -66,6 +66,7 @@
       "inLibraryEngine": "No Engine DJ",
       "duplicates": "Duplicadas",
       "silence": "Silêncio a cortar",
+      "grid": "Grade a revisar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover o arquivo suspeito para a Lixeira",
       "trashSuspects_other": "Mover os {{count}} arquivos suspeitos para a Lixeira"
@@ -506,6 +507,7 @@
     "hint": "Coloca uma grade de beats sobre a onda para os exports DJ. Segure uma linha da grade para deslizá-la até as batidas.",
     "summaryNone": "Não",
     "detected": "Detectado {{bpm}} BPM",
+    "review": "Confira a grade de ouvido",
     "nothing": "Nenhum beat estável detectado.",
     "bpmLabel": "BPM",
     "half": "Metade do BPM",

@@ -183,6 +183,28 @@ describe('detectBeatgrid', () => {
     expect(phaseError).toBeLessThan(ANCHOR_TOL * 2)
   })
 
+  // Two identical hit trains half a period apart are a genuine coin flip: the
+  // review signals must say so, so the triage can park the track for an ear
+  // check instead of trusting either side silently.
+  it('reports a coin-flip grid as ambiguous with no energy margin', () => {
+    const samples = new Float32Array(SR * 30)
+    const period = (60 / 120) * SR
+    for (let beat = 0; beat * period < samples.length; beat++) {
+      for (const off of [0, 0.5]) {
+        const start = Math.round((beat + off) * period)
+        for (let i = 0; i < 64 && start + i < samples.length; i++) samples[start + i] += 1 - i / 64
+      }
+    }
+    const result = detectBeatgrid(samples, SR)
+    expect(result?.phaseAmbiguity ?? 0).toBeGreaterThan(0.8)
+    expect(result?.phaseMargin ?? 99).toBeLessThan(1.2)
+  })
+
+  it('reports a clean beat as unambiguous', () => {
+    const result = detectBeatgrid(clickTrain(120, 30), SR)
+    expect(result?.phaseAmbiguity ?? 1).toBeLessThan(0.3)
+  })
+
   it('refuses whatever detectBpm refuses', () => {
     // No tempo means no grid: an anchor without a trustworthy period would
     // draw confident-looking lines through beatless audio.

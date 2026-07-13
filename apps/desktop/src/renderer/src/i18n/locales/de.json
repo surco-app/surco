@@ -66,6 +66,7 @@
       "inLibraryEngine": "In Engine DJ",
       "duplicates": "Duplikate",
       "silence": "Stille zum Kürzen",
+      "grid": "Beatgrid prüfen",
       "clipping": "Clipping",
       "trashSuspects_one": "Die verdächtige Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} verdächtigen Dateien in den Papierkorb legen"
@@ -506,6 +507,7 @@
     "hint": "Legt ein Beatgrid über die Wellenform für die DJ-Exporte. Eine Beat-Linie greifen und auf die Schläge ziehen.",
     "summaryNone": "Aus",
     "detected": "{{bpm}} BPM erkannt",
+    "review": "Grid nach Gehör prüfen",
     "nothing": "Kein stabiler Beat erkannt.",
     "bpmLabel": "BPM",
     "half": "BPM halbieren",

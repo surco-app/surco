@@ -67,6 +67,10 @@ export interface TrackItem {
   // hasn't staged; clipping = the decoder's true-clipping flags fired. Undefined
   // until some consumer (player, editor strip, analyze sweep) decodes the wave.
   audioIssues?: { silence: boolean; clipping: boolean }
+  // The beatgrid triage fact, merged from the beatgrid analysis cache the same
+  // passive way: true when the detection looked like a coin flip (see
+  // beatgridNeedsReview) and the user hasn't confirmed a grid by hand yet.
+  gridReview?: boolean
   // True while this track's spectrum analysis is in flight (hover prefetch, editor
   // open or the toolbar sweep), merged in from the React Query fetch status like
   // spectrum above, so the row can show a placeholder instead of an empty slot.

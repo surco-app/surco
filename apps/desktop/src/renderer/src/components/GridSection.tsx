@@ -18,7 +18,7 @@ import type { Beatgrid } from '../../../shared/types'
 import { useBeatgrid } from '../hooks/useBeatgrid'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
-import { gridLines } from '../lib/beatgrid'
+import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
 import { SectionHeader } from './SectionHeader'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
@@ -252,11 +252,19 @@ export function GridSection({
               </span>
             ) : undefined
           ) : detected ? (
+            // A coin-flip detection wears the warn tint: the same fact the
+            // list's "grid to review" filter reads, visible in context here.
             <span
-              data-testid="grid-detected-pill"
-              className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium text-fg-muted"
+              data-testid={beatgridNeedsReview(detected) ? 'grid-review-pill' : 'grid-detected-pill'}
+              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
+                beatgridNeedsReview(detected)
+                  ? 'bg-[var(--color-warn)]/15 text-[var(--color-warn)]'
+                  : 'bg-[var(--color-panel-2)] text-fg-muted'
+              }`}
             >
-              {tr('grid.detected', { bpm: detected.bpm.toFixed(1) })}
+              {beatgridNeedsReview(detected)
+                ? tr('grid.review')
+                : tr('grid.detected', { bpm: detected.bpm.toFixed(1) })}
             </span>
           ) : undefined
         }

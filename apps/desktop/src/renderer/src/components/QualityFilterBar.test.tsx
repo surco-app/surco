@@ -20,6 +20,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   matchedBandcamp: 0,
   silence: 0,
   clipping: 0,
+  grid: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,

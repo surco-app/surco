@@ -1,7 +1,7 @@
 // The grid section's pure geometry: which beat lines to draw for the visible
 // window, and where the stored anchor lands in an exported file's timeline.
 import { snapAnchor } from '../../../shared/beatgrid'
-import type { Beatgrid } from '../../../shared/types'
+import type { Beatgrid, BeatgridResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 export interface GridLine {
@@ -50,6 +50,23 @@ export function gridLines(
     })
   }
   return lines
+}
+
+// The "grid to review" verdict for the attention triage. Absolute correctness
+// is unknowable (if we knew the grid was wrong we would fix it), so this flags
+// the honest ear-check cases: a shaky tempo, or a beat-vs-off-beat coin flip
+// the low-band energy vote couldn't break (two equal hit trains half a period
+// apart). Thresholds calibrated against a real sidechained 138 BPM trance
+// track (decisive margin ≈1.9, stays unflagged) and synthesized twins
+// (ambiguity 1.0, margin 1.0, flagged).
+const REVIEW_MIN_CONFIDENCE = 0.3
+const REVIEW_AMBIGUITY = 0.6
+const REVIEW_MARGIN = 1.5
+
+export function beatgridNeedsReview(result: BeatgridResult | null | undefined): boolean {
+  if (!result) return false
+  if (result.confidence < REVIEW_MIN_CONFIDENCE) return true
+  return result.phaseAmbiguity > REVIEW_AMBIGUITY && result.phaseMargin < REVIEW_MARGIN
 }
 
 // Where the stored anchor (original-file seconds) lands in the file an export

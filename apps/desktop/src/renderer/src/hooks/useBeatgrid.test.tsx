@@ -7,7 +7,13 @@ import type { BeatgridResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import { useBeatgrid } from './useBeatgrid'
 
-const sample: BeatgridResult = { bpm: 124.02, confidence: 0.8, anchorSec: 0.25 }
+const sample: BeatgridResult = {
+  bpm: 124.02,
+  confidence: 0.8,
+  anchorSec: 0.25,
+  phaseAmbiguity: 0.1,
+  phaseMargin: 5,
+}
 
 function setApi(beatgrid: ReturnType<typeof vi.fn>): void {
   ;(window as unknown as { api: unknown }).api = { beatgrid }

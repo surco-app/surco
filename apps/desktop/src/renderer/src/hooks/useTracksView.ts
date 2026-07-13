@@ -1,9 +1,11 @@
 import { useQueries } from '@tanstack/react-query'
 import { type RefObject, useMemo } from 'react'
-import type { SpectrumResult, WaveformResult } from '../../../shared/types'
+import type { BeatgridResult, SpectrumResult, WaveformResult } from '../../../shared/types'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { duplicateIds } from '../lib/duplicates'
 import type { LibrarySource } from '../lib/librarySource'
+import { analysisOptions } from '../lib/analysisQueries'
+import { beatgridNeedsReview } from '../lib/beatgrid'
 import { detectTrim } from '../lib/trim'
 import type { TrackItem } from '../types'
 import { useLibraryMembership } from './useLibraryMembership'
@@ -17,6 +19,7 @@ export interface ViewCacheEntry {
   track: TrackItem
   spectrum: SpectrumResult | undefined
   wave: WaveformResult | null | undefined
+  grid: BeatgridResult | null | undefined
   index: AppleMusicIndex | null
   dup: boolean
   view: TrackItem
@@ -55,6 +58,15 @@ export function useTracksView(
     })),
     combine: (results) => results.map((r) => r.data),
   })
+  // The beatgrid detections, observed just as passively: whatever the Grid
+  // section probed feeds the "grid to review" fact; the list never probes.
+  const grids = useQueries({
+    queries: tracks.map((t) => ({
+      ...analysisOptions('beatgrid', t.inputPath, () => window.api.beatgrid(t.inputPath)),
+      enabled: false,
+    })),
+    combine: (results) => results.map((r) => r.data as BeatgridResult | null | undefined),
+  })
   // The session snapshot of the destination's library (Apple Music or Engine DJ),
   // fetched once there are tracks to check, so each row's "already owned" verdict is a
   // local lookup rather than a process per track. Null until it lands or with no source.
@@ -76,6 +88,7 @@ export function useTracksView(
     return tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
         const wave = waves[i]
+        const grid = grids[i]
         // inLibraryResolved is the verdict the editor/sweep already confirmed against
         // the canonical Discogs match — the raw tags can't reach it here, so OR it in so
         // the list and filter agree with the editor's badge instead of reading not-owned.
@@ -97,17 +110,20 @@ export function useTracksView(
         const dup = dups.has(t.id)
         if (!spectrum && fetching) {
           const view: TrackItem = { ...t, analyzing: true }
-          if (inLibrary !== undefined) view.inLibrary = inLibrary
+          // A hand-confirmed grid IS the review — only unconfirmed detections flag.
+        if (grid && !t.beatgrid && beatgridNeedsReview(grid)) view.gridReview = true
+        if (inLibrary !== undefined) view.inLibrary = inLibrary
           if (dup) view.duplicate = true
           return view
         }
-        if (!spectrum && inLibrary === undefined && !dup && !wave) return t
+        if (!spectrum && inLibrary === undefined && !dup && !wave && !grid) return t
         const cached = viewCache.current.get(t.id)
         if (
           cached &&
           cached.track === t &&
           cached.spectrum === spectrum &&
           cached.wave === wave &&
+          cached.grid === grid &&
           cached.index === libraryIndex &&
           cached.dup === dup
         )
@@ -123,11 +139,21 @@ export function useTracksView(
             clipping: wave.clipped?.some(Boolean) ?? false,
           }
         }
+        // A hand-confirmed grid IS the review — only unconfirmed detections flag.
+        if (grid && !t.beatgrid && beatgridNeedsReview(grid)) view.gridReview = true
         if (inLibrary !== undefined) view.inLibrary = inLibrary
         if (dup) view.duplicate = true
-        viewCache.current.set(t.id, { track: t, spectrum, wave, index: libraryIndex, dup, view })
+        viewCache.current.set(t.id, {
+          track: t,
+          spectrum,
+          wave,
+          grid,
+          index: libraryIndex,
+          dup,
+          view,
+        })
         return view
       })
-  }, [tracks, spectra, waves, libraryIndex, librarySource])
+  }, [tracks, spectra, waves, grids, libraryIndex, librarySource])
   return { tracksView, libraryIndex }
 }

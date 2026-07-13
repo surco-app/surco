@@ -11,7 +11,13 @@ import { GridSection } from './GridSection'
 
 afterEach(cleanup)
 
-const detected: BeatgridResult = { bpm: 120, confidence: 0.9, anchorSec: 0.25 }
+const detected: BeatgridResult = {
+  bpm: 120,
+  confidence: 0.9,
+  anchorSec: 0.25,
+  phaseAmbiguity: 0.1,
+  phaseMargin: 5,
+}
 
 function wave(): WaveformResult {
   return { peaks: Array.from({ length: 200 }, () => 0.3), durationSec: 60 }
@@ -89,6 +95,18 @@ describe('GridSection header', () => {
   it('wears a staged grid as the folded active badge', () => {
     render(section({ value: { bpm: 127.5, anchorSec: 0.1 }, open: false }))
     expect(screen.getByTestId('grid-active-badge')).toHaveTextContent('127.50 BPM')
+    expect(screen.queryByTestId('grid-detected-pill')).not.toBeInTheDocument()
+  })
+
+  // A coin-flip detection (the "grid to review" fact) must be readable here in
+  // context, not only in the list filter — warn tint instead of the quiet pill.
+  it('wears the review pill when the detection was a coin flip', async () => {
+    ;(window as unknown as { api: { beatgrid: unknown } }).api.beatgrid = vi
+      .fn()
+      .mockResolvedValue({ ...detected, phaseAmbiguity: 1, phaseMargin: 1 })
+    render(section())
+    const pill = await screen.findByTestId('grid-review-pill', undefined, { timeout: 3000 })
+    expect(pill).toHaveTextContent('Check the grid by ear')
     expect(screen.queryByTestId('grid-detected-pill')).not.toBeInTheDocument()
   })
 

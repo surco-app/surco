@@ -170,6 +170,7 @@ describe('matchesFilter / qualityCounts', () => {
       duplicates: 0,
       silence: 0,
       clipping: 0,
+      grid: 0,
     })
   })
 })
@@ -193,6 +194,15 @@ describe('attention filter (silence to trim, clipping)', () => {
     const counts = qualityCounts(tracks)
     expect(counts.silence).toBe(2)
     expect(counts.clipping).toBe(2)
+  })
+
+  // The grid bucket rides the same axis: only coin-flip detections (gridReview,
+  // merged from the beatgrid cache) land in it — a hand-confirmed grid or an
+  // unprobed track belongs to neither side.
+  it('buckets the grids parked for an ear check', () => {
+    const flagged = { ...t('coin-flip'), gridReview: true }
+    expect(by([...tracks, flagged], { attention: 'grid' }).map((x) => x.id)).toEqual(['coin-flip'])
+    expect(qualityCounts([...tracks, flagged]).grid).toBe(1)
   })
 
   it('stacks with the other axes like any dimension', () => {

@@ -47,8 +47,10 @@ export type DuplicatesFilter = 'duplicates'
 // The retouch buckets djotas asked for: tracks whose decoded wave shows work left to
 // do — lead-in/run-out silence not yet staged for trimming, or true digital clipping.
 // Both read the audioIssues facts the view merges from the shared waveform cache, so
-// a track with no wave decoded yet belongs to neither (like 'unanalyzed').
-export type AttentionFilter = 'silence' | 'clipping'
+// a track with no wave decoded yet belongs to neither (like 'unanalyzed'). 'grid'
+// adds the beatgrid triage: detections that looked like a coin flip (see
+// beatgridNeedsReview), parked here for an ear check.
+export type AttentionFilter = 'silence' | 'clipping' | 'grid'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -116,6 +118,7 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
+  if (sel.attention === 'grid' && track.gridReview !== true) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
@@ -219,6 +222,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   duplicates: number
   silence: number
   clipping: number
+  grid: number
 } {
   let suspect = 0
   let good = 0
@@ -232,6 +236,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   let duplicates = 0
   let silence = 0
   let clipping = 0
+  let grid = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed') suspect += 1
@@ -246,6 +251,7 @@ export function qualityCounts(tracks: TrackItem[]): {
     if (t.duplicate) duplicates += 1
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
+    if (t.gridReview) grid += 1
   }
   return {
     suspect,
@@ -260,6 +266,7 @@ export function qualityCounts(tracks: TrackItem[]): {
     duplicates,
     silence,
     clipping,
+    grid,
   }
 }
 

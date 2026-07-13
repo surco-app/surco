@@ -1,5 +1,6 @@
 import {
   AudioLines,
+  Grid3x3,
   Check,
   ChevronDown,
   CircleCheckBig,
@@ -30,7 +31,7 @@ type QualityMode = 'unanalyzed' | 'suspect' | 'good'
 type ConversionMode = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
-type AttentionMode = 'silence' | 'clipping'
+type AttentionMode = 'silence' | 'clipping' | 'grid'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
@@ -42,7 +43,7 @@ const CONVERSION_MODES: ConversionMode[] = [
 ]
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
-const ATTENTION_MODES: AttentionMode[] = ['silence', 'clipping']
+const ATTENTION_MODES: AttentionMode[] = ['silence', 'grid', 'clipping']
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
@@ -59,6 +60,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   notInLibrary: Plus,
   duplicates: CopyIcon,
   silence: Scissors,
+  grid: Grid3x3,
   clipping: Zap,
 }
 

@@ -248,6 +248,26 @@ export function detectBeatgrid(
     }
   }
 
+  // The review signals, measured against whatever side won: the rival's best
+  // flux within its own neighbourhood (attack-evidence tie?), and the low-band
+  // energy summed over a quarter-beat window around each side (did the kick
+  // energy actually break the tie?).
+  const rivalCentre = (best + Math.round(bins / 2)) % bins
+  let rivalPeak = rivalCentre
+  for (let d = -2; d <= 2; d++) {
+    const b = (rivalCentre + d + bins) % bins
+    if (fold[b] > fold[rivalPeak]) rivalPeak = b
+  }
+  const phaseAmbiguity = fold[best] > 0 ? Math.min(1, fold[rivalPeak] / fold[best]) : 0
+  const energyWin = Math.max(1, Math.round(bins / 8))
+  const energyNear = (centre: number): number => {
+    let sum = 0
+    for (let d = -energyWin; d <= energyWin; d++) sum += energyFold[(centre + d + bins) % bins]
+    return sum
+  }
+  const rivalEnergy = energyNear(rivalPeak)
+  const phaseMargin = rivalEnergy > 0 ? energyNear(best) / rivalEnergy : Number.POSITIVE_INFINITY
+
   // Sub-bin refinement over circular neighbours, same parabola as the
   // autocorrelation's. A frame is ~11.6 ms; without this the anchor quantizes
   // to frames and the ±20 ms accuracy contract gets no margin.
@@ -266,5 +286,5 @@ export function detectBeatgrid(
   // of the wrap point, the honest anchor is the file start itself.
   const periodSec = 60 / result.bpm
   const anchorSec = periodSec - folded < (1.5 * HOP) / sampleRate ? 0 : folded
-  return { bpm: result.bpm, confidence: result.confidence, anchorSec }
+  return { bpm: result.bpm, confidence: result.confidence, anchorSec, phaseAmbiguity, phaseMargin }
 }
