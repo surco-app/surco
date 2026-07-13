@@ -209,16 +209,16 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // button ON the wave — the position says which side it is, so the button needs
   // no words (the amount rides the header pill and the aria-label). One click
   // stages that side alone; both markers stay independent, so "only the end" is
-  // one click, not a drag.
+  // one click, not a drag. The line sits at the exact second, but the button's
+  // center is clamped a half-button inside the strip: a suggestion hugging the
+  // track edge used to render the scissors half-clipped under the edge handle,
+  // leaving a sliver to click. z-20 keeps it above the handles' hit areas.
   const suggestionMarker = (which: 'start' | 'end', sec: number): React.JSX.Element => (
-    <div
-      key={`suggest-${which}`}
-      className="pointer-events-none absolute inset-y-0 -translate-x-1/2"
-      style={{ left: `${pct(sec)}%` }}
-    >
+    <div key={`suggest-${which}`} className="pointer-events-none absolute inset-0">
       <span
         aria-hidden="true"
-        className="absolute inset-y-0 left-1/2 w-0 border-l border-dashed border-[var(--color-line-strong)]"
+        className="absolute inset-y-0 w-0 border-l border-dashed border-[var(--color-line-strong)]"
+        style={{ left: `${pct(sec)}%` }}
       />
       <button
         type="button"
@@ -230,7 +230,8 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         onClick={() =>
           commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec })
         }
-        className="press pointer-events-auto absolute top-1 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-muted hover:text-fg"
+        className="press pointer-events-auto absolute top-1 z-20 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-muted hover:text-fg"
+        style={{ left: `clamp(12px, ${pct(sec)}%, calc(100% - 12px))` }}
       >
         <Scissors className="h-3 w-3" aria-hidden="true" />
       </button>

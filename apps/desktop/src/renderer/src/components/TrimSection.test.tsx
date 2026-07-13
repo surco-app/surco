@@ -86,6 +86,10 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.7 })
     fireEvent.click(screen.getByTestId('trim-apply-end'))
     expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
+    // A suggestion hugging the track edge must keep its button reachable: the
+    // center clamps a half-button inside the strip instead of clipping under
+    // the edge handle.
+    expect(screen.getByTestId('trim-apply-end').style.left).toContain('clamp(')
   })
 
   it('says there is nothing to cut when the track starts and ends on music', async () => {
