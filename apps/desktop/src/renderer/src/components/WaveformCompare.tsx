@@ -307,6 +307,10 @@ export function Strip({
         window: { from: view.from, to: view.to },
       })
     }
+    // Position and pixels move as one: the canvas sits at the very window it just
+    // drew, in strip percentages, so scrolling can never shear it off the overlays.
+    canvas.style.left = `${view.from * 100}%`
+    canvas.style.width = `${(view.to - view.from) * 100}%`
   }, [hiResActive, hiRes, view, wave, color, clipDb, marks])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
@@ -347,19 +351,23 @@ export function Strip({
           height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
           className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-36' : 'h-24'}`}
         />
-        {/* The deep zoom's viewport canvas: sticky at the scroller's left edge and
-            one viewport wide, it redraws the visible slice per scroll frame — the
+        {/* The deep zoom's detail canvas: absolutely positioned IN CONTENT
+            coordinates at the exact window it depicts (left/width are set in the
+            same effect that draws, so position and pixels commit together) — the
             capped base raster underneath goes blurry past ~×27, but this covers
-            exactly where the eye is. Pulled up over the base with a negative
-            margin; pointer events pass through so scrub/hover stay the strip's. */}
+            where the eye is. It used to be viewport-sticky and redrawn per scroll
+            frame, which lagged the natively-scrolling overlays (grid lines, ruler)
+            by a frame mid-drag; anchored to the content it scrolls in lockstep and
+            a fast fling just shows the coarse base at the edges until the next
+            redraw. Pointer events pass through so scrub/hover stay the strip's. */}
         {hiResActive && (
           <canvas
             ref={hiResRef}
             data-testid="waveform-hires"
             width={2400}
             height={CANVAS_H}
-            className="pointer-events-none sticky left-0 block h-24 rounded-lg bg-[var(--color-field)]"
-            style={{ width: `${100 / zoom}%`, marginTop: '-6rem' }}
+            className="pointer-events-none absolute top-0 left-0 block h-24 rounded-lg bg-[var(--color-field)]"
+            style={{ width: `${100 / zoom}%` }}
           />
         )}
         {loading && <WaveformSkeleton testid="waveform-compare-loading" />}
