@@ -4,8 +4,10 @@ import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } fr
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
+import { snapAnchor } from '../shared/beatgrid'
 import { formatRatingTag } from '../shared/rating'
 import type {
+  Beatgrid,
   BeatgridResult,
   BpmResult,
   ConversionQuality,
@@ -23,6 +25,7 @@ import type {
   WaveformResult,
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
+import { seratoBeatgridVorbis } from './seratoBeatgrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { countClicks } from './clickDetect'
 import { declickFilter } from '../shared/declick'
@@ -594,6 +597,9 @@ export function convertArgs(
   meta: TrackMetadata,
   coverPath?: string,
   audioFilter?: string,
+  // The staged beatgrid in output-file time, for FLAC outputs: Serato reads its
+  // grid from a SERATO_BEATGRID vorbis comment there (GEOB is ID3-only).
+  seratoBeatgrid?: Beatgrid,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -636,6 +642,8 @@ export function convertArgs(
     const rating = Number(meta.rating)
     const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
     args.push('-metadata', `RATING=${value}`)
+    if (seratoBeatgrid)
+      args.push('-metadata', `SERATO_BEATGRID=${seratoBeatgridVorbis(seratoBeatgrid)}`)
   }
   args.push(output)
   return args
@@ -851,6 +859,22 @@ function cueShiftFor(
   }
 }
 
+// Where the staged grid lands in the output's timeline: a trim that actually ran
+// cut the head, so the anchor shifts back by it, folded onto the same grid's
+// first surviving beat when the cut passes it — the tag-side twin of the cue
+// re-anchoring above and of exportAnchorSec in the renderer.
+function outputBeatgrid(
+  grid: Beatgrid | undefined,
+  trim: TrimRange | undefined,
+  trimApplied: boolean,
+): Beatgrid | undefined {
+  if (!grid) return undefined
+  const cut = trimApplied ? (trim?.startSec ?? 0) : 0
+  if (cut === 0) return grid
+  const anchor = grid.anchorSec - cut
+  return { bpm: grid.bpm, anchorSec: anchor < 0 ? snapAnchor(anchor, grid.bpm) : anchor }
+}
+
 // The temp file a conversion renders into before the rename over the final output.
 // Unique per call: bulk runs convert several tracks in parallel, and two tracks whose
 // metadata resolves to the same output name would otherwise share one deterministic
@@ -904,6 +928,10 @@ export async function convertAudio(
   // Leading/trailing silence trim, the first filter stage: the seconds the user
   // confirmed in the editor, cut exactly. Forces a re-encode like normalize.
   trim?: TrimRange,
+  // The staged beatgrid (original-file seconds): written into the output as
+  // Serato's grid tag — GEOB on MP3/AIFF, a vorbis comment on FLAC — offset by
+  // the trim exactly like the Traktor cues.
+  beatgrid?: Beatgrid,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -954,6 +982,8 @@ export async function convertAudio(
     [trimAf, declickAf, normalizeAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
+  // trimAf decides whether the trim actually ran (a stream copy never trims).
+  const outGrid = outputBeatgrid(beatgrid, trim, trimAf !== undefined)
   const tmp = convertTmpPath(output, ext)
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined
@@ -972,11 +1002,11 @@ export async function convertAudio(
       // size) and silently falls back to a byte copy otherwise (other
       // filesystems, or an output folder on a different volume).
       await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
-      await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover })
+      await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover, beatgrid: outGrid })
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter),
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, ext === '.flac' ? outGrid : undefined),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1004,6 +1034,7 @@ export async function convertAudio(
           coverPath,
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined),
+          beatgrid: outGrid,
         })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -1020,6 +1051,7 @@ export async function convertAudio(
           source: input,
           dest: tmp,
           shift: cueShiftFor(trim, trimAf !== undefined),
+          beatgrid: outGrid,
         })
     }
     // Last touch before the rename so the header rides the same atomic landing.

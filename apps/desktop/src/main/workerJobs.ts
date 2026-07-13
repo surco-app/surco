@@ -1,4 +1,4 @@
-import type { BeatgridResult, BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import type { Beatgrid, BeatgridResult, BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
@@ -25,8 +25,10 @@ export type WorkerJob =
       // them when a trim moved the audio underneath.
       cueSource?: string
       cueShift?: CueShift
+      // The staged beatgrid in output-file time, written as Serato's GEOB.
+      beatgrid?: Beatgrid
     }
-  | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
+  | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift; beatgrid?: Beatgrid }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
@@ -44,10 +46,18 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult {
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'writeTags':
-      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource, job.cueShift)
+      writeTags(
+        job.file,
+        job.meta,
+        job.coverPath,
+        job.removeCover,
+        job.cueSource,
+        job.cueShift,
+        job.beatgrid,
+      )
       return null
     case 'copyCueFrames':
-      copyCueFrames(job.source, job.dest, job.shift)
+      copyCueFrames(job.source, job.dest, job.shift, job.beatgrid)
       return null
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)

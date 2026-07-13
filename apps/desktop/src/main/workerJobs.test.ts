@@ -48,6 +48,7 @@ describe('runWorkerJob', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
   })
 
@@ -60,21 +61,51 @@ describe('runWorkerJob', () => {
       cueSource: '/in.mp3',
       cueShift: { shiftMs: 1300 },
     })
-    expect(writeTags).toHaveBeenCalledWith('/out/a.mp3', meta, undefined, undefined, '/in.mp3', {
-      shiftMs: 1300,
-    })
+    expect(writeTags).toHaveBeenCalledWith(
+      '/out/a.mp3',
+      meta,
+      undefined,
+      undefined,
+      '/in.mp3',
+      { shiftMs: 1300 },
+      undefined,
+    )
   })
 
-  it('routes cue copies with source, destination and the trim shift in order', () => {
+  // The staged grid must reach the same TagLib save as the cues and rating —
+  // a missed pass here would ship converted files with no Serato grid.
+  it('routes the beatgrid through tag writes', () => {
+    const meta = { title: 'T' } as TrackMetadata
+    runWorkerJob({
+      type: 'writeTags',
+      file: '/out/a.mp3',
+      meta,
+      beatgrid: { bpm: 128, anchorSec: 0.25 },
+    })
+    expect(writeTags).toHaveBeenCalledWith(
+      '/out/a.mp3',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { bpm: 128, anchorSec: 0.25 },
+    )
+  })
+
+  it('routes cue copies with source, destination, shift and beatgrid in order', () => {
     runWorkerJob({
       type: 'copyCueFrames',
       source: '/in.mp3',
       dest: '/out.mp3',
       shift: { shiftMs: 1300, maxMs: 240000 },
+      beatgrid: { bpm: 128, anchorSec: 0.25 },
     })
-    expect(copyCueFrames).toHaveBeenCalledWith('/in.mp3', '/out.mp3', {
-      shiftMs: 1300,
-      maxMs: 240000,
-    })
+    expect(copyCueFrames).toHaveBeenCalledWith(
+      '/in.mp3',
+      '/out.mp3',
+      { shiftMs: 1300, maxMs: 240000 },
+      { bpm: 128, anchorSec: 0.25 },
+    )
   })
 })

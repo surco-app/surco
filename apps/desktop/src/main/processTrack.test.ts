@@ -86,6 +86,7 @@ describe('runProcessTrack — plain conversion', () => {
       expect.any(Function),
       'off',
       undefined,
+      undefined,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -124,6 +125,15 @@ describe('runProcessTrack — plain conversion', () => {
     await runProcessTrack(job({ trim: { startSec: 1.5, endSec: 200 } }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
     expect(call[11]).toEqual({ startSec: 1.5, endSec: 200 })
+  })
+
+  // Like trim, the grid only exists per track: it rides the job into the encoder,
+  // which writes it into the output's Serato tags offset by the applied trim.
+  it('threads the job’s beatgrid through to the encoder', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job({ beatgrid: { bpm: 128, anchorSec: 0.25 } }), deps)
+    const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(call[12]).toEqual({ bpm: 128, anchorSec: 0.25 })
   })
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
@@ -166,6 +176,7 @@ describe('runProcessTrack — cover handling', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
@@ -219,6 +230,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       'off',
       undefined,
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -240,6 +252,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
@@ -387,6 +400,7 @@ describe('runProcessTrack — forced re-encode', () => {
       expect.any(Function),
       'off',
       undefined,
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -411,6 +425,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -441,6 +456,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -501,6 +517,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
@@ -596,6 +613,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -809,6 +827,7 @@ describe('runProcessTrack — Apple Music only', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(

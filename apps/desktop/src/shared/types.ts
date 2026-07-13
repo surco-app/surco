@@ -427,6 +427,10 @@ export interface ProcessJob {
   // The silence trim the user confirmed in the editor. No Settings fallback —
   // the exact seconds only exist per track, so it rides the job or not at all.
   trim?: TrimRange
+  // The staged beatgrid, in ORIGINAL-file seconds like the track stores it; the
+  // conversion offsets it by the trim when writing it into the output's tags
+  // (Serato) or the Engine DJ library.
+  beatgrid?: Beatgrid
   // Overwrite-original pinned when the batch started; falls back to the live setting
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
