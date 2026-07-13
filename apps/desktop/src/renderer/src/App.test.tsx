@@ -778,6 +778,23 @@ describe('App loudness help overlay', () => {
   })
 })
 
+describe('App maximized section', () => {
+  // Escape while a section fills the window must ONLY restore the section. The
+  // global Escape (clear the selection) used to fire too, so the overlay closed
+  // AND the track deselected — the editor vanished mid-review.
+  it('restores the section on Escape without dropping the selection', async () => {
+    await renderApp()
+    const [row] = await addTwoTracks()
+    fireEvent.click(row)
+    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    fireEvent.click(within(trim).getByTestId('section-maximize'))
+    await screen.findByTestId('section-maximized-overlay')
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+})
+
 describe('App track removal', () => {
   // Removed tracks must not pin their probe results in the session-long query cache:
   // spectrogram images are the heaviest objects in the app, and a long session of

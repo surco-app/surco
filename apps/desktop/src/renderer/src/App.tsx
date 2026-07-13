@@ -61,7 +61,7 @@ import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
-import { editorSectionOpen } from './hooks/useEditorSections'
+import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useMetaUndo } from './hooks/useMetaUndo'
@@ -1554,6 +1554,7 @@ export default function App(): React.JSX.Element {
   // is deliberately omitted from the close: it forces a deliberate choice, not an Escape
   // dismissal. Deselect is skipped while a field is focused so Escape stays a field action
   // (cancel an edit, close a field's own popover) instead of yanking the editor away.
+  const { maximized } = useMaximizedSection()
   function onEscape(): void {
     if (activeModal) {
       if (activeModal.type === 'onboarding') return
@@ -1561,6 +1562,10 @@ export default function App(): React.JSX.Element {
       overlays.close()
       return
     }
+    // A maximized editor section is an overlay layer too: its own listener
+    // restores it, and Escape must stop there — falling through would ALSO
+    // clear the selection, unmounting the editor mid-review.
+    if (maximized !== null) return
     if (isTypingTarget(document.activeElement)) return
     if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
