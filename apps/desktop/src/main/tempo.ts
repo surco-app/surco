@@ -214,59 +214,74 @@ export function detectBeatgrid(
     return fold
   }
 
-  // Two signals, two jobs. FLUX localizes precisely (it spikes at the attack)
-  // but can't tell beat from off-beat under sidechain pumping; low-band ENERGY
-  // knows which half of the period holds the kick (its body is the loudest sub
-  // content) but smears across the kick's tail. So: flux proposes the phase and
-  // its half-period rival, energy votes between them, flux places the line.
+  // Three signals, ranked. Full-band FLUX localizes precisely (it spikes at
+  // the attack) but can't tell beat from off-beat: sidechain pumping and loud
+  // off-beat stabs both hand it the wrong side. The beat belongs to the KICK,
+  // and what defines a kick is its sub ATTACK — so low-band FLUX outranks
+  // low-band ENERGY, whose sustained reading lies whenever the kick's long
+  // distorted body bleeds past the compare windows or an off-beat bass swell
+  // carries as much sub as the kick (a real 147 hard-dance rip: energy margin
+  // 1.06, low-flux margin 1.50; the trance calibration track agrees, 1.56 with
+  // energy 2.02). So: full flux proposes the phase and its half-period rival,
+  // the sub's attack arbitrates, the sub's energy settles a wash, and full
+  // flux places the line.
   const fold = foldOf(onsetEnvelope(samples))
   let best = 0
   for (let b = 1; b < bins; b++) if (fold[b] > fold[best]) best = b
 
-  const energyFold = foldOf(energyEnvelope(lowpassed(samples, sampleRate)))
-  let energyBest = 0
-  let energyTotal = 0
-  for (let b = 0; b < bins; b++) {
-    energyTotal += energyFold[b]
-    if (energyFold[b] > energyFold[energyBest]) energyBest = b
-  }
-  const circDist = (a: number, b: number): number => {
-    const d = Math.abs(a - b)
-    return Math.min(d, bins - d)
-  }
-  // Only vote when the low band actually pulses (flat = beatless bass, keep
-  // flux's pick), and re-localize on the rival's own flux peak when it wins.
-  if (energyFold[energyBest] * bins > 1.2 * energyTotal) {
-    const rival = (best + Math.round(bins / 2)) % bins
-    if (circDist(rival, energyBest) < circDist(best, energyBest)) {
-      let peak = rival
-      for (let d = -2; d <= 2; d++) {
-        const b = (rival + d + bins) % bins
-        if (fold[b] > fold[peak]) peak = b
-      }
-      best = peak
-    }
-  }
+  const lowSamples = lowpassed(samples, sampleRate)
+  const energyFold = foldOf(energyEnvelope(lowSamples))
+  const lowFluxFold = foldOf(onsetEnvelope(lowSamples))
 
-  // The review signals, measured against whatever side won: the rival's best
-  // flux within its own neighbourhood (attack-evidence tie?), and the low-band
-  // energy summed over a quarter-beat window around each side (did the kick
-  // energy actually break the tie?).
-  const rivalCentre = (best + Math.round(bins / 2)) % bins
-  let rivalPeak = rivalCentre
-  for (let d = -2; d <= 2; d++) {
-    const b = (rivalCentre + d + bins) % bins
-    if (fold[b] > fold[rivalPeak]) rivalPeak = b
+  // The winner's half-period rival, re-localized on its own full-flux peak —
+  // the arbitration and the review signals both measure against it.
+  const rivalPeakOf = (b: number): number => {
+    const centre = (b + Math.round(bins / 2)) % bins
+    let peak = centre
+    for (let d = -2; d <= 2; d++) {
+      const c = (centre + d + bins) % bins
+      if (fold[c] > fold[peak]) peak = c
+    }
+    return peak
   }
-  const phaseAmbiguity = fold[best] > 0 ? Math.min(1, fold[rivalPeak] / fold[best]) : 0
-  const energyWin = Math.max(1, Math.round(bins / 8))
-  const energyNear = (centre: number): number => {
+  const nearWin = Math.max(1, Math.round(bins / 8))
+  const near = (values: Float64Array, centre: number): number => {
     let sum = 0
-    for (let d = -energyWin; d <= energyWin; d++) sum += energyFold[(centre + d + bins) % bins]
+    for (let d = -nearWin; d <= nearWin; d++) sum += values[(centre + d + bins) % bins]
     return sum
   }
-  const rivalEnergy = energyNear(rivalPeak)
-  const phaseMargin = rivalEnergy > 0 ? energyNear(best) / rivalEnergy : Number.POSITIVE_INFINITY
+  const ratio = (a: number, b: number): number => (b > 0 ? a / b : Number.POSITIVE_INFINITY)
+
+  // A voter must beat the other side by this much to decide a phase; under it
+  // the voter abstains (a flat bass drone abstains from both low-band votes by
+  // construction). The review margin downstream treats any grid decided at
+  // this bar as settled.
+  const DECISIVE = 1.3
+  let rivalPeak = rivalPeakOf(best)
+  const rivalLowFlux = ratio(near(lowFluxFold, rivalPeak), near(lowFluxFold, best))
+  if (rivalLowFlux >= DECISIVE) {
+    // The rival side holds the sub attacks — the kick lives there.
+    best = rivalPeak
+    rivalPeak = rivalPeakOf(best)
+  } else if (rivalLowFlux >= 1) {
+    // The sub-attack vote is a wash — the kick body's sustained energy may
+    // settle it, but only while the sub-attack doesn't lean against it: an
+    // off-beat swell can hold MORE in-window sub energy than a long kick whose
+    // body outruns the window, and letting energy override even a mild attack
+    // lean handed that swell the beat.
+    if (ratio(near(energyFold, rivalPeak), near(energyFold, best)) >= DECISIVE) {
+      best = rivalPeak
+      rivalPeak = rivalPeakOf(best)
+    }
+  }
+  // The margin reported for review is the strongest voter's word from the
+  // final side: either low-band signal decisively on this side is a settled
+  // grid; both hovering near 1 is the coin flip an ear must check.
+  const phaseMargin = Math.max(
+    ratio(near(lowFluxFold, best), near(lowFluxFold, rivalPeak)),
+    ratio(near(energyFold, best), near(energyFold, rivalPeak)),
+  )
+  const phaseAmbiguity = fold[best] > 0 ? Math.min(1, fold[rivalPeak] / fold[best]) : 0
 
   // Sub-bin refinement over circular neighbours, same parabola as the
   // autocorrelation's. A frame is ~11.6 ms; without this the anchor quantizes

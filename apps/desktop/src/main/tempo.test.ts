@@ -183,6 +183,48 @@ describe('detectBeatgrid', () => {
     expect(phaseError).toBeLessThan(ANCHOR_TOL * 2)
   })
 
+  // The hard-dance failure mode (seen on a real 147 BPM rip, grid half a period
+  // off): the kick is a LONG distorted burst (a third of the period), so its
+  // sustained low-band energy bleeds past both candidates' quarter-beat windows
+  // and the energy vote ties — while a bass swell centered on the off-beat adds
+  // just as much sub there. Full-band flux favors the sharper off-beat stab.
+  // What still separates the sides is the low band's ATTACK: the kick's sub
+  // arrives in one frame, the swell's creeps in — the fold must listen to
+  // low-band flux when the energy vote is a wash.
+  it('anchors on a long kick when off-beat sub energy ties the energy vote', () => {
+    const bpm = 138
+    const seconds = 30
+    const samples = new Float32Array(Math.floor(SR * seconds))
+    const period = (60 / bpm) * SR
+    for (let beat = 0; beat * period < samples.length; beat++) {
+      // The kick: sharp sub attack, long body — a quarter of the period.
+      const kick = Math.round(beat * period)
+      const kickLen = Math.round(period * 0.25)
+      for (let i = 0; i < kickLen && kick + i < samples.length; i++) {
+        samples[kick + i] += 0.75 * Math.sin((2 * Math.PI * 55 * i) / SR) * (1 - i / kickLen)
+      }
+      // The off-beat stab: louder, sharper, no sub — what full-band flux locks onto.
+      const stab = Math.round((beat + 0.5) * period)
+      const stabLen = Math.round(period * 0.08)
+      for (let i = 0; i < stabLen && stab + i < samples.length; i++) {
+        samples[stab + i] += 1.2 * Math.sin((2 * Math.PI * 3000 * i) / SR) * (1 - i / stabLen)
+      }
+      // The sub swell: a triangle of 55 Hz centered on the off-beat, ramping in
+      // and out — as much low-band ENERGY as the kick, next to no low-band flux.
+      const swellStart = Math.round((beat + 0.3) * period)
+      const swellLen = Math.round(period * 0.4)
+      for (let i = 0; i < swellLen && swellStart + i < samples.length; i++) {
+        const ramp = 1 - Math.abs(i - swellLen / 2) / (swellLen / 2)
+        samples[swellStart + i] += 0.7 * ramp * Math.sin((2 * Math.PI * 55 * i) / SR)
+      }
+    }
+    const result = detectBeatgrid(samples, SR)
+    const gridPeriod = 60 / (result?.bpm ?? bpm)
+    const anchor = result?.anchorSec ?? Number.NaN
+    const phaseError = Math.min(anchor, gridPeriod - anchor)
+    expect(phaseError).toBeLessThan(ANCHOR_TOL * 2)
+  })
+
   // Two identical hit trains half a period apart are a genuine coin flip: the
   // review signals must say so, so the triage can park the track for an ear
   // check instead of trusting either side silently.

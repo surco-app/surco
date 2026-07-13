@@ -60,16 +60,18 @@ export function gridLines(
 // The "grid to review" verdict for the attention triage. Absolute correctness
 // is unknowable (if we knew the grid was wrong we would fix it), so this flags
 // the honest ear-check cases: a shaky tempo, or a beat-vs-off-beat coin flip
-// the low-band energy vote couldn't break (two equal hit trains half a period
-// apart). Thresholds calibrated against a real sidechained 138 BPM trance
-// track (decisive margin ≈1.9, stays unflagged), synthesized twins (ambiguity
-// 1.0, margin 1.0, flagged) — and a real 147 BPM hard-dance rip (ambiguity
-// 0.80, margin 0.94, grid verified against rekordbox) that the original 0.6
-// ambiguity bar false-flagged: ordinary off-beat-bass dance music lives in
-// 0.6–0.9, so only a near-tie in the attack evidence itself counts as a flip.
+// no low-band voter could break (two equal hit trains half a period apart).
+// phaseMargin is the strongest low-band voter's word from the chosen side, and
+// the detector treats ≥1.3 as decisive — so the review bar matches it: a grid
+// the voters settled is trusted, a grid they all shrugged at is parked for an
+// ear check. Calibrated against a real sidechained 138 BPM trance track
+// (margin 1.94, unflagged), a real 147 BPM hard-dance rip whose grid the
+// sub-attack voter fixed (margin 1.50, unflagged), synthesized twins
+// (ambiguity 1.0, margin 1.0, flagged), and ordinary off-beat-bass dance
+// music living at 0.6–0.9 ambiguity (under the 0.9 bar, never flagged).
 const REVIEW_MIN_CONFIDENCE = 0.3
 const REVIEW_AMBIGUITY = 0.9
-const REVIEW_MARGIN = 1.5
+const REVIEW_MARGIN = 1.3
 
 export function beatgridNeedsReview(result: BeatgridResult | null | undefined): boolean {
   if (!result) return false
