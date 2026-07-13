@@ -62,6 +62,14 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
   })
 
+  // The detector's count rides the header as a pill — the one convention for
+  // analysis results — so a clicky track reads at a glance.
+  it('pills the click estimate on the header once measured', async () => {
+    render(section({ open: true }))
+    const pill = await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
+    expect(pill).toHaveTextContent('~23 clicks')
+  })
+
   // A folded section that shows nothing is indistinguishable from one never looked
   // at — the header must state "Off" so the folded column stays scannable.
   it('summarizes the off state in the header while folded', () => {

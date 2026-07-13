@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { useTrackLoudness } from '../hooks/useTrackLoudness'
+import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionHeader } from './SectionHeader'
@@ -49,6 +51,11 @@ export function NormalizeSection({
   // pattern as NormalizeControls' mode switch.
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
+  // The source's measured loudness, worn on the header like the quality section's
+  // verdict pill — the one convention for analysis results. Shares the per-path
+  // cache the strips' legends read, and the same open-gating as the wave decode,
+  // so a folded section stays unanalysed but keeps the pill once known.
+  const { data: measured } = useTrackLoudness(item.inputPath, !isMulti && open && settled)
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
@@ -74,16 +81,29 @@ export function NormalizeSection({
         }
         summaryTestId="normalize-summary"
         right={
-          // Only while folded: open, the segmented control right below says the
-          // same thing, and showing both reads as two controls for one fact.
-          value.mode !== 'none' && !open ? (
-            <span
-              data-testid="normalize-active-badge"
-              className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-            >
-              {tr(`normalize.mode.${value.mode}`)}
-            </span>
-          ) : undefined
+          <span className="flex shrink-0 items-center gap-1.5">
+            {/* The measurement pill stays up open or folded — it is a fact about
+                the file, not a control state, and the body never repeats it as
+                figures this compact. */}
+            {measured && (
+              <span
+                data-testid="normalize-measured-pill"
+                className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium tabular-nums text-fg-muted"
+              >
+                {`${formatDb(measured.integratedLufs)} LUFS · ${formatDb(measured.truePeakDb)} dBTP`}
+              </span>
+            )}
+            {/* The mode badge only while folded: open, the segmented control right
+                below says the same thing. */}
+            {value.mode !== 'none' && !open && (
+              <span
+                data-testid="normalize-active-badge"
+                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
+              >
+                {tr(`normalize.mode.${value.mode}`)}
+              </span>
+            )}
+          </span>
         }
       />
       {open && (

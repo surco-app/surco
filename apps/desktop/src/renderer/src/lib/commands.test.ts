@@ -91,6 +91,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     numberTracks: () => {},
     applyTitleFormat: () => {},
     regenerateNames: () => {},
+    trimDetected: () => {},
     titleFormatSet: false,
     undoMeta: () => {},
     canUndoMeta: () => false,
@@ -461,6 +462,19 @@ describe('buildCommands editor + theme entries', () => {
     expect(cmd.enabled).toBe(true)
     cmd.run()
     expect(regenerateNames).toHaveBeenCalledOnce()
+  })
+
+  // The bulk trim detection acts on the selection like the other sweeps, so it is
+  // gated on a track being selected and otherwise fires the App-side sweep.
+  it('gates trim-detected on a selection and runs it', () => {
+    const trimDetected = vi.fn()
+    expect(commandById(makeDeps({ trimDetected, selected: null }), 'trim-detected').enabled).toBe(
+      false,
+    )
+    const cmd = commandById(makeDeps({ trimDetected, selected: track() }), 'trim-detected')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(trimDetected).toHaveBeenCalledOnce()
   })
 
   // Clear-metadata and derive-from-filename act on the current selection, so both must be

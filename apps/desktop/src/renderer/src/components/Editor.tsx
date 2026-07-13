@@ -1,4 +1,4 @@
-import { Copy, Disc3, Eraser, Globe, RefreshCw, Tag, Type } from 'lucide-react'
+import { Copy, Disc3, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -134,6 +134,9 @@ interface Props {
   // Rebuilds this track's output name from the Settings naming pattern in one click.
   // App owns the format and writes the result, so the editor just signals intent.
   onRegenerateName: () => void
+  // Detects and stages the silence trim over the selection (the multi face of the
+  // trim section's scissors markers). App owns the sweep; the editor signals intent.
+  onTrimDetectedAll: () => void
   // Copies the Settings-pattern file name to the clipboard so the user can paste the track
   // into a search box. App owns the pattern and clipboard, so the editor just signals intent.
   onCopyFilename: () => void
@@ -175,6 +178,7 @@ export const Editor = memo(function Editor({
   onShowLoudnessHelp,
   onOpenRename,
   onRegenerateName,
+  onTrimDetectedAll,
   onCopyFilename,
   onSearchWeb,
   onExportCollection,
@@ -1032,20 +1036,39 @@ export const Editor = memo(function Editor({
                     />
                   )
                 case 'trim':
-                  // The trim lives on the track (exact per-track seconds), so it has
-                  // no multi-select story: the anchor's handles would misrepresent
-                  // every other selected track's silence.
-                  return (
-                    !isMulti && (
-                      <TrimSection
+                  // The per-track handles have no multi-select story (the anchor's
+                  // wave would misrepresent the rest), but the detection does: one
+                  // button runs it over the selection and stages each track's own
+                  // suggestion — visible and resettable per track afterwards.
+                  if (isMulti) {
+                    return (
+                      <div
                         key={id}
-                        value={item.trim}
-                        open={trimOpen}
-                        onToggle={() => setSectionOpen('trim', !trimOpen)}
-                        onChange={(trim) => onChange({ trim })}
-                        inputPath={item.inputPath}
-                      />
+                        data-testid="trim-multi"
+                        className="mt-6 border-t border-[var(--color-line)] pt-5"
+                      >
+                        <p className="text-sm font-medium text-fg-muted">{tr('trim.title')}</p>
+                        <button
+                          type="button"
+                          data-testid="trim-detect-all"
+                          onClick={onTrimDetectedAll}
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                        >
+                          <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
+                          {tr('trim.applyAll', { count: multiTracks.length })}
+                        </button>
+                      </div>
                     )
+                  }
+                  return (
+                    <TrimSection
+                      key={id}
+                      value={item.trim}
+                      open={trimOpen}
+                      onToggle={() => setSectionOpen('trim', !trimOpen)}
+                      onChange={(trim) => onChange({ trim })}
+                      inputPath={item.inputPath}
+                    />
                   )
                 case 'declick':
                   return (

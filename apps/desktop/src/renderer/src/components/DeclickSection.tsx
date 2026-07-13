@@ -101,16 +101,29 @@ export function DeclickSection({
         summary={value === 'off' ? tr('declick.mode.off') : undefined}
         summaryTestId="declick-summary"
         right={
-          // Only while folded: open, the segmented control right below says the
-          // same thing, and showing both reads as two controls for one fact.
-          value !== 'off' && !open ? (
-            <span
-              data-testid="declick-active-badge"
-              className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-            >
-              {tr(`declick.mode.${value}`)}
-            </span>
-          ) : undefined
+          <span className="flex shrink-0 items-center gap-1.5">
+            {/* The detector's finding as a header pill — the one convention for
+                analysis results — so a clicky track reads at a glance without
+                opening the section (once the count has been measured). */}
+            {!isMulti && typeof clicks === 'number' && clicks > 0 && (
+              <span
+                data-testid="declick-estimate-pill"
+                className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium tabular-nums text-fg-muted"
+              >
+                {tr('declick.estimatePill', { count: clicks })}
+              </span>
+            )}
+            {/* The mode badge only while folded: open, the segmented control right
+                below says the same thing. */}
+            {value !== 'off' && !open && (
+              <span
+                data-testid="declick-active-badge"
+                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
+              >
+                {tr(`declick.mode.${value}`)}
+              </span>
+            )}
+          </span>
         }
       />
       {open && (

@@ -23,10 +23,10 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
   }
 }
 
-function renderSection(item: TrackItem, isMulti = false): void {
+function renderSection(item: TrackItem, isMulti = false, loudness: unknown = null): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
-    loudness: vi.fn().mockResolvedValue(null),
+    loudness: vi.fn().mockResolvedValue(loudness),
   }
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -220,5 +220,27 @@ describe('NormalizeSection layout', () => {
     await screen.findByTestId('waveform-solo')
     expect(screen.queryByTestId('normalize-cue-warning')).not.toBeInTheDocument()
     expect(screen.queryByText(/Re-encodes the audio/)).not.toBeInTheDocument()
+  })
+})
+
+// The measured loudness rides the header as a pill — the one convention for
+// analysis results — so the figures read without hunting through the body.
+describe('NormalizeSection measured pill', () => {
+  it('pills the source measurement once the loudness pass lands', async () => {
+    renderSection(track(), false, {
+      integratedLufs: -8.6,
+      truePeakDb: 0.2,
+      loudnessRange: 5,
+      samplePeakDb: 0.1,
+    })
+    const pill = await screen.findByTestId('normalize-measured-pill', undefined, { timeout: 3000 })
+    expect(pill).toHaveTextContent('-8.6 LUFS')
+    expect(pill).toHaveTextContent('dBTP')
+  })
+
+  it('shows no pill before the measurement exists', async () => {
+    renderSection(track())
+    await screen.findByTestId('waveform-solo')
+    expect(screen.queryByTestId('normalize-measured-pill')).not.toBeInTheDocument()
   })
 })

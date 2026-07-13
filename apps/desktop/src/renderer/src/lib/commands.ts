@@ -223,6 +223,8 @@ export interface CommandDeps {
   applyTitleFormat: () => void
   // Rebuilds the selection's file names from the Settings → Naming pattern.
   regenerateNames: () => void
+  // Detects and stages the silence trim over the whole selection.
+  trimDetected: () => void
   // Whether a title format is configured at all — the command is pointless without one.
   titleFormatSet: boolean
   // Restores the tags the last batch operation (fill-all, find & replace, clear, paste,
@@ -296,6 +298,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     numberTracks,
     applyTitleFormat,
     regenerateNames,
+    trimDetected,
     titleFormatSet,
     undoMeta,
     canUndoMeta,
@@ -634,6 +637,17 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('regenerate-names'),
       enabled: !!selected && !settings?.overwriteOriginal,
       run: regenerateNames,
+    },
+    {
+      // The bulk twin of the trim section's scissors markers: detects and stages
+      // each selected track's silence trim in one press. Detection only suggests —
+      // what converts is exactly what this stages, visible and resettable per track.
+      id: 'trim-detected',
+      group: 'convert',
+      title: tr('commands.trimDetected'),
+      hint: hintFor('trim-detected'),
+      enabled: !!selected,
+      run: trimDetected,
     },
     {
       id: 'add-apple-music',

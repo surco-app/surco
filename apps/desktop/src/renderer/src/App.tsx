@@ -75,6 +75,7 @@ import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackL
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
+import { detectTrim } from './lib/trim'
 import { nextLocale, resolveLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
@@ -1284,6 +1285,39 @@ export default function App(): React.JSX.Element {
     for (const p of patches) updateTrack(p.id, { outputName: p.outputName })
     if (targets.length > 1) setNotice(tr('notices.regeneratedNames', { count: patches.length }))
   })
+  // Runs the trim section's silence detection over the whole selection and stages
+  // each track's suggestion in one press — the same "detect, then the user
+  // confirmed seconds are what converts" contract, just confirmed in bulk. Tracks
+  // with a trim already staged are left alone: a hand-adjusted cut must never be
+  // clobbered by a re-detection. Waveforms decode through the same query cache the
+  // strips use (and main's analysis limiter paces), sequentially so a big selection
+  // doesn't starve the analyses the visible editor is waiting on.
+  const onTrimDetected = useStableCallback(async () => {
+    const scope = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const targets = scope.filter((t) => !t.trim)
+    if (targets.length === 0) return
+    if (targets.length > 1) setNotice(tr('notices.trimDetecting', { count: targets.length }))
+    let applied = 0
+    for (const t of targets) {
+      try {
+        const wave = await queryClient.fetchQuery(waveformOptions(t.inputPath))
+        const suggestion = wave ? detectTrim(wave) : undefined
+        if (suggestion) {
+          updateTrack(t.id, { trim: suggestion })
+          applied++
+        }
+      } catch {
+        // A failed decode counts as "nothing to trim" for this track; the summary
+        // notice below still reports honestly how many were actually cut.
+      }
+    }
+    setNotice(tr('notices.trimApplied', { count: applied }))
+  })
+  // The fire-and-forget face of the sweep above, identity-stable like every other
+  // Editor/command prop so the memoized editor never re-renders for it.
+  const onTrimDetectedAll = useStableCallback(() => {
+    void onTrimDetected()
+  })
   // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
   // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but
   // the last segment — the file name, not its directory, is what you search for.
@@ -1486,6 +1520,7 @@ export default function App(): React.JSX.Element {
       numberTracks,
       applyTitleFormat,
       regenerateNames: onRegenerateName,
+      trimDetected: onTrimDetectedAll,
       titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
       canUndoMeta: metaUndo.canUndo,
@@ -1886,6 +1921,7 @@ export default function App(): React.JSX.Element {
                   onShowLoudnessHelp={onShowLoudnessHelp}
                   onOpenRename={onOpenRename}
                   onRegenerateName={onRegenerateName}
+                  onTrimDetectedAll={onTrimDetectedAll}
                   onCopyFilename={onCopyFilename}
                   onSearchWeb={onSearchWeb}
                   onExportCollection={onOpenExport}

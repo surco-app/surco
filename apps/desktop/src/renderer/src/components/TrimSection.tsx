@@ -205,12 +205,59 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     </div>
   )
 
+  // A suggested cut, drawn where it would land: a dashed line with a scissors
+  // button ON the wave — the position says which side it is, so the button needs
+  // no words (the amount rides the header pill and the aria-label). One click
+  // stages that side alone; both markers stay independent, so "only the end" is
+  // one click, not a drag.
+  const suggestionMarker = (which: 'start' | 'end', sec: number): React.JSX.Element => (
+    <div
+      key={`suggest-${which}`}
+      className="pointer-events-none absolute inset-y-0 -translate-x-1/2"
+      style={{ left: `${pct(sec)}%` }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 left-1/2 w-0 border-l border-dashed border-[var(--color-line-strong)]"
+      />
+      <button
+        type="button"
+        data-testid={`trim-apply-${which}`}
+        aria-label={tr(which === 'start' ? 'trim.applyStart' : 'trim.applyEnd', {
+          seconds: cutSeconds(which === 'start' ? sec : durationSec - sec),
+        })}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() =>
+          commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec })
+        }
+        className="press pointer-events-auto absolute top-1 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-muted hover:text-fg"
+      >
+        <Scissors className="h-3 w-3" aria-hidden="true" />
+      </button>
+    </div>
+  )
+
   // The folded header states the cuts (or that there are none) exactly once, like
   // the click-repair header: dim summary when off, accent badge when active.
   const cuts = [
     cutStart ? tr('trim.cutStart', { seconds: cutSeconds(startSec) }) : undefined,
     cutEnd ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - endSec) }) : undefined,
   ].filter(Boolean)
+  // The detection's finding, worn on the header like the quality section's verdict
+  // pill: the one convention for analysis results, readable without opening the
+  // section (once the wave has been decoded) and without hunting through the body.
+  const detected = suggestion
+    ? [
+        suggestion.startSec !== undefined
+          ? tr('trim.cutStart', { seconds: cutSeconds(suggestion.startSec) })
+          : undefined,
+        suggestion.endSec !== undefined
+          ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - suggestion.endSec) })
+          : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : undefined
 
   return (
     <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -221,12 +268,21 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         summary={value ? undefined : tr('trim.summaryNone')}
         summaryTestId="trim-summary"
         right={
-          value && !open ? (
+          value ? (
+            !open ? (
+              <span
+                data-testid="trim-active-badge"
+                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
+              >
+                {`−${cutSeconds((value.startSec ?? 0) + (value.endSec !== undefined && durationSec > 0 ? durationSec - value.endSec : 0))}`}
+              </span>
+            ) : undefined
+          ) : detected ? (
             <span
-              data-testid="trim-active-badge"
-              className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
+              data-testid="trim-detected-pill"
+              className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium text-fg-muted"
             >
-              {`−${cutSeconds((value.startSec ?? 0) + (value.endSec !== undefined && durationSec > 0 ? durationSec - value.endSec : 0))}`}
+              {detected}
             </span>
           ) : undefined
         }
@@ -263,38 +319,11 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                     )}
                   </>
                 ) : (
-                  wave && (
-                    <>
-                      <span data-testid="trim-detected" className="min-w-0 truncate text-[10px] text-fg-dim">
-                        {suggestion
-                          ? tr('trim.detected', {
-                              parts: [
-                                suggestion.startSec !== undefined
-                                  ? tr('trim.cutStart', { seconds: cutSeconds(suggestion.startSec) })
-                                  : undefined,
-                                suggestion.endSec !== undefined
-                                  ? tr('trim.cutEnd', {
-                                      seconds: cutSeconds(durationSec - suggestion.endSec),
-                                    })
-                                  : undefined,
-                              ]
-                                .filter(Boolean)
-                                .join(' · '),
-                            })
-                          : tr('trim.nothing')}
-                      </span>
-                      {suggestion && (
-                        <button
-                          type="button"
-                          data-testid="trim-apply"
-                          onClick={() => onChange(suggestion)}
-                          className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-0.5 text-[10px] font-medium text-fg-muted transition-colors hover:text-fg"
-                        >
-                          <Scissors className="h-3 w-3" aria-hidden="true" />
-                          {tr('trim.apply')}
-                        </button>
-                      )}
-                    </>
+                  wave &&
+                  !suggestion && (
+                    <span data-testid="trim-detected" className="min-w-0 truncate text-[10px] text-fg-dim">
+                      {tr('trim.nothing')}
+                    </span>
                   )
                 )}
                 <span className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -380,6 +409,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                     )}
                     {handle('start', startSec)}
                     {handle('end', endSec)}
+                    {shown?.startSec === undefined &&
+                      suggestion?.startSec !== undefined &&
+                      suggestionMarker('start', suggestion.startSec)}
+                    {shown?.endSec === undefined &&
+                      suggestion?.endSec !== undefined &&
+                      suggestionMarker('end', suggestion.endSec)}
                   </div>
                 )}
               </Strip>

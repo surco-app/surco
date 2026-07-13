@@ -171,6 +171,7 @@ function renderEditor(
       onShowLoudnessHelp={onShowLoudnessHelp}
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
+      onTrimDetectedAll={vi.fn()}
       onCopyFilename={onCopyFilename}
       onSearchWeb={onSearchWeb}
       onExportCollection={onExportCollection}
@@ -637,6 +638,7 @@ function MultiHarness() {
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
+        onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
         onSearchWeb={vi.fn()}
       />
@@ -908,6 +910,7 @@ describe('Editor multi-select', () => {
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
+        onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
         onSearchWeb={vi.fn()}
       />,

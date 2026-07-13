@@ -70,16 +70,22 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
-  // The detection only suggests — nothing is staged until the user confirms, so a
-  // track never gets silently trimmed just by opening the section.
-  it('suggests the detected silence and stages it only on the apply click', async () => {
+  // The detection only suggests — nothing is staged until a scissors marker is
+  // clicked, and each side stages alone, so "only the end" is one click. The
+  // finding itself rides the header as a pill, the app's one convention for
+  // analysis results (like the quality section's verdict).
+  it('pills the detected silence and stages each side from its scissors marker', async () => {
     const onChange = vi.fn()
     render(section({ onChange }))
-    const apply = await screen.findByTestId('trim-apply', undefined, { timeout: 3000 })
-    expect(screen.getByTestId('trim-detected')).toBeInTheDocument()
+    const start = await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
+    expect(screen.getByTestId('trim-detected-pill')).toHaveTextContent(
+      '9.7 s from the start · 9.7 s from the end',
+    )
     expect(onChange).not.toHaveBeenCalled()
-    fireEvent.click(apply)
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.7, endSec: 90.3 })
+    fireEvent.click(start)
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.7 })
+    fireEvent.click(screen.getByTestId('trim-apply-end'))
+    expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
   })
 
   it('says there is nothing to cut when the track starts and ends on music', async () => {
@@ -89,7 +95,8 @@ describe('TrimSection', () => {
     render(section())
     const detected = await screen.findByTestId('trim-detected', undefined, { timeout: 3000 })
     expect(detected).toHaveTextContent('No leading or trailing silence detected.')
-    expect(screen.queryByTestId('trim-apply')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trim-detected-pill')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trim-apply-start')).not.toBeInTheDocument()
   })
 
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,
