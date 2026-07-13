@@ -132,17 +132,16 @@ describe('GridSection header', () => {
 })
 
 describe('GridSection grid', () => {
-  // The detected grid shows live before anything is staged: lines every beat at
-  // the detected phase, downbeats emphasised — what the user judges and adjusts.
-  it('draws the detected grid with downbeats phased to the anchor', async () => {
+  // The detected grid shows live before anything is staged. At overview zoom a
+  // 60 s track's 120 beats pass the thinning cap, so only whole bars render —
+  // sparse ruler ticks phased to the anchor, not an amber wall over the wave.
+  it('draws the detected grid as bar ticks phased to the anchor', async () => {
     render(section())
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     const downbeats = screen.getAllByTestId('grid-line-downbeat')
-    const beats = screen.getAllByTestId('grid-line')
-    // 60 s at 120 BPM from 0.25 s: 120 beats, every fourth a downbeat.
-    expect(downbeats.length + beats.length).toBe(120)
+    expect(downbeats).toHaveLength(30)
+    expect(screen.queryAllByTestId('grid-line')).toHaveLength(0)
     expect(downbeats[0].style.left).toBe(`${(0.25 / 60) * 100}%`)
-    expect(beats.length).toBe(downbeats.length * 3)
   })
 
   it('nudges the grid earlier and later by 10 ms', async () => {

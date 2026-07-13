@@ -11,9 +11,11 @@ export interface GridLine {
 }
 
 // A 10-minute techno track holds over a thousand beats; rendered full-length
-// they would swamp the DOM. Above this count the density thins by doubling the
-// beat stride, so the overview shows bars while deep zoom shows every beat.
-const MAX_LINES = 192
+// they would swamp the DOM — and, at overview zoom, paint an amber wall over
+// the whole wave. Above this count the density thins by whole BARS (stride
+// multiples of 4), so the overview reads as sparse bar ticks while deep zoom
+// shows every beat.
+const MAX_LINES = 96
 
 // The beats visible in [view.from, view.to] (fractions of the track), plus one
 // beat of margin either side so a line never pops at the viewport edge. The
@@ -33,6 +35,9 @@ export function gridLines(
   const spanSec = Math.max(0, (view.to - view.from) * durationSec)
   let stride = 1
   while (spanSec / period / stride > MAX_LINES) stride *= 2
+  // Once thinning starts, land on whole bars: a mix of on- and off-bar beats at
+  // overview zoom reads as noise, evenly spaced downbeats read as a ruler.
+  if (stride > 1) stride = Math.ceil(stride / 4) * 4
   const fromSec = Math.max(0, view.from * durationSec - period)
   const toSec = Math.min(durationSec, view.to * durationSec + period)
   // First rendered beat at or before fromSec, aligned to the stride so the same

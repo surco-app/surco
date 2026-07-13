@@ -7,7 +7,9 @@ const FULL = { from: 0, to: 1 }
 
 describe('gridLines', () => {
   it('lays a beat every period from the anchor, downbeats every fourth', () => {
-    const lines = gridLines({ bpm: 120, anchorSec: 0.25 }, 60, FULL)
+    // Half the track in view keeps the beat count under the thinning cap, so
+    // every beat renders and the phase/downbeat pattern is assertable 1:1.
+    const lines = gridLines({ bpm: 120, anchorSec: 0.25 }, 60, { from: 0, to: 0.5 })
     expect(lines[0]).toMatchObject({ sec: 0.25, downbeat: true })
     expect(lines[1].sec).toBeCloseTo(0.75, 10)
     expect(lines[1].downbeat).toBe(false)
@@ -32,10 +34,12 @@ describe('gridLines', () => {
   // A 10-minute techno track holds well over a thousand beats: rendered
   // full-length they would swamp the DOM, so the density thins by whole bars
   // until the count is bounded — what remains still marks the phase.
-  it('thins a long track to a bounded number of lines', () => {
+  it('thins a long track to sparse whole-bar ticks', () => {
     const lines = gridLines({ bpm: 128, anchorSec: 0 }, 600, FULL)
     expect(lines.length).toBeGreaterThan(0)
-    expect(lines.length).toBeLessThanOrEqual(192)
+    expect(lines.length).toBeLessThanOrEqual(96)
+    // Whole bars only: a mix of on- and off-bar beats at overview zoom is noise.
+    expect(lines.every((l) => l.downbeat)).toBe(true)
   })
 
   it('renders every beat when the view is zoomed into a short window', () => {
