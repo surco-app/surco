@@ -344,5 +344,42 @@ describe('GridSection two-lane layout', () => {
     fireEvent.pointerMove(overview, { clientX: 3000, pointerId: 1 })
     expect(scroller.scrollLeft).toBe(0)
   })
+
+  // "Hear the grid" must behave like a player: the wave scrolls along under the
+  // advancing playhead instead of playing off-screen once it leaves the window.
+  it('keeps the working window on the audition playhead', async () => {
+    const rafCbs: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      rafCbs.push(cb)
+      return rafCbs.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    stubOverlayRect()
+    render(section())
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    fireEvent.click(screen.getByTestId('grid-audition'))
+    audios[0].onloadedmetadata?.()
+    audios[0].currentTime = 30
+    rafCbs.shift()?.(0)
+    // 30 s into a 60 s track, centered: 0.5 × 6000 − 300.
+    expect(scroller.scrollLeft).toBe(2700)
+  })
+
+  // Scrubbing the overview churns through windows faster than ffmpeg can decode
+  // them; every mid-scrub window used to enqueue anyway, and the queue then
+  // played catch-up for seconds after release. The re-decode must wait for the
+  // view to rest.
+  it('defers the deep-zoom re-decode until the view rests', async () => {
+    const waveformWindow = vi.fn().mockResolvedValue(null)
+    ;(window as unknown as { api: { waveformWindow: unknown } }).api.waveformWindow =
+      waveformWindow
+    render(section())
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(waveformWindow).not.toHaveBeenCalled()
+    await waitFor(() => expect(waveformWindow).toHaveBeenCalled(), { timeout: 2000 })
+  })
 })
 

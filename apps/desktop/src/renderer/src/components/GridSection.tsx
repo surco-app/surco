@@ -295,7 +295,11 @@ export function GridSection({
     audio.onended = () => stopAudition()
     const tick = (): void => {
       if (!audioRef.current) return
-      setPlayheadSec(audioRef.current.currentTime)
+      const t = audioRef.current.currentTime
+      setPlayheadSec(t)
+      // Follow like a player: the wave scrolls along under the advancing
+      // playhead instead of playing on past the window's right edge.
+      if (durationSec > 0) centerOn(t / durationSec)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)

@@ -277,7 +277,29 @@ export function Strip({
   const win = hiResActive
     ? windowFor(wave.durationSec, view.from, zoom)
     : { startSec: 0, durSec: 0 }
-  const { data: hiRes } = useWaveformWindow(inputPath, win.startSec, win.durSec, hiResActive)
+  // Fetch only once the window RESTS: a fast scrub (the grid section's overview
+  // lane) churns through quantized windows faster than ffmpeg decodes them, and
+  // enqueueing every intermediate one left the queue playing catch-up for
+  // seconds after release. While the fetch waits, the draw below falls back to
+  // the coarse overview slice, so the strip stays live — just soft.
+  const { startSec: winStart, durSec: winDur } = win
+  const [settledWin, setSettledWin] = useState(win)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSettledWin((prev) =>
+        prev.startSec === winStart && prev.durSec === winDur
+          ? prev
+          : { startSec: winStart, durSec: winDur },
+      )
+    }, 120)
+    return () => clearTimeout(id)
+  }, [winStart, winDur])
+  const { data: hiRes } = useWaveformWindow(
+    inputPath,
+    settledWin.startSec,
+    settledWin.durSec,
+    hiResActive && settledWin.durSec > 0,
+  )
   useEffect(() => {
     const canvas = hiResRef.current
     if (!canvas || !hiResActive || !wave) return

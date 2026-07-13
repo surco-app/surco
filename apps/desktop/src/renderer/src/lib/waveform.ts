@@ -91,6 +91,33 @@ export function drawWaveform(
   const span = to - from
   if (span <= 0) return
   const barW = w / span
+  // Upsampling (fewer buckets than pixels — a deep zoom outrunning its data):
+  // one rectangle per bucket reads as a wall of fat blocks, so draw per-pixel
+  // columns linearly interpolated between bucket centres instead — a soft
+  // envelope the eye reads as "coarse", not broken. Clip marks follow the
+  // nearest bucket.
+  if (barW > 2) {
+    for (let x = 0; x < w; x++) {
+      const pos = from + ((x + 0.5) / w) * span - 0.5
+      const i0 = Math.max(0, Math.min(peaks.length - 1, Math.floor(pos)))
+      const i1 = Math.min(peaks.length - 1, i0 + 1)
+      const t = Math.min(1, Math.max(0, pos - i0))
+      const raw = peaks[i0] * (1 - t) + peaks[i1] * t
+      const nearest = t < 0.5 ? i0 : i1
+      const over =
+        opts.marks !== false &&
+        (limitLin !== null
+          ? peaks[nearest] > limitLin
+          : opts.clipDb !== undefined
+            ? clipsOver(peaks[nearest], opts.clipDb)
+            : opts.clipped?.[nearest] === true)
+      const amp = limitLin !== null ? Math.min(raw, limitLin) : raw
+      const bar = Math.max(amp * (laneH / 2 - 2), 0.5)
+      ctx.fillStyle = over ? CLIP_COLOR : baseColor
+      ctx.fillRect(x, mid - bar, 1, bar * 2)
+    }
+    return
+  }
   for (let i = Math.max(0, Math.floor(from)); i < Math.min(peaks.length, Math.ceil(to)); i++) {
     const over =
       opts.marks !== false &&
