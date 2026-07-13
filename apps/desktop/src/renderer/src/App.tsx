@@ -1270,6 +1270,16 @@ export default function App(): React.JSX.Element {
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     editorNormalizeRef.current = n
+    // The two peak checkboxes are lasting preferences (user feedback: a relaunch must
+    // find them as they were left), unlike mode/targets which stay one-shot per track —
+    // so an editor toggle writes just those flags back to Settings. The mount report
+    // arrives with the Settings-seeded value, so it never writes.
+    const cur = settings?.normalize
+    if (!cur) return
+    const removeDc = n.peakRemoveDc === true
+    const perChannel = n.peakPerChannel === true
+    if ((cur.peakRemoveDc === true) !== removeDc || (cur.peakPerChannel === true) !== perChannel)
+      saveSettings({ normalize: { ...cur, peakRemoveDc: removeDc, peakPerChannel: perChannel } })
   })
   const onDeclickChange = useStableCallback((d: DeclickMode) => {
     editorDeclickRef.current = d
