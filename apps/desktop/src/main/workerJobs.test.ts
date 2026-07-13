@@ -31,17 +31,40 @@ describe('runWorkerJob', () => {
   it('routes tag writes with the full file/meta/cover arguments', () => {
     const meta = { title: 'T' } as TrackMetadata
     runWorkerJob({ type: 'writeTags', file: '/out/a.aiff', meta, coverPath: '/c.jpg' })
-    expect(writeTags).toHaveBeenCalledWith('/out/a.aiff', meta, '/c.jpg', undefined, undefined)
+    expect(writeTags).toHaveBeenCalledWith(
+      '/out/a.aiff',
+      meta,
+      '/c.jpg',
+      undefined,
+      undefined,
+      undefined,
+    )
   })
 
-  it('routes the cue source through tag writes so cues merge into the same save', () => {
+  it('routes the cue source and shift through tag writes so cues merge into the same save', () => {
     const meta = { title: 'T' } as TrackMetadata
-    runWorkerJob({ type: 'writeTags', file: '/out/a.mp3', meta, cueSource: '/in.mp3' })
-    expect(writeTags).toHaveBeenCalledWith('/out/a.mp3', meta, undefined, undefined, '/in.mp3')
+    runWorkerJob({
+      type: 'writeTags',
+      file: '/out/a.mp3',
+      meta,
+      cueSource: '/in.mp3',
+      cueShift: { shiftMs: 1300 },
+    })
+    expect(writeTags).toHaveBeenCalledWith('/out/a.mp3', meta, undefined, undefined, '/in.mp3', {
+      shiftMs: 1300,
+    })
   })
 
-  it('routes cue copies with source and destination in order', () => {
-    runWorkerJob({ type: 'copyCueFrames', source: '/in.mp3', dest: '/out.mp3' })
-    expect(copyCueFrames).toHaveBeenCalledWith('/in.mp3', '/out.mp3')
+  it('routes cue copies with source, destination and the trim shift in order', () => {
+    runWorkerJob({
+      type: 'copyCueFrames',
+      source: '/in.mp3',
+      dest: '/out.mp3',
+      shift: { shiftMs: 1300, maxMs: 240000 },
+    })
+    expect(copyCueFrames).toHaveBeenCalledWith('/in.mp3', '/out.mp3', {
+      shiftMs: 1300,
+      maxMs: 240000,
+    })
   })
 })

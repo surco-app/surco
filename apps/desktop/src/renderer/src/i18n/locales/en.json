@@ -493,7 +493,7 @@
     "applyStart": "Cut {{seconds}} from the start",
     "applyEnd": "Cut {{seconds}} from the end",
     "applyAll_other": "Trim detected silence on {{count}} tracks",
-    "cueWarning": "Re-encodes the audio and shifts any saved DJ cues and beatgrid by the trimmed amount.",
+    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid stored in the file are re-anchored to the cut; WAV and FLAC lose them.",
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
     "auditionStart": "Hear the start",

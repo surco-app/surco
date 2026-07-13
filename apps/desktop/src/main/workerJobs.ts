@@ -2,7 +2,7 @@ import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
-import { copyCueFrames, writeTags } from './tags'
+import { copyCueFrames, type CueShift, writeTags } from './tags'
 import { detectBpm } from './tempo'
 
 // The CPU-bound work that must never run on the main process's event loop: the
@@ -19,11 +19,13 @@ export type WorkerJob =
       meta: TrackMetadata
       coverPath?: string
       removeCover?: boolean
-      // Carries this file's GEOB cue frames over in the same TagLib save,
-      // sparing the separate copyCueFrames rewrite (see tags.ts).
+      // Carries this file's cue frames over in the same TagLib save, sparing
+      // the separate copyCueFrames rewrite (see tags.ts). cueShift re-anchors
+      // them when a trim moved the audio underneath.
       cueSource?: string
+      cueShift?: CueShift
     }
-  | { type: 'copyCueFrames'; source: string; dest: string }
+  | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
@@ -39,10 +41,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult {
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'writeTags':
-      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource)
+      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource, job.cueShift)
       return null
     case 'copyCueFrames':
-      copyCueFrames(job.source, job.dest)
+      copyCueFrames(job.source, job.dest, job.shift)
       return null
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)

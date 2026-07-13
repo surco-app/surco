@@ -834,6 +834,22 @@ export async function normalizeFilter(
     : limitedLoudnormFilter(cfg, measured, sampleRate)
 }
 
+// The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
+// move back by the head cut and clamp to the trimmed length when the tail was
+// cut too. Undefined while no trim filter ran — the carried frames then stay
+// byte-exact, as they always did for plain re-encodes and constant gains.
+function cueShiftFor(
+  trim: TrimRange | undefined,
+  active: boolean,
+): { shiftMs: number; maxMs?: number } | undefined {
+  if (!active || !trim) return undefined
+  const startSec = trim.startSec ?? 0
+  return {
+    shiftMs: Math.round(startSec * 1000),
+    maxMs: trim.endSec !== undefined ? Math.round((trim.endSec - startSec) * 1000) : undefined,
+  }
+}
+
 // The temp file a conversion renders into before the rename over the final output.
 // Unique per call: bulk runs convert several tracks in parallel, and two tracks whose
 // metadata resolves to the same output name would otherwise share one deterministic
@@ -980,17 +996,30 @@ export async function convertAudio(
         // avoid a second tag pass on every conversion. cueSource folds the cue
         // carry-over (below) into this same save, so the rating never costs a
         // second whole-file rewrite on top of it.
-        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, cueSource: input })
+        await runInWorker({
+          type: 'writeTags',
+          file: tmp,
+          meta,
+          coverPath,
+          cueSource: input,
+          cueShift: cueShiftFor(trim, trimAf !== undefined),
+        })
       }
-      // Any re-encode through ffmpeg drops Traktor's GEOB cue/beatgrid frame — a
+      // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
       // plain format change just as much as a normalizing gain pass. Neither moves
       // the cues in time (a constant gain doesn't, and the decoded sample timeline
-      // is preserved across formats), so carry the frame over from the source for
-      // the ID3 containers it round-trips through, restoring cues on every encode
-      // rather than only when normalizing. A rated MP3/AIFF already carried them
-      // in its writeTags pass above.
+      // is preserved across formats), so carry the frames over from the source for
+      // the ID3 containers they round-trip through, restoring cues on every encode
+      // rather than only when normalizing. A trim DOES move the audio under them,
+      // so the shift re-anchors each stored position (see tags.ts). A rated
+      // MP3/AIFF already carried them in its writeTags pass above.
       else if (preservesCuesInPlace(ext))
-        await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp })
+        await runInWorker({
+          type: 'copyCueFrames',
+          source: input,
+          dest: tmp,
+          shift: cueShiftFor(trim, trimAf !== undefined),
+        })
     }
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's

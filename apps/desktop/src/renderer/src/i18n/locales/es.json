@@ -493,7 +493,7 @@
     "applyStart": "Recortar {{seconds}} del inicio",
     "applyEnd": "Recortar {{seconds}} del final",
     "applyAll_other": "Recortar el silencio detectado en {{count}} pistas",
-    "cueWarning": "Recodifica el audio y desplaza los cues y el beatgrid guardados tanto como el recorte.",
+    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor guardados en el archivo se recolocan según el recorte; en WAV y FLAC se pierden.",
     "handleStart": "Inicio del recorte",
     "handleEnd": "Final del recorte",
     "auditionStart": "Escuchar el inicio",

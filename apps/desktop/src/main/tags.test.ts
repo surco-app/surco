@@ -13,6 +13,7 @@ import {
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
+import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 // Strips the GEOB cue frame from a file, to model the output of a normalizing
 // ffmpeg re-encode (which drops it) before copyCueFrames puts it back.
@@ -405,6 +406,93 @@ describe('copyCueFrames', () => {
     const bytes = readFileSync(out)
     expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
     expect(bytes.includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(true)
+  })
+
+  // Builds an MP3 whose Traktor data lives where real Traktor puts it: an ID3
+  // PRIV frame owned "TRAKTOR4" carrying the binary cue tree.
+  function buildPrivSeed(dir: string, tree: Uint8Array): string {
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const priv = frame(
+      'PRIV',
+      Buffer.concat([Buffer.from('TRAKTOR4', 'latin1'), Buffer.from([0]), Buffer.from(tree)]),
+    )
+    const body = priv
+    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const path = join(dir, 'priv-seed.mp3')
+    writeFileSync(path, Buffer.concat([header, body, audio]))
+    return path
+  }
+
+  function readPrivTree(file: string): Uint8Array | null {
+    const bytes = readFileSync(file)
+    const owner = Buffer.from('TRAKTOR4\0', 'latin1')
+    const at = bytes.indexOf(owner)
+    if (at === -1) return null
+    const tree = bytes.subarray(at + owner.length)
+    const len = tree.readUInt32LE(4)
+    return new Uint8Array(tree.subarray(0, 12 + len))
+  }
+
+  // The PRIV frame is how real Traktor-written MP3s carry their cues; before this
+  // path existed the copy only knew GEOB, so an MP3 re-encode silently lost them.
+  it('carries the Traktor PRIV frame over verbatim without a trim', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 61234.5, 1)])
+    const source = buildPrivSeed(dir, tree)
+    const out = join(dir, 'normalized.mp3')
+    writeFileSync(out, readFileSync(buildSeed(dir)))
+    stripCues(out)
+
+    copyCueFrames(source, out)
+
+    const carried = readPrivTree(out)
+    expect(carried).not.toBeNull()
+    expect(Buffer.from(carried as Uint8Array).equals(Buffer.from(tree))).toBe(true)
+  })
+
+  // djotas's report: after a trim the audio moved under the stored cues. The copy
+  // must re-anchor every position (and the checksum, or Traktor ignores the frame).
+  it('re-anchors the Traktor cues by the trim and clamps into-the-cut positions', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const tree = buildTraktorTree([traktorCue('AutoGrid', 4, 65.61, 0), traktorCue('Drop', 0, 61234.5, 1)])
+    const source = buildPrivSeed(dir, tree)
+    const out = join(dir, 'trimmed.mp3')
+    writeFileSync(out, readFileSync(buildSeed(dir)))
+    stripCues(out)
+
+    copyCueFrames(source, out, { shiftMs: 1300 })
+
+    const carried = readPrivTree(out)
+    expect(carried).not.toBeNull()
+    expect(readTraktorCueStart(carried as Uint8Array, 0)).toBeCloseTo(0)
+    expect(readTraktorCueStart(carried as Uint8Array, 1)).toBeCloseTo(59934.5)
+  })
+
+  // A blob we can't re-anchor (unknown variant, corrupt) must be dropped, never
+  // carried pointing at the wrong beats — and the opaque GEOB blobs join it when a
+  // trim moved the audio, for the same reason.
+  it('drops un-anchorable frames when a trim moved the audio', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 61234.5, 1)])
+    tree[tree.length - 6] ^= 0xff // break the checksum inside the summed span
+    const source = buildPrivSeed(dir, tree)
+    const out = join(dir, 'trimmed.mp3')
+    writeFileSync(out, readFileSync(buildSeed(dir)))
+    stripCues(out)
+
+    copyCueFrames(source, out, { shiftMs: 1300 })
+
+    expect(readPrivTree(out)).toBeNull()
+    expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
   })
 
   it('leaves the output untouched when the source carries no cue frame', () => {

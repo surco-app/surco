@@ -1,10 +1,12 @@
 import { extname } from 'node:path'
 import {
+  ByteVector,
   Id3v2AttachmentFrame,
   type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
+  Id3v2PrivateFrame,
   type Id3v2Tag,
   Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
@@ -13,6 +15,7 @@ import {
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
+import { shiftTraktorCues } from './traktor4'
 import {
   starsToRating,
   starsToWmpRating,
@@ -39,22 +42,34 @@ export function preservesCuesInPlace(ext: string): boolean {
   return ID3_IN_PLACE.has(ext.toLowerCase())
 }
 
-// Carries Traktor's GEOB cue/beatgrid frame from a source file into a freshly
-// converted one. Normalizing re-encodes the audio through ffmpeg, which drops the
-// frame — but a constant gain never shifts the cues in time, so copying the frame
-// verbatim restores them exactly. GEOB is copied as a whole frame (via clone) and
-// never parsed: its body is an opaque Traktor blob that TagLib's attachment parser
-// can choke on. Best-effort — any failure leaves the (already valid) output as-is
-// rather than aborting the conversion. Only meaningful for ID3 containers.
-export function copyCueFrames(source: string, dest: string): void {
+// A trim moved the audio under the stored cues: shift every position back by
+// shiftMs and clamp what remains to maxMs (the trimmed length) when the tail
+// was cut too. Millisecond units, like Traktor's own cue positions.
+export interface CueShift {
+  shiftMs: number
+  maxMs?: number
+}
+
+// Carries Traktor's cue/beatgrid frames from a source file into a freshly
+// converted one. Traktor stores them in an ID3 PRIV frame owned "TRAKTOR4"
+// (what real Traktor-written MP3s carry) and historically in GEOB; ffmpeg's
+// re-encode drops both. A constant gain never shifts the cues in time, so
+// without a trim the frames are cloned verbatim. With a trim the audio moved
+// under them: PRIV bodies are re-anchored through shiftTraktorCues (checksum
+// recomputed, or Traktor ignores the frame), and a frame that can't be
+// re-anchored — an unknown variant, or the opaque GEOB blobs — is dropped
+// rather than carried provably pointing at the wrong beats. Best-effort — any
+// failure leaves the (already valid) output as-is rather than aborting the
+// conversion. Only meaningful for ID3 containers.
+export function copyCueFrames(source: string, dest: string, shift?: CueShift): void {
   try {
-    const cues = readCueFrames(source)
+    const cues = applyCueShift(readCueFrames(source), shift)
     if (cues.length === 0) return
 
     const out = TagFile.createFromPath(dest)
     try {
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
-      tag.removeFrames(Id3v2FrameIdentifiers.GEOB)
+      removeCueFrames(tag)
       for (const frame of cues) tag.addFrame(frame)
       out.save()
     } finally {
@@ -65,22 +80,48 @@ export function copyCueFrames(source: string, dest: string): void {
   }
 }
 
+function isTraktorPriv(frame: Id3v2Frame): frame is Id3v2PrivateFrame {
+  return frame instanceof Id3v2PrivateFrame && frame.owner === 'TRAKTOR4'
+}
+
+// Drops the frames a cue carry-over is about to rewrite: every GEOB, and the
+// Traktor PRIV specifically — other PRIV owners on the destination stay.
+function removeCueFrames(tag: Id3v2Tag): void {
+  tag.removeFrames(Id3v2FrameIdentifiers.GEOB)
+  for (const frame of tag.frames.filter(isTraktorPriv)) tag.removeFrame(frame)
+}
+
 // The read half of copyCueFrames, also used by writeTags' cueSource merge: clones
-// the source's GEOB frames without parsing their opaque Traktor blobs. Best-effort
-// like the copy itself — an unreadable source yields no cues, never an error.
+// the source's GEOB frames (opaque blobs TagLib's attachment parser can choke on,
+// so never parsed) plus the PRIV "TRAKTOR4" frame real Traktor MP3s carry.
+// Best-effort like the copy itself — an unreadable source yields no cues.
 function readCueFrames(source: string): Id3v2Frame[] {
   try {
     const src = TagFile.createFromPath(source)
     try {
       const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      const geob = tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB') ?? []
-      return geob.map((fr) => fr.clone())
+      const cues =
+        tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB' || isTraktorPriv(fr)) ?? []
+      return cues.map((fr) => fr.clone())
     } finally {
       src.dispose()
     }
   } catch {
     return []
   }
+}
+
+// Applies a trim's re-anchoring to the carried frames; without a shift they pass
+// through verbatim (a plain format change or gain never moves the cues in time).
+function applyCueShift(frames: Id3v2Frame[], shift?: CueShift): Id3v2Frame[] {
+  if (!shift) return frames
+  return frames.flatMap((frame) => {
+    if (!isTraktorPriv(frame)) return []
+    const patched = shiftTraktorCues(frame.privateData.toByteArray(), shift.shiftMs, shift.maxMs)
+    if (!patched) return []
+    frame.privateData = ByteVector.fromByteArray(patched)
+    return [frame]
+  })
 }
 
 const toNumber = (value: string): number => {
@@ -157,17 +198,19 @@ function setRating(tag: Id3v2Tag, stars: string): void {
 // written as empty so clearing a value in the editor clears it on disk too,
 // matching the metadata the ffmpeg path would have produced. `removeCover` drops
 // the embedded art with no replacement, for when the user clears the artwork.
-// `cueSource` carries the GEOB cue frames over from that file in this same save —
+// `cueSource` carries the cue frames over from that file in this same save —
 // TagLib's save can rewrite the whole file, so a conversion that needs both the
 // rating and the cues merges them into one pass instead of rewriting a 100MB+
-// AIFF twice. ID3 targets only; the m4a early-return below ignores it, matching
-// copyCueFrames' scope.
+// AIFF twice. `cueShift` re-anchors them when a trim moved the audio, exactly
+// like copyCueFrames. ID3 targets only; the m4a early-return below ignores it,
+// matching copyCueFrames' scope.
 export function writeTags(
   file: string,
   meta: TrackMetadata,
   coverPath?: string,
   removeCover = false,
   cueSource?: string,
+  cueShift?: CueShift,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -252,9 +295,9 @@ export function writeTags(
     }
 
     if (cueSource) {
-      const cues = readCueFrames(cueSource)
+      const cues = applyCueShift(readCueFrames(cueSource), cueShift)
       if (cues.length > 0) {
-        id3.removeFrames(Id3v2FrameIdentifiers.GEOB)
+        removeCueFrames(id3)
         for (const frame of cues) id3.addFrame(frame)
       }
     }

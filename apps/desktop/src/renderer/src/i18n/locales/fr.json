@@ -493,7 +493,7 @@
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",
     "applyAll_other": "Rogner le silence détecté sur {{count}} morceaux",
-    "cueWarning": "Ré-encode l'audio et décale les points cue et le beatgrid enregistrés de la durée rognée.",
+    "cueWarning": "Ré-encode l'audio. Les cues et le beatgrid Traktor enregistrés dans le fichier sont réalignés sur la coupe ; en WAV et FLAC ils sont perdus.",
     "handleStart": "Début du rognage",
     "handleEnd": "Fin du rognage",
     "auditionStart": "Écouter le début",

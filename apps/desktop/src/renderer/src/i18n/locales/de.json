@@ -493,7 +493,7 @@
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",
     "applyAll_other": "Erkannte Stille in {{count}} Tracks abschneiden",
-    "cueWarning": "Codiert das Audio neu und verschiebt gespeicherte DJ-Cues und das Beatgrid um den gekürzten Betrag.",
+    "cueWarning": "Codiert das Audio neu. In der Datei gespeicherte Traktor-Cues und das Beatgrid werden an den Schnitt angepasst; bei WAV und FLAC gehen sie verloren.",
     "handleStart": "Schnittanfang",
     "handleEnd": "Schnittende",
     "auditionStart": "Anfang anhören",
