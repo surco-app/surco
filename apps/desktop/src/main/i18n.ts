@@ -30,6 +30,9 @@ interface MenuStrings {
   faq: string
   guide: string
   website: string
+  // The About panel's credits block: authorship and the people whose ideas and
+  // feedback shape Surco.
+  aboutCredits: string
   checkUpdates: string
   upToDate: string
   updateError: string
@@ -71,6 +74,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     faq: 'Preguntas frecuentes',
     guide: 'Guía de uso',
     website: 'Sitio web de Surco',
+    aboutCredits:
+      'Hecha con cariño por Vicent Gozalbes — vigosan@gmail.com\nGracias a @djotas y a todas las personas que aportan ideas y feedback.\ngetsurco.app',
     checkUpdates: 'Buscar actualizaciones…',
     upToDate: 'Ya tienes la última versión de Surco.',
     updateError: 'No se pudo comprobar si hay actualizaciones.',
@@ -111,6 +116,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     faq: 'Frequently Asked Questions',
     guide: 'User guide',
     website: 'Surco website',
+    aboutCredits:
+      'Made with care by Vicent Gozalbes — vigosan@gmail.com\nThanks to @djotas and everyone who shares ideas and feedback.\ngetsurco.app',
     checkUpdates: 'Check for Updates…',
     upToDate: "You're on the latest version of Surco.",
     updateError: 'Could not check for updates.',
@@ -151,6 +158,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     faq: 'Häufige Fragen',
     guide: 'Benutzerhandbuch',
     website: 'Surco-Website',
+    aboutCredits:
+      'Mit Sorgfalt gemacht von Vicent Gozalbes — vigosan@gmail.com\nDanke an @djotas und alle, die Ideen und Feedback beisteuern.\ngetsurco.app',
     checkUpdates: 'Nach Updates suchen…',
     upToDate: 'Du hast bereits die neueste Version von Surco.',
     updateError: 'Nach Updates konnte nicht gesucht werden.',
@@ -190,6 +199,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     faq: 'Questions fréquentes',
     guide: 'Guide d\'utilisation',
     website: 'Site web de Surco',
+    aboutCredits:
+      'Fait avec soin par Vicent Gozalbes — vigosan@gmail.com\nMerci à @djotas et à toutes les personnes qui partagent idées et retours.\ngetsurco.app',
     checkUpdates: 'Rechercher les mises à jour…',
     upToDate: 'Tu as déjà la dernière version de Surco.',
     updateError: 'Impossible de vérifier les mises à jour.',
@@ -229,6 +240,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     faq: 'Perguntas frequentes',
     guide: 'Guia de uso',
     website: 'Site do Surco',
+    aboutCredits:
+      'Feito com carinho por Vicent Gozalbes — vigosan@gmail.com\nObrigado a @djotas e a todos que compartilham ideias e feedback.\ngetsurco.app',
     checkUpdates: 'Buscar atualizações…',
     upToDate: 'Você já tem a versão mais recente do Surco.',
     updateError: 'Não foi possível verificar se há atualizações.',

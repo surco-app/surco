@@ -188,6 +188,10 @@ function checkForUpdates(win: BrowserWindow): void {
 
 function buildAppMenu(win: BrowserWindow): void {
   const t = createMenuT(menuLocale())
+  // The About panel's credits follow the menu's language: the menu rebuilds on
+  // every Settings language change, so refreshing them here keeps the panel in
+  // step without its own listener (options merge over the boot-time defaults).
+  app.setAboutPanelOptions({ credits: t('aboutCredits') })
   // Every custom item triggers a command by id, the same registry the palette
   // and keyboard shortcuts use. Items whose accelerator is already owned by the
   // renderer keymap pass registerAccelerator:false so the shortcut shows in the
@@ -992,7 +996,10 @@ app.setAboutPanelOptions({
   applicationName: 'Surco',
   applicationVersion: app.getVersion(),
   version: '',
-  credits: 'getsurco.app\nhello@vicent.io',
+  // The boot-time default; buildAppMenu refreshes the credits in the Settings
+  // language (with the authorship and thanks) once the locale is known.
+  credits:
+    'Made with care by Vicent Gozalbes — vigosan@gmail.com\nThanks to @djotas and everyone who shares ideas and feedback.\ngetsurco.app',
   copyright: `© ${new Date().getFullYear()} Vicent Gozalbes`,
   website: 'https://getsurco.app',
 })
