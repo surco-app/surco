@@ -6,7 +6,8 @@
 // binary beyond the ffmpeg decode that produces the PCM, and it unit-tests on
 // synthesized signals without spawning anything.
 
-import type { BpmResult } from '../shared/types'
+import type { BeatgridResult, BpmResult } from '../shared/types'
+import { snapAnchor } from '../shared/beatgrid'
 
 // The rate ffmpeg decodes to before analysis. Beat energy lives far below
 // this Nyquist, so a low rate costs no accuracy while keeping minutes of
@@ -31,26 +32,31 @@ const MAX_BPM = 180
 // null beats suggesting a confident-looking random number.
 const MIN_CONFIDENCE = 0.25
 
-export function detectBpm(samples: Float32Array, sampleRate: number): BpmResult | null {
-  const fps = sampleRate / HOP
-  const minLag = Math.floor((60 * fps) / MAX_BPM)
-  const maxLag = Math.ceil((60 * fps) / MIN_BPM)
+// Half-wave rectified energy flux per hop: rising energy only, so it spikes on
+// every percussive hit. Decays and sustains carry no beat information and
+// would smear both the correlation peaks and the phase fold.
+function onsetEnvelope(samples: Float32Array): Float32Array {
   const frames = Math.floor(samples.length / HOP)
-  // Fewer than ~8 beat periods of envelope can't average out spurious
-  // correlations; refuse rather than guess from a clip that short.
-  if (frames < maxLag * 8) return null
-
   const energy = new Float32Array(frames)
   for (let f = 0; f < frames; f++) {
     let sum = 0
     for (let i = f * HOP; i < (f + 1) * HOP; i++) sum += samples[i] * samples[i]
     energy[f] = Math.sqrt(sum / HOP)
   }
-
-  // Half-wave rectified flux: rising energy only. Decays and sustains carry
-  // no beat information and would smear the correlation peaks.
   const env = new Float32Array(frames)
   for (let f = 1; f < frames; f++) env[f] = Math.max(0, energy[f] - energy[f - 1])
+  return env
+}
+
+export function detectBpm(samples: Float32Array, sampleRate: number): BpmResult | null {
+  const fps = sampleRate / HOP
+  const minLag = Math.floor((60 * fps) / MAX_BPM)
+  const maxLag = Math.ceil((60 * fps) / MIN_BPM)
+  const env = onsetEnvelope(samples)
+  const frames = env.length
+  // Fewer than ~8 beat periods of envelope can't average out spurious
+  // correlations; refuse rather than guess from a clip that short.
+  if (frames < maxLag * 8) return null
 
   // Remove the mean so the autocorrelation measures periodicity, not the
   // envelope's DC level — without this a busy but beatless signal correlates
@@ -122,4 +128,46 @@ export function detectBpm(samples: Float32Array, sampleRate: number): BpmResult 
   }
 
   return { bpm: (60 * fps) / period, confidence: Math.min(1, bestValue) }
+}
+
+// Locates the beat phase for the tempo detectBpm found, by folding the onset
+// envelope onto the beat period: every frame's flux lands in the bin of its
+// position within a beat, and with a steady beat one bin towers over the rest.
+// The fold uses the raw rectified envelope, not the mean-subtracted one the
+// autocorrelation needs — phase energy must stay non-negative or off-beat bins
+// could cancel the peak. Recomputing the envelope costs one O(samples) pass,
+// noise next to the O(frames·lags) autocorrelation detectBpm just ran.
+export function detectBeatgrid(
+  samples: Float32Array,
+  sampleRate: number,
+): BeatgridResult | null {
+  const result = detectBpm(samples, sampleRate)
+  if (!result) return null
+
+  const env = onsetEnvelope(samples)
+  const fps = sampleRate / HOP
+  const period = (60 * fps) / result.bpm
+  const bins = Math.ceil(period)
+  const fold = new Float64Array(bins)
+  for (let f = 0; f < env.length; f++) {
+    const phase = f % period
+    fold[Math.min(bins - 1, Math.floor((phase / period) * bins))] += env[f]
+  }
+
+  let best = 0
+  for (let b = 1; b < bins; b++) if (fold[b] > fold[best]) best = b
+
+  // Sub-bin refinement over circular neighbours, same parabola as the
+  // autocorrelation's. A frame is ~11.6 ms; without this the anchor quantizes
+  // to frames and the ±20 ms accuracy contract gets no margin.
+  const before = fold[(best - 1 + bins) % bins]
+  const after = fold[(best + 1) % bins]
+  const denom = before - 2 * fold[best] + after
+  const offset = denom === 0 ? 0 : Math.max(-0.5, Math.min(0.5, (0.5 * (before - after)) / denom))
+
+  // +0.5 reads the bin at its centre: a hit anywhere inside frame f folds into
+  // bin f, so the unbiased estimate of where it struck is mid-frame.
+  const phaseFrames = ((best + 0.5 + offset) / bins) * period
+  const anchorSec = snapAnchor((phaseFrames * HOP) / sampleRate, result.bpm)
+  return { bpm: result.bpm, confidence: result.confidence, anchorSec }
 }
