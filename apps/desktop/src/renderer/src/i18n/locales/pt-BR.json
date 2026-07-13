@@ -520,6 +520,7 @@
     "resetHint": "Voltar à grade detectada",
     "audition": "Ouvir a grade",
     "handleAnchor": "Âncora da grade",
+    "overview": "Visão geral — pressione para mover a vista de trabalho",
     "anchorAt": "Primeiro beat em {{seconds}} s"
   },
   "normalize": {

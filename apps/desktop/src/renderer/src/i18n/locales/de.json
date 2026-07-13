@@ -520,6 +520,7 @@
     "resetHint": "Zurück zum erkannten Grid",
     "audition": "Grid anhören",
     "handleAnchor": "Grid-Anker",
+    "overview": "Track-Übersicht — drücken, um die Arbeitsansicht zu bewegen",
     "anchorAt": "Erster Beat bei {{seconds}} s"
   },
   "normalize": {

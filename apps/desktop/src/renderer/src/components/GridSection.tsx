@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
 import { mediaUrl } from '../../../shared/media'
@@ -20,6 +20,7 @@ import { useBeatgrid } from '../hooks/useBeatgrid'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
+import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
@@ -38,6 +39,11 @@ const DRAG_THRESHOLD_PX = 3
 // tempo — enough to hear whether the clicks ride the transients, short enough
 // to stay a check instead of a listen.
 const AUDITION_SEC = 8
+// Where the working lane opens: rekordbox-style, the overview lane above shows
+// the whole track, so the lane grid work happens in starts at working depth —
+// ~9 s of a typical track in view, transients and beat lines both readable —
+// instead of asking for a zoom-in from ×1 on every single track.
+const WORK_ZOOM = 32
 
 interface Props {
   value: Beatgrid | undefined
@@ -67,7 +73,7 @@ export function GridSection({
   const { data: detected } = useBeatgrid(inputPath, open && settled)
   const loading = isFetching && !wave
   const durationSec = wave?.durationSec ?? 0
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(WORK_ZOOM)
   const [view, setView] = useState({ from: 0, to: 1 })
   // The live grid while dragging; committed to the track (onChange) only on
   // release, so a drag doesn't spray staleness/session updates per pixel.
@@ -84,6 +90,70 @@ export function GridSection({
     () => (shown && durationSec > 0 ? gridLines(shown, durationSec, view) : []),
     [shown, durationSec, view],
   )
+
+  // The overview lane: the whole track at 100% width, a slim strip below the
+  // zoomed working lane. It never zooms; it navigates — press or scrub and the
+  // working window above centers there — and it wears the visible-window block
+  // (the rest dimmed), sparse bar ticks and the audition playhead so "where am
+  // I" is always answered.
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const overviewRef = useRef<HTMLDivElement>(null)
+  const overviewCanvasRef = useRef<HTMLCanvasElement>(null)
+  const scrubbing = useRef(false)
+  const overviewLines = useMemo(
+    () => (shown && durationSec > 0 ? gridLines(shown, durationSec, { from: 0, to: 1 }) : []),
+    [shown, durationSec],
+  )
+  useEffect(() => {
+    const canvas = overviewCanvasRef.current
+    if (!canvas || !wave) return
+    drawWaveform(canvas, wave.peaks, { color: AFTER_COLOR })
+  }, [wave])
+
+  function centerOn(ratio: number): void {
+    const el = scrollerRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    if (max <= 0) return
+    el.scrollLeft = Math.min(max, Math.max(0, ratio * el.scrollWidth - el.clientWidth / 2))
+  }
+
+  function overviewRatio(clientX: number): number {
+    const rect = overviewRef.current?.getBoundingClientRect()
+    if (!rect || rect.width === 0) return 0
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  }
+
+  // At ×1 there is no window to move, so navigating first restores the working
+  // depth; the scroll must then wait for the stretched width to exist, hence the
+  // pending ratio applied by the layout effect below — which runs after the
+  // strip's own zoom re-anchoring, so the pressed spot wins.
+  const pendingCenter = useRef<number | null>(null)
+  function navigate(ratio: number): void {
+    if (zoom <= 1) {
+      pendingCenter.current = ratio
+      setZoom(WORK_ZOOM)
+      return
+    }
+    centerOn(ratio)
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: centerOn reads refs only — the zoom flip that staged the pending ratio is the one trigger this needs.
+  useLayoutEffect(() => {
+    const ratio = pendingCenter.current
+    if (ratio === null) return
+    pendingCenter.current = null
+    centerOn(ratio)
+  }, [zoom])
+
+  // Open looking at the anchor (the first beat, or wherever the user last
+  // anchored the grid), not at whatever scroll position ×32 happens to start on.
+  const centeredOnce = useRef(false)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on the wave landing — re-centering on every grid edit (`shown`) would yank the view mid-work.
+  useEffect(() => {
+    if (!wave || durationSec <= 0 || centeredOnce.current) return
+    centeredOnce.current = true
+    centerOn((shown?.anchorSec ?? 0) / durationSec)
+  }, [wave, durationSec])
 
   function secondsAt(clientX: number): number {
     const el = overlayRef.current
@@ -442,6 +512,7 @@ export function GridSection({
                 onZoomChange={setZoom}
                 inputPath={inputPath}
                 onViewChange={setView}
+                scrollerRef={scrollerRef}
                 // No red clip marks: the eye is lining hairlines up with
                 // transients, and on a hot master the flags paint half the
                 // strip red — noise for this job.
@@ -535,6 +606,94 @@ export function GridSection({
                   </div>
                 )}
               </Strip>
+              {wave && durationSec > 0 && (
+                <div
+                  ref={overviewRef}
+                  data-testid="grid-overview"
+                  role="slider"
+                  aria-label={tr('grid.overview')}
+                  aria-valuemin={0}
+                  aria-valuemax={Number(durationSec.toFixed(2))}
+                  aria-valuenow={Number((((view.from + view.to) / 2) * durationSec).toFixed(2))}
+                  tabIndex={0}
+                  className="relative mt-1.5 h-6 cursor-pointer touch-none overflow-hidden rounded-md focus-visible:outline-1 focus-visible:outline-accent"
+                  onPointerDown={(e) => {
+                    scrubbing.current = true
+                    e.currentTarget.setPointerCapture?.(e.pointerId)
+                    navigate(overviewRatio(e.clientX))
+                  }}
+                  onPointerMove={(e) => {
+                    if (scrubbing.current) navigate(overviewRatio(e.clientX))
+                  }}
+                  onPointerUp={() => {
+                    scrubbing.current = false
+                  }}
+                  onPointerCancel={() => {
+                    scrubbing.current = false
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                    e.preventDefault()
+                    const span = view.to - view.from
+                    const centre =
+                      (view.from + view.to) / 2 + (e.key === 'ArrowLeft' ? -span / 2 : span / 2)
+                    navigate(Math.min(1, Math.max(0, centre)))
+                  }}
+                >
+                  <canvas
+                    ref={overviewCanvasRef}
+                    width={OVERLAY_W}
+                    height={36}
+                    className="block h-6 w-full rounded-md bg-[var(--color-field)]"
+                  />
+                  {/* The grid's bar ticks, dimmed: enough to see where the grid
+                      sits across the whole track, quiet enough not to compete
+                      with the working lane's lines. */}
+                  {overviewLines.map((line) => (
+                    <span
+                      key={line.sec}
+                      data-testid="grid-overview-tick"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-1.5 w-px -translate-x-1/2 bg-[var(--color-warn)]/60"
+                      style={{ left: `${line.pct}%` }}
+                    />
+                  ))}
+                  {playheadSec !== null && (
+                    <span
+                      data-testid="grid-overview-playhead"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 w-px bg-fg"
+                      style={{ left: `${pct(playheadSec)}%` }}
+                    />
+                  )}
+                  {/* The working window reads as the one clear block: everything
+                      outside it dims (the trim shades' treatment), so the strip
+                      above is visibly "this slice of the whole". */}
+                  {zoom > 1 && (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 left-0 bg-[var(--color-panel)]/70"
+                        style={{ width: `${view.from * 100}%` }}
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 right-0 bg-[var(--color-panel)]/70"
+                        style={{ width: `${(1 - view.to) * 100}%` }}
+                      />
+                      <span
+                        data-testid="grid-overview-window"
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 rounded-sm border border-fg/40"
+                        style={{
+                          left: `${view.from * 100}%`,
+                          width: `${Math.max(0.4, (view.to - view.from) * 100)}%`,
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

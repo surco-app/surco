@@ -106,6 +106,7 @@ export function Strip({
   onZoomChange,
   inputPath,
   onViewChange,
+  scrollerRef,
   children,
 }: StripData & {
   color: string
@@ -135,6 +136,9 @@ export function Strip({
   // tracks for its deep zoom, so an overlay can render only what shows — the
   // grid section's beat lines would be thousands of nodes drawn full-length.
   onViewChange?: (view: { from: number; to: number }) => void
+  // Hands the scroll container out, so a parent can drive the visible window —
+  // the grid section's overview lane navigates by setting scrollLeft here.
+  scrollerRef?: React.RefObject<HTMLDivElement | null>
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -330,7 +334,11 @@ export function Strip({
     // (the hover chip at an edge) must be clipped, never grow a vertical scrollbar
     // that jiggles the wave under the cursor.
     <div
-      ref={scrollRef}
+      ref={(el) => {
+        scrollRef.current = el
+        if (scrollerRef) scrollerRef.current = el
+      }}
+      data-testid="waveform-scroller"
       className={`overflow-y-hidden rounded-lg ${zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}
     >
       <div

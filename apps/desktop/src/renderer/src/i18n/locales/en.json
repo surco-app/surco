@@ -520,6 +520,7 @@
     "resetHint": "Back to the detected grid",
     "audition": "Hear the grid",
     "handleAnchor": "Grid anchor",
+    "overview": "Track overview — press to move the working view",
     "anchorAt": "First beat at {{seconds}} s"
   },
   "normalize": {

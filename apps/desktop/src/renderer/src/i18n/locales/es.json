@@ -520,6 +520,7 @@
     "resetHint": "Volver a la rejilla detectada",
     "audition": "Escuchar la rejilla",
     "handleAnchor": "Ancla de la rejilla",
+    "overview": "Vista general — pulsa para mover la vista de trabajo",
     "anchorAt": "Primer beat en {{seconds}} s"
   },
   "normalize": {

@@ -520,6 +520,7 @@
     "resetHint": "Revenir à la grille détectée",
     "audition": "Écouter la grille",
     "handleAnchor": "Ancre de la grille",
+    "overview": "Vue d'ensemble — appuyez pour déplacer la vue de travail",
     "anchorAt": "Premier beat à {{seconds}} s"
   },
   "normalize": {

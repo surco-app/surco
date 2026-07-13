@@ -61,6 +61,9 @@ beforeEach(() => {
   ;(window as unknown as { api: unknown }).api = {
     beatgrid: vi.fn().mockResolvedValue(detected),
     waveform: vi.fn().mockResolvedValue(wave()),
+    // The working lane opens past the hi-res threshold now, so its windowed
+    // re-decode fires on mount; null keeps it on the stretched overview.
+    waveformWindow: vi.fn().mockResolvedValue(null),
   }
 })
 
@@ -79,6 +82,23 @@ function section(over: Partial<React.ComponentProps<typeof GridSection>> = {}): 
       />
     </QueryClientProvider>
   )
+}
+
+// Real strips are hundreds of px wide; jsdom rects are 0×0, which would land
+// every press "on" a line. A fixed rect gives the grab tests real geometry:
+// 6000 px over 60 s → a beat every 50 px at 120 BPM.
+function stubOverlayRect(): void {
+  HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: 6000,
+    bottom: 100,
+    width: 6000,
+    height: 100,
+    toJSON: () => ({}),
+  })) as unknown as typeof HTMLElement.prototype.getBoundingClientRect
 }
 
 describe('GridSection header', () => {
@@ -227,23 +247,6 @@ describe('GridSection grid', () => {
     await waitFor(() => expect(probe).toHaveBeenCalledWith('/in/track.wav', true))
   })
 
-  // Real strips are hundreds of px wide; jsdom rects are 0×0, which would land
-  // every press "on" a line. A fixed rect gives the grab tests real geometry:
-  // 6000 px over 60 s → a beat every 50 px at 120 BPM.
-  function stubOverlayRect(): void {
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
-      x: 0,
-      y: 0,
-      top: 0,
-      left: 0,
-      right: 6000,
-      bottom: 100,
-      width: 6000,
-      height: 100,
-      toJSON: () => ({}),
-    })) as unknown as typeof HTMLElement.prototype.getBoundingClientRect
-  }
-
   // Grabbing a beat line and dragging slides the whole grid — the rekordbox
   // gesture — and commits once, on release.
   it('slides the phase by dragging a beat line', async () => {
@@ -300,3 +303,46 @@ describe('GridSection grid', () => {
     expect(play).toHaveBeenCalled()
   })
 })
+
+// The rekordbox-style two-lane layout, by user feedback: working the grid in
+// one strip meant zooming in from ×1 on every track and crawling along a tiny
+// scrollbar. A slim overview lane under the working strip always shows the
+// whole track and navigates with one press or scrub; the working lane above is
+// where grid work happens, so it opens at working depth, not at the overview.
+describe('GridSection two-lane layout', () => {
+  it('opens with an overview lane and the working lane pre-zoomed', async () => {
+    render(section())
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(screen.getByTestId('grid-overview')).toBeInTheDocument()
+    expect(screen.getByTestId('waveform-zoom-reset')).toHaveTextContent('×32')
+    expect(screen.getByTestId('grid-overview-window')).toBeInTheDocument()
+  })
+
+  it('centers the working window where the overview is pressed', async () => {
+    stubOverlayRect()
+    render(section())
+    const overview = await screen.findByTestId('grid-overview', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    fireEvent.pointerDown(overview, { clientX: 3000, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(2700)
+    // Still held: scrubbing to the end clamps to the last full window.
+    fireEvent.pointerMove(overview, { clientX: 6000, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(5400)
+    fireEvent.pointerUp(overview, { pointerId: 1 })
+  })
+
+  // A hover without a press must not move the window the user is working in.
+  it('ignores overview moves without a press', async () => {
+    stubOverlayRect()
+    render(section())
+    const overview = await screen.findByTestId('grid-overview', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    fireEvent.pointerMove(overview, { clientX: 3000, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(0)
+  })
+})
+
