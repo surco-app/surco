@@ -6,7 +6,8 @@ import { mediaUrl } from '../../../shared/media'
 import type { TrimRange } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
-import { detectOnsets, detectTrim } from '../lib/trim'
+import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
@@ -48,6 +49,37 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   const suggestion = useMemo(() => (wave ? detectTrim(wave) : undefined), [wave])
   // The unpadded truth the drag magnet aims at: where the music actually starts/ends.
   const onsets = useMemo(() => (wave ? detectOnsets(wave) : undefined), [wave])
+  // The coarse onsets come from the 8192-bucket overview — up to a bucket (tens of
+  // milliseconds) off the audible wave, a gap the eye catches at deep zoom ("the
+  // snapped line doesn't touch the music"). A one-second finely-bucketed window
+  // around each onset (the deep zoom's own re-decode, cached alike) narrows the
+  // magnet's target to the millisecond; while it loads, the coarse value stands.
+  const startWinStart = Math.max(0, (onsets?.startSec ?? 0) - 0.5)
+  const { data: startWin } = useWaveformWindow(
+    inputPath,
+    Number(startWinStart.toFixed(3)),
+    1,
+    open && settled && onsets?.startSec !== undefined,
+  )
+  const endWinStart = Math.max(0, (onsets?.endSec ?? 0) - 0.5)
+  const { data: endWin } = useWaveformWindow(
+    inputPath,
+    Number(endWinStart.toFixed(3)),
+    1,
+    open && settled && onsets?.endSec !== undefined,
+  )
+  const snapTargets = useMemo(
+    () => ({
+      startSec: startWin
+        ? (refineOnset(startWin.peaks, startWin.startSec, startWin.durSec, 'start') ??
+          onsets?.startSec)
+        : onsets?.startSec,
+      endSec: endWin
+        ? (refineOnset(endWin.peaks, endWin.startSec, endWin.durSec, 'end') ?? onsets?.endSec)
+        : onsets?.endSec,
+    }),
+    [onsets, startWin, endWin],
+  )
   const [zoom, setZoom] = useState(1)
   // The live range while a handle is dragged; committed to the track (onChange)
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
@@ -133,7 +165,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // window follows the zoom: generous in the overview, surgical when zoomed in.
   const [snapped, setSnapped] = useState(false)
   function withSnap(which: 'start' | 'end', sec: number): number {
-    const target = which === 'start' ? onsets?.startSec : onsets?.endSec
+    const target = which === 'start' ? snapTargets.startSec : snapTargets.endSec
     if (target === undefined || durationSec === 0) {
       setSnapped(false)
       return sec

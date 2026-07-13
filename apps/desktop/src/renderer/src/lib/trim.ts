@@ -28,6 +28,28 @@ export function detectOnsets(wave: {
   return { startSec: first * bucketSec, endSec: (last + 1) * bucketSec }
 }
 
+// Sharpens a coarse onset with a finely-bucketed window decoded around it (the
+// deep zoom's re-decode): the same threshold, but against buckets hundreds of
+// times narrower, so the drag magnet lands ON the wave instead of up to one
+// coarse bucket away — the gap the eye catches at deep zoom. Undefined when the
+// window holds no audible bucket (the coarse estimate stands).
+export function refineOnset(
+  peaks: number[],
+  windowStartSec: number,
+  windowDurSec: number,
+  side: 'start' | 'end',
+): number | undefined {
+  if (peaks.length === 0 || windowDurSec <= 0) return undefined
+  const threshold = 10 ** (THRESHOLD_DB / 20)
+  const bucketSec = windowDurSec / peaks.length
+  if (side === 'start') {
+    const first = peaks.findIndex((p) => p > threshold)
+    return first === -1 ? undefined : windowStartSec + first * bucketSec
+  }
+  const last = peaks.findLastIndex((p) => p > threshold)
+  return last === -1 ? undefined : windowStartSec + (last + 1) * bucketSec
+}
+
 // Suggests a trim from the player's decoded envelope: the onsets above, padded
 // outward. Runs instantly in the renderer — no extra ffmpeg pass — because the
 // suggestion only seeds the handles; the exact cut is whatever seconds the user

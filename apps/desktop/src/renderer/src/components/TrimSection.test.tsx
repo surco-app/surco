@@ -52,6 +52,8 @@ beforeEach(() => {
   client = createQueryClient()
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(noisyEndsWave()),
+    // The magnet's precision pass; null keeps tests on the coarse onsets.
+    waveformWindow: vi.fn().mockResolvedValue(null),
   }
 })
 

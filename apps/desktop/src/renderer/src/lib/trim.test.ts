@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectOnsets, detectTrim } from './trim'
+import { detectOnsets, detectTrim, refineOnset } from './trim'
 
 // 200 buckets over 100 s → 0.5 s per bucket, coarse but plenty for a suggestion
 // the user refines with the handles.
@@ -57,5 +57,26 @@ describe('detectOnsets', () => {
 
   it('returns undefined for an all-silent decode', () => {
     expect(detectOnsets(wave(() => NOISE))).toBeUndefined()
+  })
+})
+
+describe('refineOnset', () => {
+  // The drag magnet's precision pass: the coarse 8192-bucket onset can sit tens of
+  // milliseconds off the audible wave; the finely-bucketed window narrows it so the
+  // snapped handle visibly touches the music.
+  it('narrows a coarse onset to the fine bucket where the audio starts', () => {
+    // 1 s window from 9.5 s, 1000 buckets (1 ms each), music from 10.234 s.
+    const peaks = Array.from({ length: 1000 }, (_, i) => (i >= 734 ? MUSIC : NOISE))
+    expect(refineOnset(peaks, 9.5, 1, 'start')).toBeCloseTo(10.234)
+  })
+
+  it('narrows the end onset to where the audio dies', () => {
+    const peaks = Array.from({ length: 1000 }, (_, i) => (i < 266 ? MUSIC : NOISE))
+    expect(refineOnset(peaks, 90, 1, 'end')).toBeCloseTo(90.266)
+  })
+
+  it('returns undefined when the window is silent, keeping the coarse estimate', () => {
+    expect(refineOnset(Array.from({ length: 100 }, () => NOISE), 9.5, 1, 'start')).toBeUndefined()
+    expect(refineOnset([], 9.5, 1, 'start')).toBeUndefined()
   })
 })
