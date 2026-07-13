@@ -1399,9 +1399,13 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
 // analysis decoder below differs only in rate, window and buffer ceiling.
 async function decodePcm(
   input: string,
-  opts: { sampleRate: number; seconds?: number; maxBufferMb: number },
+  opts: { sampleRate: number; startSec?: number; seconds?: number; maxBufferMb: number },
 ): Promise<Float32Array> {
-  const args = ['-hide_banner', '-loglevel', 'error', '-i', input]
+  const args = ['-hide_banner', '-loglevel', 'error']
+  // Input seek (-ss before -i): ffmpeg jumps straight to the window instead of
+  // decoding its way there — what keeps the zoomed re-decode interactive.
+  if (opts.startSec !== undefined && opts.startSec > 0) args.push('-ss', String(opts.startSec))
+  args.push('-i', input)
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
   args.push('-ac', '1', '-ar', String(opts.sampleRate), '-f', 'f32le', '-')
   const { stdout } = await run(ffmpegPath, args, {
@@ -1576,6 +1580,27 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
 // 4 kHz rate keeps even a 2-hour mix around 115 MB, inside the 128 MB ceiling.
 function decodeWaveformPcm(input: string): Promise<Float32Array> {
   return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128 })
+}
+
+// A slice of the track re-decoded at full waveform fidelity for the strips' deep
+// zoom: past the global envelope's resolution, the visible window is decoded on
+// demand (DAW-style) instead of stretching the 8192 overview buckets into blocks.
+// Seek + short window keeps it a sub-second ffmpeg call; the renderer caches and
+// quantizes windows so scrolling reuses them.
+export async function measureWaveformWindow(
+  input: string,
+  startSec: number,
+  durSec: number,
+  buckets: number,
+): Promise<{ peaks: number[] } | null> {
+  const samples = await decodePcm(input, {
+    sampleRate: WAVEFORM_SAMPLE_RATE,
+    startSec,
+    seconds: durSec,
+    maxBufferMb: 32,
+  })
+  if (samples.length === 0) return null
+  return { peaks: computePeaks(samples, buckets) }
 }
 
 // Per-channel scan at the native rate and channel count: true-clipping flags plus

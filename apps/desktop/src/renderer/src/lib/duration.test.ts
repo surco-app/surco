@@ -77,4 +77,13 @@ describe('timeTicks', () => {
   it('returns nothing for an empty decode', () => {
     expect(timeTicks(0, 8)).toEqual([])
   })
+
+  // The ×256 deep zoom fits less than a second in the panel — the ruler must go
+  // sub-second there, with tenths on the label so ticks stay distinguishable.
+  it('goes sub-second at deep zoom with tenths in the label', () => {
+    const deep = timeTicks(100, 256)
+    expect(deep[0].sec).toBeCloseTo(0.1)
+    expect(deep[0].label).toBe('0:00.1')
+    expect(deep[9].label).toBe('0:01.0')
+  })
 })

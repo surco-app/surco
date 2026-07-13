@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { LoudnessResult, NormalizeConfig, WaveformResult } from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform } from '../hooks/useWaveform'
+import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
 import { formatDb } from '../lib/quality'
 import { formatTime, timeTicks } from '../lib/duration'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
@@ -17,14 +18,22 @@ const CANVAS_W = 600
 // Exported (with the strip and its blue) for the trim section, whose full-width
 // wave must read as the same instrument as the loudness preview's.
 export const OVERLAY_W = 1200
-const CANVAS_H = 96
+// 1.5× the strips' 96 CSS px, so the taller wave stays supersampled-crisp.
+const CANVAS_H = 144
 
-// The deepest zoom step, shared with the trim section: ×32 across a 6-minute track
-// puts ~11 s in the visible panel — enough to place a trim handle by eye — and the
-// 8192 decoded buckets keep real detail at that depth. The cap also keeps the
-// zoomed canvas raster (OVERLAY_W × zoom = 38 400 px) under the browser's ~65k
-// per-dimension canvas limit.
-export const ZOOM_MAX = 32
+// The deepest zoom step, shared with the trim section: ×256 across a 6-minute
+// track puts ~1.4 s in the visible panel — cut-placing territory. Past ×8 the
+// strip stops stretching the 8192 overview buckets and re-decodes the visible
+// window at full fidelity (useWaveformWindow), so depth keeps real detail
+// instead of widening blocks.
+export const ZOOM_MAX = 256
+
+// Where the viewport canvas takes over from the stretched base raster: at ×8 the
+// base still has ≥2 buckets per panel pixel; deeper, the re-decode earns its keep.
+const HIRES_MIN_ZOOM = 8
+// The stretched base raster's bitmap cap, safely under Chromium's per-dimension
+// canvas ceiling; past it the base blurs, but the hi-res canvas covers it there.
+const BASE_RASTER_MAX = 32640
 
 // The ×N chip's text: pinch zoom makes the factor continuous, so round to what
 // the eye needs — tenths under ×10, whole steps above ("×3.4", "×27").
@@ -95,6 +104,7 @@ export function Strip({
   raster = CANVAS_W,
   zoom = 1,
   onZoomChange,
+  inputPath,
   children,
 }: StripData & {
   color: string
@@ -116,11 +126,16 @@ export function Strip({
   // cursor: the spot under the pointer stays put, DAW-style, instead of the view
   // re-centering. The parent owns the zoom state, so the strip only reports.
   onZoomChange?: (zoom: number) => void
+  // Enables the deep zoom's windowed re-decode: past ×8 the visible slice of THIS
+  // file is decoded at full fidelity onto a viewport canvas instead of stretching
+  // the 8192 overview buckets into blocks. Absent, deep zoom just magnifies.
+  inputPath?: string
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
 }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const hiResRef = useRef<HTMLCanvasElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   // The cursor's position over the strip, as a 0..1 ratio (for the bucket/time math)
   // plus the raw x (for the readout's placement). Null while the pointer is away.
@@ -206,6 +221,81 @@ export function Strip({
   // Splitting halves each channel's room, so the strip grows by half in return:
   // every lane keeps roughly the mono wave's readable height, like Audacity's rows.
   const splitActive = split && wave?.channels?.length === 2
+  // The visible slice of the strip, as 0..1 fractions of the track — what the deep
+  // zoom's viewport canvas draws and what the windowed re-decode is asked for.
+  // rAF-throttled off the native scroll so a flick costs one state write per frame.
+  const [view, setView] = useState({ from: 0, to: 1 })
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let frame = 0
+    const update = (): void => {
+      frame = 0
+      const total = el.scrollWidth
+      if (total === 0) return
+      const from = el.scrollLeft / total
+      const to = (el.scrollLeft + el.clientWidth) / total
+      setView((v) => (v.from === from && v.to === to ? v : { from, to }))
+    }
+    const onScroll = (): void => {
+      if (frame === 0) frame = requestAnimationFrame(update)
+    }
+    update()
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (frame !== 0) cancelAnimationFrame(frame)
+    }
+  }, [zoom])
+  // The deep zoom's real detail: past ×8, re-decode the visible window of this
+  // file at full fidelity and draw it on the viewport canvas below. Skipped for
+  // the composed views (split lanes, preview-over-original) — those stay on the
+  // stretched overview, and their work happens at shallow zoom anyway.
+  const hiResActive =
+    !!inputPath &&
+    !!wave &&
+    zoom > HIRES_MIN_ZOOM &&
+    !splitActive &&
+    !background &&
+    limitDb === undefined
+  const win = hiResActive
+    ? windowFor(wave.durationSec, view.from, zoom)
+    : { startSec: 0, durSec: 0 }
+  const { data: hiRes } = useWaveformWindow(inputPath, win.startSec, win.durSec, hiResActive)
+  useEffect(() => {
+    const canvas = hiResRef.current
+    if (!canvas || !hiResActive || !wave) return
+    // The window covers the view → draw its full-fidelity peaks; while it loads
+    // (or after a fast fling outran it) fall back to the overview slice, so the
+    // viewport is never blank — just briefly coarse.
+    const dur = wave.durationSec
+    const covers =
+      hiRes &&
+      hiRes.durSec > 0 &&
+      hiRes.startSec / dur <= view.from + 1e-6 &&
+      (hiRes.startSec + hiRes.durSec) / dur >= view.to - 1e-6
+    if (covers && hiRes) {
+      const winFrom = hiRes.startSec / dur
+      const winSpan = hiRes.durSec / dur
+      drawWaveform(canvas, hiRes.peaks, {
+        color,
+        clipDb,
+        marks,
+        window: {
+          from: (view.from - winFrom) / winSpan,
+          to: (view.to - winFrom) / winSpan,
+        },
+      })
+    } else {
+      drawWaveform(canvas, wave.peaks, {
+        color,
+        clipDb,
+        clipped: wave.clipped,
+        marks,
+        window: { from: view.from, to: view.to },
+      })
+    }
+  }, [hiResActive, hiRes, view, wave, color, clipDb, marks])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
@@ -241,10 +331,25 @@ export function Strip({
       >
         <canvas
           ref={canvasRef}
-          width={Math.round(raster * zoom)}
+          width={Math.min(BASE_RASTER_MAX, Math.round(raster * zoom))}
           height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
-          className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-24' : 'h-16'}`}
+          className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-36' : 'h-24'}`}
         />
+        {/* The deep zoom's viewport canvas: sticky at the scroller's left edge and
+            one viewport wide, it redraws the visible slice per scroll frame — the
+            capped base raster underneath goes blurry past ~×27, but this covers
+            exactly where the eye is. Pulled up over the base with a negative
+            margin; pointer events pass through so scrub/hover stay the strip's. */}
+        {hiResActive && (
+          <canvas
+            ref={hiResRef}
+            data-testid="waveform-hires"
+            width={2400}
+            height={CANVAS_H}
+            className="pointer-events-none sticky left-0 block h-24 rounded-lg bg-[var(--color-field)]"
+            style={{ width: `${100 / zoom}%`, marginTop: '-6rem' }}
+          />
+        )}
         {loading && <WaveformSkeleton testid="waveform-compare-loading" />}
         {/* The ruler appears with the zoom: at ×1 the strip is an overview and ticks
             are clutter, but zoomed in, "where am I in the track" needs answering
@@ -373,7 +478,7 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
           ref={canvasRef}
           width={OVERLAY_W}
           height={CANVAS_H}
-          className="block h-16 w-full rounded-lg bg-[var(--color-field)]"
+          className="block h-24 w-full rounded-lg bg-[var(--color-field)]"
         />
         {(before.loading || after.loading) && <WaveformSkeleton testid="waveform-compare-loading" />}
       </div>
@@ -562,6 +667,7 @@ export function WaveformSolo({
           raster={OVERLAY_W}
           zoom={zoom}
           onZoomChange={setZoom}
+          inputPath={inputPath}
         />
       )}
     </div>

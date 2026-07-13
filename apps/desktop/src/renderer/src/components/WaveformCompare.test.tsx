@@ -459,15 +459,12 @@ describe('WaveformSolo', () => {
     fireEvent.click(screen.getByTestId('waveform-zoom-in'))
     expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '200%' })
 
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '3200%' })
+    for (let i = 0; i < 7; i++) fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '25600%' })
     expect(screen.getByTestId('waveform-zoom-in')).toBeDisabled()
 
     fireEvent.click(screen.getByTestId('waveform-zoom-out'))
-    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '1600%' })
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '12800%' })
   })
 
   it('resets the zoom from the factor label', async () => {
@@ -536,13 +533,13 @@ describe('WaveformSolo', () => {
     }
     // Half the strip per lane would squash each channel to half the mono wave's
     // size, so splitting grows the strip: every lane keeps a readable height.
-    expect(canvas().className).toContain('h-16')
+    expect(canvas().className).toContain('h-24')
     fireEvent.click(toggle)
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'true')
-    expect(canvas().className).toContain('h-24')
+    expect(canvas().className).toContain('h-36')
     fireEvent.click(screen.getByTestId('waveform-split'))
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'false')
-    expect(canvas().className).toContain('h-16')
+    expect(canvas().className).toContain('h-24')
   })
 
   it('hides the split toggle when the decoder shipped no channel lanes', async () => {

@@ -70,6 +70,10 @@ export function drawWaveform(
     lane?: { index: number; count: number }
     limitDb?: number
     marks?: boolean
+    // Draw only this slice of the peak array (0..1 fractions of it), stretched
+    // across the full canvas — the deep zoom's viewport canvas renders the
+    // visible window this way instead of rastering the whole zoomed strip.
+    window?: { from: number; to: number }
   } = {},
 ): void {
   const ctx = canvas.getContext('2d')
@@ -82,8 +86,12 @@ export function drawWaveform(
   const mid = (opts.lane ? laneH * opts.lane.index : 0) + laneH / 2
   const baseColor = opts.color ?? 'rgba(96, 165, 250, 0.8)'
   const limitLin = opts.limitDb !== undefined ? 10 ** (opts.limitDb / 20) : null
-  const barW = w / peaks.length
-  for (let i = 0; i < peaks.length; i++) {
+  const from = (opts.window?.from ?? 0) * peaks.length
+  const to = (opts.window?.to ?? 1) * peaks.length
+  const span = to - from
+  if (span <= 0) return
+  const barW = w / span
+  for (let i = Math.max(0, Math.floor(from)); i < Math.min(peaks.length, Math.ceil(to)); i++) {
     const over =
       opts.marks !== false &&
       (limitLin !== null
@@ -94,7 +102,7 @@ export function drawWaveform(
     const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
     const bar = Math.max(amp * (laneH / 2 - 2), 0.5)
     ctx.fillStyle = over ? CLIP_COLOR : baseColor
-    ctx.fillRect(i * barW, mid - bar, Math.max(barW - 0.5, 0.5), bar * 2)
+    ctx.fillRect((i - from) * barW, mid - bar, Math.max(barW - 0.5, 0.5), bar * 2)
   }
 }
 

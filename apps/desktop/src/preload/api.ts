@@ -136,6 +136,14 @@ export interface Api {
   bpm: (path: string) => Promise<BpmResult | null>
   key: (path: string) => Promise<KeyResult | null>
   waveform: (path: string) => Promise<WaveformResult | null>
+  // A slice of the track re-decoded at full waveform fidelity, for the strips'
+  // deep zoom — DAW-style windowed detail past the global envelope's resolution.
+  waveformWindow: (
+    path: string,
+    startSec: number,
+    durSec: number,
+    buckets: number,
+  ) => Promise<{ peaks: number[] } | null>
   // Renders the "hear what gets removed" audition: a temp WAV holding only what the
   // given repair mode would take out of the track, playable through surco://, plus
   // the excerpt's touched share (0..1) for the caption. null when the mode is off

@@ -368,6 +368,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 raster={OVERLAY_W}
                 zoom={zoom}
                 onZoomChange={setZoom}
+                inputPath={inputPath}
               >
                 {wave && durationSec > 0 && (
                   // Clicking the wave grabs the NEAREST handle and drops it there —

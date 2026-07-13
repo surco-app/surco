@@ -16,6 +16,7 @@ import {
   measureKey,
   measureLoudness,
   measureWaveform,
+  measureWaveformWindow,
   probeAudio,
   probeDuration,
   probeProperties,
@@ -241,6 +242,31 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
+
+  // The deep zoom's on-demand slice: no disk cache (windows vary with every scroll
+  // position; react-query holds the quantized ones) and no activity row (it fires
+  // per scroll step — the feed would flood). Params are clamped: the renderer is
+  // trusted UI, but a compromised renderer must not be able to ask for an unbounded
+  // decode. 'high' like the full waveform — the user is looking right at the strip.
+  ipcMain.handle(
+    'audio:waveformWindow',
+    async (_e, inputPath: string, startSec: number, durSec: number, buckets: number) => {
+      try {
+        if (!Number.isFinite(startSec) || !Number.isFinite(durSec) || !Number.isFinite(buckets))
+          return null
+        const start = Math.max(0, startSec)
+        const dur = Math.min(600, Math.max(0.05, durSec))
+        const count = Math.min(4096, Math.max(16, Math.floor(buckets)))
+        return await analysisLimiter.run(
+          () => measureWaveformWindow(inputPath, start, dur, count),
+          'high',
+        )
+      } catch (err) {
+        log.error('audio:waveformWindow failed', err)
+        return null
+      }
+    },
+  )
 
   // The declick audition: a 20 s excerpt holding only what the chosen repair mode
   // would remove, served back through surco:// (hence the allowMedia). Not cached —
