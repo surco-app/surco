@@ -400,6 +400,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 zoom={zoom}
                 onZoomChange={setZoom}
                 inputPath={inputPath}
+                // No red clip marks here: clipping is the loudness section's
+                // concern, and on a hot master the decoder's flags paint half
+                // this strip red — noise where the eye is hunting silence.
+                marks={false}
               >
                 {wave && durationSec > 0 && (
                   // Clicking the wave grabs the NEAREST handle and drops it there —
