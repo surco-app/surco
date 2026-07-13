@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { CopiedTags } from '../types'
 import type { Toast } from './toastQueue'
-import type { ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort,
+import type { AttentionFilter, ConversionFilter, LibraryFilter, QualityFilter, SortDir, TrackSort,
   DuplicatesFilter,
 } from './triage'
 
@@ -33,6 +33,7 @@ export interface AppState {
   conversionFilter: ConversionFilter | null
   libraryFilter: LibraryFilter | null
   duplicatesFilter: DuplicatesFilter | null
+  attentionFilter: AttentionFilter | null
   formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
@@ -59,6 +60,7 @@ const INITIAL: AppState = {
   conversionFilter: null,
   libraryFilter: null,
   duplicatesFilter: null,
+  attentionFilter: null,
   formatFilter: null,
   dragging: false,
   toasts: [],

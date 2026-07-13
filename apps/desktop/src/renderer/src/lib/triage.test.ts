@@ -168,7 +168,38 @@ describe('matchesFilter / qualityCounts', () => {
       inLibrary: 0,
       notInLibrary: 0,
       duplicates: 0,
+      silence: 0,
+      clipping: 0,
     })
+  })
+})
+
+describe('attention filter (silence to trim, clipping)', () => {
+  const t = (id: string, issues?: { silence: boolean; clipping: boolean }): TrackItem =>
+    ({ id, status: 'idle', audioIssues: issues }) as TrackItem
+  const tracks = [
+    t('quiet-tail', { silence: true, clipping: false }),
+    t('hot-master', { silence: false, clipping: true }),
+    t('both', { silence: true, clipping: true }),
+    t('clean', { silence: false, clipping: false }),
+    t('undecoded'),
+  ]
+
+  // djotas's triage flow: while editing the collection, isolate the tracks with
+  // retouch work left — silence still to trim, or true clipping to tame.
+  it('buckets the retouch work and leaves undecoded tracks in neither', () => {
+    expect(by(tracks, { attention: 'silence' }).map((x) => x.id)).toEqual(['quiet-tail', 'both'])
+    expect(by(tracks, { attention: 'clipping' }).map((x) => x.id)).toEqual(['hot-master', 'both'])
+    const counts = qualityCounts(tracks)
+    expect(counts.silence).toBe(2)
+    expect(counts.clipping).toBe(2)
+  })
+
+  it('stacks with the other axes like any dimension', () => {
+    const done = [{ ...t('trimmed-already', { silence: true, clipping: false }), status: 'done' }] as TrackItem[]
+    expect(
+      by([...tracks, ...done], { attention: 'silence', conversion: 'unconverted' }).map((x) => x.id),
+    ).toEqual(['quiet-tail', 'both'])
   })
 })
 

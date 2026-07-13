@@ -112,4 +112,19 @@ describe('useTracksView', () => {
     ])
     expect(result.current.tracksView.map((t) => t.duplicate ?? false)).toEqual([true, true, false])
   })
+  // The attention filters' facts, derived from whatever wave any consumer decoded:
+  // silence flags a suggested cut the track hasn't staged (a staged trim clears it —
+  // that's the "already retouched" signal), clipping follows the decoder's flags.
+  it('derives silence and clipping facts from a cached waveform', () => {
+    const client = new QueryClient()
+    // 100 s: 10 s of surface noise, music with a clipped stretch, clean tail cut.
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 ? 0.5 : 0.0005))
+    const clipped = peaks.map((_, i) => i === 100)
+    client.setQueryData(['waveform', '/music/a.wav'], { peaks, durationSec: 100, clipped })
+    client.setQueryData(['waveform', '/music/b.wav'], { peaks, durationSec: 100, clipped })
+    const { result } = setup([track('a'), track('b', {}, { trim: { startSec: 9.9 } })], client)
+    expect(result.current.tracksView[0].audioIssues).toEqual({ silence: true, clipping: true })
+    // Same wave, but the trim is staged: nothing left to retouch on the silence axis.
+    expect(result.current.tracksView[1].audioIssues).toEqual({ silence: false, clipping: true })
+  })
 })

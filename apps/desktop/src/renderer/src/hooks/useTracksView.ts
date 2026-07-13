@@ -1,19 +1,22 @@
 import { useQueries } from '@tanstack/react-query'
 import { type RefObject, useMemo } from 'react'
-import type { SpectrumResult } from '../../../shared/types'
+import type { SpectrumResult, WaveformResult } from '../../../shared/types'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { duplicateIds } from '../lib/duplicates'
 import type { LibrarySource } from '../lib/librarySource'
+import { detectTrim } from '../lib/trim'
 import type { TrackItem } from '../types'
 import { useLibraryMembership } from './useLibraryMembership'
 import { spectrogramOptions } from './useSpectrogram'
+import { waveformOptions } from './useWaveform'
 
 // One cache entry per track: the inputs the merged view was built from (track object,
-// cached spectrum, library snapshot) plus the view itself, so an unchanged track keeps
-// the same view reference across renders.
+// cached spectrum/wave, library snapshot) plus the view itself, so an unchanged track
+// keeps the same view reference across renders.
 export interface ViewCacheEntry {
   track: TrackItem
   spectrum: SpectrumResult | undefined
+  wave: WaveformResult | null | undefined
   index: AppleMusicIndex | null
   dup: boolean
   view: TrackItem
@@ -42,6 +45,16 @@ export function useTracksView(
     })),
     combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
   })
+  // Each track's decoded wave, observed the same passive way: whatever the player,
+  // the editor strips or the analyze sweep decoded feeds the attention filters'
+  // silence/clipping facts — the list itself never spends a decode.
+  const waves = useQueries({
+    queries: tracks.map((t) => ({
+      ...waveformOptions(t.inputPath),
+      enabled: false,
+    })),
+    combine: (results) => results.map((r) => r.data),
+  })
   // The session snapshot of the destination's library (Apple Music or Engine DJ),
   // fetched once there are tracks to check, so each row's "already owned" verdict is a
   // local lookup rather than a process per track. Null until it lands or with no source.
@@ -62,6 +75,7 @@ export function useTracksView(
     const dups = duplicateIds(tracks)
     return tracks.map((t, i) => {
         const { data: spectrum, fetching } = spectra[i]
+        const wave = waves[i]
         // inLibraryResolved is the verdict the editor/sweep already confirmed against
         // the canonical Discogs match — the raw tags can't reach it here, so OR it in so
         // the list and filter agree with the editor's badge instead of reading not-owned.
@@ -87,23 +101,33 @@ export function useTracksView(
           if (dup) view.duplicate = true
           return view
         }
-        if (!spectrum && inLibrary === undefined && !dup) return t
+        if (!spectrum && inLibrary === undefined && !dup && !wave) return t
         const cached = viewCache.current.get(t.id)
         if (
           cached &&
           cached.track === t &&
           cached.spectrum === spectrum &&
+          cached.wave === wave &&
           cached.index === libraryIndex &&
           cached.dup === dup
         )
           return cached.view
         const view: TrackItem = { ...t }
         if (spectrum) view.spectrum = spectrum
+        if (wave) {
+          // The attention filters' facts, derived once per (track, wave) pair: a
+          // staged trim clears the silence bucket — it's the "already retouched"
+          // signal — while clipping follows the decoder's per-sample truth.
+          view.audioIssues = {
+            silence: !t.trim && detectTrim(wave) !== undefined,
+            clipping: wave.clipped?.some(Boolean) ?? false,
+          }
+        }
         if (inLibrary !== undefined) view.inLibrary = inLibrary
         if (dup) view.duplicate = true
-        viewCache.current.set(t.id, { track: t, spectrum, index: libraryIndex, dup, view })
+        viewCache.current.set(t.id, { track: t, spectrum, wave, index: libraryIndex, dup, view })
         return view
       })
-  }, [tracks, spectra, libraryIndex, librarySource])
+  }, [tracks, spectra, waves, libraryIndex, librarySource])
   return { tracksView, libraryIndex }
 }

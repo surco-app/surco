@@ -9,11 +9,13 @@ import {
   type LucideIcon,
   Plus,
   RefreshCw,
+  Scissors,
   SlidersHorizontal,
   Sparkles,
   Store,
   Trash2,
   TriangleAlert,
+  Zap,
   Copy as CopyIcon,
 } from 'lucide-react'
 import type React from 'react'
@@ -28,7 +30,8 @@ type QualityMode = 'unanalyzed' | 'suspect' | 'good'
 type ConversionMode = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
-type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode
+type AttentionMode = 'silence' | 'clipping'
+type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
@@ -39,6 +42,7 @@ const CONVERSION_MODES: ConversionMode[] = [
 ]
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
+const ATTENTION_MODES: AttentionMode[] = ['silence', 'clipping']
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
@@ -54,6 +58,8 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   inLibrary: Check,
   notInLibrary: Plus,
   duplicates: CopyIcon,
+  silence: Scissors,
+  clipping: Zap,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -64,6 +70,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if ((QUALITY_MODES as string[]).includes(mode)) return 'quality'
   if ((CONVERSION_MODES as string[]).includes(mode)) return 'conversion'
   if (mode === 'duplicates') return 'duplicates'
+  if ((ATTENTION_MODES as string[]).includes(mode)) return 'attention'
   return 'library'
 }
 
@@ -72,6 +79,10 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
 function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'suspect' && tally.suspect > 0) return 'bg-warn'
   if (mode === 'unconverted' && tally.unconverted > 0) return 'bg-[var(--color-accent)]'
+  // The retouch buckets exist to be worked through, so they carry the same amber
+  // nudge as suspect while anything is left in them.
+  if (mode === 'silence' && tally.silence > 0) return 'bg-warn'
+  if (mode === 'clipping' && tally.clipping > 0) return 'bg-warn'
   return null
 }
 
@@ -159,6 +170,12 @@ export function QualityFilterBar({
   const primarySections: Mode[][] = [
     // The quality verdict.
     QUALITY_MODES,
+    // The retouch buckets (silence left to trim, true clipping), each listed only
+    // once some decoded wave actually put a track in it — permanently-empty rows
+    // would just pad the menu, and the facts only exist once waves are decoded.
+    ...(tally.silence > 0 || tally.clipping > 0
+      ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
+      : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
@@ -172,11 +189,17 @@ export function QualityFilterBar({
   // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
   // or a format visibly clears its tick.
   const nothingActive =
-    !value.quality && !value.conversion && !value.library && !value.duplicates && !value.format
+    !value.quality &&
+    !value.conversion &&
+    !value.library &&
+    !value.duplicates &&
+    !value.attention &&
+    !value.format
 
   // Focus an active option when the menu opens (the first set axis, or "All" when nothing
   // is), so the arrows continue from the current choice like a native select.
-  const focusMode = value.quality ?? value.conversion ?? value.library ?? value.duplicates ?? 'all'
+  const focusMode =
+    value.quality ?? value.conversion ?? value.library ?? value.duplicates ?? value.attention ?? 'all'
   useEffect(() => {
     if (!open) return
     listRef.current

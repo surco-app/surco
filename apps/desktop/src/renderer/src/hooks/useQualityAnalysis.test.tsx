@@ -36,7 +36,7 @@ describe('useQualityAnalysis', () => {
   // (those with a spectrum) alone, then return to idle.
   it('analyzes only the not-yet-measured tracks and ends idle', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = {
       current: [
         track('a'),
@@ -62,7 +62,7 @@ describe('useQualityAnalysis', () => {
       release = r
     })
     const spectrogram = vi.fn().mockReturnValue(gate)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a')] }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
@@ -89,7 +89,7 @@ describe('useQualityAnalysis', () => {
       if (path === '/music/b.wav') throw new Error('unreadable')
       return spectrum
     })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a'), track('b'), track('c')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
@@ -107,7 +107,7 @@ describe('useQualityAnalysis', () => {
   // only when something actually failed, so a good folder shows no "0 failed" noise.
   it('does not report errors when every file analyzes cleanly', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a'), track('b')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {

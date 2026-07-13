@@ -277,6 +277,7 @@ export default function App(): React.JSX.Element {
   const conversionFilter = useAppStore(store, (s) => s.conversionFilter)
   const libraryFilter = useAppStore(store, (s) => s.libraryFilter)
   const duplicatesFilter = useAppStore(store, (s) => s.duplicatesFilter)
+  const attentionFilter = useAppStore(store, (s) => s.attentionFilter)
   const formatFilter = useAppStore(store, (s) => s.formatFilter)
   // The four filter axes bundled for the bar, which toggles one per click; split back onto
   // the store fields here so each axis stays an independently-readable slice.
@@ -286,15 +287,17 @@ export default function App(): React.JSX.Element {
       conversion: conversionFilter,
       library: libraryFilter,
       duplicates: duplicatesFilter,
+      attention: attentionFilter,
       format: formatFilter,
     }),
-    [qualityFilter, conversionFilter, libraryFilter, duplicatesFilter, formatFilter],
+    [qualityFilter, conversionFilter, libraryFilter, duplicatesFilter, attentionFilter, formatFilter],
   )
   const filterActive =
     qualityFilter !== null ||
     conversionFilter !== null ||
     libraryFilter !== null ||
     duplicatesFilter !== null ||
+    attentionFilter !== null ||
     formatFilter !== null
   const setFilterSelection = useCallback(
     (next: FilterSelection) =>
@@ -303,6 +306,7 @@ export default function App(): React.JSX.Element {
         conversionFilter: next.conversion,
         libraryFilter: next.library,
         duplicatesFilter: next.duplicates,
+        attentionFilter: next.attention,
         formatFilter: next.format,
       }),
     [store],

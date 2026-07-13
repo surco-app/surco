@@ -18,6 +18,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   automatched: 0,
   matchedDiscogs: 0,
   matchedBandcamp: 0,
+  silence: 0,
+  clipping: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -65,6 +67,24 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.queryByTestId('quality-filter-matchedDiscogs')).toBeNull()
     expect(screen.queryByTestId('quality-filter-matchedBandcamp')).toBeNull()
+  })
+
+  // djotas's retouch buckets: while editing the collection, isolate the tracks with
+  // work left — silence still to trim, or true clipping. Each row appears only once
+  // a decoded wave actually put a track in it, and picking one filters its own axis.
+  it('lists the retouch buckets once their facts exist and filters the attention axis', () => {
+    const { onChange } = renderBar({ tally: tally({ silence: 4, clipping: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-silence')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('quality-filter-silence'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'silence' }))
+  })
+
+  it('hides a retouch bucket while no decoded wave has filled it', () => {
+    renderBar({ tally: tally({ clipping: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-silence')).toBeNull()
+    expect(screen.getByTestId('quality-filter-clipping')).toBeInTheDocument()
   })
 
   it('picking a provider bucket filters the conversion axis', () => {

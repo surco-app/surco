@@ -44,6 +44,11 @@ export type LibraryFilter = 'inLibrary' | 'notInLibrary'
 // The same song loaded as two files (see lib/duplicates); a single-value axis so it
 // stacks with the others like any dimension.
 export type DuplicatesFilter = 'duplicates'
+// The retouch buckets djotas asked for: tracks whose decoded wave shows work left to
+// do — lead-in/run-out silence not yet staged for trimming, or true digital clipping.
+// Both read the audioIssues facts the view merges from the shared waveform cache, so
+// a track with no wave decoded yet belongs to neither (like 'unanalyzed').
+export type AttentionFilter = 'silence' | 'clipping'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -52,12 +57,14 @@ export interface FilterSelection {
   conversion: ConversionFilter | null
   library: LibraryFilter | null
   duplicates: DuplicatesFilter | null
+  attention: AttentionFilter | null
   format: string | null
 }
 
 export const EMPTY_FILTER: FilterSelection = {
   quality: null,
   conversion: null,
+  attention: null,
   library: null,
   duplicates: null,
   format: null,
@@ -107,6 +114,8 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.conversion && !matchesConversion(track, sel.conversion)) return false
   if (sel.library && !matchesLibrary(track, sel.library)) return false
   if (sel.duplicates && track.duplicate !== true) return false
+  if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
+  if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
@@ -208,6 +217,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   inLibrary: number
   notInLibrary: number
   duplicates: number
+  silence: number
+  clipping: number
 } {
   let suspect = 0
   let good = 0
@@ -219,6 +230,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   let inLibrary = 0
   let notInLibrary = 0
   let duplicates = 0
+  let silence = 0
+  let clipping = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed') suspect += 1
@@ -231,6 +244,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     if (t.inLibrary === true) inLibrary += 1
     else if (t.inLibrary === false) notInLibrary += 1
     if (t.duplicate) duplicates += 1
+    if (t.audioIssues?.silence) silence += 1
+    if (t.audioIssues?.clipping) clipping += 1
   }
   return {
     suspect,
@@ -243,6 +258,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     inLibrary,
     notInLibrary,
     duplicates,
+    silence,
+    clipping,
   }
 }
 

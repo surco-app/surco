@@ -65,6 +65,8 @@
       "inLibrary": "In Apple Music",
       "inLibraryEngine": "In Engine DJ",
       "duplicates": "Duplicates",
+      "silence": "Silence to trim",
+      "clipping": "Clipping",
       "trashSuspects_one": "Move the suspect file to Trash",
       "trashSuspects_other": "Move the {{count}} suspect files to Trash"
     },

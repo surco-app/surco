@@ -5,6 +5,7 @@ import { createFocusGate } from '../lib/focusGate'
 import { tracksToAnalyze } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { spectrogramOptions } from './useSpectrogram'
+import { waveformOptions } from './useWaveform'
 import { useWindowFocus } from './useWindowFocus'
 
 interface Params {
@@ -67,6 +68,10 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
       if (analyzeCancel.current) return
       try {
         await queryClient.fetchQuery(spectrogramOptions(t.inputPath))
+        // The wave feeds the attention filters (silence left to trim, clipping) —
+        // decoded here so one "analyze all" fills those buckets collection-wide
+        // instead of only for tracks the user happened to open or play.
+        await queryClient.fetchQuery(waveformOptions(t.inputPath))
       } catch {
         // A single file ffmpeg can't read must not abort the whole sweep — count it so
         // the run can report the total at the end instead of swallowing it.

@@ -62,6 +62,11 @@ export interface TrackItem {
   // from the React Query cache at the App boundary so the quality triage and the list
   // can read each track's verdict. Undefined until its analysis lands in the cache.
   spectrum?: SpectrumResult
+  // The retouch facts the attention filters read, merged from the shared waveform
+  // cache exactly like `spectrum`: silence = the detection suggests a cut this track
+  // hasn't staged; clipping = the decoder's true-clipping flags fired. Undefined
+  // until some consumer (player, editor strip, analyze sweep) decodes the wave.
+  audioIssues?: { silence: boolean; clipping: boolean }
   // True while this track's spectrum analysis is in flight (hover prefetch, editor
   // open or the toolbar sweep), merged in from the React Query fetch status like
   // spectrum above, so the row can show a placeholder instead of an empty slot.
