@@ -149,6 +149,19 @@ export function Strip({
 }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hiResRef = useRef<HTMLCanvasElement>(null)
+  // The deep zoom's real detail: past ×8, re-decode the visible window of this
+  // file at full fidelity and draw it on the viewport canvas below. Skipped for
+  // the composed views (split lanes, preview-over-original) — those stay on the
+  // stretched overview, and their work happens at shallow zoom anyway. Declared
+  // up here because the base-draw effect below reads it: past the raster cap the
+  // base cannot draw the wave right, so it draws nothing at all.
+  const hiResActive =
+    !!inputPath &&
+    !!wave &&
+    zoom > HIRES_MIN_ZOOM &&
+    !(split && wave.channels?.length === 2) &&
+    !background &&
+    limitDb === undefined
   const scrollRef = useRef<HTMLDivElement>(null)
   // The cursor's position over the strip, as a 0..1 ratio (for the bucket/time math)
   // plus the raw x (for the readout's placement). Null while the pointer is away.
@@ -157,6 +170,16 @@ export function Strip({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !wave) return
+    // Past the raster cap the base bitmap is stretched over a box many times
+    // wider (×128 puts 32 640 px of pixels under 20 000+ px of CSS), which
+    // smears every bar into a solid block — the "deformed wave" seen while
+    // navigating, before the hi-res window lands over it. So once the viewport
+    // canvas is covering the lane, the base stays EMPTY: it still lays the lane
+    // out and paints the field, but it never draws a wave it cannot draw right.
+    if (hiResActive) {
+      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+      return
+    }
     if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
     // With no dB line dialed in, the red marks come from the decoder's true-clipping
     // flags — drawWaveform only consults them when clipDb/limitDb are absent.
@@ -184,7 +207,7 @@ export function Strip({
         clear: !background,
       })
     }
-  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom, tall])
+  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom, tall, hiResActive])
   // A zoom step re-anchors the scroller so the spot the user is working on stays
   // put: at the cursor for a pinch/wheel zoom (anchorRef, set by the handler
   // below), at the middle for a button step — zooming must never teleport the
@@ -267,17 +290,6 @@ export function Strip({
       if (frame !== 0) cancelAnimationFrame(frame)
     }
   }, [zoom])
-  // The deep zoom's real detail: past ×8, re-decode the visible window of this
-  // file at full fidelity and draw it on the viewport canvas below. Skipped for
-  // the composed views (split lanes, preview-over-original) — those stay on the
-  // stretched overview, and their work happens at shallow zoom anyway.
-  const hiResActive =
-    !!inputPath &&
-    !!wave &&
-    zoom > HIRES_MIN_ZOOM &&
-    !splitActive &&
-    !background &&
-    limitDb === undefined
   const win = hiResActive
     ? windowFor(wave.durationSec, view.from, zoom)
     : { startSec: 0, durSec: 0 }
@@ -295,7 +307,10 @@ export function Strip({
           ? prev
           : { startSec: winStart, durSec: winDur },
       )
-    }, 120)
+      // Short: the window request is what makes a fast move show the field for a
+      // moment, so it must chase the view closely. Long enough that a fling still
+      // coalesces its frames into one decode.
+    }, 40)
     return () => clearTimeout(id)
   }, [winStart, winDur])
   const { data: hiRes } = useWaveformWindow(
@@ -308,32 +323,38 @@ export function Strip({
   useEffect(() => {
     const canvas = hiResRef.current
     if (!canvas || !hiResActive || !wave) return
-    // The bitmap must carry as many pixels as the CSS box it is stretched over,
-    // or the drawn bars are scaled up: a fixed raster under a viewport-sized box
-    // is what made the wave go FAT during playback and panning (the window the
-    // canvas covers narrows as the view follows the playhead). The box IS the
-    // scroller's visible width, so size the bitmap from that — capped, so a wide
-    // panel on a retina display can't blow the bitmap up.
+    // Sizing the bitmap is the whole ballgame: a raster smaller than the CSS box
+    // it is stretched over scales every bar up, and THAT is the "deformed/fat
+    // wave" — during playback (the box is one viewport) and, worse, on a fast
+    // move (the box becomes the whole cached window, three viewports wide). So
+    // the bitmap is sized per pass, from the box this very draw will occupy.
     const panelPx = scrollRef.current?.clientWidth ?? 0
-    if (panelPx > 0) {
+    const sizeFor = (boxPx: number): void => {
+      if (boxPx <= 0) return
       const target = Math.min(
-        4096,
-        Math.max(600, Math.round(panelPx * (window.devicePixelRatio || 1))),
+        8192,
+        Math.max(600, Math.round(boxPx * (window.devicePixelRatio || 1))),
       )
       if (canvas.width !== target) canvas.width = target
     }
-    // The window covers the view → draw its full-fidelity peaks; while it loads
-    // (or after a fast fling outran it) fall back to the overview slice, so the
-    // viewport is never blank — just briefly coarse.
+    // Only ever draw a window that actually covers the view. The overview slice
+    // is NOT a usable stand-in at this depth — at ×128 it hands four buckets to a
+    // 1300 px canvas, and those stretch into the blocky "deformed wave" a fast
+    // move used to leave behind. So while the decode is catching up, the canvas
+    // keeps the last good window's pixels and simply parks over the stretch it
+    // still describes: the wave slides with the view (correct, just not yet
+    // re-cut for the new edges) instead of flashing blocks.
     const dur = wave.durationSec
     const covers =
       hiRes &&
       hiRes.durSec > 0 &&
       hiRes.startSec / dur <= view.from + 1e-6 &&
       (hiRes.startSec + hiRes.durSec) / dur >= view.to - 1e-6
-    if (covers && hiRes) {
-      const winFrom = hiRes.startSec / dur
-      const winSpan = hiRes.durSec / dur
+    if (!hiRes || hiRes.durSec <= 0) return
+    const winFrom = hiRes.startSec / dur
+    const winSpan = hiRes.durSec / dur
+    if (covers) {
+      sizeFor(panelPx)
       drawWaveform(canvas, hiRes.peaks, {
         color,
         clipDb,
@@ -343,20 +364,24 @@ export function Strip({
           to: (view.to - winFrom) / winSpan,
         },
       })
-    } else {
-      drawWaveform(canvas, wave.peaks, {
-        color,
-        clipDb,
-        clipped: wave.clipped,
-        marks,
-        window: { from: view.from, to: view.to },
-      })
+      // Position and pixels move as one: the canvas sits at the very window it
+      // just drew, in strip percentages, so scrolling can never shear it off the
+      // overlays.
+      canvas.style.left = `${view.from * 100}%`
+      canvas.style.width = `${(view.to - view.from) * 100}%`
+      return
     }
-    // Position and pixels move as one: the canvas sits at the very window it just
-    // drew, in strip percentages, so scrolling can never shear it off the overlays.
-    canvas.style.left = `${view.from * 100}%`
-    canvas.style.width = `${(view.to - view.from) * 100}%`
-  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall, raster])
+    // Outrun: redraw the whole cached window at its own resolution and let it sit
+    // where it belongs on the strip — the view has moved off it, so part of the
+    // lane shows the empty field until the new window lands, which reads as
+    // "loading", not as a broken wave.
+    // The cached window spans winSpan of the strip; at this zoom that is
+    // (winSpan × zoom) panels wide — the bitmap must match, or the bars stretch.
+    sizeFor(panelPx * winSpan * zoom)
+    drawWaveform(canvas, hiRes.peaks, { color, clipDb, marks })
+    canvas.style.left = `${winFrom * 100}%`
+    canvas.style.width = `${winSpan * 100}%`
+  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall, raster, zoom])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))

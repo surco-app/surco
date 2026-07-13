@@ -361,6 +361,12 @@ export function GridSection({
       (a, b) => a.anchorSec - b.anchorSec,
     )
     commit({ ...shown, changes })
+    // Land the reference ON the new change: the beat it starts at sits just
+    // RIGHT of where the line was, so leaving the line put would keep the
+    // controls pointing at the segment BEHIND it — and the nudges would move
+    // the whole track instead of the stretch just carved out. Centring makes
+    // the next edit hit the new segment, which is the whole point of the button.
+    centerOn(sec / durationSec)
   }
 
   function removeChange(index: number): void {

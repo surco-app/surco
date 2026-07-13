@@ -371,6 +371,23 @@ describe('GridSection two-lane layout', () => {
 // "Adjust from here" — a new segment from the beat in view — and every later
 // edit touches only the segment you're standing on, never what's behind it.
 describe('GridSection segments', () => {
+  // The button carves the segment at the beat AHEAD of the line, so the line must
+  // land ON it — left where it was (a hair behind the new anchor) the controls
+  // would still point at the segment BEHIND, and a nudge would move the whole
+  // track instead of the stretch just carved out.
+  it('lands the reference on the change it just staged', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    fireEvent.click(screen.getByTestId('grid-from-here'))
+    const staged = onChange.mock.calls[0][0].changes[0].anchorSec
+    expect(scroller.scrollLeft).toBeCloseTo((staged / 60) * 6000 - 300, 0)
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {
