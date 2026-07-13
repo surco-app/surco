@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
+import { claimSpace } from '../lib/spaceClaim'
 import { mediaUrl } from '../../../shared/media'
 import type { Beatgrid } from '../../../shared/types'
 import { useBeatgrid } from '../hooks/useBeatgrid'
@@ -40,6 +41,13 @@ const AUDITION_SEC = 8
 // ~9 s of a typical track in view, transients and beat lines both readable —
 // instead of asking for a zoom-in from ×1 on every single track.
 const WORK_ZOOM = 32
+// The centre reference's magnet: a beat within this many panel pixels of the
+// line pulls it in, so panning lands on a beat by feel instead of a hair off.
+const SNAP_PX = 10
+// The lane's nominal width in CSS px, for turning SNAP_PX into seconds without
+// measuring on every render — the strip fills the editor pane, and the magnet's
+// feel is forgiving enough that a panel a few hundred px off changes nothing.
+const LANE_PX = 900
 
 interface Props {
   value: Beatgrid | undefined
@@ -50,8 +58,9 @@ interface Props {
 }
 
 // The per-track beatgrid for the DJ exports: a constant-tempo grid drawn over
-// the wave, lined up with the beats by grabbing a beat line (phase), dragging
-// the anchor handle (absolute), nudging, or typing the BPM. The detection only
+// the wave, lined up with the beats through the buttons and the keyboard alone
+// (nudges, beat steps, typed BPM, halve/double, "adjust from here") — the
+// cursor's one job on the lane is panning the wave. The detection only
 // suggests — it shows as the live grid until the user touches anything, and
 // what the exports carry is whatever grid the track stores.
 export function GridSection({
@@ -111,8 +120,33 @@ export function GridSection({
   }
   // "Where you are" for the segment-scoped controls (BPM, nudges, From here):
   // the centre of the visible window — the overview press centres the window on
-  // the spot being worked, so the centre IS the current position.
-  const viewCentreSec = ((view.from + view.to) / 2) * durationSec
+  // the spot being worked, so the centre IS the current position. Magnetic: with
+  // a beat within SNAP_PX of it, the reference sticks to that beat, so panning
+  // lands on a line by feel and "adjust from here" starts exactly on it instead
+  // of a hair off. The raw centre stands when no beat is close.
+  const rawCentreSec = ((view.from + view.to) / 2) * durationSec
+  const snappedCentre = useMemo(() => {
+    if (!shown || durationSec <= 0 || segments.length === 0) return null
+    const index = (() => {
+      let i = 0
+      for (let j = 1; j < segments.length; j++) {
+        if (segments[j].anchorSec <= rawCentreSec) i = j
+        else break
+      }
+      return i
+    })()
+    const seg = segments[index]
+    const period = 60 / seg.bpm
+    const beat = seg.anchorSec + Math.round((rawCentreSec - seg.anchorSec) / period) * period
+    // The catch window in seconds: SNAP_PX of the panel, sized off the VISIBLE
+    // span (the view is the source of truth — zoom alone lies while the lane is
+    // still settling into its scroll position).
+    const visibleSec = Math.max(1e-6, (view.to - view.from) * durationSec)
+    const catchSec = visibleSec * (SNAP_PX / LANE_PX)
+    return Math.abs(beat - rawCentreSec) <= catchSec ? beat : null
+  }, [shown, segments, rawCentreSec, durationSec, view])
+  const viewCentreSec = snappedCentre ?? rawCentreSec
+  const centreSnapped = snappedCentre !== null
   const activeSegIndex = shown ? segmentIndexAt(viewCentreSec) : 0
   const activeSeg = segments[activeSegIndex]
 
@@ -135,19 +169,19 @@ export function GridSection({
     return { ...grid, changes }
   }
 
-  // The nearest grid line to an instant — the governing segment's nearest beat,
-  // or the next segment's anchor when that line is closer (it is a line too).
-  function nearestBeatSec(sec: number): number {
+  // The first grid line AT or AFTER an instant — where "adjust from here"
+  // starts a new segment: the change must begin on the beat to the RIGHT of the
+  // centre reference (that's the stretch being fixed), never on the one behind
+  // it, which would re-anchor music the user is leaving alone.
+  function beatAtOrAfter(sec: number): number {
     const index = segmentIndexAt(sec)
     const seg = segments[index]
     const period = 60 / seg.bpm
-    let k = Math.round((sec - seg.anchorSec) / period)
-    if (index > 0 && k < 0) k = 0
-    let best = seg.anchorSec + k * period
+    const k = Math.max(0, Math.ceil((sec - seg.anchorSec) / period - 1e-9))
+    const beat = seg.anchorSec + k * period
     const next = segments[index + 1]
-    if (next && (best >= next.anchorSec || Math.abs(next.anchorSec - sec) < Math.abs(best - sec)))
-      best = next.anchorSec
-    return best
+    // A later segment's own anchor is a line too: never step past it.
+    return next && beat >= next.anchorSec ? next.anchorSec : beat
   }
 
   // rekordbox-style undo/redo over committed grid edits: each commit pushes the
@@ -297,7 +331,7 @@ export function GridSection({
   // pinned.
   function addChangeFromHere(): void {
     if (!shown || durationSec <= 0) return
-    const sec = Number(nearestBeatSec(viewCentreSec).toFixed(3))
+    const sec = Number(beatAtOrAfter(viewCentreSec).toFixed(3))
     if (sec <= shown.anchorSec) return
     if (gridSegments(shown).some((s) => Math.abs(s.anchorSec - sec) < 1e-3)) return
     const bpm = segments[segmentIndexAt(sec)].bpm
@@ -379,19 +413,26 @@ export function GridSection({
       setPlayheadSec(null)
     }
   }, [value])
+  // Space plays/pauses this check while the section is open — and the claim
+  // keeps the same press from ALSO starting the mini-player (see spaceClaim).
+  // The handler is re-registered whenever what it closes over changes, so the
+  // key always drives the live grid and position.
+  const auditionRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    if (!open) return
+    return claimSpace(() => auditionRef.current())
+  }, [open])
+
   function audition(): void {
     if (auditing) {
       stopAudition()
       return
     }
     if (!shown || durationSec === 0) return
-    // The first grid line at or after the window start — under whichever
-    // segment governs there.
-    const viewStart = view.from * durationSec
-    const seg = segments[segmentIndexAt(viewStart)]
-    const period = 60 / seg.bpm
-    const k = Math.ceil((viewStart - seg.anchorSec) / period - 1e-6)
-    const from = Math.max(0, seg.anchorSec + k * period)
+    // From the centre reference — the red line IS the position, so the check
+    // plays exactly the stretch being worked on (magnetised onto its beat, so
+    // the first click lands on a transient).
+    const from = Math.max(0, Math.min(durationSec, viewCentreSec))
     const until = Math.min(durationSec, from + AUDITION_SEC)
     const audio = new Audio(mediaUrl(inputPath))
     audioRef.current = audio
@@ -417,6 +458,9 @@ export function GridSection({
     rafRef.current = requestAnimationFrame(tick)
     setAuditing(true)
   }
+  // The claim above fires through this ref, so Space always drives the live
+  // closure (current grid, current centre) without re-registering per render.
+  auditionRef.current = audition
 
   const iconButton = (
     testid: string,
@@ -824,8 +868,17 @@ export function GridSection({
                 <>
                   <span
                     data-testid="grid-center-line"
+                    data-snapped={centreSnapped || undefined}
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-[var(--color-danger)]/60"
+                    // A crosshair, not a marker: it stays nailed to the middle of
+                    // the viewport while the wave slides under it (rekordbox's
+                    // reference). It must never move or grow mid-pan — chasing
+                    // the magnetised beat made it smear into a fat streak while
+                    // dragging. The magnet lives in the POSITION the controls
+                    // act on, not in the line; the glow only says "caught".
+                    className={`pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-[var(--color-danger)] ${
+                      centreSnapped && !panning ? 'shadow-[0_0_4px_var(--color-danger)]' : 'opacity-60'
+                    }`}
                   />
                   {activeSeg && (
                     <span

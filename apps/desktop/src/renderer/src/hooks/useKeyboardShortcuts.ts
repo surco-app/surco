@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
 import { isTypingTarget, keyToCommandId } from '../lib/keymap'
+import { runSpaceClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
 interface Params {
@@ -56,6 +57,13 @@ export function useKeyboardShortcuts(params: Params): void {
       }
       const id = keyToCommandId(e, isTypingTarget(document.activeElement), p.bindings, p.isMac)
       if (!id) return
+      // A section with its own transport (the beatgrid's audition) claims Space
+      // while it is open, so one press never starts BOTH its check and the
+      // mini-player. Nothing claimed → the global play command runs as always.
+      if (id === 'play' && !p.overlayOpen && runSpaceClaim()) {
+        e.preventDefault()
+        return
+      }
       // The language toggle is global UI chrome, not a list action, so it stays live even
       // over a modal — the onboarding wizard has no other way to reach the second locale.
       // Every other command is swallowed while an overlay owns the screen.

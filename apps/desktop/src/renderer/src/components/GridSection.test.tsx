@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Beatgrid, BeatgridResult, WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
+import { runSpaceClaim } from '../lib/spaceClaim'
 import { GridSection } from './GridSection'
 
 afterEach(cleanup)
@@ -268,14 +269,22 @@ describe('GridSection grid', () => {
 
   // The audition must start ON a beat: hearing the click land on the transient
   // is the whole check, so it seeks to the first grid beat in view.
-  it('auditions from the first beat of the visible window', async () => {
+  // The red line IS the position, so the check plays the stretch being worked
+  // on — and Space drives it while the section is open (without the mini-player
+  // hearing the same press: see the spaceClaim guard in useKeyboardShortcuts).
+  it('auditions from the centre reference and toggles on Space', async () => {
     render(section())
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     fireEvent.click(screen.getByTestId('grid-audition'))
     expect(audios).toHaveLength(1)
     audios[0].onloadedmetadata?.()
-    expect(audios[0].currentTime).toBeCloseTo(0.25, 6)
+    // Initial full-track view: the centre is 30 s, magnetised onto the 30.25 s
+    // beat (120 bpm phased to 0.25 s) — a beat, not an arbitrary instant.
+    expect(audios[0].currentTime).toBeCloseTo(30.25, 2)
     expect(play).toHaveBeenCalled()
+    // The section's Space claim stops it again.
+    expect(runSpaceClaim()).toBe(true)
+    expect(pause).toHaveBeenCalled()
   })
 })
 
@@ -362,14 +371,20 @@ describe('GridSection two-lane layout', () => {
 // "Adjust from here" — a new segment from the beat in view — and every later
 // edit touches only the segment you're standing on, never what's behind it.
 describe('GridSection segments', () => {
-  it('stages a change at the beat in the view centre from the From-here button', async () => {
+  // "Adjust from here" fixes the stretch AHEAD of the centre reference, so the
+  // new segment must start on the first beat AT OR AFTER the red line — a beat
+  // behind it would re-anchor music the user is deliberately leaving alone.
+  it('stages a change on the first beat at or after the centre reference', async () => {
     const onChange = vi.fn()
-    render(section({ onChange }))
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // Centre of the initial full-track view: 30 s. At 120 bpm phased to 0.25 s
+    // the beats around it are 29.75 s and 30.25 s — the one AFTER wins, even
+    // though 29.75 s is equally near.
     fireEvent.click(screen.getByTestId('grid-from-here'))
-    // jsdom's view is the whole 60 s track; its centre (30 s) sits nearest the
-    // detected grid's beat at 30.25 (anchor 0.25, 120 BPM).
-    expect(onChange).toHaveBeenCalledWith({
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0]).toEqual({
       bpm: 120,
       anchorSec: 0.25,
       changes: [{ anchorSec: 30.25, bpm: 120 }],
@@ -417,9 +432,10 @@ describe('GridSection segments', () => {
     render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     expect(screen.getByTestId('grid-center-line')).toBeInTheDocument()
-    // Initial view spans the whole 60 s track: centre 30 s, anchor 0.25 s at
-    // 120 bpm (2 s bars) → +14.9 bars.
-    expect(screen.getByTestId('grid-center-bars')).toHaveTextContent('+14.9 bars')
+    // Initial view spans the whole 60 s track: the centre (30 s) magnetises onto
+    // the beat at 30.25 s, which is exactly 15 bars past the 0.25 s anchor at
+    // 120 bpm — the magnet is what makes the offset a round number.
+    expect(screen.getByTestId('grid-center-bars')).toHaveTextContent('+15.0 bars')
   })
 
   it('removes a focused change with Delete', async () => {

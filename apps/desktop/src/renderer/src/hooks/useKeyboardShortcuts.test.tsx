@@ -3,6 +3,7 @@ import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Command } from '../lib/commands'
+import { claimSpace } from '../lib/spaceClaim'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 
 // Hooks from a previous test must not stay subscribed to window: a leftover handler
@@ -101,5 +102,24 @@ describe('useKeyboardShortcuts Ctrl+arrow track stepping', () => {
     const { stepTrack } = setup(true)
     press({ key: 'ArrowDown', ctrlKey: true })
     expect(stepTrack).not.toHaveBeenCalled()
+  })
+})
+
+// A section with its own transport (the beatgrid's audition) claims Space while
+// it is open. The whole point of the claim is that ONE press can't both check
+// the grid and start the mini-player playing the whole track underneath.
+describe('useKeyboardShortcuts space claim', () => {
+  it('gives Space to a claiming section instead of the player, and returns it after', () => {
+    const { play } = setup(false)
+    const claimed = vi.fn()
+    const release = claimSpace(claimed)
+    press({ key: ' ' })
+    expect(claimed).toHaveBeenCalledTimes(1)
+    expect(play).not.toHaveBeenCalled()
+    // Released (section folded or unmounted): the player gets its key back.
+    release()
+    press({ key: ' ' })
+    expect(claimed).toHaveBeenCalledTimes(1)
+    expect(play).toHaveBeenCalledTimes(1)
   })
 })
