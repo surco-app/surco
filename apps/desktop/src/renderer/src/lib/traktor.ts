@@ -1,5 +1,6 @@
 import type { TrackItem } from '../types'
-import { exportAnchorSec } from './beatgrid'
+import { gridSegments } from '../../../shared/beatgrid'
+import { exportedBeatgrid } from './beatgrid'
 
 // Builds a Traktor collection (.nml) from the loaded tracks, plus a single "Surco"
 // playlist. Like the rekordbox export it's a bridge file the user imports — Traktor
@@ -82,14 +83,19 @@ export function buildTraktorNml(tracks: TrackItem[]): string {
     if (Number.isFinite(bpm) && bpm > 0) {
       entries.push(`      <TEMPO BPM="${bpm.toFixed(6)}" BPM_QUALITY="100.000000"></TEMPO>`)
     }
-    if (t.beatgrid) {
-      // TYPE="4" is Traktor's grid marker; START is in milliseconds. Traktor may
-      // still show the grid unlocked — LOCK on the ENTRY is unverified against a
-      // real Traktor and stays a possible follow-up.
-      const startMs = (exportAnchorSec(t) ?? 0) * 1000
-      entries.push(
-        `      <CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="${startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>`,
-      )
+    const outGrid = t.beatgrid ? exportedBeatgrid(t) : undefined
+    if (outGrid) {
+      // TYPE="4" is Traktor's grid marker; START is in milliseconds — one per
+      // segment: Traktor keeps a single BPM per track, but every marker
+      // re-anchors the phase, so the drift points a multi-segment grid pins
+      // stay pinned. Traktor may still show the grid unlocked — LOCK on the
+      // ENTRY is unverified against a real Traktor and stays a follow-up.
+      for (const s of gridSegments(outGrid)) {
+        const startMs = s.anchorSec * 1000
+        entries.push(
+          `      <CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="${startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>`,
+        )
+      }
     }
     entries.push('    </ENTRY>')
     playlist.push(

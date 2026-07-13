@@ -17,6 +17,31 @@ describe('seratoBeatgridPayload', () => {
   })
 })
 
+describe('seratoBeatgridPayload multi-segment', () => {
+  // Serato's own variable-grid form: every segment but the last is a
+  // non-terminal marker (position + whole beats to the next marker, uint32),
+  // the last is the terminal one (position + BPM). Beats-to-next is what makes
+  // Serato re-derive each span's tempo from the marker positions themselves.
+  it('writes non-terminal markers for the leading segments', () => {
+    const bytes = Buffer.from(
+      seratoBeatgridPayload({
+        bpm: 120,
+        anchorSec: 0.5,
+        changes: [{ anchorSec: 60.5, bpm: 130 }],
+      }),
+    )
+    expect(bytes).toHaveLength(6 + 2 * 8 + 1)
+    expect(bytes.readUInt32BE(2)).toBe(2)
+    // Non-terminal: position, then beats till next — (60.5-0.5)/0.5 = 120.
+    expect(bytes.readFloatBE(6)).toBeCloseTo(0.5, 6)
+    expect(bytes.readUInt32BE(10)).toBe(120)
+    // Terminal: position + BPM, as in the constant form.
+    expect(bytes.readFloatBE(14)).toBeCloseTo(60.5, 5)
+    expect(bytes.readFloatBE(18)).toBe(130)
+    expect(bytes.readUInt8(22)).toBe(0)
+  })
+})
+
 describe('seratoBeatgridVorbis', () => {
   // The FLAC comment is the GEOB content wrapped in Serato's base64 envelope:
   // MIME + double NUL + tag name + NUL + payload, encoded without padding, a

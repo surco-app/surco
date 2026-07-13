@@ -134,6 +134,20 @@ describe('buildRekordboxXml beatgrid', () => {
     expect(out).toMatch(/<TRACK TrackID="1"[^>]*\/>/)
   })
 
+  // A multi-segment grid is exactly what rekordbox's TEMPO list expresses: one
+  // node per segment, each anchoring its own bpm from its own beat 1.
+  it('emits one TEMPO node per segment for a multi-segment grid', () => {
+    const out = buildRekordboxXml([
+      track({
+        id: 'a',
+        beatgrid: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 60.5, bpm: 130 }] },
+        meta: { title: 'A' },
+      }),
+    ])
+    expect(out).toContain('<TEMPO Inizio="0.250" Bpm="120.00" Metro="4/4" Battito="1"/>')
+    expect(out).toContain('<TEMPO Inizio="60.500" Bpm="130.00" Metro="4/4" Battito="1"/>')
+  })
+
   // The grid is stored in original-file seconds; a converted output had the
   // trimmed head cut off, so the marker shifts back by it.
   it('offsets Inizio by the trimmed head on a converted track', () => {

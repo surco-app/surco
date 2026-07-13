@@ -129,6 +129,21 @@ describe('buildTraktorNml beatgrid', () => {
     expect(out).not.toContain('CUE_V2')
   })
 
+  // Traktor keeps one BPM per track, but each grid marker re-anchors the phase
+  // — so a multi-segment grid still exports every change as its own marker,
+  // pinning the drift points even if the tempo between them stays the base's.
+  it('emits one grid marker per segment for a multi-segment grid', () => {
+    const out = buildTraktorNml([
+      track({
+        id: 'a',
+        beatgrid: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 60.5, bpm: 130 }] },
+        meta: { title: 'A' },
+      }),
+    ])
+    expect(out).toContain('TYPE="4" START="250.000000"')
+    expect(out).toContain('TYPE="4" START="60500.000000"')
+  })
+
   // The grid is stored in original-file seconds; a converted output had the
   // trimmed head cut off, so the marker shifts back by it.
   it('offsets the marker by the trimmed head on a converted track', () => {

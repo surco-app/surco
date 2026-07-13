@@ -1,5 +1,6 @@
+import { gridSegments } from '../../../shared/beatgrid'
 import type { TrackItem } from '../types'
-import { exportAnchorSec } from './beatgrid'
+import { exportedBeatgrid } from './beatgrid'
 
 // Builds a rekordbox-importable collection XML (DJ_PLAYLISTS v1) from the loaded
 // tracks, plus a single "Surco" playlist referencing them all. rekordbox imports each
@@ -65,17 +66,17 @@ export function buildRekordboxXml(tracks: TrackItem[]): string {
       .filter(([, value]) => value !== '')
       .map(([key, value]) => `${key}="${escapeXml(value)}"`)
       .join(' ')
-    if (!grid) return `    <TRACK ${rendered}/>`
-    // The staged beatgrid, as rekordbox's grid structure: Inizio = seconds to
-    // the first beat, one TEMPO node = a constant grid. Battito pins the anchor
-    // to beat 1 of a 4/4 bar — Surco detects no downbeats, so this is the same
-    // assumption the section's visual downbeat count makes.
-    const inizio = exportAnchorSec(t) ?? 0
-    return [
-      `    <TRACK ${rendered}>`,
-      `      <TEMPO Inizio="${inizio.toFixed(3)}" Bpm="${grid.bpm.toFixed(2)}" Metro="4/4" Battito="1"/>`,
-      '    </TRACK>',
-    ].join('\n')
+    const outGrid = exportedBeatgrid(t)
+    if (!grid || !outGrid) return `    <TRACK ${rendered}/>`
+    // The staged beatgrid, as rekordbox's grid structure: one TEMPO node per
+    // segment, Inizio = seconds to that segment's first beat. Battito pins
+    // each anchor to beat 1 of a 4/4 bar — Surco detects no downbeats, so this
+    // is the same assumption the section's visual downbeat count makes.
+    const tempoNodes = gridSegments(outGrid).map(
+      (s) =>
+        `      <TEMPO Inizio="${s.anchorSec.toFixed(3)}" Bpm="${s.bpm.toFixed(2)}" Metro="4/4" Battito="1"/>`,
+    )
+    return [`    <TRACK ${rendered}>`, ...tempoNodes, '    </TRACK>'].join('\n')
   })
   const playlistTracks = tracks.map((_t, i) => `      <TRACK Key="${i + 1}"></TRACK>`).join('\n')
   return [

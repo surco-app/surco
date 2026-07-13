@@ -56,6 +56,40 @@ describe('engineBeatData', () => {
     expect(raw.length).toBe(17 + 2 * gridBytes)
   })
 
+  // A multi-segment grid adds one marker per change between the two outer
+  // ones: beat indexes accumulate whole beats per span, and each span's
+  // sampleOffset delta over its beatsToNext is what Engine reads as that
+  // span's tempo.
+  it('adds a marker per change with cumulative beat indexes', () => {
+    const blob = Buffer.from(
+      engineBeatData(
+        { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 15.25, bpm: 150 }] },
+        RATE,
+        SAMPLES,
+      ),
+    )
+    const raw = inflateSync(blob.subarray(4))
+    expect(raw.readBigInt64BE(17)).toBe(3n)
+    const m1 = 25
+    // Beat -4 extrapolated from the BASE segment.
+    expect(raw.readDoubleLE(m1)).toBe(11025 - 4 * 22050)
+    expect(raw.readBigInt64LE(m1 + 8)).toBe(-4n)
+    // 4 lead-in beats plus (15.25-0.25)/0.5 = 30 base-segment beats.
+    expect(raw.readInt32LE(m1 + 16)).toBe(34)
+    const m2 = m1 + 24
+    expect(raw.readDoubleLE(m2)).toBe(15.25 * RATE)
+    expect(raw.readBigInt64LE(m2 + 8)).toBe(30n)
+    // (30-15.25) s at 150 BPM = 36.875 beats → 37 to reach past the end.
+    expect(raw.readInt32LE(m2 + 16)).toBe(37)
+    const m3 = m2 + 24
+    expect(raw.readDoubleLE(m3)).toBeCloseTo((15.25 + 37 * 0.4) * RATE, 6)
+    expect(raw.readBigInt64LE(m3 + 8)).toBe(67n)
+    expect(raw.readInt32LE(m3 + 16)).toBe(0)
+    // Both grid copies carry the three markers.
+    const gridBytes = 8 + 3 * 24
+    expect(raw.length).toBe(17 + 2 * gridBytes)
+  })
+
   // A grid whose anchor sits past the end of a short clip still needs its two
   // markers ordered first-before-last or Engine rejects the blob.
   it('keeps at least one beat between the markers on degenerate clips', () => {
