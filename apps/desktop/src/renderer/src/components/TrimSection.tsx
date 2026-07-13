@@ -176,34 +176,63 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
           <p className="mb-3 text-xs text-fg-dim">{tr('trim.hint')}</p>
           {(loading || wave) && (
             <>
-              <div className="mb-1.5 flex min-w-0 items-center gap-x-4 gap-y-1">
+              {/* The action lives IN the detection row, not below the strip: the
+                  message is what the user reads ("detected 2.1 s"), so the one-click
+                  confirm must sit right next to it — parked under the wave it went
+                  unseen in real use. Same for Reset beside the cuts readout. */}
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {shown ? (
-                  <span data-testid="trim-cuts" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
-                    <span className="font-medium uppercase tracking-wider">
-                      {tr('trim.cutsLabel')}
+                  <>
+                    <span data-testid="trim-cuts" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
+                      <span className="font-medium uppercase tracking-wider">
+                        {tr('trim.cutsLabel')}
+                      </span>
+                      {` ${cuts.join(' · ')}`}
                     </span>
-                    {` ${cuts.join(' · ')}`}
-                  </span>
+                    {value && (
+                      <button
+                        type="button"
+                        data-testid="trim-clear"
+                        onClick={() => onChange(undefined)}
+                        className="press shrink-0 text-[10px] text-fg-dim underline-offset-2 hover:text-fg hover:underline"
+                      >
+                        {tr('trim.clear')}
+                      </button>
+                    )}
+                  </>
                 ) : (
                   wave && (
-                    <span data-testid="trim-detected" className="min-w-0 truncate text-[10px] text-fg-dim">
-                      {suggestion
-                        ? tr('trim.detected', {
-                            parts: [
-                              suggestion.startSec !== undefined
-                                ? tr('trim.cutStart', { seconds: cutSeconds(suggestion.startSec) })
-                                : undefined,
-                              suggestion.endSec !== undefined
-                                ? tr('trim.cutEnd', {
-                                    seconds: cutSeconds(durationSec - suggestion.endSec),
-                                  })
-                                : undefined,
-                            ]
-                              .filter(Boolean)
-                              .join(' · '),
-                          })
-                        : tr('trim.nothing')}
-                    </span>
+                    <>
+                      <span data-testid="trim-detected" className="min-w-0 truncate text-[10px] text-fg-dim">
+                        {suggestion
+                          ? tr('trim.detected', {
+                              parts: [
+                                suggestion.startSec !== undefined
+                                  ? tr('trim.cutStart', { seconds: cutSeconds(suggestion.startSec) })
+                                  : undefined,
+                                suggestion.endSec !== undefined
+                                  ? tr('trim.cutEnd', {
+                                      seconds: cutSeconds(durationSec - suggestion.endSec),
+                                    })
+                                  : undefined,
+                              ]
+                                .filter(Boolean)
+                                .join(' · '),
+                            })
+                          : tr('trim.nothing')}
+                      </span>
+                      {suggestion && (
+                        <button
+                          type="button"
+                          data-testid="trim-apply"
+                          onClick={() => onChange(suggestion)}
+                          className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-0.5 text-[10px] font-medium text-fg-muted transition-colors hover:text-fg"
+                        >
+                          <Scissors className="h-3 w-3" aria-hidden="true" />
+                          {tr('trim.apply')}
+                        </button>
+                      )}
+                    </>
                   )
                 )}
                 <span className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -272,31 +301,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                   </div>
                 )}
               </Strip>
-              {wave && (
-                <div className="mt-2 flex items-center gap-3">
-                  {!shown && suggestion && (
-                    <button
-                      type="button"
-                      data-testid="trim-apply"
-                      onClick={() => onChange(suggestion)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                    >
-                      <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
-                      {tr('trim.apply')}
-                    </button>
-                  )}
-                  {value && (
-                    <button
-                      type="button"
-                      data-testid="trim-clear"
-                      onClick={() => onChange(undefined)}
-                      className="press text-xs text-fg-dim hover:text-fg"
-                    >
-                      {tr('trim.clear')}
-                    </button>
-                  )}
-                </div>
-              )}
               {value && (
                 <p data-testid="trim-cue-warning" className="mt-3 text-xs text-warn">
                   {tr('trim.cueWarning')}
