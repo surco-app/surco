@@ -721,13 +721,13 @@ describe('GridSection undo/redo', () => {
     expect(undo).toBeDisabled()
     expect(redo).toBeDisabled()
     fireEvent.click(screen.getByTestId('grid-nudge-later'))
-    await screen.findByText('First beat at 0.26 s')
+    await waitFor(() => expect(screen.getByTestId('grid-anchor')).toHaveTextContent('0.26 s'))
     fireEvent.click(undo)
     // Back to the bare detection (no staged grid).
-    await screen.findByText('First beat at 0.25 s')
+    await waitFor(() => expect(screen.getByTestId('grid-anchor')).toHaveTextContent('0.25 s'))
     expect(redo).not.toBeDisabled()
     fireEvent.click(redo)
-    await screen.findByText('First beat at 0.26 s')
+    await waitFor(() => expect(screen.getByTestId('grid-anchor')).toHaveTextContent('0.26 s'))
   })
 })
 

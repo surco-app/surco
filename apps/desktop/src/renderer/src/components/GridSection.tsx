@@ -790,79 +790,6 @@ export function GridSection({
                     {divider}
                     <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
-                        'grid-beat-back',
-                        tr('grid.beatBack'),
-                        () => nudge(-60 / activeSeg.bpm),
-                        <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {iconButton(
-                        'grid-nudge-earlier',
-                        tr('grid.nudgeEarlier'),
-                        () => nudge(-NUDGE_SEC),
-                        <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {iconButton(
-                        'grid-nudge-later',
-                        tr('grid.nudgeLater'),
-                        () => nudge(NUDGE_SEC),
-                        <ChevronRight className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {iconButton(
-                        'grid-beat-forward',
-                        tr('grid.beatForward'),
-                        () => nudge(60 / activeSeg.bpm),
-                        <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                    </span>
-                    {divider}
-                    {/* The line's verbs: everything that acts where the red
-                        reference stands — a beat here, a beat centred, a new
-                        segment from here, or Auto's fresh listen (whole track on
-                        the base, this stretch only on a change segment). */}
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      {toolButton(
-                        'grid-beat-here',
-                        tr('grid.beatHere'),
-                        beatHere,
-                        <Anchor className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {toolButton(
-                        'grid-centre-beat',
-                        tr('grid.centreBeat'),
-                        centreNearestBeat,
-                        <Crosshair className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {toolButton(
-                        'grid-from-here',
-                        tr('grid.fromHere'),
-                        addChangeFromHere,
-                        <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
-                      )}
-                      {toolButton(
-                        'grid-reset',
-                        tr('grid.resetHint'),
-                        autoDetect,
-                        <Wand2
-                          className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
-                          aria-hidden="true"
-                        />,
-                        reprobing,
-                      )}
-                    </span>
-                    {divider}
-                    {toolButton(
-                      'grid-audition',
-                      tr('grid.audition'),
-                      audition,
-                      auditing ? (
-                        <Square className="h-3 w-3 fill-current" aria-hidden="true" />
-                      ) : (
-                        <Volume2 className="h-3 w-3" aria-hidden="true" />
-                      ),
-                    )}
-                    {divider}
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      {iconButton(
                         'grid-undo',
                         tr('grid.undo'),
                         undo,
@@ -885,7 +812,8 @@ export function GridSection({
                       data-testid="grid-anchor"
                       className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
                     >
-                      {tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
+                      {`${shown.anchorSec.toFixed(2)} s`}
+                      <Tooltip label={tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })} />
                     </span>
                   )}
                   <span className="flex shrink-0 items-center gap-0.5">
@@ -1105,6 +1033,86 @@ export function GridSection({
                 </>
               )}
               </div>
+              {/* The grid verbs live WITH the line: work happens at the centre
+                  (pan, look, nudge), so the buttons sit right under the red
+                  reference instead of up in a corner — hands stay where the
+                  eyes are. The top row keeps only what isn't about the line
+                  (tempo numbers, history, zoom). */}
+              {wave && durationSec > 0 && shown && activeSeg && (
+                <div className="mt-1.5 flex items-center justify-center gap-2">
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {iconButton(
+                      'grid-beat-back',
+                      tr('grid.beatBack'),
+                      () => nudge(-60 / activeSeg.bpm),
+                      <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {iconButton(
+                      'grid-nudge-earlier',
+                      tr('grid.nudgeEarlier'),
+                      () => nudge(-NUDGE_SEC),
+                      <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {iconButton(
+                      'grid-nudge-later',
+                      tr('grid.nudgeLater'),
+                      () => nudge(NUDGE_SEC),
+                      <ChevronRight className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {iconButton(
+                      'grid-beat-forward',
+                      tr('grid.beatForward'),
+                      () => nudge(60 / activeSeg.bpm),
+                      <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                  </span>
+                  {divider}
+                  {/* The line's verbs: a beat here, a beat centred, a new
+                      segment from here, or Auto's fresh listen (whole track on
+                      the base, this stretch only on a change segment). */}
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {toolButton(
+                      'grid-beat-here',
+                      tr('grid.beatHere'),
+                      beatHere,
+                      <Anchor className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {toolButton(
+                      'grid-centre-beat',
+                      tr('grid.centreBeat'),
+                      centreNearestBeat,
+                      <Crosshair className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {toolButton(
+                      'grid-from-here',
+                      tr('grid.fromHere'),
+                      addChangeFromHere,
+                      <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
+                    )}
+                    {toolButton(
+                      'grid-reset',
+                      tr('grid.resetHint'),
+                      autoDetect,
+                      <Wand2
+                        className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
+                        aria-hidden="true"
+                      />,
+                      reprobing,
+                    )}
+                  </span>
+                  {divider}
+                  {toolButton(
+                    'grid-audition',
+                    tr('grid.audition'),
+                    audition,
+                    auditing ? (
+                      <Square className="h-3 w-3 fill-current" aria-hidden="true" />
+                    ) : (
+                      <Volume2 className="h-3 w-3" aria-hidden="true" />
+                    ),
+                  )}
+                </div>
+              )}
               {wave && durationSec > 0 && (
                 <div
                   ref={overviewRef}
