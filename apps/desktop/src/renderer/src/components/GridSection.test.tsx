@@ -248,46 +248,20 @@ describe('GridSection grid', () => {
     await waitFor(() => expect(probe).toHaveBeenCalledWith('/in/track.wav', true))
   })
 
-  // Grabbing a beat line and dragging slides the whole grid — the rekordbox
-  // gesture — and commits once, on release.
-  it('slides the phase by dragging a beat line', async () => {
+  // The grid moves by buttons and keyboard alone (user call): no pointer gesture
+  // on the lane may ever shift the phase — a press just pans the wave.
+  it('never moves the grid from a pointer drag on the lane', async () => {
     const onChange = vi.fn()
     stubOverlayRect()
     render(section({ onChange }))
     const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-    // At 100 px/s the 0.25 s beat sits at 25 px; press on it, drag one beat (50 px) right.
+    // Straight over the beat at 0.25 s (x=25 at 100 px/s) — the old grab spot.
     fireEvent.pointerDown(overlay, { clientX: 25, pointerId: 1 })
     fireEvent.pointerMove(overlay, { clientX: 75, pointerId: 1 })
     fireEvent.pointerUp(overlay, { pointerId: 1 })
-    expect(onChange).toHaveBeenCalledTimes(1)
-    const grid = onChange.mock.calls[0][0]
-    expect(grid.bpm).toBe(120)
-    expect(grid.anchorSec).toBeCloseTo(0.75, 2)
-  })
-
-  // A press on empty wave must stay inert: dragging there used to shift the
-  // phase, so panning or a stray click while zooming moved the grid unnoticed.
-  it('ignores presses away from any beat line', async () => {
-    const onChange = vi.fn()
-    stubOverlayRect()
-    render(section({ onChange }))
-    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-    // 50 px sits 25 px from the beats at 25 and 75 px — well past the grab radius.
+    // And over open wave.
     fireEvent.pointerDown(overlay, { clientX: 50, pointerId: 1 })
     fireEvent.pointerMove(overlay, { clientX: 110, pointerId: 1 })
-    fireEvent.pointerUp(overlay, { pointerId: 1 })
-    expect(onChange).not.toHaveBeenCalled()
-  })
-
-  // Trackpad clicks wobble a pixel or two; that wobble must not commit a
-  // milliseconds-off grid on every click near a line.
-  it('does not commit a sub-threshold wobble on a beat line', async () => {
-    const onChange = vi.fn()
-    stubOverlayRect()
-    render(section({ onChange }))
-    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-    fireEvent.pointerDown(overlay, { clientX: 25, pointerId: 1 })
-    fireEvent.pointerMove(overlay, { clientX: 26, pointerId: 1 })
     fireEvent.pointerUp(overlay, { pointerId: 1 })
     expect(onChange).not.toHaveBeenCalled()
   })
@@ -402,7 +376,7 @@ describe('GridSection segments', () => {
     })
   })
 
-  it('drags only the segment under the grabbed beat line', async () => {
+  it('nudges only the segment whose handle is focused', async () => {
     const onChange = vi.fn()
     stubOverlayRect()
     render(
@@ -411,45 +385,21 @@ describe('GridSection segments', () => {
         value: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 30.25, bpm: 120 }] },
       }),
     )
-    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-    // A base-segment beat at 10.25 s (x=1025 at 100 px/s), dragged one beat right:
-    // only the base anchor moves.
-    fireEvent.pointerDown(overlay, { clientX: 1025, pointerId: 1 })
-    fireEvent.pointerMove(overlay, { clientX: 1075, pointerId: 1 })
-    fireEvent.pointerUp(overlay, { pointerId: 1 })
-    expect(onChange).toHaveBeenCalledTimes(1)
-    expect(onChange.mock.calls[0][0].anchorSec).toBeCloseTo(0.75, 2)
-    expect(onChange.mock.calls[0][0].changes).toEqual([{ anchorSec: 30.25, bpm: 120 }])
-    onChange.mockClear()
-    // A beat in the change's segment at 40.25 s, dragged half a beat right:
-    // only the change anchor moves — what's behind stays pinned.
-    fireEvent.pointerDown(overlay, { clientX: 4025, pointerId: 1 })
-    fireEvent.pointerMove(overlay, { clientX: 4050, pointerId: 1 })
-    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    const handle = await screen.findByTestId('grid-change-handle', undefined, { timeout: 3000 })
+    // The arrows move that change alone; what's behind it stays pinned.
+    fireEvent.keyDown(handle, { key: 'ArrowRight' })
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange.mock.calls[0][0].anchorSec).toBeCloseTo(0.25, 6)
-    expect(onChange.mock.calls[0][0].changes[0].anchorSec).toBeCloseTo(30.5, 2)
+    expect(onChange.mock.calls[0][0].changes[0].anchorSec).toBeCloseTo(30.26, 2)
   })
 
-  // The affordances djotas asked for: hovering within grab range of a beat shows
-  // the resize cursor and brightens that line; open wave shows the pan hand.
-  it('signals grabbable beats on hover and pans from open wave', async () => {
+  // The lane's one pointer gesture: grab the wave and pan it (hand cursors).
+  it('pans the wave from a press anywhere on the lane', async () => {
     const onChange = vi.fn()
     stubOverlayRect()
     render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
     const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
-
-    // Within grab range of the beat at 10.25 s (x=1025): resize + highlight.
-    fireEvent.pointerMove(overlay, { clientX: 1026, pointerId: 1 })
-    expect(overlay.style.cursor).toBe('ew-resize')
-    expect(document.querySelector('[data-hovered]')).not.toBeNull()
-
-    // Open wave between beats: the hand, and no highlighted line.
-    fireEvent.pointerMove(overlay, { clientX: 1050, pointerId: 1 })
     expect(overlay.style.cursor).toBe('grab')
-    expect(document.querySelector('[data-hovered]')).toBeNull()
-
-    // Dragging open wave pans the scroller instead of touching the grid.
     const scroller = overlay.parentElement?.parentElement as HTMLElement
     fireEvent.pointerDown(overlay, { clientX: 1050, pointerId: 1 })
     expect(overlay.style.cursor).toBe('grabbing')

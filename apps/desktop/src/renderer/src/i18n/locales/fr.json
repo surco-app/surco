@@ -507,7 +507,7 @@
   "grid": {
     "title": "Beatgrid",
     "centerBars": "{{bars}} mesures",
-    "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Saisissez une ligne de la grille pour l'aligner sur les temps.",
+    "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Alignez les beats avec les boutons de décalage — faites glisser l'onde pour vous déplacer.",
     "summaryNone": "Non",
     "detected": "{{bpm}} BPM détecté",
     "review": "Vérifiez la grille à l'oreille",

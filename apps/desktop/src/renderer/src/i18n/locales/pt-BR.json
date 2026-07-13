@@ -507,7 +507,7 @@
   "grid": {
     "title": "Beatgrid",
     "centerBars": "{{bars}} compassos",
-    "hint": "Coloca uma grade de beats sobre a onda para os exports DJ. Segure uma linha da grade para deslizá-la até as batidas.",
+    "hint": "Sobrepõe uma grade de batidas na onda para os exports de DJ. Alinhe as batidas com os botões de ajuste — arraste a onda para se mover.",
     "summaryNone": "Não",
     "detected": "Detectado {{bpm}} BPM",
     "review": "Confira a grade de ouvido",

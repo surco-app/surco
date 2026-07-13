@@ -507,7 +507,7 @@
   "grid": {
     "title": "Beatgrid",
     "centerBars": "{{bars}} bars",
-    "hint": "Lays a beat grid over the wave for the DJ exports. Grab a beat line to slide the grid onto the beats.",
+    "hint": "Lays a beat grid over the wave for the DJ exports. Line the beats up with the nudge buttons — drag the wave to move around.",
     "summaryNone": "Off",
     "detected": "Detected {{bpm}} BPM",
     "review": "Check the grid by ear",

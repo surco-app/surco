@@ -507,7 +507,7 @@
   "grid": {
     "title": "Beatgrid",
     "centerBars": "{{bars}} compases",
-    "hint": "Coloca una rejilla de beats sobre la onda para los exports DJ. Agarra una línea de la rejilla para deslizarla hasta los golpes.",
+    "hint": "Superpone una rejilla de beats sobre la onda para los exports de DJ. Cuadra los beats con los botones de ajuste — arrastra la onda para desplazarte.",
     "summaryNone": "No",
     "detected": "Detectado {{bpm}} BPM",
     "review": "Revisa el grid a oído",
