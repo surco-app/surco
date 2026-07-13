@@ -23,6 +23,18 @@
       {
         "text": "Silence trim now re-anchors Traktor cues and beatgrid in the exported file, and the handle magnet snaps to the exact millisecond the music starts.",
         "in": "0.54.0"
+      },
+      {
+        "text": "The Beatgrid section now works on two waves, rekordbox-style: the zoomed view where you adjust the grid (it opens zoomed onto the first beat) and, below it, the whole track — press or drag to move the view anywhere, and “Hear the grid” scrolls along with the playhead like a player.",
+        "in": "0.54.1"
+      },
+      {
+        "text": "The grid lands on the kick in hard dance too: when a long kick and an off-beat bassline confuse the detection, the sub's attack decides the right side of the beat.",
+        "in": "0.54.1"
+      },
+      {
+        "text": "The peak normalization checkboxes (remove DC offset, normalize channels independently) are remembered across sessions.",
+        "in": "0.54.1"
       }
     ]
   },

@@ -23,6 +23,18 @@
       {
         "text": "El recorte de silencio recoloca los cues y el beatgrid de Traktor en el fichero exportado, y el imán de las asas ajusta ahora al milisegundo exacto donde empieza la música.",
         "in": "0.54.0"
+      },
+      {
+        "text": "La sección Beatgrid trabaja ahora en dos ondas, estilo rekordbox: la vista ampliada donde ajustas el grid (se abre ya con zoom sobre el primer beat) y, debajo, la pista entera — pulsa o arrastra para llevar la vista a cualquier parte, y «Escuchar el grid» avanza siguiendo el playhead como un reproductor.",
+        "in": "0.54.1"
+      },
+      {
+        "text": "El grid clava el kick también en hard dance: cuando un kick largo y un bajo a contratiempo confunden la detección, el ataque del sub decide el lado correcto del beat.",
+        "in": "0.54.1"
+      },
+      {
+        "text": "Las casillas de la normalización por picos (quitar DC, normalizar canales por separado) se recuerdan entre sesiones.",
+        "in": "0.54.1"
       }
     ]
   },
