@@ -20,6 +20,7 @@ import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/bea
 import { mediaUrl } from '../../../shared/media'
 import type { Beatgrid } from '../../../shared/types'
 import { useBeatgrid } from '../hooks/useBeatgrid'
+import { useMaximizedSection } from '../hooks/useEditorSections'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
@@ -77,6 +78,10 @@ export function GridSection({
   const loading = isFetching && !wave
   const durationSec = wave?.durationSec ?? 0
   const [zoom, setZoom] = useState(WORK_ZOOM)
+  // Maximized (the header's own toggle drives the store), the lanes double in
+  // height — the whole window is available, so the wave takes it.
+  const { maximized } = useMaximizedSection()
+  const tall = maximized === 'grid'
   const [view, setView] = useState({ from: 0, to: 1 })
   // The live grid while dragging; committed to the track (onChange) only on
   // release, so a drag doesn't spray staleness/session updates per pixel.
@@ -724,6 +729,7 @@ export function GridSection({
                 inputPath={inputPath}
                 onViewChange={setView}
                 scrollerRef={scrollerRef}
+                tall={tall}
                 // No red clip marks: the eye is lining hairlines up with
                 // transients, and on a hot master the flags paint half the
                 // strip red — noise for this job.
@@ -885,7 +891,7 @@ export function GridSection({
                   aria-valuemax={Number(durationSec.toFixed(2))}
                   aria-valuenow={Number((((view.from + view.to) / 2) * durationSec).toFixed(2))}
                   tabIndex={0}
-                  className="relative mt-1.5 h-6 cursor-pointer touch-none overflow-hidden rounded-md focus-visible:outline-1 focus-visible:outline-accent"
+                  className={`relative mt-1.5 cursor-pointer touch-none overflow-hidden rounded-md focus-visible:outline-1 focus-visible:outline-accent ${tall ? 'h-10' : 'h-6'}`}
                   onPointerDown={(e) => {
                     scrubbing.current = true
                     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -912,8 +918,8 @@ export function GridSection({
                   <canvas
                     ref={overviewCanvasRef}
                     width={OVERLAY_W}
-                    height={36}
-                    className="block h-6 w-full rounded-md bg-[var(--color-field)]"
+                    height={tall ? 60 : 36}
+                    className={`block w-full rounded-md bg-[var(--color-field)] ${tall ? 'h-10' : 'h-6'}`}
                   />
                   {/* The grid's bar ticks, dimmed: enough to see where the grid
                       sits across the whole track, quiet enough not to compete

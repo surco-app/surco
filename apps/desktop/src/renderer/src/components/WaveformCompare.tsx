@@ -107,6 +107,7 @@ export function Strip({
   inputPath,
   onViewChange,
   scrollerRef,
+  tall = false,
   children,
 }: StripData & {
   color: string
@@ -139,6 +140,9 @@ export function Strip({
   // Hands the scroll container out, so a parent can drive the visible window —
   // the grid section's overview lane navigates by setting scrollLeft here.
   scrollerRef?: React.RefObject<HTMLDivElement | null>
+  // Double-height lanes for a maximized section: the whole window is available,
+  // so the wave takes it instead of floating in empty space.
+  tall?: boolean
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -180,7 +184,7 @@ export function Strip({
         clear: !background,
       })
     }
-  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom])
+  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom, tall])
   // A zoom step re-anchors the scroller so the spot the user is working on stays
   // put: at the cursor for a pinch/wheel zoom (anchorRef, set by the handler
   // below), at the middle for a button step — zooming must never teleport the
@@ -300,6 +304,7 @@ export function Strip({
     settledWin.durSec,
     hiResActive && settledWin.durSec > 0,
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tall only feeds the canvas height attribute in JSX, but changing that attribute wipes the bitmap — the effect must re-run to redraw at the new height.
   useEffect(() => {
     const canvas = hiResRef.current
     if (!canvas || !hiResActive || !wave) return
@@ -337,7 +342,7 @@ export function Strip({
     // drew, in strip percentages, so scrolling can never shear it off the overlays.
     canvas.style.left = `${view.from * 100}%`
     canvas.style.width = `${(view.to - view.from) * 100}%`
-  }, [hiResActive, hiRes, view, wave, color, clipDb, marks])
+  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
@@ -378,8 +383,10 @@ export function Strip({
         <canvas
           ref={canvasRef}
           width={Math.min(BASE_RASTER_MAX, Math.round(raster * zoom))}
-          height={splitActive ? CANVAS_H * 1.5 : CANVAS_H}
-          className={`block w-full rounded-lg bg-[var(--color-field)] ${splitActive ? 'h-36' : 'h-24'}`}
+          height={splitActive ? CANVAS_H * 1.5 : tall ? CANVAS_H * 2 : CANVAS_H}
+          className={`block w-full rounded-lg bg-[var(--color-field)] ${
+            splitActive ? 'h-36' : tall ? 'h-48' : 'h-24'
+          }`}
         />
         {/* The deep zoom's detail canvas: absolutely positioned IN CONTENT
             coordinates at the exact window it depicts (left/width are set in the
@@ -395,8 +402,8 @@ export function Strip({
             ref={hiResRef}
             data-testid="waveform-hires"
             width={2400}
-            height={CANVAS_H}
-            className="pointer-events-none absolute top-0 left-0 block h-24 rounded-lg bg-[var(--color-field)]"
+            height={tall ? CANVAS_H * 2 : CANVAS_H}
+            className={`pointer-events-none absolute top-0 left-0 block rounded-lg bg-[var(--color-field)] ${tall ? 'h-48' : 'h-24'}`}
             style={{ width: `${100 / zoom}%` }}
           />
         )}
