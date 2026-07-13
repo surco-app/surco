@@ -6,7 +6,7 @@ import { mediaUrl } from '../../../shared/media'
 import type { TrimRange } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
-import { detectTrim } from '../lib/trim'
+import { detectOnsets, detectTrim } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
@@ -46,6 +46,8 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   const loading = isFetching && !wave
   const durationSec = wave?.durationSec ?? 0
   const suggestion = useMemo(() => (wave ? detectTrim(wave) : undefined), [wave])
+  // The unpadded truth the drag magnet aims at: where the music actually starts/ends.
+  const onsets = useMemo(() => (wave ? detectOnsets(wave) : undefined), [wave])
   const [zoom, setZoom] = useState(1)
   // The live range while a handle is dragged; committed to the track (onChange)
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
@@ -124,10 +126,28 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     return ratio * durationSec
   }
 
+  // The magnet: dragging near where the music actually starts (or ends) pulls the
+  // handle onto it — landing the cut exactly on the wave is the whole gesture, and
+  // trackpads have no haptics an Electron app can fire, so the snap plus the
+  // handle's glow (`snapped`) stand in for the click under the finger. The catch
+  // window follows the zoom: generous in the overview, surgical when zoomed in.
+  const [snapped, setSnapped] = useState(false)
+  function withSnap(which: 'start' | 'end', sec: number): number {
+    const target = which === 'start' ? onsets?.startSec : onsets?.endSec
+    if (target === undefined || durationSec === 0) {
+      setSnapped(false)
+      return sec
+    }
+    const catchSec = Math.min(0.3, Math.max(0.02, (durationSec / zoom) * 0.015))
+    const snap = Math.abs(sec - target) <= catchSec
+    setSnapped(snap)
+    return snap ? target : sec
+  }
+
   function dragTo(clientX: number): void {
     const which = dragging.current
     if (!which) return
-    const sec = secondsAt(clientX)
+    const sec = withSnap(which, secondsAt(clientX))
     if (which === 'start') {
       setDraft({ ...shown, startSec: Math.min(sec, endSec - MIN_KEEP_SEC) })
     } else {
@@ -149,6 +169,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   function release(): void {
     const committed = draft
     dragging.current = null
+    setSnapped(false)
     if (!committed) return
     setDraft(null)
     commit(committed)
@@ -197,10 +218,20 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       onPointerUp={release}
       onPointerCancel={release}
     >
-      <span aria-hidden="true" className="absolute inset-y-0 left-1/2 w-px bg-accent" />
       <span
         aria-hidden="true"
-        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent"
+        data-testid={snapped && dragging.current === which ? `trim-snapped-${which}` : undefined}
+        className={`absolute inset-y-0 left-1/2 w-px bg-accent ${
+          snapped && dragging.current === which
+            ? 'shadow-[0_0_8px_2px_var(--color-accent)]'
+            : ''
+        }`}
+      />
+      <span
+        aria-hidden="true"
+        className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
+          snapped && dragging.current === which ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
+        }`}
       />
     </div>
   )

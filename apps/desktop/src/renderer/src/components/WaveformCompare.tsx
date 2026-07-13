@@ -225,6 +225,7 @@ export function Strip({
   // zoom's viewport canvas draws and what the windowed re-decode is asked for.
   // rAF-throttled off the native scroll so a flick costs one state write per frame.
   const [view, setView] = useState({ from: 0, to: 1 })
+  // biome-ignore lint/correctness/useExhaustiveDependencies: zoom isn't read inside, but a zoom step at scrollLeft 0 fires no scroll event — the effect must re-run to recompute the shrunken view.
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return

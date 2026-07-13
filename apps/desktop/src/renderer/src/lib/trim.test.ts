@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectTrim } from './trim'
+import { detectOnsets, detectTrim } from './trim'
 
 // 200 buckets over 100 s → 0.5 s per bucket, coarse but plenty for a suggestion
 // the user refines with the handles.
@@ -44,5 +44,18 @@ describe('detectTrim', () => {
   it('suggests nothing for an all-silent file', () => {
     expect(detectTrim(wave(() => NOISE))).toBeUndefined()
     expect(detectTrim({ peaks: [], durationSec: 0 })).toBeUndefined()
+  })
+})
+
+describe('detectOnsets', () => {
+  // The drag magnet's target: the unpadded edges of the music itself — the exact
+  // "at the wave" spot the padded suggestion deliberately backs away from.
+  it('returns the unpadded music edges', () => {
+    const w = wave((sec) => (sec >= 10 && sec < 90 ? MUSIC : NOISE))
+    expect(detectOnsets(w)).toEqual({ startSec: 10, endSec: 90 })
+  })
+
+  it('returns undefined for an all-silent decode', () => {
+    expect(detectOnsets(wave(() => NOISE))).toBeUndefined()
   })
 })

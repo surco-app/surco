@@ -79,13 +79,13 @@ describe('TrimSection', () => {
     render(section({ onChange }))
     const start = await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
     expect(screen.getByTestId('trim-detected-pill')).toHaveTextContent(
-      '9.7 s from the start · 9.7 s from the end',
+      '9.9 s from the start · 9.9 s from the end',
     )
     expect(onChange).not.toHaveBeenCalled()
     fireEvent.click(start)
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.7 })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.9 })
     fireEvent.click(screen.getByTestId('trim-apply-end'))
-    expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
+    expect(onChange).toHaveBeenCalledWith({ endSec: 90.1 })
     // A suggestion hugging the track edge must keep its button reachable: the
     // center clamps a half-button inside the strip instead of clipping under
     // the edge handle.
@@ -141,6 +141,33 @@ describe('TrimSection', () => {
     expect(onChange).not.toHaveBeenCalled()
     fireEvent(start, new MouseEvent('pointerup', { bubbles: true }))
     expect(onChange).toHaveBeenCalledWith({ startSec: 5, endSec: 90.3 })
+  })
+
+  // The trackpad-haptics stand-in: dragging near where the music actually starts
+  // pulls the handle onto it (the onset, not the padded suggestion) and the handle
+  // glows while caught — landing the cut "at the wave" without pixel-hunting.
+  it('snaps a dragged handle onto the music onset and glows', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    const overlay = start.parentElement as HTMLElement
+    vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      width: 1000,
+      top: 0,
+      height: 64,
+      right: 1000,
+      bottom: 64,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect)
+    fireEvent(start, new MouseEvent('pointerdown', { bubbles: true, clientX: 97 }))
+    // 9.8 s is within the ×1 catch window of the onset at 10.0 s.
+    fireEvent(start, new MouseEvent('pointermove', { bubbles: true, clientX: 98 }))
+    expect(screen.getByTestId('trim-snapped-start')).toBeInTheDocument()
+    fireEvent(start, new MouseEvent('pointerup', { bubbles: true }))
+    expect(onChange).toHaveBeenCalledWith({ startSec: 10, endSec: 90.3 })
   })
 
   // Placing a cut is one gesture: pressing the wave grabs the nearest handle and
