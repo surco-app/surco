@@ -480,6 +480,64 @@ describe('GridSection segments', () => {
     expect(again.changes[0].anchorSec).toBeCloseTo(30.03, 3)
   })
 
+  // rekordbox's TAP: four taps half a second apart read as 120 BPM on the
+  // active segment. A long pause must start a fresh take, not poison the mean.
+  it('sets the BPM from tapped intervals', async () => {
+    const onChange = vi.fn()
+    let clock = 0
+    const now = vi.spyOn(performance, 'now').mockImplementation(() => clock)
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 100, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const tap = screen.getByTestId('grid-tap')
+    for (const t of [0, 500, 1000, 1500]) {
+      clock = t
+      fireEvent.click(tap)
+    }
+    const grid = onChange.mock.calls.at(-1)[0]
+    expect(grid.bpm).toBeCloseTo(120, 2)
+    // Three seconds of silence, then two taps at a new tempo: only the fresh
+    // pair counts.
+    onChange.mockClear()
+    for (const t of [4500, 5100]) {
+      clock = t
+      fireEvent.click(tap)
+    }
+    expect(onChange.mock.calls.at(-1)[0].bpm).toBeCloseTo(100, 2)
+    now.mockRestore()
+  })
+
+  // rekordbox's expand/shrink beat intervals: a fine tempo step — wider gaps
+  // between beats IS a lower BPM — pivoting at the segment's anchor.
+  it('expands and shrinks the beat intervals by a hundredth of a BPM', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-expand'))
+    expect(onChange.mock.calls[0][0].bpm).toBeCloseTo(119.99, 3)
+    fireEvent.click(screen.getByTestId('grid-shrink'))
+    expect(onChange.mock.calls[1][0].bpm).toBeCloseTo(120.01, 3)
+    expect(onChange.mock.calls[1][0].anchorSec).toBe(0.25)
+  })
+
+  // rekordbox's "set the first beat to the current position": the base re-phases
+  // so a beat lands exactly under the line — folded back to keep the first beat
+  // near the start. Uses the RAW centre: the snapped centre is already a beat.
+  it('re-phases the grid so a beat lands under the line', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    // Anchor 0.3 puts the lattice 0.2 s off the view centre (30 s of 60 s).
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.3 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-beat-here'))
+    const grid = onChange.mock.calls[0][0]
+    // 30.0 folds to phase 0: the first beat moves to 0.00 and a beat now sits
+    // at exactly 30.0, under the line.
+    expect(grid.anchorSec).toBe(0)
+    expect(grid.bpm).toBe(120)
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {

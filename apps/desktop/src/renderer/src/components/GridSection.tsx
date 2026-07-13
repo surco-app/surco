@@ -1,12 +1,15 @@
 import {
+  Anchor,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   Crosshair,
+  FoldHorizontal,
   Redo2,
   SplitSquareHorizontal,
   Square,
+  UnfoldHorizontal,
   Undo2,
   Volume2,
   Wand2,
@@ -366,6 +369,49 @@ export function GridSection({
     )
   }
 
+  // rekordbox's expand/shrink beat intervals, as a fine BPM step on the active
+  // segment: expanding the gaps between beats IS lowering the tempo. The grid
+  // pivots at the segment's anchor, so the beat under the anchor never moves.
+  function stepBpm(deltaBpm: number): void {
+    if (!shown || !activeSeg) return
+    commit(
+      withSegment(shown, activeSegIndex, {
+        bpm: Number((activeSeg.bpm + deltaBpm).toFixed(2)),
+      }),
+    )
+  }
+
+  // rekordbox's TAP: the tempo, tapped in on the button. The mean interval over
+  // the recent taps sets the active segment's BPM; a pause of over two seconds
+  // starts a fresh take, so a missed beat costs nothing.
+  const taps = useRef<number[]>([])
+  function tapTempo(): void {
+    if (!shown || !activeSeg) return
+    const now = performance.now()
+    const last = taps.current[taps.current.length - 1]
+    if (last !== undefined && now - last > 2000) taps.current = []
+    taps.current.push(now)
+    if (taps.current.length < 2) return
+    const recent = taps.current.slice(-9)
+    const meanMs = (recent[recent.length - 1] - recent[0]) / (recent.length - 1)
+    commit(withSegment(shown, activeSegIndex, { bpm: Number((60000 / meanMs).toFixed(2)) }))
+  }
+
+  // rekordbox's "set the first beat to the current position": re-phase the
+  // active segment so a beat lands exactly under the reference line. The RAW
+  // centre on purpose — the magnet's snapped position is already a beat, and
+  // re-phasing to it would change nothing; this button exists for when the
+  // whole lattice is offset from the music and the line marks where a beat
+  // SHOULD be. The base folds back to keep "first beat near the start".
+  function beatHere(): void {
+    if (!shown || !activeSeg || durationSec <= 0) return
+    const anchor =
+      activeSegIndex === 0
+        ? snapAnchor(rawCentreSec, activeSeg.bpm)
+        : clampChange(rawCentreSec, activeSegIndex)
+    commit(withSegment(shown, activeSegIndex, { anchorSec: anchor }))
+  }
+
   // "Make an adjustment from the current position", rekordbox's most-used grid
   // tool: a new segment starts on the beat at the view's centre (same bpm — the
   // usual fix is phase drift), and from here on every edit leaves what's behind
@@ -605,6 +651,15 @@ export function GridSection({
                 </label>
                 {shown && activeSeg && (
                   <>
+                    <button
+                      type="button"
+                      data-testid="grid-tap"
+                      aria-label={tr('grid.tapHint')}
+                      onClick={tapTempo}
+                      className="press shrink-0 rounded border border-[var(--color-line-strong)] px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
+                    >
+                      TAP
+                    </button>
                     <span className="flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
@@ -638,6 +693,18 @@ export function GridSection({
                       >
                         ×2
                       </button>
+                      {iconButton(
+                        'grid-expand',
+                        tr('grid.expand'),
+                        () => stepBpm(-0.01),
+                        <UnfoldHorizontal className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-shrink',
+                        tr('grid.shrink'),
+                        () => stepBpm(0.01),
+                        <FoldHorizontal className="h-3 w-3" aria-hidden="true" />,
+                      )}
                     </span>
                     <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
@@ -689,6 +756,17 @@ export function GridSection({
                         position": a new segment on the beat at the view's
                         centre — from here forward, edits leave what's behind
                         pinned. */}
+                    {/* rekordbox's "first beat to current position": a beat,
+                        exactly under the line. */}
+                    <button
+                      type="button"
+                      data-testid="grid-beat-here"
+                      onClick={beatHere}
+                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
+                    >
+                      <Anchor className="h-3 w-3" aria-hidden="true" />
+                      {tr('grid.beatHere')}
+                    </button>
                     {/* rekordbox's C, as a button too: bring the nearest beat
                         under the reference so the controls act on a beat. */}
                     <button
