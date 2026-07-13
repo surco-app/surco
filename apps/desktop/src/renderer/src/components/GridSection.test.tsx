@@ -494,7 +494,7 @@ describe('GridSection segments', () => {
       clock = t
       fireEvent.click(tap)
     }
-    const grid = onChange.mock.calls.at(-1)[0]
+    const grid = onChange.mock.calls[onChange.mock.calls.length - 1][0]
     expect(grid.bpm).toBeCloseTo(120, 2)
     // Three seconds of silence, then two taps at a new tempo: only the fresh
     // pair counts.
@@ -503,7 +503,7 @@ describe('GridSection segments', () => {
       clock = t
       fireEvent.click(tap)
     }
-    expect(onChange.mock.calls.at(-1)[0].bpm).toBeCloseTo(100, 2)
+    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0].bpm).toBeCloseTo(100, 2)
     now.mockRestore()
   })
 
@@ -536,6 +536,32 @@ describe('GridSection segments', () => {
     // at exactly 30.0, under the line.
     expect(grid.anchorSec).toBe(0)
     expect(grid.bpm).toBe(120)
+  })
+
+  // Nudging an anchor walks it away from the line — and the moment it left the
+  // magnet's catch window, the controls used to fall back to the segment BEHIND
+  // the line, mid-edit ("the right part stops and the left starts moving"). The
+  // segment last edited stays the target until the view itself moves.
+  it('keeps the controls on the edited segment after its anchor leaves the magnet', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    // Diamond one whole beat right of the line (30.25 vs centre 30.0), inside
+    // the catch window (0.667 s at this view).
+    const first = { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 30.25, bpm: 120 }] }
+    const { rerender } = render(section({ onChange, value: first }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // A whole-beat step carries the diamond to 30.75 — beyond the catch window.
+    fireEvent.click(screen.getByTestId('grid-beat-forward'))
+    const once = onChange.mock.calls[0][0]
+    expect(once.changes[0].anchorSec).toBeCloseTo(30.75, 3)
+    rerender(section({ onChange, value: once }))
+    onChange.mockClear()
+    // The next step must STILL move the diamond, not the base grid the line
+    // now happens to sit over.
+    fireEvent.click(screen.getByTestId('grid-beat-forward'))
+    const twice = onChange.mock.calls[0][0]
+    expect(twice.anchorSec).toBe(0.25)
+    expect(twice.changes[0].anchorSec).toBeCloseTo(31.25, 3)
   })
 
   // rekordbox's C (and its button): bring the nearest beat under the reference,

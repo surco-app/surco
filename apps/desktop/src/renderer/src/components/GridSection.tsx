@@ -170,8 +170,33 @@ export function GridSection({
   }, [shown, segments, rawCentreSec, durationSec, view])
   const viewCentreSec = snappedCentre ?? rawCentreSec
   const centreSnapped = snappedCentre !== null
-  const activeSegIndex = shown ? segmentIndexAt(viewCentreSec) : 0
+  // Editing holds its target: nudging an anchor walks it away from the line,
+  // and the moment it left the magnet's catch the controls used to fall back to
+  // the segment BEHIND the line — mid-edit, the left grid started moving. So
+  // the segment last edited through the toolbar stays the target until the view
+  // itself moves (a deliberate pan releases the hold; the magnet takes over
+  // again from wherever the user lands).
+  const editHold = useRef<{ index: number; centreSec: number } | null>(null)
+  const heldIndex = (() => {
+    const hold = editHold.current
+    if (!hold || !shown || hold.index >= segments.length) return null
+    const visibleSec = Math.max(1e-6, (view.to - view.from) * durationSec)
+    const catchSec = visibleSec * (SNAP_PX / LANE_PX)
+    return Math.abs(rawCentreSec - hold.centreSec) <= catchSec ? hold.index : null
+  })()
+  const activeSegIndex = shown ? (heldIndex ?? segmentIndexAt(viewCentreSec)) : 0
   const activeSeg = segments[activeSegIndex]
+
+  // Every toolbar edit routes through here so the hold and the commit can never
+  // disagree about which segment was touched.
+  function editSegment(
+    index: number,
+    patch: Partial<{ anchorSec: number; bpm: number }>,
+  ): void {
+    if (!shown) return
+    commit(withSegment(shown, index, patch))
+    editHold.current = { index, centreSec: rawCentreSec }
+  }
 
   // A change may move only between its neighbours: segments never reorder by
   // dragging, they get removed instead.
@@ -362,11 +387,9 @@ export function GridSection({
   function nudge(deltaSec: number): void {
     if (!shown || !activeSeg) return
     const moved = activeSeg.anchorSec + deltaSec
-    commit(
-      withSegment(shown, activeSegIndex, {
-        anchorSec: activeSegIndex === 0 ? moved : clampChange(moved, activeSegIndex),
-      }),
-    )
+    editSegment(activeSegIndex, {
+      anchorSec: activeSegIndex === 0 ? moved : clampChange(moved, activeSegIndex),
+    })
   }
 
   // rekordbox's expand/shrink beat intervals, as a fine BPM step on the active
@@ -374,11 +397,7 @@ export function GridSection({
   // pivots at the segment's anchor, so the beat under the anchor never moves.
   function stepBpm(deltaBpm: number): void {
     if (!shown || !activeSeg) return
-    commit(
-      withSegment(shown, activeSegIndex, {
-        bpm: Number((activeSeg.bpm + deltaBpm).toFixed(2)),
-      }),
-    )
+    editSegment(activeSegIndex, { bpm: Number((activeSeg.bpm + deltaBpm).toFixed(2)) })
   }
 
   // rekordbox's TAP: the tempo, tapped in on the button. The mean interval over
@@ -394,7 +413,7 @@ export function GridSection({
     if (taps.current.length < 2) return
     const recent = taps.current.slice(-9)
     const meanMs = (recent[recent.length - 1] - recent[0]) / (recent.length - 1)
-    commit(withSegment(shown, activeSegIndex, { bpm: Number((60000 / meanMs).toFixed(2)) }))
+    editSegment(activeSegIndex, { bpm: Number((60000 / meanMs).toFixed(2)) })
   }
 
   // rekordbox's "set the first beat to the current position": re-phase the
@@ -409,7 +428,7 @@ export function GridSection({
       activeSegIndex === 0
         ? snapAnchor(rawCentreSec, activeSeg.bpm)
         : clampChange(rawCentreSec, activeSegIndex)
-    commit(withSegment(shown, activeSegIndex, { anchorSec: anchor }))
+    editSegment(activeSegIndex, { anchorSec: anchor })
   }
 
   // "Make an adjustment from the current position", rekordbox's most-used grid
@@ -426,6 +445,12 @@ export function GridSection({
       (a, b) => a.anchorSec - b.anchorSec,
     )
     commit({ ...shown, changes })
+    // The fresh change is what the next edits are for — hold it as the target
+    // (segment index = position among the changes, plus the base at 0).
+    editHold.current = {
+      index: changes.findIndex((c) => c.anchorSec === sec) + 1,
+      centreSec: sec,
+    }
     // Land the reference ON the new change: the beat it starts at sits just
     // RIGHT of where the line was, so leaving the line put would keep the
     // controls pointing at the segment BEHIND it — and the nudges would move
@@ -436,6 +461,7 @@ export function GridSection({
 
   function removeChange(index: number): void {
     if (!shown) return
+    editHold.current = null
     const changes = (shown.changes ?? []).filter((_c, i) => i !== index)
     commit({ ...shown, changes })
   }
@@ -447,6 +473,7 @@ export function GridSection({
   const queryClient = useQueryClient()
   const [reprobing, setReprobing] = useState(false)
   async function autoDetect(): Promise<void> {
+    editHold.current = null
     if (value) {
       record(value)
       onChange(undefined)
@@ -478,7 +505,7 @@ export function GridSection({
       commit({ anchorSec: 0, bpm })
       return
     }
-    commit(withSegment(shown, activeSegIndex, { bpm }))
+    editSegment(activeSegIndex, { bpm })
   }
 
   // The by-ear check: play from the first beat at or after the visible window's
@@ -670,9 +697,7 @@ export function GridSection({
                             withSegment(shown, activeSegIndex, { bpm: activeSeg.bpm / 2 }),
                           )
                         }
-                        onClick={() =>
-                          commit(withSegment(shown, activeSegIndex, { bpm: activeSeg.bpm / 2 }))
-                        }
+                        onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm / 2 })}
                         className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                       >
                         ÷2
@@ -686,9 +711,7 @@ export function GridSection({
                             withSegment(shown, activeSegIndex, { bpm: activeSeg.bpm * 2 }),
                           )
                         }
-                        onClick={() =>
-                          commit(withSegment(shown, activeSegIndex, { bpm: activeSeg.bpm * 2 }))
-                        }
+                        onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm * 2 })}
                         className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                       >
                         ×2
