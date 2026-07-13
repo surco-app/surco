@@ -52,15 +52,29 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
 
 // Repairs a stored value into a complete, valid list: unknown/duplicate entries are
 // dropped (a hand-edited settings.json), sections the stored file predates are
-// appended with their default state, and the metadata form — the editor's fixed
-// header — is pinned first so no consumer defends against it moving.
+// INSERTED at their default position — after the nearest default-order neighbour
+// the store kept — and the metadata form, the editor's fixed header, is pinned
+// first so no consumer defends against it moving. Appending used to dump every
+// new section below File Name (Beatgrid landed after the output name on upgraded
+// installs), breaking the workflow order the defaults encode while still
+// respecting any custom order the user arranged.
 export function normalizeEditorSections(value: EditorSectionPref[] | undefined): EditorSectionPref[] {
   const stored = (value ?? []).filter(
     (s, i, all) =>
       EDITOR_SECTION_IDS.includes(s.id) && all.findIndex((o) => o.id === s.id) === i,
   )
-  const missing = DEFAULT_EDITOR_SECTIONS.filter((d) => !stored.some((s) => s.id === d.id))
-  const merged = [...stored, ...missing]
+  const merged = [...stored]
+  for (const [index, def] of DEFAULT_EDITOR_SECTIONS.entries()) {
+    if (merged.some((s) => s.id === def.id)) continue
+    // The nearest earlier default that survived in the store anchors the insert;
+    // with none (empty store), default order itself does.
+    const anchors = DEFAULT_EDITOR_SECTIONS.slice(0, index).map((d) => d.id)
+    const at = anchors.reduce((best, id) => {
+      const found = merged.findIndex((s) => s.id === id)
+      return found > best ? found : best
+    }, -1)
+    merged.splice(at + 1, 0, def)
+  }
   return [
     ...merged.filter((s) => s.id === 'form'),
     ...merged.filter((s) => s.id !== 'form'),

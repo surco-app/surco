@@ -9,7 +9,7 @@ describe('normalizeEditorSections', () => {
   // A settings.json written by an older Surco predates sections added later: the
   // stored array must gain the missing entries (with their default state) instead of
   // silently dropping whole editor sections from the UI.
-  it('appends sections missing from a stored value', () => {
+  it('inserts sections missing from a stored value at their default position', () => {
     const stored = [
       { id: 'form' as const, open: true },
       { id: 'quality' as const, open: false },
@@ -41,10 +41,16 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: false },
       { id: 'properties' as const, open: true },
     ]
-    // The sections this store predates (trim, declick, grid) are appended with
-    // their defaults.
+    // The sections this store predates follow their default-order neighbours
+    // WHEREVER the user parked those: trim/declick after properties, and grid
+    // after the audio chain it annotates (which here ends at the inserted
+    // declick) — never dumped blindly below the output name.
     expect(normalizeEditorSections(stored)).toEqual([
-      ...stored,
+      { id: 'form', open: true },
+      { id: 'normalize', open: false },
+      { id: 'output', open: true },
+      { id: 'quality', open: false },
+      { id: 'properties', open: true },
       { id: 'trim', open: true },
       { id: 'declick', open: false },
       { id: 'grid', open: false },
