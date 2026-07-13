@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import {
   emptyTitleFormatFields,
+  outputNamePatches,
   renderOutputName,
   renderTitle,
   titleFormatPatches,
@@ -297,5 +298,29 @@ describe('titleFormatSummary', () => {
     expect(s.patches).toEqual([])
     expect(s.skipped).toBe(1)
     expect(s.missingFields).toEqual(['trackNumber'])
+  })
+})
+
+describe('outputNamePatches', () => {
+  const track = (
+    id: string,
+    patch: Partial<TrackMetadata>,
+    outputName?: string,
+  ): { id: string; outputName?: string; meta: TrackMetadata } => ({
+    id,
+    outputName,
+    meta: meta(patch),
+  })
+
+  // djotas's flow: retag a whole crate from Discogs, then stamp every file name at
+  // once — one patch per track whose rendered name actually changes, so the caller
+  // can report a partial pass honestly and a double press stays a no-op.
+  it('renders one rename per track that needs it, skipping no-ops', () => {
+    const patches = outputNamePatches('{artist} - {title}', [
+      track('a', { artist: 'HH Traxx', title: 'Preview' }),
+      track('b', { artist: 'Jeff Mills', title: 'Preview' }, 'Jeff Mills - Preview'),
+      track('c', { artist: '', title: '' }),
+    ])
+    expect(patches).toEqual([{ id: 'a', outputName: 'HH Traxx - Preview' }])
   })
 })

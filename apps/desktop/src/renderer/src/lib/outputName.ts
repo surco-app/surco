@@ -155,6 +155,21 @@ export function titleFormatPatches(
   })
 }
 
+// The file-name sibling of titleFormatPatches: one rename per track whose rendered
+// output name is non-empty AND different from the current one, so the regenerate
+// action works over a whole selection and re-pressing it is a no-op. Pure and
+// shared by the editor's Regenerate button (single and multi) and the ⌘K command.
+export function outputNamePatches(
+  format: string,
+  tracks: { id: string; outputName?: string; meta: TrackMetadata }[],
+): { id: string; outputName: string }[] {
+  return tracks.flatMap((t) => {
+    const name = renderOutputName(format, t.meta)
+    if (!name || name === t.outputName) return []
+    return [{ id: t.id, outputName: name }]
+  })
+}
+
 // The pattern's {tokens} (minus {title}) that are empty on EVERY given track, in
 // pattern order — the concrete "why" behind a no-op apply, so the toast can name
 // the missing field ("Track No. is empty") instead of a generic "nothing changed".

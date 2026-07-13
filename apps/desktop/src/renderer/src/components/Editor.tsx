@@ -1,4 +1,4 @@
-import { Copy, Disc3, Eraser, Globe, Tag, Type } from 'lucide-react'
+import { Copy, Disc3, Eraser, Globe, RefreshCw, Tag, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -989,22 +989,47 @@ export const Editor = memo(function Editor({
                       </div>
                     )
                   }
-                  return (
-                    !isMulti && (
-                      <OutputNameSection
+                  // Multi-select has no single name to edit, but the bulk rename is
+                  // exactly the flow a selection wants: retag a crate, then stamp
+                  // every file name from the pattern at once (djotas's ask). One
+                  // button in the section's slot instead of hiding it entirely.
+                  if (isMulti) {
+                    if (overwriteOriginal) return null
+                    return (
+                      <div
                         key={id}
-                        item={item}
-                        format={format}
-                        defaultOutputName={defaultOutputName}
-                        autoApply={autoApplyFilename}
-                        willEditInPlace={willEditInPlace}
-                        open={outputOpen}
-                        onToggle={() => setSectionOpen('output', !outputOpen)}
-                        onChangeName={(outputName) => onChange({ outputName })}
-                        onRegenerateName={onRegenerateName}
-                        onOpenRename={onOpenRename}
-                      />
+                        data-testid="output-multi"
+                        className="mt-6 border-t border-[var(--color-line)] pt-5"
+                      >
+                        <p className="text-sm font-medium text-fg-muted">
+                          {tr('editor.outputName')}
+                        </p>
+                        <button
+                          type="button"
+                          data-testid="regenerate-output-names-all"
+                          onClick={onRegenerateName}
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                          {tr('editor.regenerateAll', { count: multiTracks.length })}
+                        </button>
+                      </div>
                     )
+                  }
+                  return (
+                    <OutputNameSection
+                      key={id}
+                      item={item}
+                      format={format}
+                      defaultOutputName={defaultOutputName}
+                      autoApply={autoApplyFilename}
+                      willEditInPlace={willEditInPlace}
+                      open={outputOpen}
+                      onToggle={() => setSectionOpen('output', !outputOpen)}
+                      onChangeName={(outputName) => onChange({ outputName })}
+                      onRegenerateName={onRegenerateName}
+                      onOpenRename={onOpenRename}
+                    />
                   )
                 case 'trim':
                   // The trim lives on the track (exact per-track seconds), so it has

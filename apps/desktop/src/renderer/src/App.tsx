@@ -93,7 +93,7 @@ import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { isMacOS } from './lib/platform'
 import { shouldShowOnboarding } from './lib/onboarding'
-import { renderOutputName, titleFormatSummary } from './lib/outputName'
+import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -1274,10 +1274,15 @@ export default function App(): React.JSX.Element {
   })
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   const onOpenRename = useStableCallback(overlays.openRename)
+  // Rebuilds file names from the Settings pattern over the whole selection when there
+  // is one (djotas's flow: retag a crate, then stamp every name at once), else the
+  // selected track alone. Multi reports a count — the File name section that shows a
+  // single rename land is hidden there, so the toast is the only feedback.
   const onRegenerateName = useStableCallback(() => {
-    if (!selected) return
-    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
-    if (name) updateTrack(selected.id, { outputName: name })
+    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const patches = outputNamePatches(settings?.filenameFormat ?? '{artist} - {title}', targets)
+    for (const p of patches) updateTrack(p.id, { outputName: p.outputName })
+    if (targets.length > 1) setNotice(tr('notices.regeneratedNames', { count: patches.length }))
   })
   // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
   // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but
@@ -1480,6 +1485,7 @@ export default function App(): React.JSX.Element {
       deriveTags,
       numberTracks,
       applyTitleFormat,
+      regenerateNames: onRegenerateName,
       titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
       canUndoMeta: metaUndo.canUndo,

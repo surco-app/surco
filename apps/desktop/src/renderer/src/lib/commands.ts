@@ -221,6 +221,8 @@ export interface CommandDeps {
   numberTracks: () => void
   // Rewrites the selection's titles from the settings' title format (one-shot).
   applyTitleFormat: () => void
+  // Rebuilds the selection's file names from the Settings → Naming pattern.
+  regenerateNames: () => void
   // Whether a title format is configured at all — the command is pointless without one.
   titleFormatSet: boolean
   // Restores the tags the last batch operation (fill-all, find & replace, clear, paste,
@@ -293,6 +295,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     deriveTags,
     numberTracks,
     applyTitleFormat,
+    regenerateNames,
     titleFormatSet,
     undoMeta,
     canUndoMeta,
@@ -620,6 +623,17 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('rename'),
       enabled: !!selected && selectedTracksCount <= 1 && !settings?.overwriteOriginal,
       run: openRename,
+    },
+    {
+      // Rebuilds file names from the Settings pattern over the whole selection — the
+      // bulk twin of the File name section's Regenerate button, which multi-select
+      // hides. Overwrite mode pins names to the originals, so it is disabled there.
+      id: 'regenerate-names',
+      group: 'convert',
+      title: tr('commands.regenerateNames'),
+      hint: hintFor('regenerate-names'),
+      enabled: !!selected && !settings?.overwriteOriginal,
+      run: regenerateNames,
     },
     {
       id: 'add-apple-music',

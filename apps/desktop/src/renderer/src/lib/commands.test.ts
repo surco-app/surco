@@ -90,6 +90,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     deriveTags: () => {},
     numberTracks: () => {},
     applyTitleFormat: () => {},
+    regenerateNames: () => {},
     titleFormatSet: false,
     undoMeta: () => {},
     canUndoMeta: () => false,
@@ -439,6 +440,27 @@ describe('buildCommands editor + theme entries', () => {
     expect(cmd.enabled).toBe(true)
     cmd.run()
     expect(applyTitleFormat).toHaveBeenCalledOnce()
+  })
+
+  // The bulk rename djotas asked for: it acts on the selection (the File name
+  // section's button is single-track and hidden in multi), and overwrite mode pins
+  // every name to the original, so the command greys out there instead of lying.
+  it('gates regenerate-names on a selection and not-overwrite, and runs it', () => {
+    const regenerateNames = vi.fn()
+    const noSelection = makeDeps({ regenerateNames, selected: null })
+    expect(commandById(noSelection, 'regenerate-names').enabled).toBe(false)
+    const overwrite = makeDeps({
+      regenerateNames,
+      selected: track(),
+      settings: { outputFormat: 'aiff', overwriteOriginal: true } as Settings,
+    })
+    expect(commandById(overwrite, 'regenerate-names').enabled).toBe(false)
+
+    const ready = makeDeps({ regenerateNames, selected: track() })
+    const cmd = commandById(ready, 'regenerate-names')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(regenerateNames).toHaveBeenCalledOnce()
   })
 
   // Clear-metadata and derive-from-filename act on the current selection, so both must be
