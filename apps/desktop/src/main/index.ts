@@ -999,7 +999,7 @@ app.setAboutPanelOptions({
   // The boot-time default; buildAppMenu refreshes the credits in the Settings
   // language (with the authorship and thanks) once the locale is known.
   credits:
-    'Made with care by Vicent Gozalbes — vigosan@gmail.com\nThanks to @djotas and everyone who shares ideas and feedback.\ngetsurco.app',
+    'Made with care by Vicent Gozalbes\nvigosan@gmail.com\n\nThanks to @djotas and everyone\nwho shares ideas and feedback.\n\ngetsurco.app',
   copyright: `© ${new Date().getFullYear()} Vicent Gozalbes`,
   website: 'https://getsurco.app',
 })
