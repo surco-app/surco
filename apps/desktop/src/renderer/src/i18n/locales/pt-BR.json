@@ -487,7 +487,9 @@
     "clear": "Redefinir",
     "cueWarning": "Recodifica o áudio e desloca os cues e o beatgrid salvos pelo tanto cortado.",
     "handleStart": "Início do corte",
-    "handleEnd": "Final do corte"
+    "handleEnd": "Final do corte",
+    "auditionStart": "Ouvir o início",
+    "auditionEnd": "Ouvir o final"
   },
   "normalize": {
     "title": "Normalização de loudness",

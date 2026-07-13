@@ -487,7 +487,9 @@
     "clear": "Zurücksetzen",
     "cueWarning": "Codiert das Audio neu und verschiebt gespeicherte DJ-Cues und das Beatgrid um den gekürzten Betrag.",
     "handleStart": "Schnittanfang",
-    "handleEnd": "Schnittende"
+    "handleEnd": "Schnittende",
+    "auditionStart": "Anfang anhören",
+    "auditionEnd": "Ende anhören"
   },
   "normalize": {
     "title": "Loudness-Normalisierung",

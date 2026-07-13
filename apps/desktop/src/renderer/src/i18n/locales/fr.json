@@ -487,7 +487,9 @@
     "clear": "Réinitialiser",
     "cueWarning": "Ré-encode l'audio et décale les points cue et le beatgrid enregistrés de la durée rognée.",
     "handleStart": "Début du rognage",
-    "handleEnd": "Fin du rognage"
+    "handleEnd": "Fin du rognage",
+    "auditionStart": "Écouter le début",
+    "auditionEnd": "Écouter la fin"
   },
   "normalize": {
     "title": "Normalisation du loudness",

@@ -487,7 +487,9 @@
     "clear": "Reset",
     "cueWarning": "Re-encodes the audio and shifts any saved DJ cues and beatgrid by the trimmed amount.",
     "handleStart": "Trim start",
-    "handleEnd": "Trim end"
+    "handleEnd": "Trim end",
+    "auditionStart": "Hear the start",
+    "auditionEnd": "Hear the end"
   },
   "normalize": {
     "title": "Loudness normalization",

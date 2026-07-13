@@ -1,7 +1,8 @@
-import { Scissors, ZoomIn, ZoomOut } from 'lucide-react'
+import { Scissors, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { mediaUrl } from '../../../shared/media'
 import type { TrimRange } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
@@ -15,6 +16,9 @@ const MIN_KEEP_SEC = 1
 // Dragging a handle back to within this of its own edge means "cut nothing here":
 // the bound drops instead of persisting a hair's-width trim.
 const EDGE_SNAP_SEC = 0.05
+// How much of the track each cut audition plays: enough to judge the boundary by
+// ear, short enough to stay a check instead of a listen.
+const AUDITION_SEC = 4
 
 interface Props {
   value: TrimRange | undefined
@@ -54,6 +58,62 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   const cutStart = startSec > 0
   const cutEnd = durationSec > 0 && endSec < durationSec
   const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
+  // The by-ear check of a cut: a local element playing the source right at the
+  // boundary — from the cut-in (what the converted track will open with), or the
+  // last seconds INTO the end cut (where the outro lands). Stopped when the trim
+  // changes or the section unmounts, like the declick audition.
+  const [auditing, setAuditing] = useState<'start' | 'end' | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  function stopAudition(): void {
+    audioRef.current?.pause()
+    audioRef.current = null
+    setAuditing(null)
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a moved cut invalidates the playing boundary, so the cleanup must fire on it.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause()
+      audioRef.current = null
+      setAuditing(null)
+    }
+  }, [value])
+  function audition(which: 'start' | 'end'): void {
+    if (auditing === which) {
+      stopAudition()
+      return
+    }
+    stopAudition()
+    const audio = new Audio(mediaUrl(inputPath))
+    audioRef.current = audio
+    const from = which === 'start' ? startSec : Math.max(0, endSec - AUDITION_SEC)
+    const until = which === 'start' ? Math.min(durationSec, startSec + AUDITION_SEC) : endSec
+    // Seek only once the element knows its duration — an immediate currentTime on
+    // a still-loading element is dropped by the media pipeline.
+    audio.onloadedmetadata = () => {
+      audio.currentTime = from
+      audio.play().catch(() => stopAudition())
+    }
+    audio.ontimeupdate = () => {
+      if (audio.currentTime >= until) stopAudition()
+    }
+    audio.onended = () => stopAudition()
+    setAuditing(which)
+  }
+  const auditionButton = (which: 'start' | 'end'): React.JSX.Element => (
+    <button
+      type="button"
+      data-testid={`trim-audition-${which}`}
+      onClick={() => audition(which)}
+      className="press inline-flex shrink-0 items-center gap-1 text-[10px] text-fg-dim hover:text-fg"
+    >
+      {auditing === which ? (
+        <Square className="h-3 w-3" aria-hidden="true" />
+      ) : (
+        <Volume2 className="h-3 w-3" aria-hidden="true" />
+      )}
+      {tr(which === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
+    </button>
+  )
 
   function secondsAt(clientX: number): number {
     const el = overlayRef.current
@@ -189,6 +249,8 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                       </span>
                       {` ${cuts.join(' · ')}`}
                     </span>
+                    {cutStart && auditionButton('start')}
+                    {cutEnd && auditionButton('end')}
                     {value && (
                       <button
                         type="button"

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
@@ -23,8 +23,31 @@ function musicOnlyWave(): WaveformResult {
   return { peaks: Array.from({ length: 200 }, () => 0.3), durationSec: 100 }
 }
 
+const play = vi.fn()
+const pause = vi.fn()
+const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+
 let client: QueryClient
 beforeEach(() => {
+  play.mockReset().mockResolvedValue(undefined)
+  pause.mockReset()
+  audios.length = 0
+  // jsdom has no audio pipeline; the audition only needs seek/play/pause and the
+  // loadedmetadata hook the component waits on before seeking.
+  vi.stubGlobal(
+    'Audio',
+    class {
+      onloadedmetadata: (() => void) | null = null
+      ontimeupdate: (() => void) | null = null
+      onended: (() => void) | null = null
+      currentTime = 0
+      play = play
+      pause = pause
+      constructor() {
+        audios.push(this)
+      }
+    },
+  )
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(noisyEndsWave()),
@@ -153,6 +176,21 @@ describe('TrimSection', () => {
     fireEvent(start, new MouseEvent('pointermove', { bubbles: true, clientX: 0 }))
     fireEvent(start, new MouseEvent('pointerup', { bubbles: true }))
     expect(onChange).toHaveBeenCalledWith(undefined)
+  })
+
+  // The by-ear check: the start audition must open exactly at the cut-in — what
+  // the converted file will start with — and a second click stops it.
+  it('auditions the track from the cut-in and stops on a second click', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const btn = await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 })
+    fireEvent.click(btn)
+    const audio = audios.at(-1)
+    expect(audio).toBeDefined()
+    act(() => audio?.onloadedmetadata?.())
+    expect(audio?.currentTime).toBe(9.7)
+    expect(play).toHaveBeenCalledOnce()
+    fireEvent.click(btn)
+    expect(pause).toHaveBeenCalledOnce()
   })
 
   // The arrows give the precision a drag on the coarse strip can't: tenths of a
