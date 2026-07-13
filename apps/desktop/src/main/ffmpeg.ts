@@ -6,6 +6,7 @@ import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { formatRatingTag } from '../shared/rating'
 import type {
+  BeatgridResult,
   BpmResult,
   ConversionQuality,
   CoverRead,
@@ -1481,6 +1482,11 @@ export async function measureBpm(input: string): Promise<BpmResult | null> {
 export async function measureKey(input: string): Promise<KeyResult | null> {
   const pcm = await decodeAnalysisPcm(input)
   return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+}
+
+export async function measureBeatgrid(input: string): Promise<BeatgridResult | null> {
+  const pcm = await decodeAnalysisPcm(input)
+  return runInWorker<BeatgridResult | null>({ type: 'beatgrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
 // Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's

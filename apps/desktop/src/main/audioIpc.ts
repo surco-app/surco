@@ -12,6 +12,7 @@ import {
   extractCover,
   extractCoverDataUrl,
   generateSpectrogram,
+  measureBeatgrid,
   measureBpm,
   measureKey,
   measureLoudness,
@@ -198,6 +199,28 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       )
     } catch (err) {
       log.error('audio:bpm failed', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('audio:beatgrid', async (_e, inputPath: string) => {
+    try {
+      // Same caching contract as audio:bpm: a null (beatless material) is a
+      // real measurement and is cached; only a decode error retries. Its own
+      // namespace rather than a bump of 'bpm': old cached BpmResults carry no
+      // anchor and could never be told apart from a grid, while the BPM chip
+      // keeps its cache untouched.
+      return await cachedAnalysis(
+        'beatgrid-v1',
+        inputPath,
+        () =>
+          probe('activity.probeBeatgrid', inputPath, () =>
+            analysisLimiter.run(() => measureBeatgrid(inputPath), 'low'),
+          ),
+        () => true,
+      )
+    } catch (err) {
+      log.error('audio:beatgrid failed', err)
       return null
     }
   })

@@ -1,9 +1,9 @@
-import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import type { BeatgridResult, BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, type CueShift, writeTags } from './tags'
-import { detectBpm } from './tempo'
+import { detectBeatgrid, detectBpm } from './tempo'
 
 // The CPU-bound work that must never run on the main process's event loop: the
 // BPM/key DSP crunches hundreds of FFTs per track, and TagLib rewrites a whole
@@ -11,6 +11,7 @@ import { detectBpm } from './tempo'
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
+  | { type: 'beatgrid'; pcm: Float32Array; sampleRate: number }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   | {
@@ -30,12 +31,14 @@ export type WorkerJob =
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
 
-export type WorkerJobResult = BpmResult | KeyResult | number[] | null
+export type WorkerJobResult = BpmResult | BeatgridResult | KeyResult | number[] | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult {
   switch (job.type) {
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
+    case 'beatgrid':
+      return detectBeatgrid(job.pcm, job.sampleRate)
     case 'key':
       return detectKey(job.pcm, job.sampleRate)
     case 'shelf':

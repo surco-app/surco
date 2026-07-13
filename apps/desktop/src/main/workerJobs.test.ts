@@ -5,13 +5,16 @@ import { runWorkerJob } from './workerJobs'
 // The dispatcher is the worker-side contract: each job type must reach its real
 // implementation with the caller's exact arguments, because a silent mismatch here
 // would corrupt files (writeTags) or return analysis for the wrong parameters.
-vi.mock('./tempo', () => ({ detectBpm: vi.fn(() => ({ bpm: 128, confidence: 0.9 })) }))
+vi.mock('./tempo', () => ({
+  detectBpm: vi.fn(() => ({ bpm: 128, confidence: 0.9 })),
+  detectBeatgrid: vi.fn(() => ({ bpm: 128, confidence: 0.9, anchorSec: 0.25 })),
+}))
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
 vi.mock('./tags', () => ({ writeTags: vi.fn(), copyCueFrames: vi.fn() }))
 
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
-import { detectBpm } from './tempo'
+import { detectBeatgrid, detectBpm } from './tempo'
 
 describe('runWorkerJob', () => {
   it('routes bpm jobs to the tempo detector with the job pcm and rate', () => {
@@ -19,6 +22,13 @@ describe('runWorkerJob', () => {
     const out = runWorkerJob({ type: 'bpm', pcm, sampleRate: 11025 })
     expect(detectBpm).toHaveBeenCalledWith(pcm, 11025)
     expect(out).toEqual({ bpm: 128, confidence: 0.9 })
+  })
+
+  it('routes beatgrid jobs to the anchor detector with the job pcm and rate', () => {
+    const pcm = new Float32Array([0.5])
+    const out = runWorkerJob({ type: 'beatgrid', pcm, sampleRate: 11025 })
+    expect(detectBeatgrid).toHaveBeenCalledWith(pcm, 11025)
+    expect(out).toEqual({ bpm: 128, confidence: 0.9, anchorSec: 0.25 })
   })
 
   it('routes key jobs to the key detector with the job pcm and rate', () => {

@@ -151,8 +151,9 @@ describe('detectBeatgrid', () => {
     for (const offsetSec of [0, 0.1, 0.33, 0.49, 0.6]) {
       const result = detectBeatgrid(clickTrain(120, 30, offsetSec), SR)
       expect(result).not.toBeNull()
-      expect(result!.anchorSec).toBeGreaterThanOrEqual(0)
-      expect(result!.anchorSec).toBeLessThan(60 / result!.bpm)
+      const anchor = result?.anchorSec ?? Number.NaN
+      expect(anchor).toBeGreaterThanOrEqual(0)
+      expect(anchor).toBeLessThan(60 / (result?.bpm ?? Number.NaN))
     }
   })
 
