@@ -51,7 +51,7 @@ describe('normalizeEditorSections', () => {
       { id: 'output', open: true },
       { id: 'quality', open: false },
       { id: 'properties', open: true },
-      { id: 'trim', open: true },
+      { id: 'trim', open: false },
       { id: 'declick', open: false },
       { id: 'grid', open: false },
     ])
@@ -74,11 +74,11 @@ describe('normalizeEditorSections', () => {
     ])
   })
 
-  // Open by default: the detection pill only appears once the section has analyzed,
-  // and the wave decode is shared with the loudness strip's — so the "this rip has
-  // silence" finding surfaces without costing an extra pass.
-  it('ships silence trim open by default', () => {
-    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'trim')?.open).toBe(true)
+  // Folded by default: the header pill and the attention filter still surface the
+  // "this rip has silence" finding, and folded it skips the wave decode for the
+  // tracks the user never trims.
+  it('ships silence trim folded by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'trim')?.open).toBe(false)
   })
 
   // Click repair is the rare-use section (most rips are clean), so it ships folded —

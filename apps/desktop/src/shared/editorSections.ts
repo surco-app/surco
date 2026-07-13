@@ -35,10 +35,10 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   // Reference figures, consulted when the quality verdict raises an eyebrow.
   { id: 'properties', open: false },
   { id: 'quality', open: true },
-  // Open: its detection pill only appears once the section has analyzed, and the
-  // wave decode is shared with the loudness strip's — opening it costs nothing
-  // extra while surfacing the "this rip has silence" finding by default.
-  { id: 'trim', open: true },
+  // Folded: the header pill still surfaces the "this rip has silence" finding
+  // (the attention filter flags it list-wide too), and folded it skips the wave
+  // decode for the tracks the user never trims.
+  { id: 'trim', open: false },
   // Folded: the rare-use section (most rips are clean), and its click estimate is
   // its own expensive pass; the fold badge still surfaces an active mode.
   { id: 'declick', open: false },
