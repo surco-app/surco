@@ -91,6 +91,19 @@ describe('session store', () => {
     expect(loadLastSession().edits[kept].trim).toBeUndefined()
   })
 
+  // Same repair contract as the trim: a hand-edited grid with a garbage bpm would
+  // draw a wall of lines and export an unusable tempo, so the load degrades it to
+  // "no grid" while a valid staged grid comes back exactly as saved.
+  it('round-trips a staged beatgrid and repairs a malformed one', () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    saveLastSession([kept], { [kept]: edit({ beatgrid: { bpm: 128, anchorSec: 0.25 } }) })
+    expect(loadLastSession().edits[kept].beatgrid).toEqual({ bpm: 128, anchorSec: 0.25 })
+    saveLastSession([kept], { [kept]: edit({ beatgrid: { bpm: 0, anchorSec: -1 } }) })
+    expect(loadLastSession().edits[kept].beatgrid).toBeUndefined()
+  })
+
   // An edit whose track dropped out of the offer (file gone) has nothing to restore
   // onto; keeping it would only grow the file forever.
   it('drops edits for paths that no longer exist', () => {

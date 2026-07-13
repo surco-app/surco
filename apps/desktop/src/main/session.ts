@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
+import { normalizeBeatgrid } from '../shared/beatgrid'
 import { normalizeTrim } from '../shared/trim'
 import type { SessionData, SessionEdit } from '../shared/types'
 
@@ -55,6 +56,11 @@ function sanitizeEdit(raw: unknown, previews: Map<string, string | undefined>): 
   const trim = normalizeTrim(edit.trim)
   if (trim) edit.trim = trim
   else delete edit.trim
+  // Same repair for the beatgrid: a hand-edited garbage bpm would draw a wall of
+  // grid lines and export a tempo no DJ software accepts.
+  const beatgrid = normalizeBeatgrid(edit.beatgrid)
+  if (beatgrid) edit.beatgrid = beatgrid
+  else delete edit.beatgrid
   return edit
 }
 

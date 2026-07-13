@@ -1,7 +1,10 @@
 import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
-type SignatureFields = Pick<TrackItem, 'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim'>
+type SignatureFields = Pick<
+  TrackItem,
+  'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim' | 'beatgrid'
+>
 
 // Serializes the fields that determine the converted output. A snapshot is taken
 // when a track finishes (processedSignature); when the live values diverge from
@@ -15,6 +18,7 @@ export function trackSignature(track: SignatureFields): string {
     track.coverPath ?? '',
     // Normalized so a trim with an unset bound and an absent trim read identically.
     track.trim ? [track.trim.startSec ?? null, track.trim.endSec ?? null] : null,
+    track.beatgrid ? [track.beatgrid.bpm, track.beatgrid.anchorSec] : null,
   ])
 }
 
