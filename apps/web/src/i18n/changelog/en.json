@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.54",
+    "date": "July 13, 2026",
+    "title": "The beatgrid, yours",
+    "items": [
+      {
+        "text": "New Beatgrid section in the editor: Surco detects the BPM and the first beat and draws the grid over the wave. Adjust it by grabbing any line, with precision nudges, by editing the BPM (÷2/×2 for the octave), and check it by ear in one click. The Auto button re-analyzes from scratch whenever you want.",
+        "in": "0.54.0"
+      },
+      {
+        "text": "The grid you confirm travels with your exports: rekordbox and Traktor receive it in their collections, and converted files carry the Serato grid in their tags and the Engine DJ one in the library — locked so its analysis won't overwrite it.",
+        "in": "0.54.0"
+      },
+      {
+        "text": "Detection understands trance: on sidechained tracks the grid anchors to the kick, not the off-beat bass, and doubtful detections get flagged for you to check by ear.",
+        "in": "0.54.0"
+      },
+      {
+        "text": "New review filters in the list: tracks with silence left to trim, with clipping, and with a grid to review — to polish the collection section by section.",
+        "in": "0.54.0"
+      },
+      {
+        "text": "Silence trim now re-anchors Traktor cues and beatgrid in the exported file, and the handle magnet snaps to the exact millisecond the music starts.",
+        "in": "0.54.0"
+      }
+    ]
+  },
+  {
     "version": "0.53",
     "date": "July 13, 2026",
     "title": "Surgical precision",
