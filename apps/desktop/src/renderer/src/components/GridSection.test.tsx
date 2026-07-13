@@ -431,6 +431,34 @@ describe('GridSection segments', () => {
     expect(onChange.mock.calls[0][0].changes[0].anchorSec).toBeCloseTo(30.5, 2)
   })
 
+  // The affordances djotas asked for: hovering within grab range of a beat shows
+  // the resize cursor and brightens that line; open wave shows the pan hand.
+  it('signals grabbable beats on hover and pans from open wave', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+
+    // Within grab range of the beat at 10.25 s (x=1025): resize + highlight.
+    fireEvent.pointerMove(overlay, { clientX: 1026, pointerId: 1 })
+    expect(overlay.style.cursor).toBe('ew-resize')
+    expect(document.querySelector('[data-hovered]')).not.toBeNull()
+
+    // Open wave between beats: the hand, and no highlighted line.
+    fireEvent.pointerMove(overlay, { clientX: 1050, pointerId: 1 })
+    expect(overlay.style.cursor).toBe('grab')
+    expect(document.querySelector('[data-hovered]')).toBeNull()
+
+    // Dragging open wave pans the scroller instead of touching the grid.
+    const scroller = overlay.parentElement?.parentElement as HTMLElement
+    fireEvent.pointerDown(overlay, { clientX: 1050, pointerId: 1 })
+    expect(overlay.style.cursor).toBe('grabbing')
+    fireEvent.pointerMove(overlay, { clientX: 850, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(200)
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('removes a focused change with Delete', async () => {
     const onChange = vi.fn()
     render(

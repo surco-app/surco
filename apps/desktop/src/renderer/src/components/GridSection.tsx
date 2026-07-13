@@ -96,9 +96,21 @@ export function GridSection({
         fromClientX: number
         armed: boolean
       }
+    | { mode: 'pan'; fromClientX: number; fromScroll: number }
     | null
   >(null)
   const overlayRef = useRef<HTMLDivElement>(null)
+  // The beat the cursor could pick up right now (within grab range), for the
+  // hover affordance: that line brightens and the cursor turns resize — without
+  // it the grid gave no hint it was draggable (the lines themselves are
+  // pointer-events-none; the overlay does the grabbing by proximity).
+  const [hoverBeatSec, setHoverBeatSec] = useState<number | null>(null)
+  // Grabbing-hand feedback while a pan drag scrolls the wave.
+  const [panning, setPanning] = useState(false)
+  // The Strip's horizontal scroller, two levels up from the overlay (overlay →
+  // strip div → scroller) — what a pan drag actually moves.
+  const scrollerOf = (): HTMLElement | null =>
+    overlayRef.current?.parentElement?.parentElement ?? null
   // A BeatgridResult is a Beatgrid plus detection extras; typing shown as the
   // grid keeps the segment math (changes) available on every source.
   const shown: Beatgrid | undefined = draft ?? value ?? detected ?? undefined
@@ -290,6 +302,12 @@ export function GridSection({
   function dragTo(clientX: number): void {
     const drag = dragging.current
     if (!drag || !shown) return
+    if (drag.mode === 'pan') {
+      const scroller = scrollerOf()
+      // Content follows the finger: dragging the wave right moves the view left.
+      if (scroller) scroller.scrollLeft = drag.fromScroll - (clientX - drag.fromClientX)
+      return
+    }
     if (drag.mode === 'anchor') {
       const sec = secondsAt(clientX)
       setDraft(
@@ -332,6 +350,7 @@ export function GridSection({
   function release(): void {
     const committed = draft
     dragging.current = null
+    setPanning(false)
     if (!committed) return
     setDraft(null)
     commit(committed)
@@ -740,12 +759,35 @@ export function GridSection({
                     ref={overlayRef}
                     data-testid="grid-overlay"
                     className="absolute inset-0 touch-none"
+                    // The affordances the raw overlay hid: resize over a
+                    // grabbable beat, a hand over open wave when there's
+                    // somewhere to pan to, closed while panning.
+                    style={{
+                      cursor: panning
+                        ? 'grabbing'
+                        : hoverBeatSec !== null
+                          ? 'ew-resize'
+                          : zoom > 1
+                            ? 'grab'
+                            : undefined,
+                    }}
                     onPointerDown={(e) => {
-                      // Only a press ON a beat line picks the grid up — empty
-                      // wave stays inert, so a stray click or a pan gesture
-                      // while zooming can't shift the phase by accident. The
-                      // grabbed line's SEGMENT is what the drag moves.
-                      if (distToBeatPx(e.clientX) > GRAB_PX) return
+                      // A press ON a beat line picks the grid up; anywhere else
+                      // (zoomed) it grabs the wave itself and pans it — the
+                      // grid's phase can still never shift by accident, and at
+                      // ×1 there is nowhere to pan, so open wave stays inert.
+                      if (distToBeatPx(e.clientX) > GRAB_PX) {
+                        const scroller = scrollerOf()
+                        if (!scroller || zoom <= 1) return
+                        dragging.current = {
+                          mode: 'pan',
+                          fromClientX: e.clientX,
+                          fromScroll: scroller.scrollLeft,
+                        }
+                        setPanning(true)
+                        e.currentTarget.setPointerCapture?.(e.pointerId)
+                        return
+                      }
                       const sec = secondsAt(e.clientX)
                       const segIndex = segmentIndexAt(nearestBeatSec(sec))
                       dragging.current = {
@@ -758,7 +800,15 @@ export function GridSection({
                       }
                       e.currentTarget.setPointerCapture?.(e.pointerId)
                     }}
-                    onPointerMove={(e) => dragTo(e.clientX)}
+                    onPointerMove={(e) => {
+                      if (dragging.current) {
+                        dragTo(e.clientX)
+                        return
+                      }
+                      const near = distToBeatPx(e.clientX) <= GRAB_PX
+                      setHoverBeatSec(near ? nearestBeatSec(secondsAt(e.clientX)) : null)
+                    }}
+                    onPointerLeave={() => setHoverBeatSec(null)}
                     onPointerUp={release}
                     onPointerCancel={release}
                   >
@@ -766,19 +816,33 @@ export function GridSection({
                         wave, and same-hue lines disappeared into a busy mix.
                         Full opacity plus a faint halo — a bare 1px line at half
                         opacity still sank between the peaks of a busy wave. */}
-                    {lines.map((line) => (
-                      <span
-                        key={line.sec}
-                        data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
-                        aria-hidden="true"
-                        className={`pointer-events-none absolute -translate-x-1/2 ${
-                          line.downbeat
-                            ? 'inset-y-0 w-0.5 bg-[var(--color-warn)] shadow-[0_0_3px_var(--color-warn)]'
-                            : 'inset-y-1.5 w-px bg-[var(--color-warn)]/80 shadow-[0_0_2px_rgba(0,0,0,0.6)]'
-                        }`}
-                        style={{ left: `${line.pct}%` }}
-                      />
-                    ))}
+                    {lines.map((line) => {
+                      // The line under the cursor's grab range brightens — the
+                      // "you can drag me" half of the affordance the resize
+                      // cursor starts.
+                      const hovered =
+                        hoverBeatSec !== null && Math.abs(line.sec - hoverBeatSec) < 1e-3
+                      return (
+                        <span
+                          key={line.sec}
+                          data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
+                          data-hovered={hovered || undefined}
+                          aria-hidden="true"
+                          className={`pointer-events-none absolute -translate-x-1/2 ${
+                            line.downbeat
+                              ? 'inset-y-0 bg-[var(--color-warn)]'
+                              : 'inset-y-1.5 bg-[var(--color-warn)]/80'
+                          } ${
+                            hovered
+                              ? 'w-1 shadow-[0_0_8px_var(--color-warn)]'
+                              : line.downbeat
+                                ? 'w-0.5 shadow-[0_0_3px_var(--color-warn)]'
+                                : 'w-px shadow-[0_0_2px_rgba(0,0,0,0.6)]'
+                          }`}
+                          style={{ left: `${line.pct}%` }}
+                        />
+                      )
+                    })}
                     {playheadSec !== null && (
                       <span
                         data-testid="grid-playhead"
