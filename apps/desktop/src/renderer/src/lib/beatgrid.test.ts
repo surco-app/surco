@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BeatgridResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { beatgridNeedsReview, exportAnchorSec, gridLines } from './beatgrid'
+import { beatgridNeedsReview, exportAnchorSec, exportedBeatgrid, gridLines } from './beatgrid'
 
 const FULL = { from: 0, to: 1 }
 
@@ -55,6 +55,29 @@ describe('gridLines', () => {
 
   it('returns nothing without a duration', () => {
     expect(gridLines({ bpm: 128, anchorSec: 0 }, 0, FULL)).toEqual([])
+  })
+
+  // Multi-segment grids: each change re-anchors the grid from its own beat
+  // forward. The previous segment must stop AT the change (no line from the old
+  // grid past it), the change's own anchor is a downbeat, and beats after it
+  // follow the change's bpm.
+  it('walks segments, each change re-anchoring the beats and the downbeat count', () => {
+    const lines = gridLines(
+      { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 5.3, bpm: 150 }] },
+      20,
+      { from: 0, to: 0.5 },
+    )
+    const secs = lines.map((l) => l.sec)
+    // Base segment: beats every 0.5 s up to but not past 5.3.
+    expect(secs[0]).toBeCloseTo(0, 10)
+    expect(secs.filter((s) => s < 5.3 - 1e-6).length).toBe(11)
+    // The change's anchor is itself a line, and a downbeat.
+    const change = lines.find((l) => Math.abs(l.sec - 5.3) < 1e-6)
+    expect(change?.downbeat).toBe(true)
+    // After it, beats follow 150 BPM (0.4 s), phased to the change.
+    const after = secs.filter((s) => s > 5.3 + 1e-6)
+    expect(after[0]).toBeCloseTo(5.7, 6)
+    expect(after[1]).toBeCloseTo(6.1, 6)
   })
 
   // With a NaN anchor the loop's `sec > toSec` exit is false forever and the
@@ -158,5 +181,30 @@ describe('exportAnchorSec', () => {
   it('keeps the anchor as-is on a converted track with no trim', () => {
     const t = track({ beatgrid: { bpm: 120, anchorSec: 2 }, outputPath: '/out/a.aiff' })
     expect(exportAnchorSec(t)).toBe(2)
+  })
+})
+
+describe('exportedBeatgrid', () => {
+  // The whole-grid counterpart to exportAnchorSec, for the exports that carry
+  // every segment (rekordbox TEMPO nodes, Serato markers, Engine beatData):
+  // same gate — offset by the trim only once a converted output exists.
+  it('offsets every segment only for a converted track', () => {
+    const grid = { bpm: 120, anchorSec: 2, changes: [{ anchorSec: 62, bpm: 121 }] }
+    const staged = track({ beatgrid: grid, trim: { startSec: 1.5 } })
+    expect(exportedBeatgrid(staged)).toEqual(grid)
+    const converted = track({
+      beatgrid: grid,
+      trim: { startSec: 1.5 },
+      outputPath: '/out/a.aiff',
+    })
+    expect(exportedBeatgrid(converted)).toEqual({
+      bpm: 120,
+      anchorSec: 0.5,
+      changes: [{ anchorSec: 60.5, bpm: 121 }],
+    })
+  })
+
+  it('is undefined without a grid', () => {
+    expect(exportedBeatgrid(track({}))).toBeUndefined()
   })
 })

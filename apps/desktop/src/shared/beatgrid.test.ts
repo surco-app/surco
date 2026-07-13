@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeBeatgrid, snapAnchor } from './beatgrid'
+import { gridSegments, normalizeBeatgrid, outputBeatgrid, snapAnchor } from './beatgrid'
 
 describe('normalizeBeatgrid', () => {
   it('passes a valid grid through', () => {
@@ -37,6 +37,123 @@ describe('normalizeBeatgrid', () => {
 
   it('rejects a negative anchor', () => {
     expect(normalizeBeatgrid({ bpm: 128, anchorSec: -0.1 })).toBeUndefined()
+  })
+
+  // Multi-segment grids ride the same stored value, so the changes list gets
+  // the same degrade-not-error treatment — entry by entry, because one typo in
+  // a hand-edited session.json must not throw away the segments that are fine.
+  it('passes valid tempo changes through', () => {
+    expect(
+      normalizeBeatgrid({
+        bpm: 128,
+        anchorSec: 0.25,
+        changes: [
+          { anchorSec: 60, bpm: 128 },
+          { anchorSec: 120.5, bpm: 127.8 },
+        ],
+      }),
+    ).toEqual({
+      bpm: 128,
+      anchorSec: 0.25,
+      changes: [
+        { anchorSec: 60, bpm: 128 },
+        { anchorSec: 120.5, bpm: 127.8 },
+      ],
+    })
+  })
+
+  it('drops malformed, out-of-order or pre-anchor changes but keeps the rest', () => {
+    expect(
+      normalizeBeatgrid({
+        bpm: 128,
+        anchorSec: 0.25,
+        changes: [
+          { anchorSec: 0.1, bpm: 128 },
+          { anchorSec: 60, bpm: 128 },
+          { anchorSec: 30, bpm: 128 },
+          { anchorSec: 90, bpm: Number.NaN },
+          { anchorSec: 120, bpm: 130 },
+          'garbage',
+        ],
+      }),
+    ).toEqual({
+      bpm: 128,
+      anchorSec: 0.25,
+      changes: [
+        { anchorSec: 60, bpm: 128 },
+        { anchorSec: 120, bpm: 130 },
+      ],
+    })
+  })
+
+  it('omits the changes key when nothing valid remains', () => {
+    expect(normalizeBeatgrid({ bpm: 128, anchorSec: 0.25, changes: [] })).toEqual({
+      bpm: 128,
+      anchorSec: 0.25,
+    })
+    expect(normalizeBeatgrid({ bpm: 128, anchorSec: 0.25, changes: 'x' })).toEqual({
+      bpm: 128,
+      anchorSec: 0.25,
+    })
+  })
+})
+
+describe('gridSegments', () => {
+  // The one walk every consumer shares: base plus changes as ordered segments.
+  it('lists the base grid and each change in order', () => {
+    expect(
+      gridSegments({ bpm: 128, anchorSec: 0.25, changes: [{ anchorSec: 60, bpm: 130 }] }),
+    ).toEqual([
+      { anchorSec: 0.25, bpm: 128 },
+      { anchorSec: 60, bpm: 130 },
+    ])
+    expect(gridSegments({ bpm: 128, anchorSec: 0.25 })).toEqual([{ anchorSec: 0.25, bpm: 128 }])
+  })
+})
+
+describe('outputBeatgrid', () => {
+  it('keeps a grid with no trim untouched', () => {
+    const grid = { bpm: 128, anchorSec: 0.25, changes: [{ anchorSec: 60, bpm: 130 }] }
+    expect(outputBeatgrid(grid, undefined)).toBe(grid)
+  })
+
+  it('shifts every anchor by the trimmed head', () => {
+    expect(
+      outputBeatgrid(
+        { bpm: 120, anchorSec: 10, changes: [{ anchorSec: 60, bpm: 121 }] },
+        { startSec: 5 },
+      ),
+    ).toEqual({ bpm: 120, anchorSec: 5, changes: [{ anchorSec: 55, bpm: 121 }] })
+  })
+
+  // A cut landing INSIDE a later segment must re-base on that segment — its
+  // bpm, its beat phase — and drop the changes the cut swallowed: the exported
+  // file starts under that segment's grid, not under the long-gone base.
+  it('re-bases on the segment the cut lands in', () => {
+    const out = outputBeatgrid(
+      {
+        bpm: 120,
+        anchorSec: 0,
+        changes: [
+          { anchorSec: 60, bpm: 150 },
+          { anchorSec: 120, bpm: 152 },
+        ],
+      },
+      { startSec: 61 },
+    )
+    // 61 s is 2.5 beats into the 150 BPM segment (period 0.4): first surviving
+    // beat 0.2 s into the output.
+    expect(out?.bpm).toBe(150)
+    expect(out?.anchorSec).toBeCloseTo(0.2, 10)
+    expect(out?.changes).toEqual([{ anchorSec: 59, bpm: 152 }])
+  })
+
+  it('re-bases cleanly when the cut sits exactly on a change', () => {
+    const out = outputBeatgrid(
+      { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 60, bpm: 150 }] },
+      { startSec: 60 },
+    )
+    expect(out).toEqual({ bpm: 150, anchorSec: 0 })
   })
 })
 

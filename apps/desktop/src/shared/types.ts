@@ -97,14 +97,25 @@ export interface TrimRange {
   endSec?: number
 }
 
-// A constant-tempo beatgrid staged in the editor: beat k falls at
-// anchorSec + k * 60/bpm. Times are seconds into the ORIGINAL file — a staged
-// trim is subtracted only at DJ-export time, like cues, so re-trimming never
-// invalidates the grid. Constant tempo only: the use case is vinyl rips of
-// studio records; a drifting live take needs a variable grid, out of scope.
+// A beatgrid staged in the editor. Times are seconds into the ORIGINAL file —
+// a staged trim is subtracted only at DJ-export time, like cues, so
+// re-trimming never invalidates the grid. The base grid is constant tempo:
+// beat k falls at anchorSec + k * 60/bpm. `changes` makes it multi-segment
+// (rekordbox's "make an adjustment from the current position"): each change
+// re-anchors the grid from its own beat forward — a vinyl rip that drifts gets
+// pinned back without moving everything behind it. Each change governs from
+// its anchorSec (itself a beat, counted as a downbeat) until the next change;
+// the base governs from the file start to the first change.
+export interface GridChange {
+  anchorSec: number
+  bpm: number
+}
+
 export interface Beatgrid {
   bpm: number
   anchorSec: number
+  // Strictly increasing, every anchor past the base one. Absent = constant grid.
+  changes?: GridChange[]
 }
 
 
