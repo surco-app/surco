@@ -596,6 +596,30 @@ describe('GridSection segments', () => {
     expect(grid.changes[0]).toEqual({ anchorSec: 30.31, bpm: 174 })
   })
 
+  // Aligning a grid is dozens of tiny steps: holding a stepper must keep
+  // stepping (fire on press, repeat after a beat) instead of acting once.
+  it('repeats a held nudge until release', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    vi.useFakeTimers()
+    try {
+      const later = screen.getByTestId('grid-nudge-later')
+      fireEvent.pointerDown(later)
+      expect(onChange).toHaveBeenCalledTimes(1)
+      // Past the initial delay the hold ticks on its own.
+      vi.advanceTimersByTime(350 + 70 * 3 + 5)
+      expect(onChange.mock.calls.length).toBeGreaterThanOrEqual(3)
+      const before = onChange.mock.calls.length
+      fireEvent.pointerUp(later)
+      vi.advanceTimersByTime(500)
+      expect(onChange.mock.calls.length).toBe(before)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {

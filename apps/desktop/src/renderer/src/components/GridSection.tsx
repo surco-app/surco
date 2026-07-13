@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
 import { claimKeys } from '../lib/spaceClaim'
@@ -53,6 +53,80 @@ const SNAP_PX = 10
 // measuring on every render — the strip fills the editor pane, and the magnet's
 // feel is forgiving enough that a panel a few hundred px off changes nothing.
 const LANE_PX = 900
+
+// Press-and-hold repeats: aligning a grid is dozens of tiny steps, so the
+// stepper buttons auto-repeat like rekordbox's — fire once on press, then keep
+// stepping after a short beat until release. The action reads through a ref so
+// every tick acts on the LATEST grid; captured directly, a 2-second hold would
+// re-commit the grid from press time over and over instead of walking it.
+const HOLD_DELAY_MS = 350
+const HOLD_TICK_MS = 70
+function ToolbarButton({
+  testid,
+  label,
+  onAct,
+  icon,
+  disabled = false,
+  repeat = false,
+}: {
+  testid: string
+  label: string
+  onAct: () => void
+  icon: React.ReactNode
+  disabled?: boolean
+  repeat?: boolean
+}): React.JSX.Element {
+  const actRef = useRef(onAct)
+  actRef.current = onAct
+  const timers = useRef<{
+    delay?: ReturnType<typeof setTimeout>
+    tick?: ReturnType<typeof setInterval>
+  }>({})
+  // A pointer press already fired on pointerdown; the click that follows on
+  // release must not fire a second step. Keyboard activation has no pointer
+  // phase, so its click still acts — Enter/Space keep working.
+  const fromPointer = useRef(false)
+  const stop = useCallback((): void => {
+    if (timers.current.delay !== undefined) clearTimeout(timers.current.delay)
+    if (timers.current.tick !== undefined) clearInterval(timers.current.tick)
+    timers.current = {}
+  }, [])
+  useEffect(() => stop, [stop])
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      aria-label={label}
+      disabled={disabled}
+      onPointerDown={
+        repeat
+          ? (e) => {
+              if (disabled) return
+              fromPointer.current = true
+              e.currentTarget.setPointerCapture?.(e.pointerId)
+              actRef.current()
+              timers.current.delay = setTimeout(() => {
+                timers.current.tick = setInterval(() => actRef.current(), HOLD_TICK_MS)
+              }, HOLD_DELAY_MS)
+            }
+          : undefined
+      }
+      onPointerUp={repeat ? stop : undefined}
+      onPointerCancel={repeat ? stop : undefined}
+      onClick={() => {
+        if (repeat && fromPointer.current) {
+          fromPointer.current = false
+          return
+        }
+        onAct()
+      }}
+      className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+    >
+      {icon}
+      <Tooltip label={label} />
+    </button>
+  )
+}
 
 interface Props {
   value: Beatgrid | undefined
@@ -614,41 +688,16 @@ export function GridSection({
     onClick: () => void,
     icon: React.ReactNode,
     disabled = false,
+    repeat = false,
   ): React.JSX.Element => (
-    <button
-      type="button"
-      data-testid={testid}
-      aria-label={label}
+    <ToolbarButton
+      testid={testid}
+      label={label}
+      onAct={onClick}
+      icon={icon}
       disabled={disabled}
-      onClick={onClick}
-      className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-    >
-      {icon}
-      <Tooltip label={label} />
-    </button>
-  )
-
-  // The bordered variant for the toolbar's verbs: icon-only, the name in the
-  // tooltip (and aria) — full words made the row wrap to two lines in the
-  // editor column.
-  const toolButton = (
-    testid: string,
-    label: string,
-    onClick: () => void,
-    icon: React.ReactNode,
-    disabled = false,
-  ): React.JSX.Element => (
-    <button
-      type="button"
-      data-testid={testid}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
-    >
-      {icon}
-      <Tooltip label={label} />
-    </button>
+      repeat={repeat}
+    />
   )
 
   // Hairline between the toolbar's groups, so tempo / shift / line actions /
@@ -704,7 +753,7 @@ export function GridSection({
           )}
           {(loading || wave) && (
             <>
-              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                 {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
                     small groups split by hairlines — tempo, shift, the line's
                     actions, listen, history. Labels live in the tooltips (and
@@ -728,7 +777,9 @@ export function GridSection({
                         commitBpm()
                       }
                     }}
-                    className="w-16 rounded border border-[var(--color-line-strong)] bg-transparent px-1.5 py-0.5 text-[11px] tabular-nums text-fg outline-none focus:border-accent"
+                    // w-20, not w-16: a two-decimal tempo ("150.03") plus the
+                    // number input's spinner well clipped the last digit.
+                    className="w-20 rounded border border-[var(--color-line-strong)] bg-transparent px-1.5 py-0.5 text-[11px] tabular-nums text-fg outline-none focus:border-accent"
                   />
                 </label>
                 {shown && activeSeg && (
@@ -739,7 +790,7 @@ export function GridSection({
                         data-testid="grid-tap"
                         aria-label={tr('grid.tapHint')}
                         onClick={tapTempo}
-                        className="press shrink-0 rounded border border-[var(--color-line-strong)] px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
+                        className="press shrink-0 rounded px-1 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
                       >
                         TAP
                         <Tooltip label={tr('grid.tapHint')} />
@@ -779,14 +830,98 @@ export function GridSection({
                         tr('grid.expand'),
                         () => stepBpm(-0.01),
                         <UnfoldHorizontal className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
                       )}
                       {iconButton(
                         'grid-shrink',
                         tr('grid.shrink'),
                         () => stepBpm(0.01),
                         <FoldHorizontal className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
                       )}
                     </span>
+                    {divider}
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {iconButton(
+                        'grid-beat-back',
+                        tr('grid.beatBack'),
+                        () => nudge(-60 / activeSeg.bpm),
+                        <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
+                      )}
+                      {iconButton(
+                        'grid-nudge-earlier',
+                        tr('grid.nudgeEarlier'),
+                        () => nudge(-NUDGE_SEC),
+                        <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
+                      )}
+                      {iconButton(
+                        'grid-nudge-later',
+                        tr('grid.nudgeLater'),
+                        () => nudge(NUDGE_SEC),
+                        <ChevronRight className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
+                      )}
+                      {iconButton(
+                        'grid-beat-forward',
+                        tr('grid.beatForward'),
+                        () => nudge(60 / activeSeg.bpm),
+                        <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
+                        false,
+                        true,
+                      )}
+                    </span>
+                    {divider}
+                    {/* The line's verbs: a beat here, a beat centred, a new
+                        segment from here, or Auto's fresh listen (whole track
+                        on the base, this stretch only on a change segment). */}
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {iconButton(
+                        'grid-beat-here',
+                        tr('grid.beatHere'),
+                        beatHere,
+                        <Anchor className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-centre-beat',
+                        tr('grid.centreBeat'),
+                        centreNearestBeat,
+                        <Crosshair className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-from-here',
+                        tr('grid.fromHere'),
+                        addChangeFromHere,
+                        <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-reset',
+                        tr('grid.resetHint'),
+                        autoDetect,
+                        <Wand2
+                          className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
+                          aria-hidden="true"
+                        />,
+                        reprobing,
+                      )}
+                    </span>
+                    {divider}
+                    {iconButton(
+                      'grid-audition',
+                      tr('grid.audition'),
+                      audition,
+                      auditing ? (
+                        <Square className="h-3 w-3 fill-current" aria-hidden="true" />
+                      ) : (
+                        <Volume2 className="h-3 w-3" aria-hidden="true" />
+                      ),
+                    )}
                     {divider}
                     <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
@@ -1033,86 +1168,6 @@ export function GridSection({
                 </>
               )}
               </div>
-              {/* The grid verbs live WITH the line: work happens at the centre
-                  (pan, look, nudge), so the buttons sit right under the red
-                  reference instead of up in a corner — hands stay where the
-                  eyes are. The top row keeps only what isn't about the line
-                  (tempo numbers, history, zoom). */}
-              {wave && durationSec > 0 && shown && activeSeg && (
-                <div className="mt-1.5 flex items-center justify-center gap-2">
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {iconButton(
-                      'grid-beat-back',
-                      tr('grid.beatBack'),
-                      () => nudge(-60 / activeSeg.bpm),
-                      <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {iconButton(
-                      'grid-nudge-earlier',
-                      tr('grid.nudgeEarlier'),
-                      () => nudge(-NUDGE_SEC),
-                      <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {iconButton(
-                      'grid-nudge-later',
-                      tr('grid.nudgeLater'),
-                      () => nudge(NUDGE_SEC),
-                      <ChevronRight className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {iconButton(
-                      'grid-beat-forward',
-                      tr('grid.beatForward'),
-                      () => nudge(60 / activeSeg.bpm),
-                      <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                  </span>
-                  {divider}
-                  {/* The line's verbs: a beat here, a beat centred, a new
-                      segment from here, or Auto's fresh listen (whole track on
-                      the base, this stretch only on a change segment). */}
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {toolButton(
-                      'grid-beat-here',
-                      tr('grid.beatHere'),
-                      beatHere,
-                      <Anchor className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {toolButton(
-                      'grid-centre-beat',
-                      tr('grid.centreBeat'),
-                      centreNearestBeat,
-                      <Crosshair className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {toolButton(
-                      'grid-from-here',
-                      tr('grid.fromHere'),
-                      addChangeFromHere,
-                      <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
-                    )}
-                    {toolButton(
-                      'grid-reset',
-                      tr('grid.resetHint'),
-                      autoDetect,
-                      <Wand2
-                        className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
-                        aria-hidden="true"
-                      />,
-                      reprobing,
-                    )}
-                  </span>
-                  {divider}
-                  {toolButton(
-                    'grid-audition',
-                    tr('grid.audition'),
-                    audition,
-                    auditing ? (
-                      <Square className="h-3 w-3 fill-current" aria-hidden="true" />
-                    ) : (
-                      <Volume2 className="h-3 w-3" aria-hidden="true" />
-                    ),
-                  )}
-                </div>
-              )}
               {wave && durationSec > 0 && (
                 <div
                   ref={overviewRef}
