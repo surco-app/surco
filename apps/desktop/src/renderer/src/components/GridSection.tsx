@@ -1,26 +1,203 @@
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
 import type React from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
+import { mediaUrl } from '../../../shared/media'
 import type { Beatgrid } from '../../../shared/types'
 import { useBeatgrid } from '../hooks/useBeatgrid'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { useWaveform } from '../hooks/useWaveform'
+import { gridLines } from '../lib/beatgrid'
 import { SectionHeader } from './SectionHeader'
+import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
+
+// The fine correction: about the detector's own resolution, so one press fixes
+// the largest error a correct detection leaves behind.
+const NUDGE_SEC = 0.01
+// How much the audition plays from the first visible beat: four bars at house
+// tempo — enough to hear whether the clicks ride the transients, short enough
+// to stay a check instead of a listen.
+const AUDITION_SEC = 8
 
 interface Props {
   value: Beatgrid | undefined
   open: boolean
   onToggle: () => void
+  onChange: (grid: Beatgrid | undefined) => void
   inputPath: string
 }
 
-// The per-track beatgrid for the DJ exports: a constant-tempo grid the user can
-// line up with the beats on the wave. The detection only suggests — what the
-// exports carry is whatever grid the user confirmed (or left as detected).
-export function GridSection({ value, open, onToggle, inputPath }: Props): React.JSX.Element {
+// The per-track beatgrid for the DJ exports: a constant-tempo grid drawn over
+// the wave, lined up with the beats by dragging the wave (phase), dragging the
+// anchor handle (absolute), nudging, or typing the BPM. The detection only
+// suggests — it shows as the live grid until the user touches anything, and
+// what the exports carry is whatever grid the track stores.
+export function GridSection({
+  value,
+  open,
+  onToggle,
+  onChange,
+  inputPath,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The detection decodes the opening minutes, so it waits for the selection to
-  // rest and for the section to actually be open — same gating as the trim wave.
+  // The waveform decodes the full file and the detection its opening minutes,
+  // so both wait for the selection to rest and the section to actually be open.
   const settled = useSettled(SELECTION_SETTLE_MS)
+  const { data: wave, isFetching } = useWaveform(inputPath, open && settled)
   const { data: detected } = useBeatgrid(inputPath, open && settled)
+  const loading = isFetching && !wave
+  const durationSec = wave?.durationSec ?? 0
+  const [zoom, setZoom] = useState(1)
+  const [view, setView] = useState({ from: 0, to: 1 })
+  // The live grid while dragging; committed to the track (onChange) only on
+  // release, so a drag doesn't spray staleness/session updates per pixel.
+  const [draft, setDraft] = useState<Beatgrid | null>(null)
+  const dragging = useRef<
+    { mode: 'anchor' } | { mode: 'phase'; fromSec: number; fromAnchor: number } | null
+  >(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const shown = draft ?? value ?? detected ?? undefined
+  const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
+  const lines = useMemo(
+    () => (shown && durationSec > 0 ? gridLines(shown, durationSec, view) : []),
+    [shown, durationSec, view],
+  )
+
+  function secondsAt(clientX: number): number {
+    const el = overlayRef.current
+    if (!el || durationSec === 0) return 0
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0) return 0
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    return ratio * durationSec
+  }
+
+  // Millisecond precision is all the exports write; committing float noise from
+  // a drag would flip staleness on bits the user can't see.
+  function commit(next: Beatgrid): void {
+    const anchorSec = Number(
+      (next.anchorSec < 0 ? snapAnchor(next.anchorSec, next.bpm) : next.anchorSec).toFixed(3),
+    )
+    const grid = normalizeBeatgrid({ bpm: next.bpm, anchorSec })
+    if (grid) onChange(grid)
+  }
+
+  function dragTo(clientX: number): void {
+    const drag = dragging.current
+    if (!drag || !shown) return
+    if (drag.mode === 'anchor') {
+      setDraft({ ...shown, anchorSec: secondsAt(clientX) })
+      return
+    }
+    // Dragging anywhere on the wave shifts the phase: the grid follows the
+    // finger, folded back onto the same grid if it crosses zero.
+    const raw = drag.fromAnchor + (secondsAt(clientX) - drag.fromSec)
+    setDraft({ ...shown, anchorSec: raw < 0 ? snapAnchor(raw, shown.bpm) : raw })
+  }
+
+  function release(): void {
+    const committed = draft
+    dragging.current = null
+    if (!committed) return
+    setDraft(null)
+    commit(committed)
+  }
+
+  function nudge(deltaSec: number): void {
+    if (!shown) return
+    commit({ ...shown, anchorSec: shown.anchorSec + deltaSec })
+  }
+
+  // The BPM field edits as text and commits on blur/Enter, so a half-typed
+  // "12" never becomes a staged 12 BPM grid mid-keystroke. With no grid at all
+  // (beatless material) a typed BPM creates one anchored at zero — the manual
+  // path detection can't offer.
+  const [bpmText, setBpmText] = useState<string | null>(null)
+  function commitBpm(): void {
+    const text = bpmText
+    setBpmText(null)
+    if (text === null) return
+    const bpm = Number.parseFloat(text.replace(',', '.'))
+    if (!Number.isFinite(bpm)) return
+    commit({ anchorSec: shown?.anchorSec ?? 0, bpm })
+  }
+
+  // The by-ear check: play from the first beat at or after the visible window's
+  // start while a playhead rides the strip, so grid-vs-transient alignment is
+  // judged by eye and ear together. Stopped when the grid changes or the
+  // section unmounts, like the trim audition.
+  const [auditing, setAuditing] = useState(false)
+  const [playheadSec, setPlayheadSec] = useState<number | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const rafRef = useRef(0)
+  function stopAudition(): void {
+    audioRef.current?.pause()
+    audioRef.current = null
+    cancelAnimationFrame(rafRef.current)
+    setAuditing(false)
+    setPlayheadSec(null)
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a moved grid invalidates what the playhead is checking, so the cleanup must fire on it.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause()
+      audioRef.current = null
+      cancelAnimationFrame(rafRef.current)
+      setAuditing(false)
+      setPlayheadSec(null)
+    }
+  }, [value])
+  function audition(): void {
+    if (auditing) {
+      stopAudition()
+      return
+    }
+    if (!shown || durationSec === 0) return
+    const period = 60 / shown.bpm
+    const viewStart = view.from * durationSec
+    const k = Math.ceil((viewStart - shown.anchorSec) / period - 1e-6)
+    const from = Math.max(0, shown.anchorSec + k * period)
+    const until = Math.min(durationSec, from + AUDITION_SEC)
+    const audio = new Audio(mediaUrl(inputPath))
+    audioRef.current = audio
+    // Seek only once the element knows its duration — an immediate currentTime
+    // on a still-loading element is dropped by the media pipeline.
+    audio.onloadedmetadata = () => {
+      audio.currentTime = from
+      audio.play().catch(() => stopAudition())
+    }
+    audio.ontimeupdate = () => {
+      if (audio.currentTime >= until) stopAudition()
+    }
+    audio.onended = () => stopAudition()
+    const tick = (): void => {
+      if (!audioRef.current) return
+      setPlayheadSec(audioRef.current.currentTime)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    setAuditing(true)
+  }
+
+  const iconButton = (
+    testid: string,
+    label: string,
+    onClick: () => void,
+    icon: React.ReactNode,
+    disabled = false,
+  ): React.JSX.Element => (
+    <button
+      type="button"
+      data-testid={testid}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+    >
+      {icon}
+    </button>
+  )
 
   return (
     <div data-testid="editor-grid" className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -53,10 +230,234 @@ export function GridSection({ value, open, onToggle, inputPath }: Props): React.
       {open && (
         <div className="mt-3">
           <p className="mb-3 text-xs text-fg-dim">{tr('grid.hint')}</p>
-          {detected === null && !value && (
-            <p data-testid="grid-nothing" className="text-[10px] text-fg-dim">
+          {detected === null && !shown && (
+            <p data-testid="grid-nothing" className="mb-3 text-[10px] text-fg-dim">
               {tr('grid.nothing')}
             </p>
+          )}
+          {(loading || wave) && (
+            <>
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                <label className="flex shrink-0 items-center gap-1.5 text-[10px] text-fg-dim">
+                  <span className="font-medium uppercase tracking-wider">
+                    {tr('grid.bpmLabel')}
+                  </span>
+                  <input
+                    data-testid="grid-bpm-input"
+                    type="number"
+                    step="0.01"
+                    min="20"
+                    max="999"
+                    value={bpmText ?? (shown ? String(Number(shown.bpm.toFixed(2))) : '')}
+                    onChange={(e) => setBpmText(e.target.value)}
+                    onBlur={commitBpm}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        commitBpm()
+                      }
+                    }}
+                    className="w-16 rounded border border-[var(--color-line-strong)] bg-transparent px-1.5 py-0.5 text-[11px] tabular-nums text-fg outline-none focus:border-accent"
+                  />
+                </label>
+                {shown && (
+                  <>
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        data-testid="grid-bpm-half"
+                        aria-label={tr('grid.half')}
+                        disabled={!normalizeBeatgrid({ ...shown, bpm: shown.bpm / 2 })}
+                        onClick={() => commit({ ...shown, bpm: shown.bpm / 2 })}
+                        className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                      >
+                        ÷2
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="grid-bpm-double"
+                        aria-label={tr('grid.double')}
+                        disabled={!normalizeBeatgrid({ ...shown, bpm: shown.bpm * 2 })}
+                        onClick={() => commit({ ...shown, bpm: shown.bpm * 2 })}
+                        className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                      >
+                        ×2
+                      </button>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {iconButton(
+                        'grid-beat-back',
+                        tr('grid.beatBack'),
+                        () => nudge(-60 / shown.bpm),
+                        <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-nudge-earlier',
+                        tr('grid.nudgeEarlier'),
+                        () => nudge(-NUDGE_SEC),
+                        <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-nudge-later',
+                        tr('grid.nudgeLater'),
+                        () => nudge(NUDGE_SEC),
+                        <ChevronRight className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {iconButton(
+                        'grid-beat-forward',
+                        tr('grid.beatForward'),
+                        () => nudge(60 / shown.bpm),
+                        <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                    </span>
+                    <span data-testid="grid-anchor" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
+                      {tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="grid-audition"
+                      onClick={audition}
+                      className="press inline-flex shrink-0 items-center gap-1 text-[10px] text-fg-dim hover:text-fg"
+                    >
+                      {auditing ? (
+                        <Square className="h-3 w-3" aria-hidden="true" />
+                      ) : (
+                        <Volume2 className="h-3 w-3" aria-hidden="true" />
+                      )}
+                      {tr('grid.audition')}
+                    </button>
+                  </>
+                )}
+                {value && (
+                  <button
+                    type="button"
+                    data-testid="grid-reset"
+                    aria-label={tr('grid.resetHint')}
+                    onClick={() => onChange(undefined)}
+                    className="press shrink-0 text-[10px] text-fg-dim underline-offset-2 hover:text-fg hover:underline"
+                  >
+                    {tr('grid.reset')}
+                  </button>
+                )}
+                <span className="ml-auto flex shrink-0 items-center gap-0.5">
+                  {iconButton(
+                    'waveform-zoom-out',
+                    tr('editor.waveformZoomOut'),
+                    () => setZoom((z) => Math.max(1, z / 2)),
+                    <ZoomOut className="h-3 w-3" aria-hidden="true" />,
+                    zoom <= 1,
+                  )}
+                  <button
+                    type="button"
+                    data-testid="waveform-zoom-reset"
+                    aria-label={tr('editor.waveformZoomReset')}
+                    disabled={zoom <= 1}
+                    onClick={() => setZoom(1)}
+                    className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                  >
+                    {zoomLabel(zoom)}
+                  </button>
+                  {iconButton(
+                    'waveform-zoom-in',
+                    tr('editor.waveformZoomIn'),
+                    () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
+                    <ZoomIn className="h-3 w-3" aria-hidden="true" />,
+                    zoom >= ZOOM_MAX,
+                  )}
+                </span>
+              </div>
+              <Strip
+                wave={wave}
+                loading={loading}
+                loudness={undefined}
+                color={AFTER_COLOR}
+                raster={OVERLAY_W}
+                zoom={zoom}
+                onZoomChange={setZoom}
+                inputPath={inputPath}
+                onViewChange={setView}
+                // No red clip marks: the eye is lining hairlines up with
+                // transients, and on a hot master the flags paint half the
+                // strip red — noise for this job.
+                marks={false}
+              >
+                {wave && durationSec > 0 && shown && (
+                  <div
+                    ref={overlayRef}
+                    data-testid="grid-overlay"
+                    className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
+                    onPointerDown={(e) => {
+                      dragging.current = {
+                        mode: 'phase',
+                        fromSec: secondsAt(e.clientX),
+                        fromAnchor: shown.anchorSec,
+                      }
+                      e.currentTarget.setPointerCapture?.(e.pointerId)
+                    }}
+                    onPointerMove={(e) => dragTo(e.clientX)}
+                    onPointerUp={release}
+                    onPointerCancel={release}
+                  >
+                    {lines.map((line) => (
+                      <span
+                        key={line.sec}
+                        data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute w-px ${
+                          line.downbeat ? 'inset-y-0 bg-accent/70' : 'inset-y-2 bg-accent/30'
+                        }`}
+                        style={{ left: `${line.pct}%` }}
+                      />
+                    ))}
+                    {playheadSec !== null && (
+                      <span
+                        data-testid="grid-playhead"
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 w-px bg-fg"
+                        style={{ left: `${pct(playheadSec)}%` }}
+                      />
+                    )}
+                    <div
+                      data-testid="grid-anchor-handle"
+                      role="slider"
+                      aria-label={tr('grid.handleAnchor')}
+                      aria-valuemin={0}
+                      aria-valuemax={Number(durationSec.toFixed(2))}
+                      aria-valuenow={Number(shown.anchorSec.toFixed(2))}
+                      tabIndex={0}
+                      className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none focus-visible:outline-1 focus-visible:outline-accent"
+                      style={{ left: `${pct(shown.anchorSec)}%` }}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                        e.preventDefault()
+                        const step = e.shiftKey ? 0.1 : NUDGE_SEC
+                        nudge(e.key === 'ArrowLeft' ? -step : step)
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation()
+                        dragging.current = { mode: 'anchor' }
+                        e.currentTarget.setPointerCapture?.(e.pointerId)
+                      }}
+                      onPointerMove={(e) => {
+                        e.stopPropagation()
+                        dragTo(e.clientX)
+                      }}
+                      onPointerUp={release}
+                      onPointerCancel={release}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-0 left-1/2 w-px bg-accent"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </Strip>
+            </>
           )}
         </div>
       )}

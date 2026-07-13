@@ -1098,6 +1098,7 @@ export const Editor = memo(function Editor({
                         value={item.beatgrid}
                         open={gridOpen}
                         onToggle={() => setSectionOpen('grid', !gridOpen)}
+                        onChange={(beatgrid) => onChange({ beatgrid })}
                         inputPath={item.inputPath}
                       />
                     )
