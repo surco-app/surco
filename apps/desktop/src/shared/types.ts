@@ -697,6 +697,10 @@ export interface BeatgridResult {
   // is suspect when the attacks tie AND the energy can't break the tie.
   phaseAmbiguity: number
   phaseMargin: number
+  // Present when the drift scan confirmed the phase stepping off mid-track:
+  // the suggested grid is multi-segment, same shape a manual "Adjust from
+  // here" stages. Absent = steady single-segment grid.
+  changes?: GridChange[]
 }
 
 // Musical key detected from the audio (chromagram × Krumhansl profiles in

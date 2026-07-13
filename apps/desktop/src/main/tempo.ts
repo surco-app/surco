@@ -6,7 +6,7 @@
 // binary beyond the ffmpeg decode that produces the PCM, and it unit-tests on
 // synthesized signals without spawning anything.
 
-import type { BeatgridResult, BpmResult } from '../shared/types'
+import type { BeatgridResult, BpmResult, GridChange } from '../shared/types'
 import { snapAnchor } from '../shared/beatgrid'
 
 // The rate ffmpeg decodes to before analysis. Beat energy lives far below
@@ -39,6 +39,20 @@ const MIN_CONFIDENCE = 0.25
 // off-beat bass enters from the duck's silence (huge rise), so every flux fold
 // locks exactly half a period off the kicks (seen on a real 138 BPM remix).
 const KICK_LOWPASS_HZ = 150
+
+// The drift scan's granularity: the local phase is measured over windows this
+// long, so a step lands on a window boundary at worst this far from where it
+// happened. Long enough that a window holds ~20+ beats to average over.
+const DRIFT_WINDOW_SEC = 10
+// A window must sit this far off its segment's grid — and the NEXT window must
+// agree — before a change is emitted. 25 ms is right at beat-matching slop;
+// under it a re-anchor is churn, over it the grid audibly walks off the kicks.
+const DRIFT_STEP_SEC = 0.025
+const DRIFT_CONFIRM_SEC = 0.015
+// The first window's local phase outranks the whole-file fold (which averages
+// every segment together) — but only past this gate, so frame noise on steady
+// tracks never wiggles the anchor that the fold measured globally.
+const DRIFT_REBASE_SEC = 0.015
 
 // One-pole low-pass, good enough to isolate the kick band for the fold — the
 // slow 6 dB/oct rolloff still attenuates a 3 kHz stab by ~26 dB.
@@ -73,6 +87,104 @@ function onsetEnvelope(samples: Float32Array): Float32Array {
   const env = new Float32Array(energy.length)
   for (let f = 1; f < energy.length; f++) env[f] = Math.max(0, energy[f] - energy[f - 1])
   return env
+}
+
+// Scans the onset envelope in windows for phase steps against the detected
+// grid — the vinyl-rip drift multi-segment grids exist for (a splice, a needle
+// bump, slow wow). Each window's local phase is measured on the same circular
+// fold the global phase used, searched around the RUNNING phase so slow wow
+// stays tracked (unwrapped) even past a quarter period cumulatively. A step
+// must clear DRIFT_STEP_SEC and be confirmed by the next measurable window
+// before it becomes a change — the guard that keeps arrangement changes and
+// noise from growing segments on steady tracks. Cumulative wow re-anchors each
+// time the deviation from the CURRENT segment crosses the step threshold.
+function detectDrift(
+  flux: Float32Array,
+  fps: number,
+  bpm: number,
+  anchorSec: number,
+): { anchorSec: number; changes: GridChange[] } {
+  const periodSec = 60 / bpm
+  const periodFrames = (60 * fps) / bpm
+  const bins = Math.ceil(periodFrames)
+  const frames = flux.length
+  const winFrames = Math.round(DRIFT_WINDOW_SEC * fps)
+  if (winFrames <= 0 || frames < winFrames * 2) return { anchorSec, changes: [] }
+
+  const wrap = (sec: number): number => ((sec % periodSec) + periodSec) % periodSec
+
+  // The absolute phase (seconds, unwrapped near refSec) of the strongest pulse
+  // in [f0, f1) — or null when the window holds no clear pulse (a breakdown),
+  // which simply skips the window instead of feeding noise into the scan.
+  const phaseAt = (f0: number, f1: number, refSec: number): number | null => {
+    const fold = new Float64Array(bins)
+    let total = 0
+    for (let f = f0; f < f1; f++) {
+      const phase = f % periodFrames
+      fold[Math.min(bins - 1, Math.floor((phase / periodFrames) * bins))] += flux[f]
+      total += flux[f]
+    }
+    if (total <= 0) return null
+    const refBin = Math.floor((wrap(refSec) / periodSec) * bins)
+    const search = Math.max(2, Math.round(bins / 4))
+    let peak = -1
+    let peakValue = 0
+    for (let d = -search; d <= search; d++) {
+      const b = (refBin + d + bins) % bins
+      if (fold[b] > peakValue) {
+        peakValue = fold[b]
+        peak = b
+      }
+    }
+    // A real beat towers over the window's average flux; anything flatter is
+    // pad wash or noise and must not measure.
+    if (peak < 0 || peakValue * bins < 2 * total) return null
+    const before = fold[(peak - 1 + bins) % bins]
+    const after = fold[(peak + 1) % bins]
+    const denom = before - 2 * peakValue + after
+    const off = denom === 0 ? 0 : Math.max(-0.5, Math.min(0.5, (0.5 * (before - after)) / denom))
+    const measured = (((peak + 0.5 + off) / bins) * periodFrames) / fps
+    let delta = measured - wrap(refSec)
+    if (delta > periodSec / 2) delta -= periodSec
+    if (delta < -periodSec / 2) delta += periodSec
+    return refSec + delta
+  }
+
+  const phases: (number | null)[] = []
+  let searchRef = wrap(anchorSec)
+  for (let f0 = 0; f0 + winFrames <= frames; f0 += winFrames) {
+    const measured = phaseAt(f0, f0 + winFrames, searchRef)
+    phases.push(measured)
+    if (measured !== null) searchRef = measured
+  }
+  const firstIndex = phases.findIndex((m) => m !== null)
+  if (firstIndex < 0) return { anchorSec, changes: [] }
+  const first = phases[firstIndex] as number
+
+  // The opening windows' own phase outranks the whole-file fold, which
+  // averaged every later segment into the anchor — but only past the gate, so
+  // frame noise never wiggles a steady track's anchor.
+  let base = anchorSec
+  if (Math.abs(first - wrap(anchorSec)) > DRIFT_REBASE_SEC)
+    base = snapAnchor(anchorSec + (first - wrap(anchorSec)), bpm)
+
+  const changes: GridChange[] = []
+  let segPhase = first
+  for (let w = firstIndex + 1; w < phases.length; w++) {
+    const measured = phases[w]
+    if (measured === null) continue
+    if (Math.abs(measured - segPhase) <= DRIFT_STEP_SEC) continue
+    const next = phases.slice(w + 1).find((x) => x !== null)
+    if (next === undefined || next === null || Math.abs(next - measured) > DRIFT_CONFIRM_SEC)
+      continue
+    // The change lands on the corrected grid's first beat inside this window.
+    const windowStartSec = (w * winFrames) / fps
+    const anchorAbs = base + (measured - first)
+    const k = Math.ceil((windowStartSec - anchorAbs) / periodSec - 1e-6)
+    changes.push({ anchorSec: Number((anchorAbs + k * periodSec).toFixed(3)), bpm })
+    segPhase = measured
+  }
+  return { anchorSec: base, changes }
 }
 
 export function detectBpm(samples: Float32Array, sampleRate: number): BpmResult | null {
@@ -225,7 +337,8 @@ export function detectBeatgrid(
   // energy 2.02). So: full flux proposes the phase and its half-period rival,
   // the sub's attack arbitrates, the sub's energy settles a wash, and full
   // flux places the line.
-  const fold = foldOf(onsetEnvelope(samples))
+  const flux = onsetEnvelope(samples)
+  const fold = foldOf(flux)
   let best = 0
   for (let b = 1; b < bins; b++) if (fold[b] > fold[best]) best = b
 
@@ -301,5 +414,18 @@ export function detectBeatgrid(
   // of the wrap point, the honest anchor is the file start itself.
   const periodSec = 60 / result.bpm
   const anchorSec = periodSec - folded < (1.5 * HOP) / sampleRate ? 0 : folded
-  return { bpm: result.bpm, confidence: result.confidence, anchorSec, phaseAmbiguity, phaseMargin }
+
+  // The drift scan may re-base the anchor onto the opening windows' phase and
+  // add a change per confirmed mid-track step — the automatic counterpart of
+  // "Adjust from here". Its anchor gets the same wrap-to-zero read as above.
+  const drift = detectDrift(flux, fps, result.bpm, anchorSec)
+  const baseAnchor = periodSec - drift.anchorSec < (1.5 * HOP) / sampleRate ? 0 : drift.anchorSec
+  return {
+    bpm: result.bpm,
+    confidence: result.confidence,
+    anchorSec: baseAnchor,
+    phaseAmbiguity,
+    phaseMargin,
+    ...(drift.changes.length > 0 ? { changes: drift.changes } : {}),
+  }
 }

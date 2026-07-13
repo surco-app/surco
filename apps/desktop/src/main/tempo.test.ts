@@ -253,4 +253,41 @@ describe('detectBeatgrid', () => {
     expect(detectBeatgrid(new Float32Array(SR * 30), SR)).toBeNull()
     expect(detectBeatgrid(clickTrain(120, 1), SR)).toBeNull()
   })
+
+  // The vinyl-rip reality multi-segment grids exist for: the tempo holds but
+  // the phase steps off mid-track (a splice, a needle bump, drift). The
+  // detector must hand back a grid with a change re-anchoring from that point
+  // — the same fix a user would stage by hand with "Adjust from here".
+  it('re-anchors with a change where the beat steps off mid-track', () => {
+    const samples = new Float32Array(SR * 60)
+    const period = (60 / 120) * SR
+    for (let beat = 0; beat * period < samples.length; beat++) {
+      // From 30 s on, every click lands 60 ms late — a step in phase, same tempo.
+      const late = beat * 0.5 >= 30 ? Math.round(0.06 * SR) : 0
+      const start = Math.round(beat * period) + late
+      for (let i = 0; i < 64 && start + i < samples.length; i++) {
+        samples[start + i] += 1 - i / 64
+      }
+    }
+    const result = detectBeatgrid(samples, SR)
+    expect(result?.bpm).toBeGreaterThan(119)
+    expect(result?.bpm).toBeLessThan(121)
+    // The base grid holds the first half…
+    expect(Math.min(result?.anchorSec ?? 1, 0.5 - (result?.anchorSec ?? 1))).toBeLessThan(0.02)
+    // …and one change re-anchors the second half onto the late clicks.
+    expect(result?.changes?.length).toBe(1)
+    const change = result?.changes?.[0]
+    expect(change?.anchorSec ?? 0).toBeGreaterThan(28)
+    expect(change?.anchorSec ?? 99).toBeLessThan(45)
+    const phase = (((change?.anchorSec ?? 0) - 0.06) % 0.5 + 0.5) % 0.5
+    expect(Math.min(phase, 0.5 - phase)).toBeLessThan(0.02)
+  })
+
+  // The guard the triage memory warns about: a steady beat must never grow
+  // segments out of measurement noise — extra markers are churn in every
+  // export and erode trust in the automatic grid.
+  it('keeps a steady train single-segment', () => {
+    expect(detectBeatgrid(clickTrain(120, 60), SR)?.changes).toBeUndefined()
+    expect(detectBeatgrid(clickTrain(174, 60, 0.3), SR)?.changes).toBeUndefined()
+  })
 })
