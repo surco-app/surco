@@ -278,7 +278,26 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 onZoomChange={setZoom}
               >
                 {wave && durationSec > 0 && (
-                  <div ref={overlayRef} className="absolute inset-0">
+                  // Clicking the wave grabs the NEAREST handle and drops it there —
+                  // placing a cut is one gesture (press, optionally drag to refine,
+                  // release commits) instead of dragging a handle across the strip.
+                  // The handles' own pointerdown stops propagation, so grabbing one
+                  // directly never re-places it through this handler.
+                  <div
+                    ref={overlayRef}
+                    data-testid="trim-overlay"
+                    className="absolute inset-0"
+                    onPointerDown={(e) => {
+                      const sec = secondsAt(e.clientX)
+                      dragging.current =
+                        Math.abs(sec - startSec) <= Math.abs(sec - endSec) ? 'start' : 'end'
+                      e.currentTarget.setPointerCapture?.(e.pointerId)
+                      dragTo(e.clientX)
+                    }}
+                    onPointerMove={(e) => dragTo(e.clientX)}
+                    onPointerUp={release}
+                    onPointerCancel={release}
+                  >
                     {/* The discarded regions, shaded like a dimmed room: the kept
                         audio stays lit, so the cut reads without a legend. */}
                     {cutStart && (

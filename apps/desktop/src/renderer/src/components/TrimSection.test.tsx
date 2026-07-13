@@ -109,6 +109,28 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 5, endSec: 90.3 })
   })
 
+  // Placing a cut is one gesture: pressing the wave grabs the nearest handle and
+  // drops it under the pointer, and releasing commits — no cross-strip drag needed.
+  it('moves the nearest handle to a click on the wave', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const overlay = await screen.findByTestId('trim-overlay', undefined, { timeout: 3000 })
+    vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      width: 1000,
+      top: 0,
+      height: 64,
+      right: 1000,
+      bottom: 64,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect)
+    fireEvent(overlay, new MouseEvent('pointerdown', { bubbles: true, clientX: 150 }))
+    fireEvent(overlay, new MouseEvent('pointerup', { bubbles: true }))
+    expect(onChange).toHaveBeenCalledWith({ startSec: 15, endSec: 90.3 })
+  })
+
   // Parking the start handle back on the left edge means "cut nothing here": the
   // bound drops rather than persisting a hair's-width trim.
   it('drops a bound dragged back to its own edge', async () => {
