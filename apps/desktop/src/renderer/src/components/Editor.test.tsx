@@ -1158,11 +1158,14 @@ describe('Editor export control', () => {
     renderEditor(
       { id: 'a', status: 'done', outputPath: '/out/a.aiff', processedNormalize: applied },
       'aiff',
-      { normalize: applied },
+      {
+        normalize: applied,
+        // The section ships folded now, so the settings open it to reach the dials.
+        editorSections: [{ id: 'normalize' as const, open: true }],
+      },
     )
     expect(screen.getByTestId('export-success')).toBeInTheDocument()
 
-    // The normalize section now starts open, so its dials are directly reachable.
     fireEvent.click(screen.getByTestId('normalize-preset-club'))
     expect(screen.queryByTestId('export-success')).not.toBeInTheDocument()
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()

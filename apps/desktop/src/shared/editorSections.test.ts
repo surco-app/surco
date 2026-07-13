@@ -17,8 +17,8 @@ describe('normalizeEditorSections', () => {
     const ids = normalizeEditorSections(stored).map((s) => s.id)
     expect(ids).toEqual([
       'form',
-      'quality',
       'properties',
+      'quality',
       'trim',
       'declick',
       'normalize',
@@ -57,15 +57,15 @@ describe('normalizeEditorSections', () => {
     ])
   })
 
-  // The list reads as the workflow: judge the file first (quality's verdict, ahead
-  // of the passive properties), then the audio surgery in the order the conversion
-  // applies it — so reading the editor top-to-bottom reads the processing chain.
-  it('orders quality first and the audio chain in processing order by default', () => {
+  // The list reads as the track workflow: identify (form), inspect what the file is
+  // (properties, then quality's verdict), then the audio surgery in the order the
+  // conversion applies it — so reading the editor top-to-bottom reads the pipeline.
+  it('orders inspection first and the audio chain in processing order by default', () => {
     const ids = DEFAULT_EDITOR_SECTIONS.map((s) => s.id)
     expect(ids).toEqual([
       'form',
-      'quality',
       'properties',
+      'quality',
       'trim',
       'declick',
       'normalize',
@@ -92,6 +92,13 @@ describe('normalizeEditorSections', () => {
   // fold badge carrying an active grid.
   it('ships the beatgrid folded by default', () => {
     expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'grid')?.open).toBe(false)
+  })
+
+  // Normalization is an occasional mastering choice (the mode ships off), and open it
+  // costs a full-length wave decode plus the loudness measure — folded, with the fold
+  // badge carrying an active mode.
+  it('ships loudness normalization folded by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'normalize')?.open).toBe(false)
   })
 
   // A hidden section stays hidden across the repair — losing the flag would resurface
@@ -133,8 +140,8 @@ describe('normalizeEditorSections', () => {
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
     expect(ids).toEqual([
       'form',
-      'quality',
       'properties',
+      'quality',
       'trim',
       'declick',
       'normalize',

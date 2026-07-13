@@ -25,16 +25,16 @@ export interface EditorSectionPref {
 }
 
 // The file name goes last: it names the output, so it reads best right above the
-// Convert button, with the audio sections (quality, normalization) grouped above it.
-// The list reads as the workflow: identify (the pinned form), judge the file
-// (quality's go/no-go verdict, ahead of the passive properties), then the audio
-// surgery in the order the conversion applies it — trim the silence first, repair
-// clicks on what remains, size the gain on the repaired audio — and the name last.
+// Convert button, with the audio sections grouped above it. The list reads as the
+// track workflow: identify (the pinned form), inspect the file (properties' passive
+// figures, then quality's go/no-go verdict), then the audio surgery in the order the
+// conversion applies it — trim the silence first, repair clicks on what remains,
+// size the gain on the repaired audio — and the name last.
 export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
-  { id: 'quality', open: true },
   // Reference figures, consulted when the quality verdict raises an eyebrow.
   { id: 'properties', open: false },
+  { id: 'quality', open: true },
   // Open: its detection pill only appears once the section has analyzed, and the
   // wave decode is shared with the loudness strip's — opening it costs nothing
   // extra while surfacing the "this rip has silence" finding by default.
@@ -42,7 +42,10 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   // Folded: the rare-use section (most rips are clean), and its click estimate is
   // its own expensive pass; the fold badge still surfaces an active mode.
   { id: 'declick', open: false },
-  { id: 'normalize', open: true },
+  // Folded: an occasional mastering choice (the mode ships off), and opening it
+  // costs a full-length wave decode plus the loudness measure; the fold badge
+  // still surfaces an active mode.
+  { id: 'normalize', open: false },
   // Folded: DJ-export prep rather than part of every conversion, and opening it
   // costs a wave decode plus the beatgrid probe. After the audio chain — it
   // annotates the result, it doesn't process audio.

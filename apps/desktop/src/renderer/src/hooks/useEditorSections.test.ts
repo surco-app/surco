@@ -22,12 +22,12 @@ describe('useEditorSections', () => {
     expect(second.result.current.open.form).toBe(true)
   })
 
-  // Normalization used to start folded as a niche feature; with the section now
-  // showing the track's waveform (and its clipping peaks) it earns its place open,
-  // so a DJ sees the wave without hunting for a fold.
-  it('starts the normalize section open by default', () => {
+  // Normalization is an occasional mastering choice (the mode ships off) and opening
+  // it costs a full-length wave decode plus the loudness measure, so the store boots
+  // it folded — the fold badge still surfaces an active mode.
+  it('starts the normalize section folded by default', () => {
     const { result } = renderHook(() => useEditorSections())
-    expect(result.current.open.normalize).toBe(true)
+    expect(result.current.open.normalize).toBe(false)
   })
 
   // The per-section defaults are the user's (Settings → Editor). Settings load after

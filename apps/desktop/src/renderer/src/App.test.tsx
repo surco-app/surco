@@ -1117,13 +1117,20 @@ describe('App multi-select convert', () => {
 })
 
 describe('App normalize peak preferences', () => {
+  const normalizeOpen: Partial<Settings> = {
+    editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+      s.id === 'normalize' ? { ...s, open: true } : s,
+    ),
+  }
+
   // "Remove DC offset" and "Normalize stereo channels independently" describe how the
   // user always wants peak normalization done, not a one-track choice — user feedback:
   // relaunching the app must find them as they were left. So a toggle in the editor
   // writes the two flags back to Settings, while mode/targets stay per-track.
   it('persists an editor checkbox toggle back to Settings', async () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
-    setApi({ saveSettings })
+    // The section ships folded now, so the stored settings open it to reach the dials.
+    setApi({ saveSettings, getSettings: vi.fn().mockResolvedValue(settings(normalizeOpen)) })
     await renderApp()
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
@@ -1147,7 +1154,7 @@ describe('App normalize peak preferences', () => {
   // Settings, or every editor visit would flip the global default.
   it('never writes Settings for a bare per-track mode switch', async () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
-    setApi({ saveSettings })
+    setApi({ saveSettings, getSettings: vi.fn().mockResolvedValue(settings(normalizeOpen)) })
     await renderApp()
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
