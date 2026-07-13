@@ -97,6 +97,16 @@ export interface TrimRange {
   endSec?: number
 }
 
+// A constant-tempo beatgrid staged in the editor: beat k falls at
+// anchorSec + k * 60/bpm. Times are seconds into the ORIGINAL file — a staged
+// trim is subtracted only at DJ-export time, like cues, so re-trimming never
+// invalidates the grid. Constant tempo only: the use case is vinyl rips of
+// studio records; a drifting live take needs a variable grid, out of scope.
+export interface Beatgrid {
+  bpm: number
+  anchorSec: number
+}
+
 
 export type KeyNotation = 'camelot' | 'musical'
 
@@ -648,6 +658,17 @@ export interface LoudnessResult {
 export interface BpmResult {
   bpm: number
   confidence: number
+}
+
+// BpmResult plus the estimated first-beat phase, detected by folding the onset
+// envelope onto the beat period. anchorSec always lies in [0, 60/bpm): it is
+// the grid's phase, not the first audible hit — a grid through a silent intro
+// is what DJ software expects. Editable suggestion like BpmResult, never
+// trusted unattended.
+export interface BeatgridResult {
+  bpm: number
+  confidence: number
+  anchorSec: number
 }
 
 // Musical key detected from the audio (chromagram × Krumhansl profiles in
