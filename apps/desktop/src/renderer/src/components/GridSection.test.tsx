@@ -388,6 +388,98 @@ describe('GridSection segments', () => {
     expect(scroller.scrollLeft).toBeCloseTo((staged / 60) * 6000 - 300, 0)
   })
 
+  // The real-world path: the user never touched the grid, so the section is
+  // showing the DETECTION (value is undefined). Adjust-from-here must still
+  // carve the segment — the bug was that it staged nothing here, so the later
+  // nudges fell through to the base and moved the whole track.
+  it('stages the change from a detected (never-touched) grid too', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: undefined }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-from-here'))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const grid = onChange.mock.calls[0][0]
+    expect(grid.changes).toHaveLength(1)
+    expect(grid.changes[0].anchorSec).toBeCloseTo(30.25, 2)
+  })
+
+  // The heart of the complaint ("it moves the grid BEFORE the line, not after"):
+  // right after carving the segment, a nudge must move THAT segment's anchor and
+  // leave the base — everything to the left of the line — exactly where it was.
+  it('nudges the new segment, not the base, right after adjusting from here', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    const { rerender } = render(section({ onChange, value: undefined }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+
+    fireEvent.click(screen.getByTestId('grid-from-here'))
+    const staged = onChange.mock.calls[0][0]
+    expect(staged.changes).toHaveLength(1)
+    // The app feeds the committed grid back in as `value` — that's the state the
+    // next click acts on.
+    rerender(section({ onChange, value: staged }))
+    onChange.mockClear()
+
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    const nudged = onChange.mock.calls[0][0]
+    // The base anchor — the grid behind the line — must NOT have moved.
+    expect(nudged.anchorSec).toBeCloseTo(staged.anchorSec, 6)
+    // The new segment's anchor is the one that moved.
+    expect(nudged.changes[0].anchorSec).toBeCloseTo(staged.changes[0].anchorSec + 0.01, 4)
+  })
+
+  // Change anchors are stored rounded to the millisecond, but the magnet parks
+  // the reference on the UNROUNDED beat — which can sit a few microseconds
+  // before the anchor it is visually on. Compared exactly, that near-miss put
+  // the controls on the BASE segment, and the nudge moved the grid LEFT of the
+  // line (the user's "adjust from here moves the part before the red line").
+  it('targets the segment under the line even when its anchor rounded past the beat', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(
+      section({
+        onChange,
+        value: { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 30.0004, bpm: 120 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    const nudged = onChange.mock.calls[0][0]
+    expect(nudged.anchorSec).toBe(0)
+    // commit rounds anchors to the millisecond, so the nudge lands on 30.010.
+    expect(nudged.changes[0].anchorSec).toBeCloseTo(30.01, 3)
+  })
+
+  // After a nudge moves a change's anchor, the previous segment still has a
+  // beat at the anchor's OLD spot — often closer to the line than the moved
+  // diamond. The magnet used to grab that leftover beat and silently flip the
+  // controls onto the base, so the SECOND nudge moved the grid left of the line.
+  // Anchors outrank plain beats inside the catch window, so consecutive nudges
+  // keep working the same segment.
+  it('keeps consecutive nudges on the segment being edited', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    const first = { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 30.01, bpm: 120 }] }
+    // The line sits at 30.0 — exactly the base beat the change was carved from,
+    // one nudge behind the diamond at 30.01.
+    const { rerender } = render(section({ onChange, value: first }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    const nudged = onChange.mock.calls[0][0]
+    expect(nudged.anchorSec).toBe(0)
+    expect(nudged.changes[0].anchorSec).toBeCloseTo(30.02, 3)
+    rerender(section({ onChange, value: nudged }))
+    onChange.mockClear()
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    const again = onChange.mock.calls[0][0]
+    expect(again.anchorSec).toBe(0)
+    expect(again.changes[0].anchorSec).toBeCloseTo(30.03, 3)
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {

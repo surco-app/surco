@@ -114,7 +114,14 @@ export function GridSection({
   function segmentIndexAt(sec: number): number {
     let index = 0
     for (let i = 1; i < segments.length; i++) {
-      if (segments[i].anchorSec <= sec) index = i
+      // Tolerance, not equality: anchors are stored rounded to the millisecond
+      // while the magnet parks the reference on the unrounded beat, which can
+      // sit a few microseconds BEFORE the anchor it is visually on. Compared
+      // exactly, that near-miss handed the controls the segment behind the line
+      // — and a nudge then moved the grid the user had just pinned. One
+      // millisecond is far below a pixel at any zoom, so nothing else can fall
+      // inside the slack.
+      if (segments[i].anchorSec <= sec + 1e-3) index = i
       else break
     }
     return index
@@ -128,6 +135,23 @@ export function GridSection({
   const rawCentreSec = ((view.from + view.to) / 2) * durationSec
   const snappedCentre = useMemo(() => {
     if (!shown || durationSec <= 0 || segments.length === 0) return null
+    // The catch window in seconds: SNAP_PX of the panel, sized off the VISIBLE
+    // span (the view is the source of truth — zoom alone lies while the lane is
+    // still settling into its scroll position).
+    const visibleSec = Math.max(1e-6, (view.to - view.from) * durationSec)
+    const catchSec = visibleSec * (SNAP_PX / LANE_PX)
+    // Anchors outrank plain beats inside the window: the anchor is the thing
+    // being edited, and the previous segment keeps a beat right where an anchor
+    // stood before a nudge moved it. Snapping to that leftover beat flipped the
+    // controls back onto the segment BEHIND the line mid-edit — the "adjust from
+    // here moves the left grid" bug. Near a diamond, the line grabs the diamond.
+    let anchor: number | null = null
+    for (const seg of segments) {
+      const d = Math.abs(seg.anchorSec - rawCentreSec)
+      if (d <= catchSec && (anchor === null || d < Math.abs(anchor - rawCentreSec)))
+        anchor = seg.anchorSec
+    }
+    if (anchor !== null) return anchor
     const index = (() => {
       let i = 0
       for (let j = 1; j < segments.length; j++) {
@@ -139,11 +163,6 @@ export function GridSection({
     const seg = segments[index]
     const period = 60 / seg.bpm
     const beat = seg.anchorSec + Math.round((rawCentreSec - seg.anchorSec) / period) * period
-    // The catch window in seconds: SNAP_PX of the panel, sized off the VISIBLE
-    // span (the view is the source of truth — zoom alone lies while the lane is
-    // still settling into its scroll position).
-    const visibleSec = Math.max(1e-6, (view.to - view.from) * durationSec)
-    const catchSec = visibleSec * (SNAP_PX / LANE_PX)
     return Math.abs(beat - rawCentreSec) <= catchSec ? beat : null
   }, [shown, segments, rawCentreSec, durationSec, view])
   const viewCentreSec = snappedCentre ?? rawCentreSec
