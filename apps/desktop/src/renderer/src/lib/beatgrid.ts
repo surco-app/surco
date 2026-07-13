@@ -62,10 +62,13 @@ export function gridLines(
 // the honest ear-check cases: a shaky tempo, or a beat-vs-off-beat coin flip
 // the low-band energy vote couldn't break (two equal hit trains half a period
 // apart). Thresholds calibrated against a real sidechained 138 BPM trance
-// track (decisive margin ≈1.9, stays unflagged) and synthesized twins
-// (ambiguity 1.0, margin 1.0, flagged).
+// track (decisive margin ≈1.9, stays unflagged), synthesized twins (ambiguity
+// 1.0, margin 1.0, flagged) — and a real 147 BPM hard-dance rip (ambiguity
+// 0.80, margin 0.94, grid verified against rekordbox) that the original 0.6
+// ambiguity bar false-flagged: ordinary off-beat-bass dance music lives in
+// 0.6–0.9, so only a near-tie in the attack evidence itself counts as a flip.
 const REVIEW_MIN_CONFIDENCE = 0.3
-const REVIEW_AMBIGUITY = 0.6
+const REVIEW_AMBIGUITY = 0.9
 const REVIEW_MARGIN = 1.5
 
 export function beatgridNeedsReview(result: BeatgridResult | null | undefined): boolean {

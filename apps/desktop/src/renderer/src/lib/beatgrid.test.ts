@@ -93,6 +93,16 @@ describe('beatgridNeedsReview', () => {
     expect(beatgridNeedsReview(grid({ phaseAmbiguity: 1, phaseMargin: 1.0 }))).toBe(true)
   })
 
+  // The third calibration case, measured on a real 147 BPM hard-dance rip whose
+  // off-beat bass ties every timbre band (energy margin 0.94): the flux pick
+  // still favored the kick 1.25:1 and matched rekordbox's grid exactly. An
+  // ambiguity under 0.9 means the attack evidence itself chose a side — that is
+  // a decision, not a coin flip, and flagging it buried the filter in false
+  // positives across ordinary off-beat-bass dance music.
+  it('trusts a grid whose attack evidence favored one side', () => {
+    expect(beatgridNeedsReview(grid({ phaseAmbiguity: 0.8, phaseMargin: 0.94 }))).toBe(false)
+  })
+
   it('flags a shaky tempo outright', () => {
     expect(beatgridNeedsReview(grid({ confidence: 0.27 }))).toBe(true)
   })
