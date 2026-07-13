@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
@@ -23,7 +24,7 @@ const stereoWave: WaveformResult = {
 const CFG_NONE: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
 }
 
@@ -187,7 +188,9 @@ describe('WaveformSolo', () => {
       waveform,
       loudness: vi.fn().mockResolvedValue(null),
     }
-    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled={false} clipDb={-1} normalize={CFG_NONE} />)
+    renderWithQuery(
+      <WaveformSolo inputPath="/m/a.wav" enabled={false} clipDb={-1} normalize={CFG_NONE} />,
+    )
     await waitFor(() => expect(screen.getByTestId('waveform-solo')).toBeInTheDocument())
     expect(waveform).not.toHaveBeenCalled()
   })

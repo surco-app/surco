@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BpmResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import { useBpm } from './useBpm'
 
 const sample: BpmResult = { bpm: 124.02, confidence: 0.8 }
@@ -13,7 +14,7 @@ function setApi(bpm: ReturnType<typeof vi.fn>): void {
 }
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 

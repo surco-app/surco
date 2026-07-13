@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createQueryClient } from '../lib/queryClient'
 import { useLibraryMembership } from './useLibraryMembership'
 
 function setApi(over: Record<string, unknown>): void {
@@ -11,7 +12,7 @@ function setApi(over: Record<string, unknown>): void {
 }
 
 function wrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return function Wrapper({ children }: { children: React.ReactNode }): React.JSX.Element {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>
   }

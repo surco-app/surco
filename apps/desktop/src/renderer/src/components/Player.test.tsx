@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata, WaveformResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { LivePlayer, Player } from './Player'
 import '../i18n'
@@ -28,7 +29,7 @@ afterEach(() => {
 // client per render keeps the cache from leaking between tests. The wrapper option
 // (not a wrapping element) is what makes rerender keep the provider in place.
 function renderUI(ui: React.ReactElement): ReturnType<typeof render> {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return render(ui, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoudnessResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import { useTrackLoudness } from './useTrackLoudness'
 
 const sample: LoudnessResult = {
@@ -21,7 +22,7 @@ function setApi(loudness: ReturnType<typeof vi.fn>): void {
 }
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 

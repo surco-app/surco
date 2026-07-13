@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { useDiscogsBrowser } from './useDiscogsBrowser'
 
@@ -33,12 +34,7 @@ function setApi(over: Record<string, unknown> = {}): void {
 }
 
 function item(
-  over: {
-    query?: string
-    title?: string
-    discogsReleaseId?: string
-    loadingMeta?: boolean
-  } = {},
+  over: { query?: string; title?: string; discogsReleaseId?: string; loadingMeta?: boolean } = {},
 ): TrackItem {
   const meta = { title: over.title ?? '', discogsReleaseId: over.discogsReleaseId } as TrackMetadata
   return {
@@ -56,7 +52,7 @@ function item(
 const tr = (k: string): string => k
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 

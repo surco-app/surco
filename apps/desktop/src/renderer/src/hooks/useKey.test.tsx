@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { KeyResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import { useKey } from './useKey'
 
 const sample: KeyResult = { camelot: '8A', name: 'Am', confidence: 0.8 }
@@ -13,7 +14,7 @@ function setApi(key: ReturnType<typeof vi.fn>): void {
 }
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 

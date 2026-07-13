@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { Waveform } from './Waveform'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
 
 function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
 }
 

@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { TrimSection } from './TrimSection'
 
@@ -48,7 +49,7 @@ beforeEach(() => {
       }
     },
   )
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client = createQueryClient()
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(noisyEndsWave()),
   }
@@ -108,7 +109,9 @@ describe('TrimSection', () => {
   it('shades the staged cuts and clears them from the reset button', async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
-    expect(await screen.findByTestId('trim-shade-start', undefined, { timeout: 3000 })).toBeInTheDocument()
+    expect(
+      await screen.findByTestId('trim-shade-start', undefined, { timeout: 3000 }),
+    ).toBeInTheDocument()
     expect(screen.getByTestId('trim-shade-end')).toBeInTheDocument()
     expect(screen.getByTestId('trim-cuts')).toHaveTextContent('9.7 s from the start')
     expect(screen.getByTestId('trim-cuts')).toHaveTextContent('9.7 s from the end')

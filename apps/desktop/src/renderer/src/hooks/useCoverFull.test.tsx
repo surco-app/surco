@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createQueryClient } from '../lib/queryClient'
 import { useCoverFull } from './useCoverFull'
 
 function setApi(readCoverFull: ReturnType<typeof vi.fn>): void {
@@ -10,7 +11,7 @@ function setApi(readCoverFull: ReturnType<typeof vi.fn>): void {
 }
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 

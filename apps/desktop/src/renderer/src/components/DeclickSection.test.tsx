@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { DeclickSection } from './DeclickSection'
 
@@ -15,7 +16,7 @@ let client: QueryClient
 beforeEach(() => {
   play.mockReset().mockResolvedValue(undefined)
   pause.mockReset()
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client = createQueryClient()
   // jsdom has no audio pipeline; the audition only needs play/pause/onended.
   vi.stubGlobal(
     'Audio',
@@ -31,7 +32,9 @@ beforeEach(() => {
   }
 })
 
-function section(over: Partial<React.ComponentProps<typeof DeclickSection>> = {}): React.JSX.Element {
+function section(
+  over: Partial<React.ComponentProps<typeof DeclickSection>> = {},
+): React.JSX.Element {
   return (
     <QueryClientProvider client={client}>
       <DeclickSection

@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import type { Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
+import { createQueryClient } from './lib/queryClient'
 import './i18n'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -254,7 +255,7 @@ beforeEach(() => {
 // imported only after the bridge mock is in place — a dynamic import after beforeEach.
 async function renderApp(): Promise<QueryClient> {
   const { default: App } = await import('./App')
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
       <App />
@@ -1658,9 +1659,7 @@ describe("App what's new popup", () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
     setApi({
       version: '0.33.1',
-      getSettings: vi
-        .fn()
-        .mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.0' })),
+      getSettings: vi.fn().mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.0' })),
       saveSettings,
     })
     await renderApp()
@@ -1679,9 +1678,7 @@ describe("App what's new popup", () => {
       version: '0.33.1',
       getSettings: vi
         .fn()
-        .mockResolvedValue(
-          settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' }),
-        ),
+        .mockResolvedValue(settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' })),
       saveSettings,
     })
     await renderApp()
@@ -1695,9 +1692,7 @@ describe("App what's new popup", () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
     setApi({
       version: '0.33.1',
-      getSettings: vi
-        .fn()
-        .mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.1' })),
+      getSettings: vi.fn().mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.1' })),
       saveSettings,
     })
     await renderApp()
@@ -2058,7 +2053,9 @@ describe('App paste metadata feedback', () => {
       prepareCoverDrag: vi.fn().mockResolvedValue(null),
       readCover: vi.fn((path: string) =>
         Promise.resolve(
-          path === '/music/a.wav' ? { thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 } : null,
+          path === '/music/a.wav'
+            ? { thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }
+            : null,
         ),
       ),
     })

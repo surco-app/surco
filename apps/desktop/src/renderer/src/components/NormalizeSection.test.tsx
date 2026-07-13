@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, TrackMetadata } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import type { TrackItem } from '../types'
 import { NormalizeSection } from './NormalizeSection'
@@ -28,7 +29,7 @@ function renderSection(item: TrackItem, isMulti = false, loudness: unknown = nul
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
     loudness: vi.fn().mockResolvedValue(loudness),
   }
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
       <NormalizeSection
@@ -110,7 +111,7 @@ describe('NormalizeSection before/after waveforms', () => {
       waveform: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = createQueryClient()
     const ui = (item: TrackItem): React.ReactElement => (
       <QueryClientProvider client={client}>
         <NormalizeSection
@@ -142,12 +143,14 @@ describe('NormalizeSection before/after waveforms', () => {
 describe('NormalizeSection layout', () => {
   const loud: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
-  function renderWith(over: { open?: boolean; value?: NormalizeConfig } = {}): ReturnType<typeof render> {
+  function renderWith(
+    over: { open?: boolean; value?: NormalizeConfig } = {},
+  ): ReturnType<typeof render> {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
       loudness: vi.fn().mockResolvedValue(null),
     }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = createQueryClient()
     return render(
       <QueryClientProvider client={client}>
         <NormalizeSection
@@ -210,9 +213,7 @@ describe('NormalizeSection layout', () => {
     const warning = await screen.findByTestId('normalize-cue-warning')
     expect(screen.getAllByText(/Re-encodes the audio/)).toHaveLength(1)
     const strip = screen.getByTestId('waveform-strip')
-    expect(
-      strip.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    expect(strip.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows no cue warning while normalization is off', async () => {

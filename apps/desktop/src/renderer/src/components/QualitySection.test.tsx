@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
+import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { QualitySection } from './QualitySection'
 
@@ -51,7 +52,7 @@ function renderSection(spectrum: SpectrumResult, inputPath?: string): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
       <QualitySection
@@ -78,7 +79,7 @@ describe('QualitySection analysis gating', () => {
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
     ;(window as unknown as { api: unknown }).api = { spectrogram }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
         <QualitySection
@@ -104,7 +105,7 @@ describe('QualitySection analysis gating', () => {
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
     ;(window as unknown as { api: unknown }).api = { spectrogram }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
         <QualitySection
@@ -298,7 +299,7 @@ describe('QualitySection analysis failure', () => {
     ;(window as unknown as { api: unknown }).api = {
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
         <QualitySection

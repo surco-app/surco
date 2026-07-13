@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { createRef, useState } from 'react'
@@ -17,6 +17,7 @@ import type {
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
@@ -30,7 +31,7 @@ function renderWithQuery(
   ui: React.ReactElement,
   settings: Partial<Settings> = {},
 ): ReturnType<typeof render> {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = createQueryClient()
   // The editor reads its Settings-derived values from the shared context now, so the
   // per-test overrides ride a provider instead of an 17-prop wall on <Editor>.
   return render(
@@ -1186,8 +1187,7 @@ describe('Editor export control', () => {
     ]
     for (let i = 0; i < rendered.length - 1; i++) {
       expect(
-        rendered[i].compareDocumentPosition(rendered[i + 1]) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
+        rendered[i].compareDocumentPosition(rendered[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy()
     }
   })
@@ -2486,11 +2486,10 @@ describe('Editor insert from field', () => {
   it('offers no title-format row when the title already wears the pattern', () => {
     // Re-applying must never stack "(B2) (B2) …": an already-formatted title is a
     // no-op for the row, the T button and the ⌘K command alike.
-    renderEditor(
-      { id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } },
-      'wav',
-      { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
-    )
+    renderEditor({ id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } }, 'wav', {
+      visibleFields: ['title', 'trackNumber'],
+      titleFormat: '({trackNumber}) {title}',
+    })
     fireEvent.click(screen.getByTestId('field-insert-title'))
     expect(screen.queryByTestId('field-insert-option-title-format')).toBeNull()
   })
