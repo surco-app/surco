@@ -19,6 +19,12 @@ function toRecord(prefs: EditorSectionPref[]): Record<EditorSection, boolean> {
 
 let store: Record<EditorSection, boolean> = toRecord(DEFAULT_EDITOR_SECTIONS)
 
+// The one section blown up to the whole window, if any. Module-level like the
+// folds — and for the same reason, plus one more: surviving the per-track
+// remount is what turns "maximize the beatgrid" into a review flow (arrow
+// through the crate, every grid full-screen).
+let maximized: EditorSection | null = null
+
 // useSyncExternalStore plumbing, so a seed arriving after editors mounted (settings
 // load async) updates them live instead of waiting for the next track switch.
 const listeners = new Set<() => void>()
@@ -34,6 +40,7 @@ function subscribe(listener: () => void): () => void {
 // state between tests. Resets it to defaults so each test starts clean.
 export function resetEditorSections(): void {
   store = toRecord(DEFAULT_EDITOR_SECTIONS)
+  maximized = null
   emit()
 }
 
@@ -63,4 +70,21 @@ export function useEditorSections(): {
     emit()
   }, [])
   return { open, setOpen }
+}
+
+// The maximized-section state, shared by every SectionHeader (the toggle) and
+// the Editor (the overlay). Maximizing implies opening: a folded section blown
+// up to the window would be an empty header, and the analysis gating reads
+// `open`.
+export function useMaximizedSection(): {
+  maximized: EditorSection | null
+  setMaximized: (section: EditorSection | null) => void
+} {
+  const value = useSyncExternalStore(subscribe, () => maximized)
+  const setMaximized = useCallback((section: EditorSection | null): void => {
+    maximized = section
+    if (section !== null) store = { ...store, [section]: true }
+    emit()
+  }, [])
+  return { maximized: value, setMaximized }
 }

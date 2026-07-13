@@ -66,6 +66,7 @@ export function NormalizeSection({
   return (
     <div data-testid="editor-normalize" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="normalize"
         title={tr('normalize.title')}
         open={open}
         onToggle={onToggle}

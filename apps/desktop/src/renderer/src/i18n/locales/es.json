@@ -433,7 +433,9 @@
     "copyFilename": "Copiar nombre de archivo",
     "copyFilenameHint": "Copia el nombre del archivo al portapapeles",
     "searchWeb": "Buscar en Google",
-    "searchWebHint": "Busca el nombre del archivo en Google"
+    "searchWebHint": "Busca el nombre del archivo en Google",
+    "sectionMaximize": "Maximizar la sección",
+    "sectionRestore": "Restaurar la sección"
   },
   "fields": {
     "title": "Título",

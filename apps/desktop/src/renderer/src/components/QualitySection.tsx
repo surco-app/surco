@@ -150,6 +150,7 @@ export function QualitySection({
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="quality"
         title={tr('editor.qualityTitle')}
         open={open}
         onToggle={onToggle}

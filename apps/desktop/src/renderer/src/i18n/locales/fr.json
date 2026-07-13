@@ -433,7 +433,9 @@
     "copyFilename": "Copier le nom du fichier",
     "copyFilenameHint": "Copie le nom du fichier dans le presse-papiers",
     "searchWeb": "Rechercher sur Google",
-    "searchWebHint": "Recherche le nom du fichier sur Google"
+    "searchWebHint": "Recherche le nom du fichier sur Google",
+    "sectionMaximize": "Agrandir la section",
+    "sectionRestore": "Restaurer la section"
   },
   "fields": {
     "title": "Titre",

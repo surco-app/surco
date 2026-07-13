@@ -1,6 +1,7 @@
 import { Copy, Disc3, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -14,7 +15,7 @@ import type {
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
-import { useEditorSections } from '../hooks/useEditorSections'
+import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -244,6 +245,20 @@ export const Editor = memo(function Editor({
   // a section away persists as the user browses the crate instead of resetting on every
   // track switch — and the gated analyses below stay quiet until the section is reopened.
   const { open: sectionOpen, setOpen: setSectionOpen } = useEditorSections()
+  // The one section blown up to the whole window (Settings-independent, module
+  // store): its element renders into a portal overlay instead of the column,
+  // and Esc restores it. Surviving the per-track remount is deliberate — a
+  // maximized Beatgrid plus arrow-key track switching is a full-screen review
+  // flow over the whole crate.
+  const { maximized, setMaximized } = useMaximizedSection()
+  useEffect(() => {
+    if (maximized === null) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setMaximized(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
@@ -949,185 +964,201 @@ export const Editor = memo(function Editor({
           {editorSections
             .filter((s) => s.id !== 'form' && s.hidden !== true)
             .map(({ id }) => {
-              switch (id) {
-                case 'properties':
-                  return (
-                    !isMulti && (
-                      <PropertiesSection
+              const element = ((): React.ReactNode => {
+                switch (id) {
+                  case 'properties':
+                    return (
+                      !isMulti && (
+                        <PropertiesSection
+                          key={id}
+                          item={item}
+                          open={propertiesOpen}
+                          onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                        />
+                      )
+                    )
+                  case 'quality':
+                    return (
+                      !isMulti &&
+                      (showSpectrum || showLoudness) && (
+                        <QualitySection
+                          key={id}
+                          item={item}
+                          showSpectrum={showSpectrum}
+                          showLoudness={showLoudness}
+                          open={spectrumOpen}
+                          onToggle={() => setSectionOpen('quality', !spectrumOpen)}
+                          onShowLoudnessHelp={onShowLoudnessHelp}
+                        />
+                      )
+                    )
+                  case 'output':
+                    // Overwrite mode pins the name to the original, so the File Name
+                    // section is replaced by a notice of what the export will do.
+                    if (!isMulti && overwriteOriginal) {
+                      return (
+                        <div
+                          key={id}
+                          data-testid="overwrite-notice"
+                          className="mt-6 border-t border-[var(--color-line)] pt-5"
+                        >
+                          <p className="text-sm font-medium text-fg-muted">
+                            {tr('editor.overwriteTitle')}
+                          </p>
+                          <p
+                            className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
+                            data-testid="overwrite-hint"
+                          >
+                            {lossyOverwrite
+                              ? tr('editor.overwriteLossyHint')
+                              : willEditInPlace
+                                ? tr('editor.overwriteHint')
+                                : tr('editor.overwriteAlacHint')}
+                          </p>
+                        </div>
+                      )
+                    }
+                    // Multi-select has no single name to edit, but the bulk rename is
+                    // exactly the flow a selection wants: retag a crate, then stamp
+                    // every file name from the pattern at once (djotas's ask). One
+                    // button in the section's slot instead of hiding it entirely.
+                    if (isMulti) {
+                      if (overwriteOriginal) return null
+                      return (
+                        <div
+                          key={id}
+                          data-testid="output-multi"
+                          className="mt-6 border-t border-[var(--color-line)] pt-5"
+                        >
+                          <p className="text-sm font-medium text-fg-muted">
+                            {tr('editor.outputName')}
+                          </p>
+                          <button
+                            type="button"
+                            data-testid="regenerate-output-names-all"
+                            onClick={onRegenerateName}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                            {tr('editor.regenerateAll', { count: multiTracks.length })}
+                          </button>
+                        </div>
+                      )
+                    }
+                    return (
+                      <OutputNameSection
                         key={id}
                         item={item}
-                        open={propertiesOpen}
-                        onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                        format={format}
+                        defaultOutputName={defaultOutputName}
+                        autoApply={autoApplyFilename}
+                        willEditInPlace={willEditInPlace}
+                        open={outputOpen}
+                        onToggle={() => setSectionOpen('output', !outputOpen)}
+                        onChangeName={(outputName) => onChange({ outputName })}
+                        onRegenerateName={onRegenerateName}
+                        onOpenRename={onOpenRename}
                       />
                     )
-                  )
-                case 'quality':
-                  return (
-                    !isMulti &&
-                    (showSpectrum || showLoudness) && (
-                      <QualitySection
-                        key={id}
-                        item={item}
-                        showSpectrum={showSpectrum}
-                        showLoudness={showLoudness}
-                        open={spectrumOpen}
-                        onToggle={() => setSectionOpen('quality', !spectrumOpen)}
-                        onShowLoudnessHelp={onShowLoudnessHelp}
-                      />
-                    )
-                  )
-                case 'output':
-                  // Overwrite mode pins the name to the original, so the File Name
-                  // section is replaced by a notice of what the export will do.
-                  if (!isMulti && overwriteOriginal) {
-                    return (
-                      <div
-                        key={id}
-                        data-testid="overwrite-notice"
-                        className="mt-6 border-t border-[var(--color-line)] pt-5"
-                      >
-                        <p className="text-sm font-medium text-fg-muted">
-                          {tr('editor.overwriteTitle')}
-                        </p>
-                        <p
-                          className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
-                          data-testid="overwrite-hint"
+                  case 'trim':
+                    // The per-track handles have no multi-select story (the anchor's
+                    // wave would misrepresent the rest), but the detection does: one
+                    // button runs it over the selection and stages each track's own
+                    // suggestion — visible and resettable per track afterwards.
+                    if (isMulti) {
+                      return (
+                        <div
+                          key={id}
+                          data-testid="trim-multi"
+                          className="mt-6 border-t border-[var(--color-line)] pt-5"
                         >
-                          {lossyOverwrite
-                            ? tr('editor.overwriteLossyHint')
-                            : willEditInPlace
-                              ? tr('editor.overwriteHint')
-                              : tr('editor.overwriteAlacHint')}
-                        </p>
-                      </div>
-                    )
-                  }
-                  // Multi-select has no single name to edit, but the bulk rename is
-                  // exactly the flow a selection wants: retag a crate, then stamp
-                  // every file name from the pattern at once (djotas's ask). One
-                  // button in the section's slot instead of hiding it entirely.
-                  if (isMulti) {
-                    if (overwriteOriginal) return null
+                          <p className="text-sm font-medium text-fg-muted">{tr('trim.title')}</p>
+                          <button
+                            type="button"
+                            data-testid="trim-detect-all"
+                            onClick={onTrimDetectedAll}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                          >
+                            <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
+                            {tr('trim.applyAll', { count: multiTracks.length })}
+                          </button>
+                        </div>
+                      )
+                    }
                     return (
-                      <div
+                      <TrimSection
                         key={id}
-                        data-testid="output-multi"
-                        className="mt-6 border-t border-[var(--color-line)] pt-5"
-                      >
-                        <p className="text-sm font-medium text-fg-muted">
-                          {tr('editor.outputName')}
-                        </p>
-                        <button
-                          type="button"
-                          data-testid="regenerate-output-names-all"
-                          onClick={onRegenerateName}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                          {tr('editor.regenerateAll', { count: multiTracks.length })}
-                        </button>
-                      </div>
-                    )
-                  }
-                  return (
-                    <OutputNameSection
-                      key={id}
-                      item={item}
-                      format={format}
-                      defaultOutputName={defaultOutputName}
-                      autoApply={autoApplyFilename}
-                      willEditInPlace={willEditInPlace}
-                      open={outputOpen}
-                      onToggle={() => setSectionOpen('output', !outputOpen)}
-                      onChangeName={(outputName) => onChange({ outputName })}
-                      onRegenerateName={onRegenerateName}
-                      onOpenRename={onOpenRename}
-                    />
-                  )
-                case 'trim':
-                  // The per-track handles have no multi-select story (the anchor's
-                  // wave would misrepresent the rest), but the detection does: one
-                  // button runs it over the selection and stages each track's own
-                  // suggestion — visible and resettable per track afterwards.
-                  if (isMulti) {
-                    return (
-                      <div
-                        key={id}
-                        data-testid="trim-multi"
-                        className="mt-6 border-t border-[var(--color-line)] pt-5"
-                      >
-                        <p className="text-sm font-medium text-fg-muted">{tr('trim.title')}</p>
-                        <button
-                          type="button"
-                          data-testid="trim-detect-all"
-                          onClick={onTrimDetectedAll}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                        >
-                          <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
-                          {tr('trim.applyAll', { count: multiTracks.length })}
-                        </button>
-                      </div>
-                    )
-                  }
-                  return (
-                    <TrimSection
-                      key={id}
-                      value={item.trim}
-                      open={trimOpen}
-                      onToggle={() => setSectionOpen('trim', !trimOpen)}
-                      onChange={(trim) => onChange({ trim })}
-                      inputPath={item.inputPath}
-                    />
-                  )
-                case 'declick':
-                  return (
-                    <DeclickSection
-                      key={id}
-                      value={declickCfg}
-                      open={declickOpen}
-                      onToggle={() => setSectionOpen('declick', !declickOpen)}
-                      onChange={(d) => {
-                        setDeclickCfg(d)
-                        onDeclickChange?.(d)
-                      }}
-                      inputPath={item.inputPath}
-                      isMulti={isMulti}
-                      format={format}
-                    />
-                  )
-                case 'grid':
-                  // One track's grid says nothing about another's: no multi story,
-                  // like properties.
-                  return (
-                    !isMulti && (
-                      <GridSection
-                        key={id}
-                        value={item.beatgrid}
-                        open={gridOpen}
-                        onToggle={() => setSectionOpen('grid', !gridOpen)}
-                        onChange={(beatgrid) => onChange({ beatgrid })}
+                        value={item.trim}
+                        open={trimOpen}
+                        onToggle={() => setSectionOpen('trim', !trimOpen)}
+                        onChange={(trim) => onChange({ trim })}
                         inputPath={item.inputPath}
                       />
                     )
-                  )
-                case 'normalize':
-                  return (
-                    <NormalizeSection
-                      key={id}
-                      value={normalizeCfg}
-                      open={normalizeOpen}
-                      onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
-                      onChange={(n) => {
-                        setNormalizeCfg(n)
-                        onNormalizeChange?.(n)
-                      }}
-                      item={item}
-                      isMulti={isMulti}
-                    />
-                  )
-                default:
-                  return null
-              }
+                  case 'declick':
+                    return (
+                      <DeclickSection
+                        key={id}
+                        value={declickCfg}
+                        open={declickOpen}
+                        onToggle={() => setSectionOpen('declick', !declickOpen)}
+                        onChange={(d) => {
+                          setDeclickCfg(d)
+                          onDeclickChange?.(d)
+                        }}
+                        inputPath={item.inputPath}
+                        isMulti={isMulti}
+                        format={format}
+                      />
+                    )
+                  case 'grid':
+                    // One track's grid says nothing about another's: no multi story,
+                    // like properties.
+                    return (
+                      !isMulti && (
+                        <GridSection
+                          key={id}
+                          value={item.beatgrid}
+                          open={gridOpen}
+                          onToggle={() => setSectionOpen('grid', !gridOpen)}
+                          onChange={(beatgrid) => onChange({ beatgrid })}
+                          inputPath={item.inputPath}
+                        />
+                      )
+                    )
+                  case 'normalize':
+                    return (
+                      <NormalizeSection
+                        key={id}
+                        value={normalizeCfg}
+                        open={normalizeOpen}
+                        onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
+                        onChange={(n) => {
+                          setNormalizeCfg(n)
+                          onNormalizeChange?.(n)
+                        }}
+                        item={item}
+                        isMulti={isMulti}
+                      />
+                    )
+                  default:
+                    return null
+                }
+              })()
+              if (!element || id !== maximized) return element
+              // The maximized section renders into a window-covering portal
+              // instead of its column slot — same element, all its state and
+              // analyses intact, just with the whole app's width and height.
+              return createPortal(
+                <div
+                  data-testid="section-maximized-overlay"
+                  className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                >
+                  {element}
+                </div>,
+                document.body,
+                id,
+              )
             })}
         </div>
 

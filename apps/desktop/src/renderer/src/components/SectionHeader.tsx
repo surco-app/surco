@@ -1,5 +1,7 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
 import type React from 'react'
+import { useTranslation } from 'react-i18next'
+import { type EditorSection, useMaximizedSection } from '../hooks/useEditorSections'
 
 interface SectionHeaderProps {
   title: string
@@ -12,6 +14,10 @@ interface SectionHeaderProps {
   // The digest's testid, named per section so tests never fish among siblings.
   summaryTestId?: string
   right?: React.ReactNode
+  // Present on the sections that earn a maximize toggle (the wave-work ones):
+  // the header wires itself to the shared maximized-section store, so the
+  // Editor's overlay and every header stay one state.
+  sectionId?: EditorSection
 }
 
 export function SectionHeader({
@@ -21,7 +27,11 @@ export function SectionHeader({
   summary,
   summaryTestId,
   right,
+  sectionId,
 }: SectionHeaderProps): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const { maximized, setMaximized } = useMaximizedSection()
+  const isMaximized = sectionId !== undefined && maximized === sectionId
   return (
     <div className="flex items-center justify-between gap-3">
       {/* The button stretches across the free width (and pads a few px vertically)
@@ -50,6 +60,22 @@ export function SectionHeader({
         )}
       </button>
       {right}
+      {sectionId !== undefined && (
+        <button
+          type="button"
+          data-testid="section-maximize"
+          aria-label={isMaximized ? tr('editor.sectionRestore') : tr('editor.sectionMaximize')}
+          aria-pressed={isMaximized}
+          onClick={() => setMaximized(isMaximized ? null : sectionId)}
+          className="press flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+        >
+          {isMaximized ? (
+            <Minimize2 className="h-3 w-3" aria-hidden="true" />
+          ) : (
+            <Maximize2 className="h-3 w-3" aria-hidden="true" />
+          )}
+        </button>
+      )}
     </div>
   )
 }

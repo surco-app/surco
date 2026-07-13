@@ -433,7 +433,9 @@
     "copyFilename": "Copy file name",
     "copyFilenameHint": "Copy the file name to the clipboard",
     "searchWeb": "Search on Google",
-    "searchWebHint": "Search Google for the file name"
+    "searchWebHint": "Search Google for the file name",
+    "sectionMaximize": "Maximize the section",
+    "sectionRestore": "Restore the section"
   },
   "fields": {
     "title": "Title",

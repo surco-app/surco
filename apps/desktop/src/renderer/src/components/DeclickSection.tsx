@@ -93,6 +93,7 @@ export function DeclickSection({
   return (
     <div data-testid="editor-declick" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="declick"
         title={tr('declick.title')}
         open={open}
         onToggle={onToggle}

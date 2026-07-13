@@ -326,6 +326,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   return (
     <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="trim"
         title={tr('trim.title')}
         open={open}
         onToggle={onToggle}

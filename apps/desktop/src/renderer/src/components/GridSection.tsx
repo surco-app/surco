@@ -491,6 +491,7 @@ export function GridSection({
   return (
     <div data-testid="editor-grid" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="grid"
         title={tr('grid.title')}
         open={open}
         onToggle={onToggle}

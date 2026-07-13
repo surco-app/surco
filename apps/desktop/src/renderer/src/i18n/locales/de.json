@@ -433,7 +433,9 @@
     "copyFilename": "Dateinamen kopieren",
     "copyFilenameHint": "Kopiert den Dateinamen in die Zwischenablage",
     "searchWeb": "Auf Google suchen",
-    "searchWebHint": "Sucht den Dateinamen auf Google"
+    "searchWebHint": "Sucht den Dateinamen auf Google",
+    "sectionMaximize": "Abschnitt maximieren",
+    "sectionRestore": "Abschnitt wiederherstellen"
   },
   "fields": {
     "title": "Titel",
