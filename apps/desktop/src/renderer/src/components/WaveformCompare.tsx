@@ -105,6 +105,7 @@ export function Strip({
   zoom = 1,
   onZoomChange,
   inputPath,
+  onViewChange,
   children,
 }: StripData & {
   color: string
@@ -130,6 +131,10 @@ export function Strip({
   // file is decoded at full fidelity onto a viewport canvas instead of stretching
   // the 8192 overview buckets into blocks. Absent, deep zoom just magnifies.
   inputPath?: string
+  // Reports the visible slice (0..1 fractions of the track) the strip already
+  // tracks for its deep zoom, so an overlay can render only what shows — the
+  // grid section's beat lines would be thousands of nodes drawn full-length.
+  onViewChange?: (view: { from: number; to: number }) => void
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -225,6 +230,12 @@ export function Strip({
   // zoom's viewport canvas draws and what the windowed re-decode is asked for.
   // rAF-throttled off the native scroll so a flick costs one state write per frame.
   const [view, setView] = useState({ from: 0, to: 1 })
+  // Handed out through a ref so an inline callback prop never re-runs the effect.
+  const onViewChangeRef = useRef(onViewChange)
+  onViewChangeRef.current = onViewChange
+  useEffect(() => {
+    onViewChangeRef.current?.(view)
+  }, [view])
   // biome-ignore lint/correctness/useExhaustiveDependencies: zoom isn't read inside, but a zoom step at scrollLeft 0 fires no scroll event — the effect must re-run to recompute the shrunken view.
   useEffect(() => {
     const el = scrollRef.current

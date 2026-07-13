@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
-import { WaveformCompare, WaveformSolo } from './WaveformCompare'
+import { AFTER_COLOR, Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
 
@@ -163,6 +163,25 @@ describe('WaveformCompare', () => {
 
 // The pre-conversion view: the source's wave alone, with the same measured figures,
 // so the normalization controls are tuned against what the file actually looks like.
+describe('Strip view reporting', () => {
+  // An overlay that renders only the visible beats (the grid section) needs the
+  // window the strip already tracks internally; the callback hands it out without
+  // the overlay re-deriving scroll math.
+  it('reports the visible window to onViewChange', async () => {
+    const onViewChange = vi.fn()
+    renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        onViewChange={onViewChange}
+      />,
+    )
+    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith({ from: 0, to: 1 }))
+  })
+})
+
 describe('WaveformSolo', () => {
   it('decodes the source and shows its measured figures', async () => {
     const waveform = vi.fn().mockResolvedValue(wave)
