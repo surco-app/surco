@@ -18,7 +18,15 @@ export function trackSignature(track: SignatureFields): string {
     track.coverPath ?? '',
     // Normalized so a trim with an unset bound and an absent trim read identically.
     track.trim ? [track.trim.startSec ?? null, track.trim.endSec ?? null] : null,
-    track.beatgrid ? [track.beatgrid.bpm, track.beatgrid.anchorSec] : null,
+    track.beatgrid
+      ? [
+          track.beatgrid.bpm,
+          track.beatgrid.anchorSec,
+          // Segment edits change what the exports write, so they flip staleness
+          // like a moved base anchor does.
+          (track.beatgrid.changes ?? []).map((c) => [c.anchorSec, c.bpm]),
+        ]
+      : null,
   ])
 }
 

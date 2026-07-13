@@ -519,6 +519,10 @@
     "reset": "Auto",
     "resetHint": "Volver a la rejilla detectada",
     "audition": "Escuchar la rejilla",
+    "fromHere": "Ajustar desde aquí",
+    "undo": "Deshacer ajuste del grid",
+    "redo": "Rehacer ajuste del grid",
+    "handleChange": "Ancla del cambio de grid",
     "handleAnchor": "Ancla de la rejilla",
     "overview": "Vista general — pulsa para mover la vista de trabajo",
     "anchorAt": "Primer beat en {{seconds}} s"

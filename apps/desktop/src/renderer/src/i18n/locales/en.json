@@ -519,6 +519,10 @@
     "reset": "Auto",
     "resetHint": "Back to the detected grid",
     "audition": "Hear the grid",
+    "fromHere": "Adjust from here",
+    "undo": "Undo grid edit",
+    "redo": "Redo grid edit",
+    "handleChange": "Grid change anchor",
     "handleAnchor": "Grid anchor",
     "overview": "Track overview — press to move the working view",
     "anchorAt": "First beat at {{seconds}} s"

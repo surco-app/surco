@@ -3,8 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BeatgridResult, WaveformResult } from '../../../shared/types'
+import type { Beatgrid, BeatgridResult, WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { GridSection } from './GridSection'
@@ -380,6 +381,104 @@ describe('GridSection two-lane layout', () => {
     await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
     expect(waveformWindow).not.toHaveBeenCalled()
     await waitFor(() => expect(waveformWindow).toHaveBeenCalled(), { timeout: 2000 })
+  })
+})
+
+// Djotas's rekordbox flow, simplified: a rip that drifts gets pinned back with
+// "Adjust from here" — a new segment from the beat in view — and every later
+// edit touches only the segment you're standing on, never what's behind it.
+describe('GridSection segments', () => {
+  it('stages a change at the beat in the view centre from the From-here button', async () => {
+    const onChange = vi.fn()
+    render(section({ onChange }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-from-here'))
+    // jsdom's view is the whole 60 s track; its centre (30 s) sits nearest the
+    // detected grid's beat at 30.25 (anchor 0.25, 120 BPM).
+    expect(onChange).toHaveBeenCalledWith({
+      bpm: 120,
+      anchorSec: 0.25,
+      changes: [{ anchorSec: 30.25, bpm: 120 }],
+    })
+  })
+
+  it('drags only the segment under the grabbed beat line', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(
+      section({
+        onChange,
+        value: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 30.25, bpm: 120 }] },
+      }),
+    )
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // A base-segment beat at 10.25 s (x=1025 at 100 px/s), dragged one beat right:
+    // only the base anchor moves.
+    fireEvent.pointerDown(overlay, { clientX: 1025, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 1075, pointerId: 1 })
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0].anchorSec).toBeCloseTo(0.75, 2)
+    expect(onChange.mock.calls[0][0].changes).toEqual([{ anchorSec: 30.25, bpm: 120 }])
+    onChange.mockClear()
+    // A beat in the change's segment at 40.25 s, dragged half a beat right:
+    // only the change anchor moves — what's behind stays pinned.
+    fireEvent.pointerDown(overlay, { clientX: 4025, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 4050, pointerId: 1 })
+    fireEvent.pointerUp(overlay, { pointerId: 1 })
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0].anchorSec).toBeCloseTo(0.25, 6)
+    expect(onChange.mock.calls[0][0].changes[0].anchorSec).toBeCloseTo(30.5, 2)
+  })
+
+  it('removes a focused change with Delete', async () => {
+    const onChange = vi.fn()
+    render(
+      section({
+        onChange,
+        value: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 30.25, bpm: 120 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const handle = screen.getByTestId('grid-change-handle')
+    fireEvent.keyDown(handle, { key: 'Delete' })
+    expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: 0.25 })
+  })
+})
+
+describe('GridSection undo/redo', () => {
+  function Harness(): React.JSX.Element {
+    const [grid, setGrid] = useState<Beatgrid | undefined>(undefined)
+    return (
+      <QueryClientProvider client={client}>
+        <GridSection
+          value={grid}
+          open
+          onToggle={() => {}}
+          onChange={setGrid}
+          inputPath="/in/track.wav"
+        />
+      </QueryClientProvider>
+    )
+  }
+
+  // rekordbox's safety net, verbatim: grid edits are exploratory, so every
+  // committed step can be walked back — and forward again.
+  it('walks committed grid edits back and forward', async () => {
+    render(<Harness />)
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const undo = screen.getByTestId('grid-undo')
+    const redo = screen.getByTestId('grid-redo')
+    expect(undo).toBeDisabled()
+    expect(redo).toBeDisabled()
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    await screen.findByText('First beat at 0.26 s')
+    fireEvent.click(undo)
+    // Back to the bare detection (no staged grid).
+    await screen.findByText('First beat at 0.25 s')
+    expect(redo).not.toBeDisabled()
+    fireEvent.click(redo)
+    await screen.findByText('First beat at 0.26 s')
   })
 })
 

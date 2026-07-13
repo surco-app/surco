@@ -519,6 +519,10 @@
     "reset": "Auto",
     "resetHint": "Zurück zum erkannten Grid",
     "audition": "Grid anhören",
+    "fromHere": "Ab hier anpassen",
+    "undo": "Grid-Änderung rückgängig machen",
+    "redo": "Grid-Änderung wiederholen",
+    "handleChange": "Anker der Grid-Änderung",
     "handleAnchor": "Grid-Anker",
     "overview": "Track-Übersicht — drücken, um die Arbeitsansicht zu bewegen",
     "anchorAt": "Erster Beat bei {{seconds}} s"
