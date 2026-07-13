@@ -39,6 +39,11 @@ interface Props {
   // The release formats search is restricted to (Settings → Search). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
+  // The column's persisted width and its save hook: the panel remounts on every
+  // track switch (the editor is keyed by track), so a width held only in state
+  // used to snap back the moment the user changed tracks.
+  resultsWidth: number | null
+  onResultsWidthChange: (width: number) => void
 }
 
 // The Discogs column: the search box, its results, and the expanded release's
@@ -62,6 +67,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   searchInputRef,
   onOpenSettings,
   formatFilter,
+  resultsWidth,
+  onResultsWidthChange,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const {
@@ -80,7 +87,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     error,
     previewRelease,
   } = browser
-  const discogs = useResizableWidth(315, 300, 720)
+  const discogs = useResizableWidth(resultsWidth ?? 315, 300, 720, onResultsWidthChange)
 
   // Double-clicking the divider fits the Discogs column to its results: measure how far each
   // release and track title is clipped (or has to spare) and resize by the widest, so long

@@ -125,6 +125,9 @@ interface Props {
   // along so the dialog can name the entry it is about to delete.
   onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
   onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
+  // Persists the results column's width (Settings.resultsWidth): the panel
+  // remounts per track, so the width must round-trip through settings to stick.
+  onResultsWidthChange: (width: number) => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
@@ -176,6 +179,7 @@ export const Editor = memo(function Editor({
   onTrashOriginal,
   onRemoveOldMusicCopy,
   onOpenSettings,
+  onResultsWidthChange,
   onShowLoudnessHelp,
   onOpenRename,
   onRegenerateName,
@@ -205,6 +209,7 @@ export const Editor = memo(function Editor({
     requiredFields,
     discogsFormats,
     discogsMaxResults,
+    resultsWidth,
     searchProviders,
     searchIgnoreWords,
     showSpectrum,
@@ -834,6 +839,8 @@ export const Editor = memo(function Editor({
         searchInputRef={searchInputRef}
         onOpenSettings={onOpenSettings}
         formatFilter={discogsFormats}
+        resultsWidth={resultsWidth}
+        onResultsWidthChange={onResultsWidthChange}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">

@@ -40,6 +40,7 @@ const settings: Settings = {
   flacCompression: '5',
   showSpectrum: true,
   activityPanel: null,
+  resultsWidth: null,
   autoAnalyze: false,
   showWaveform: true,
   showLoudness: true,

@@ -73,6 +73,7 @@ afterEach(cleanup)
 function settings(over: Partial<Settings> = {}): Settings {
   return {
     editorSections: DEFAULT_EDITOR_SECTIONS,
+    resultsWidth: null,
     theme: 'system',
     language: 'system',
     discogsToken: '',

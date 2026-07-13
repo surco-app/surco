@@ -7,6 +7,10 @@ export function useResizableWidth(
   initial: number,
   min: number,
   max: number,
+  // Fired once per finished gesture (drag release, auto-fit) with the final
+  // width — the persistence hook, so a caller can save without being spammed
+  // by the per-frame updates a drag produces.
+  onCommit?: (width: number) => void,
 ): {
   width: number
   onPointerDown: (e: React.PointerEvent) => void
@@ -15,6 +19,12 @@ export function useResizableWidth(
   autoFit: (deficit: number) => void
 } {
   const [width, setWidth] = useState(initial)
+  // Refs so the drag's window listeners and the memoized autoFit read the
+  // latest values without re-subscribing.
+  const widthRef = useRef(width)
+  widthRef.current = width
+  const onCommitRef = useRef(onCommit)
+  onCommitRef.current = onCommit
   // Holds the teardown for an in-flight drag so unmounting mid-drag doesn't leak
   // the window listeners or leave the body cursor stuck at col-resize.
   const endDrag = useRef<(() => void) | null>(null)
@@ -42,6 +52,8 @@ export function useResizableWidth(
       window.removeEventListener('pointerup', cleanup)
       document.body.style.cursor = ''
       endDrag.current = null
+      const final = nextWidth(startWidth, latestX - startX, min, max)
+      if (final !== startWidth) onCommitRef.current?.(final)
     }
     endDrag.current = cleanup
     document.body.style.cursor = 'col-resize'
@@ -52,7 +64,9 @@ export function useResizableWidth(
   const autoFit = useCallback(
     (deficit: number): void => {
       if (deficit === 0) return
-      setWidth((w) => nextWidth(w, deficit, min, max))
+      const next = nextWidth(widthRef.current, deficit, min, max)
+      setWidth(next)
+      if (next !== widthRef.current) onCommitRef.current?.(next)
     },
     [min, max],
   )

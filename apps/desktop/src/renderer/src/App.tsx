@@ -1195,6 +1195,12 @@ export default function App(): React.JSX.Element {
     const kept = tracksRef.current.filter((t) => !ids.has(t.id)).map((t) => t.coverUrl)
     for (const old of new Set(displaced)) revokeCoverUrlIfUnused(old, kept)
   })
+  // Stable like the other editor props: saveSettings is recreated per render,
+  // and an unstable identity here would re-render the memoized Editor per keystroke.
+  const onResultsWidthChange = useStableCallback((width: number) =>
+    saveSettings({ resultsWidth: width }),
+  )
+
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (!selected) return
     // A cover change or removal may strand the selected track's old blob; free it only
@@ -1922,6 +1928,7 @@ export default function App(): React.JSX.Element {
                   onTrashOriginal={onTrashOriginal}
                   onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                   onOpenSettings={onOpenSettings}
+                  onResultsWidthChange={onResultsWidthChange}
                   onShowLoudnessHelp={onShowLoudnessHelp}
                   onOpenRename={onOpenRename}
                   onRegenerateName={onRegenerateName}

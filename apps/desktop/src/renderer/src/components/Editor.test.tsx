@@ -169,6 +169,7 @@ function renderEditor(
       onTrashOriginal={onTrashOriginal}
       onRemoveOldMusicCopy={onRemoveOldMusicCopy}
       onOpenSettings={onOpenSettings}
+      onResultsWidthChange={vi.fn()}
       onShowLoudnessHelp={onShowLoudnessHelp}
       onOpenRename={onOpenRename}
       onRegenerateName={onRegenerateName}
@@ -625,6 +626,7 @@ function MultiHarness() {
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
+        onResultsWidthChange={vi.fn()}
         selectedTracks={selectedTracks}
         onApplyMatches={vi.fn()}
         onProcessAll={vi.fn()}
@@ -897,6 +899,7 @@ describe('Editor multi-select', () => {
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
+        onResultsWidthChange={vi.fn()}
         selectedTracks={[a, b]}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}

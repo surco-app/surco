@@ -53,6 +53,8 @@ export interface ResolvedSettings {
   declick: DeclickMode
   // Always complete and form-first, whatever an older settings.json stored.
   editorSections: EditorSectionPref[]
+  // The results column's persisted width; null until the user first drags it.
+  resultsWidth: number | null
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -84,6 +86,7 @@ const DEFAULTS: ResolvedSettings = {
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   declick: DEFAULT_DECLICK,
   editorSections: DEFAULT_EDITOR_SECTIONS,
+  resultsWidth: null,
 }
 
 export function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -115,6 +118,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
     normalize: settings.normalize ?? DEFAULTS.normalize,
     declick: normalizeDeclick(settings.declick),
     editorSections: normalizeEditorSections(settings.editorSections),
+    resultsWidth: settings.resultsWidth ?? DEFAULTS.resultsWidth,
   }
 }
 

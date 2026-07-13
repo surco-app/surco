@@ -65,6 +65,7 @@ const defaults: Settings = {
   showSpectrum: true,
   showLoudness: true,
   activityPanel: null,
+  resultsWidth: null,
   showWaveform: true,
   autoAnalyze: false,
   autoMatch: false,
@@ -103,6 +104,7 @@ const LOCAL_KEYS = [
   'lastSeenChangelogVersion',
   // A pixel position only means something on the screen it was saved on.
   'activityPanel',
+  'resultsWidth',
 ] as const satisfies readonly (keyof Settings)[]
 
 function localFile(): string {

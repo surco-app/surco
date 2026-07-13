@@ -207,6 +207,10 @@ export interface Settings {
   // Where the floating activity panel was last parked and its size, in window pixels.
   // Machine-local (screen-dependent), null until the user first moves or resizes it.
   activityPanel: { x: number; y: number; width: number; height: number } | null
+  // The search-results column's width in the editor, in pixels. Machine-local
+  // (screen-dependent), null until the user first drags its divider — the drag
+  // used to reset on every track switch because the width lived in the panel.
+  resultsWidth: number | null
   // When on, every imported track queues its quality analysis in the background (low
   // priority, same shared cache as the sweep), so suspect rips surface on their own
   // without pressing Analyze. Off by default: it spends an ffmpeg decode per drop.
