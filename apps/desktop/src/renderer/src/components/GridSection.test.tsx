@@ -564,6 +564,38 @@ describe('GridSection segments', () => {
     expect(twice.changes[0].anchorSec).toBeCloseTo(31.25, 3)
   })
 
+  // Auto is segment-scoped like every other control: over a tempo-change
+  // segment it re-detects THAT stretch only (via the windowed IPC) and leaves
+  // the base grid alone. The full-track reset stays the base's behavior.
+  it('re-detects only the segment under the line on Auto', async () => {
+    const onChange = vi.fn()
+    const beatgridWindow = vi
+      .fn()
+      .mockResolvedValue({ bpm: 174, confidence: 0.9, anchorSec: 30.31, phaseAmbiguity: 0, phaseMargin: 9 })
+    ;(window as unknown as { api: { beatgridWindow: unknown } }).api.beatgridWindow =
+      beatgridWindow
+    stubOverlayRect()
+    // The line (centre 30.0 of 60 s) sits within the change segment [30.25, end).
+    // Wait — 30.0 < 30.25 puts the line on the base; the magnet catches the
+    // diamond at 30.25 (0.25 < 0.667 catch) and anchors outrank beats, so the
+    // controls target the change segment.
+    render(
+      section({
+        onChange,
+        value: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 30.25, bpm: 120 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-reset'))
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    // The window asked for exactly the segment's stretch: anchor to track end.
+    expect(beatgridWindow).toHaveBeenCalledWith('/in/track.wav', 30.25, 60 - 30.25)
+    const grid = onChange.mock.calls[0][0]
+    expect(grid.bpm).toBe(120)
+    expect(grid.anchorSec).toBe(0.25)
+    expect(grid.changes[0]).toEqual({ anchorSec: 30.31, bpm: 174 })
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {

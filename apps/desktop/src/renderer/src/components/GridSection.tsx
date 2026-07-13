@@ -31,6 +31,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
+import { Tooltip } from './Tooltip'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
 // The fine correction: about the detector's own resolution, so one press fixes
@@ -472,7 +473,27 @@ export function GridSection({
   // than the same cached answer back.
   const queryClient = useQueryClient()
   const [reprobing, setReprobing] = useState(false)
+  // Auto is segment-scoped like every other control: on the base it redoes the
+  // whole track (the classic reset); on a tempo-change segment it re-detects
+  // only that stretch — from its anchor to the next segment — and leaves the
+  // grid behind the line untouched. "Adjust from here, then let it listen."
   async function autoDetect(): Promise<void> {
+    if (activeSegIndex > 0 && shown) {
+      const from = segments[activeSegIndex].anchorSec
+      const to = segments[activeSegIndex + 1]?.anchorSec ?? durationSec
+      setReprobing(true)
+      try {
+        const fresh = await window.api.beatgridWindow(inputPath, from, to - from)
+        if (fresh)
+          editSegment(activeSegIndex, {
+            bpm: fresh.bpm,
+            anchorSec: clampChange(fresh.anchorSec, activeSegIndex),
+          })
+      } finally {
+        setReprobing(false)
+      }
+      return
+    }
     editHold.current = null
     if (value) {
       record(value)
@@ -603,7 +624,37 @@ export function GridSection({
       className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
     >
       {icon}
+      <Tooltip label={label} />
     </button>
+  )
+
+  // The bordered variant for the toolbar's verbs: icon-only, the name in the
+  // tooltip (and aria) — full words made the row wrap to two lines in the
+  // editor column.
+  const toolButton = (
+    testid: string,
+    label: string,
+    onClick: () => void,
+    icon: React.ReactNode,
+    disabled = false,
+  ): React.JSX.Element => (
+    <button
+      type="button"
+      data-testid={testid}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
+    >
+      {icon}
+      <Tooltip label={label} />
+    </button>
+  )
+
+  // Hairline between the toolbar's groups, so tempo / shift / line actions /
+  // listen / history read as clusters instead of one long strip of glyphs.
+  const divider = (
+    <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[var(--color-line)]" />
   )
 
   return (
@@ -653,7 +704,11 @@ export function GridSection({
           )}
           {(loading || wave) && (
             <>
-              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
+                    small groups split by hairlines — tempo, shift, the line's
+                    actions, listen, history. Labels live in the tooltips (and
+                    aria), so the row stays one calm line instead of a sentence. */}
                 <label className="flex shrink-0 items-center gap-1.5 text-[10px] text-fg-dim">
                   <span className="font-medium uppercase tracking-wider">
                     {tr('grid.bpmLabel')}
@@ -678,16 +733,17 @@ export function GridSection({
                 </label>
                 {shown && activeSeg && (
                   <>
-                    <button
-                      type="button"
-                      data-testid="grid-tap"
-                      aria-label={tr('grid.tapHint')}
-                      onClick={tapTempo}
-                      className="press shrink-0 rounded border border-[var(--color-line-strong)] px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
-                    >
-                      TAP
-                    </button>
                     <span className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        data-testid="grid-tap"
+                        aria-label={tr('grid.tapHint')}
+                        onClick={tapTempo}
+                        className="press shrink-0 rounded border border-[var(--color-line-strong)] px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
+                      >
+                        TAP
+                        <Tooltip label={tr('grid.tapHint')} />
+                      </button>
                       <button
                         type="button"
                         data-testid="grid-bpm-half"
@@ -701,6 +757,7 @@ export function GridSection({
                         className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                       >
                         ÷2
+                        <Tooltip label={tr('grid.half')} />
                       </button>
                       <button
                         type="button"
@@ -715,6 +772,7 @@ export function GridSection({
                         className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                       >
                         ×2
+                        <Tooltip label={tr('grid.double')} />
                       </button>
                       {iconButton(
                         'grid-expand',
@@ -729,6 +787,7 @@ export function GridSection({
                         <FoldHorizontal className="h-3 w-3" aria-hidden="true" />,
                       )}
                     </span>
+                    {divider}
                     <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
                         'grid-beat-back',
@@ -755,119 +814,106 @@ export function GridSection({
                         <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
                       )}
                     </span>
-                    <span data-testid="grid-anchor" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
-                      {tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
+                    {divider}
+                    {/* The line's verbs: everything that acts where the red
+                        reference stands — a beat here, a beat centred, a new
+                        segment from here, or Auto's fresh listen (whole track on
+                        the base, this stretch only on a change segment). */}
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {toolButton(
+                        'grid-beat-here',
+                        tr('grid.beatHere'),
+                        beatHere,
+                        <Anchor className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {toolButton(
+                        'grid-centre-beat',
+                        tr('grid.centreBeat'),
+                        centreNearestBeat,
+                        <Crosshair className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {toolButton(
+                        'grid-from-here',
+                        tr('grid.fromHere'),
+                        addChangeFromHere,
+                        <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
+                      )}
+                      {toolButton(
+                        'grid-reset',
+                        tr('grid.resetHint'),
+                        autoDetect,
+                        <Wand2
+                          className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
+                          aria-hidden="true"
+                        />,
+                        reprobing,
+                      )}
                     </span>
-                    {/* Bordered like the trim section's detect button: the bare
-                        text form read as a caption, not something to press. */}
-                    <button
-                      type="button"
-                      data-testid="grid-audition"
-                      onClick={audition}
-                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
-                    >
-                      {auditing ? (
-                        // Filled: the hollow square read as a broken checkbox,
-                        // not a stop control.
+                    {divider}
+                    {toolButton(
+                      'grid-audition',
+                      tr('grid.audition'),
+                      audition,
+                      auditing ? (
                         <Square className="h-3 w-3 fill-current" aria-hidden="true" />
                       ) : (
                         <Volume2 className="h-3 w-3" aria-hidden="true" />
+                      ),
+                    )}
+                    {divider}
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {iconButton(
+                        'grid-undo',
+                        tr('grid.undo'),
+                        undo,
+                        <Undo2 className="h-3 w-3" aria-hidden="true" />,
+                        history.undo === 0,
                       )}
-                      {tr('grid.audition')}
-                    </button>
-                    {/* rekordbox's "make an adjustment from the current
-                        position": a new segment on the beat at the view's
-                        centre — from here forward, edits leave what's behind
-                        pinned. */}
-                    {/* rekordbox's "first beat to current position": a beat,
-                        exactly under the line. */}
-                    <button
-                      type="button"
-                      data-testid="grid-beat-here"
-                      onClick={beatHere}
-                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
-                    >
-                      <Anchor className="h-3 w-3" aria-hidden="true" />
-                      {tr('grid.beatHere')}
-                    </button>
-                    {/* rekordbox's C, as a button too: bring the nearest beat
-                        under the reference so the controls act on a beat. */}
-                    <button
-                      type="button"
-                      data-testid="grid-centre-beat"
-                      onClick={centreNearestBeat}
-                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
-                    >
-                      <Crosshair className="h-3 w-3" aria-hidden="true" />
-                      {tr('grid.centreBeat')}
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="grid-from-here"
-                      onClick={addChangeFromHere}
-                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
-                    >
-                      <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />
-                      {tr('grid.fromHere')}
-                    </button>
+                      {iconButton(
+                        'grid-redo',
+                        tr('grid.redo'),
+                        redo,
+                        <Redo2 className="h-3 w-3" aria-hidden="true" />,
+                        history.redo === 0,
+                      )}
+                    </span>
                   </>
                 )}
-                {(value || shown) && (
-                  <button
-                    type="button"
-                    data-testid="grid-reset"
-                    aria-label={tr('grid.resetHint')}
-                    disabled={reprobing}
-                    onClick={autoDetect}
-                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
-                  >
-                    <Wand2 className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`} aria-hidden="true" />
-                    {tr('grid.reset')}
-                  </button>
-                )}
-                {(value || shown) && (
+                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+                  {shown && (
+                    <span
+                      data-testid="grid-anchor"
+                      className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
+                    >
+                      {tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
+                    </span>
+                  )}
                   <span className="flex shrink-0 items-center gap-0.5">
                     {iconButton(
-                      'grid-undo',
-                      tr('grid.undo'),
-                      undo,
-                      <Undo2 className="h-3 w-3" aria-hidden="true" />,
-                      history.undo === 0,
+                      'waveform-zoom-out',
+                      tr('editor.waveformZoomOut'),
+                      () => setZoom((z) => Math.max(1, z / 2)),
+                      <ZoomOut className="h-3 w-3" aria-hidden="true" />,
+                      zoom <= 1,
                     )}
+                    <button
+                      type="button"
+                      data-testid="waveform-zoom-reset"
+                      aria-label={tr('editor.waveformZoomReset')}
+                      disabled={zoom <= 1}
+                      onClick={() => setZoom(1)}
+                      className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                    >
+                      {zoomLabel(zoom)}
+                    </button>
                     {iconButton(
-                      'grid-redo',
-                      tr('grid.redo'),
-                      redo,
-                      <Redo2 className="h-3 w-3" aria-hidden="true" />,
-                      history.redo === 0,
+                      'waveform-zoom-in',
+                      tr('editor.waveformZoomIn'),
+                      () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
+                      <ZoomIn className="h-3 w-3" aria-hidden="true" />,
+                      zoom >= ZOOM_MAX,
                     )}
                   </span>
-                )}
-                <span className="ml-auto flex shrink-0 items-center gap-0.5">
-                  {iconButton(
-                    'waveform-zoom-out',
-                    tr('editor.waveformZoomOut'),
-                    () => setZoom((z) => Math.max(1, z / 2)),
-                    <ZoomOut className="h-3 w-3" aria-hidden="true" />,
-                    zoom <= 1,
-                  )}
-                  <button
-                    type="button"
-                    data-testid="waveform-zoom-reset"
-                    aria-label={tr('editor.waveformZoomReset')}
-                    disabled={zoom <= 1}
-                    onClick={() => setZoom(1)}
-                    className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-                  >
-                    {zoomLabel(zoom)}
-                  </button>
-                  {iconButton(
-                    'waveform-zoom-in',
-                    tr('editor.waveformZoomIn'),
-                    () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
-                    <ZoomIn className="h-3 w-3" aria-hidden="true" />,
-                    zoom >= ZOOM_MAX,
-                  )}
                 </span>
               </div>
               {/* relative wrapper: the centre reference below must pin to the

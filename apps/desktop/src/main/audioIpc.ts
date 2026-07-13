@@ -13,6 +13,7 @@ import {
   extractCoverDataUrl,
   generateSpectrogram,
   measureBeatgrid,
+  measureBeatgridWindow,
   measureBpm,
   measureKey,
   measureLoudness,
@@ -232,6 +233,26 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
+
+  // The scoped Auto: re-detect one stretch only (a tempo-change segment). Never
+  // cached — the window boundaries change with every edit, and the result lands
+  // in the staged grid, not in the analysis store.
+  ipcMain.handle(
+    'audio:beatgridWindow',
+    async (_e, inputPath: string, startSec: number, durSec: number) => {
+      try {
+        if (typeof startSec !== 'number' || typeof durSec !== 'number') return null
+        if (!Number.isFinite(startSec) || !Number.isFinite(durSec)) return null
+        if (startSec < 0 || durSec <= 0) return null
+        return await probe('activity.probeBeatgrid', inputPath, () =>
+          analysisLimiter.run(() => measureBeatgridWindow(inputPath, startSec, durSec), 'low'),
+        )
+      } catch (err) {
+        log.error('audio:beatgridWindow failed', err)
+        return null
+      }
+    },
+  )
 
   ipcMain.handle('audio:key', async (_e, inputPath: string) => {
     try {

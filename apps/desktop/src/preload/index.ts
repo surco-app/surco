@@ -107,6 +107,8 @@ const api: Api = {
   bpm: (path: string): Promise<BpmResult | null> => ipcRenderer.invoke('audio:bpm', path),
   beatgrid: (path: string, fresh?: boolean): Promise<BeatgridResult | null> =>
     ipcRenderer.invoke('audio:beatgrid', path, fresh),
+  beatgridWindow: (path: string, startSec: number, durSec: number): Promise<BeatgridResult | null> =>
+    ipcRenderer.invoke('audio:beatgridWindow', path, startSec, durSec),
   key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
   waveform: (path: string): Promise<WaveformResult | null> =>
     ipcRenderer.invoke('audio:waveform', path),

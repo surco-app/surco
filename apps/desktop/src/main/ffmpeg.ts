@@ -1506,6 +1506,30 @@ export async function measureBeatgrid(input: string): Promise<BeatgridResult | n
   return runInWorker<BeatgridResult | null>({ type: 'beatgrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
+// The same detector over one stretch of the track: the editor's "Auto" scoped
+// to a tempo-change segment re-detects only from that segment's anchor forward,
+// leaving the grid behind it alone. The detector sees the window as its own
+// little track, so its anchor comes back window-relative — shift it out here,
+// where the offset is known.
+export async function measureBeatgridWindow(
+  input: string,
+  startSec: number,
+  durSec: number,
+): Promise<BeatgridResult | null> {
+  const pcm = await decodePcm(input, {
+    sampleRate: TEMPO_SAMPLE_RATE,
+    startSec,
+    seconds: Math.min(durSec, 240),
+    maxBufferMb: 16,
+  })
+  const result = await runInWorker<BeatgridResult | null>({
+    type: 'beatgrid',
+    pcm,
+    sampleRate: TEMPO_SAMPLE_RATE,
+  })
+  return result ? { ...result, anchorSec: result.anchorSec + startSec } : null
+}
+
 // Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's
 // downsample, the shelf lives at 17-22 kHz, which a low analysis rate discards.
 // Four minutes captures the shelf the whole-file average shows (a short window can
