@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.55",
+    "date": "13 de julio de 2026",
+    "title": "Edición de grid, ya mayor",
+    "items": [
+      {
+        "text": "Los beatgrids ahora admiten cambios de tempo: divide el grid con Ajustar desde aquí, edita cada tramo por separado y la detección marca las derivas a mitad de pista. Todos los exports DJ llevan el grid multi-segmento completo.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "La edición del grid funciona como rekordbox: referencia central fija con el desfase en compases, beats imantados, tap tempo, C para centrar un beat, poner-un-beat-aquí, pasos finos de intervalo y una barra compacta de una línea cuyos botones repiten al mantenerlos pulsados.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "Recorte, Beatgrid y Calidad de audio pueden ocupar toda la ventana mientras trabajas — Esc las devuelve a su sitio sin perder la selección.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "La onda ampliada se mantiene nítida durante la reproducción y la navegación rápida.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "Las secciones del editor siguen ahora el orden de trabajo de una pista, de los tags al export.",
+        "in": "0.55.0"
+      }
+    ]
+  },
+  {
     "version": "0.54",
     "date": "13 de julio de 2026",
     "title": "El beatgrid, tuyo",

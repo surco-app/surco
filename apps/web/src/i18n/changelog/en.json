@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.55",
+    "date": "July 13, 2026",
+    "title": "Grid editing, all grown up",
+    "items": [
+      {
+        "text": "Beatgrids now handle tempo changes: split the grid with Adjust from here, edit each stretch on its own, and detection flags mid-track drift automatically. Every DJ export carries the full multi-segment grid.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "Grid editing works like rekordbox: a fixed centre reference with the offset in bars, magnetic beats, tap tempo, C to centre a beat, set-a-beat-here, fine interval steps, and a compact one-line toolbar whose nudge buttons repeat while held.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "Trim, Beatgrid and Audio quality can take over the whole window while you work — Esc puts them back without losing your place.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "The zoomed waveform stays crisp during playback and fast navigation.",
+        "in": "0.55.0"
+      },
+      {
+        "text": "Editor sections now follow the working order of a track, from tags to export.",
+        "in": "0.55.0"
+      }
+    ]
+  },
+  {
     "version": "0.54",
     "date": "July 13, 2026",
     "title": "The beatgrid, yours",
