@@ -308,6 +308,20 @@ export function Strip({
   useEffect(() => {
     const canvas = hiResRef.current
     if (!canvas || !hiResActive || !wave) return
+    // The bitmap must carry as many pixels as the CSS box it is stretched over,
+    // or the drawn bars are scaled up: a fixed raster under a viewport-sized box
+    // is what made the wave go FAT during playback and panning (the window the
+    // canvas covers narrows as the view follows the playhead). The box IS the
+    // scroller's visible width, so size the bitmap from that — capped, so a wide
+    // panel on a retina display can't blow the bitmap up.
+    const panelPx = scrollRef.current?.clientWidth ?? 0
+    if (panelPx > 0) {
+      const target = Math.min(
+        4096,
+        Math.max(600, Math.round(panelPx * (window.devicePixelRatio || 1))),
+      )
+      if (canvas.width !== target) canvas.width = target
+    }
     // The window covers the view → draw its full-fidelity peaks; while it loads
     // (or after a fast fling outran it) fall back to the overview slice, so the
     // viewport is never blank — just briefly coarse.
@@ -342,7 +356,7 @@ export function Strip({
     // drew, in strip percentages, so scrolling can never shear it off the overlays.
     canvas.style.left = `${view.from * 100}%`
     canvas.style.width = `${(view.to - view.from) * 100}%`
-  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall])
+  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall, raster])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))

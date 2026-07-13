@@ -523,6 +523,7 @@
     "resetHint": "Zurück zum erkannten Grid",
     "audition": "Grid anhören",
     "fromHere": "Ab hier anpassen",
+    "centreBeat": "Beat zentrieren (C)",
     "undo": "Grid-Änderung rückgängig machen",
     "redo": "Grid-Änderung wiederholen",
     "handleChange": "Anker der Grid-Änderung",

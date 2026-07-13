@@ -523,6 +523,7 @@
     "resetHint": "Volver a la rejilla detectada",
     "audition": "Escuchar la rejilla",
     "fromHere": "Ajustar desde aquí",
+    "centreBeat": "Centrar beat (C)",
     "undo": "Deshacer ajuste del grid",
     "redo": "Rehacer ajuste del grid",
     "handleChange": "Ancla del cambio de grid",

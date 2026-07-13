@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Beatgrid, BeatgridResult, WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
-import { runSpaceClaim } from '../lib/spaceClaim'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { GridSection } from './GridSection'
 
 afterEach(cleanup)
@@ -283,7 +283,7 @@ describe('GridSection grid', () => {
     expect(audios[0].currentTime).toBeCloseTo(30.25, 2)
     expect(play).toHaveBeenCalled()
     // The section's Space claim stops it again.
-    expect(runSpaceClaim()).toBe(true)
+    expect(runKeyClaim('play')).toBe(true)
     expect(pause).toHaveBeenCalled()
   })
 })
@@ -371,6 +371,23 @@ describe('GridSection two-lane layout', () => {
 // "Adjust from here" — a new segment from the beat in view — and every later
 // edit touches only the segment you're standing on, never what's behind it.
 describe('GridSection segments', () => {
+  // rekordbox's C (and its button): bring the nearest beat under the reference,
+  // so the controls act on a beat instead of an arbitrary instant.
+  it('centres the nearest beat under the reference from the button', async () => {
+    stubOverlayRect()
+    render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    // jsdom lays nothing out, so the lane's geometry is stubbed like the other
+    // navigation tests: a 6000 px strip in a 600 px panel.
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    // The lane scrolls so the beat nearest the centre (30.25 s of the 60 s track)
+    // lands under the reference: beat_ratio × scrollWidth − half a panel.
+    fireEvent.click(screen.getByTestId('grid-centre-beat'))
+    expect(scroller.scrollLeft).toBeCloseTo((30.25 / 60) * 6000 - 300, 0)
+  })
+
   // "Adjust from here" fixes the stretch AHEAD of the centre reference, so the
   // new segment must start on the first beat AT OR AFTER the red line — a beat
   // behind it would re-anchor music the user is deliberately leaving alone.

@@ -523,6 +523,7 @@
     "resetHint": "Voltar à grade detectada",
     "audition": "Ouvir a grade",
     "fromHere": "Ajustar a partir daqui",
+    "centreBeat": "Centralizar batida (C)",
     "undo": "Desfazer ajuste do grid",
     "redo": "Refazer ajuste do grid",
     "handleChange": "Âncora da mudança de grid",

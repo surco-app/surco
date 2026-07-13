@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
 import { isTypingTarget, keyToCommandId } from '../lib/keymap'
-import { runSpaceClaim } from '../lib/spaceClaim'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
 interface Params {
@@ -55,12 +55,28 @@ export function useKeyboardShortcuts(params: Params): void {
         p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }
-      const id = keyToCommandId(e, isTypingTarget(document.activeElement), p.bindings, p.isMac)
+      // rekordbox's C: the open lane centres the nearest beat under its
+      // reference. A bare letter, so it never fights a chord — and only while a
+      // section actually claims it (nothing claimed → the key is free).
+      const typing = isTypingTarget(document.activeElement)
+      if (
+        !typing &&
+        !p.overlayOpen &&
+        (e.key === 'c' || e.key === 'C') &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        runKeyClaim('centre-beat')
+      ) {
+        e.preventDefault()
+        return
+      }
+      const id = keyToCommandId(e, typing, p.bindings, p.isMac)
       if (!id) return
       // A section with its own transport (the beatgrid's audition) claims Space
       // while it is open, so one press never starts BOTH its check and the
       // mini-player. Nothing claimed → the global play command runs as always.
-      if (id === 'play' && !p.overlayOpen && runSpaceClaim()) {
+      if (id === 'play' && !p.overlayOpen && runKeyClaim('play')) {
         e.preventDefault()
         return
       }

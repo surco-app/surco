@@ -523,6 +523,7 @@
     "resetHint": "Revenir à la grille détectée",
     "audition": "Écouter la grille",
     "fromHere": "Ajuster à partir d'ici",
+    "centreBeat": "Centrer le beat (C)",
     "undo": "Annuler le réglage de la grille",
     "redo": "Rétablir le réglage de la grille",
     "handleChange": "Ancre du changement de grille",

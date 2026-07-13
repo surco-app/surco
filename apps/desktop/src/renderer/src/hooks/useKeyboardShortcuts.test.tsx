@@ -3,7 +3,7 @@ import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Command } from '../lib/commands'
-import { claimSpace } from '../lib/spaceClaim'
+import { claimKeys } from '../lib/spaceClaim'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 
 // Hooks from a previous test must not stay subscribed to window: a leftover handler
@@ -112,7 +112,7 @@ describe('useKeyboardShortcuts space claim', () => {
   it('gives Space to a claiming section instead of the player, and returns it after', () => {
     const { play } = setup(false)
     const claimed = vi.fn()
-    const release = claimSpace(claimed)
+    const release = claimKeys({ play: claimed })
     press({ key: ' ' })
     expect(claimed).toHaveBeenCalledTimes(1)
     expect(play).not.toHaveBeenCalled()
@@ -121,5 +121,22 @@ describe('useKeyboardShortcuts space claim', () => {
     press({ key: ' ' })
     expect(claimed).toHaveBeenCalledTimes(1)
     expect(play).toHaveBeenCalledTimes(1)
+  })
+
+  // rekordbox's C centres the nearest beat under the lane's reference. It only
+  // acts while a section claims it — a bare letter must stay free otherwise.
+  it('routes a bare C to a claiming section and leaves it inert otherwise', () => {
+    const { play } = setup(false)
+    const centre = vi.fn()
+    const release = claimKeys({ 'centre-beat': centre })
+    press({ key: 'c' })
+    expect(centre).toHaveBeenCalledTimes(1)
+    expect(play).not.toHaveBeenCalled()
+    // A chord is not the bare key: ⌘C must never centre a beat.
+    press({ key: 'c', metaKey: true })
+    expect(centre).toHaveBeenCalledTimes(1)
+    release()
+    press({ key: 'c' })
+    expect(centre).toHaveBeenCalledTimes(1)
   })
 })

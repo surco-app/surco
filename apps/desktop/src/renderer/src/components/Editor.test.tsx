@@ -2577,12 +2577,26 @@ describe('Editor Discogs format filter hint', () => {
 describe('Editor maximized section', () => {
   it('maximizes a section into a full-window overlay and Esc restores it', async () => {
     renderEditor({ id: 'a' })
-    const section = screen.getByTestId('editor-normalize')
+    const section = screen.getByTestId('editor-trim')
     fireEvent.click(within(section).getByTestId('section-maximize'))
     const overlay = await screen.findByTestId('section-maximized-overlay')
-    expect(within(overlay).getByTestId('editor-normalize')).toBeInTheDocument()
+    expect(within(overlay).getByTestId('editor-trim')).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByTestId('section-maximized-overlay')).not.toBeInTheDocument()
-    expect(screen.getByTestId('editor-normalize')).toBeInTheDocument()
+    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+  })
+
+  // Only the sections with fine work to do on a wave earn the toggle (trim,
+  // beatgrid, the quality spectrogram). Click repair is a segmented control and
+  // loudness a reference wave — a full window buys them nothing but chrome.
+  it('offers no maximize on the sections with nothing to blow up', () => {
+    renderEditor({ id: 'a' })
+    for (const id of ['editor-declick', 'editor-normalize']) {
+      const section = screen.getByTestId(id)
+      expect(within(section).queryByTestId('section-maximize')).toBeNull()
+    }
+    expect(
+      within(screen.getByTestId('editor-trim')).getByTestId('section-maximize'),
+    ).toBeInTheDocument()
   })
 })

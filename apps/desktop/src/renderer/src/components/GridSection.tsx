@@ -3,6 +3,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Crosshair,
   Redo2,
   SplitSquareHorizontal,
   Square,
@@ -17,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
-import { claimSpace } from '../lib/spaceClaim'
+import { claimKeys } from '../lib/spaceClaim'
 import { mediaUrl } from '../../../shared/media'
 import type { Beatgrid } from '../../../shared/types'
 import { useBeatgrid } from '../hooks/useBeatgrid'
@@ -311,8 +312,29 @@ export function GridSection({
   }
 
   function release(): void {
+    const wasPanning = dragging.current !== null
     dragging.current = null
     setPanning(false)
+    // Settle onto the beat: with one caught in the magnet's range, the wave
+    // eases the last few pixels so the beat sits exactly under the reference —
+    // the "click" the magnet was missing while it only moved an invisible
+    // position. A pan that ends far from any beat just stays put.
+    if (wasPanning && snappedCentre !== null && durationSec > 0)
+      centerOn(snappedCentre / durationSec)
+  }
+
+  // rekordbox's C: bring the nearest beat under the reference, whatever the
+  // magnet's range — the explicit version of the settle above, for when the eye
+  // has already found the beat and just wants it centred.
+  function centreNearestBeat(): void {
+    if (!shown || durationSec <= 0 || segments.length === 0) return
+    const index = segmentIndexAt(rawCentreSec)
+    const seg = segments[index]
+    const period = 60 / seg.bpm
+    const beat = seg.anchorSec + Math.round((rawCentreSec - seg.anchorSec) / period) * period
+    const next = segments[index + 1]
+    const target = next && beat >= next.anchorSec ? next.anchorSec : Math.max(0, beat)
+    centerOn(Math.min(durationSec, target) / durationSec)
   }
 
   function nudge(deltaSec: number): void {
@@ -418,9 +440,13 @@ export function GridSection({
   // The handler is re-registered whenever what it closes over changes, so the
   // key always drives the live grid and position.
   const auditionRef = useRef<() => void>(() => {})
+  const centreRef = useRef<() => void>(() => {})
   useEffect(() => {
     if (!open) return
-    return claimSpace(() => auditionRef.current())
+    return claimKeys({
+      play: () => auditionRef.current(),
+      'centre-beat': () => centreRef.current(),
+    })
   }, [open])
 
   function audition(): void {
@@ -461,6 +487,7 @@ export function GridSection({
   // The claim above fires through this ref, so Space always drives the live
   // closure (current grid, current centre) without re-registering per render.
   auditionRef.current = audition
+  centreRef.current = centreNearestBeat
 
   const iconButton = (
     testid: string,
@@ -637,6 +664,17 @@ export function GridSection({
                         position": a new segment on the beat at the view's
                         centre — from here forward, edits leave what's behind
                         pinned. */}
+                    {/* rekordbox's C, as a button too: bring the nearest beat
+                        under the reference so the controls act on a beat. */}
+                    <button
+                      type="button"
+                      data-testid="grid-centre-beat"
+                      onClick={centreNearestBeat}
+                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
+                    >
+                      <Crosshair className="h-3 w-3" aria-hidden="true" />
+                      {tr('grid.centreBeat')}
+                    </button>
                     <button
                       type="button"
                       data-testid="grid-from-here"
@@ -876,8 +914,8 @@ export function GridSection({
                     // the magnetised beat made it smear into a fat streak while
                     // dragging. The magnet lives in the POSITION the controls
                     // act on, not in the line; the glow only says "caught".
-                    className={`pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-[var(--color-danger)] ${
-                      centreSnapped && !panning ? 'shadow-[0_0_4px_var(--color-danger)]' : 'opacity-60'
+                    className={`pointer-events-none absolute inset-y-0 left-1/2 z-20 w-0.5 -translate-x-1/2 bg-[var(--color-danger)] ${
+                      centreSnapped && !panning ? 'shadow-[0_0_5px_var(--color-danger)]' : 'opacity-70'
                     }`}
                   />
                   {activeSeg && (

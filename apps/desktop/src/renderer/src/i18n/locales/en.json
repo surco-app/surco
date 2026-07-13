@@ -523,6 +523,7 @@
     "resetHint": "Back to the detected grid",
     "audition": "Hear the grid",
     "fromHere": "Adjust from here",
+    "centreBeat": "Centre beat (C)",
     "undo": "Undo grid edit",
     "redo": "Redo grid edit",
     "handleChange": "Grid change anchor",
