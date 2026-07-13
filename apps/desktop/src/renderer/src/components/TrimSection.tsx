@@ -7,11 +7,8 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { detectTrim } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
-import { AFTER_COLOR, OVERLAY_W, Strip } from './WaveformCompare'
+import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX } from './WaveformCompare'
 
-// Matches WaveformSolo's ladder: past ×8 the 2048 decoded buckets have no more
-// precision to give the handles.
-const ZOOM_MAX = 8
 // A handle can never cross to within a second of the other: a trim that eats the
 // whole track is always a mistake, and the floor keeps the handles grabbable.
 const MIN_KEEP_SEC = 1

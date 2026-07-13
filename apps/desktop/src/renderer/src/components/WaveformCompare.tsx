@@ -19,9 +19,12 @@ const CANVAS_W = 600
 export const OVERLAY_W = 1200
 const CANVAS_H = 96
 
-// The deepest zoom step: ×8 across a 6-minute track puts ~2 s in the visible panel,
-// enough to pin a clip down; past that the 2048 decoded buckets have no more to show.
-const ZOOM_MAX = 8
+// The deepest zoom step, shared with the trim section: ×32 across a 6-minute track
+// puts ~11 s in the visible panel — enough to place a trim handle by eye — and the
+// 8192 decoded buckets keep real detail at that depth. The cap also keeps the
+// zoomed canvas raster (OVERLAY_W × zoom = 38 400 px) under the browser's ~65k
+// per-dimension canvas limit.
+export const ZOOM_MAX = 32
 
 // The colour key the legends' dots repeat: the converted file keeps the player's
 // accent blue, the source goes muted so "louder than before" reads as blue fringes

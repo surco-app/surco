@@ -229,7 +229,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // just hit play), so it jumps ahead of the editor's background passes.
       // v2: results grew the per-channel lanes (WaveformResult.channels); entries
       // cached before that would pin waves with no split view forever.
-      return await cachedAnalysis('waveform-v2', inputPath, () =>
+      // v3: buckets went 2048 → 8192 for the ×32 zoom; older entries would pin
+      // the blocky low-resolution wave the deeper zoom exists to replace.
+      return await cachedAnalysis('waveform-v3', inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
           analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
         ),

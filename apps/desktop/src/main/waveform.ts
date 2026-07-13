@@ -3,12 +3,15 @@
 // exists to line kicks up against the playhead: a transient is a few hot
 // samples inside an otherwise quiet bucket, and any averaging would erase it.
 
-export const WAVEFORM_BUCKETS = 2048
+// Sized for the editor strips' ×32 zoom: the trim handles are placed against the
+// zoomed wave, and at 2048 buckets a deep zoom drew blocks instead of detail —
+// "adjusting by eye" landed the cut tens of milliseconds off.
+export const WAVEFORM_BUCKETS = 8192
 
 // The rate ffmpeg decodes to for peak extraction. Far lower than the tempo
 // rate because this decode is NOT bounded to the opening minutes — the strip
 // spans the whole track — and a 2-hour mix at 11025 Hz would be a ~300 MB
-// buffer. At 4 kHz each of the 2048 buckets still covers hundreds of samples
+// buffer. At 4 kHz each of the 8192 buckets still covers dozens of samples
 // on a club track, so kick transients survive the max-abs reduction intact.
 export const WAVEFORM_SAMPLE_RATE = 4000
 

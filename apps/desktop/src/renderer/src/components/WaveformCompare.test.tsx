@@ -445,7 +445,7 @@ describe('WaveformSolo', () => {
 
   // rekordbox-style zoom: + stretches the strip inside a horizontal scroller so a
   // clip can be pinned down bar by bar; − steps back; the ×N label resets. The
-  // envelope is still the decoded 2048 buckets — zoom widens them, it never re-reads.
+  // envelope is still the decoded buckets — zoom widens them, it never re-reads.
   it('zooms the strip in steps and scrolls horizontally', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
@@ -461,11 +461,13 @@ describe('WaveformSolo', () => {
 
     fireEvent.click(screen.getByTestId('waveform-zoom-in'))
     fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '800%' })
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '3200%' })
     expect(screen.getByTestId('waveform-zoom-in')).toBeDisabled()
 
     fireEvent.click(screen.getByTestId('waveform-zoom-out'))
-    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '400%' })
+    expect(screen.getByTestId('waveform-strip')).toHaveStyle({ width: '1600%' })
   })
 
   it('resets the zoom from the factor label', async () => {
