@@ -459,6 +459,19 @@ describe('GridSection segments', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  // rekordbox's centre reference: the fixed line marks the position the
+  // segment-scoped controls target, and the chip turns phase drift into a
+  // number (bars from the active segment's downbeat).
+  it('pins a centre reference line with the bar offset from the anchor', async () => {
+    stubOverlayRect()
+    render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(screen.getByTestId('grid-center-line')).toBeInTheDocument()
+    // Initial view spans the whole 60 s track: centre 30 s, anchor 0.25 s at
+    // 120 bpm (2 s bars) → +14.9 bars.
+    expect(screen.getByTestId('grid-center-bars')).toHaveTextContent('+14.9 bars')
+  })
+
   it('removes a focused change with Delete', async () => {
     const onChange = vi.fn()
     render(

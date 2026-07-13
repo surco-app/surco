@@ -506,6 +506,7 @@
   },
   "grid": {
     "title": "Beatgrid",
+    "centerBars": "{{bars}} Takte",
     "hint": "Legt ein Beatgrid über die Wellenform für die DJ-Exporte. Eine Beat-Linie greifen und auf die Schläge ziehen.",
     "summaryNone": "Aus",
     "detected": "{{bpm}} BPM erkannt",

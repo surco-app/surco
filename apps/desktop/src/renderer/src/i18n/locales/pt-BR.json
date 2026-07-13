@@ -506,6 +506,7 @@
   },
   "grid": {
     "title": "Beatgrid",
+    "centerBars": "{{bars}} compassos",
     "hint": "Coloca uma grade de beats sobre a onda para os exports DJ. Segure uma linha da grade para deslizá-la até as batidas.",
     "summaryNone": "Não",
     "detected": "Detectado {{bpm}} BPM",

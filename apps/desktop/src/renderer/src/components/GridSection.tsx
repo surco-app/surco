@@ -737,6 +737,10 @@ export function GridSection({
                   )}
                 </span>
               </div>
+              {/* relative wrapper: the centre reference below must pin to the
+                  VIEWPORT's middle while the lane scrolls under it, so it lives
+                  outside the Strip's scrolled content. */}
+              <div className="relative">
               <Strip
                 wave={wave}
                 loading={loading}
@@ -945,6 +949,33 @@ export function GridSection({
                   </div>
                 )}
               </Strip>
+              {/* rekordbox's centre reference: the fixed line marks the exact
+                  spot every segment-scoped control (BPM, nudges, From here)
+                  already targets — the "current position" used to be invisible.
+                  The chip reads the offset from the active segment's downbeat
+                  in bars, so phase drift is a number, not a squint. */}
+              {wave && durationSec > 0 && shown && (
+                <>
+                  <span
+                    data-testid="grid-center-line"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-[var(--color-danger)]/60"
+                  />
+                  {activeSeg && (
+                    <span
+                      data-testid="grid-center-bars"
+                      className="pointer-events-none absolute top-1 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)]/90 px-1.5 py-0.5 text-[9px] leading-none tabular-nums text-fg-dim"
+                    >
+                      {tr('grid.centerBars', {
+                        bars: `${viewCentreSec >= activeSeg.anchorSec ? '+' : '−'}${Math.abs(
+                          (viewCentreSec - activeSeg.anchorSec) / ((240 / activeSeg.bpm) || 1),
+                        ).toFixed(1)}`,
+                      })}
+                    </span>
+                  )}
+                </>
+              )}
+              </div>
               {wave && durationSec > 0 && (
                 <div
                   ref={overviewRef}
