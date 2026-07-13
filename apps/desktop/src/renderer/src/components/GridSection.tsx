@@ -1,4 +1,14 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Square,
+  Volume2,
+  Wand2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -337,11 +347,13 @@ export function GridSection({
                     <span data-testid="grid-anchor" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
                       {tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
                     </span>
+                    {/* Bordered like the trim section's detect button: the bare
+                        text form read as a caption, not something to press. */}
                     <button
                       type="button"
                       data-testid="grid-audition"
                       onClick={audition}
-                      className="press inline-flex shrink-0 items-center gap-1 text-[10px] text-fg-dim hover:text-fg"
+                      className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
                     >
                       {auditing ? (
                         // Filled: the hollow square read as a broken checkbox,
@@ -360,8 +372,9 @@ export function GridSection({
                     data-testid="grid-reset"
                     aria-label={tr('grid.resetHint')}
                     onClick={() => onChange(undefined)}
-                    className="press shrink-0 text-[10px] text-fg-dim underline-offset-2 hover:text-fg hover:underline"
+                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-2 py-1 text-[10px] text-fg-muted transition-colors hover:text-fg"
                   >
+                    <Wand2 className="h-3 w-3" aria-hidden="true" />
                     {tr('grid.reset')}
                   </button>
                 )}
@@ -431,16 +444,18 @@ export function GridSection({
                     onPointerCancel={release}
                   >
                     {/* Amber, not the wave's accent blue: the lines sit ON the
-                        wave, and same-hue lines disappeared into a busy mix. */}
+                        wave, and same-hue lines disappeared into a busy mix.
+                        Full opacity plus a faint halo — a bare 1px line at half
+                        opacity still sank between the peaks of a busy wave. */}
                     {lines.map((line) => (
                       <span
                         key={line.sec}
                         data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
                         aria-hidden="true"
-                        className={`pointer-events-none absolute w-px cursor-ew-resize ${
+                        className={`pointer-events-none absolute -translate-x-1/2 ${
                           line.downbeat
-                            ? 'inset-y-0 bg-[var(--color-warn)]'
-                            : 'inset-y-2 bg-[var(--color-warn)]/45'
+                            ? 'inset-y-0 w-0.5 bg-[var(--color-warn)] shadow-[0_0_3px_var(--color-warn)]'
+                            : 'inset-y-1.5 w-px bg-[var(--color-warn)]/80 shadow-[0_0_2px_rgba(0,0,0,0.6)]'
                         }`}
                         style={{ left: `${line.pct}%` }}
                       />
