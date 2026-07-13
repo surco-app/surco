@@ -12,6 +12,7 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
+import { outputBeatgrid } from '../shared/beatgrid'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
 import {
@@ -72,7 +73,12 @@ export interface ProcessTrackDeps {
   ) => Promise<string | null>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
-  addToEngineDj: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<void>
+  addToEngineDj: (
+    target: string,
+    meta: TrackMetadata,
+    coverPath?: string,
+    beatgrid?: Beatgrid,
+  ) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
@@ -183,10 +189,7 @@ export async function runProcessTrack(
       const choice = await deps.confirmConflict(basename(outputPath))
       if (choice === 'skip') return { outputPath: '', inPlace, skipped: true }
       if (choice === 'keepBoth')
-        target = uniqueOutputPath(
-          outputPath,
-          (p) => deps.existsSync(p) || deps.isPathReserved(p),
-        )
+        target = uniqueOutputPath(outputPath, (p) => deps.existsSync(p) || deps.isPathReserved(p))
     }
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
@@ -283,7 +286,12 @@ export async function runProcessTrack(
           .catch(() => undefined)
       }
       try {
-        await deps.addToEngineDj(target, job.meta, coverPath ?? extracted?.path)
+        await deps.addToEngineDj(
+          target,
+          job.meta,
+          coverPath ?? extracted?.path,
+          outputBeatgrid(job.beatgrid, job.trim),
+        )
         addedToEngineDj = true
       } finally {
         if (extracted) await extracted.cleanup()

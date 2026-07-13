@@ -798,7 +798,7 @@ function registerIpc(): void {
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
-      addToEngineDj: async (target, meta, coverPath) => {
+      addToEngineDj: async (target, meta, coverPath, beatgrid) => {
         const win = BrowserWindow.fromWebContents(e.sender)
         if (!(await ensureEngineDjClosed(win))) {
           throw new Error(createMenuT(menuLocale())('engineOpenError'))
@@ -809,7 +809,14 @@ function registerIpc(): void {
           'activity.engineAdd',
           () => {
             const s = getSettings()
-            return addToEngineLibrary(s.engineLibraryDir, target, meta, s.engineDjPlaylist, coverPath)
+            return addToEngineLibrary(
+              s.engineLibraryDir,
+              target,
+              meta,
+              s.engineDjPlaylist,
+              coverPath,
+              beatgrid,
+            )
           },
           { labelParams: { track } },
         )

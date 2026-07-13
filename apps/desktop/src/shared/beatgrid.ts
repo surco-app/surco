@@ -21,6 +21,20 @@ export function normalizeBeatgrid(value: unknown): Beatgrid | undefined {
   return { bpm, anchorSec }
 }
 
+// Where a staged grid lands in a converted output's timeline: a staged trim is
+// always applied by the conversion (it forces a re-encode), so the anchor moves
+// back by the cut head — folded onto the same grid's first surviving beat when
+// the cut passes it. Shared by the tag writes in main and the Engine DJ add.
+export function outputBeatgrid(
+  grid: Beatgrid | undefined,
+  trim: { startSec?: number } | undefined,
+): Beatgrid | undefined {
+  const cut = trim?.startSec ?? 0
+  if (!grid || cut === 0) return grid
+  const anchor = grid.anchorSec - cut
+  return { bpm: grid.bpm, anchorSec: anchor < 0 ? snapAnchor(anchor, grid.bpm) : anchor }
+}
+
 // Folds an anchor by whole beats into [0, 60/bpm) — the same grid, expressed as
 // its first non-negative beat. Used when a nudge crosses zero and when a trim
 // offset at export time pushes the anchor negative.

@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import { inflateSync } from 'node:zlib'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -12,6 +13,13 @@ import { isEngineDjRunning } from './engineProcess'
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
 // what happens to be running on the machine (Engine DJ itself, for instance).
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
+// The beatData blob needs the output's sample rate and length; the test files are
+// text stubs no real ffprobe could read, so the probes are pinned to a 30 s
+// 44.1 kHz file (1_323_000 samples).
+vi.mock('./ffmpeg', () => ({
+  probeProperties: vi.fn(async () => ({ sampleRateHz: 44100 })),
+  probeDuration: vi.fn(async () => 30),
+}))
 
 const meta = (over: Partial<TrackMetadata> = {}): TrackMetadata => ({
   title: 'One',
@@ -176,6 +184,44 @@ describe('addToEngineLibrary', () => {
       bpmAnalyzed: 127.25,
       isAnalyzed: 1,
     })
+    db.close()
+  })
+
+  // The staged beatgrid lands as Engine's compressed beatData blob, locked so
+  // Engine's own first-load analysis fills the waveforms without replacing the
+  // grid the user lined up.
+  it('writes the staged beatgrid as a locked beatData blob', async () => {
+    const lib = join(root, 'grid', 'Engine Library')
+    const file = await makeFile(root, 'grid.aiff')
+
+    await addToEngineLibrary(lib, file, meta(), 'Surco', undefined, { bpm: 120, anchorSec: 0.25 })
+
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    const tracks = rows(db, 'SELECT * FROM Track')
+    expect(tracks).toHaveLength(1)
+    expect(tracks[0].isBeatGridLocked).toBe(1)
+    const blob = tracks[0].beatData as Uint8Array
+    const raw = inflateSync(Buffer.from(blob).subarray(4))
+    expect(raw.readDoubleBE(0)).toBe(44100)
+    expect(raw.readDoubleBE(8)).toBe(30 * 44100)
+    expect(raw.readUInt8(16)).toBe(1)
+    db.close()
+  })
+
+  // A re-convert with no staged grid must leave the row's beatData alone —
+  // nulling it would wipe a grid Engine analyzed itself.
+  it('keeps the existing beatData when a re-convert carries no grid', async () => {
+    const lib = join(root, 'gridkeep', 'Engine Library')
+    const file = await makeFile(root, 'gridkeep.aiff')
+    await addToEngineLibrary(lib, file, meta(), 'Surco', undefined, { bpm: 120, anchorSec: 0.25 })
+
+    await addToEngineLibrary(lib, file, meta({ title: 'Retagged' }), 'Surco')
+
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    const tracks = rows(db, 'SELECT * FROM Track')
+    expect(tracks[0].title).toBe('Retagged')
+    expect(tracks[0].beatData).toBeTruthy()
+    expect(tracks[0].isBeatGridLocked).toBe(1)
     db.close()
   })
 

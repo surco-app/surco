@@ -4,7 +4,7 @@ import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } fr
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
-import { snapAnchor } from '../shared/beatgrid'
+import { outputBeatgrid } from '../shared/beatgrid'
 import { formatRatingTag } from '../shared/rating'
 import type {
   Beatgrid,
@@ -859,21 +859,6 @@ function cueShiftFor(
   }
 }
 
-// Where the staged grid lands in the output's timeline: a trim that actually ran
-// cut the head, so the anchor shifts back by it, folded onto the same grid's
-// first surviving beat when the cut passes it — the tag-side twin of the cue
-// re-anchoring above and of exportAnchorSec in the renderer.
-function outputBeatgrid(
-  grid: Beatgrid | undefined,
-  trim: TrimRange | undefined,
-  trimApplied: boolean,
-): Beatgrid | undefined {
-  if (!grid) return undefined
-  const cut = trimApplied ? (trim?.startSec ?? 0) : 0
-  if (cut === 0) return grid
-  const anchor = grid.anchorSec - cut
-  return { bpm: grid.bpm, anchorSec: anchor < 0 ? snapAnchor(anchor, grid.bpm) : anchor }
-}
 
 // The temp file a conversion renders into before the rename over the final output.
 // Unique per call: bulk runs convert several tracks in parallel, and two tracks whose
@@ -982,8 +967,8 @@ export async function convertAudio(
     [trimAf, declickAf, normalizeAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
-  // trimAf decides whether the trim actually ran (a stream copy never trims).
-  const outGrid = outputBeatgrid(beatgrid, trim, trimAf !== undefined)
+  // A staged trim always re-encodes, so the output-time grid only depends on it.
+  const outGrid = outputBeatgrid(beatgrid, trim)
   const tmp = convertTmpPath(output, ext)
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined

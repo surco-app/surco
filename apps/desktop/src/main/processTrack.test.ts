@@ -632,6 +632,23 @@ describe('runProcessTrack — per-job destination', () => {
   // Settings. Like the overwrite pin, each destination facet rides the job and falls
   // back to the live setting only when absent — otherwise a one-shot "this track to
   // Engine DJ" would still convert to wherever Settings points.
+  // Engine stores the grid against the CONVERTED file, whose head the trim cut:
+  // the anchor must arrive already offset or every beat lands late by the cut.
+  it('offsets the beatgrid by the trim before handing it to Engine DJ', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+    })
+    await runProcessTrack(
+      job({ beatgrid: { bpm: 120, anchorSec: 2 }, trim: { startSec: 1.5 } }),
+      deps,
+    )
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(expect.any(String), expect.anything(), undefined, {
+      bpm: 120,
+      anchorSec: 0.5,
+    })
+  })
+
   it('honors a job that opts out of the configured Engine DJ registration', async () => {
     const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
     await runProcessTrack(job({ addToEngineDj: false }), deps)
@@ -644,7 +661,7 @@ describe('runProcessTrack — per-job destination', () => {
       prepareProcessedCover: vi.fn(async () => undefined),
     })
     await runProcessTrack(job({ addToEngineDj: true }), deps)
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined, undefined)
   })
 
   it('adds to Apple Music when only the job asks for it', async () => {
@@ -732,7 +749,7 @@ describe('runProcessTrack — Engine DJ', () => {
     })
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined, undefined)
     expect(deps.sendProgress).toHaveBeenCalledWith('engineDj')
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -743,7 +760,7 @@ describe('runProcessTrack — Engine DJ', () => {
     const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
     await runProcessTrack(job({ coverPath: '/art/cover.jpg' }), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, '/tmp/cover.jpg')
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, '/tmp/cover.jpg', undefined)
     // The job's own cover preparation is the only one — no second extraction pass.
     expect(deps.prepareProcessedCover).toHaveBeenCalledTimes(1)
   })
@@ -767,8 +784,7 @@ describe('runProcessTrack — Engine DJ', () => {
     expect(deps.addToEngineDj).toHaveBeenCalledWith(
       '/out/Artist - Title.aiff',
       {},
-      '/tmp/extracted.jpg',
-    )
+      '/tmp/extracted.jpg', undefined)
     expect(cleanup).toHaveBeenCalled()
   })
 
@@ -781,7 +797,7 @@ describe('runProcessTrack — Engine DJ', () => {
       }),
     })
     await runProcessTrack(job(), deps)
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined, undefined)
   })
 
   it('leaves the Engine library alone when the setting is off', async () => {
