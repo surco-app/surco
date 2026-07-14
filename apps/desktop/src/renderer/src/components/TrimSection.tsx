@@ -396,12 +396,45 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   const cutStart = startSec > 0
   const cutEnd = durationSec > 0 && endSec < durationSec
 
-  // Each lane frames the cut it owns: the confirmed one if there is one, else the
-  // suggestion, else the track's own edge. The window is anchored to that spot and
-  // NOT to the live draft — a lane that re-framed under the finger would drag the
-  // wave out from under the handle mid-gesture.
-  const startFocus = value?.startSec ?? suggestion?.startSec ?? 0
-  const endFocus = value?.endSec ?? suggestion?.endSec ?? durationSec
+  // The lane's window is FRAMED, not tracked. It is placed once — around the cut the
+  // section opens on (confirmed, else suggested, else the track's edge) — and then
+  // holds still while the handle moves inside it. Deriving it from the cut re-framed
+  // the lane on every commit, and re-framing means re-decoding: the wave jumped and
+  // stalled the moment you let go of the handle. The frame is re-taken only when the
+  // user asks for a different view (the zoom) or moves to another track.
+  const focus = useRef<{ start: number; end: number } | null>(null)
+  const suggestedStart = suggestion?.startSec
+  const suggestedEnd = suggestion?.endSec
+  if (focus.current === null && durationSec > 0) {
+    focus.current = {
+      start: value?.startSec ?? suggestedStart ?? 0,
+      end: value?.endSec ?? suggestedEnd ?? durationSec,
+    }
+  }
+  // The detection lands after the first render, so the initial frame (which had no
+  // suggestion to aim at) is retaken once — before the user has touched anything.
+  const framedOnDetection = useRef(false)
+  useEffect(() => {
+    if (framedOnDetection.current || durationSec <= 0) return
+    if (suggestedStart === undefined && suggestedEnd === undefined) return
+    framedOnDetection.current = true
+    if (value) return
+    focus.current = {
+      start: suggestedStart ?? 0,
+      end: suggestedEnd ?? durationSec,
+    }
+  }, [suggestedStart, suggestedEnd, durationSec, value])
+  // Re-frame on a zoom: a tighter window around a cut the user has since moved must
+  // land on where the cut IS, not where it was when the section opened.
+  function reframe(which: Side): void {
+    if (!focus.current) return
+    focus.current = {
+      ...focus.current,
+      [which]: which === 'start' ? startSec : endSec,
+    }
+  }
+  const startFocus = focus.current?.start ?? 0
+  const endFocus = focus.current?.end ?? durationSec
   const startLane = useMemo(() => {
     const from = Math.max(0, startFocus - startContextSec)
     return { from, to: Math.min(durationSec, from + startContextSec * 2) }
@@ -599,7 +632,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       onKeyStep: (delta: number) => nudge(which, delta),
       onApplySuggestion: (sec: number) =>
         commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
-      onContextChange: (index: number) => setContext(which, index),
+      onContextChange: (index: number) => {
+        reframe(which)
+        setContext(which, index)
+      },
       contextIndex: contextIndex[which],
       contextSec: which === 'start' ? startContextSec : endContextSec,
       contextCount: CONTEXT_SEC.length,

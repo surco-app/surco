@@ -620,6 +620,28 @@ describe('GridSection segments', () => {
     }
   })
 
+  // The nudges are the most-used control by far, and the eye is already at the red
+  // line when it reaches for them — so they live under it, not in the strip of 17
+  // identical glyphs the top row had become.
+  it('puts the nudges under the reference line, not in the top toolbar', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const bar = screen.getByTestId('grid-nudge-bar')
+    for (const id of [
+      'grid-beat-back',
+      'grid-nudge-earlier',
+      'grid-nudge-later',
+      'grid-beat-forward',
+    ]) {
+      expect(bar).toContainElement(screen.getByTestId(id))
+    }
+    // And they still act on the grid from there.
+    fireEvent.click(screen.getByTestId('grid-nudge-later'))
+    expect(onChange.mock.calls[0][0].anchorSec).toBeCloseTo(0.26, 3)
+  })
+
   // rekordbox's C (and its button): bring the nearest beat under the reference,
   // so the controls act on a beat instead of an arbitrary instant.
   it('centres the nearest beat under the reference from the button', async () => {

@@ -68,6 +68,7 @@ function ToolbarButton({
   icon,
   disabled = false,
   repeat = false,
+  size = 'sm',
 }: {
   testid: string
   label: string
@@ -75,6 +76,7 @@ function ToolbarButton({
   icon: React.ReactNode
   disabled?: boolean
   repeat?: boolean
+  size?: 'sm' | 'lg'
 }): React.JSX.Element {
   const actRef = useRef(onAct)
   actRef.current = onAct
@@ -120,7 +122,9 @@ function ToolbarButton({
         }
         onAct()
       }}
-      className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+      className={`press flex items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${
+        size === 'lg' ? 'h-8 w-8' : 'h-5 w-5'
+      }`}
     >
       {icon}
       <Tooltip label={label} />
@@ -704,6 +708,7 @@ export function GridSection({
     icon: React.ReactNode,
     disabled = false,
     repeat = false,
+    size: 'sm' | 'lg' = 'sm',
   ): React.JSX.Element => (
     <ToolbarButton
       testid={testid}
@@ -712,8 +717,12 @@ export function GridSection({
       icon={icon}
       disabled={disabled}
       repeat={repeat}
+      size={size}
     />
   )
+  // The glyph inside a button: bigger in the full-window view, where the lane is
+  // twice as tall and the icons had no reason to stay 12 px.
+  const glyph = tall ? 'h-4 w-4' : 'h-3 w-3'
 
   // Hairline between the toolbar's groups, so tempo / shift / line actions /
   // listen / history read as clusters instead of one long strip of glyphs.
@@ -844,7 +853,7 @@ export function GridSection({
                         'grid-expand',
                         tr('grid.expand'),
                         () => stepBpm(-0.01),
-                        <UnfoldHorizontal className="h-3 w-3" aria-hidden="true" />,
+                        <UnfoldHorizontal className={glyph} aria-hidden="true" />,
                         false,
                         true,
                       )}
@@ -852,42 +861,7 @@ export function GridSection({
                         'grid-shrink',
                         tr('grid.shrink'),
                         () => stepBpm(0.01),
-                        <FoldHorizontal className="h-3 w-3" aria-hidden="true" />,
-                        false,
-                        true,
-                      )}
-                    </span>
-                    {divider}
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      {iconButton(
-                        'grid-beat-back',
-                        tr('grid.beatBack'),
-                        () => nudge(-60 / activeSeg.bpm),
-                        <ChevronsLeft className="h-3 w-3" aria-hidden="true" />,
-                        false,
-                        true,
-                      )}
-                      {iconButton(
-                        'grid-nudge-earlier',
-                        tr('grid.nudgeEarlier'),
-                        () => nudge(-NUDGE_SEC),
-                        <ChevronLeft className="h-3 w-3" aria-hidden="true" />,
-                        false,
-                        true,
-                      )}
-                      {iconButton(
-                        'grid-nudge-later',
-                        tr('grid.nudgeLater'),
-                        () => nudge(NUDGE_SEC),
-                        <ChevronRight className="h-3 w-3" aria-hidden="true" />,
-                        false,
-                        true,
-                      )}
-                      {iconButton(
-                        'grid-beat-forward',
-                        tr('grid.beatForward'),
-                        () => nudge(60 / activeSeg.bpm),
-                        <ChevronsRight className="h-3 w-3" aria-hidden="true" />,
+                        <FoldHorizontal className={glyph} aria-hidden="true" />,
                         false,
                         true,
                       )}
@@ -901,26 +875,26 @@ export function GridSection({
                         'grid-beat-here',
                         tr('grid.beatHere'),
                         beatHere,
-                        <Anchor className="h-3 w-3" aria-hidden="true" />,
+                        <Anchor className={glyph} aria-hidden="true" />,
                       )}
                       {iconButton(
                         'grid-centre-beat',
                         tr('grid.centreBeat'),
                         centreNearestBeat,
-                        <Crosshair className="h-3 w-3" aria-hidden="true" />,
+                        <Crosshair className={glyph} aria-hidden="true" />,
                       )}
                       {iconButton(
                         'grid-from-here',
                         tr('grid.fromHere'),
                         addChangeFromHere,
-                        <SplitSquareHorizontal className="h-3 w-3" aria-hidden="true" />,
+                        <SplitSquareHorizontal className={glyph} aria-hidden="true" />,
                       )}
                       {iconButton(
                         'grid-reset',
                         tr('grid.resetHint'),
                         autoDetect,
                         <Wand2
-                          className={`h-3 w-3 ${reprobing ? 'animate-pulse' : ''}`}
+                          className={`${glyph} ${reprobing ? 'animate-pulse' : ''}`}
                           aria-hidden="true"
                         />,
                         reprobing,
@@ -934,7 +908,7 @@ export function GridSection({
                       auditing ? (
                         <Square className="h-3 w-3 fill-current" aria-hidden="true" />
                       ) : (
-                        <Volume2 className="h-3 w-3" aria-hidden="true" />
+                        <Volume2 className={glyph} aria-hidden="true" />
                       ),
                     )}
                     {divider}
@@ -943,14 +917,14 @@ export function GridSection({
                         'grid-undo',
                         tr('grid.undo'),
                         undo,
-                        <Undo2 className="h-3 w-3" aria-hidden="true" />,
+                        <Undo2 className={glyph} aria-hidden="true" />,
                         history.undo === 0,
                       )}
                       {iconButton(
                         'grid-redo',
                         tr('grid.redo'),
                         redo,
-                        <Redo2 className="h-3 w-3" aria-hidden="true" />,
+                        <Redo2 className={glyph} aria-hidden="true" />,
                         history.redo === 0,
                       )}
                     </span>
@@ -971,7 +945,7 @@ export function GridSection({
                       'waveform-zoom-out',
                       tr('editor.waveformZoomOut'),
                       () => setZoom((z) => Math.max(1, z / 2)),
-                      <ZoomOut className="h-3 w-3" aria-hidden="true" />,
+                      <ZoomOut className={glyph} aria-hidden="true" />,
                       zoom <= 1,
                     )}
                     <button
@@ -988,7 +962,7 @@ export function GridSection({
                       'waveform-zoom-in',
                       tr('editor.waveformZoomIn'),
                       () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
-                      <ZoomIn className="h-3 w-3" aria-hidden="true" />,
+                      <ZoomIn className={glyph} aria-hidden="true" />,
                       zoom >= ZOOM_MAX,
                     )}
                   </span>
@@ -1183,6 +1157,49 @@ export function GridSection({
                 </>
               )}
               </div>
+              {wave && durationSec > 0 && shown && activeSeg && (
+                <div
+                  data-testid="grid-nudge-bar"
+                  className={`flex items-center justify-center ${tall ? 'mt-2 gap-1.5' : 'mt-1 gap-0.5'}`}
+                >
+                  {iconButton(
+                    'grid-beat-back',
+                    tr('grid.beatBack'),
+                    () => nudge(-60 / activeSeg.bpm),
+                    <ChevronsLeft className={glyph} aria-hidden="true" />,
+                    false,
+                    true,
+                    tall ? 'lg' : 'sm',
+                  )}
+                  {iconButton(
+                    'grid-nudge-earlier',
+                    tr('grid.nudgeEarlier'),
+                    () => nudge(-NUDGE_SEC),
+                    <ChevronLeft className={glyph} aria-hidden="true" />,
+                    false,
+                    true,
+                    tall ? 'lg' : 'sm',
+                  )}
+                  {iconButton(
+                    'grid-nudge-later',
+                    tr('grid.nudgeLater'),
+                    () => nudge(NUDGE_SEC),
+                    <ChevronRight className={glyph} aria-hidden="true" />,
+                    false,
+                    true,
+                    tall ? 'lg' : 'sm',
+                  )}
+                  {iconButton(
+                    'grid-beat-forward',
+                    tr('grid.beatForward'),
+                    () => nudge(60 / activeSeg.bpm),
+                    <ChevronsRight className={glyph} aria-hidden="true" />,
+                    false,
+                    true,
+                    tall ? 'lg' : 'sm',
+                  )}
+                </div>
+              )}
               {wave && durationSec > 0 && (
                 <div
                   ref={overviewRef}

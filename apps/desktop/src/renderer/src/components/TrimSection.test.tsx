@@ -160,6 +160,24 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-zoom-in-start')).toBeDisabled()
   })
 
+  // The lane is a FRAME, not a follower: committing a cut must not re-window the
+  // lane, because re-windowing re-decodes — the wave jumped and stalled the moment
+  // the handle was released. The cut moves inside the window; the window holds.
+  it('holds the lane window still when the cut moves', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    expect(
+      await screen.findByTestId('trim-lane-range-start', undefined, { timeout: 3000 }),
+    ).toHaveTextContent('4.7–14.7 s')
+    // The app feeds a moved cut back in as `value` — the window must not follow it.
+    rerender(section({ value: { startSec: 6.2, endSec: 90.3 }, onChange }))
+    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('4.7–14.7 s')
+    expect(screen.getByTestId('trim-cut-time-start')).toHaveTextContent('6.200 s')
+    // Zooming IS a request for a new view, so it re-frames on where the cut now is.
+    fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('4.2–8.2 s')
+  })
+
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,
   // and the reset that clears the whole range in one click.
   it('shades the staged cuts and clears them from the reset button', async () => {
