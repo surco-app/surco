@@ -872,7 +872,7 @@ export function GridSection({
                     <span className="flex shrink-0 items-center gap-1">
                       {iconButton(
                         'grid-beat-here',
-                        tr('grid.beatHere'),
+                        tr('grid.beatHereHint'),
                         beatHere,
                         <Anchor className={glyph} aria-hidden="true" />,
                       )}
@@ -884,7 +884,7 @@ export function GridSection({
                       )}
                       {iconButton(
                         'grid-from-here',
-                        tr('grid.fromHere'),
+                        tr('grid.fromHereHint'),
                         addChangeFromHere,
                         <SplitSquareHorizontal className={glyph} aria-hidden="true" />,
                       )}

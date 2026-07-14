@@ -1,4 +1,13 @@
-import { ChevronLeft, ChevronRight, Scissors, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Scissors,
+  Square,
+  TriangleAlert,
+  Volume2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +19,7 @@ import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { drawWaveform } from '../lib/waveform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
+import { Tooltip } from './Tooltip'
 import { WaveformSkeleton } from './WaveformSkeleton'
 import { AFTER_COLOR } from './WaveformCompare'
 
@@ -151,15 +161,16 @@ function Lane({
         {/* The cut's own time, to the millisecond, with a step either side of it:
             reading the position off the wave is guesswork below a tenth, and the
             arrow keys that used to be the only fine control were invisible. */}
-        <span className="flex min-w-0 items-center gap-0.5">
+        <span className="flex min-w-0 items-center gap-1">
           <button
             type="button"
             data-testid={`trim-nudge-back-${side}`}
             aria-label={tr('trim.nudgeBack')}
             onClick={() => onKeyStep(-fineStepSec)}
-            className="press flex h-4 w-4 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
             <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('trim.nudgeBack')} />
           </button>
           <span
             data-testid={`trim-cut-time-${side}`}
@@ -172,15 +183,16 @@ function Lane({
             data-testid={`trim-nudge-forward-${side}`}
             aria-label={tr('trim.nudgeForward')}
             onClick={() => onKeyStep(fineStepSec)}
-            className="press flex h-4 w-4 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
             <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('trim.nudgeForward')} />
           </button>
         </span>
         {/* Each lane zooms on its own: the head can be dense music while the tail
             is flat silence, and one shared control forced a compromise that fit
             neither. */}
-        <span className="flex shrink-0 items-center gap-0.5">
+        <span className="flex shrink-0 items-center gap-1">
           <span
             data-testid={`trim-lane-range-${side}`}
             className="text-[10px] tabular-nums text-fg-dim"
@@ -193,9 +205,10 @@ function Lane({
             aria-label={tr('trim.contextNarrow')}
             disabled={contextIndex <= 0}
             onClick={() => onContextChange(contextIndex - 1)}
-            className="press flex h-4 w-4 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             <ZoomIn className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('trim.contextNarrow')} />
           </button>
           <span
             data-testid={`trim-context-${side}`}
@@ -209,9 +222,10 @@ function Lane({
             aria-label={tr('trim.contextWiden')}
             disabled={contextIndex >= contextCount - 1}
             onClick={() => onContextChange(contextIndex + 1)}
-            className="press flex h-4 w-4 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             <ZoomOut className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('trim.contextWiden')} />
           </button>
         </span>
       </div>
@@ -722,9 +736,17 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                   <Lane {...laneProps('end')} />
                 </div>
               )}
+              {/* The warning matters (a WAV or FLAC loses its cues on the re-encode),
+                  but it was two lines of yellow prose under every trim. A short line
+                  states the consequence; the full sentence rides its tooltip. */}
               {value && (
-                <p data-testid="trim-cue-warning" className="mt-3 text-xs text-warn">
-                  {tr('trim.cueWarning')}
+                <p
+                  data-testid="trim-cue-warning"
+                  className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
+                >
+                  <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  {tr('trim.cueWarningShort')}
+                  <Tooltip label={tr('trim.cueWarning')} />
                 </p>
               )}
             </>
