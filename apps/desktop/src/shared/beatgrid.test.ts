@@ -35,8 +35,16 @@ describe('normalizeBeatgrid', () => {
     expect(normalizeBeatgrid({ bpm: 999, anchorSec: 0 })).toEqual({ bpm: 999, anchorSec: 0 })
   })
 
-  it('rejects a negative anchor', () => {
-    expect(normalizeBeatgrid({ bpm: 128, anchorSec: -0.1 })).toBeUndefined()
+  // A lattice may legitimately start before the file does: nudge a grid that was
+  // anchored a few milliseconds in and the anchor crosses zero. Folding it by a
+  // beat to keep it positive states the same grid but jumps every line a beat to
+  // the right on screen, so the editor keeps it negative and only the exports
+  // fold. Storing it therefore has to survive a session round-trip.
+  it('keeps a negative anchor, the lattice starting before the file', () => {
+    expect(normalizeBeatgrid({ bpm: 128, anchorSec: -0.1 })).toEqual({
+      bpm: 128,
+      anchorSec: -0.1,
+    })
   })
 
   // Multi-segment grids ride the same stored value, so the changes list gets
@@ -115,6 +123,18 @@ describe('outputBeatgrid', () => {
   it('keeps a grid with no trim untouched', () => {
     const grid = { bpm: 128, anchorSec: 0.25, changes: [{ anchorSec: 60, bpm: 130 }] }
     expect(outputBeatgrid(grid, undefined)).toBe(grid)
+  })
+
+  // The editor hands over lattices anchored before the file starts (nudging the
+  // anchor past zero). Serato, Engine and rekordbox all state the grid by its
+  // first beat and none can write a negative one, so the fold the editor skips
+  // has to happen here — including with nothing trimmed, which was the untouched
+  // passthrough above.
+  it('folds an anchor that starts before the file onto its first beat', () => {
+    expect(outputBeatgrid({ bpm: 120, anchorSec: -0.1 }, undefined)).toEqual({
+      bpm: 120,
+      anchorSec: 0.4,
+    })
   })
 
   it('shifts every anchor by the trimmed head', () => {

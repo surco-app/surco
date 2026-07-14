@@ -176,6 +176,19 @@ describe('GridSection grid', () => {
     expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: 0.26 })
   })
 
+  // Nudging past zero has to keep walking the grid LEFT. The anchor is a phase,
+  // so folding a negative one by a whole beat describes the same lattice — but
+  // on screen every line jumps a beat to the RIGHT, which reads as the grid
+  // snapping back to where it started. Whoever is nudging is watching one line
+  // against one transient: it must keep creeping the way they pressed.
+  it('keeps walking the grid earlier when a nudge crosses zero', async () => {
+    const onChange = vi.fn()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.005 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-nudge-earlier'))
+    expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: -0.005 })
+  })
+
   // Shifting by a whole beat re-phases the downbeat count without moving any
   // line — how a grid whose bar-1 landed on the wrong beat gets fixed.
   it('shifts the anchor by one beat from the beat buttons', async () => {

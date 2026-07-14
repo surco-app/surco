@@ -33,8 +33,13 @@ function normalizeChanges(value: unknown, baseAnchorSec: number): GridChange[] {
 }
 
 // Repairs any stored value into a usable grid: both fields must be finite
-// numbers, bpm inside the displayable range, anchor non-negative. Anything
-// unusable degrades to undefined — "no grid" — never to an error.
+// numbers, bpm inside the displayable range. Anything unusable degrades to
+// undefined — "no grid" — never to an error.
+//
+// The base anchor may be NEGATIVE: it is a phase, and a lattice whose first
+// beat falls before the file starts is the ordinary result of nudging a grid
+// that was anchored a few milliseconds in. Only the exports need a non-negative
+// first beat, and outputBeatgrid folds it there.
 export function normalizeBeatgrid(value: unknown): Beatgrid | undefined {
   if (typeof value !== 'object' || value === null) return undefined
   const { bpm, anchorSec, changes } = value as {
@@ -43,8 +48,7 @@ export function normalizeBeatgrid(value: unknown): Beatgrid | undefined {
     changes?: unknown
   }
   if (!validBpm(bpm)) return undefined
-  if (typeof anchorSec !== 'number' || !Number.isFinite(anchorSec) || anchorSec < 0)
-    return undefined
+  if (typeof anchorSec !== 'number' || !Number.isFinite(anchorSec)) return undefined
   const kept = normalizeChanges(changes, anchorSec)
   return kept.length > 0 ? { bpm, anchorSec, changes: kept } : { bpm, anchorSec }
 }
@@ -68,7 +72,15 @@ export function outputBeatgrid(
   trim: { startSec?: number } | undefined,
 ): Beatgrid | undefined {
   const cut = trim?.startSec ?? 0
-  if (!grid || cut === 0) return grid
+  if (!grid) return grid
+  // Even untrimmed, the editor may hand over a lattice that starts before the
+  // file (nudging the anchor past zero). Every format states the grid by its
+  // first beat and none can write a negative one, so the fold the editor skips
+  // happens here — the same grid, legally stated.
+  if (cut === 0)
+    return grid.anchorSec < 0
+      ? { ...grid, anchorSec: snapAnchor(grid.anchorSec, grid.bpm) }
+      : grid
   const segments = gridSegments(grid)
   let governing = segments[0]
   for (const segment of segments) {
@@ -87,8 +99,10 @@ export function outputBeatgrid(
 }
 
 // Folds an anchor by whole beats into [0, 60/bpm) — the same grid, expressed as
-// its first non-negative beat. Used when a nudge crosses zero and when a trim
-// offset at export time pushes the anchor negative.
+// its first non-negative beat. For the exports, which have no way to state a
+// first beat falling before the file starts, and for a trim offset that pushes
+// the anchor negative. The editor deliberately does NOT fold: on screen the
+// anchor is a line the user is watching, and folding it jumps that line a beat.
 export function snapAnchor(anchorSec: number, bpm: number): number {
   const period = 60 / bpm
   const folded = anchorSec % period

@@ -429,10 +429,14 @@ export function GridSection({
 
   // Millisecond precision is all the exports write; committing float noise from
   // a drag would flip staleness on bits the user can't see.
+  //
+  // A negative anchor is kept as it is: the lattice simply starts before the
+  // file does. Folding it by a beat here (as the exports do, where the formats
+  // demand a non-negative first beat) describes the SAME grid but jumps every
+  // line a beat to the RIGHT on screen — so nudging past zero snapped the grid
+  // back to where it started instead of creeping it left.
   function commit(next: Beatgrid): void {
-    const anchorSec = Number(
-      (next.anchorSec < 0 ? snapAnchor(next.anchorSec, next.bpm) : next.anchorSec).toFixed(3),
-    )
+    const anchorSec = Number(next.anchorSec.toFixed(3))
     const changes = next.changes?.map((c) => ({
       anchorSec: Number(c.anchorSec.toFixed(3)),
       bpm: c.bpm,
