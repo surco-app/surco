@@ -1,16 +1,39 @@
-import { useQueries } from '@tanstack/react-query'
-import { type RefObject, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { type RefObject, useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
 import type { BeatgridResult, SpectrumResult, WaveformResult } from '../../../shared/types'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import { duplicateIds } from '../lib/duplicates'
 import type { LibrarySource } from '../lib/librarySource'
-import { analysisOptions } from '../lib/analysisQueries'
 import { beatgridNeedsReview } from '../lib/beatgrid'
 import { detectTrim } from '../lib/trim'
 import type { TrackItem } from '../types'
+import { beatgridOptions } from './useBeatgrid'
 import { useLibraryMembership } from './useLibraryMembership'
 import { spectrogramOptions } from './useSpectrogram'
 import { waveformOptions } from './useWaveform'
+
+// The three probe families the list reads, one entry per track, positionally aligned with
+// `tracks`. Spectrum carries `fetching` too: a row with an analysis in flight shows a
+// placeholder where its verdict dot will land, which the other two have no equivalent of.
+interface CacheSnapshot {
+  spectra: { data: SpectrumResult | undefined; fetching: boolean }[]
+  waves: (WaveformResult | null | undefined)[]
+  grids: (BeatgridResult | null | undefined)[]
+}
+
+// Cheap positional compare so an unchanged cache hands back the same snapshot object.
+// Query results are replaced wholesale (never mutated), so reference equality is the
+// right test for "this probe's result changed".
+function sameSnapshot(a: CacheSnapshot, b: CacheSnapshot): boolean {
+  return (
+    a.spectra.length === b.spectra.length &&
+    a.waves.length === b.waves.length &&
+    a.grids.length === b.grids.length &&
+    a.spectra.every((s, i) => s.data === b.spectra[i].data && s.fetching === b.spectra[i].fetching) &&
+    a.waves.every((w, i) => w === b.waves[i]) &&
+    a.grids.every((g, i) => g === b.grids[i])
+  )
+}
 
 // One cache entry per track: the inputs the merged view was built from (track object,
 // cached spectrum/wave, library snapshot) plus the view itself, so an unchanged track
@@ -34,39 +57,57 @@ export function useTracksView(
   viewCache: RefObject<Map<string, ViewCacheEntry>>,
   librarySource: LibrarySource,
 ): { tracksView: TrackItem[]; libraryIndex: AppleMusicIndex | null } {
-  // Each track's spectrum, read from the shared React Query cache the hover prefetch,
-  // the analyze sweep and the editor all fill. enabled:false so the list only observes —
-  // it never triggers an analysis itself. combine matters: its output is cached by the
-  // observer until an underlying result changes, so this hook keeps a stable identity
-  // across unrelated renders — without it, useQueries returns a fresh array per render,
-  // which broke the tracksView memo below and re-ran the whole triage pipeline on every
-  // keystroke and progress tick.
-  const spectra = useQueries({
-    queries: tracks.map((t) => ({
-      ...spectrogramOptions(t.inputPath),
-      enabled: false,
-    })),
-    combine: (results) => results.map((r) => ({ data: r.data, fetching: r.isFetching })),
-  })
-  // Each track's decoded wave, observed the same passive way: whatever the player,
-  // the editor strips or the analyze sweep decoded feeds the attention filters'
-  // silence/clipping facts — the list itself never spends a decode.
-  const waves = useQueries({
-    queries: tracks.map((t) => ({
-      ...waveformOptions(t.inputPath),
-      enabled: false,
-    })),
-    combine: (results) => results.map((r) => r.data),
-  })
-  // The beatgrid detections, observed just as passively: whatever the Grid
-  // section probed feeds the "grid to review" fact; the list never probes.
-  const grids = useQueries({
-    queries: tracks.map((t) => ({
-      ...analysisOptions('beatgrid', t.inputPath, () => window.api.beatgrid(t.inputPath)),
-      enabled: false,
-    })),
-    combine: (results) => results.map((r) => r.data as BeatgridResult | null | undefined),
-  })
+  // The probe results the list displays, READ from the shared query cache the hover
+  // prefetch, the analyze sweep and the editor all fill — never fetched here; the list
+  // shows what others decoded and spends no analysis of its own.
+  //
+  // Read through a single cache subscription rather than a per-track useQueries. Two
+  // reasons, and the second is the load-bearing one:
+  //   · One observer instead of 3N. The old form also rebuilt 3N options objects on every
+  //     App render (every keystroke, every progress tick) just to observe.
+  //   · React Query only starts a query's gcTime countdown once its LAST observer goes
+  //     away. An observer per track per family therefore pinned every analysed track's
+  //     payload for the whole session — and the two heavy families are ~0.5 MB a track
+  //     (8192 peaks + flags; a 1000x320 PNG as a base64 string). Rendering the list was
+  //     what kept the memory alive, so no gcTime could ever collect it. Reading without
+  //     observing is what lets HEAVY_PROBE_GC_MS actually fire.
+  const client = useQueryClient()
+  const subscribe = useCallback(
+    (onChange: () => void) => client.getQueryCache().subscribe(onChange),
+    [client],
+  )
+  // useSyncExternalStore calls this on every render and demands the SAME reference back
+  // when nothing changed, or it re-renders forever. So the snapshot is cached and only
+  // re-minted when a value it holds actually differs — which is also exactly what keeps
+  // the tracksView memo below from re-running the whole triage pipeline on every tick.
+  const snapRef = useRef<CacheSnapshot | null>(null)
+  const getSnapshot = useCallback((): CacheSnapshot => {
+    const next: CacheSnapshot = {
+      spectra: tracks.map((t) => {
+        const q = client.getQueryCache().find({ queryKey: spectrogramOptions(t.inputPath).queryKey })
+        return { data: q?.state.data as SpectrumResult | undefined, fetching: q?.state.fetchStatus === 'fetching' }
+      }),
+      waves: tracks.map(
+        (t) =>
+          client.getQueryData(waveformOptions(t.inputPath).queryKey) as
+            | WaveformResult
+            | null
+            | undefined,
+      ),
+      grids: tracks.map(
+        (t) =>
+          client.getQueryData(beatgridOptions(t.inputPath).queryKey) as
+            | BeatgridResult
+            | null
+            | undefined,
+      ),
+    }
+    const prev = snapRef.current
+    if (prev && sameSnapshot(prev, next)) return prev
+    snapRef.current = next
+    return next
+  }, [client, tracks])
+  const { spectra, waves, grids } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
   // The session snapshot of the destination's library (Apple Music or Engine DJ),
   // fetched once there are tracks to check, so each row's "already owned" verdict is a
   // local lookup rather than a process per track. Null until it lands or with no source.

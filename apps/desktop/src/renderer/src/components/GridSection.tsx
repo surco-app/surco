@@ -24,7 +24,7 @@ import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/bea
 import { claimKeys } from '../lib/spaceClaim'
 import { mediaUrl } from '../../../shared/media'
 import type { Beatgrid } from '../../../shared/types'
-import { useBeatgrid } from '../hooks/useBeatgrid'
+import { beatgridOptions, useBeatgrid } from '../hooks/useBeatgrid'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
@@ -600,7 +600,7 @@ export function GridSection({
     setReprobing(true)
     try {
       const fresh = await window.api.beatgrid(inputPath, true)
-      queryClient.setQueryData(['beatgrid', inputPath], fresh)
+      queryClient.setQueryData(beatgridOptions(inputPath).queryKey, fresh)
     } finally {
       setReprobing(false)
     }
