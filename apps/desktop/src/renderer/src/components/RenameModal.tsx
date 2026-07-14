@@ -117,7 +117,7 @@ export function RenameModal({
           type="submit"
           data-testid="rename-apply"
           disabled={!preview}
-          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
         >
           {tr('rename.apply')}
         </button>

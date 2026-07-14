@@ -105,7 +105,7 @@ export const Field = memo(function Field({
                 onClick={() => onChange(multiSuggestions ? toggleCsv(value, s) : on ? '' : s)}
                 className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
                   on
-                    ? 'border-transparent bg-[var(--color-accent)] text-white'
+                    ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
                 }`}
               >

@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
             type="button"
             data-testid="error-retry"
             onClick={() => this.setState({ error: null, info: '' })}
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-white hover:brightness-110"
+            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-[var(--color-on-accent)] hover:brightness-110"
           >
             {i18n.t('errorBoundary.retry')}
           </button>

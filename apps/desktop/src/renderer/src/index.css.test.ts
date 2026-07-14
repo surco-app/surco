@@ -43,3 +43,23 @@ describe('theme text contrast (WCAG 1.4.3 AA)', () => {
     }
   }
 })
+
+// The label on a FILLED surface — the primary CTA, the destructive confirm, the "applied"
+// row. These read white in both themes until now, which quietly failed in dark: that
+// palette's accent is a light blue (#7aa2f7) and its danger a light rose, so white on them
+// measured ~2.5:1 — below even the relaxed 3:1 bar, on the most important button in the
+// app. It passed unnoticed because the light palette's fills are dark, where white is
+// correct. One theme-flipping token now carries the label, and the check runs over every
+// filled surface it can land on, in both themes, so a future palette tweak can't reopen it.
+describe('filled-surface label contrast (WCAG 1.4.3 AA)', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    for (const fill of ['color-accent', 'color-accent-hover', 'color-danger', 'color-good']) {
+      it(`${theme} on-accent label reaches 4.5:1 on ${fill}`, () => {
+        expect(contrast(t['color-on-accent'], t[fill])).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+})

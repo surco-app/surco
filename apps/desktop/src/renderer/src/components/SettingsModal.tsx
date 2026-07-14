@@ -237,7 +237,7 @@ export function SettingsModal({
           type="submit"
           data-testid="settings-save"
           disabled={conflictIds.size > 0}
-          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
         >
           {tr('common.save')}
         </button>

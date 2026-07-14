@@ -318,7 +318,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
               <button
                 type="submit"
                 data-testid="onboarding-next"
-                className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+                className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
               >
                 {isLast ? tr('onboarding.finish') : tr('onboarding.next')}
               </button>

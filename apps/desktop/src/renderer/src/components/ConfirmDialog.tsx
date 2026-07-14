@@ -61,7 +61,7 @@ export function ConfirmDialog({
           type="submit"
           data-testid="confirm-ok"
           disabled={confirmDisabled}
-          className={`press rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+          className={`press rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-50 ${
             destructive
               ? 'bg-[var(--color-danger)] hover:brightness-110'
               : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'

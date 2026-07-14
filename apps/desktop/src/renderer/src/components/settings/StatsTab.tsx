@@ -149,7 +149,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
           href={DONATE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+          className="press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
           <Heart size={14} />
           {tr('settings.stats.donateCta')}

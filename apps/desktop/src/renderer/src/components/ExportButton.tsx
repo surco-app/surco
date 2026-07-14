@@ -143,8 +143,8 @@ export function ExportButton({
             : liveStage
               ? // The dimmed track + accent fill replace the usual disabled fade: the
                 // button reads as a progress bar, not as a greyed-out control.
-                'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-white disabled:pointer-events-none'
-              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+                'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
         }
       >
         {liveStage && (
@@ -170,8 +170,8 @@ export function ExportButton({
             : liveStage
               ? // Matches the body's progress-bar look, or the split button would read
                 // as half-faded while the fill keeps the body vivid.
-                'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)]/40 text-white disabled:pointer-events-none'
-              : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+                'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
+              : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-white/20 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
         }
       >
         <ChevronDown

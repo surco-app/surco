@@ -153,7 +153,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
         data-testid="match-apply"
         onClick={apply}
         disabled={matchedCount === 0}
-        className={`press mt-3 w-full rounded-lg py-2 text-sm font-medium text-white disabled:opacity-50 ${
+        className={`press mt-3 w-full rounded-lg py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-50 ${
           justApplied ? 'bg-good' : 'bg-[var(--color-accent)]'
         }`}
       >

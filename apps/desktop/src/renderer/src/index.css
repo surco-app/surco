@@ -21,6 +21,12 @@
   --color-good: #9ece6a;
   --color-warn: #e0af68;
   --color-danger: #f7768e;
+  /* Text sitting ON a filled accent/danger/good surface. It has to flip with the theme
+     because those fills do: the dark palette's accent is a LIGHT blue (#7aa2f7) and its
+     danger a light rose, so white text on them lands at 2.5:1 — under even the relaxed
+     3:1 bar, and it was the same white in both themes. Dark ink on the light fills, white
+     on the dark ones; every filled pair then clears AA (4.5:1) with room to spare. */
+  --color-on-accent: #16161e;
   --color-scrollbar: rgba(192, 202, 245, 0.13);
   --color-scrollbar-hover: rgba(192, 202, 245, 0.24);
 }
@@ -48,6 +54,7 @@
   --color-good: #33635c;
   --color-warn: #8f5e15;
   --color-danger: #8c4351;
+  --color-on-accent: #ffffff;
   --color-scrollbar: rgba(20, 22, 38, 0.18);
   --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
 }
