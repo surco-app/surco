@@ -13,8 +13,6 @@ import {
   Undo2,
   Volume2,
   Wand2,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react'
 import type React from 'react'
 import { useQueryClient } from '@tanstack/react-query'

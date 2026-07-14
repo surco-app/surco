@@ -1,14 +1,4 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  RotateCcw,
-  Scissors,
-  Square,
-  TriangleAlert,
-  Volume2,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react'
+import { RotateCcw, Scissors, Square, TriangleAlert, Volume2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -783,14 +773,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                   they were an "end" button sitting a panel away from the end. */}
               <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {shown ? (
-                  <>
-                    <span data-testid="trim-cuts" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
-                      <span className="font-medium uppercase tracking-wider">
-                        {tr('trim.cutsLabel')}
-                      </span>
-                      {` ${cuts.join(' · ')}`}
+                  <span data-testid="trim-cuts" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
+                    <span className="font-medium uppercase tracking-wider">
+                      {tr('trim.cutsLabel')}
                     </span>
-                  </>
+                    {` ${cuts.join(' · ')}`}
+                  </span>
                 ) : (
                   wave &&
                   !suggestion && (

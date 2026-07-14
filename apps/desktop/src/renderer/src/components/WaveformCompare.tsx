@@ -1,4 +1,4 @@
-import { Columns2, Layers2, Rows2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Columns2, Layers2, Rows2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
