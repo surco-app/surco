@@ -215,7 +215,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     try {
       // The Grid section's Auto: the user explicitly asked to redo the analysis,
       // so the cached verdict (possibly from an older detector) must not serve.
-      if (fresh) await dropAnalysis('beatgrid-v5', inputPath)
+      if (fresh) await dropAnalysis('beatgrid-v6', inputPath)
       // Same caching contract as audio:bpm: a null (beatless material) is a
       // real measurement and is cached; only a decode error retries. Its own
       // namespace rather than a bump of 'bpm': old cached BpmResults carry no
@@ -228,9 +228,13 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // would pin single-segment grids on tracks the scan now segments. v5: the
       // drift scan now tracks the beat and fits each stretch its own TEMPO
       // rather than only re-anchoring the phase; v4 entries would pin segments
-      // that all inherit one bpm and walk off the kicks within bars.
+      // that all inherit one bpm and walk off the kicks within bars. v6: the
+      // tracker was calibrated on a REAL rip — it no longer locks onto a triplet
+      // layer, and the fit no longer cuts a segment on a single jittery beat;
+      // v5 entries would pin the grids that produced (a steady 123 BPM house
+      // record came out with 22 segments, the last of them at double time).
       return await cachedAnalysis(
-        'beatgrid-v5',
+        'beatgrid-v6',
         inputPath,
         () =>
           probe('activity.probeBeatgrid', inputPath, () =>

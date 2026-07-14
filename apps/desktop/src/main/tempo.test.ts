@@ -422,3 +422,47 @@ describe('detectBeatgrid on a tempo that changes', () => {
     expect(worstDriftMs(grid as BeatgridResult, audible)).toBeLessThan(DRIFT_TOL_MS)
   })
 })
+
+// What a REAL record throws at a beat tracker that has only ever met clean
+// synthetic clicks. Found on a 123 BPM house rip whose grid came out with 22
+// segments, the last of them at 246 BPM — double time.
+//
+// NOTE on what is NOT tested here: the same rip also had the tracker lock onto a
+// TRIPLET layer (beats measured at ~365 ms instead of 488), which is what the
+// narrow SEARCH_FRAC in tempo.ts now prevents. That failure could not be
+// reproduced with synthesized clicks at any triplet level — quiet triplets never
+// tempt the tracker, and loud ones simply move the whole-file autocorrelation to
+// 184.5 BPM, which is a different failure. It took the density of a real mix.
+// Rather than leave a test that passes with the bug reintroduced (a test that
+// cannot fail is worse than none — it reads as cover it does not give), the
+// guard lives in the SEARCH_FRAC comment, with the numbers from the rip.
+describe('detectBeatgrid on material a real record throws at it', () => {
+  it('does not slice a steady record into segments over ordinary jitter', () => {
+    // A real record's beats are not on a metronome: a drummer, a sampler, the
+    // groove and the vinyl all move them. On the house rip that exposed this,
+    // beats sat a median 4.5 ms from their own best-fit line and up to 32 ms at
+    // worst — rock steady to any ear, yet enough to make a fit that cuts on any
+    // single stray beat produce a dozen segments, each re-stating the same
+    // tempo. Churn in every DJ export, and the thing a constant-tempo track must
+    // never grow.
+    const seconds = 180
+    const bpm = 123
+    const period = 60 / bpm
+    // Deterministic jitter (LCG), at the size the real rip actually showed —
+    // random SIDE, which is the shape of jitter, as opposed to drift, which
+    // always leans the same way. The side, not the size, is what tells them
+    // apart, and what the fit keys on.
+    let state = 7
+    const beats: number[] = []
+    for (let beat = 0; beat * period < seconds; beat++) {
+      state = (state * 48271) % 2147483647
+      beats.push(beat * period + (state / 2147483647 - 0.5) * 0.025)
+    }
+    const grid = detectBeatgrid(trainAt(beats, seconds), SR)
+    expect(grid).not.toBeNull()
+    expect(grid?.bpm ?? 0).toBeGreaterThan(122)
+    expect(grid?.bpm ?? 0).toBeLessThan(124)
+    // At most one correction — never the pile of them jitter used to produce.
+    expect((grid?.changes ?? []).length).toBeLessThanOrEqual(1)
+  })
+})

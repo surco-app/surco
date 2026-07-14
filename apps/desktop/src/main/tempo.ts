@@ -63,6 +63,25 @@ const TEMPO_FIT_MIN_SLOPE = 0.0002
 // A stretch shorter than this has no tempo worth trusting — a couple of beats
 // fit any line — so it never becomes a segment of its own.
 const MIN_SEGMENT_BEATS = 8
+// How far the tracked period may wander from the tempo the whole-file
+// autocorrelation measured. A platter that drags is off by a few percent over a
+// side; a tracker that is allowed more than that does not track the record, it
+// tracks its own mistakes — see the rail in trackBeats.
+const TRACK_PERIOD_TOLERANCE = 0.05
+// How far either side of the predicted beat the tracker will look for it, as a
+// fraction of the beat period. Must stay well under 1/3 — that is where triplets
+// live, and a window that reaches them will eventually lock onto them.
+const SEARCH_FRAC = 0.12
+// How hard an onset is penalised for sitting away from the predicted beat, as a
+// fraction of its loudness at the edge of the search window. The pulse is the
+// evidence: in a dense mix the loudest thing near a beat is often not the beat.
+const PULSE_PROXIMITY_BIAS = 0.8
+// How far a candidate segment must move the grid, at some point in the stretch
+// it governs, to be worth stating at all. Under this the grid lands on the same
+// beats the previous segment already put it on, and the "tempo change" is a
+// fiction — a cut the fit made because a real record's beats jitter, not
+// because the record changed speed.
+const SEGMENT_WORTH_IT_SEC = 0.02
 // How large a flux peak must be, relative to a TYPICAL onset on this record
 // (the 90th percentile of the ones present), before the tracker believes a drum
 // was struck there. A breakdown is not silence — a pad swells and wobbles, and
@@ -85,13 +104,17 @@ const ONSET_FLOOR_OF_PEAK = 0.5
 // in there is unknown.
 const RESEEK_AFTER_BEATS = 8
 
-// How far a beat may sit from its segment's line before the fit cuts a new
-// segment there. Deliberately tighter than the ~25 ms of slop a DJ starts to
-// hear as a flam: this tolerance is a budget the whole stretch spends, so
-// allowing the audible figure here would let a segment end up right at the edge
-// of audible once measurement noise stacks on top. Half of it leaves headroom —
-// and on the ramped-platter fixture it holds the worst beat to 14 ms.
+// How far a beat may sit from its segment's line to count as having strayed
+// from it. On its own this is NOT a cut — a real record's beats stray this far
+// all the time (a rock-steady 123 BPM house rip has a worst case of 32 ms
+// against its own best-fit line, from groove and sampler jitter alone). It takes
+// a RUN of strays to cut; see fitSegments.
 const SEGMENT_FIT_TOL_SEC = 0.012
+// How many consecutive beats must stray past that tolerance, ALL to the same
+// side, before the fit calls it drift and cuts a segment. This is the whole
+// discrimination between jitter and drift: jitter is random, so a long one-sided
+// run is vanishingly unlikely; drift is systematic, so it produces nothing else.
+const STRAY_RUN_TO_CUT = 4
 
 // A beat the tracker located, carried with the beat NUMBER it is — not its
 // position in the array. The two differ wherever the tracker coasted across a
@@ -165,11 +188,33 @@ function trackBeats(
   // (a platter never lurches that hard between two beats) while never reaching
   // the neighbouring beat, which would let the tracker slip a whole beat and
   // lock onto the off-beat.
-  const search = Math.max(1, Math.round(period0 / 4))
+  // How far around the prediction a beat may be hunted. A QUARTER period — the
+  // obvious choice, and the one this started with — is a trap on real music: at
+  // 123 BPM it reaches 122 ms out, and a triplet layer sits 2/3 of a period away
+  // (163 ms early)… but its neighbours land at 366 ms, right on the window's
+  // inner edge. The tracker latched onto the triplets at 32 s of a real house
+  // rip and rode them for the rest of the track, 46 beats measured at ~365 ms
+  // instead of 488. The window only ever needs to cover how far a real record
+  // can drift between two beats, which is a fraction of a percent — SEARCH_FRAC
+  // is far wider than that already, and narrow enough that no triplet, swing or
+  // off-beat hit can reach it.
+  const search = Math.max(1, Math.round(period0 * SEARCH_FRAC))
   // The period follows the record, but slowly: each beat nudges it by this much
   // of the newly observed interval. Too fast and one syncopated hit drags the
   // tempo; too slow and a real ramp never gets tracked.
   const ADAPT = 0.08
+  // …and it may never wander far from the tempo the autocorrelation measured
+  // over the whole file. Without this rail the tracker eats itself: in real
+  // dance music the off-beat hat is nearly as loud as the kick, so a hit
+  // occasionally lands half a period out, which shortens the period, which
+  // shrinks the search window, which makes the next off-beat hit look even more
+  // like the true beat. A real 123 BPM house rip tracked at a median of 162 BPM
+  // that way — intervals flapping between 234 ms (the off-beat) and 489 ms (the
+  // beat) — and its grid came out with 22 segments, the tail of them at 246 BPM,
+  // double time. A platter that drags is off by a few percent, never by thirty:
+  // the autocorrelation's tempo is trustworthy, and the tracker's job is PHASE.
+  const minPeriod = period0 * (1 - TRACK_PERIOD_TOLERANCE)
+  const maxPeriod = period0 * (1 + TRACK_PERIOD_TOLERANCE)
 
   // What counts as a drum hit on this record. A breakdown is not silence — a
   // pad swells and wobbles, and its flux has local peaks — so a tracker that
@@ -191,17 +236,37 @@ function trackBeats(
     onsets.length > 0 ? onsets[Math.min(onsets.length - 1, Math.floor(onsets.length * 0.9))] : 0
   const onsetFloor = typicalOnset * ONSET_FLOOR_OF_PEAK
 
-  // The strongest flux frame within `search` of `centre`, refined to sub-frame
+  // The onset near `centre` that best continues the pulse, refined to sub-frame
   // by the same parabola the folds use. Null means "nothing was struck here" —
   // silence, or a wash that never rises to a hit — and the caller coasts.
+  //
+  // Candidates are scored by loudness WEIGHTED BY HOW CLOSE they sit to the
+  // predicted beat, rather than by loudness alone. Real dance music is dense:
+  // inside a quarter-period window there are hats, percussion, stabs, and any of
+  // them can out-shout the kick. A tracker that simply took the loudest frame
+  // walked onto that percussion and stayed there — on a real 123 BPM house rip
+  // it locked onto a ~164 BPM layer at 32 s and never came back, inventing 13
+  // phantom beats (each one advancing the beat count) and turning a
+  // constant-tempo record into a 22-segment grid. The pulse is what continues
+  // the pulse: proximity is evidence, and it has to be weighed as such.
   const peakNear = (centre: number): number | null => {
     const lo = Math.max(1, Math.round(centre - search))
     const hi = Math.min(frames - 2, Math.round(centre + search))
     if (lo > hi) return null
     let peak = -1
     let peakValue = 0
+    let bestScore = 0
     for (let f = lo; f <= hi; f++) {
-      if (flux[f] > peakValue) {
+      if (flux[f] <= 0) continue
+      // A raised cosine over the search window: full weight on the prediction,
+      // tapering to a third at the edges. Gentle enough that a genuinely
+      // drifting beat is still found, firm enough that a louder off-pulse hit
+      // must be MUCH louder to win.
+      const d = Math.abs(f - centre) / search
+      const weight = 1 - PULSE_PROXIMITY_BIAS * (1 - Math.cos(Math.PI * Math.min(1, d))) * 0.5
+      const score = flux[f] * weight
+      if (score > bestScore) {
+        bestScore = score
         peakValue = flux[f]
         peak = f
       }
@@ -292,9 +357,13 @@ function trackBeats(
       const spanned = index - lastFound.index
       const observed = (found - lastFound.atFrame) / spanned
       // A hit landing at a plausible beat distance refines the tempo; anything
-      // wilder is a missed beat or a stray transient and must not.
-      if (spanned > 0 && observed > 0.75 * period && observed < 1.25 * period)
-        period += ADAPT * (observed - period)
+      // wilder is a missed beat or a stray transient and must not. The window is
+      // measured against the ORIGINAL period, not the running one — judging a
+      // drifting period by its own drifted self is what let the tracker walk to
+      // double time one small step at a time, each step looking reasonable
+      // against the last.
+      if (spanned > 0 && observed > 0.75 * period0 && observed < 1.25 * period0)
+        period = Math.min(maxPeriod, Math.max(minPeriod, period + ADAPT * (observed - period)))
     }
     lastFound = { atFrame: found, index }
     at = found + period
@@ -307,13 +376,26 @@ function trackBeats(
 // Splits tracked beats into the fewest constant-tempo stretches that keep every
 // beat on the grid, and states each as a segment (its own tempo, its own phase).
 //
-// Greedy and forward-only: extend the current stretch while a straight line
-// through its beats still predicts them all inside the tolerance; the moment a
-// beat falls outside, that beat starts a new stretch. On a steady record the
-// first line holds to the last beat and there is exactly one segment. A splice
-// breaks the line at the seam; a dragging platter breaks it wherever the ramp
-// has bent far enough to matter, so a slow drift becomes a handful of segments
-// rather than the churn of one re-anchor per window.
+// Greedy and forward-only: extend the current stretch while its line still
+// predicts the beats, and cut where it stops being able to.
+//
+// What counts as "stops being able to" is the whole difficulty, because two very
+// different things push a beat off the line:
+//
+//   JITTER is random and does not accumulate. A drummer, a sampler, the groove,
+//   the vinyl — a rock-steady 123 BPM house rip has beats sitting a median 4.5 ms
+//   from its own best-fit line and a worst case of 32 ms. Cutting on any single
+//   beat that strays (what this did at first) turns that record into a dozen
+//   segments, every one re-stating the same 123 BPM. Churn in every DJ export.
+//
+//   DRIFT is systematic and grows. A platter running slow walks the grid further
+//   off with every bar, and — this is the tell — always to the SAME SIDE.
+//
+// So the cut needs a run of consecutive beats that are all off the line AND all
+// off it the same way. Jitter cannot fake that for long; drift produces nothing
+// else. This discriminates on the SHAPE of the error rather than its size, which
+// is why the tolerance can then stay tight enough to catch drift early without
+// slicing a steady record.
 function fitSegments(beats: TrackedBeat[], tolSec: number): { bpm: number; anchorSec: number }[] {
   const segments: { bpm: number; anchorSec: number }[] = []
   let start = 0
@@ -322,6 +404,8 @@ function fitSegments(beats: TrackedBeat[], tolSec: number): { bpm: number; ancho
     // tempo) and the intercept is the phase. Both fall out of the same line.
     let end = start + 1
     let best = fitLine(beats, start, Math.min(start + 2, beats.length))
+    let strayRun = 0
+    let straySide = 0
     while (end < beats.length) {
       // A seam may end the stretch, but only if the beat after the hole has
       // actually moved: a record that kept time across its breakdown still fits
@@ -332,31 +416,86 @@ function fitSegments(beats: TrackedBeat[], tolSec: number): { bpm: number; ancho
         const gap = Math.abs(best.slope * beats[end].index + best.intercept - beats[end].atSec)
         if (gap > tolSec) break
       }
-      const candidate = fitLine(beats, start, end + 1)
-      let worst = 0
-      for (let i = start; i <= end; i++)
-        worst = Math.max(
-          worst,
-          Math.abs(candidate.slope * beats[i].index + candidate.intercept - beats[i].atSec),
-        )
-      if (worst > tolSec) break
-      best = candidate
+      // Does THIS beat stray from the line the stretch has so far, and to which
+      // side? Measured against `best` — the line fitted to the beats already
+      // accepted — not against a line refitted to include the stray itself,
+      // which would absorb the very drift being looked for.
+      const error = beats[end].atSec - (best.slope * beats[end].index + best.intercept)
+      const side = Math.sign(error)
+      if (Math.abs(error) > tolSec && (strayRun === 0 || side === straySide)) {
+        straySide = side
+        strayRun++
+        // A run this long, all leaning the same way, is drift: cut the stretch
+        // at the beat the run STARTED on, so the new segment covers the drifted
+        // stretch rather than beginning in the middle of it.
+        if (strayRun >= STRAY_RUN_TO_CUT) {
+          end -= strayRun - 1
+          break
+        }
+      } else {
+        strayRun = 0
+        straySide = 0
+      }
+      // The line is refitted over everything accepted so far, jitter and all —
+      // least squares averages the jitter out rather than chasing it.
+      best = fitLine(beats, start, end + 1)
       end++
     }
+    if (end <= start) end = start + 1
     // A stretch too short to hold a tempo would state one anyway, out of a
     // couple of beats that fit any line. Skip it — its beats stay under the
     // previous segment's grid — and keep scanning: abandoning the scan here
     // would throw away every segment in the REST of the track, which on a
     // record with a breakdown is most of it.
     const tooShort = end - start < MIN_SEGMENT_BEATS && segments.length > 0
-    if (!tooShort && best.slope > 0)
-      segments.push({
+    if (!tooShort && best.slope > 0) {
+      const candidate = {
         bpm: 60 / best.slope,
         anchorSec: best.intercept + best.slope * beats[start].index,
-      })
+      }
+      // A SEGMENT MUST EARN ITS PLACE. The fit cuts wherever a beat strays from
+      // the line, and on a real record beats stray for reasons that are not
+      // tempo changes: groove, a drummer, a sampler's jitter, the vinyl itself.
+      // Cutting there and re-stating the SAME tempo produces a grid that says
+      // "the tempo changed" a dozen times over a rock-steady record — churn in
+      // every DJ export, and exactly what a constant-tempo track must never
+      // grow. So a new segment survives only if it actually MOVES the grid off
+      // where the previous one had it: a different tempo, or a real re-phasing.
+      const previous = segments[segments.length - 1]
+      if (previous && !movesTheGrid(previous, candidate, beats[start].atSec, beats[end - 1].atSec)) {
+        start = end
+        continue
+      }
+      segments.push(candidate)
+    }
     start = end
   }
   return segments
+}
+
+// Whether stating `next` as its own segment puts the grid anywhere `prev` did
+// not already put it, over the stretch `next` governs. Compares the two grids
+// where it matters — on the beats themselves — rather than comparing their BPM
+// numbers, because a hair of tempo difference over a long stretch DOES move the
+// grid, while the same difference over a few bars does not.
+function movesTheGrid(
+  prev: { bpm: number; anchorSec: number },
+  next: { bpm: number; anchorSec: number },
+  fromSec: number,
+  toSec: number,
+): boolean {
+  const beatUnder = (grid: { bpm: number; anchorSec: number }, t: number): number => {
+    const period = 60 / grid.bpm
+    return grid.anchorSec + Math.round((t - grid.anchorSec) / period) * period
+  }
+  // Sampled across the stretch, not just at its ends: two grids can agree at
+  // the edges and walk apart in the middle.
+  const steps = 12
+  for (let i = 0; i <= steps; i++) {
+    const t = fromSec + ((toSec - fromSec) * i) / steps
+    if (Math.abs(beatUnder(prev, t) - beatUnder(next, t)) > SEGMENT_WORTH_IT_SEC) return true
+  }
+  return false
 }
 
 // Least squares of beat time against beat INDEX over [from, to): slope =
