@@ -76,7 +76,8 @@ printf 'launch\ntone 5\nplay\nss player\nquit\n' | node driver.mjs repl
 
 Commands: `launch` · `tone [secs]` (make + open a tone WAV) · `open <wavPath>` ·
 `play` (double-click the track row → open the floating player) · `ss <name>`
-(→ `/tmp/surco-<name>.png`) · `click <selector>` · `eval <js>` (prints JSON) · `quit`.
+(→ `/tmp/surco-<name>.png`) · `click <selector>` · `hover <selector>` (to raise a
+tooltip before `ss`) · `eval <js>` (prints JSON) · `quit`.
 Selectors use the renderer's `data-testid`s — e.g. `[data-testid="player"]`,
 `[data-testid="track-row"]`, `[data-testid="player-volume-slider"]`,
 `[data-testid="player-volume"]` (the % readout).
