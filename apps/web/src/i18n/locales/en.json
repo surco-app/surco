@@ -90,6 +90,8 @@
           "Draws the spectrum and catches fake-lossless MP3s",
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Waveform with zoom, real clipping in red and a preview of the normalized result",
+          "Repairs vinyl clicks: marks each one on the wave, then A/B the repaired track against the original without a gap in the audio",
+          "Beatgrid editor: fix the grid by ear, and carve segments for tracks that change tempo",
           "Detects BPM and key from the audio itself",
           "Warns if a track is already in your Apple Music or Engine DJ — and filters your tracks to the ones you're missing"
         ]

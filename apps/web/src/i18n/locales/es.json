@@ -90,6 +90,8 @@
           "Dibuja el espectro y caza MP3 falsos antes de cabina",
           "Lectura por colores: LUFS, pico, dinámica y ruido",
           "Forma de onda con zoom, clipping real en rojo y vista previa del resultado normalizado",
+          "Repara los clics del vinilo: marca cada uno sobre la onda y compara la pista reparada con la original sin cortar el audio",
+          "Editor de beatgrid: corrige la rejilla de oído y crea segmentos para pistas que cambian de tempo",
           "Detecta BPM y tonalidad del propio audio",
           "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
         ]
