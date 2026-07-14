@@ -51,6 +51,7 @@ import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
+import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { GridSection } from './GridSection'
@@ -899,25 +900,18 @@ export const Editor = memo(function Editor({
                     // section is replaced by a notice of what the export will do.
                     if (!isMulti && overwriteOriginal) {
                       return (
-                        <div
+                        <OverwriteNotice
                           key={id}
-                          data-testid="overwrite-notice"
-                          className="mt-6 border-t border-[var(--color-line)] pt-5"
-                        >
-                          <p className="text-sm font-medium text-fg-muted">
-                            {tr('editor.overwriteTitle')}
-                          </p>
-                          <p
-                            className={`mt-2 text-xs ${lossyOverwrite ? 'text-danger' : 'text-fg-dim'}`}
-                            data-testid="overwrite-hint"
-                          >
-                            {lossyOverwrite
+                          title={tr('editor.overwriteTitle')}
+                          lossy={lossyOverwrite}
+                          hint={
+                            lossyOverwrite
                               ? tr('editor.overwriteLossyHint')
                               : willEditInPlace
                                 ? tr('editor.overwriteHint')
-                                : tr('editor.overwriteAlacHint')}
-                          </p>
-                        </div>
+                                : tr('editor.overwriteAlacHint')
+                          }
+                        />
                       )
                     }
                     // Multi-select has no single name to edit, but the bulk rename is
@@ -927,24 +921,15 @@ export const Editor = memo(function Editor({
                     if (isMulti) {
                       if (overwriteOriginal) return null
                       return (
-                        <div
+                        <BulkActionSection
                           key={id}
-                          data-testid="output-multi"
-                          className="mt-6 border-t border-[var(--color-line)] pt-5"
-                        >
-                          <p className="text-sm font-medium text-fg-muted">
-                            {tr('editor.outputName')}
-                          </p>
-                          <button
-                            type="button"
-                            data-testid="regenerate-output-names-all"
-                            onClick={onRegenerateName}
-                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                            {tr('editor.regenerateAll', { count: multiTracks.length })}
-                          </button>
-                        </div>
+                          testid="output-multi"
+                          buttonTestid="regenerate-output-names-all"
+                          title={tr('editor.outputName')}
+                          label={tr('editor.regenerateAll', { count: multiTracks.length })}
+                          icon={RefreshCw}
+                          onClick={onRegenerateName}
+                        />
                       )
                     }
                     return (
@@ -969,22 +954,15 @@ export const Editor = memo(function Editor({
                     // suggestion — visible and resettable per track afterwards.
                     if (isMulti) {
                       return (
-                        <div
+                        <BulkActionSection
                           key={id}
-                          data-testid="trim-multi"
-                          className="mt-6 border-t border-[var(--color-line)] pt-5"
-                        >
-                          <p className="text-sm font-medium text-fg-muted">{tr('trim.title')}</p>
-                          <button
-                            type="button"
-                            data-testid="trim-detect-all"
-                            onClick={onTrimDetectedAll}
-                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                          >
-                            <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
-                            {tr('trim.applyAll', { count: multiTracks.length })}
-                          </button>
-                        </div>
+                          testid="trim-multi"
+                          buttonTestid="trim-detect-all"
+                          title={tr('trim.title')}
+                          label={tr('trim.applyAll', { count: multiTracks.length })}
+                          icon={Scissors}
+                          onClick={onTrimDetectedAll}
+                        />
                       )
                     }
                     return (
