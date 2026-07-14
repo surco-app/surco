@@ -122,8 +122,8 @@ function ToolbarButton({
         }
         onAct()
       }}
-      className={`press flex items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${
-        size === 'lg' ? 'h-8 w-8' : 'h-5 w-5'
+      className={`press relative flex shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
+        size === 'lg' ? 'h-8 w-8' : 'h-6 w-6'
       }`}
     >
       {icon}
@@ -724,12 +724,6 @@ export function GridSection({
   // twice as tall and the icons had no reason to stay 12 px.
   const glyph = tall ? 'h-4 w-4' : 'h-3 w-3'
 
-  // Hairline between the toolbar's groups, so tempo / shift / line actions /
-  // listen / history read as clusters instead of one long strip of glyphs.
-  const divider = (
-    <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[var(--color-line)]" />
-  )
-
   return (
     <div data-testid="editor-grid" className="mt-6 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -777,7 +771,7 @@ export function GridSection({
           )}
           {(loading || wave) && (
             <>
-              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
                     small groups split by hairlines — tempo, shift, the line's
                     actions, listen, history. Labels live in the tooltips (and
@@ -808,13 +802,15 @@ export function GridSection({
                 </label>
                 {shown && activeSeg && (
                   <>
-                    <span className="flex shrink-0 items-center gap-0.5">
+                    <span className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
                         data-testid="grid-tap"
                         aria-label={tr('grid.tapHint')}
                         onClick={tapTempo}
-                        className="press shrink-0 rounded px-1 text-[10px] font-medium tracking-wider text-fg-dim transition-colors hover:text-fg"
+                        className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] font-medium tracking-wider text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg ${
+                          tall ? 'h-8' : 'h-6'
+                        }`}
                       >
                         TAP
                         <Tooltip label={tr('grid.tapHint')} />
@@ -829,7 +825,9 @@ export function GridSection({
                           )
                         }
                         onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm / 2 })}
-                        className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                        className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] tabular-nums text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
+                          tall ? 'h-8' : 'h-6'
+                        }`}
                       >
                         ÷2
                         <Tooltip label={tr('grid.half')} />
@@ -844,7 +842,9 @@ export function GridSection({
                           )
                         }
                         onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm * 2 })}
-                        className="press rounded px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                        className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] tabular-nums text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
+                          tall ? 'h-8' : 'h-6'
+                        }`}
                       >
                         ×2
                         <Tooltip label={tr('grid.double')} />
@@ -866,11 +866,10 @@ export function GridSection({
                         true,
                       )}
                     </span>
-                    {divider}
                     {/* The line's verbs: a beat here, a beat centred, a new
                         segment from here, or Auto's fresh listen (whole track
                         on the base, this stretch only on a change segment). */}
-                    <span className="flex shrink-0 items-center gap-0.5">
+                    <span className="flex shrink-0 items-center gap-1">
                       {iconButton(
                         'grid-beat-here',
                         tr('grid.beatHere'),
@@ -900,7 +899,6 @@ export function GridSection({
                         reprobing,
                       )}
                     </span>
-                    {divider}
                     {iconButton(
                       'grid-audition',
                       tr('grid.audition'),
@@ -911,8 +909,7 @@ export function GridSection({
                         <Volume2 className={glyph} aria-hidden="true" />
                       ),
                     )}
-                    {divider}
-                    <span className="flex shrink-0 items-center gap-0.5">
+                    <span className="flex shrink-0 items-center gap-1">
                       {iconButton(
                         'grid-undo',
                         tr('grid.undo'),
@@ -940,7 +937,7 @@ export function GridSection({
                       <Tooltip label={tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })} />
                     </span>
                   )}
-                  <span className="flex shrink-0 items-center gap-0.5">
+                  <span className="flex shrink-0 items-center gap-1">
                     {iconButton(
                       'waveform-zoom-out',
                       tr('editor.waveformZoomOut'),
@@ -1160,7 +1157,7 @@ export function GridSection({
               {wave && durationSec > 0 && shown && activeSeg && (
                 <div
                   data-testid="grid-nudge-bar"
-                  className={`flex items-center justify-center ${tall ? 'mt-2 gap-1.5' : 'mt-1 gap-0.5'}`}
+                  className={`flex items-center justify-center ${tall ? 'mt-2 gap-2' : 'mt-1.5 gap-1'}`}
                 >
                   {iconButton(
                     'grid-beat-back',
