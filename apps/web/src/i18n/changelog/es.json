@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.59",
+    "date": "14 de julio de 2026",
+    "title": "El grid sigue al plato",
+    "items": [
+      {
+        "text": "El beatgrid ahora sigue los discos que no van a tempo constante. Un vinilo rara vez lo va: el plato arrastra, una copia está prensada un pelín lenta, dos tomas se empalman en el mismo corte. Hasta ahora, cuando Surco detectaba eso, plantaba un cambio de grid pero le dejaba el mismo BPM debajo, así que la rejilla se volvía a despegar de los bombos a los pocos compases. Ahora cada tramo lleva su propio tempo, medido sobre los beats que suenan de verdad, y la rejilla se queda pegada de principio a fin: un disco que baja de 128 a 126 lo resuelve el botón Auto él solo. Está calibrado contra vinilos reales, con su tembleque y sus capas de percusión, así que un disco de tempo firme sigue saliendo con un solo tramo.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "La cabecera te dice cuántos tramos tiene el grid. Antes decía solo «128 BPM», que en un disco con deriva es el tempo del primer tramo y no el del disco. Ahora dice «128 BPM · 5 segmentos», y si pliegas la sección sabes lo que llevas dentro.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "El botón Auto dice lo que hace. Su descripción hablaba de volver a detectar el tempo, y se quedaba corta en las dos cosas que importan: que ajusta el grid entero creando segmentos si el disco deriva, y que descarta tus ediciones al hacerlo.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "Surco conserva las etiquetas de estado de ánimo y energía que escriben otras herramientas DJ, en vez de perderlas al convertir.",
+        "in": "0.59.0"
+      }
+    ]
+  },
+  {
     "version": "0.58",
     "date": "14 de julio de 2026",
     "title": "Escucha lo que te queda, no lo que se va",

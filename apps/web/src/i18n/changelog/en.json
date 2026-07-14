@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.59",
+    "date": "July 14, 2026",
+    "title": "The grid follows the platter",
+    "items": [
+      {
+        "text": "The beatgrid now follows records that don't hold a steady tempo. Vinyl rarely does: the platter drags, a pressing runs a shade slow, two takes are spliced into the same cut. Until now, when Surco spotted that, it dropped a grid change but left the same BPM running underneath, so the grid walked off the kicks again within bars. Each stretch now carries its own tempo, measured on the beats the record actually plays, and the grid stays on them from first bar to last: a record sliding from 128 to 126 is something Auto now sorts out on its own. It is calibrated against real vinyl, with the wobble and the layered percussion that comes with it, so a record that does hold its tempo still comes out as a single stretch.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "The header tells you how many segments the grid holds. It used to say just \"128 BPM\", which on a drifting record is the first stretch's tempo, not the record's. It now says \"128 BPM · 5 segments\", so a folded section still tells you what's inside it.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "The Auto button says what it does. Its description talked about detecting the tempo again, which undersold the two things that matter: that it fixes the whole grid, adding segments if the record drifts, and that it discards your edits when it does.",
+        "in": "0.59.0"
+      },
+      {
+        "text": "Surco carries the mood and energy tags other DJ tools write, instead of dropping them on conversion.",
+        "in": "0.59.0"
+      }
+    ]
+  },
+  {
     "version": "0.58",
     "date": "July 14, 2026",
     "title": "Hear what you keep, not what you lose",
