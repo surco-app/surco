@@ -324,10 +324,28 @@ describe('GridSection two-lane layout', () => {
     Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
     fireEvent.pointerDown(overview, { clientX: 3000, pointerId: 1 })
     expect(scroller.scrollLeft).toBe(2700)
-    // Still held: scrubbing to the end clamps to the last full window.
-    fireEvent.pointerMove(overview, { clientX: 6000, pointerId: 1 })
+    // Still held (buttons: 1 — the scrub only follows a held button):
+    // scrubbing to the end clamps to the last full window.
+    fireEvent.pointerMove(overview, { clientX: 6000, pointerId: 1, buttons: 1 })
     expect(scroller.scrollLeft).toBe(5400)
     fireEvent.pointerUp(overview, { pointerId: 1 })
+  })
+
+  // The overview holds the same capture as the lane, so it went stale the same
+  // way: with the scrub still armed after a lost capture, merely moving the
+  // mouse across the strip jumped the working window.
+  it('drops an overview scrub whose pointer capture was lost', async () => {
+    stubOverlayRect()
+    render(section())
+    const overview = await screen.findByTestId('grid-overview', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    fireEvent.pointerDown(overview, { clientX: 3000, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(2700)
+    fireEvent.lostPointerCapture(overview, { pointerId: 1 })
+    fireEvent.pointerMove(overview, { clientX: 6000, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(2700)
   })
 
   // A hover without a press must not move the window the user is working in.
@@ -767,10 +785,41 @@ describe('GridSection segments', () => {
     const scroller = overlay.parentElement?.parentElement as HTMLElement
     fireEvent.pointerDown(overlay, { clientX: 1050, pointerId: 1 })
     expect(overlay.style.cursor).toBe('grabbing')
-    fireEvent.pointerMove(overlay, { clientX: 850, pointerId: 1 })
+    // buttons: 1 — a real drag holds the button down through every move, and
+    // the lane now pans only while it is held.
+    fireEvent.pointerMove(overlay, { clientX: 850, pointerId: 1, buttons: 1 })
     expect(scroller.scrollLeft).toBe(200)
     fireEvent.pointerUp(overlay, { pointerId: 1 })
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // Losing the pointer capture mid-pan (the browser fires lostpointercapture
+  // when the captured element is resized or re-laid-out — which is exactly what
+  // maximizing the section does) delivers no pointerup, so the pan used to stay
+  // armed. The next bare mouse move — no button held — then panned the wave from
+  // a stale origin, yanking the view away on its own.
+  it('drops a pan whose pointer capture was lost, so a bare move cannot drag the view', async () => {
+    stubOverlayRect()
+    render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = overlay.parentElement?.parentElement as HTMLElement
+    fireEvent.pointerDown(overlay, { clientX: 1050, pointerId: 1 })
+    fireEvent.lostPointerCapture(overlay, { pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 100, pointerId: 1 })
+    expect(scroller.scrollLeft).toBe(0)
+    expect(overlay.style.cursor).toBe('grab')
+  })
+
+  // The same stale-pan guard from the other side: a move that arrives with no
+  // button held is not a drag, whatever the drag state says.
+  it('ignores a move with no button held', async () => {
+    stubOverlayRect()
+    render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
+    const overlay = await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = overlay.parentElement?.parentElement as HTMLElement
+    fireEvent.pointerDown(overlay, { clientX: 1050, pointerId: 1 })
+    fireEvent.pointerMove(overlay, { clientX: 100, pointerId: 1, buttons: 0 })
+    expect(scroller.scrollLeft).toBe(0)
   })
 
   // rekordbox's centre reference: the fixed line marks the position the

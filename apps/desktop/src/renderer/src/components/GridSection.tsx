@@ -998,9 +998,24 @@ export function GridSection({
                       setPanning(true)
                       e.currentTarget.setPointerCapture?.(e.pointerId)
                     }}
-                    onPointerMove={(e) => dragTo(e.clientX)}
+                    // A move only pans while the button is actually down. The
+                    // browser drops the capture (no pointerup follows) whenever
+                    // the captured element is re-laid-out under the finger —
+                    // maximizing the section does exactly that — and the pan
+                    // used to stay armed, so the next bare move dragged the
+                    // wave from a stale origin and threw the view across the
+                    // track. Belt and braces: release on the lost capture, and
+                    // refuse to pan from a move with no button held.
+                    onPointerMove={(e) => {
+                      if (e.buttons === 0) {
+                        if (dragging.current) release()
+                        return
+                      }
+                      dragTo(e.clientX)
+                    }}
                     onPointerUp={release}
                     onPointerCancel={release}
+                    onLostPointerCapture={release}
                   >
                     {/* Amber, not the wave's accent blue: the lines sit ON the
                         wave, and same-hue lines disappeared into a busy mix.
@@ -1259,13 +1274,24 @@ export function GridSection({
                     e.currentTarget.setPointerCapture?.(e.pointerId)
                     navigate(overviewRatio(e.clientX))
                   }}
+                  // Same stale-gesture guard as the lane above: a scrub only
+                  // follows a held button, and a capture lost to a re-layout
+                  // (maximizing) ends it — otherwise the overview kept scrubbing
+                  // from every bare mouse move that crossed it.
                   onPointerMove={(e) => {
+                    if (e.buttons === 0) {
+                      scrubbing.current = false
+                      return
+                    }
                     if (scrubbing.current) navigate(overviewRatio(e.clientX))
                   }}
                   onPointerUp={() => {
                     scrubbing.current = false
                   }}
                   onPointerCancel={() => {
+                    scrubbing.current = false
+                  }}
+                  onLostPointerCapture={() => {
                     scrubbing.current = false
                   }}
                   onKeyDown={(e) => {
