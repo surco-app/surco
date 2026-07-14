@@ -543,7 +543,7 @@
     "resetHint": "Detect the tempo again (this segment, or the whole track)",
     "audition": "Hear the grid",
     "fromHere": "Adjust from here",
-    "fromHereHint": "Start a new tempo from the red line, leaving the grid behind it untouched",
+    "fromHereHint": "Start a new tempo from the red line, leaving the grid behind it untouched (G)",
     "centreBeat": "Centre beat (C)",
     "tapHint": "Tap the tempo",
     "expand": "Expand beat intervals",

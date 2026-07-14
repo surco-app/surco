@@ -543,7 +543,7 @@
     "resetHint": "Volver a detectar el tempo (este tramo, o toda la pista)",
     "audition": "Escuchar la rejilla",
     "fromHere": "Ajustar desde aquí",
-    "fromHereHint": "Empieza un tempo nuevo en la línea roja, dejando intacto el grid anterior",
+    "fromHereHint": "Empieza un tempo nuevo en la línea roja, dejando intacto el grid anterior (G)",
     "centreBeat": "Centrar beat (C)",
     "tapHint": "Marca el tempo a golpes",
     "expand": "Expandir intervalos de beat",

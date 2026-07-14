@@ -2,8 +2,16 @@ import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
 import { isTypingTarget, keyToCommandId } from '../lib/keymap'
-import { runKeyClaim } from '../lib/spaceClaim'
+import { type ClaimedKey, runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
+
+// The bare keys an open lane may claim for itself. Kept as a table so the guard
+// that protects them (not typing, no overlay, no modifier) is written once —
+// each new lane verb is one entry, not another copy of the same four conditions.
+const LANE_KEYS: Record<string, ClaimedKey> = {
+  c: 'centre-beat',
+  g: 'add-segment',
+}
 
 interface Params {
   isMac: boolean
@@ -55,19 +63,14 @@ export function useKeyboardShortcuts(params: Params): void {
         p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }
-      // rekordbox's C: the open lane centres the nearest beat under its
-      // reference. A bare letter, so it never fights a chord — and only while a
-      // section actually claims it (nothing claimed → the key is free).
+      // The open lane's own bare keys: C centres the nearest beat (rekordbox's),
+      // G starts a new grid segment under the reference. Bare letters, so they
+      // never fight a chord — and each acts only while a section actually claims
+      // it (nothing claimed → the key stays free for the list commands).
       const typing = isTypingTarget(document.activeElement)
-      if (
-        !typing &&
-        !p.overlayOpen &&
-        (e.key === 'c' || e.key === 'C') &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        runKeyClaim('centre-beat')
-      ) {
+      const bare = !typing && !p.overlayOpen && !e.metaKey && !e.ctrlKey && !e.altKey
+      const laneKey = LANE_KEYS[e.key.toLowerCase()]
+      if (bare && laneKey && runKeyClaim(laneKey)) {
         e.preventDefault()
         return
       }

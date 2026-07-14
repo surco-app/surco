@@ -139,4 +139,29 @@ describe('useKeyboardShortcuts space claim', () => {
     press({ key: 'c' })
     expect(centre).toHaveBeenCalledTimes(1)
   })
+
+  // G carves a grid segment, the verb that used to force a trip to the mouse.
+  // It rides the same claim as C, so it inherits the same guards — and the one
+  // that matters most is typing: a bare letter that fired while a field had
+  // focus would carve a segment every time someone typed a "g" into a title.
+  it('routes a bare G to a claiming section but never while typing', () => {
+    setup(false)
+    const addSegment = vi.fn()
+    const release = claimKeys({ 'add-segment': addSegment })
+    press({ key: 'g' })
+    expect(addSegment).toHaveBeenCalledTimes(1)
+    // A chord is not the bare key.
+    press({ key: 'g', metaKey: true })
+    expect(addSegment).toHaveBeenCalledTimes(1)
+    // Typing a "g" into a field must never carve a segment.
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+    press({ key: 'g' })
+    expect(addSegment).toHaveBeenCalledTimes(1)
+    input.remove()
+    release()
+    press({ key: 'g' })
+    expect(addSegment).toHaveBeenCalledTimes(1)
+  })
 })

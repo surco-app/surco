@@ -503,6 +503,22 @@ describe('GridSection segments', () => {
     expect(grid.changes[0].anchorSec).toBeCloseTo(30.25, 2)
   })
 
+  // Carving a segment was the one grid verb still stuck on the mouse, and it is
+  // the verb the work is MADE of — Djotas: "crear comando teclado añadir
+  // beatgrid, que toca utilizar el ratón y se pierde tiempo". G does what the ⊞
+  // button does, so the hand never leaves the keyboard between nudges.
+  it('carves a segment from the G key, like the button', async () => {
+    const onChange = vi.fn()
+    stubOverlayRect()
+    render(section({ onChange, value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(runKeyClaim('add-segment')).toBe(true)
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const grid = onChange.mock.calls[0][0]
+    expect(grid.changes).toHaveLength(1)
+    expect(grid.changes[0].anchorSec).toBeCloseTo(30.25, 2)
+  })
+
   // The heart of the complaint ("it moves the grid BEFORE the line, not after"):
   // right after carving the segment, a nudge must move THAT segment's anchor and
   // leave the base — everything to the left of the line — exactly where it was.

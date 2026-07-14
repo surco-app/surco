@@ -672,11 +672,13 @@ export function GridSection({
   // key always drives the live grid and position.
   const auditionRef = useRef<() => void>(() => {})
   const centreRef = useRef<() => void>(() => {})
+  const addSegmentRef = useRef<() => void>(() => {})
   useEffect(() => {
     if (!open) return
     return claimKeys({
       play: () => auditionRef.current(),
       'centre-beat': () => centreRef.current(),
+      'add-segment': () => addSegmentRef.current(),
     })
   }, [open])
 
@@ -717,10 +719,11 @@ export function GridSection({
     rafRef.current = requestAnimationFrame(tick)
     setAuditing(true)
   }
-  // The claim above fires through this ref, so Space always drives the live
+  // The claim above fires through these refs, so the keys always drive the live
   // closure (current grid, current centre) without re-registering per render.
   auditionRef.current = audition
   centreRef.current = centreNearestBeat
+  addSegmentRef.current = addChangeFromHere
 
   const iconButton = (
     testid: string,

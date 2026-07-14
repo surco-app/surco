@@ -543,7 +543,7 @@
     "resetHint": "Detectar o tempo de novo (este trecho, ou a faixa toda)",
     "audition": "Ouvir a grade",
     "fromHere": "Ajustar a partir daqui",
-    "fromHereHint": "Começa um novo andamento na linha vermelha, sem mexer na grade anterior",
+    "fromHereHint": "Começa um novo andamento na linha vermelha, sem mexer na grade anterior (G)",
     "centreBeat": "Centralizar batida (C)",
     "tapHint": "Marque o tempo",
     "expand": "Expandir intervalos de batida",
