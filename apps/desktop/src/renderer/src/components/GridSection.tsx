@@ -37,10 +37,6 @@ import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCo
 // The fine correction: about the detector's own resolution, so one press fixes
 // the largest error a correct detection leaves behind.
 const NUDGE_SEC = 0.01
-// How much the audition plays from the first visible beat: four bars at house
-// tempo — enough to hear whether the clicks ride the transients, short enough
-// to stay a check instead of a listen.
-const AUDITION_SEC = 8
 // Where the working lane opens: rekordbox-style, the overview lane above shows
 // the whole track, so the lane grid work happens in starts at working depth —
 // ~9 s of a typical track in view, transients and beat lines both readable —
@@ -693,8 +689,12 @@ export function GridSection({
     // From the centre reference — the red line IS the position, so the check
     // plays exactly the stretch being worked on (magnetised onto its beat, so
     // the first click lands on a transient).
+    //
+    // It runs until Space stops it, not for a fixed spell: checking a grid is
+    // listening for the click DRIFTING off the beat, and drift needs bars to
+    // show itself. A timed snippet kept cutting out mid-judgement and had to be
+    // restarted over and over.
     const from = Math.max(0, Math.min(durationSec, viewCentreSec))
-    const until = Math.min(durationSec, from + AUDITION_SEC)
     const audio = new Audio(mediaUrl(inputPath))
     audioRef.current = audio
     // Seek only once the element knows its duration — an immediate currentTime
@@ -702,9 +702,6 @@ export function GridSection({
     audio.onloadedmetadata = () => {
       audio.currentTime = from
       audio.play().catch(() => stopAudition())
-    }
-    audio.ontimeupdate = () => {
-      if (audio.currentTime >= until) stopAudition()
     }
     audio.onended = () => stopAudition()
     const tick = (): void => {

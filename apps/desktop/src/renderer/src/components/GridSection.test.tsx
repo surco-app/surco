@@ -299,6 +299,26 @@ describe('GridSection grid', () => {
     expect(runKeyClaim('play')).toBe(true)
     expect(pause).toHaveBeenCalled()
   })
+
+  // Judging a grid means hearing the click DRIFT off the beat, and drift needs
+  // bars to show itself. The check used to cut out after a fixed 8 s, right in
+  // the middle of that judgement, so it had to be restarted over and over
+  // (Djotas: "la prescucha tendría que ser hasta que tú aprietes espacio otra
+  // vez"). Nothing but Space — or the end of the track — stops it now.
+  it('keeps auditioning past the old fixed window until Space stops it', async () => {
+    render(section())
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-audition'))
+    audios[0].onloadedmetadata?.()
+    // Well past the 8 s the audition used to stop at, from a 30.25 s start.
+    audios[0].currentTime = 50
+    audios[0].ontimeupdate?.()
+    expect(pause).not.toHaveBeenCalled()
+    expect(screen.getByTestId('grid-audition')).toBeInTheDocument()
+    // And Space still ends it.
+    expect(runKeyClaim('play')).toBe(true)
+    expect(pause).toHaveBeenCalled()
+  })
 })
 
 // The rekordbox-style two-lane layout, by user feedback: working the grid in
