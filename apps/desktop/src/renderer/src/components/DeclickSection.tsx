@@ -126,15 +126,24 @@ export function DeclickSection({
   // the A/B with the whole track blaring underneath it. Claiming the key (rather than
   // rebinding it) is the app's answer to exactly this, and the beatgrid already does it.
   //
-  // Only claimed once there is a preview to drive: with no rendered audio the section has
-  // no transport, and stealing Space from the mini-player to do nothing with it would be
-  // a plain regression.
-  const toggleRef = useRef<() => void>(() => {})
-  toggleRef.current = () => (ab.playing ? ab.pause() : ab.play())
+  // Claimed for the WHOLE open section, not just once a preview exists: the user looking
+  // at this wave means "play what I am looking at" by Space, and gating the claim on a
+  // rendered preview is what let the press fall through and start the mini-player. With
+  // nothing rendered the key does the render — the same thing the button does — so the
+  // gesture always acts on the wave in front of them.
+  //
+  // The exception is Off: nothing is repaired, so there is no result to hear, and the key
+  // rightly belongs to the mini-player again.
+  const spaceRef = useRef<() => void>(() => {})
+  spaceRef.current = () => {
+    if (preview) return ab.playing ? ab.pause() : ab.play()
+    // A render is tens of seconds; an impatient second press must not queue another.
+    if (!rendering) void render()
+  }
   useEffect(() => {
-    if (!open || !preview) return
-    return claimKeys({ play: () => toggleRef.current() })
-  }, [open, preview])
+    if (!open || value === 'off') return
+    return claimKeys({ play: () => spaceRef.current() })
+  }, [open, value])
 
   // The overlay lives INSIDE the zoomed strip, so its own width is already the zoomed
   // width of the whole track — the ratio across it is the fraction of the track, at any

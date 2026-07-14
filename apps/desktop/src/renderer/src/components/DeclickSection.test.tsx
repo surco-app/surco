@@ -274,6 +274,42 @@ describe('DeclickSection', () => {
     expect(elements[0].currentTime).toBe(60)
   })
 
+  // The bug as reported: the section open, nothing rendered yet, Space pressed — and the
+  // mini-player started playing the whole track. Claiming the key only once a preview
+  // existed was the mistake. The user is looking at THIS wave; Space means "play what I am
+  // looking at", so the first press renders it and plays it.
+  it('renders the preview when Space is pressed before anything exists', async () => {
+    render(section({ value: 'standard' }))
+    await screen.findByTestId('declick-render')
+    // Claimed even with no preview — otherwise the press falls through to the mini-player.
+    await act(async () => {
+      expect(runKeyClaim('play')).toBe(true)
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledWith('/in/track.wav', 'standard')
+    await screen.findByTestId('declick-ab')
+  })
+
+  // A render is tens of seconds; an impatient second press must not queue a second one.
+  it('does not start a second render while one is already running', async () => {
+    ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}))
+    render(section({ value: 'standard' }))
+    await screen.findByTestId('declick-render')
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(window.api.declickPreview).toHaveBeenCalledTimes(1)
+  })
+
+  // Off means the repair does nothing, so there is no result to hear: the key belongs to
+  // the mini-player again, exactly as it would with the section closed.
+  it('leaves Space to the mini-player when the repair is off', () => {
+    render(section({ value: 'off' }))
+    expect(runKeyClaim('play')).toBe(false)
+  })
+
   // Space is play/pause everywhere in Surco, so it must work here too — but the SAME
   // press would otherwise also start the mini-player, and the user would end up with the
   // whole track blaring underneath the A/B they are trying to judge. The section claims
