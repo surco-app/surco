@@ -714,9 +714,9 @@ export function WaveformSolo({
             aria-label={tr('editor.waveformZoomOut')}
             disabled={zoom <= 1}
             onClick={() => setZoom((z) => Math.max(1, z / 2))}
-            className="press relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
-            <ZoomOut className="h-3 w-3" aria-hidden="true" />
+            <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -734,9 +734,9 @@ export function WaveformSolo({
             aria-label={tr('editor.waveformZoomIn')}
             disabled={zoom >= ZOOM_MAX}
             onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
-            className="press relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
-            <ZoomIn className="h-3 w-3" aria-hidden="true" />
+            <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </span>
       </div>

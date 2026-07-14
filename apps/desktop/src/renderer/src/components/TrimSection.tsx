@@ -174,9 +174,9 @@ function Lane({
             data-testid={`trim-nudge-back-${side}`}
             aria-label={tr('trim.nudgeBack')}
             onClick={() => onKeyStep(-fineStepSec)}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
-            <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.nudgeBack')} />
           </button>
           <span
@@ -190,9 +190,9 @@ function Lane({
             data-testid={`trim-nudge-forward-${side}`}
             aria-label={tr('trim.nudgeForward')}
             onClick={() => onKeyStep(fineStepSec)}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
-            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.nudgeForward')} />
           </button>
         </span>
@@ -206,12 +206,12 @@ function Lane({
             aria-label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
             disabled={cutSec === undefined}
             onClick={onAudition}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             {auditing ? (
-              <Square className="h-3 w-3 fill-current" aria-hidden="true" />
+              <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
             ) : (
-              <Volume2 className="h-3 w-3" aria-hidden="true" />
+              <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
             )}
             <Tooltip label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')} />
           </button>
@@ -221,9 +221,9 @@ function Lane({
             aria-label={tr('trim.clearSide')}
             disabled={cutSec === undefined}
             onClick={onClear}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
-            <RotateCcw className="h-3 w-3" aria-hidden="true" />
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.clearSide')} />
           </button>
         </span>
@@ -234,9 +234,9 @@ function Lane({
             aria-label={tr('trim.contextNarrow')}
             disabled={contextIndex <= 0}
             onClick={() => onContextChange(contextIndex - 1)}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
-            <ZoomIn className="h-3 w-3" aria-hidden="true" />
+            <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.contextNarrow')} />
           </button>
           <span
@@ -251,9 +251,9 @@ function Lane({
             aria-label={tr('trim.contextWiden')}
             disabled={contextIndex >= contextCount - 1}
             onClick={() => onContextChange(contextIndex + 1)}
-            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
-            <ZoomOut className="h-3 w-3" aria-hidden="true" />
+            <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.contextWiden')} />
           </button>
         </span>

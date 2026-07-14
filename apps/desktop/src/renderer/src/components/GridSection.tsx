@@ -127,7 +127,7 @@ function ToolbarButton({
         onAct()
       }}
       className={`press relative flex shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
-        size === 'lg' ? 'h-8 w-8' : 'h-6 w-6'
+        size === 'lg' ? 'h-8 w-8' : 'h-7 w-7'
       }`}
     >
       {icon}
@@ -726,7 +726,10 @@ export function GridSection({
   )
   // The glyph inside a button: bigger in the full-window view, where the lane is
   // twice as tall and the icons had no reason to stay 12 px.
-  const glyph = tall ? 'h-4 w-4' : 'h-3 w-3'
+  const glyph = tall ? 'h-4 w-4' : 'h-3.5 w-3.5'
+  // The toolbar's one height. Applied to the BPM field and to every button, so the
+  // baseline is shared and nothing floats a pixel proud of its neighbour.
+  const controlH = tall ? 'h-8' : 'h-7'
 
   return (
     <div data-testid="editor-grid" className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -801,7 +804,7 @@ export function GridSection({
                     }}
                     // w-20, not w-16: a two-decimal tempo ("150.03") plus the
                     // number input's spinner well clipped the last digit.
-                    className="w-20 rounded border border-[var(--color-line-strong)] bg-transparent px-1.5 py-0.5 text-[11px] tabular-nums text-fg outline-none focus:border-accent"
+                    className={`w-20 rounded-md border border-[var(--color-line)] bg-transparent px-2 text-[11px] tabular-nums text-fg outline-none focus:border-accent ${controlH}`}
                   />
                   {shown && activeSeg && (
                     <button
@@ -810,7 +813,7 @@ export function GridSection({
                       aria-label={tr('grid.tapHint')}
                       onClick={tapTempo}
                       className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] font-medium tracking-wider text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg ${
-                        tall ? 'h-8' : 'h-6'
+                        controlH
                       }`}
                     >
                       TAP
@@ -832,7 +835,7 @@ export function GridSection({
                         }
                         onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm / 2 })}
                         className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] tabular-nums text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
-                          tall ? 'h-8' : 'h-6'
+                          controlH
                         }`}
                       >
                         ÷2
@@ -849,7 +852,7 @@ export function GridSection({
                         }
                         onClick={() => editSegment(activeSegIndex, { bpm: activeSeg.bpm * 2 })}
                         className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] tabular-nums text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${
-                          tall ? 'h-8' : 'h-6'
+                          controlH
                         }`}
                       >
                         ×2
@@ -960,7 +963,7 @@ export function GridSection({
                       aria-label={tr('editor.waveformZoomReset')}
                       disabled={zoom <= 1}
                       onClick={() => setZoom(1)}
-                      className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                      className={`press flex min-w-8 items-center justify-center rounded-md px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${controlH}`}
                     >
                       {zoomLabel(zoom)}
                     </button>
