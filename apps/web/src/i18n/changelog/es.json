@@ -17,6 +17,10 @@
         "in": "0.59.0"
       },
       {
+        "text": "Y el editor de grid se maneja mejor. Cada segmento enseña su tempo, por estrecho que sea (el primero se quedaba mudo justo cuando más falta hacía), el que estás editando se distingue de un vistazo, y ahora puedes quitar un cambio de tempo con la X del propio segmento: hasta ahora solo se podía borrar con la tecla Suprimir sobre el rombo, que no lo descubría nadie. Los minutos de la regla también se leen sobre la onda en vez de disolverse en ella.",
+        "in": "0.59.0"
+      },
+      {
         "text": "Surco conserva las etiquetas de estado de ánimo y energía que escriben otras herramientas DJ, en vez de perderlas al convertir.",
         "in": "0.59.0"
       }

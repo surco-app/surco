@@ -17,6 +17,10 @@
         "in": "0.59.0"
       },
       {
+        "text": "And the grid editor handles better. Every segment shows its tempo however narrow it is (the first one used to fall silent exactly when you needed it), the one you're editing now stands out at a glance, and a tempo change can be removed with the ✕ on its own segment — until now that only worked by pressing Delete on the diamond, which nobody ever found. The ruler's timestamps are legible over the waveform too, rather than dissolving into it.",
+        "in": "0.59.0"
+      },
+      {
         "text": "Surco carries the mood and energy tags other DJ tools write, instead of dropping them on conversion.",
         "in": "0.59.0"
       }
