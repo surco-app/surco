@@ -1,4 +1,5 @@
 import type React from 'react'
+import { CheckboxRow } from './CheckboxRow'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../../shared/types'
@@ -176,26 +177,18 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             </span>
           </span>
         </label>
-        <label className="flex cursor-pointer items-center gap-3">
-          <input
-            data-testid="settings-trim"
-            type="checkbox"
-            checked={synced.trimWhitespace}
-            onChange={(e) => patch('trimWhitespace', e.target.checked)}
-            className="h-4 w-4 accent-[var(--color-accent)]"
-          />
-          <span className="text-sm">{tr('settings.trimWhitespace')}</span>
-        </label>
-        <label className="flex cursor-pointer items-center gap-3">
-          <input
-            data-testid="settings-zeropad"
-            type="checkbox"
-            checked={synced.zeroPadTrack}
-            onChange={(e) => patch('zeroPadTrack', e.target.checked)}
-            className="h-4 w-4 accent-[var(--color-accent)]"
-          />
-          <span className="text-sm">{tr('settings.zeroPadTrack')}</span>
-        </label>
+        <CheckboxRow
+        testid="settings-trim"
+        checked={synced.trimWhitespace}
+        onChange={(v) => patch('trimWhitespace', v)}
+        label={tr('settings.trimWhitespace')}
+      />
+        <CheckboxRow
+        testid="settings-zeropad"
+        checked={synced.zeroPadTrack}
+        onChange={(v) => patch('zeroPadTrack', v)}
+        label={tr('settings.zeroPadTrack')}
+      />
       </div>
 
     </>

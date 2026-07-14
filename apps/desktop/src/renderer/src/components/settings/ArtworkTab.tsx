@@ -1,4 +1,5 @@
 import type React from 'react'
+import { CheckboxRow } from './CheckboxRow'
 import { useTranslation } from 'react-i18next'
 import { isMacOS } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -38,53 +39,40 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
         <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
       </div>
 
-      <label className="mb-5 flex cursor-pointer items-center gap-3">
-        <input
-          data-testid="settings-cover-upscale"
-          type="checkbox"
-          checked={synced.coverUpscale}
-          onChange={(e) => patch('coverUpscale', e.target.checked)}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('settings.coverUpscale')}</span>
-      </label>
+      <CheckboxRow
+        testid="settings-cover-upscale"
+        checked={synced.coverUpscale}
+        onChange={(v) => patch('coverUpscale', v)}
+        label={tr('settings.coverUpscale')}
+        className="mb-5"
+      />
 
-      <label className="flex cursor-pointer items-center gap-3">
-        <input
-          data-testid="settings-cover-square"
-          type="checkbox"
-          checked={synced.coverSquare}
-          onChange={(e) => patch('coverSquare', e.target.checked)}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('settings.coverSquare')}</span>
-      </label>
+      <CheckboxRow
+        testid="settings-cover-square"
+        checked={synced.coverSquare}
+        onChange={(v) => patch('coverSquare', v)}
+        label={tr('settings.coverSquare')}
+      />
       <p className="mt-3 text-xs text-fg-dim">{tr('settings.coverHint')}</p>
 
-      <label className="mt-5 flex cursor-pointer items-center gap-3">
-        <input
-          data-testid="settings-replace-lowres"
-          type="checkbox"
-          checked={synced.replaceLowResCover}
-          onChange={(e) => patch('replaceLowResCover', e.target.checked)}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('settings.replaceLowRes')}</span>
-      </label>
+      <CheckboxRow
+        testid="settings-replace-lowres"
+        checked={synced.replaceLowResCover}
+        onChange={(v) => patch('replaceLowResCover', v)}
+        label={tr('settings.replaceLowRes')}
+        className="mt-5"
+      />
       <p className="mt-3 text-xs text-fg-dim">{tr('settings.replaceLowResHint')}</p>
 
       {isMacOS() && (
         <>
-          <label className="mt-5 flex cursor-pointer items-center gap-3">
-            <input
-              data-testid="settings-flac-finder-covers"
-              type="checkbox"
-              checked={synced.flacFinderCovers}
-              onChange={(e) => patch('flacFinderCovers', e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">{tr('settings.flacFinderCovers')}</span>
-          </label>
+          <CheckboxRow
+        testid="settings-flac-finder-covers"
+        checked={synced.flacFinderCovers}
+        onChange={(v) => patch('flacFinderCovers', v)}
+        label={tr('settings.flacFinderCovers')}
+        className="mt-5"
+      />
           <p className="mt-3 text-xs text-fg-dim">{tr('settings.flacFinderCoversHint')}</p>
         </>
       )}
