@@ -632,15 +632,30 @@ export function GridSection({
   // judged by eye and ear together. Stopped when the grid changes or the
   // section unmounts, like the trim audition.
   const [auditing, setAuditing] = useState(false)
-  const [playheadSec, setPlayheadSec] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef(0)
+  // The two playheads are moved by writing their style, not by re-rendering. Holding the
+  // position in state meant every animation frame re-rendered this whole component —
+  // recomputing the grid lines, the snapped centre and the active segment, and reconciling
+  // dozens of line spans at ×32 zoom — and the follow-scroll below then made the Strip
+  // report a new view, which re-rendered it a SECOND time per frame. The audition is
+  // precisely when the user is judging alignment BY EYE, so dropped frames there defeat the
+  // feature. Two elements move; nothing else has to.
+  const playheadRef = useRef<HTMLSpanElement>(null)
+  const overviewPlayheadRef = useRef<HTMLSpanElement>(null)
+  const movePlayheads = (sec: number | null): void => {
+    for (const el of [playheadRef.current, overviewPlayheadRef.current]) {
+      if (!el) continue
+      el.style.display = sec === null ? 'none' : ''
+      if (sec !== null) el.style.left = `${pct(sec)}%`
+    }
+  }
   function stopAudition(): void {
     audioRef.current?.pause()
     audioRef.current = null
     cancelAnimationFrame(rafRef.current)
     setAuditing(false)
-    setPlayheadSec(null)
+    movePlayheads(null)
   }
   // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is deliberately the trigger — a moved grid invalidates what the playhead is checking, so the cleanup must fire on it.
   useEffect(() => {
@@ -649,7 +664,7 @@ export function GridSection({
       audioRef.current = null
       cancelAnimationFrame(rafRef.current)
       setAuditing(false)
-      setPlayheadSec(null)
+      movePlayheads(null)
     }
   }, [value])
   // Space plays/pauses this check while the section is open — and the claim
@@ -692,12 +707,13 @@ export function GridSection({
     const tick = (): void => {
       if (!audioRef.current) return
       const t = audioRef.current.currentTime
-      setPlayheadSec(t)
+      movePlayheads(t)
       // Follow like a player: the wave scrolls along under the advancing
       // playhead instead of playing on past the window's right edge.
       if (durationSec > 0) centerOn(t / durationSec)
       rafRef.current = requestAnimationFrame(tick)
     }
+    movePlayheads(from)
     rafRef.current = requestAnimationFrame(tick)
     setAuditing(true)
   }
@@ -1020,14 +1036,15 @@ export function GridSection({
                         style={{ left: `${line.pct}%` }}
                       />
                     ))}
-                    {playheadSec !== null && (
-                      <span
-                        data-testid="grid-playhead"
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 w-px bg-fg"
-                        style={{ left: `${pct(playheadSec)}%` }}
-                      />
-                    )}
+                    {/* Always mounted, hidden until the audition moves it: the rAF writes
+                        its style directly, so it must not depend on a render to exist. */}
+                    <span
+                      ref={playheadRef}
+                      data-testid="grid-playhead"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 w-px bg-fg"
+                      style={{ display: 'none' }}
+                    />
                     <div
                       data-testid="grid-anchor-handle"
                       role="slider"
@@ -1282,14 +1299,13 @@ export function GridSection({
                       style={{ left: `${line.pct}%` }}
                     />
                   ))}
-                  {playheadSec !== null && (
-                    <span
-                      data-testid="grid-overview-playhead"
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-y-0 w-px bg-fg"
-                      style={{ left: `${pct(playheadSec)}%` }}
-                    />
-                  )}
+                  <span
+                    ref={overviewPlayheadRef}
+                    data-testid="grid-overview-playhead"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 w-px bg-fg"
+                    style={{ display: 'none' }}
+                  />
                   {/* The working window reads as the one clear block: everything
                       outside it dims (the trim shades' treatment), so the strip
                       above is visibly "this slice of the whole". */}

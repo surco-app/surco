@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
-import { useState } from 'react'
+import { Profiler, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Beatgrid, BeatgridResult, WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
@@ -350,6 +350,54 @@ describe('GridSection two-lane layout', () => {
     rafCbs.shift()?.(0)
     // 30 s into a 60 s track, centered: 0.5 × 6000 − 300.
     expect(scroller.scrollLeft).toBe(2700)
+  })
+
+  // The playhead moves by writing its own style, not by re-rendering the section.
+  //
+  // The audition is the one moment the user judges beat alignment BY EYE, so a dropped
+  // frame here defeats the feature's whole purpose — and it used to drop them: the playhead
+  // sat in React state, so every animation frame re-rendered all 1300 lines of this
+  // component (recomputing the grid lines, the snapped centre, the active segment, and
+  // reconciling dozens of line spans at ×32 zoom). Worse, the follow-scroll it also does
+  // makes the Strip report a new view, which re-rendered the section a SECOND time per
+  // frame. Two elements move; nothing else needs to.
+  it('moves the playhead without re-rendering the section', async () => {
+    const rafCbs: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      rafCbs.push(cb)
+      return rafCbs.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    stubOverlayRect()
+    // Count the section's renders for real. Asserting on the resulting DOM would prove
+    // nothing: a re-render produces byte-identical markup, so the cost is invisible from the
+    // outside — which is exactly why it went unnoticed. React's Profiler reports every
+    // commit the subtree makes, which is the thing that must not happen per frame.
+    const commits: string[] = []
+
+    render(
+      <Profiler id="grid" onRender={(_id, phase) => commits.push(phase)}>
+        {section()}
+      </Profiler>,
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-audition'))
+    audios[0].onloadedmetadata?.()
+    commits.length = 0
+
+    // act() so anything the frame enqueues is flushed before we look — otherwise a state
+    // write inside the rAF would sit pending and the commit would go uncounted, which is
+    // how a test like this quietly stops testing anything.
+    act(() => {
+      audios[0].currentTime = 15
+      rafCbs.shift()?.(0)
+    })
+
+    // The playhead moved, and its overview twin with it…
+    expect(screen.getByTestId('grid-playhead').style.left).toBe(`${(15 / 60) * 100}%`)
+    expect(screen.getByTestId('grid-overview-playhead').style.left).toBe(`${(15 / 60) * 100}%`)
+    // …and the frame cost React nothing: not one commit.
+    expect(commits).toEqual([])
   })
 
   // Scrubbing the overview churns through windows faster than ffmpeg can decode
