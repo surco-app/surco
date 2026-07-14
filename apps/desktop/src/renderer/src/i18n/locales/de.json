@@ -605,7 +605,13 @@
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
-      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise."
+      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
+      "laneTitle": "Beatgrid — solange der Bereich offen ist",
+      "laneAudition": "Grid anhören / stoppen",
+      "laneCentre": "Nächsten Beat zentrieren",
+      "laneAddSegment": "Neues Segment an der Linie",
+      "lanePrevSeam": "Vorheriger Grid-Wechsel",
+      "laneNextSeam": "Nächster Grid-Wechsel"
     },
     "stats": {
       "count": "Konvertierungen",

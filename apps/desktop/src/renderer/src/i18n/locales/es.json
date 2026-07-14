@@ -605,7 +605,13 @@
       "reset": "Restablecer al valor por defecto",
       "resetAll": "Restablecer todo",
       "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar.",
-      "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página."
+      "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página.",
+      "laneTitle": "Beatgrid — mientras la sección está abierta",
+      "laneAudition": "Escuchar la rejilla / parar",
+      "laneCentre": "Centrar el beat más cercano",
+      "laneAddSegment": "Segmento nuevo en la línea",
+      "lanePrevSeam": "Cambio de grid anterior",
+      "laneNextSeam": "Cambio de grid siguiente"
     },
     "stats": {
       "count": "conversiones",

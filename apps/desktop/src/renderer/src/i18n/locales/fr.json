@@ -605,7 +605,13 @@
       "reset": "Rétablir la valeur par défaut",
       "resetAll": "Tout rétablir",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
-      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page."
+      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
+      "laneTitle": "Beatgrid — tant que la section est ouverte",
+      "laneAudition": "Écouter la grille / arrêter",
+      "laneCentre": "Centrer le beat le plus proche",
+      "laneAddSegment": "Nouveau segment sur la ligne",
+      "lanePrevSeam": "Changement de grille précédent",
+      "laneNextSeam": "Changement de grille suivant"
     },
     "stats": {
       "count": "conversions",

@@ -605,7 +605,13 @@
       "reset": "Restaurar o padrão",
       "resetAll": "Restaurar tudo",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
-      "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página."
+      "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
+      "laneTitle": "Beatgrid — enquanto a seção está aberta",
+      "laneAudition": "Ouvir a grade / parar",
+      "laneCentre": "Centralizar o beat mais próximo",
+      "laneAddSegment": "Novo segmento na linha",
+      "lanePrevSeam": "Mudança de grade anterior",
+      "laneNextSeam": "Próxima mudança de grade"
     },
     "stats": {
       "count": "conversões",
