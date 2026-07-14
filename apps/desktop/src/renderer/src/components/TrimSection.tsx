@@ -1,6 +1,7 @@
 import {
   ChevronLeft,
   ChevronRight,
+  RotateCcw,
   Scissors,
   Square,
   TriangleAlert,
@@ -86,6 +87,9 @@ function Lane({
   onRelease,
   onKeyStep,
   onApplySuggestion,
+  onAudition,
+  onClear,
+  auditing,
   onContextChange,
   contextIndex,
   contextSec,
@@ -109,6 +113,9 @@ function Lane({
   onRelease: () => void
   onKeyStep: (deltaSec: number) => void
   onApplySuggestion: (sec: number) => void
+  onAudition: () => void
+  onClear: () => void
+  auditing: boolean
   onContextChange: (index: number) => void
   contextIndex: number
   contextSec: number
@@ -189,9 +196,37 @@ function Lane({
             <Tooltip label={tr('trim.nudgeForward')} />
           </button>
         </span>
-        {/* Each lane zooms on its own: the head can be dense music while the tail
-            is flat silence, and one shared control forced a compromise that fit
-            neither. */}
+        {/* This cut's own actions: hear it, clear it. They used to sit in a row above
+            BOTH lanes, so the "hear the end" button lived a panel away from the end
+            it played. */}
+        <span className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            data-testid={`trim-audition-${side}`}
+            aria-label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
+            disabled={cutSec === undefined}
+            onClick={onAudition}
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+          >
+            {auditing ? (
+              <Square className="h-3 w-3 fill-current" aria-hidden="true" />
+            ) : (
+              <Volume2 className="h-3 w-3" aria-hidden="true" />
+            )}
+            <Tooltip label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')} />
+          </button>
+          <button
+            type="button"
+            data-testid={`trim-clear-${side}`}
+            aria-label={tr('trim.clearSide')}
+            disabled={cutSec === undefined}
+            onClick={onClear}
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+          >
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('trim.clearSide')} />
+          </button>
+        </span>
         <span className="flex shrink-0 items-center gap-1">
           <button
             type="button"
@@ -469,18 +504,26 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     if (to > durationSec) return { from: Math.max(0, durationSec - span), to: durationSec }
     return { from, to }
   }
+  // The window follows the COMMITTED cut, never the live draft. Feeding it the
+  // draft made the lane re-frame on every pointermove — and a re-framed window is a
+  // re-decoded window, so the wave rebuilt itself under the finger, which is the
+  // lag and the flicker the user saw while dragging. The draft moves the handle;
+  // the wave holds still. On release the commit lands and, if the cut ended up out
+  // of frame, the window slides once to bring it back.
+  const committedStart = value?.startSec ?? 0
+  const committedEnd = value?.endSec ?? durationSec
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const startLane = useMemo(() => {
     const from = Math.max(0, startFocus - startContextSec)
     const lane = { from, to: Math.min(durationSec, from + startContextSec * 2) }
-    return contain(lane, startSec)
-  }, [startFocus, startContextSec, durationSec, startSec])
+    return contain(lane, committedStart)
+  }, [startFocus, startContextSec, durationSec, committedStart])
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const endLane = useMemo(() => {
     const to = Math.min(durationSec, endFocus + endContextSec)
     const lane = { from: Math.max(0, to - endContextSec * 2), to }
-    return contain(lane, endSec)
-  }, [endFocus, endContextSec, durationSec, endSec])
+    return contain(lane, committedEnd)
+  }, [endFocus, endContextSec, durationSec, committedEnd])
 
   // The by-ear check of a cut: a local element playing the source right at the
   // boundary — from the cut-in (what the converted track will open with), or the
@@ -523,22 +566,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     audio.onended = () => stopAudition()
     setAuditing(which)
   }
-  const auditionButton = (which: Side): React.JSX.Element => (
-    <button
-      type="button"
-      data-testid={`trim-audition-${which}`}
-      onClick={() => audition(which)}
-      className="press inline-flex shrink-0 items-center gap-1 text-[10px] text-fg-dim hover:text-fg"
-    >
-      {auditing === which ? (
-        <Square className="h-3 w-3" aria-hidden="true" />
-      ) : (
-        <Volume2 className="h-3 w-3" aria-hidden="true" />
-      )}
-      {tr(which === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
-    </button>
-  )
-
   // A click lands in a LANE, so the second it means is read off that lane's window.
   // Dragging PAST the lane's outer edge means the track's own edge: with the window
   // framed around the cut, the head lane may well start at 4.7 s, and "cut nothing"
@@ -598,6 +625,16 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     if (next.endSec !== undefined && next.endSec < durationSec - EDGE_SNAP_SEC)
       cleaned.endSec = Number(next.endSec.toFixed(3))
     onChange(cleaned.startSec === undefined && cleaned.endSec === undefined ? undefined : cleaned)
+  }
+
+  // Reset is per side now: clearing "the trim" wholesale threw away the cut at the
+  // other end of the track, which the user had just dialled in by hand.
+  function clearSide(which: Side): void {
+    if (!value) return
+    const next: TrimRange = { ...value }
+    if (which === 'start') delete next.startSec
+    else delete next.endSec
+    onChange(next.startSec === undefined && next.endSec === undefined ? undefined : next)
   }
 
   function release(): void {
@@ -670,6 +707,9 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       onKeyStep: (delta: number) => nudge(which, delta),
       onApplySuggestion: (sec: number) =>
         commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
+      onAudition: () => audition(which),
+      onClear: () => clearSide(which),
+      auditing: auditing === which,
       onContextChange: (index: number) => {
         reframe(which)
         setContext(which, index)
@@ -717,10 +757,9 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         <div className="mt-3">
           {(loading || wave) && (
             <>
-              {/* The action lives IN the detection row, not below the strip: the
-                  message is what the user reads ("detected 2.1 s"), so the one-click
-                  confirm must sit right next to it — parked under the wave it went
-                  unseen in real use. Same for Reset beside the cuts readout. */}
+              {/* Only the summary of what will be cut. The per-side actions (hear
+                  this cut, clear this cut) moved INTO the lane they act on — up here
+                  they were an "end" button sitting a panel away from the end. */}
               <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {shown ? (
                   <>
@@ -730,18 +769,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                       </span>
                       {` ${cuts.join(' · ')}`}
                     </span>
-                    {cutStart && auditionButton('start')}
-                    {cutEnd && auditionButton('end')}
-                    {value && (
-                      <button
-                        type="button"
-                        data-testid="trim-clear"
-                        onClick={() => onChange(undefined)}
-                        className="press shrink-0 text-[10px] text-fg-dim underline-offset-2 hover:text-fg hover:underline"
-                      >
-                        {tr('trim.clear')}
-                      </button>
-                    )}
                   </>
                 ) : (
                   wave &&

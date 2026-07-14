@@ -502,6 +502,7 @@
     "cutEnd": "{{seconds}} am Ende",
     "nothing": "Keine Stille am Anfang oder Ende erkannt.",
     "clear": "Zurücksetzen",
+    "clearSide": "Diesen Schnitt entfernen",
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",
     "applyAll_other": "Erkannte Stille in {{count}} Tracks abschneiden",

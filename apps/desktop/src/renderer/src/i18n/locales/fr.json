@@ -502,6 +502,7 @@
     "cutEnd": "{{seconds}} à la fin",
     "nothing": "Aucun silence détecté au début ou à la fin.",
     "clear": "Réinitialiser",
+    "clearSide": "Supprimer cette coupe",
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",
     "applyAll_other": "Rogner le silence détecté sur {{count}} morceaux",

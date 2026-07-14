@@ -502,6 +502,7 @@
     "cutEnd": "{{seconds}} del final",
     "nothing": "No se detecta silencio al inicio ni al final.",
     "clear": "Restablecer",
+    "clearSide": "Quitar este corte",
     "applyStart": "Recortar {{seconds}} del inicio",
     "applyEnd": "Recortar {{seconds}} del final",
     "applyAll_other": "Recortar el silencio detectado en {{count}} pistas",

@@ -502,6 +502,7 @@
     "cutEnd": "{{seconds}} do final",
     "nothing": "Nenhum silêncio detectado no início ou no final.",
     "clear": "Redefinir",
+    "clearSide": "Remover este corte",
     "applyStart": "Cortar {{seconds}} do início",
     "applyEnd": "Cortar {{seconds}} do final",
     "applyAll_other": "Cortar o silêncio detectado em {{count}} faixas",

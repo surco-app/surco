@@ -502,6 +502,7 @@
     "cutEnd": "{{seconds}} from the end",
     "nothing": "No leading or trailing silence detected.",
     "clear": "Reset",
+    "clearSide": "Clear this cut",
     "applyStart": "Cut {{seconds}} from the start",
     "applyEnd": "Cut {{seconds}} from the end",
     "applyAll_other": "Trim detected silence on {{count}} tracks",

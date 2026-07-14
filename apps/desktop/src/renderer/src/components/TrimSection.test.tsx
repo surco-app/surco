@@ -199,6 +199,37 @@ describe('TrimSection', () => {
     expect(to - from).toBeCloseTo(10, 5)
   })
 
+  // Dragging must not rebuild the wave. The window follows the COMMITTED cut, never
+  // the live draft — fed the draft, the lane re-framed on every pointermove, and a
+  // re-framed window is a re-decoded one, so the wave flickered and stalled under
+  // the finger.
+  it('never re-frames the lane while a handle is being dragged', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const lane = await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    const before = lane.getAttribute('data-window')
+    const handle = screen.getByTestId('trim-handle-start')
+    const overlay = screen.getByTestId('trim-overlay-start')
+    vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      width: 1000,
+      top: 0,
+      height: 64,
+      right: 1000,
+      bottom: 64,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect)
+    fireEvent(handle, new MouseEvent('pointerdown', { bubbles: true, clientX: 500 }))
+    for (const x of [400, 300, 200, 100]) {
+      fireEvent(handle, new MouseEvent('pointermove', { bubbles: true, clientX: x }))
+      // The window has not moved a hair, so no window decode was ever requested.
+      expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', before)
+    }
+    fireEvent(handle, new MouseEvent('pointerup', { bubbles: true }))
+  })
+
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,
   // and the reset that clears the whole range in one click.
   it('shades the staged cuts and clears them from the reset button', async () => {
@@ -210,7 +241,18 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-shade-end')).toBeInTheDocument()
     expect(screen.getByTestId('trim-cuts')).toHaveTextContent('9.7 s from the start')
     expect(screen.getByTestId('trim-cuts')).toHaveTextContent('9.7 s from the end')
-    fireEvent.click(screen.getByTestId('trim-clear'))
+    // Reset belongs to a lane: clearing the head must leave the tail cut alone —
+    // one button for "the trim" used to throw away work at the other end of the
+    // track that the user had just dialled in by hand.
+    fireEvent.click(screen.getByTestId('trim-clear-start'))
+    expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
+  })
+
+  // Clearing the last remaining cut leaves the track with no trim at all.
+  it('drops the trim entirely when the last cut is cleared', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { endSec: 90.3 }, onChange }))
+    fireEvent.click(await screen.findByTestId('trim-clear-end', undefined, { timeout: 3000 }))
     expect(onChange).toHaveBeenCalledWith(undefined)
   })
 
