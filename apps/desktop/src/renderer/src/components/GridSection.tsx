@@ -53,6 +53,10 @@ const SNAP_PX = 10
 // measuring on every render — the strip fills the editor pane, and the magnet's
 // feel is forgiving enough that a panel a few hundred px off changes nothing.
 const LANE_PX = 900
+// The working lane's wave, at full strength. The shared AFTER_COLOR is 80% opaque,
+// which reads as washed-out navy once the grid's amber sits on top of it — and the
+// audio, not the grid, is what the eye is trying to read.
+const LANE_WAVE_COLOR = 'rgb(96, 165, 250)'
 
 // Press-and-hold repeats: aligning a grid is dozens of tiny steps, so the
 // stepper buttons auto-repeat like rekordbox's — fire once on press, then keep
@@ -973,7 +977,7 @@ export function GridSection({
                 wave={wave}
                 loading={loading}
                 loudness={undefined}
-                color={AFTER_COLOR}
+                color={LANE_WAVE_COLOR}
                 raster={OVERLAY_W}
                 zoom={zoom}
                 onZoomChange={setZoom}
@@ -1018,19 +1022,39 @@ export function GridSection({
                         wave, and same-hue lines disappeared into a busy mix.
                         Full opacity plus a faint halo — a bare 1px line at half
                         opacity still sank between the peaks of a busy wave. */}
-                    {lines.map((line) => (
-                      <span
-                        key={line.sec}
-                        data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
-                        aria-hidden="true"
-                        className={`pointer-events-none absolute -translate-x-1/2 ${
-                          line.downbeat
-                            ? 'inset-y-0 w-0.5 bg-[var(--color-warn)] shadow-[0_0_3px_var(--color-warn)]'
-                            : 'inset-y-1.5 w-px bg-[var(--color-warn)]/80 shadow-[0_0_2px_rgba(0,0,0,0.6)]'
-                        }`}
-                        style={{ left: `${line.pct}%` }}
-                      />
-                    ))}
+                    {/* Two ranks, not thirty equal lines. The DOWNBEAT (the 1 of the
+                        bar) is the one the ear and the eye actually track, so it alone
+                        gets a full-height amber rule. The three beats between it are
+                        tick marks at the lane's edges — present when you need to count,
+                        but they never cross the wave, so the audio stays the thing you
+                        are looking at. Before this every beat was a full amber bar with
+                        a halo: a picket fence over the music. */}
+                    {lines.map((line) =>
+                      line.downbeat ? (
+                        <span
+                          key={line.sec}
+                          data-testid="grid-line-downbeat"
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-[var(--color-warn)]"
+                          style={{ left: `${line.pct}%` }}
+                        />
+                      ) : (
+                        <span
+                          key={line.sec}
+                          data-testid="grid-line"
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2"
+                          style={{
+                            left: `${line.pct}%`,
+                            // Ticks at the top and bottom edges only: the middle of the
+                            // lane — where the wave lives — is left alone.
+                            background:
+                              'linear-gradient(to bottom, var(--color-warn) 0 12%, transparent 12% 88%, var(--color-warn) 88% 100%)',
+                            opacity: 0.55,
+                          }}
+                        />
+                      ),
+                    )}
                     {playheadSec !== null && (
                       <span
                         data-testid="grid-playhead"
@@ -1124,36 +1148,40 @@ export function GridSection({
                   The chip reads the offset from the active segment's downbeat
                   in bars, so phase drift is a number, not a squint. */}
               {wave && durationSec > 0 && shown && (
-                <>
-                  <span
-                    data-testid="grid-center-line"
-                    data-snapped={centreSnapped || undefined}
-                    aria-hidden="true"
-                    // A crosshair, not a marker: it stays nailed to the middle of
-                    // the viewport while the wave slides under it (rekordbox's
-                    // reference). It must never move or grow mid-pan — chasing
-                    // the magnetised beat made it smear into a fat streak while
-                    // dragging. The magnet lives in the POSITION the controls
-                    // act on, not in the line; the glow only says "caught".
-                    className={`pointer-events-none absolute inset-y-0 left-1/2 z-20 w-0.5 -translate-x-1/2 bg-[var(--color-danger)] ${
-                      centreSnapped && !panning ? 'shadow-[0_0_5px_var(--color-danger)]' : 'opacity-70'
-                    }`}
-                  />
-                  {activeSeg && (
-                    <span
-                      data-testid="grid-center-bars"
-                      className="pointer-events-none absolute top-1 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)]/90 px-1.5 py-0.5 text-[9px] leading-none tabular-nums text-fg-dim"
-                    >
-                      {tr('grid.centerBars', {
-                        bars: `${viewCentreSec >= activeSeg.anchorSec ? '+' : '−'}${Math.abs(
-                          (viewCentreSec - activeSeg.anchorSec) / ((240 / activeSeg.bpm) || 1),
-                        ).toFixed(1)}`,
-                      })}
-                    </span>
-                  )}
-                </>
+                <span
+                  data-testid="grid-center-line"
+                  data-snapped={centreSnapped || undefined}
+                  aria-hidden="true"
+                  // A crosshair, not a marker: nailed to the middle of the viewport
+                  // while the wave slides under it (rekordbox's reference). It must
+                  // never move or grow mid-pan — chasing the magnetised beat made it
+                  // smear into a fat streak while dragging. The magnet lives in the
+                  // POSITION the controls act on, not in the line; the glow only
+                  // says "caught". Bounded to the LANE's height (not the wrapper's,
+                  // which includes the scrollbar) — it used to hang below the wave,
+                  // spilling into the buttons.
+                  className={`pointer-events-none absolute top-0 left-1/2 z-20 w-0.5 -translate-x-1/2 bg-[var(--color-danger)] ${
+                    tall ? 'h-48' : 'h-24'
+                  } ${
+                    centreSnapped && !panning ? 'shadow-[0_0_5px_var(--color-danger)]' : 'opacity-80'
+                  }`}
+                />
               )}
               </div>
+              {/* The offset in bars: BELOW the lane, not floating over the wave it
+                  was there to measure. Centred under the reference it belongs to. */}
+              {wave && durationSec > 0 && shown && activeSeg && (
+                <p
+                  data-testid="grid-center-bars"
+                  className="mt-1 text-center text-[10px] leading-none tabular-nums text-fg-dim"
+                >
+                  {tr('grid.centerBars', {
+                    bars: `${viewCentreSec >= activeSeg.anchorSec ? '+' : '−'}${Math.abs(
+                      (viewCentreSec - activeSeg.anchorSec) / ((240 / activeSeg.bpm) || 1),
+                    ).toFixed(1)}`,
+                  })}
+                </p>
+              )}
               {wave && durationSec > 0 && shown && activeSeg && (
                 <div
                   data-testid="grid-nudge-bar"
