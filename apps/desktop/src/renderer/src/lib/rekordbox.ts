@@ -1,20 +1,13 @@
 import { gridSegments } from '../../../shared/beatgrid'
 import type { TrackItem } from '../types'
 import { exportedBeatgrid } from './beatgrid'
+import { escapeXml } from './xml'
 
 // Builds a rekordbox-importable collection XML (DJ_PLAYLISTS v1) from the loaded
 // tracks, plus a single "Surco" playlist referencing them all. rekordbox imports each
 // TRACK by its Location URL, so the path is the one part that must be exactly right;
 // everything else is best-effort metadata. Pure so it can be unit-tested without the
 // filesystem — the caller writes the returned string to disk.
-
-const escapeXml = (s: string): string =>
-  s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
 
 // rekordbox wants a file://localhost/<absolute-path> URL with the path percent-encoded
 // (spaces especially, or the import silently drops the track).

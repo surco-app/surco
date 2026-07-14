@@ -1,6 +1,7 @@
 import type { TrackItem } from '../types'
 import { gridSegments } from '../../../shared/beatgrid'
 import { exportedBeatgrid } from './beatgrid'
+import { escapeXml } from './xml'
 
 // Builds a Traktor collection (.nml) from the loaded tracks, plus a single "Surco"
 // playlist. Like the rekordbox export it's a bridge file the user imports — Traktor
@@ -10,14 +11,6 @@ import { exportedBeatgrid } from './beatgrid'
 // keeps the filename literal (XML-escaped, NOT percent-encoded), with the volume held
 // separately — a Windows drive letter, or empty for a POSIX boot-volume path (Traktor
 // then resolves the absolute DIR). The playlist references a track by VOLUME+DIR+FILE.
-
-const escapeXml = (s: string): string =>
-  s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
 
 function traktorLocation(path: string): { volume: string; dir: string; file: string; key: string } {
   const norm = path.replace(/\\/g, '/')
