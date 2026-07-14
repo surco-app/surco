@@ -388,8 +388,58 @@ describe('GridSection two-lane layout', () => {
     expect(chips[0]).toHaveTextContent('120.0')
     expect(chips[1]).toHaveTextContent('121.0')
     expect(chips[2]).toHaveTextContent('122.0')
-    // 20 s of a 60 s track: the second stretch starts a third of the way in.
-    expect(chips[1].style.left).toBe(`${(20 / 60) * 100}%`)
+    // 20 s of a 60 s track: the second stretch starts a third of the way in. The
+    // chip fills its wrapper, and the wrapper is what carries the position — it
+    // has to hold the remove button as a sibling, which cannot nest in a button.
+    expect((chips[1].parentElement as HTMLElement).style.left).toBe(`${(20 / 60) * 100}%`)
+  })
+
+  // Removing a tempo change existed only on the keyboard (focus the diamond,
+  // press Delete), which nothing on screen said — so in practice a segment the
+  // detector got wrong was one the user could not take back.
+  it('removes a tempo change from its stretch in the row', async () => {
+    const onChange = vi.fn()
+    render(
+      section({
+        value: { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 20, bpm: 121 }] },
+        onChange,
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-segment-remove'))
+    // Removing the last change leaves a plain constant grid — no empty `changes`
+    // key trailing behind it, which would serialise into session.json and every
+    // DJ export as a multi-segment grid that holds no segments.
+    expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: 0 })
+  })
+
+  // The base grid is where the track's grid STARTS. There is no earlier stretch
+  // to fall back to, so offering to remove it would be offering to leave the
+  // track with no grid at all — a different action, and not this one.
+  it('offers no remove on the base stretch', async () => {
+    render(
+      section({
+        value: { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 20, bpm: 121 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // Two stretches, but only the one past the base can be removed.
+    expect(screen.getAllByTestId('grid-segment-chip')).toHaveLength(2)
+    expect(screen.getAllByTestId('grid-segment-remove')).toHaveLength(1)
+  })
+
+  // The tempo is what the chip is FOR. It used to be hidden on any stretch under
+  // 12% of the width, and on a real rip that silenced the base stretch — whose
+  // BPM the user then had no way to read at all.
+  it('shows the tempo even on a narrow stretch', async () => {
+    render(
+      section({
+        // The base holds 5 s of a 60 s track: 8% wide, under the old threshold.
+        value: { bpm: 120, anchorSec: 0, changes: [{ anchorSec: 5, bpm: 121 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(screen.getAllByTestId('grid-segment-chip')[0]).toHaveTextContent('120.0')
   })
 
   // A constant grid has one stretch and no handover, so the row would draw a

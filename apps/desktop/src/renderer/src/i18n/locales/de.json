@@ -551,6 +551,7 @@
     "prevSegment": "Vorheriger Grid-Wechsel ([)",
     "nextSegment": "Nächster Grid-Wechsel (])",
     "segmentAt": "Grid-Segment bei {{time}}, {{bpm}} BPM",
+    "removeSegment": "Tempowechsel bei {{time}} entfernen",
     "centreBeat": "Beat zentrieren (C)",
     "tapHint": "Tempo tippen",
     "expand": "Beat-Abstände vergrößern",

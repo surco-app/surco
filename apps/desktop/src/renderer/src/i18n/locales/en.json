@@ -551,6 +551,7 @@
     "prevSegment": "Previous grid change ([)",
     "nextSegment": "Next grid change (])",
     "segmentAt": "Grid segment at {{time}}, {{bpm}} BPM",
+    "removeSegment": "Remove the tempo change at {{time}}",
     "centreBeat": "Centre beat (C)",
     "tapHint": "Tap the tempo",
     "expand": "Expand beat intervals",

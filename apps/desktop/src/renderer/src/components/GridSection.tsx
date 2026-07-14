@@ -15,6 +15,7 @@ import {
   Undo2,
   Volume2,
   Wand2,
+  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -1456,30 +1457,60 @@ export function GridSection({
                     const start = Math.max(0, seg.anchorSec)
                     const end = segments[i + 1]?.anchorSec ?? durationSec
                     const width = ((end - start) / durationSec) * 100
+                    const active = i === activeSegIndex
+                    // The base grid is not a "change" — there is nothing to
+                    // remove it back to — so only the stretches past it can go.
+                    const removable = i > 0
                     return (
-                      <button
-                        type="button"
+                      <span
                         key={seg.anchorSec}
-                        data-testid="grid-segment-chip"
-                        aria-label={tr('grid.segmentAt', {
-                          bpm: Number(seg.bpm.toFixed(2)),
-                          time: formatTime(start),
-                        })}
-                        onClick={() => navigate(start / durationSec)}
-                        className={`absolute inset-y-0 overflow-hidden border-r border-[var(--color-panel)] text-[9px] tabular-nums last:border-r-0 ${
-                          i === activeSegIndex
-                            ? 'bg-accent/30 text-fg'
-                            : 'bg-[var(--color-panel-2)] text-fg-dim hover:bg-[var(--color-panel-2)]/70'
-                        } ${i === 0 ? 'rounded-l-md' : ''} ${
+                        className={`group absolute inset-y-0 ${i === 0 ? 'rounded-l-md' : ''} ${
                           i === segments.length - 1 ? 'rounded-r-md' : ''
                         }`}
                         style={{ left: `${(start / durationSec) * 100}%`, width: `${width}%` }}
                       >
-                        {/* The tempo only when the stretch is wide enough to hold
-                            it: a 3% sliver would show two clipped digits, which
-                            reads as a rendering fault rather than a number. */}
-                        {width > 12 && <span className="px-1">{seg.bpm.toFixed(1)}</span>}
-                      </button>
+                        <button
+                          type="button"
+                          data-testid="grid-segment-chip"
+                          aria-label={tr('grid.segmentAt', {
+                            bpm: Number(seg.bpm.toFixed(2)),
+                            time: formatTime(start),
+                          })}
+                          aria-current={active ? 'true' : undefined}
+                          onClick={() => navigate(start / durationSec)}
+                          className={`absolute inset-0 overflow-hidden rounded-[inherit] border-r border-[var(--color-panel)] text-[9px] tabular-nums ${
+                            active
+                              ? 'bg-accent/40 font-medium text-fg ring-1 ring-inset ring-accent'
+                              : 'bg-[var(--color-panel-2)] text-fg-dim hover:bg-[var(--color-panel-2)]/70'
+                          }`}
+                        >
+                          {/* Always the tempo, however narrow the stretch. It used
+                              to be hidden below a width threshold, on the theory
+                              that clipped digits read as a rendering fault — but
+                              the tempo IS what the chip is for, and the stretch
+                              that lost it was the base one, whose BPM the user had
+                              then no way to see at all. Clipped beats absent. */}
+                          <span className="px-1">{seg.bpm.toFixed(1)}</span>
+                        </button>
+                        {/* Removing a stretch is the counterpart of "Adjust from
+                            here", and until now it only existed on the keyboard
+                            (focus the diamond, press Delete) — which nothing on
+                            screen said. It appears on hover rather than living on
+                            the bar: a row of permanent ✕ buttons reads as clutter
+                            on a control the user mostly just glances at. */}
+                        {removable && width > 4 && (
+                          <button
+                            type="button"
+                            data-testid="grid-segment-remove"
+                            aria-label={tr('grid.removeSegment', { time: formatTime(start) })}
+                            onClick={() => removeChange(i - 1)}
+                            className="press absolute top-1/2 right-0.5 hidden -translate-y-1/2 rounded p-0.5 text-fg-dim hover:bg-[var(--color-panel)] hover:text-danger group-hover:block"
+                          >
+                            <X className="h-2.5 w-2.5" aria-hidden="true" />
+                            <Tooltip label={tr('grid.removeSegment', { time: formatTime(start) })} />
+                          </button>
+                        )}
+                      </span>
                     )
                   })}
                 </div>

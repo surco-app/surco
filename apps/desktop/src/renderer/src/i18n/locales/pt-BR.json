@@ -551,6 +551,7 @@
     "prevSegment": "Mudança de grade anterior ([)",
     "nextSegment": "Próxima mudança de grade (])",
     "segmentAt": "Segmento da grade em {{time}}, {{bpm}} BPM",
+    "removeSegment": "Remover a mudança de tempo em {{time}}",
     "centreBeat": "Centralizar batida (C)",
     "tapHint": "Marque o tempo",
     "expand": "Expandir intervalos de batida",
