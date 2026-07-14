@@ -97,6 +97,7 @@ import { shouldShowOnboarding } from './lib/onboarding'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { SettingsProvider } from './lib/settingsContext'
+import { type ToastReporter, ToastProvider } from './lib/toastContext'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
@@ -227,6 +228,18 @@ export default function App(): React.JSX.Element {
         testid: 'app-error',
       }),
     [store, tr],
+  )
+  // The route out for a failure raised deep in the tree — the quality report, the stats
+  // image, a dragged cover — none of which can reach the store from where they live. Same
+  // red persistent card as setAppError, but taking a ready message: those callers know
+  // exactly what failed, so they translate it themselves rather than squeezing it through
+  // the AppError kinds. Memoized: an unstable value here would re-render every consumer.
+  const toastReporter = useMemo<ToastReporter>(
+    () => ({
+      reportError: (message: string) =>
+        void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
+    }),
+    [store],
   )
   // The activity log: always-accumulating feed of background work, shown in a
   // movable floating panel the user toggles.
@@ -1610,6 +1623,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <SettingsProvider settings={settings}>
+     <ToastProvider value={toastReporter}>
       {/* Drag-and-drop is a pointer-only convenience; the "Add files" button is the
           keyboard-accessible path to the same action. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
@@ -2117,6 +2131,7 @@ export default function App(): React.JSX.Element {
         )}
         {confettiBurst > 0 && <Confetti key={confettiBurst} />}
       </div>
+     </ToastProvider>
     </SettingsProvider>
   )
 }

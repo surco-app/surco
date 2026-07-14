@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
+import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { QualitySection } from './QualitySection'
 
@@ -199,6 +200,39 @@ describe('QualitySection verdict caption', () => {
     expect(
       button.compareDocumentPosition(spectrogram) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
+  })
+
+  // The save crosses IPC to write a file, so it fails for ordinary reasons — no permission,
+  // a full disk. It used to console.error and stop: the spinner finished, no file appeared,
+  // and nothing was said, which reads exactly like success. Whatever else happens, the user
+  // who pressed the button has to be told it didn't work.
+  it('tells the user when the report cannot be saved', async () => {
+    const reportError = vi.fn()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi
+        .fn()
+        .mockResolvedValue({ image: 'x', cutoffHz: 21000, sampleRateHz: 44100, processed: false }),
+      exportQualityReport: vi.fn().mockRejectedValue(new Error('EACCES')),
+    }
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <ToastProvider value={{ reportError }}>
+          <QualitySection
+            item={track('/m/a.flac')}
+            showSpectrum
+            showLoudness={false}
+            open
+            onToggle={vi.fn()}
+            onShowLoudnessHelp={vi.fn()}
+          />
+        </ToastProvider>
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(await screen.findByTestId('quality-save-report'))
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledWith(i18n.t('errors.qualityReport')))
   })
 
   it('flags regenerated highs with a Reprocessed badge, not Bad quality over cutoff boilerplate', async () => {

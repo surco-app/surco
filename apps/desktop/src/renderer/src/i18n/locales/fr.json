@@ -103,7 +103,10 @@
     "unexpected": "Quelque chose a mal tourné : {{detail}}",
     "settingsLoad": "Impossible de charger tes réglages — les valeurs par défaut sont utilisées pour cette session.",
     "settingsSave": "Impossible d'enregistrer tes réglages.",
-    "trash": "Impossible de mettre {{detail}} à la corbeille."
+    "trash": "Impossible de mettre {{detail}} à la corbeille.",
+    "qualityReport": "Le rapport de qualité n'a pas pu être enregistré.",
+    "statsImage": "L'image de statistiques n'a pas pu être enregistrée.",
+    "draggedCover": "Cette image n'a pas pu être utilisée comme pochette."
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",

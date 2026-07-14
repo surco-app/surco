@@ -103,7 +103,10 @@
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",
     "settingsLoad": "Deine Einstellungen konnten nicht geladen werden — für diese Sitzung gelten die Standardwerte.",
     "settingsSave": "Deine Einstellungen konnten nicht gespeichert werden.",
-    "trash": "{{detail}} konnte nicht in den Papierkorb gelegt werden."
+    "trash": "{{detail}} konnte nicht in den Papierkorb gelegt werden.",
+    "qualityReport": "Der Qualitätsbericht konnte nicht gespeichert werden.",
+    "statsImage": "Das Statistikbild konnte nicht gespeichert werden.",
+    "draggedCover": "Dieses Bild konnte nicht als Cover verwendet werden."
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",

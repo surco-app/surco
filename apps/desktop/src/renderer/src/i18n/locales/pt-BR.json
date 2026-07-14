@@ -103,7 +103,10 @@
     "unexpected": "Algo deu errado: {{detail}}",
     "settingsLoad": "Não foi possível carregar suas configurações — os padrões estão em uso nesta sessão.",
     "settingsSave": "Não foi possível salvar suas configurações.",
-    "trash": "Não foi possível mover {{detail}} para a Lixeira."
+    "trash": "Não foi possível mover {{detail}} para a Lixeira.",
+    "qualityReport": "Não foi possível salvar o relatório de qualidade.",
+    "statsImage": "Não foi possível salvar a imagem de estatísticas.",
+    "draggedCover": "Não foi possível usar essa imagem como capa."
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",

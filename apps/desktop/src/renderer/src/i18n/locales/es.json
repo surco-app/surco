@@ -103,7 +103,10 @@
     "unexpected": "Algo ha fallado: {{detail}}",
     "settingsLoad": "No se ha podido cargar tu configuración — se usan los valores por defecto en esta sesión.",
     "settingsSave": "No se ha podido guardar tu configuración.",
-    "trash": "No se ha podido enviar {{detail}} a la papelera."
+    "trash": "No se ha podido enviar {{detail}} a la papelera.",
+    "qualityReport": "No se ha podido guardar el informe de calidad.",
+    "statsImage": "No se ha podido guardar la imagen de estadísticas.",
+    "draggedCover": "Esa imagen no se ha podido usar como carátula."
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",

@@ -11,6 +11,7 @@ import {
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../lib/toastContext'
 import type { Release } from '../../../shared/types'
 import { useWindowFocus } from '../hooks/useWindowFocus'
 import { coverSourceOf } from '../lib/coverSource'
@@ -90,6 +91,7 @@ export function CoverPicker({
   onApplyCoverAll,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const { reportError } = useToast()
   // In multi-select the cover is whatever the tracks already share (or nothing, when
   // they differ); a drop/pick stamps it onto all of them instead of just the primary.
   const sharedCover =
@@ -275,8 +277,13 @@ export function CoverPicker({
       .resolveDraggedCover(urls)
       .then((resolved) => {
         if (resolved) applyCover(resolved.coverUrl, resolved.coverPath)
+        // Not an edge case: a hotlink-blocked or dead image URL is the ordinary outcome of
+        // dragging from a browser. The drop highlight has already cleared by now, so saying
+        // nothing makes a failed drop look exactly like a successful one — the user waits
+        // for artwork that is never coming.
+        else reportError(tr('errors.draggedCover'))
       })
-      .catch(() => {})
+      .catch(() => reportError(tr('errors.draggedCover')))
   }
 
   // The covers the picker steps through: the file's own artwork first, then the

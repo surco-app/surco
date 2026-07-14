@@ -2,6 +2,7 @@ import { AudioLines, Disc3, FolderDown, Headphones, Heart, Share, Store } from '
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../../lib/toastContext'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL } from '../../lib/donate'
 import {
@@ -28,6 +29,7 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
 
 export function StatsTab({ settings }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const { reportError } = useToast()
   const { conversionCount, stats } = settings
   const anyActivity = conversionCount > 0 || CELLS.some(({ key }) => stats[key] > 0)
   const milestone = nextMilestone(conversionCount)
@@ -65,10 +67,11 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       })
       await window.api.exportStatsImage(png)
     } catch (err) {
-      // Composition only draws numbers already on screen, so a failure is a bug, not a
-      // user state; this tab has no error surface, so at least say so loudly where a
-      // bug report's console capture will carry it.
+      // Composition only draws numbers already on screen, but the save still crosses IPC to
+      // write a file — permissions, a full disk, a bad path. The user pressed Share and saw
+      // the spinner finish; silence here reads as "it worked" with no image to show for it.
       console.error('stats image failed', err)
+      reportError(tr('errors.statsImage'))
     } finally {
       setSharing(false)
     }

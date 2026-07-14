@@ -2,6 +2,7 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../lib/toastContext'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -60,6 +61,7 @@ export function QualitySection({
   onShowLoudnessHelp,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const { reportError } = useToast()
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
   const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
@@ -139,10 +141,12 @@ export function QualitySection({
       })
       await window.api.exportQualityReport(png, `${item.fileName} — Surco`)
     } catch (err) {
-      // Composition reads the image already rendered on screen, so a failure is a bug,
-      // not a user state; this section has no error surface, so at least say so loudly
-      // where a bug report's console capture will carry it.
+      // Composition reads an image already on screen, so this is mostly a bug path — but it
+      // also crosses IPC to write a file, which fails for ordinary reasons (permissions, a
+      // full disk, a bad path). Either way the user pressed a button and watched the spinner
+      // finish: staying silent leaves them staring at a folder with no report in it.
       console.error('quality report failed', err)
+      reportError(tr('errors.qualityReport'))
     } finally {
       setSavingReport(false)
     }
