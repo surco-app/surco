@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.56",
+    "date": "14 de julio de 2026",
+    "title": "Recorte, de cerca",
+    "items": [
+      {
+        "text": "El recorte de silencio ahora muestra los dos sitios que importan — el inicio y el final de la pista — uno junto al otro y ya encuadrados en el corte. Se acabó buscar el silencio con la lupa.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Los cortes se ajustan al milisegundo: teclea el segundo exacto, muévelo en pasos de 10 ms y haz zoom en cada extremo por separado hasta un cuarto de segundo de contexto.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "El carril del beatgrid vuelve a leerse como un grid: el downbeat manda, los beats quedan discretos y la onda ya no se pierde bajo una valla de líneas.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Auto ahora vuelve a detectar solo el tramo en el que estás trabajando cuando has dividido el grid con Ajustar desde aquí, en vez de rehacer la pista entera.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Todas las secciones con onda comparten un mismo control de zoom, y las barras están alineadas: mismos botones, mismo orden, mismo sitio, estés donde estés.",
+        "in": "0.56.0"
+      }
+    ]
+  },
+  {
     "version": "0.55",
     "date": "13 de julio de 2026",
     "title": "Edición de grid, ya mayor",

@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.56",
+    "date": "July 14, 2026",
+    "title": "Trim, up close",
+    "items": [
+      {
+        "text": "Silence trim now shows the two places that matter — the start and the end of the track — side by side and already framed on the cut. No more zooming and scrubbing to find the silence.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Cuts are set to the millisecond: type the exact second, step it in 10 ms nudges, and zoom each end independently down to a quarter-second of context.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "The beatgrid lane reads like a grid again: the downbeat leads, the beats stay quiet, and the wave is no longer buried under a picket fence of lines.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Auto now re-detects just the stretch you are working on when you have split the grid with Adjust from here, instead of redoing the whole track.",
+        "in": "0.56.0"
+      },
+      {
+        "text": "Every wave section shares one zoom control, and the toolbars line up: same buttons, same order, same place, whichever section you are in.",
+        "in": "0.56.0"
+      }
+    ]
+  },
+  {
     "version": "0.55",
     "date": "July 13, 2026",
     "title": "Grid editing, all grown up",
