@@ -731,7 +731,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
               {loading || !wave || durationSec <= 0 ? (
                 <WaveformSkeleton testid="trim-loading" />
               ) : (
-                <div className="flex gap-3">
+                // The lanes are two DIFFERENT places in the track (second 0 and
+                // second 400), not one continuous wave: pressed together the eye read
+                // them as a single strip, so they get a proper gap between them.
+                <div className="flex gap-8">
                   <Lane {...laneProps('start')} />
                   <Lane {...laneProps('end')} />
                 </div>
