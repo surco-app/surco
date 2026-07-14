@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.57",
+    "date": "July 14, 2026",
+    "title": "Nothing is lost in silence",
+    "items": [
+      {
+        "text": "Removing a selection from the list now asks first. A row's ✕ acted on the whole selection it belonged to, so one click on a 12-pixel target could drop forty tracks and every edit staged on them, with no way back. Now it warns you — and removing a lone row is still one click.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Failures no longer happen in silence. Saving a quality report, sharing your stats or dragging artwork in from a browser could quietly do nothing — the spinner finished and no file appeared. Now they tell you.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Button labels are actually readable in dark mode. The palette's blue and rose are light colours, and white text on them was left floating; it now carries dark ink and contrasts properly.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Big crates no longer eat memory. Waveforms and spectrograms are released once nothing shows them, instead of being kept until you quit: analysing 300 tracks in one go stops weighing on the rest of the session.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Auditioning the beatgrid runs smoothly. The playhead used to repaint the whole section on every frame — exactly while you are judging by eye whether the clicks land on the transients.",
+        "in": "0.57.0"
+      }
+    ]
+  },
+  {
     "version": "0.56",
     "date": "July 14, 2026",
     "title": "Trim, up close",

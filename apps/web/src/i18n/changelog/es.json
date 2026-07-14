@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.57",
+    "date": "14 de julio de 2026",
+    "title": "Nada se pierde en silencio",
+    "items": [
+      {
+        "text": "Quitar una selección de la lista ahora pregunta antes. La ✕ de una fila actuaba sobre toda la selección a la que pertenecía, así que un clic en un target de 12 píxeles podía llevarse cuarenta pistas y todas sus ediciones sin vuelta atrás. Ahora avisa; quitar una fila suelta sigue siendo un clic.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Los fallos ya no ocurren en silencio. Guardar un informe de calidad, compartir tus estadísticas o arrastrar una carátula desde el navegador podían no hacer nada sin decir por qué — el spinner terminaba y no aparecía ningún archivo. Ahora te lo cuentan.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "El texto de los botones se lee de verdad en modo oscuro. El azul y el rosa de la paleta son claros, y el texto blanco encima quedaba flotando; ahora lleva tinta oscura y contrasta como debe.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Las cajas grandes ya no se comen la memoria. Las ondas y los espectrogramas se liberan cuando nada los muestra, en vez de quedarse hasta cerrar la app: analizar 300 pistas de una tirada deja de pesar sobre el resto de la sesión.",
+        "in": "0.57.0"
+      },
+      {
+        "text": "Escuchar el beatgrid va fluido. La cabeza de reproducción se movía repintando toda la sección en cada fotograma — justo mientras juzgas a ojo si los clics caen sobre los transitorios.",
+        "in": "0.57.0"
+      }
+    ]
+  },
+  {
     "version": "0.56",
     "date": "14 de julio de 2026",
     "title": "Recorte, de cerca",
