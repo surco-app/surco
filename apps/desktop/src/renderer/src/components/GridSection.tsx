@@ -939,43 +939,6 @@ export function GridSection({
                     </span>
                   </>
                 )}
-                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
-                  {shown && (
-                    <span
-                      data-testid="grid-anchor"
-                      className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
-                    >
-                      {`${shown.anchorSec.toFixed(2)} s`}
-                      <Tooltip label={tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })} />
-                    </span>
-                  )}
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {iconButton(
-                      'waveform-zoom-out',
-                      tr('editor.waveformZoomOut'),
-                      () => setZoom((z) => Math.max(1, z / 2)),
-                      <ZoomOut className={glyph} aria-hidden="true" />,
-                      zoom <= 1,
-                    )}
-                    <button
-                      type="button"
-                      data-testid="waveform-zoom-reset"
-                      aria-label={tr('editor.waveformZoomReset')}
-                      disabled={zoom <= 1}
-                      onClick={() => setZoom(1)}
-                      className={`press flex min-w-8 items-center justify-center rounded-md px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${controlH}`}
-                    >
-                      {zoomLabel(zoom)}
-                    </button>
-                    {iconButton(
-                      'waveform-zoom-in',
-                      tr('editor.waveformZoomIn'),
-                      () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
-                      <ZoomIn className={glyph} aria-hidden="true" />,
-                      zoom >= ZOOM_MAX,
-                    )}
-                  </span>
-                </span>
               </div>
               {/* relative wrapper: the centre reference below must pin to the
                   VIEWPORT's middle while the lane scrolls under it, so it lives
@@ -1186,8 +1149,24 @@ export function GridSection({
               {wave && durationSec > 0 && shown && activeSeg && (
                 <div
                   data-testid="grid-nudge-bar"
-                  className={`flex items-center justify-center ${tall ? 'mt-2 gap-2' : 'mt-1.5 gap-1'}`}
+                  className={`flex items-center ${tall ? 'mt-2 gap-2' : 'mt-1.5 gap-1'}`}
                 >
+                  {/* The anchor readout sits with the view controls, not with the
+                      grid's edit verbs: it reports where the grid IS, it does not
+                      change it. */}
+                  <span className="flex min-w-0 flex-1 items-center">
+                    {shown && (
+                      <span
+                        data-testid="grid-anchor"
+                        className="relative min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
+                      >
+                        {`${shown.anchorSec.toFixed(2)} s`}
+                        <Tooltip
+                          label={tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })}
+                        />
+                      </span>
+                    )}
+                  </span>
                   {iconButton(
                     'grid-beat-back',
                     tr('grid.beatBack'),
@@ -1224,6 +1203,38 @@ export function GridSection({
                     true,
                     tall ? 'lg' : 'sm',
                   )}
+                  {/* Zoom: how much of the track the working lane shows. A view
+                      control, so it belongs to the view's own row. */}
+                  <span className="flex min-w-0 flex-1 items-center justify-end gap-0.5">
+                    {iconButton(
+                      'waveform-zoom-out',
+                      tr('editor.waveformZoomOut'),
+                      () => setZoom((z) => Math.max(1, z / 2)),
+                      <ZoomOut className={glyph} aria-hidden="true" />,
+                      zoom <= 1,
+                      false,
+                      tall ? 'lg' : 'sm',
+                    )}
+                    <button
+                      type="button"
+                      data-testid="waveform-zoom-reset"
+                      aria-label={tr('editor.waveformZoomReset')}
+                      disabled={zoom <= 1}
+                      onClick={() => setZoom(1)}
+                      className={`press flex min-w-8 items-center justify-center rounded-md px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${controlH}`}
+                    >
+                      {zoomLabel(zoom)}
+                    </button>
+                    {iconButton(
+                      'waveform-zoom-in',
+                      tr('editor.waveformZoomIn'),
+                      () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
+                      <ZoomIn className={glyph} aria-hidden="true" />,
+                      zoom >= ZOOM_MAX,
+                      false,
+                      tall ? 'lg' : 'sm',
+                    )}
+                  </span>
                 </div>
               )}
               {wave && durationSec > 0 && (
