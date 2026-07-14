@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
-import { analysisOptions, removeAnalysisQueries } from './analysisQueries'
+import { analysisOptions, HEAVY_PROBE_GC_MS, removeAnalysisQueries } from './analysisQueries'
 
 describe('analysisOptions', () => {
   // The probe and its eviction must agree on the exact key tuple. Pinning the shape to
@@ -14,6 +14,22 @@ describe('analysisOptions', () => {
     expect(probe).not.toHaveBeenCalled()
     const run = options.queryFn as () => Promise<unknown>
     expect(await run()).toEqual({ ok: true })
+  })
+
+  // A waveform's peaks and a spectrogram's image are two orders of magnitude larger than
+  // the other probes' handful of numbers, and the session-long default would retain every
+  // one of them until quit — a 300-track crate analysed end to end never gives the heap
+  // back. These two evict once nothing renders them; the probe is cheap to repeat because
+  // the main process still holds the result on disk. The small families keep the default.
+  it('lets the heavy families evict but keeps the cheap facts for the session', () => {
+    expect(HEAVY_PROBE_GC_MS).toBeGreaterThan(0)
+    expect(HEAVY_PROBE_GC_MS).toBeLessThan(Number.POSITIVE_INFINITY)
+    for (const name of ['waveform', 'spectrogram']) {
+      expect(analysisOptions(name, '/m/a.wav', vi.fn()).gcTime).toBe(HEAVY_PROBE_GC_MS)
+    }
+    for (const name of ['properties', 'loudness', 'bpm', 'key', 'clicks']) {
+      expect(analysisOptions(name, '/m/a.wav', vi.fn()).gcTime).toBeUndefined()
+    }
   })
 })
 
