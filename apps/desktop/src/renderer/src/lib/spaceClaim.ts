@@ -18,22 +18,35 @@ export type ClaimedKey =
 
 type Handlers = Partial<Record<ClaimedKey, () => void>>
 
-let claim: Handlers | null = null
+// A STACK, not a single claim. Two wave sections can be open at once (click repair and
+// the beatgrid), and each has its own transport. With one global slot the second to
+// register silently overwrote the first — and when that one released, the key fell
+// through to the GLOBAL command, so Space started the mini-player underneath a section
+// that still had its own transport open. That is precisely what claiming exists to
+// prevent, and it was invisible until a second section ever claimed the same key.
+//
+// The top of the stack owns the keys (the section opened last is the one being looked
+// at); releasing it restores the one below rather than freeing the key.
+const claims: Handlers[] = []
 
-// Registers the section's handlers and returns the release. The last claimant
-// wins: only one section can own the lane at a time, and a stale claim can never
-// outlive its section (the effect releases on unmount and on close).
+// Registers the section's handlers and returns the release. Releases can arrive in any
+// order — React unmounts children before parents, and the editor's sections are
+// reorderable — so a release removes its OWN entry wherever it sits, and can neither
+// resurrect a dead claim nor drop a live one.
 export function claimKeys(handlers: Handlers): () => void {
-  claim = handlers
+  claims.push(handlers)
   return () => {
-    if (claim === handlers) claim = null
+    const i = claims.indexOf(handlers)
+    if (i !== -1) claims.splice(i, 1)
   }
 }
 
-// True when a section handled the key — the caller must then leave the global
-// command alone.
+// True when a section handled the key — the caller must then leave the global command
+// alone. Only the top claimant answers: a section that owns the lane owns it whole, so a
+// key it did not register does not fall through to the section underneath (which the user
+// is not looking at) — it goes to the global command, as if nothing were claimed.
 export function runKeyClaim(key: ClaimedKey): boolean {
-  const handler = claim?.[key]
+  const handler = claims.at(-1)?.[key]
   if (!handler) return false
   handler()
   return true
