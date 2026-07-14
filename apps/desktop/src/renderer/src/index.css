@@ -341,6 +341,33 @@ textarea {
   transform: scale(0.96);
 }
 
+/* Text laid directly over the waveform — the zoom ruler's time labels. The wave is a
+   dense field of bright blue bars, and a 9 px label sitting on it has no ground to be
+   read against: over a loud passage the glyphs disappear into the bars entirely (user
+   report, with a screenshot of a ruler nobody could read).
+   A panel-coloured halo, drawn on all four sides, gives every glyph its own ground
+   without putting a chip or a plate around it. Chips would be the obvious fix and the
+   wrong one: the ruler repeats its label six or eight times across the strip, and eight
+   little boxes read as UI competing with the wave rather than as a scale beneath it.
+   The halo is the theme's own panel colour, so it inverts with the theme like everything
+   else — a dark outline would glow on the light palette. */
+.wave-label {
+  text-shadow:
+    0 0 3px var(--color-panel),
+    0 0 3px var(--color-panel),
+    0 1px 2px var(--color-panel),
+    0 -1px 2px var(--color-panel),
+    1px 0 2px var(--color-panel),
+    -1px 0 2px var(--color-panel);
+}
+
+/* The same idea for the ruler's tick mark, which is a filled element rather than text:
+   a hairline over the wave needs the same ground its label does, and text-shadow does
+   nothing for a background colour. */
+.wave-tick {
+  box-shadow: 0 0 0 1px var(--color-panel);
+}
+
 /* Styling the bar opts out of macOS's overlay scrollbars, so ours takes real layout
    width — and a bar that only appears once the content overflows takes those 9 px away
    from the content the moment it shows up, shunting everything sideways. Opening the
