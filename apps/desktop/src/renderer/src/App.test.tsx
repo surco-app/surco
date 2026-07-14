@@ -819,7 +819,8 @@ describe('App track removal', () => {
 describe('App multi-select removal', () => {
   // The right-click row stays selected when it's already part of the selection, so the
   // menu's list actions follow what's highlighted. "Remove from list" on one of several
-  // selected rows must drop the whole selection, not just the clicked row.
+  // selected rows must drop the whole selection, not just the clicked row — behind one
+  // confirm, like Move to Trash below, because dropping rows also drops their staged edits.
   it('removes every selected track, not just the right-clicked one', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -833,6 +834,7 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.contextMenu(rows[1])
     fireEvent.click(screen.getByTestId('track-menu-remove'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
@@ -876,6 +878,53 @@ describe('App multi-select removal', () => {
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     // The two-row selection doesn't narrow it: all three visible rows go.
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+
+  // A row's ✕ acts on the whole selection when that row is part of it — so one click on a
+  // 12px target inside a 40-row selection discards all 40 rows and every staged edit on
+  // them. Removals are not undoable (useMetaUndo covers tag patches only), which makes this
+  // the one irreversible action in the list that used to fire bare — while Move to Trash,
+  // recoverable from the Finder, has always confirmed. The dialog goes where the loss is.
+  it('confirms before a row’s ✕ discards the whole selection it belongs to', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+
+    // The ✕ is a sibling of the row button, not a child: both hang off the row wrapper.
+    fireEvent.click(within(rows[0].parentElement as HTMLElement).getByLabelText('Remove'))
+
+    // Nothing goes until it is confirmed.
+    expect(screen.getAllByTestId('track-row')).toHaveLength(3)
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    // Both selected rows go; the unselected third stays.
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // The confirm must not become a tax on the ordinary gesture: removing a single row you
+  // are pointing at is a one-click, obviously-scoped action, and a dialog on every ✕ would
+  // train the user to dismiss it — which is exactly what would make the selection case above
+  // slip through. Only the expanded, lossy case asks.
+  it('removes a lone row on its ✕ without asking', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+
+    fireEvent.click(within(rows[0].parentElement as HTMLElement).getByLabelText('Remove'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
   })
 })
 

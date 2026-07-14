@@ -53,6 +53,7 @@ export interface ConfirmFlows {
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
+  askRemoveFromList: (targets: TrackItem[]) => void
   askConvertAll: (
     targets: TrackItem[],
     format?: OutputFormat,
@@ -224,6 +225,28 @@ export function useConfirmFlows({
     })
   }
 
+  // A row's ✕ (and ⌫, and the context menu's Remove) acts on the whole selection when the
+  // clicked row belongs to it — so one click on a hover-revealed target can discard dozens of
+  // rows along with every staged edit on them, and a removal is not undoable. Asking only for
+  // the expanded case is the point: a dialog on every single-row ✕ would be a tax on the
+  // ordinary gesture and would train the user to dismiss it unread, which is precisely what
+  // would let the lossy case through. Rare enough to be read.
+  function askRemoveFromList(targets: TrackItem[]): void {
+    if (targets.length <= 1) {
+      for (const t of targets) removeTrack(t.id)
+      return
+    }
+    openConfirm({
+      title: tr('confirm.removeFromListTitle', { count: targets.length }),
+      message: tr('confirm.removeFromListMessage', { count: targets.length }),
+      confirmLabel: tr('confirm.removeFromListConfirm'),
+      destructive: true,
+      onConfirm: () => {
+        for (const t of targets) removeTrack(t.id)
+      },
+    })
+  }
+
   // Overwrite mode rewrites each source in place (the original is unlinked, not
   // trashed), so a batch run asks once before touching N files. The editor carries
   // the same warning per track; outside overwrite mode the batch stays one-click
@@ -262,6 +285,7 @@ export function useConfirmFlows({
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,
+    askRemoveFromList,
     askConvertAll,
   }
 }

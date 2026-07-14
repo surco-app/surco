@@ -804,7 +804,7 @@ export default function App(): React.JSX.Element {
   )
 
   const removeFromList = useStableCallback((id: string): void => {
-    for (const t of menuTargets(id)) removeTrack(t.id)
+    askRemoveFromList(menuTargets(id))
   })
 
   const onTrashRow = useStableCallback((track: TrackItem): void => {
@@ -887,6 +887,7 @@ export default function App(): React.JSX.Element {
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,
+    askRemoveFromList,
     askConvertAll,
   } = useConfirmFlows({
       settings,
