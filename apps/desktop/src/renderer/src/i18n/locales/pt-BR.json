@@ -544,7 +544,7 @@
     "beatBack": "Deslocar a grade um beat para trás",
     "beatForward": "Deslocar a grade um beat para a frente",
     "reset": "Auto",
-    "resetHint": "Detectar o tempo de novo (este trecho, ou a faixa toda)",
+    "resetHint": "Ajustar o grid automaticamente: detecta o tempo e cria segmentos se o disco derivar. Descarta suas edições.",
     "audition": "Ouvir a grade",
     "fromHere": "Ajustar a partir daqui",
     "fromHereHint": "Começa um novo andamento na linha vermelha, sem mexer na grade anterior (G)",

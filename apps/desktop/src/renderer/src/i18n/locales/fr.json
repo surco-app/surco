@@ -544,7 +544,7 @@
     "beatBack": "Décaler la grille d'un beat en arrière",
     "beatForward": "Décaler la grille d'un beat en avant",
     "reset": "Auto",
-    "resetHint": "Redétecter le tempo (ce segment, ou tout le morceau)",
+    "resetHint": "Corriger la grille automatiquement : détecte le tempo et crée des segments si le disque dérive. Annule vos modifications.",
     "audition": "Écouter la grille",
     "fromHere": "Ajuster à partir d'ici",
     "fromHereHint": "Démarre un nouveau tempo à la ligne rouge, sans toucher à la grille précédente (G)",

@@ -544,7 +544,7 @@
     "beatBack": "Shift the grid one beat back",
     "beatForward": "Shift the grid one beat forward",
     "reset": "Auto",
-    "resetHint": "Detect the tempo again (this segment, or the whole track)",
+    "resetHint": "Auto-fix the grid: detects the tempo and adds segments if the record drifts. Discards your edits.",
     "audition": "Hear the grid",
     "fromHere": "Adjust from here",
     "fromHereHint": "Start a new tempo from the red line, leaving the grid behind it untouched (G)",

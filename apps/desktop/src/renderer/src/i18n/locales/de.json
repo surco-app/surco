@@ -544,7 +544,7 @@
     "beatBack": "Grid einen Beat zurück",
     "beatForward": "Grid einen Beat vor",
     "reset": "Auto",
-    "resetHint": "Tempo neu erkennen (dieser Abschnitt oder der ganze Track)",
+    "resetHint": "Grid automatisch korrigieren: erkennt das Tempo und legt Segmente an, wenn die Platte driftet. Verwirft deine Änderungen.",
     "audition": "Grid anhören",
     "fromHere": "Ab hier anpassen",
     "fromHereHint": "Beginnt ab der roten Linie ein neues Tempo; das Grid davor bleibt unberührt (G)",
