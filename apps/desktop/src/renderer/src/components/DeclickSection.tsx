@@ -12,7 +12,7 @@ import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
-import { Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
+import { AFTER_COLOR, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
 
 // The formats whose re-encode carries the Traktor cue/beatgrid frame over (see
@@ -185,7 +185,10 @@ export function DeclickSection({
                 wave={wave}
                 loading={isFetching && !wave}
                 loudness={undefined}
-                color="var(--color-accent)"
+                // A literal colour, never a CSS var: this is a canvas fillStyle, and a
+                // canvas silently ignores `var(...)` — leaving whatever fillStyle was set
+                // last, which is the clip red, so the whole wave painted red.
+                color={AFTER_COLOR}
                 inputPath={inputPath}
                 zoom={zoom}
                 onZoomChange={setZoom}
