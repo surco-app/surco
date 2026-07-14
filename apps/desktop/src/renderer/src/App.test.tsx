@@ -1963,6 +1963,53 @@ describe('App reopen last session', () => {
     await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
   })
 
+  // The save's expensive half (serializing every path and every staged edit) runs on the
+  // debounced side, so the "don't snapshot a half-loaded import" guard has to hold THERE,
+  // reading the settled list — not just in the effect body that scheduled it. Otherwise a
+  // burst that starts mid-import would write rows whose tags hadn't landed, and during a
+  // session restore that overwrites the very edits being restored.
+  it('never writes a session snapshot while an import is still reading tags', async () => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
+    let settleSecond: (tags: { title: string }) => void = () => {}
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'First', artist: 'A' }),
+      saveLastSession,
+    })
+    await renderApp()
+    // A settled first track ARMS the debounced write — and we deliberately do not wait for
+    // it to fire.
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    // Inside that still-open debounce window, a second import lands in the list with its
+    // tags in flight. The effect body sees loadingMeta and bails without touching the
+    // ALREADY-ARMED timer, which then fires against a half-loaded list. Only the guard on
+    // the debounced side catches this — and during a session restore, writing here would
+    // overwrite the very edits being restored.
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/b.wav']),
+      readTags: vi.fn().mockReturnValue(new Promise((r) => { settleSecond = r })),
+      saveLastSession,
+    })
+    fireEvent.click(screen.getByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+
+    await act(async () => { await new Promise((r) => setTimeout(r, 1_600)) })
+    expect(saveLastSession).not.toHaveBeenCalled()
+
+    // Once the read lands, the settled two-track list is what gets written.
+    await act(async () => { settleSecond({ title: 'Second' }) })
+    await waitFor(
+      () =>
+        expect(saveLastSession).toHaveBeenCalledWith(
+          ['/music/a.wav', '/music/b.wav'],
+          expect.anything(),
+        ),
+      { timeout: 3_000 },
+    )
+  })
+
   // An unanswered launch offer for a paths-only session must not park in the corner
   // forever: like the new-tracks prompt it carries a duration, so the shared toast
   // draws its countdown bar and retires the card on its own. Expiring counts as

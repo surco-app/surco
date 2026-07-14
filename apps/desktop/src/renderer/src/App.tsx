@@ -595,23 +595,31 @@ export default function App(): React.JSX.Element {
   // session before the reopen offer could restore it.
   const SESSION_SAVE_DEBOUNCE_MS = 1_000
   const savedSessionSig = useRef<string | null>(null)
-  const pendingSessionSig = useRef<string | null>(null)
   const sessionSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
   useEffect(() => {
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
     // and during a session restore that would overwrite the very edits being restored
     // — so the save waits for the import to settle.
     if (tracks.some((t) => t.loadingMeta)) return
-    const paths = tracks.map((t) => t.inputPath)
-    const edits = sessionEdits(tracks)
-    const sig = JSON.stringify({ paths, edits })
-    if (savedSessionSig.current === null && paths.length === 0) return
-    if (sig === savedSessionSig.current || sig === pendingSessionSig.current) return
-    pendingSessionSig.current = sig
+    if (savedSessionSig.current === null && tracks.length === 0) return
+    // Everything expensive happens on the debounced side, not here. The signature used to
+    // be built (a full serialize of every path and every staged edit) in the effect body to
+    // decide whether to schedule a write — so it ran on EVERY tracks identity change: each
+    // keystroke in the editor, each progress tick of a conversion. On a large edited crate
+    // that is a multi-hundred-KB stringify per keystroke, on the main thread, paid by a
+    // guard whose whole purpose was to avoid work. Rescheduling the timer is cheap; the
+    // serialize now happens once per settled burst, where the dedupe still catches the
+    // no-op renders before any IPC goes out.
     if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     sessionSaveTimer.current = setTimeout(() => {
       sessionSaveTimer.current = null
-      pendingSessionSig.current = null
+      const settled = tracksRef.current
+      if (settled.some((t) => t.loadingMeta)) return
+      const paths = settled.map((t) => t.inputPath)
+      const edits = sessionEdits(settled)
+      const sig = JSON.stringify({ paths, edits })
+      if (sig === savedSessionSig.current) return
       savedSessionSig.current = sig
       void window.api.saveLastSession(paths, edits)
     }, SESSION_SAVE_DEBOUNCE_MS)
