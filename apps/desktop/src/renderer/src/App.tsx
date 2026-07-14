@@ -31,6 +31,7 @@ import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
+import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useListNavigation } from './hooks/useListNavigation'
@@ -370,13 +371,17 @@ export default function App(): React.JSX.Element {
   // shortcuts export in it too. The editor reports its pick on every change AND its
   // seed on mount (it remounts per track), so this mirror is right by construction;
   // null only before any editor has mounted, falling back to the Settings default.
-  const editorFormatRef = useRef<OutputFormat | null>(null)
-  // The destination picked in the editor's split-button menu, mirroring editorFormatRef.
-  const editorDestinationRef = useRef<Destination | null>(null)
-  // Per-track normalization override picked in the editor, mirroring editorFormatRef.
-  const editorNormalizeRef = useRef<NormalizeConfig | null>(null)
-  // Per-track click-repair override picked in the editor, mirroring editorNormalizeRef.
-  const editorDeclickRef = useRef<DeclickMode | null>(null)
+  const {
+    formatRef: editorFormatRef,
+    destinationRef: editorDestinationRef,
+    normalizeRef: editorNormalizeRef,
+    declickRef: editorDeclickRef,
+    onFormatChange,
+    onDestinationChange,
+    onNormalizeChange,
+    onDeclickChange,
+    reset: resetEditorPicks,
+  } = useEditorPicks(settings, saveSettings)
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
   // would otherwise vanish into the devtools console — a failure indistinguishable
@@ -831,12 +836,7 @@ export default function App(): React.JSX.Element {
   const selected = tracks.find((t) => t.id === selectedId) ?? null
   // With nothing selected there is no editor reporting picks; the convert-all
   // shortcut then falls back to the Settings defaults.
-  if (!selected) {
-    editorFormatRef.current = null
-    editorDestinationRef.current = null
-    editorNormalizeRef.current = null
-    editorDeclickRef.current = null
-  }
+  if (!selected) resetEditorPicks()
   // Filtering mints a new array per tracks change even when none of the SELECTED
   // tracks changed (a progress tick on another row). Keeping the previous identity in
   // that case is what lets the memoized Editor skip those renders entirely.
@@ -1139,28 +1139,6 @@ export default function App(): React.JSX.Element {
         editorDestinationRef.current ?? undefined,
         editorDeclickRef.current ?? undefined,
       )
-  })
-  const onFormatChange = useStableCallback((format: OutputFormat) => {
-    editorFormatRef.current = format
-  })
-  const onDestinationChange = useStableCallback((destination: Destination) => {
-    editorDestinationRef.current = destination
-  })
-  const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
-    editorNormalizeRef.current = n
-    // The two peak checkboxes are lasting preferences (user feedback: a relaunch must
-    // find them as they were left), unlike mode/targets which stay one-shot per track —
-    // so an editor toggle writes just those flags back to Settings. The mount report
-    // arrives with the Settings-seeded value, so it never writes.
-    const cur = settings?.normalize
-    if (!cur) return
-    const removeDc = n.peakRemoveDc === true
-    const perChannel = n.peakPerChannel === true
-    if ((cur.peakRemoveDc === true) !== removeDc || (cur.peakPerChannel === true) !== perChannel)
-      saveSettings({ normalize: { ...cur, peakRemoveDc: removeDc, peakPerChannel: perChannel } })
-  })
-  const onDeclickChange = useStableCallback((d: DeclickMode) => {
-    editorDeclickRef.current = d
   })
   const onAddSelectedToAppleMusic = useStableCallback(() => {
     if (selected) void addTrackToAppleMusic(selected.id)
