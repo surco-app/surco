@@ -11,6 +11,8 @@ import { useLatest } from './useLatest'
 const LANE_KEYS: Record<string, ClaimedKey> = {
   c: 'centre-beat',
   g: 'add-segment',
+  '[': 'prev-segment',
+  ']': 'next-segment',
 }
 
 interface Params {

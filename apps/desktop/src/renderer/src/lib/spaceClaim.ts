@@ -9,7 +9,12 @@
 // handlers here, and the keyboard-shortcut hook consults this before running
 // the global command. Module-level (not context) because the claim must survive
 // the editor's per-track remount, like the fold/maximize stores next door.
-export type ClaimedKey = 'play' | 'centre-beat' | 'add-segment'
+export type ClaimedKey =
+  | 'play'
+  | 'centre-beat'
+  | 'add-segment'
+  | 'prev-segment'
+  | 'next-segment'
 
 type Handlers = Partial<Record<ClaimedKey, () => void>>
 

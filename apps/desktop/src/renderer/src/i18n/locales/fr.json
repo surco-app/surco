@@ -544,6 +544,8 @@
     "audition": "Écouter la grille",
     "fromHere": "Ajuster à partir d'ici",
     "fromHereHint": "Démarre un nouveau tempo à la ligne rouge, sans toucher à la grille précédente (G)",
+    "prevSegment": "Changement de grille précédent ([)",
+    "nextSegment": "Changement de grille suivant (])",
     "centreBeat": "Centrer le beat (C)",
     "tapHint": "Battez le tempo",
     "expand": "Élargir les intervalles de beats",

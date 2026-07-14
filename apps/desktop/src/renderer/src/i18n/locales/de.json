@@ -544,6 +544,8 @@
     "audition": "Grid anhören",
     "fromHere": "Ab hier anpassen",
     "fromHereHint": "Beginnt ab der roten Linie ein neues Tempo; das Grid davor bleibt unberührt (G)",
+    "prevSegment": "Vorheriger Grid-Wechsel ([)",
+    "nextSegment": "Nächster Grid-Wechsel (])",
     "centreBeat": "Beat zentrieren (C)",
     "tapHint": "Tempo tippen",
     "expand": "Beat-Abstände vergrößern",

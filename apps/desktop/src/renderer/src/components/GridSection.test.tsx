@@ -519,6 +519,29 @@ describe('GridSection segments', () => {
     expect(grid.changes[0].anchorSec).toBeCloseTo(30.25, 2)
   })
 
+  // A multi-segment grid scatters its seams across minutes of track, and the
+  // only way to reach the next one was dragging the overview by hand (Djotas:
+  // "botón desplazarse en los beatgrids que creas"). ] walks forward to the next
+  // seam, [ back — and with nothing to step to, the buttons are dead rather than
+  // silently doing nothing.
+  it('steps the view between the grid seams, and goes dead with none to reach', async () => {
+    stubOverlayRect()
+    render(
+      section({
+        value: { bpm: 120, anchorSec: 0.25, changes: [{ anchorSec: 40, bpm: 121 }] },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    const scroller = screen.getByTestId('waveform-scroller')
+    Object.defineProperty(scroller, 'scrollWidth', { value: 6000, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 600, configurable: true })
+    // Centre opens at 30 s: the change at 40 s lies ahead, the base at 0.25 s behind.
+    expect(screen.getByTestId('grid-next-segment')).toBeEnabled()
+    expect(screen.getByTestId('grid-prev-segment')).toBeEnabled()
+    expect(runKeyClaim('next-segment')).toBe(true)
+    expect(scroller.scrollLeft).toBeCloseTo((40 / 60) * 6000 - 300, 0)
+  })
+
   // The heart of the complaint ("it moves the grid BEFORE the line, not after"):
   // right after carving the segment, a nudge must move THAT segment's anchor and
   // leave the base — everything to the left of the line — exactly where it was.

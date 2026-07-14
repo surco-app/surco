@@ -9,6 +9,8 @@ import {
   Redo2,
   SplitSquareHorizontal,
   Square,
+  StepBack,
+  StepForward,
   UnfoldHorizontal,
   Undo2,
   Volume2,
@@ -468,6 +470,31 @@ export function GridSection({
       centerOn(snappedCentre / durationSec)
   }
 
+  // Jump the view to the previous/next segment anchor. A grid with changes in it
+  // scatters its seams across minutes of track, and hunting for the next one by
+  // dragging the overview was the tax on every multi-segment fix (Djotas: "botón
+  // desplazarse en los beatgrids que creas"). Anchors are strictly increasing,
+  // so the next seam is simply the first one past the line — and the base
+  // segment's own anchor counts, so stepping back from the first change lands on
+  // where the grid itself starts.
+  function seamAt(dir: -1 | 1): number | undefined {
+    if (!shown || durationSec <= 0) return undefined
+    const anchors = segments.map((s) => s.anchorSec)
+    return dir === 1
+      ? anchors.find((a) => a > rawCentreSec + 1e-6)
+      : [...anchors].reverse().find((a) => a < rawCentreSec - 1e-6)
+  }
+  function stepSegment(dir: -1 | 1): void {
+    const target = seamAt(dir)
+    if (target === undefined) return
+    // navigate, not centerOn: zoomed all the way out there is no window to
+    // scroll, and navigate is the one that drops back into working depth first
+    // (the same path the overview's own press takes).
+    navigate(Math.max(0, Math.min(durationSec, target)) / durationSec)
+  }
+  const hasPrevSegment = seamAt(-1) !== undefined
+  const hasNextSegment = seamAt(1) !== undefined
+
   // rekordbox's C: bring the nearest beat under the reference, whatever the
   // magnet's range — the explicit version of the settle above, for when the eye
   // has already found the beat and just wants it centred.
@@ -673,12 +700,15 @@ export function GridSection({
   const auditionRef = useRef<() => void>(() => {})
   const centreRef = useRef<() => void>(() => {})
   const addSegmentRef = useRef<() => void>(() => {})
+  const stepSegmentRef = useRef<(dir: -1 | 1) => void>(() => {})
   useEffect(() => {
     if (!open) return
     return claimKeys({
       play: () => auditionRef.current(),
       'centre-beat': () => centreRef.current(),
       'add-segment': () => addSegmentRef.current(),
+      'prev-segment': () => stepSegmentRef.current(-1),
+      'next-segment': () => stepSegmentRef.current(1),
     })
   }, [open])
 
@@ -724,6 +754,7 @@ export function GridSection({
   auditionRef.current = audition
   centreRef.current = centreNearestBeat
   addSegmentRef.current = addChangeFromHere
+  stepSegmentRef.current = stepSegment
 
   const iconButton = (
     testid: string,
@@ -910,6 +941,24 @@ export function GridSection({
                         tr('grid.fromHereHint'),
                         addChangeFromHere,
                         <SplitSquareHorizontal className={glyph} aria-hidden="true" />,
+                      )}
+                      {/* Walk the seams a multi-segment grid leaves behind: they
+                          sit minutes apart, and finding the next one by dragging
+                          the overview was the tax on every fix. Dead while the
+                          line has nothing to step to. */}
+                      {iconButton(
+                        'grid-prev-segment',
+                        tr('grid.prevSegment'),
+                        () => stepSegment(-1),
+                        <StepBack className={glyph} aria-hidden="true" />,
+                        !hasPrevSegment,
+                      )}
+                      {iconButton(
+                        'grid-next-segment',
+                        tr('grid.nextSegment'),
+                        () => stepSegment(1),
+                        <StepForward className={glyph} aria-hidden="true" />,
+                        !hasNextSegment,
                       )}
                     </span>
                     {/* Let the machine check the grid: Auto listens again and
