@@ -173,7 +173,7 @@ describe('TrimSection', () => {
     // The app feeds a moved cut back in as `value` — the window must not follow it.
     rerender(section({ value: { startSec: 6.2, endSec: 90.3 }, onChange }))
     expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '4.70-14.70')
-    expect(screen.getByTestId('trim-cut-time-start')).toHaveTextContent('6.200 s')
+    expect(screen.getByTestId('trim-cut-time-start')).toHaveValue('6.200')
     // Zooming IS a request for a new view, so it re-frames on where the cut now is.
     fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
     expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '4.20-8.20')
@@ -407,19 +407,32 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
 
-  // The same fine step, on buttons either side of the cut's exact time: the arrow
-  // keys were the only fine control and they were invisible.
-  it('steps the cut from the buttons and shows its exact time', async () => {
+  // The cut's time is a FIELD: type the second you want. It replaced a ‹ time ›
+  // stepper whose three controls duplicated the handle and the arrow keys, in a lane
+  // that had no room for them — and typing is the only way to land an exact value in
+  // one go.
+  it('shows the cut time and takes a typed second', async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
-    expect(
-      await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 }),
-    ).toHaveTextContent('9.700 s')
-    expect(screen.getByTestId('trim-cut-time-end')).toHaveTextContent('90.300 s')
-    fireEvent.click(screen.getByTestId('trim-nudge-forward-start'))
+    const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
+    expect(start).toHaveValue('9.700')
+    expect(screen.getByTestId('trim-cut-time-end')).toHaveValue('90.300')
+    // A half-typed value must not commit mid-keystroke; Enter (or blur) does.
+    fireEvent.change(start, { target: { value: '12.345' } })
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.keyDown(start, { key: 'Enter' })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
+  })
+
+  // The arrows still give the fine step, now from the field where the value is.
+  it('nudges the cut with the arrows from the time field', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
+    fireEvent.keyDown(start, { key: 'ArrowUp' })
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
-    fireEvent.click(screen.getByTestId('trim-nudge-back-end'))
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.7, endSec: 90.29 })
+    fireEvent.keyDown(start, { key: 'ArrowDown', shiftKey: true })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
 
   // Folded with a staged trim, the header badges the total cut, like the

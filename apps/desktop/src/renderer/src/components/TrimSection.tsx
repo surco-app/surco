@@ -87,6 +87,7 @@ function Lane({
   onPointerMove,
   onRelease,
   onKeyStep,
+  onSetTime,
   onApplySuggestion,
   onAudition,
   onClear,
@@ -113,6 +114,7 @@ function Lane({
   onPointerMove: (e: React.PointerEvent) => void
   onRelease: () => void
   onKeyStep: (deltaSec: number) => void
+  onSetTime: (sec: number) => void
   onApplySuggestion: (sec: number) => void
   onAudition: () => void
   onClear: () => void
@@ -126,6 +128,17 @@ function Lane({
   tr: (key: string, opts?: Record<string, unknown>) => string
 }): React.JSX.Element {
   const spanSec = Math.max(0.001, toSec - fromSec)
+  // Edits as text and commits on blur/Enter, so a half-typed "40" never becomes a
+  // 40-second cut mid-keystroke.
+  const [timeText, setTimeText] = useState<string | null>(null)
+  function commitTime(): void {
+    const text = timeText
+    setTimeText(null)
+    if (text === null) return
+    const sec = Number.parseFloat(text.replace(',', '.'))
+    if (!Number.isFinite(sec)) return
+    onSetTime(sec)
+  }
   // The lane re-decodes its own window at full fidelity — the same machinery the
   // deep zoom uses. Quantized to the tenth so a context change is one decode, not
   // one per render.
@@ -162,41 +175,37 @@ function Lane({
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+      <div className="mb-1 flex flex-nowrap items-center gap-1.5">
+        <span className="min-w-0 flex-1 truncate text-[10px] font-medium uppercase tracking-wider text-fg-dim">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </span>
-        {/* The cut's own time, to the millisecond, with a step either side of it:
-            reading the position off the wave is guesswork below a tenth, and the
-            arrow keys that used to be the only fine control were invisible. */}
-        <span className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            data-testid={`trim-nudge-back-${side}`}
-            aria-label={tr('trim.nudgeBack')}
-            onClick={() => onKeyStep(-fineStepSec)}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('trim.nudgeBack')} />
-          </button>
-          <span
-            data-testid={`trim-cut-time-${side}`}
-            className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-fg-muted"
-          >
-            {`${cut.toFixed(3)} s`}
-          </span>
-          <button
-            type="button"
-            data-testid={`trim-nudge-forward-${side}`}
-            aria-label={tr('trim.nudgeForward')}
-            onClick={() => onKeyStep(fineStepSec)}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          >
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('trim.nudgeForward')} />
-          </button>
-        </span>
+        {/* The cut's own time, and the place to set it: type the second you want.
+            It replaced a ‹ time › stepper — three controls doing what the handle,
+            the arrow keys and a typed number each already did, in a lane that had
+            no room for them. Typing is also the only one of the four that can land
+            on an exact value in one go. */}
+        <input
+          data-testid={`trim-cut-time-${side}`}
+          type="text"
+          inputMode="decimal"
+          aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+          value={timeText ?? `${cut.toFixed(3)}`}
+          onChange={(e) => setTimeText(e.target.value)}
+          onBlur={commitTime}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              commitTime()
+            }
+            // The arrows still nudge — from the field, where the value is.
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault()
+              const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
+              onKeyStep(e.key === 'ArrowUp' ? step : -step)
+            }
+          }}
+          className="h-7 w-20 shrink-0 rounded-md border border-[var(--color-line)] bg-transparent px-1.5 text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+        />
         {/* This cut's own actions: hear it, clear it. They used to sit in a row above
             BOTH lanes, so the "hear the end" button lived a panel away from the end
             it played. */}
@@ -648,6 +657,17 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
 
   // Keyboard fine-adjustment for the focused handle: the arrows move it in tenths
   // of a second (a whole second with Shift), the precision a drag alone can't give.
+  // A typed second, clamped like any other placement: the field is just another way
+  // to move the same handle.
+  function setCut(which: Side, sec: number): void {
+    if (durationSec === 0) return
+    if (which === 'start') {
+      commit({ ...shown, startSec: Math.min(Math.max(0, sec), endSec - MIN_KEEP_SEC) })
+    } else {
+      commit({ ...shown, endSec: Math.max(Math.min(durationSec, sec), startSec + MIN_KEEP_SEC) })
+    }
+  }
+
   function nudge(which: Side, deltaSec: number): void {
     if (durationSec === 0) return
     if (which === 'start') {
@@ -705,6 +725,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       },
       onRelease: release,
       onKeyStep: (delta: number) => nudge(which, delta),
+      onSetTime: (sec: number) => setCut(which, sec),
       onApplySuggestion: (sec: number) =>
         commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
       onAudition: () => audition(which),

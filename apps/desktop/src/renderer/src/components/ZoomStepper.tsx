@@ -44,10 +44,15 @@ export function ZoomStepper({
   // Kept as a prop so each section keeps the ids its tests already know.
   testids: { out: string; in: string; reset: string }
 }): React.JSX.Element {
-  const box = size === 'lg' ? 'h-8 w-8' : 'h-7 w-7'
+  const h = size === 'lg' ? 'h-8' : 'h-7'
+  const box = size === 'lg' ? 'w-8' : 'w-7'
   const glyph = size === 'lg' ? 'h-4 w-4' : 'h-3.5 w-3.5'
+  // Every part carries the SAME border and the SAME height, enabled or not: a
+  // disabled button that drops its border changes the group's size, and the whole
+  // toolbar jumps the moment you hit a zoom limit. Disabled fades the ink, never
+  // the box.
   const chrome =
-    'press relative flex shrink-0 items-center justify-center border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted'
+    'press relative flex shrink-0 items-center justify-center border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-muted'
   return (
     // One segmented control, not three loose buttons: the three parts are one
     // decision (how close am I looking), so they share an outline and the rounding
@@ -59,7 +64,7 @@ export function ZoomStepper({
         aria-label={labels.out}
         disabled={outDisabled}
         onClick={onOut}
-        className={`${chrome} ${box} rounded-l-md`}
+        className={`${chrome} ${h} ${box} rounded-l-md`}
       >
         <Minus className={glyph} aria-hidden="true" />
         <Tooltip label={labels.out} />
@@ -70,7 +75,7 @@ export function ZoomStepper({
         aria-label={labels.reset}
         disabled={resetDisabled}
         onClick={onReset}
-        className={`${chrome} ${size === 'lg' ? 'h-8' : 'h-7'} -mx-px min-w-12 px-1.5 text-[10px] tabular-nums`}
+        className={`${chrome} ${h} -mx-px min-w-12 px-1.5 text-[10px] tabular-nums`}
       >
         {label}
         <Tooltip label={labels.reset} />
@@ -81,7 +86,7 @@ export function ZoomStepper({
         aria-label={labels.in}
         disabled={inDisabled}
         onClick={onIn}
-        className={`${chrome} ${box} rounded-r-md`}
+        className={`${chrome} ${h} ${box} rounded-r-md`}
       >
         <Plus className={glyph} aria-hidden="true" />
         <Tooltip label={labels.in} />

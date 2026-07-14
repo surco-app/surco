@@ -50,6 +50,28 @@ describe('ZoomStepper', () => {
     expect(onReset).toHaveBeenCalledOnce()
   })
 
+  // A disabled button that drops its border changes the group's height, and the
+  // toolbar jumps the moment the zoom hits a limit — which it does constantly.
+  it('keeps the same box whether a step is disabled or not', () => {
+    const { rerender } = stepper({ outDisabled: false })
+    const enabled = screen.getByTestId('zoom-out').className
+    rerender(
+      <ZoomStepper
+        label="×32"
+        onOut={() => {}}
+        onIn={() => {}}
+        onReset={() => {}}
+        outDisabled
+        labels={{ out: 'Zoom out', in: 'Zoom in', reset: 'Reset zoom' }}
+        testids={{ out: 'zoom-out', in: 'zoom-in', reset: 'zoom-reset' }}
+      />,
+    )
+    const disabled = screen.getByTestId('zoom-out').className
+    // Same classes: the disabled state fades the ink through opacity, it does not
+    // remove the border or change the height.
+    expect(disabled).toBe(enabled)
+  })
+
   it('shows the caller-formatted level and disables the ends it is told to', () => {
     stepper({ label: '±5s', outDisabled: true, resetDisabled: true })
     expect(screen.getByTestId('zoom-reset')).toHaveTextContent('±5s')
