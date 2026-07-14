@@ -8,3 +8,7 @@ dist
 .env
 .env.local
 .vercel
+
+# Media dropped in the repo root — source recordings, not source code.
+*.mkv
+*.mp4
