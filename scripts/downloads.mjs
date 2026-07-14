@@ -3,8 +3,8 @@
 // per-asset download_count on the public releases repo — no analytics service
 // and nothing added to the app. Run with `npm run downloads`.
 //
-// Only the installers (.dmg, .exe) are counted. The release also carries .zip,
-// .blockmap and latest*.yml assets that electron-updater fetches on every
+// Only the installers (.dmg, .exe, .AppImage) are counted. The release also carries
+// .zip, .blockmap and latest*.yml assets that electron-updater fetches on every
 // auto-update; counting those would inflate "downloads" with update traffic.
 
 const REPO = 'vigosan/surco-releases'
@@ -13,6 +13,7 @@ function osOf(name) {
   if (name.endsWith('arm64.dmg')) return 'macOS (Apple Silicon)'
   if (name.endsWith('x64.dmg')) return 'macOS (Intel)'
   if (name.endsWith('.exe')) return 'Windows'
+  if (name.endsWith('.AppImage')) return 'Linux'
   return null
 }
 

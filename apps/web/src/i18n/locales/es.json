@@ -28,7 +28,7 @@
     "cambios": "Novedades",
     "donar": "Donar"
   },
-  "available": "Disponible · macOS · Windows",
+  "available": "Disponible · macOS · Windows · Linux",
   "betaPill": "Gratis para siempre",
   "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
   "keys": {
@@ -304,7 +304,7 @@
       },
       {
         "q": "¿En qué sistemas funciona?",
-        "a": "macOS (Apple Silicon e Intel) y Windows. Se actualiza solo, así que siempre tendrás la última versión."
+        "a": "macOS (Apple Silicon e Intel), Windows y Linux (AppImage). Se actualiza solo, así que siempre tendrás la última versión."
       }
     ]
   },
@@ -334,7 +334,7 @@
           "No hace falta crear cuenta ni suscribirte. Surco se actualiza solo, así que siempre tendrás la última versión sin volver a descargar."
         ],
         "points": [
-          "Disponible para macOS (Apple Silicon e Intel) y Windows, en cinco idiomas.",
+          "Disponible para macOS (Apple Silicon e Intel), Windows y Linux, en cinco idiomas.",
           "El asistente de bienvenida son solo cuatro pasos; el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
         ],

@@ -27,7 +27,7 @@ function DocumentHead({ lng }: { lng: Language }) {
     '@type': 'SoftwareApplication',
     name: 'Surco',
     applicationCategory: 'MultimediaApplication',
-    operatingSystem: 'macOS, Windows',
+    operatingSystem: 'macOS, Windows, Linux',
     url,
     image: `${SITE}/og.png`,
     screenshot: `${SITE}/app-${lng}.webp`,

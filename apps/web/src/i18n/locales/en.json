@@ -28,7 +28,7 @@
     "cambios": "What's new",
     "donar": "Donate"
   },
-  "available": "Available · macOS · Windows",
+  "available": "Available · macOS · Windows · Linux",
   "betaPill": "Free forever",
   "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
@@ -304,7 +304,7 @@
       },
       {
         "q": "Which systems does it run on?",
-        "a": "macOS (Apple Silicon and Intel) and Windows. It updates itself, so you'll always have the latest version."
+        "a": "macOS (Apple Silicon and Intel), Windows and Linux (AppImage). It updates itself, so you'll always have the latest version."
       }
     ]
   },
@@ -334,7 +334,7 @@
           "No account, no subscription. Surco updates itself, so you'll always have the latest version without downloading again."
         ],
         "points": [
-          "Available for macOS (Apple Silicon and Intel) and Windows, in five languages.",
+          "Available for macOS (Apple Silicon and Intel), Windows and Linux, in five languages.",
           "The welcome wizard is just four steps; naming, genres and editor fields wait for you in Settings.",
           "You can change any setting later in Settings (⌘ ,)."
         ],
