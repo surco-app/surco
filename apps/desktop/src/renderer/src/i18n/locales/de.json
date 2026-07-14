@@ -488,7 +488,11 @@
   },
   "trim": {
     "title": "Stille kürzen",
-    "hint": "Schneidet Stille am Anfang und Ende bei der Konvertierung ab. Die Griffe auf der Wellenform ziehen, um den Schnitt genau anzupassen.",
+    "hint": "Schneidet Stille am Anfang und Ende bei der Konvertierung weg. Die Spuren zeigen Anfang und Ende des Tracks — klicke die Schere für den erkannten Schnitt oder ziehe den Griff selbst.",
+    "laneStart": "Anfang",
+    "laneEnd": "Ende",
+    "contextNarrow": "Weniger um den Schnitt zeigen",
+    "contextWiden": "Mehr um den Schnitt zeigen",
     "summaryNone": "Aus",
     "cutsLabel": "Schneidet",
     "cutStart": "{{seconds}} am Anfang",

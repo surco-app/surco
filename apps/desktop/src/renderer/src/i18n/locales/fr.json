@@ -488,7 +488,11 @@
   },
   "trim": {
     "title": "Rognage du silence",
-    "hint": "Coupe le silence au début et à la fin pendant la conversion. Faites glisser les poignées sur l'onde pour ajuster la coupe exacte.",
+    "hint": "Coupe le silence d'entrée et de sortie lors de la conversion. Les pistes montrent le début et la fin du morceau — cliquez sur les ciseaux pour appliquer la coupe détectée, ou faites glisser la poignée.",
+    "laneStart": "Début",
+    "laneEnd": "Fin",
+    "contextNarrow": "Voir moins autour de la coupe",
+    "contextWiden": "Voir plus autour de la coupe",
     "summaryNone": "Non",
     "cutsLabel": "Coupe",
     "cutStart": "{{seconds}} au début",

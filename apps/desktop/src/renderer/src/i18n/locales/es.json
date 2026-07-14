@@ -488,7 +488,11 @@
   },
   "trim": {
     "title": "Recorte de silencio",
-    "hint": "Recorta el silencio inicial y final durante la conversión. Arrastra las asas sobre la onda para ajustar el corte exacto.",
+    "hint": "Recorta el silencio de entrada y de salida al convertir. Los carriles muestran el inicio y el final de la pista — pulsa las tijeras para aplicar el corte detectado, o arrastra el asa para colocarlo tú.",
+    "laneStart": "Inicio",
+    "laneEnd": "Final",
+    "contextNarrow": "Ver menos alrededor del corte",
+    "contextWiden": "Ver más alrededor del corte",
     "summaryNone": "No",
     "cutsLabel": "Recorta",
     "cutStart": "{{seconds}} del inicio",

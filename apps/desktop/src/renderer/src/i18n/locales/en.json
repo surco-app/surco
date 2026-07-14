@@ -488,7 +488,11 @@
   },
   "trim": {
     "title": "Silence trim",
-    "hint": "Cuts lead-in and run-out silence during conversion. Drag the handles on the wave to adjust the exact cut.",
+    "hint": "Cuts lead-in and run-out silence during conversion. The lanes show the start and the end of the track — click the scissors to take the detected cut, or drag the handle to place it yourself.",
+    "laneStart": "Start",
+    "laneEnd": "End",
+    "contextNarrow": "Show less around the cut",
+    "contextWiden": "Show more around the cut",
     "summaryNone": "Off",
     "cutsLabel": "Cuts",
     "cutStart": "{{seconds}} from the start",

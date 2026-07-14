@@ -3,13 +3,15 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
-import type { TrimRange } from '../../../shared/types'
+import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { drawWaveform } from '../lib/waveform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
-import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
+import { WaveformSkeleton } from './WaveformSkeleton'
+import { AFTER_COLOR } from './WaveformCompare'
 
 // A handle can never cross to within a second of the other: a trim that eats the
 // whole track is always a mistake, and the floor keeps the handles grabbable.
@@ -20,6 +22,17 @@ const EDGE_SNAP_SEC = 0.05
 // How much of the track each cut audition plays: enough to judge the boundary by
 // ear, short enough to stay a check instead of a listen.
 const AUDITION_SEC = 4
+// This section only ever asks one question — where does the music start, and where
+// does it end — so it shows exactly those two places and nothing in between. Each
+// lane is a window onto one edge of the track, and the control that used to be
+// "zoom" is now how much of the track flanks the cut. A ten-minute track's silent
+// head is a sliver at ×1: this is what made every user zoom and scrub their way to
+// a spot the detector already knew.
+const CONTEXT_SEC = [2, 5, 15, 45] as const
+const DEFAULT_CONTEXT_INDEX = 1
+// The lane's own raster: one window's worth of pixels, no scrolling.
+const LANE_RASTER = 1200
+const LANE_H = 96
 
 interface Props {
   value: TrimRange | undefined
@@ -33,11 +46,206 @@ function cutSeconds(seconds: number): string {
   return `${seconds.toFixed(1)} s`
 }
 
-// The per-track silence trim ("top and tail"): the source wave with the discarded
-// head/tail shaded and a draggable handle on each cut, so what the conversion will
-// drop is read straight off the strip. The detection only suggests — the cut is
-// whatever seconds the user confirmed, which is what the track stores and the
-// conversion applies verbatim.
+type Side = 'start' | 'end'
+
+// One edge of the track, drawn as its own little strip: the window runs from
+// `fromSec` to `toSec` of the source, so a second of audio is the same width in
+// both lanes and the eye can compare them. Everything positional inside a lane is
+// in lane-relative percent — the whole-track percentages the single strip used
+// have no meaning here.
+function Lane({
+  side,
+  wave,
+  fromSec,
+  toSec,
+  durationSec,
+  inputPath,
+  enabled,
+  cutSec,
+  suggestionSec,
+  snapped,
+  onPointerDown,
+  onPointerMove,
+  onRelease,
+  onKeyStep,
+  onApplySuggestion,
+  overlayRef,
+  tr,
+}: {
+  side: Side
+  wave: WaveformResult | null | undefined
+  fromSec: number
+  toSec: number
+  durationSec: number
+  inputPath: string
+  enabled: boolean
+  cutSec: number | undefined
+  suggestionSec: number | undefined
+  snapped: boolean
+  onPointerDown: (e: React.PointerEvent) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onRelease: () => void
+  onKeyStep: (deltaSec: number) => void
+  onApplySuggestion: (sec: number) => void
+  overlayRef: React.RefObject<HTMLDivElement | null>
+  tr: (key: string, opts?: Record<string, unknown>) => string
+}): React.JSX.Element {
+  const spanSec = Math.max(0.001, toSec - fromSec)
+  // The lane re-decodes its own window at full fidelity — the same machinery the
+  // deep zoom uses. Quantized to the tenth so a context change is one decode, not
+  // one per render.
+  const { data: win } = useWaveformWindow(
+    inputPath,
+    Number(fromSec.toFixed(1)),
+    Number(spanSec.toFixed(1)),
+    enabled,
+  )
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    // While the window decodes, the overview's peaks stand in for the same stretch
+    // — coarse, but the lane is never blank and never lies about WHERE it is.
+    if (win) {
+      drawWaveform(canvas, win.peaks, { color: AFTER_COLOR })
+      return
+    }
+    if (!wave || durationSec <= 0) return
+    drawWaveform(canvas, wave.peaks, {
+      color: AFTER_COLOR,
+      window: { from: fromSec / durationSec, to: toSec / durationSec },
+    })
+  }, [win, wave, fromSec, toSec, durationSec])
+
+  // Lane-relative: 0% is fromSec, 100% is toSec.
+  const pct = (sec: number): number => ((sec - fromSec) / spanSec) * 100
+  const cut = cutSec ?? (side === 'start' ? 0 : durationSec)
+  // The dropped audio, shaded: for the head lane everything BEFORE the cut, for the
+  // tail lane everything after — the kept audio stays lit.
+  const shadeWidth =
+    side === 'start' ? Math.max(0, Math.min(100, pct(cut))) : Math.max(0, Math.min(100, 100 - pct(cut)))
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+          {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
+        </span>
+        <span data-testid={`trim-lane-range-${side}`} className="text-[10px] tabular-nums text-fg-dim">
+          {`${fromSec.toFixed(1)}–${toSec.toFixed(1)} s`}
+        </span>
+      </div>
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          data-testid={`trim-lane-${side}`}
+          width={LANE_RASTER}
+          height={LANE_H}
+          className="block h-24 w-full rounded-lg bg-[var(--color-field)]"
+        />
+        <div
+          ref={overlayRef}
+          data-testid={`trim-overlay-${side}`}
+          className="absolute inset-0 touch-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onRelease}
+          onPointerCancel={onRelease}
+        >
+          {cutSec !== undefined && shadeWidth > 0 && (
+            <div
+              data-testid={`trim-shade-${side}`}
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-y-0 bg-[var(--color-panel)]/70 ${
+                side === 'start' ? 'left-0 rounded-l-lg' : 'right-0 rounded-r-lg'
+              }`}
+              style={{ width: `${shadeWidth}%` }}
+            />
+          )}
+          {/* The cut itself: a handle to drag, arrow keys to refine. The magnet's
+              glow stands in for the trackpad click an Electron app cannot fire. */}
+          <div
+            data-testid={`trim-handle-${side}`}
+            role="slider"
+            aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+            aria-valuemin={0}
+            aria-valuemax={Number(durationSec.toFixed(2))}
+            aria-valuenow={Number(cut.toFixed(2))}
+            tabIndex={0}
+            className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none focus-visible:outline-1 focus-visible:outline-accent"
+            style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+              e.preventDefault()
+              const step = e.shiftKey ? 1 : 0.1
+              onKeyStep(e.key === 'ArrowLeft' ? -step : step)
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation()
+              e.currentTarget.setPointerCapture?.(e.pointerId)
+              onPointerDown(e)
+            }}
+            onPointerMove={(e) => {
+              e.stopPropagation()
+              onPointerMove(e)
+            }}
+            onPointerUp={onRelease}
+            onPointerCancel={onRelease}
+          >
+            <span
+              aria-hidden="true"
+              data-testid={snapped ? `trim-snapped-${side}` : undefined}
+              className={`absolute inset-y-0 left-1/2 w-px bg-accent ${
+                snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
+              }`}
+            />
+            <span
+              aria-hidden="true"
+              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
+                snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
+              }`}
+            />
+          </div>
+          {/* The suggestion, where it would land: one click stages this side alone.
+              The button is clamped inside the lane so a cut hugging the very edge
+              never renders half-clipped. */}
+          {cutSec === undefined && suggestionSec !== undefined && (
+            <div className="pointer-events-none absolute inset-0">
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-0 w-0 border-l border-dashed border-[var(--color-line-strong)]"
+                style={{ left: `${Math.max(0, Math.min(100, pct(suggestionSec)))}%` }}
+              />
+              <button
+                type="button"
+                data-testid={`trim-apply-${side}`}
+                aria-label={tr(side === 'start' ? 'trim.applyStart' : 'trim.applyEnd', {
+                  seconds: cutSeconds(
+                    side === 'start' ? suggestionSec : durationSec - suggestionSec,
+                  ),
+                })}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onApplySuggestion(suggestionSec)}
+                className="press pointer-events-auto absolute top-1 z-20 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-muted hover:text-fg"
+                style={{
+                  left: `clamp(12px, ${Math.max(0, Math.min(100, pct(suggestionSec)))}%, calc(100% - 12px))`,
+                }}
+              >
+                <Scissors className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// The per-track silence trim ("top and tail"). Two lanes — the head of the track
+// and its tail — because those are the only two places a trim ever happens; the
+// minutes in between are not this section's business. The detection only suggests:
+// the cut is whatever seconds the user confirmed, which is what the track stores
+// and the conversion applies verbatim.
 export function TrimSection({ value, open, onToggle, onChange, inputPath }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -50,10 +258,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // The unpadded truth the drag magnet aims at: where the music actually starts/ends.
   const onsets = useMemo(() => (wave ? detectOnsets(wave) : undefined), [wave])
   // The coarse onsets come from the 8192-bucket overview — up to a bucket (tens of
-  // milliseconds) off the audible wave, a gap the eye catches at deep zoom ("the
+  // milliseconds) off the audible wave, a gap the eye catches at this depth ("the
   // snapped line doesn't touch the music"). A one-second finely-bucketed window
-  // around each onset (the deep zoom's own re-decode, cached alike) narrows the
-  // magnet's target to the millisecond; while it loads, the coarse value stands.
+  // around each onset (cached like the lanes' own) narrows the magnet's target to
+  // the millisecond; while it loads, the coarse value stands.
   const startWinStart = Math.max(0, (onsets?.startSec ?? 0) - 0.5)
   const { data: startWin } = useWaveformWindow(
     inputPath,
@@ -80,23 +288,42 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     }),
     [onsets, startWin, endWin],
   )
-  const [zoom, setZoom] = useState(1)
+  // How much track flanks each cut. Replaces the old zoom: there is no scrolling
+  // here, so the only question left is how wide a window each lane shows.
+  const [contextIndex, setContextIndex] = useState(DEFAULT_CONTEXT_INDEX)
+  const contextSec = CONTEXT_SEC[contextIndex]
   // The live range while a handle is dragged; committed to the track (onChange)
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
   const [draft, setDraft] = useState<TrimRange | null>(null)
-  const dragging = useRef<'start' | 'end' | null>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef<Side | null>(null)
+  const startOverlayRef = useRef<HTMLDivElement>(null)
+  const endOverlayRef = useRef<HTMLDivElement>(null)
   const shown = draft ?? value
   const startSec = shown?.startSec ?? 0
   const endSec = shown?.endSec ?? durationSec
   const cutStart = startSec > 0
   const cutEnd = durationSec > 0 && endSec < durationSec
-  const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
+
+  // Each lane frames the cut it owns: the confirmed one if there is one, else the
+  // suggestion, else the track's own edge. The window is anchored to that spot and
+  // NOT to the live draft — a lane that re-framed under the finger would drag the
+  // wave out from under the handle mid-gesture.
+  const startFocus = value?.startSec ?? suggestion?.startSec ?? 0
+  const endFocus = value?.endSec ?? suggestion?.endSec ?? durationSec
+  const startLane = useMemo(() => {
+    const from = Math.max(0, startFocus - contextSec)
+    return { from, to: Math.min(durationSec, from + contextSec * 2) }
+  }, [startFocus, contextSec, durationSec])
+  const endLane = useMemo(() => {
+    const to = Math.min(durationSec, endFocus + contextSec)
+    return { from: Math.max(0, to - contextSec * 2), to }
+  }, [endFocus, contextSec, durationSec])
+
   // The by-ear check of a cut: a local element playing the source right at the
   // boundary — from the cut-in (what the converted track will open with), or the
   // last seconds INTO the end cut (where the outro lands). Stopped when the trim
   // changes or the section unmounts, like the declick audition.
-  const [auditing, setAuditing] = useState<'start' | 'end' | null>(null)
+  const [auditing, setAuditing] = useState<Side | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   function stopAudition(): void {
     audioRef.current?.pause()
@@ -111,7 +338,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       setAuditing(null)
     }
   }, [value])
-  function audition(which: 'start' | 'end'): void {
+  function audition(which: Side): void {
     if (auditing === which) {
       stopAudition()
       return
@@ -133,7 +360,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     audio.onended = () => stopAudition()
     setAuditing(which)
   }
-  const auditionButton = (which: 'start' | 'end'): React.JSX.Element => (
+  const auditionButton = (which: Side): React.JSX.Element => (
     <button
       type="button"
       data-testid={`trim-audition-${which}`}
@@ -149,37 +376,44 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
     </button>
   )
 
-  function secondsAt(clientX: number): number {
-    const el = overlayRef.current
+  // A click lands in a LANE, so the second it means is read off that lane's window.
+  // Dragging PAST the lane's outer edge means the track's own edge: with the window
+  // framed around the cut, the head lane may well start at 4.7 s, and "cut nothing"
+  // (drag the handle off the left) has to stay reachable — otherwise the only way
+  // to undo a cut inside the lane would be the Reset button.
+  function secondsAt(which: Side, clientX: number): number {
+    const el = (which === 'start' ? startOverlayRef : endOverlayRef).current
+    const lane = which === 'start' ? startLane : endLane
     if (!el || durationSec === 0) return 0
     const rect = el.getBoundingClientRect()
     if (rect.width === 0) return 0
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-    return ratio * durationSec
+    const raw = (clientX - rect.left) / rect.width
+    if (which === 'start' && raw < 0) return 0
+    if (which === 'end' && raw > 1) return durationSec
+    const ratio = Math.min(1, Math.max(0, raw))
+    return lane.from + ratio * (lane.to - lane.from)
   }
 
   // The magnet: dragging near where the music actually starts (or ends) pulls the
   // handle onto it — landing the cut exactly on the wave is the whole gesture, and
   // trackpads have no haptics an Electron app can fire, so the snap plus the
-  // handle's glow (`snapped`) stand in for the click under the finger. The catch
-  // window follows the zoom: generous in the overview, surgical when zoomed in.
+  // handle's glow stand in for the click under the finger. The catch window follows
+  // the lane's span: the tighter the context, the more surgical the magnet.
   const [snapped, setSnapped] = useState(false)
-  function withSnap(which: 'start' | 'end', sec: number): number {
+  function withSnap(which: Side, sec: number): number {
     const target = which === 'start' ? snapTargets.startSec : snapTargets.endSec
     if (target === undefined || durationSec === 0) {
       setSnapped(false)
       return sec
     }
-    const catchSec = Math.min(0.3, Math.max(0.02, (durationSec / zoom) * 0.015))
+    const catchSec = Math.min(0.3, Math.max(0.02, contextSec * 2 * 0.015))
     const snap = Math.abs(sec - target) <= catchSec
     setSnapped(snap)
     return snap ? target : sec
   }
 
-  function dragTo(clientX: number): void {
-    const which = dragging.current
-    if (!which) return
-    const sec = withSnap(which, secondsAt(clientX))
+  function dragTo(which: Side, clientX: number): void {
+    const sec = withSnap(which, secondsAt(which, clientX))
     if (which === 'start') {
       setDraft({ ...shown, startSec: Math.min(sec, endSec - MIN_KEEP_SEC) })
     } else {
@@ -208,9 +442,8 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   }
 
   // Keyboard fine-adjustment for the focused handle: the arrows move it in tenths
-  // of a second (a whole second with Shift), the precision the coarse strip can't
-  // give with a drag alone.
-  function nudge(which: 'start' | 'end', deltaSec: number): void {
+  // of a second (a whole second with Shift), the precision a drag alone can't give.
+  function nudge(which: Side, deltaSec: number): void {
     if (durationSec === 0) return
     if (which === 'start') {
       const sec = Math.min(Math.max(0, startSec + deltaSec), endSec - MIN_KEEP_SEC)
@@ -220,86 +453,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       commit({ ...shown, endSec: sec })
     }
   }
-
-  const handle = (which: 'start' | 'end', sec: number): React.JSX.Element => (
-    <div
-      data-testid={`trim-handle-${which}`}
-      role="slider"
-      aria-label={tr(which === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
-      aria-valuemin={0}
-      aria-valuemax={Number(durationSec.toFixed(2))}
-      aria-valuenow={Number(sec.toFixed(2))}
-      tabIndex={0}
-      className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none focus-visible:outline-1 focus-visible:outline-accent"
-      style={{ left: `${pct(sec)}%` }}
-      onKeyDown={(e) => {
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-        e.preventDefault()
-        const step = e.shiftKey ? 1 : 0.1
-        nudge(which, e.key === 'ArrowLeft' ? -step : step)
-      }}
-      onPointerDown={(e) => {
-        e.stopPropagation()
-        dragging.current = which
-        e.currentTarget.setPointerCapture?.(e.pointerId)
-      }}
-      onPointerMove={(e) => {
-        e.stopPropagation()
-        dragTo(e.clientX)
-      }}
-      onPointerUp={release}
-      onPointerCancel={release}
-    >
-      <span
-        aria-hidden="true"
-        data-testid={snapped && dragging.current === which ? `trim-snapped-${which}` : undefined}
-        className={`absolute inset-y-0 left-1/2 w-px bg-accent ${
-          snapped && dragging.current === which
-            ? 'shadow-[0_0_8px_2px_var(--color-accent)]'
-            : ''
-        }`}
-      />
-      <span
-        aria-hidden="true"
-        className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
-          snapped && dragging.current === which ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
-        }`}
-      />
-    </div>
-  )
-
-  // A suggested cut, drawn where it would land: a dashed line with a scissors
-  // button ON the wave — the position says which side it is, so the button needs
-  // no words (the amount rides the header pill and the aria-label). One click
-  // stages that side alone; both markers stay independent, so "only the end" is
-  // one click, not a drag. The line sits at the exact second, but the button's
-  // center is clamped a half-button inside the strip: a suggestion hugging the
-  // track edge used to render the scissors half-clipped under the edge handle,
-  // leaving a sliver to click. z-20 keeps it above the handles' hit areas.
-  const suggestionMarker = (which: 'start' | 'end', sec: number): React.JSX.Element => (
-    <div key={`suggest-${which}`} className="pointer-events-none absolute inset-0">
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 w-0 border-l border-dashed border-[var(--color-line-strong)]"
-        style={{ left: `${pct(sec)}%` }}
-      />
-      <button
-        type="button"
-        data-testid={`trim-apply-${which}`}
-        aria-label={tr(which === 'start' ? 'trim.applyStart' : 'trim.applyEnd', {
-          seconds: cutSeconds(which === 'start' ? sec : durationSec - sec),
-        })}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() =>
-          commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec })
-        }
-        className="press pointer-events-auto absolute top-1 z-20 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg-muted hover:text-fg"
-        style={{ left: `clamp(12px, ${pct(sec)}%, calc(100% - 12px))` }}
-      >
-        <Scissors className="h-3 w-3" aria-hidden="true" />
-      </button>
-    </div>
-  )
 
   // The folded header states the cuts (or that there are none) exactly once, like
   // the click-repair header: dim summary when off, accent badge when active.
@@ -322,6 +475,37 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         .filter(Boolean)
         .join(' · ')
     : undefined
+
+  const laneProps = (which: Side): React.ComponentProps<typeof Lane> => {
+    const lane = which === 'start' ? startLane : endLane
+    return {
+      side: which,
+      wave,
+      fromSec: lane.from,
+      toSec: lane.to,
+      durationSec,
+      inputPath,
+      enabled: open && settled && durationSec > 0,
+      cutSec: which === 'start' ? shown?.startSec : shown?.endSec,
+      suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
+      snapped: snapped && dragging.current === which,
+      onPointerDown: (e: React.PointerEvent) => {
+        dragging.current = which
+        ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+        dragTo(which, e.clientX)
+      },
+      onPointerMove: (e: React.PointerEvent) => {
+        if (dragging.current !== which) return
+        dragTo(which, e.clientX)
+      },
+      onRelease: release,
+      onKeyStep: (delta: number) => nudge(which, delta),
+      onApplySuggestion: (sec: number) =>
+        commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
+      overlayRef: which === 'start' ? startOverlayRef : endOverlayRef,
+      tr,
+    }
+  }
 
   return (
     <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-5">
@@ -391,103 +575,47 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                     </span>
                   )
                 )}
+                {/* How much track flanks each cut — the old zoom, restated as the
+                    only question two fixed windows can still ask. */}
                 <span className="ml-auto flex shrink-0 items-center gap-0.5">
                   <button
                     type="button"
-                    data-testid="waveform-zoom-out"
-                    aria-label={tr('editor.waveformZoomOut')}
-                    disabled={zoom <= 1}
-                    onClick={() => setZoom((z) => Math.max(1, z / 2))}
-                    className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-                  >
-                    <ZoomOut className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="waveform-zoom-reset"
-                    aria-label={tr('editor.waveformZoomReset')}
-                    disabled={zoom <= 1}
-                    onClick={() => setZoom(1)}
-                    className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-                  >
-                    {zoomLabel(zoom)}
-                  </button>
-                  <button
-                    type="button"
                     data-testid="waveform-zoom-in"
-                    aria-label={tr('editor.waveformZoomIn')}
-                    disabled={zoom >= ZOOM_MAX}
-                    onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
+                    aria-label={tr('trim.contextNarrow')}
+                    disabled={contextIndex <= 0}
+                    onClick={() => setContextIndex((i) => Math.max(0, i - 1))}
                     className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
                   >
                     <ZoomIn className="h-3 w-3" aria-hidden="true" />
                   </button>
+                  <span
+                    data-testid="trim-context"
+                    className="min-w-8 px-1 text-center text-[10px] tabular-nums text-fg-dim"
+                  >
+                    {`±${contextSec}s`}
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="waveform-zoom-out"
+                    aria-label={tr('trim.contextWiden')}
+                    disabled={contextIndex >= CONTEXT_SEC.length - 1}
+                    onClick={() =>
+                      setContextIndex((i) => Math.min(CONTEXT_SEC.length - 1, i + 1))
+                    }
+                    className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+                  >
+                    <ZoomOut className="h-3 w-3" aria-hidden="true" />
+                  </button>
                 </span>
               </div>
-              <Strip
-                wave={wave}
-                loading={loading}
-                loudness={undefined}
-                color={AFTER_COLOR}
-                raster={OVERLAY_W}
-                zoom={zoom}
-                onZoomChange={setZoom}
-                inputPath={inputPath}
-                // No red clip marks here: clipping is the loudness section's
-                // concern, and on a hot master the decoder's flags paint half
-                // this strip red — noise where the eye is hunting silence.
-                marks={false}
-              >
-                {wave && durationSec > 0 && (
-                  // Clicking the wave grabs the NEAREST handle and drops it there —
-                  // placing a cut is one gesture (press, optionally drag to refine,
-                  // release commits) instead of dragging a handle across the strip.
-                  // The handles' own pointerdown stops propagation, so grabbing one
-                  // directly never re-places it through this handler.
-                  <div
-                    ref={overlayRef}
-                    data-testid="trim-overlay"
-                    className="absolute inset-0"
-                    onPointerDown={(e) => {
-                      const sec = secondsAt(e.clientX)
-                      dragging.current =
-                        Math.abs(sec - startSec) <= Math.abs(sec - endSec) ? 'start' : 'end'
-                      e.currentTarget.setPointerCapture?.(e.pointerId)
-                      dragTo(e.clientX)
-                    }}
-                    onPointerMove={(e) => dragTo(e.clientX)}
-                    onPointerUp={release}
-                    onPointerCancel={release}
-                  >
-                    {/* The discarded regions, shaded like a dimmed room: the kept
-                        audio stays lit, so the cut reads without a legend. */}
-                    {cutStart && (
-                      <div
-                        data-testid="trim-shade-start"
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 left-0 rounded-l-lg bg-[var(--color-panel)]/70"
-                        style={{ width: `${pct(startSec)}%` }}
-                      />
-                    )}
-                    {cutEnd && (
-                      <div
-                        data-testid="trim-shade-end"
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 right-0 rounded-r-lg bg-[var(--color-panel)]/70"
-                        style={{ width: `${100 - pct(endSec)}%` }}
-                      />
-                    )}
-                    {handle('start', startSec)}
-                    {handle('end', endSec)}
-                    {shown?.startSec === undefined &&
-                      suggestion?.startSec !== undefined &&
-                      suggestionMarker('start', suggestion.startSec)}
-                    {shown?.endSec === undefined &&
-                      suggestion?.endSec !== undefined &&
-                      suggestionMarker('end', suggestion.endSec)}
-                  </div>
-                )}
-              </Strip>
+              {loading || !wave || durationSec <= 0 ? (
+                <WaveformSkeleton testid="trim-loading" />
+              ) : (
+                <div className="flex gap-3">
+                  <Lane {...laneProps('start')} />
+                  <Lane {...laneProps('end')} />
+                </div>
+              )}
               {value && (
                 <p data-testid="trim-cue-warning" className="mt-3 text-xs text-warn">
                   {tr('trim.cueWarning')}

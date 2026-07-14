@@ -488,7 +488,11 @@
   },
   "trim": {
     "title": "Corte de silêncio",
-    "hint": "Corta o silêncio inicial e final durante a conversão. Arraste as alças sobre a onda para ajustar o corte exato.",
+    "hint": "Corta o silêncio de entrada e de saída na conversão. As faixas mostram o início e o fim da música — clique na tesoura para aplicar o corte detectado, ou arraste a alça você mesmo.",
+    "laneStart": "Início",
+    "laneEnd": "Fim",
+    "contextNarrow": "Ver menos ao redor do corte",
+    "contextWiden": "Ver mais ao redor do corte",
     "summaryNone": "Não",
     "cutsLabel": "Corta",
     "cutStart": "{{seconds}} do início",
