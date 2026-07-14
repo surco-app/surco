@@ -467,6 +467,8 @@ describe('Editor clear metadata', () => {
         mixName: '',
         originalYear: '',
         compilation: '',
+        mood: '',
+        energy: '',
       },
       matched: false,
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.

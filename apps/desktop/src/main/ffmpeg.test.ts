@@ -1011,6 +1011,8 @@ describe('tagsFromProbe', () => {
           TSRC: 'DEA449900124',
           TIT3: 'Club Mix',
           TORY: '1998',
+          MOOD: 'Dark',
+          ENERGY: '4',
         },
       },
     })
@@ -1037,6 +1039,8 @@ describe('tagsFromProbe', () => {
       mixName: 'Club Mix',
       originalYear: '1998',
       compilation: '',
+      mood: 'Dark',
+      energy: '4',
     })
   })
 
@@ -1096,6 +1100,16 @@ describe('tagsFromProbe', () => {
     expect(tagsFromProbe({ format: { tags: { compilation: '0' } } }).compilation).toBe('')
   })
 
+  it('reads the energy tag verbatim, whatever scale wrote it', () => {
+    // There is no one energy scale: Mixed In Key writes 1-10, other taggers 1-5, some a
+    // word. Surco does not own this field — it carries it. Anything else would mean a
+    // convert silently dropping the 8 a Mixed In Key user had already put there, which is
+    // exactly the loss this field exists to stop.
+    expect(tagsFromProbe({ format: { tags: { ENERGY: '4' } } }).energy).toBe('4')
+    expect(tagsFromProbe({ format: { tags: { ENERGY: '8' } } }).energy).toBe('8')
+    expect(tagsFromProbe({ format: { tags: { ENERGY: 'high' } } }).energy).toBe('high')
+  })
+
   it('matches tag keys case-insensitively across muxers', () => {
     // WAV/AIFF muxers emit upper- or mixed-case keys; the values must still land
     const m = tagsFromProbe({ format: { tags: { TITLE: 'X', Artist: 'Y', ALBUM_ARTIST: 'Z' } } })
@@ -1153,6 +1167,8 @@ describe('tagsFromProbe', () => {
       mixName: '',
       originalYear: '',
       compilation: '',
+      mood: '',
+      energy: '',
     })
   })
 })

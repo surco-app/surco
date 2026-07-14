@@ -25,6 +25,16 @@ function stripCues(file: string): void {
   f.dispose()
 }
 
+// Reads back a TXXX frame by its description (CATALOGNUMBER, MOOD, ENERGY…).
+function userText(id3: Id3v2Tag, description: string): Id3v2UserTextInformationFrame | undefined {
+  return Id3v2UserTextInformationFrame.findUserTextInformationFrame(
+    id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    ),
+    description,
+  )
+}
+
 const meta: TrackMetadata = {
   title: 'Till I Come',
   artist: 'ATB',
@@ -439,6 +449,38 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
     expect(id3.frames.some((fr) => fr.frameId === Id3v2FrameIdentifiers.TDOR)).toBe(false)
+    f.dispose()
+  })
+
+  // Quick Tag's two judgement fields: what the DJ hears, which no provider can supply.
+  // Both ride TXXX — mood's standard TMOO frame is ID3v2.4-only and would be dropped
+  // from the v2.3 tag these files are pinned to, and energy has no standard frame at all.
+  it('writes mood and energy in place', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, mood: 'Dark', energy: '4' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(userText(id3, 'MOOD')?.text).toEqual(['Dark'])
+    expect(userText(id3, 'ENERGY')?.text).toEqual(['4'])
+    f.dispose()
+  })
+
+  // Re-judging a track has to be able to take a value back off, or a mood set by a
+  // stray keypress would be unerasable from the editor.
+  it('clears mood and energy when the fields are emptied', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, mood: 'Dark', energy: '4' })
+
+    writeTags(file, { ...meta, mood: '', energy: '' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(userText(id3, 'MOOD')).toBeUndefined()
+    expect(userText(id3, 'ENERGY')).toBeUndefined()
     f.dispose()
   })
 })

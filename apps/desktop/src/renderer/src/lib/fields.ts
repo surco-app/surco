@@ -27,6 +27,8 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'publisher' },
   { key: 'catalogNumber' },
   { key: 'discogsReleaseId' },
+  { key: 'mood' },
+  { key: 'energy' },
 ]
 
 // Which section a field belongs to in the grouped form. The four groups sort the
@@ -47,7 +49,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
     fields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
   },
   { id: 'catalog', fields: ['publisher', 'catalogNumber', 'isrc', 'discogsReleaseId', 'composer'] },
-  { id: 'dj', fields: ['bpm', 'key', 'mixName', 'remixArtist', 'originalYear'] },
+  { id: 'dj', fields: ['bpm', 'key', 'mood', 'energy', 'mixName', 'remixArtist', 'originalYear'] },
   { id: 'order', fields: ['trackNumber', 'discNumber', 'compilation', 'comment'] },
 ]
 

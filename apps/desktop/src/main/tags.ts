@@ -314,6 +314,13 @@ export function writeTags(
       id3.addFrame(tory)
     }
     setRating(id3, meta.rating ?? '')
+    // Quick Tag's judgement fields, both on the TXXX route. Mood's standard frame
+    // (TMOO) is ID3v2.4-only — TagLib has no v2.3 equivalent for it, so on the v2.3
+    // tags pinned above it would be silently dropped on save. TXXX "MOOD" is what
+    // ffmpeg writes for a mood tag anyway, and what mp3tag and Traktor read. Energy
+    // has no standard frame at all; TXXX "ENERGY" is Mixed In Key's key.
+    setUserText(id3, 'MOOD', meta.mood ?? '')
+    setUserText(id3, 'ENERGY', meta.energy ?? '')
 
     // A vinyl-position track number ("A2") is text the numeric tag.track setter
     // above cannot hold — it wrote the bare digits. Rewrite the TRCK frame with the

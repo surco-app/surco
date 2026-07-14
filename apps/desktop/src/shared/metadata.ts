@@ -28,6 +28,8 @@ const FIELD_PRESENCE: Record<keyof TrackMetadata, true> = {
   mixName: true,
   originalYear: true,
   compilation: true,
+  mood: true,
+  energy: true,
 }
 
 // Every metadata field name, derived from the presence map above so the two can't drift.

@@ -462,7 +462,9 @@
     "mixName": "Mix",
     "originalYear": "Originaljahr",
     "compilation": "Compilation",
-    "rating": "Bewertung"
+    "rating": "Bewertung",
+    "mood": "Stimmung",
+    "energy": "Energie"
   },
   "declick": {
     "title": "Vinyl-Klick-Reparatur",

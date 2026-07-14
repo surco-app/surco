@@ -100,4 +100,14 @@ export const TAG_FIELDS: TagField[] = [
     vorbis: 'COMPILATION',
     parse: (raw) => (raw === '1' ? '1' : ''),
   },
+  // TMOO is read (ffprobe surfaces it on a v2.4 file tagged elsewhere) but never written:
+  // it has no ID3v2.3 frame, and the ID3 targets are pinned to v2.3. TXXX "MOOD" is the
+  // name ffmpeg writes and mp3tag/Traktor read, so it round-trips on both muxers.
+  { key: 'mood', aliases: ['tmoo', 'mood'], id3: 'MOOD' },
+  // Energy has no standard frame; TXXX "ENERGY" is what Mixed In Key writes and the
+  // Traktor/rekordbox crowd reads. Carried verbatim, with no scale of its own: Mixed In
+  // Key writes 1-10, other taggers 1-5, some a word. Validating would mean dropping a
+  // value the user's other tools had already written — the very loss this field exists
+  // to stop — so it stays free text, like the key or the comment.
+  { key: 'energy', aliases: ['energy', 'energylevel'], id3: 'ENERGY' },
 ]

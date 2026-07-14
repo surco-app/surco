@@ -29,6 +29,8 @@ const FULLY_TAGGED: TrackMetadata = {
   mixName: 'Club Mix',
   originalYear: '2019',
   compilation: '1',
+  mood: 'Dark',
+  energy: '4',
 }
 
 describe('emptyMetadata', () => {

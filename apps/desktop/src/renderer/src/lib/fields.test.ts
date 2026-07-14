@@ -57,6 +57,21 @@ describe('DEFAULT_FIELDS', () => {
   })
 })
 
+// Mood and energy are the DJ's own judgement — no provider supplies them, and other
+// taggers (Mixed In Key) already write them. Surco carries them: catalogued so the form
+// can show and edit them, grouped with the other DJ tags, and hidden by default so they
+// cost nothing to the people who never touch them.
+describe('mood and energy fields', () => {
+  it('catalogues both as editable DJ fields, hidden until the user enables them', () => {
+    expect(FIELD_DEFS.map((d) => d.key)).toContain('mood')
+    expect(FIELD_DEFS.map((d) => d.key)).toContain('energy')
+    expect(groupOfField('mood')).toBe('dj')
+    expect(groupOfField('energy')).toBe('dj')
+    expect(DEFAULT_FIELDS).not.toContain('mood')
+    expect(DEFAULT_FIELDS).not.toContain('energy')
+  })
+})
+
 describe('missingRequired', () => {
   it('reports required fields that are empty so processing is blocked until they are filled', () => {
     expect(missingRequired(meta, ['title', 'album', 'albumArtist'])).toEqual([

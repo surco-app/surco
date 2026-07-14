@@ -312,6 +312,12 @@ export interface TrackMetadata {
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.
   compilation?: string
+  // The DJ's own judgement of the track, which no provider can supply: the mood
+  // (TMOO/MOOD) and the energy "1"–"5", "" for none. Energy has no standard frame,
+  // so it rides TXXX "ENERGY", the key Mixed In Key writes and Traktor reads.
+  // Kept strings like every other field.
+  mood?: string
+  energy?: string
 }
 
 // One track's editable state, persisted alongside the session paths so a crash or

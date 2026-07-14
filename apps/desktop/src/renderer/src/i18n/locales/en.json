@@ -462,7 +462,9 @@
     "mixName": "Mix",
     "originalYear": "Original year",
     "compilation": "Compilation",
-    "rating": "Rating"
+    "rating": "Rating",
+    "mood": "Mood",
+    "energy": "Energy"
   },
   "declick": {
     "title": "Vinyl click repair",

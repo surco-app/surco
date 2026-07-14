@@ -35,6 +35,8 @@ const SAMPLE_META: TrackMetadata = {
   isrc: 'ES-SRC-26-00031',
   mixName: 'Original Remix',
   originalYear: '1998',
+  mood: 'Dark',
+  energy: '8',
   compilation: '1',
 }
 

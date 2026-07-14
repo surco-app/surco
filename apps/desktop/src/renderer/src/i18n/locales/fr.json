@@ -462,7 +462,9 @@
     "mixName": "Mix",
     "originalYear": "Année d'origine",
     "compilation": "Compilation",
-    "rating": "Note"
+    "rating": "Note",
+    "mood": "Ambiance",
+    "energy": "Énergie"
   },
   "declick": {
     "title": "Réparation des clics de vinyle",
