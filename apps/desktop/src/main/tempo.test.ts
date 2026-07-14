@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { detectBeatgrid, detectBpm } from './tempo'
+import type { BeatgridResult } from '../shared/types'
 
 // The detector runs on mono PCM that ffmpeg has already downmixed and
 // resampled to this rate; the tests synthesize signals at the same rate so
@@ -289,5 +290,113 @@ describe('detectBeatgrid', () => {
   it('keeps a steady train single-segment', () => {
     expect(detectBeatgrid(clickTrain(120, 60), SR)?.changes).toBeUndefined()
     expect(detectBeatgrid(clickTrain(174, 60, 0.3), SR)?.changes).toBeUndefined()
+  })
+})
+
+// A click train built from explicit beat times, so a test can synthesize any
+// tempo curve — a turntable that drags, a splice between two takes — and still
+// know where every kick truly landed.
+function trainAt(beatTimes: number[], seconds: number): Float32Array {
+  const samples = new Float32Array(Math.floor(SR * seconds))
+  for (const t of beatTimes) {
+    const start = Math.round(t * SR)
+    for (let i = 0; i < 64 && start + i < samples.length; i++) samples[start + i] = 1 - i / 64
+  }
+  return samples
+}
+
+// The beat times of a deck running at a steady but non-nominal speed.
+function steadyBeats(bpm: number, seconds: number): number[] {
+  const beats: number[] = []
+  for (let t = 0; t < seconds; t += 60 / bpm) beats.push(t)
+  return beats
+}
+
+// The beat times of a splice: the tape/needle changes tempo once, mid-track.
+function splicedBeats(firstBpm: number, secondBpm: number, seconds: number): number[] {
+  const beats: number[] = []
+  let t = 0
+  while (t < seconds) {
+    beats.push(t)
+    t += 60 / (t < seconds / 2 ? firstBpm : secondBpm)
+  }
+  return beats
+}
+
+// Where the grid lays its nearest beat to `t`, following whichever segment
+// governs that moment — what the DJ software will draw, and what the ear
+// checks the kick against.
+function gridBeatNear(grid: BeatgridResult, t: number): number {
+  const segments = [
+    { anchorSec: grid.anchorSec, bpm: grid.bpm },
+    ...(grid.changes ?? []),
+  ]
+  let governing = segments[0]
+  for (const segment of segments) {
+    if (segment.anchorSec > t) break
+    governing = segment
+  }
+  const period = 60 / governing.bpm
+  return governing.anchorSec + Math.round((t - governing.anchorSec) / period) * period
+}
+
+// The worst any real kick sits from the grid line meant to mark it. This is the
+// number the user hears: the grid "walking off the beat" is exactly this
+// growing. A whole segment list means nothing if this stays large.
+function worstDriftMs(grid: BeatgridResult, beats: number[]): number {
+  return Math.max(...beats.map((t) => Math.abs(gridBeatNear(grid, t) - t))) * 1000
+}
+
+// The auto grid's real contract, and the one the phase-only drift scan could
+// not meet: a segment exists to make the grid FIT, so each one must carry the
+// tempo its stretch actually runs at. Re-anchoring the phase while keeping a
+// wrong BPM only buys a few bars before the grid walks off the kicks again —
+// on a 180 s rip that left beats a THIRD OF A SECOND off the grid, past a
+// whole beat, which is worse than useless for beatmatching.
+describe('detectBeatgrid on a tempo that changes', () => {
+  // A DJ tolerates a few ms of slop; a beat that sits 25 ms off is already
+  // audibly flamming against a synced deck. Hold the whole track under that.
+  const DRIFT_TOL_MS = 25
+
+  it('tracks a turntable that drags, keeping every beat on the grid', () => {
+    // The vinyl case this feature exists for: the platter slows over the side,
+    // so no single BPM fits the record. The grid must follow it down.
+    const seconds = 180
+    const beats: number[] = []
+    for (let t = 0; t < seconds; ) {
+      beats.push(t)
+      t += 60 / (128 - 1.5 * (t / seconds))
+    }
+    const grid = detectBeatgrid(trainAt(beats, seconds), SR)
+    expect(grid).not.toBeNull()
+    expect(worstDriftMs(grid as BeatgridResult, beats)).toBeLessThan(DRIFT_TOL_MS)
+  })
+
+  it('gives a spliced track a segment per take, each at its own tempo', () => {
+    // Two takes butted together — the classic bootleg edit. One segment, at the
+    // second take's real tempo, must pick the grid back up at the seam.
+    const seconds = 180
+    const beats = splicedBeats(128, 124, seconds)
+    const grid = detectBeatgrid(trainAt(beats, seconds), SR)
+    expect(grid).not.toBeNull()
+    const result = grid as BeatgridResult
+    expect(result.changes?.length).toBeGreaterThanOrEqual(1)
+    // The tell that a segment carries its OWN tempo rather than inheriting the
+    // base one: the last segment must read near the second take's 124 BPM.
+    const last = (result.changes ?? [])[(result.changes ?? []).length - 1]
+    expect(last.bpm).toBeGreaterThan(122)
+    expect(last.bpm).toBeLessThan(126)
+    expect(worstDriftMs(result, beats)).toBeLessThan(DRIFT_TOL_MS)
+  })
+
+  it('still reads a steady off-nominal deck as one segment', () => {
+    // The guard that keeps the fix honest: a deck running steadily at 127.4 is
+    // NOT a tempo change. Measuring per-segment tempo must not start slicing a
+    // track that simply isn't at a round BPM.
+    const seconds = 180
+    const grid = detectBeatgrid(trainAt(steadyBeats(127.4, seconds), seconds), SR)
+    expect(grid?.changes).toBeUndefined()
+    expect(grid?.bpm ?? 0).toBeGreaterThan(126.9)
+    expect(grid?.bpm ?? 0).toBeLessThan(127.9)
   })
 })

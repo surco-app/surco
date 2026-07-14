@@ -40,19 +40,67 @@ const MIN_CONFIDENCE = 0.25
 // locks exactly half a period off the kicks (seen on a real 138 BPM remix).
 const KICK_LOWPASS_HZ = 150
 
-// The drift scan's granularity: the local phase is measured over windows this
-// long, so a step lands on a window boundary at worst this far from where it
-// happened. Long enough that a window holds ~20+ beats to average over.
+// A file shorter than two of these holds too little beat to scan for drift at
+// all: the tracker's tempo needs room to settle before its readings mean
+// anything, and a clip that short has no room for a real tempo change anyway.
 const DRIFT_WINDOW_SEC = 10
-// A window must sit this far off its segment's grid — and the NEXT window must
-// agree — before a change is emitted. 25 ms is right at beat-matching slop;
-// under it a re-anchor is churn, over it the grid audibly walks off the kicks.
-const DRIFT_STEP_SEC = 0.025
-const DRIFT_CONFIRM_SEC = 0.015
-// The first window's local phase outranks the whole-file fold (which averages
-// every segment together) — but only past this gate, so frame noise on steady
-// tracks never wiggles the anchor that the fold measured globally.
+// The base grid keeps the anchor the whole-file fold measured unless the
+// tracked beats disagree by more than this — so frame noise never wiggles the
+// anchor of a steady record away from the value the fold reported.
 const DRIFT_REBASE_SEC = 0.015
+
+// A segment is FITTED, not just re-anchored: a straight line through its
+// tracked beats gives both the tempo (its slope) and the phase (its intercept).
+// Correcting the phase while leaving the wrong BPM running underneath — what
+// this scan used to do — buys a few bars before the grid walks off the kicks
+// again, and a dragging platter then grows a re-anchor every few windows
+// without ever fitting.
+//
+// The floor under overruling the global detection: a tempo this close to what
+// the whole-file autocorrelation said is the same reading, and re-stating it
+// would only churn the grid of a steady record.
+const TEMPO_FIT_MIN_SLOPE = 0.0002
+// A stretch shorter than this has no tempo worth trusting — a couple of beats
+// fit any line — so it never becomes a segment of its own.
+const MIN_SEGMENT_BEATS = 8
+// How large a flux peak must be, as a fraction of the loudest onset in the
+// file, before the tracker will believe a drum was struck there. A breakdown is
+// not silence — a pad swells and wobbles, and its flux has local peaks — so
+// without an absolute bar the tracker reports beats nobody played straight
+// through the breakdown, follows the pad's phase, and lurches the grid when the
+// drums return (measured: a spurious tempo change at the exact moment the beat
+// came back). It only has to separate a struck drum from a swell, and it must
+// stay low: every beat the bar rejects is a beat the tracker cannot use to
+// follow a drifting record. Swept on the fixtures — the grid holds across
+// 0.15–0.2 and this sits mid-plateau; below it a pad starts scoring as a beat
+// again, above it the softer hits a dragging platter is tracked by drop out.
+const ONSET_FLOOR_OF_PEAK = 0.15
+// How many beats the tracker may coast through before the beat it finally hears
+// counts as a SEAM — the far side of a hole it could not see into, where a
+// segment may legitimately begin. A bar or two of no drums is an ordinary drop
+// the coast rides out; tens of seconds is a breakdown, and what the record did
+// in there is unknown.
+const RESEEK_AFTER_BEATS = 8
+
+// How far a beat may sit from its segment's line before the fit cuts a new
+// segment there. Deliberately tighter than the ~25 ms of slop a DJ starts to
+// hear as a flam: this tolerance is a budget the whole stretch spends, so
+// allowing the audible figure here would let a segment end up right at the edge
+// of audible once measurement noise stacks on top. Half of it leaves headroom —
+// and on the ramped-platter fixture it holds the worst beat to 14 ms.
+const SEGMENT_FIT_TOL_SEC = 0.012
+
+// A beat the tracker located, carried with the beat NUMBER it is — not its
+// position in the array. The two differ wherever the tracker coasted across a
+// breakdown, and the fits read tempo as seconds-per-beat, so they must count in
+// real beats or a 30 s hole silently becomes a tempo change. `seam` marks the
+// first beat heard after a long hole: what the record did in there was never
+// measured, so a segment may legitimately begin at one.
+interface TrackedBeat {
+  atSec: number
+  index: number
+  seam: boolean
+}
 
 // One-pole low-pass, good enough to isolate the kick band for the fold — the
 // slow 6 dB/oct rolloff still attenuates a 3 kHz stab by ~26 dB.
@@ -89,102 +137,263 @@ function onsetEnvelope(samples: Float32Array): Float32Array {
   return env
 }
 
-// Scans the onset envelope in windows for phase steps against the detected
-// grid — the vinyl-rip drift multi-segment grids exist for (a splice, a needle
-// bump, slow wow). Each window's local phase is measured on the same circular
-// fold the global phase used, searched around the RUNNING phase so slow wow
-// stays tracked (unwrapped) even past a quarter period cumulatively. A step
-// must clear DRIFT_STEP_SEC and be confirmed by the next measurable window
-// before it becomes a change — the guard that keeps arrangement changes and
-// noise from growing segments on steady tracks. Cumulative wow re-anchors each
-// time the deviation from the CURRENT segment crosses the step threshold.
+// Tracks the beat pulse by pulse across the whole file, then fits the tracked
+// beats into the fewest constant-tempo stretches that hold the grid on them.
+//
+// Why tracking rather than the fold the global phase uses: a fold measures a
+// window against ONE assumed period, so the moment the record's real tempo
+// differs — the very case a multi-segment grid exists for — the window's beats
+// land in different bins and the peak smears away. A deck 4 BPM off slides a
+// beat's width every 15 s, which is exactly the reading the fold cannot make.
+// Following each beat to where the flux actually peaks near the predicted time,
+// and letting the period adapt as it goes, measures the record instead of the
+// assumption. Everything downstream (segment cuts, per-segment tempo) is then a
+// straight-line fit over honest beat times.
+function trackBeats(
+  flux: Float32Array,
+  fps: number,
+  bpm: number,
+  anchorSec: number,
+): TrackedBeat[] {
+  const frames = flux.length
+  const period0 = (60 * fps) / bpm
+  // How far around the prediction a beat may be hunted, and how fast the
+  // tracked period may adapt. A quarter period of search follows any real drift
+  // (a platter never lurches that hard between two beats) while never reaching
+  // the neighbouring beat, which would let the tracker slip a whole beat and
+  // lock onto the off-beat.
+  const search = Math.max(1, Math.round(period0 / 4))
+  // The period follows the record, but slowly: each beat nudges it by this much
+  // of the newly observed interval. Too fast and one syncopated hit drags the
+  // tempo; too slow and a real ramp never gets tracked.
+  const ADAPT = 0.08
+
+  // What this record calls a drum hit. A breakdown is not silence — a pad still
+  // swells and wobbles, and its flux has local peaks — so a tracker that only
+  // asked "is this the biggest frame nearby?" would report beats nobody played
+  // straight through the breakdown, tracking the pad's phase instead of the
+  // drums' and re-phasing the grid when the drums returned.
+  //
+  // The bar is a FRACTION OF WHAT A HIT LOOKS LIKE HERE, read off the strongest
+  // flux in the file. It cannot be an average: how many frames carry flux is a
+  // property of the material, not of the beat — a sparse click train is mostly
+  // zeros and a dense mix mostly isn't — so an average sets a bar that swings
+  // with the arrangement, and the same threshold that rejects a pad in a busy
+  // mix rejects real beats in a sparse one.
+  let loudest = 0
+  for (let f = 0; f < frames; f++) if (flux[f] > loudest) loudest = flux[f]
+  const onsetFloor = loudest * ONSET_FLOOR_OF_PEAK
+
+  // The strongest flux frame within `search` of `centre`, refined to sub-frame
+  // by the same parabola the folds use. Null means "nothing was struck here" —
+  // silence, or a wash that never rises to a hit — and the caller coasts.
+  const peakNear = (centre: number): number | null => {
+    const lo = Math.max(1, Math.round(centre - search))
+    const hi = Math.min(frames - 2, Math.round(centre + search))
+    if (lo > hi) return null
+    let peak = -1
+    let peakValue = 0
+    for (let f = lo; f <= hi; f++) {
+      if (flux[f] > peakValue) {
+        peakValue = flux[f]
+        peak = f
+      }
+    }
+    if (peak < 0 || peakValue < onsetFloor) return null
+    const before = flux[peak - 1]
+    const after = flux[peak + 1]
+    const denom = before - 2 * peakValue + after
+    const off = denom === 0 ? 0 : Math.max(-0.5, Math.min(0.5, (0.5 * (before - after)) / denom))
+    return peak + off
+  }
+
+  // Beats carry their INDEX, not just their time, because a breakdown is a hole
+  // in the sequence: the tracker coasts across it and finds no beats to record.
+  // Numbering only the beats it heard would make the beats on either side of a
+  // 30 s hole look adjacent, and the straight-line fit downstream — which reads
+  // tempo as seconds-per-beat — would then compute a wildly wrong tempo from a
+  // gap it cannot see. Counting every predicted beat, recorded or coasted,
+  // keeps index and time in step across any hole.
+  const beats: TrackedBeat[] = []
+  let period = period0
+  let index = 0
+  let lastFound: { atFrame: number; index: number } | null = null
+  // Walk back to the earliest beat of the lattice so tracking starts at the
+  // file's head, not at the anchor the fold happened to report.
+  let at = anchorSec * fps
+  while (at - period >= 0) at -= period
+  let coasted = 0
+  while (at < frames) {
+    // The first beat heard after a long hole is a SEAM: across a breakdown the
+    // tracker measured nothing, so whatever the record did in there — kept
+    // time, or slid — is unknown, and the fit downstream must be free to start
+    // a new segment rather than draw one line across bars it never saw.
+    //
+    // The search stays at a quarter period even here. Widening it to hunt a
+    // drifted beat sounds right and is a trap: half a period reaches the
+    // NEIGHBOURING beat, so a re-seek can land on the off-beat and re-phase the
+    // whole grid half a bar off — which on a steady record with a breakdown
+    // (the common case) turns a perfect one-segment grid into a broken two.
+    const seam = coasted >= RESEEK_AFTER_BEATS
+    const found = peakNear(at)
+    if (found === null) {
+      // Silence or a wash: coast at the current tempo rather than let noise
+      // pull the grid. The beat still counts — it just leaves no evidence.
+      at += period
+      index++
+      coasted++
+      continue
+    }
+    beats.push({ atSec: found / fps, index, seam })
+    // The observed interval refines the period — divided by how many beats it
+    // actually spanned, so a hit landing after a coasted hole still reports a
+    // per-beat interval rather than the whole gap. An interval measured ACROSS
+    // a hole is not evidence of tempo (the hole hid whatever happened in it),
+    // so a seam never adapts the period.
+    if (lastFound && !seam) {
+      const spanned = index - lastFound.index
+      const observed = (found - lastFound.atFrame) / spanned
+      // A hit landing at a plausible beat distance refines the tempo; anything
+      // wilder is a missed beat or a stray transient and must not.
+      if (spanned > 0 && observed > 0.75 * period && observed < 1.25 * period)
+        period += ADAPT * (observed - period)
+    }
+    lastFound = { atFrame: found, index }
+    at = found + period
+    index++
+    coasted = 0
+  }
+  return beats
+}
+
+// Splits tracked beats into the fewest constant-tempo stretches that keep every
+// beat on the grid, and states each as a segment (its own tempo, its own phase).
+//
+// Greedy and forward-only: extend the current stretch while a straight line
+// through its beats still predicts them all inside the tolerance; the moment a
+// beat falls outside, that beat starts a new stretch. On a steady record the
+// first line holds to the last beat and there is exactly one segment. A splice
+// breaks the line at the seam; a dragging platter breaks it wherever the ramp
+// has bent far enough to matter, so a slow drift becomes a handful of segments
+// rather than the churn of one re-anchor per window.
+function fitSegments(beats: TrackedBeat[], tolSec: number): { bpm: number; anchorSec: number }[] {
+  const segments: { bpm: number; anchorSec: number }[] = []
+  let start = 0
+  while (start < beats.length) {
+    // Fit beat TIME against beat INDEX: the slope is the beat period (so the
+    // tempo) and the intercept is the phase. Both fall out of the same line.
+    let end = start + 1
+    let best = fitLine(beats, start, Math.min(start + 2, beats.length))
+    while (end < beats.length) {
+      // A seam may end the stretch, but only if the beat after the hole has
+      // actually moved: a record that kept time across its breakdown still fits
+      // the same line, and cutting a segment there would state a tempo change
+      // that never happened — churn in every export. So the seam is tested, not
+      // obeyed: does this beat still land where the line before the hole says?
+      if (beats[end].seam) {
+        const gap = Math.abs(best.slope * beats[end].index + best.intercept - beats[end].atSec)
+        if (gap > tolSec) break
+      }
+      const candidate = fitLine(beats, start, end + 1)
+      let worst = 0
+      for (let i = start; i <= end; i++)
+        worst = Math.max(
+          worst,
+          Math.abs(candidate.slope * beats[i].index + candidate.intercept - beats[i].atSec),
+        )
+      if (worst > tolSec) break
+      best = candidate
+      end++
+    }
+    // A stretch too short to hold a tempo would state one anyway, out of a
+    // couple of beats that fit any line. Skip it — its beats stay under the
+    // previous segment's grid — and keep scanning: abandoning the scan here
+    // would throw away every segment in the REST of the track, which on a
+    // record with a breakdown is most of it.
+    const tooShort = end - start < MIN_SEGMENT_BEATS && segments.length > 0
+    if (!tooShort && best.slope > 0)
+      segments.push({
+        bpm: 60 / best.slope,
+        anchorSec: best.intercept + best.slope * beats[start].index,
+      })
+    start = end
+  }
+  return segments
+}
+
+// Least squares of beat time against beat INDEX over [from, to): slope =
+// seconds per beat, intercept = the time beat 0 of that line would fall at.
+function fitLine(
+  beats: TrackedBeat[],
+  from: number,
+  to: number,
+): { slope: number; intercept: number } {
+  const n = to - from
+  if (n < 2) return { slope: 0, intercept: beats[from].atSec }
+  let sumX = 0
+  let sumY = 0
+  for (let i = from; i < to; i++) {
+    sumX += beats[i].index
+    sumY += beats[i].atSec
+  }
+  const meanX = sumX / n
+  const meanY = sumY / n
+  let sxy = 0
+  let sxx = 0
+  for (let i = from; i < to; i++) {
+    sxy += (beats[i].index - meanX) * (beats[i].atSec - meanY)
+    sxx += (beats[i].index - meanX) ** 2
+  }
+  const slope = sxx === 0 ? 0 : sxy / sxx
+  return { slope, intercept: meanY - slope * meanX }
+}
+
+// The vinyl-rip drift that multi-segment grids exist for (a splice, a needle
+// bump, a platter that drags). Tracks the beat across the file, then states the
+// result as segments — each with the tempo its own stretch runs at, which is
+// what keeps the grid on the kicks. A phase-only re-anchor (what this used to
+// do) leaves the wrong tempo running underneath and the grid walks off again
+// within bars.
 function detectDrift(
   flux: Float32Array,
   fps: number,
   bpm: number,
   anchorSec: number,
-): { anchorSec: number; changes: GridChange[] } {
-  const periodSec = 60 / bpm
-  const periodFrames = (60 * fps) / bpm
-  const bins = Math.ceil(periodFrames)
+): { anchorSec: number; bpm: number; changes: GridChange[] } {
   const frames = flux.length
   const winFrames = Math.round(DRIFT_WINDOW_SEC * fps)
-  if (winFrames <= 0 || frames < winFrames * 2) return { anchorSec, changes: [] }
+  if (winFrames <= 0 || frames < winFrames * 2) return { anchorSec, bpm, changes: [] }
 
-  const wrap = (sec: number): number => ((sec % periodSec) + periodSec) % periodSec
+  const beats = trackBeats(flux, fps, bpm, anchorSec)
+  if (beats.length < MIN_SEGMENT_BEATS * 2) return { anchorSec, bpm, changes: [] }
 
-  // The absolute phase (seconds, unwrapped near refSec) of the strongest pulse
-  // in [f0, f1) — or null when the window holds no clear pulse (a breakdown),
-  // which simply skips the window instead of feeding noise into the scan.
-  const phaseAt = (f0: number, f1: number, refSec: number): number | null => {
-    const fold = new Float64Array(bins)
-    let total = 0
-    for (let f = f0; f < f1; f++) {
-      const phase = f % periodFrames
-      fold[Math.min(bins - 1, Math.floor((phase / periodFrames) * bins))] += flux[f]
-      total += flux[f]
-    }
-    if (total <= 0) return null
-    const refBin = Math.floor((wrap(refSec) / periodSec) * bins)
-    const search = Math.max(2, Math.round(bins / 4))
-    let peak = -1
-    let peakValue = 0
-    for (let d = -search; d <= search; d++) {
-      const b = (refBin + d + bins) % bins
-      if (fold[b] > peakValue) {
-        peakValue = fold[b]
-        peak = b
-      }
-    }
-    // A real beat towers over the window's average flux; anything flatter is
-    // pad wash or noise and must not measure.
-    if (peak < 0 || peakValue * bins < 2 * total) return null
-    const before = fold[(peak - 1 + bins) % bins]
-    const after = fold[(peak + 1) % bins]
-    const denom = before - 2 * peakValue + after
-    const off = denom === 0 ? 0 : Math.max(-0.5, Math.min(0.5, (0.5 * (before - after)) / denom))
-    const measured = (((peak + 0.5 + off) / bins) * periodFrames) / fps
-    let delta = measured - wrap(refSec)
-    if (delta > periodSec / 2) delta -= periodSec
-    if (delta < -periodSec / 2) delta += periodSec
-    return refSec + delta
-  }
+  const segments = fitSegments(beats, SEGMENT_FIT_TOL_SEC)
+  if (segments.length === 0) return { anchorSec, bpm, changes: [] }
 
-  const phases: (number | null)[] = []
-  let searchRef = wrap(anchorSec)
-  for (let f0 = 0; f0 + winFrames <= frames; f0 += winFrames) {
-    const measured = phaseAt(f0, f0 + winFrames, searchRef)
-    phases.push(measured)
-    if (measured !== null) searchRef = measured
-  }
-  const firstIndex = phases.findIndex((m) => m !== null)
-  if (firstIndex < 0) return { anchorSec, changes: [] }
-  const first = phases[firstIndex] as number
-
-  // The opening windows' own phase outranks the whole-file fold, which
-  // averaged every later segment into the anchor — but only past the gate, so
-  // frame noise never wiggles a steady track's anchor.
-  let base = anchorSec
-  if (Math.abs(first - wrap(anchorSec)) > DRIFT_REBASE_SEC)
-    base = snapAnchor(anchorSec + (first - wrap(anchorSec)), bpm)
+  const head = segments[0]
+  // The tracker only overrules the global detection past these gates, so a
+  // steady record keeps exactly the tempo and anchor that the whole-file
+  // autocorrelation and phase fold reported, and neither a tempo nor a segment
+  // ever appears out of measurement noise.
+  const baseBpm = Math.abs(head.bpm - bpm) / bpm > TEMPO_FIT_MIN_SLOPE ? head.bpm : bpm
+  // Phase is circular, so the anchors are compared the short way round: a
+  // tracked first beat one period along from the folded one is the SAME phase,
+  // and rebasing on that difference would move a line the user is watching.
+  const headPhase = snapAnchor(head.anchorSec, baseBpm)
+  const basePhase = snapAnchor(anchorSec, baseBpm)
+  const period = 60 / baseBpm
+  const gap = Math.abs(headPhase - basePhase)
+  const baseAnchor = Math.min(gap, period - gap) > DRIFT_REBASE_SEC ? headPhase : anchorSec
 
   const changes: GridChange[] = []
-  let segPhase = first
-  for (let w = firstIndex + 1; w < phases.length; w++) {
-    const measured = phases[w]
-    if (measured === null) continue
-    if (Math.abs(measured - segPhase) <= DRIFT_STEP_SEC) continue
-    const next = phases.slice(w + 1).find((x) => x !== null)
-    if (next === undefined || next === null || Math.abs(next - measured) > DRIFT_CONFIRM_SEC)
-      continue
-    // The change lands on the corrected grid's first beat inside this window.
-    const windowStartSec = (w * winFrames) / fps
-    const anchorAbs = base + (measured - first)
-    const k = Math.ceil((windowStartSec - anchorAbs) / periodSec - 1e-6)
-    changes.push({ anchorSec: Number((anchorAbs + k * periodSec).toFixed(3)), bpm })
-    segPhase = measured
+  for (let s = 1; s < segments.length; s++) {
+    const seg = segments[s]
+    changes.push({
+      anchorSec: Number(seg.anchorSec.toFixed(3)),
+      bpm: Number(seg.bpm.toFixed(3)),
+    })
   }
-  return { anchorSec: base, changes }
+  return { anchorSec: baseAnchor, bpm: baseBpm, changes }
 }
 
 export function detectBpm(samples: Float32Array, sampleRate: number): BpmResult | null {
@@ -415,13 +624,16 @@ export function detectBeatgrid(
   const periodSec = 60 / result.bpm
   const anchorSec = periodSec - folded < (1.5 * HOP) / sampleRate ? 0 : folded
 
-  // The drift scan may re-base the anchor onto the opening windows' phase and
-  // add a change per confirmed mid-track step — the automatic counterpart of
-  // "Adjust from here". Its anchor gets the same wrap-to-zero read as above.
+  // The drift scan fits each stretch of the track to its own tempo and phase:
+  // it may re-base the anchor onto the opening windows, correct the base tempo
+  // the whole-file autocorrelation averaged, and add a change per confirmed
+  // mid-track seam — the automatic counterpart of "Adjust from here", but
+  // fitted rather than merely re-anchored. Its anchor gets the same wrap-to-zero
+  // read as above.
   const drift = detectDrift(flux, fps, result.bpm, anchorSec)
   const baseAnchor = periodSec - drift.anchorSec < (1.5 * HOP) / sampleRate ? 0 : drift.anchorSec
   return {
-    bpm: result.bpm,
+    bpm: drift.bpm,
     confidence: result.confidence,
     anchorSec: baseAnchor,
     phaseAmbiguity,
