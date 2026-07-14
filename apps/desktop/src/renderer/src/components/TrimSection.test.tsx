@@ -230,6 +230,22 @@ describe('TrimSection', () => {
     fireEvent(handle, new MouseEvent('pointerup', { bubbles: true }))
   })
 
+  // The end cut naturally sits hard against the right edge of its lane — that IS
+  // where the music stops. So "near the edge" can never be the trigger for moving
+  // the window, or every commit would slide (and re-decode) the wave: the exact
+  // "the wave keeps changing when I move the trim line" the user reported.
+  it('leaves the window alone when a committed cut moves inside it', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(section({ value: { endSec: 90.3 }, onChange }))
+    const lane = await screen.findByTestId('trim-lane-end', undefined, { timeout: 3000 })
+    const before = lane.getAttribute('data-window')
+    // Several commits, each moving the cut but keeping it inside the frame.
+    for (const endSec of [90.0, 89.4, 88.2, 86.5]) {
+      rerender(section({ value: { endSec }, onChange }))
+      expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', before)
+    }
+  })
+
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,
   // and the reset that clears the whole range in one click.
   it('shades the staged cuts and clears them from the reset button', async () => {

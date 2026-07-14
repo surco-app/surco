@@ -485,23 +485,28 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // uselessly against the edge. So the frame is placed, and then SLID (never
   // resized) the least amount that brings the cut back inside, with a margin so the
   // handle is never flush against the border.
+  // The window is a rescue, not a follower. It moves ONLY when the cut has left the
+  // frame outright — never merely because it came close to an edge. An earlier
+  // version rescued on a 10% margin, and since an end cut naturally sits hard
+  // against the right edge (that IS where the music stops), every commit nudged the
+  // window: the wave slid and re-decoded each time the cut moved, which is the
+  // "wave keeps changing" the user kept seeing. Recentring on the cut is the right
+  // thing to do when it is genuinely off-screen, and nothing at all otherwise.
   function contain(
     lane: { from: number; to: number },
     cutSec: number,
   ): { from: number; to: number } {
+    if (cutSec >= lane.from && cutSec <= lane.to) return lane
     const span = lane.to - lane.from
-    const margin = span * 0.1
-    let { from, to } = lane
-    if (cutSec < from + margin) {
-      from = cutSec - margin
-      to = from + span
-    } else if (cutSec > to - margin) {
-      to = cutSec + margin
-      from = to - span
+    let from = cutSec - span / 2
+    let to = from + span
+    if (from < 0) {
+      from = 0
+      to = Math.min(durationSec, span)
+    } else if (to > durationSec) {
+      to = durationSec
+      from = Math.max(0, durationSec - span)
     }
-    // Never slide past the track itself.
-    if (from < 0) return { from: 0, to: Math.min(durationSec, span) }
-    if (to > durationSec) return { from: Math.max(0, durationSec - span), to: durationSec }
     return { from, to }
   }
   // The window follows the COMMITTED cut, never the live draft. Feeding it the
