@@ -22,19 +22,55 @@ asarUnpack:
 # Surco" (these become CFBundleDocumentTypes on macOS). rank Alternate: Surco offers to
 # open them but never claims the default away from Music/Audacity — it just joins the
 # menu. The extensions mirror the AUDIO_EXTS the main process accepts (src/main/expand.ts).
+#
+# One entry per extension, `ext` a plain string rather than the list of extensions this
+# used to be. The list form is valid for mac and NSIS, but AppImage hands this config to
+# a Go binary whose FileAssociation.Ext is typed as a string, so a list aborts the Linux
+# build outright ("expects \" or n, but found ["). Platform blocks can't fix it either:
+# platformPackager CONCATENATES the global list with the platform one, so linux couldn't
+# opt out. Flattening satisfies all three packagers with the same associations.
 fileAssociations:
-  - ext:
-      - wav
-      - flac
-      - aif
-      - aiff
-      - mp3
-      - m4a
-      - mp4
-      - aac
-      - ogg
-      - oga
-      - opus
+  - ext: wav
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: flac
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: aif
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: aiff
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: mp3
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: m4a
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: mp4
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: aac
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: ogg
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: oga
+    name: Audio
+    role: Editor
+    rank: Alternate
+  - ext: opus
     name: Audio
     role: Editor
     rank: Alternate
@@ -65,6 +101,26 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+linux:
+  icon: build/icon.png
+  category: AudioVideo
+  # AppImage only. It is the one Linux target electron-updater can update in place,
+  # so a .deb/.rpm install would strand its users on the version they downloaded —
+  # every release would be a manual re-download. One self-contained file also dodges
+  # the distro matrix entirely: no packaging per Debian/Fedora/Arch.
+  #
+  # Build this on Linux (CI uses ubuntu-latest), never cross-built from a Mac. Both
+  # ffmpeg-static and @ffprobe-installer pick their binary from os.platform()/os.arch()
+  # at INSTALL time, so a `npm ci` on macOS leaves Mach-O binaries in node_modules and
+  # electron-builder happily packs those into the AppImage. The result launches on Linux
+  # and then fails every conversion — the one thing the app exists to do. A local
+  # `electron-builder --linux` is therefore only good for checking that it packages,
+  # never for testing that it runs.
+  target:
+    - AppImage
+  # Arch in the name to match the mac assets, and because a future arm64 Linux build
+  # would otherwise collide with this one as the same asset on the shared release.
+  artifactName: ${productName}-${version}-${arch}.${ext}
 publish:
   provider: github
   owner: vigosan
