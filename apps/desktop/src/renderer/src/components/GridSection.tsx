@@ -775,7 +775,7 @@ export function GridSection({
           )}
           {(loading || wave) && (
             <>
-              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
                 {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
                     small groups split by hairlines — tempo, shift, the line's
                     actions, listen, history. Labels live in the tooltips (and
@@ -803,22 +803,24 @@ export function GridSection({
                     // number input's spinner well clipped the last digit.
                     className="w-20 rounded border border-[var(--color-line-strong)] bg-transparent px-1.5 py-0.5 text-[11px] tabular-nums text-fg outline-none focus:border-accent"
                   />
+                  {shown && activeSeg && (
+                    <button
+                      type="button"
+                      data-testid="grid-tap"
+                      aria-label={tr('grid.tapHint')}
+                      onClick={tapTempo}
+                      className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] font-medium tracking-wider text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg ${
+                        tall ? 'h-8' : 'h-6'
+                      }`}
+                    >
+                      TAP
+                      <Tooltip label={tr('grid.tapHint')} />
+                    </button>
+                  )}
                 </label>
                 {shown && activeSeg && (
                   <>
-                    <span className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        data-testid="grid-tap"
-                        aria-label={tr('grid.tapHint')}
-                        onClick={tapTempo}
-                        className={`press relative shrink-0 rounded-md border border-[var(--color-line)] px-2 text-[10px] font-medium tracking-wider text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg ${
-                          tall ? 'h-8' : 'h-6'
-                        }`}
-                      >
-                        TAP
-                        <Tooltip label={tr('grid.tapHint')} />
-                      </button>
+                    <span className="flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
                         data-testid="grid-bpm-half"
@@ -873,7 +875,7 @@ export function GridSection({
                     {/* The line's verbs: a beat here, a beat centred, a new
                         segment from here, or Auto's fresh listen (whole track
                         on the base, this stretch only on a change segment). */}
-                    <span className="flex shrink-0 items-center gap-1">
+                    <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
                         'grid-beat-here',
                         tr('grid.beatHereHint'),
@@ -902,18 +904,21 @@ export function GridSection({
                         />,
                         reprobing,
                       )}
+                      {/* Hearing the grid belongs with the verbs that set it: they
+                          all answer "is the grid right HERE" — and a lone speaker
+                          floating between groups belonged to none of them. */}
+                      {iconButton(
+                        'grid-audition',
+                        tr('grid.audition'),
+                        audition,
+                        auditing ? (
+                          <Square className={`${glyph} fill-current`} aria-hidden="true" />
+                        ) : (
+                          <Volume2 className={glyph} aria-hidden="true" />
+                        ),
+                      )}
                     </span>
-                    {iconButton(
-                      'grid-audition',
-                      tr('grid.audition'),
-                      audition,
-                      auditing ? (
-                        <Square className="h-3 w-3 fill-current" aria-hidden="true" />
-                      ) : (
-                        <Volume2 className={glyph} aria-hidden="true" />
-                      ),
-                    )}
-                    <span className="flex shrink-0 items-center gap-1">
+                    <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
                         'grid-undo',
                         tr('grid.undo'),
@@ -941,7 +946,7 @@ export function GridSection({
                       <Tooltip label={tr('grid.anchorAt', { seconds: shown.anchorSec.toFixed(2) })} />
                     </span>
                   )}
-                  <span className="flex shrink-0 items-center gap-1">
+                  <span className="flex shrink-0 items-center gap-0.5">
                     {iconButton(
                       'waveform-zoom-out',
                       tr('editor.waveformZoomOut'),
