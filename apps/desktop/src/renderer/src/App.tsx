@@ -1,19 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AudioLines } from 'lucide-react'
 import type React from 'react'
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
-import { formatExtension } from '../../shared/format'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
@@ -28,9 +18,9 @@ import type {
 } from '../../shared/types'
 import { ActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
-import { ConfirmDialog } from './components/ConfirmDialog'
 import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
 import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { ToastStack } from './components/ToastStack'
@@ -100,41 +90,6 @@ import {
 import { detectTrim } from './lib/trim'
 import { selectWhatsNew } from './lib/whatsNew'
 import type { CopiedTags, TrackItem } from './types'
-
-// On-demand overlays: none is part of the first paint (each renders only behind its
-// activeModal branch), so each is split into its own chunk and kept out of the startup
-// parse, loading the first time the user opens it. The .then unwraps the named export
-// React.lazy needs as a default.
-const SettingsModal = lazy(() =>
-  import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })),
-)
-const OnboardingWizard = lazy(() =>
-  import('./components/OnboardingWizard').then((m) => ({ default: m.OnboardingWizard })),
-)
-const DonateNudgeModal = lazy(() =>
-  import('./components/DonateNudgeModal').then((m) => ({ default: m.DonateNudgeModal })),
-)
-const WhatsNewModal = lazy(() =>
-  import('./components/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
-)
-const HelpModal = lazy(() =>
-  import('./components/HelpModal').then((m) => ({ default: m.HelpModal })),
-)
-const LoudnessHelpModal = lazy(() =>
-  import('./components/LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
-)
-const FindReplaceModal = lazy(() =>
-  import('./components/FindReplaceModal').then((m) => ({ default: m.FindReplaceModal })),
-)
-const RenameModal = lazy(() =>
-  import('./components/RenameModal').then((m) => ({ default: m.RenameModal })),
-)
-const ExportModal = lazy(() =>
-  import('./components/ExportModal').then((m) => ({ default: m.ExportModal })),
-)
-const CommandPalette = lazy(() =>
-  import('./components/CommandPalette').then((m) => ({ default: m.CommandPalette })),
-)
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
@@ -1863,96 +1818,25 @@ export default function App(): React.JSX.Element {
 
           {/* The lazy overlays load their chunk on first open; fallback={null} because an
           overlay arriving a frame late is invisible (it fades in anyway). */}
-          <Suspense fallback={null}>
-            {activeModal?.type === 'settings' && settings && (
-              <SettingsModal
-                settings={settings}
-                onClose={closeSettings}
-                onSave={saveSettings}
-                onPreviewTheme={setThemePreview}
-                onSettingsReplaced={setSettings}
-                initialTab={activeModal.tab}
-              />
-            )}
-
-            {activeModal?.type === 'onboarding' && settings && (
-              <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
-            )}
-
-            {activeModal?.type === 'donateNudge' && (
-              <DonateNudgeModal
-                conversionCount={settings?.conversionCount ?? 0}
-                onClose={(dismissForever) => {
-                  if (dismissForever) saveSettings({ donateNudgeDismissed: true })
-                  overlays.close()
-                }}
-              />
-            )}
-
-            {activeModal?.type === 'whatsNew' && (
-              <WhatsNewModal lastSeen={activeModal.lastSeen} onClose={overlays.close} />
-            )}
-
-            {activeModal?.type === 'help' && <HelpModal onClose={overlays.close} />}
-            {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={overlays.close} />}
-            {activeModal?.type === 'findReplace' && (
-              <FindReplaceModal
-                tracks={bulkTracks}
-                onApply={deriveTracksUndoable}
-                onClose={overlays.close}
-              />
-            )}
-            {activeModal?.type === 'rename' && selected && (
-              <RenameModal
-                meta={selected.meta}
-                initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-                extension={formatExtension(
-                  editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
-                )}
-                onApply={(outputName) => updateTrack(selected.id, { outputName })}
-                onClose={overlays.close}
-              />
-            )}
-            {activeModal?.type === 'export' && (
-              <ExportModal tracks={bulkTracks} onClose={overlays.close} />
-            )}
-            {activeModal?.type === 'confirm' && (
-              <ConfirmDialog
-                title={activeModal.confirm.title}
-                message={activeModal.confirm.message}
-                confirmLabel={activeModal.confirm.confirmLabel}
-                confirmDisabled={activeModal.confirm.confirmDisabled}
-                destructive={activeModal.confirm.destructive}
-                onConfirm={activeModal.confirm.onConfirm}
-                onClose={overlays.close}
-              />
-            )}
-
-            {activeModal?.type === 'palette' && (
-              <CommandPalette
-                commands={getCommands()}
-                // Searching by title/artist turns ⌘K into a jump-to-track launcher over the
-                // visible list; picking a track selects and scrolls to it, then the palette
-                // closes itself (runAt → onClose) like any other command.
-                tracks={visibleTracks}
-                onGoToTrack={revealSelection}
-                usage={settings?.commandUsage ?? {}}
-                // Learn from each run so the next filtered list floats the user's habits up.
-                onRunCommand={(id) =>
-                  saveSettings({
-                    commandUsage: {
-                      ...(settings?.commandUsage ?? {}),
-                      [id]: (settings?.commandUsage?.[id] ?? 0) + 1,
-                    },
-                  })
-                }
-                // A command's run() may itself open another modal (settings, find & replace,
-                // export…). Closing the palette must not clobber that: only dismiss it when the
-                // palette is still the active modal, so a command that navigated elsewhere wins.
-                onClose={overlays.closeIfPalette}
-              />
-            )}
-          </Suspense>
+          <Overlays
+            activeModal={activeModal}
+            settings={settings}
+            selected={selected}
+            bulkTracks={bulkTracks}
+            visibleTracks={visibleTracks}
+            getCommands={getCommands}
+            editorFormatRef={editorFormatRef}
+            close={overlays.close}
+            closeIfPalette={overlays.closeIfPalette}
+            closeSettings={closeSettings}
+            saveSettings={saveSettings}
+            setSettings={setSettings}
+            setThemePreview={setThemePreview}
+            finishOnboarding={finishOnboarding}
+            deriveTracksUndoable={deriveTracksUndoable}
+            updateTrack={updateTrack}
+            revealSelection={revealSelection}
+          />
 
           <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
           {activityOpen && (
