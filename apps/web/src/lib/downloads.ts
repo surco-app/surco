@@ -1,7 +1,7 @@
 // Counts installer downloads across every published release, mirroring the
-// filter in scripts/downloads.mjs: only .dmg/.exe count. The .zip, .blockmap and
-// latest*.yml assets are update traffic electron-updater pulls on each launch,
-// so counting them would inflate the number.
+// filter in scripts/downloads.mjs: only .dmg/.exe/.AppImage count. The .zip,
+// .blockmap and latest*.yml assets are update traffic electron-updater pulls on
+// each launch, so counting them would inflate the number.
 
 interface ReleaseAsset {
   name: string
@@ -13,7 +13,7 @@ interface Release {
 }
 
 function isInstaller(name: string): boolean {
-  return name.endsWith('.dmg') || name.endsWith('.exe')
+  return name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.AppImage')
 }
 
 export function countDownloads(releases: Release[]): number {

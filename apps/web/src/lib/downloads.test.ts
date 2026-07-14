@@ -5,19 +5,21 @@ describe('countDownloads', () => {
   // Only installers count. The release also carries .zip/.blockmap/.yml assets
   // that electron-updater fetches on every auto-update; counting those would
   // turn update traffic into phantom downloads.
-  it('counts only .dmg and .exe assets, ignoring update artifacts', () => {
+  it('counts only .dmg, .exe and .AppImage assets, ignoring update artifacts', () => {
     const releases = [
       {
         assets: [
           { name: 'Surco-0.1.2-arm64.dmg', download_count: 120 },
           { name: 'Surco-0.1.2-x64.dmg', download_count: 18 },
           { name: 'Surco-0.1.2-Setup.exe', download_count: 40 },
+          { name: 'Surco-0.1.2-x86_64.AppImage', download_count: 7 },
           { name: 'Surco-0.1.2-arm64.zip', download_count: 999 },
           { name: 'latest-mac.yml', download_count: 5000 },
+          { name: 'latest-linux.yml', download_count: 3000 },
         ],
       },
     ]
-    expect(countDownloads(releases)).toBe(178)
+    expect(countDownloads(releases)).toBe(185)
   })
 
   it('sums across every release', () => {
@@ -57,6 +59,20 @@ describe('pickInstallerRelease', () => {
 
   it('returns undefined when no release carries the installer', () => {
     expect(pickInstallerRelease([{ tag_name: 'v0.1.0', assets: [] }], '.exe')).toBeUndefined()
+  })
+
+  // Linux shipped from v0.58.0 on, so the older releases carry no AppImage. A Linux
+  // visitor must land on the newest release that actually has one rather than on a
+  // mac-only build whose download button would 404.
+  it('skips releases published before Linux shipped', () => {
+    const releases = [
+      {
+        tag_name: 'v0.58.0',
+        assets: [{ name: 'Surco-0.58.0-x86_64.AppImage', browser_download_url: 'img' }],
+      },
+      { tag_name: 'v0.57.0', assets: [{ name: 'Surco-0.57.0-arm64.dmg', browser_download_url: 'd' }] },
+    ]
+    expect(pickInstallerRelease(releases, '.AppImage')?.tag_name).toBe('v0.58.0')
   })
 })
 

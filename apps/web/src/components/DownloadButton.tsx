@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { pickInstallerRelease } from '../lib/downloads'
+import { type OS, detectOS, installerSuffix } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
@@ -8,17 +9,7 @@ import DownloadCount from './DownloadCount'
 const REPO = 'vigosan/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
 
-type OS = 'mac' | 'windows' | 'other'
-
-function detectOS(): OS {
-  if (typeof navigator === 'undefined') return 'other'
-  const ua = navigator.userAgent
-  if (/Windows/i.test(ua)) return 'windows'
-  if (/Mac/i.test(ua)) return 'mac'
-  return 'other'
-}
-
-const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', other: '' }
+const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', linux: 'Linux', other: '' }
 
 const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 
@@ -45,17 +36,14 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
       .then((r) => (r.ok ? r.json() : null))
       .then((releases) => {
         if (cancelled || !Array.isArray(releases)) return
-        const rel = pickInstallerRelease(releases, os === 'mac' ? 'arm64.dmg' : '.exe')
+        const suffix = installerSuffix(os)
+        const rel = pickInstallerRelease(releases, suffix)
         if (!rel) return
         setVersion(formatVersion(rel.tag_name))
-        const url = (suffix: string) =>
-          rel.assets?.find((a) => a.name.endsWith(suffix))?.browser_download_url ?? null
-        if (os === 'mac') {
-          setHref(url('arm64.dmg'))
-          setIntelHref(url('x64.dmg'))
-        } else {
-          setHref(url('.exe'))
-        }
+        const url = (s: string) =>
+          rel.assets?.find((a) => a.name.endsWith(s))?.browser_download_url ?? null
+        setHref(url(suffix))
+        if (os === 'mac') setIntelHref(url('x64.dmg'))
       })
       .catch(() => {})
       .finally(() => {
