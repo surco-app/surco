@@ -793,9 +793,10 @@ export function GridSection({
             <>
               <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
                 {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
-                    small groups split by hairlines — tempo, shift, the line's
-                    actions, listen, history. Labels live in the tooltips (and
-                    aria), so the row stays one calm line instead of a sentence. */}
+                    small groups, ordered the way the work actually goes — set the
+                    TEMPO, trim it FINE, place the PHASE, CHECK it (by machine or
+                    by ear), UNDO. Labels live in the tooltips (and aria), so the
+                    row stays one calm line instead of a sentence. */}
                 <label className="flex shrink-0 items-center gap-1.5 text-[10px] text-fg-dim">
                   <span className="font-medium uppercase tracking-wider">
                     {tr('grid.bpmLabel')}
@@ -888,9 +889,9 @@ export function GridSection({
                         true,
                       )}
                     </span>
-                    {/* The line's verbs: a beat here, a beat centred, a new
-                        segment from here, or Auto's fresh listen (whole track
-                        on the base, this stretch only on a change segment). */}
+                    {/* Where the beats SIT: a beat here, a beat centred, a new
+                        segment from here. All three place the lattice against
+                        the reference line by hand. */}
                     <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
                         'grid-beat-here',
@@ -910,6 +911,13 @@ export function GridSection({
                         addChangeFromHere,
                         <SplitSquareHorizontal className={glyph} aria-hidden="true" />,
                       )}
+                    </span>
+                    {/* Let the machine check the grid: Auto listens again and
+                        re-places it, the audition plays the stretch so the ear
+                        can. Neither one places a beat by hand — grouping them
+                        with the verbs that do left the speaker looking stranded
+                        among tools it had nothing to do with. */}
+                    <span className="flex shrink-0 items-center gap-0.5">
                       {iconButton(
                         'grid-reset',
                         tr('grid.resetHint'),
@@ -920,9 +928,6 @@ export function GridSection({
                         />,
                         reprobing,
                       )}
-                      {/* Hearing the grid belongs with the verbs that set it: they
-                          all answer "is the grid right HERE" — and a lone speaker
-                          floating between groups belonged to none of them. */}
                       {iconButton(
                         'grid-audition',
                         tr('grid.audition'),
