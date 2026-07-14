@@ -36,6 +36,10 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
   const [playing, setPlaying] = useState(false)
   const [at, setAt] = useState(0)
   const [ready, setReady] = useState(false)
+  // The playhead, readable from the load handler without making the pair's effect depend
+  // on it — which would tear down and rebuild both elements on every frame of a scrub.
+  const atRef = useRef(0)
+  atRef.current = at
 
   useEffect(() => {
     if (!repairedPath) {
@@ -77,7 +81,16 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     let loaded = 0
     const onLoad = (): void => {
       loaded++
-      if (loaded === 2) setReady(true)
+      if (loaded < 2) return
+      // The cursor the user aimed before asking for the render (or across a preset
+      // change) is honoured, not silently reset to the top of the track: they pointed at
+      // the passage they wanted to judge, and that is where the preview must start.
+      // A seek is only legal once the element knows its duration, hence: here.
+      if (atRef.current > 0) {
+        original.currentTime = atRef.current
+        repaired.currentTime = atRef.current
+      }
+      setReady(true)
     }
     original.onloadedmetadata = onLoad
     repaired.onloadedmetadata = onLoad
@@ -90,7 +103,6 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
       repairedRef.current = null
       setReady(false)
       setPlaying(false)
-      setAt(0)
       setSide('repaired')
     }
   }, [originalPath, repairedPath])
@@ -124,15 +136,20 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     setPlaying(false)
   }, [])
 
-  // Both legs move together — this is what a click mark's "jump here" calls, and the
-  // pair must land on the same instant or the comparison at that click is meaningless.
+  // Both legs move together — this is what a click mark's "jump here" and a scrub across
+  // the wave call, and the pair must land on the same instant or the comparison there is
+  // meaningless.
+  //
+  // It also works BEFORE a preview exists: the user can aim the cursor at the passage
+  // they care about and only then ask for the render, and the position is remembered
+  // (`at`, applied on load below) rather than silently dropped.
   const seek = useCallback((sec: number) => {
+    setAt(sec)
     const original = originalRef.current
     const repaired = repairedRef.current
     if (!original || !repaired) return
     original.currentTime = sec
     repaired.currentTime = sec
-    setAt(sec)
   }, [])
 
   return { side, playing, at, toggle, play, pause, seek, ready }

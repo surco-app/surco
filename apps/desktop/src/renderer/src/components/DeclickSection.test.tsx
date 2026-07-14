@@ -35,8 +35,42 @@ class FakeAudio {
   }
 }
 
+// jsdom does no layout, so every element measures 0 wide and a scrub ratio would divide
+// by zero. Give the wave a width so the pointer maths has real geometry to work with.
+function stubWidth(el: HTMLElement, width = 1000): void {
+  el.getBoundingClientRect = () =>
+    ({
+      left: 0,
+      width,
+      right: width,
+      top: 0,
+      bottom: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect
+}
+
+// jsdom's synthetic pointer events drop clientX unless the event is built as a mouse
+// event, and a scrub with no clientX is a scrub to NaN.
+function pointerAt(el: HTMLElement, type: 'pointerDown' | 'pointerMove', clientX: number): void {
+  const e = new MouseEvent(type === 'pointerDown' ? 'pointerdown' : 'pointermove', {
+    clientX,
+    bubbles: true,
+  })
+  Object.defineProperty(e, 'pointerId', { value: 1 })
+  el.dispatchEvent(e)
+}
+
 // One turn of the requestAnimationFrame loop that pins the silent leg to the audible one.
 const tick = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()))
+
+// What a browser does once both elements know their duration: it unlocks Play (a seek is
+// illegal before metadata lands) and applies the cursor the user had already aimed.
+const loadPair = (): void => {
+  for (const el of elements) el.onloadedmetadata?.()
+}
 
 let client: QueryClient
 beforeEach(() => {
@@ -225,6 +259,56 @@ describe('DeclickSection', () => {
     expect(repaired.volume).toBe(0)
     // The proof it is a real A/B and not two players: nothing was paused to switch.
     expect(pause).not.toHaveBeenCalled()
+  })
+
+  // Without this the only reachable points in the track are the click marks: a user who
+  // wants to hear how a particular passage came out has no way to get there.
+  it('moves the playhead to wherever the wave is clicked', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    // A quarter of the way across a 240 s track.
+    pointerAt(overlay, 'pointerDown', 250)
+    expect(elements[1].currentTime).toBe(60)
+    expect(elements[0].currentTime).toBe(60)
+  })
+
+  // Placing the cursor is not the same gesture as auditioning: a click on the wave says
+  // "start from here", and blasting audio at someone who was only aiming would be the
+  // kind of surprise that makes people stop touching the wave at all.
+  it('does not start playing just because the wave was clicked', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    pointerAt(overlay, 'pointerDown', 500)
+    expect(play).not.toHaveBeenCalled()
+    // ...and Play then starts from where the cursor was put, not from the top.
+    act(() => loadPair())
+    fireEvent.click(screen.getByTestId('declick-play'))
+    expect(play).toHaveBeenCalled()
+    expect(elements[1].currentTime).toBe(120)
+  })
+
+  it('scrubs while the pointer is dragged across the wave', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    overlay.setPointerCapture = vi.fn()
+    overlay.hasPointerCapture = () => true
+    pointerAt(overlay, 'pointerDown', 100)
+    expect(elements[1].currentTime).toBe(24)
+    pointerAt(overlay, 'pointerMove', 750)
+    expect(elements[1].currentTime).toBe(180)
+  })
+
+  it('clamps a scrub that runs off either end of the wave', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    pointerAt(overlay, 'pointerDown', -40)
+    expect(elements[1].currentTime).toBe(0)
+    pointerAt(overlay, 'pointerDown', 1400)
+    expect(elements[1].currentTime).toBe(240)
   })
 
   // Caught in the real app, not here: the two elements buffer and schedule independently,

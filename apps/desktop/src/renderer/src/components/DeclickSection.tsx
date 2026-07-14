@@ -120,6 +120,20 @@ export function DeclickSection({
     if (next !== null) jump(next)
   }, [clicks, ab.at, jump])
 
+  // The overlay lives INSIDE the zoomed strip, so its own width is already the zoomed
+  // width of the whole track — the ratio across it is the fraction of the track, at any
+  // zoom, with no need to map through the visible window (the same reason the marks can
+  // be positioned by plain percentage).
+  const scrubFrom = useCallback(
+    (clientX: number, el: HTMLElement): void => {
+      if (durationSec <= 0) return
+      const rect = el.getBoundingClientRect()
+      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+      ab.seek(ratio * durationSec)
+    },
+    [ab, durationSec],
+  )
+
   const count = clicks?.count
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
   // analysed, and a wave that simply stops marking would read as a clean tail — so the
@@ -194,26 +208,52 @@ export function DeclickSection({
                 onZoomChange={setZoom}
                 onViewChange={setView}
               >
-                <div data-testid="declick-marks" className="pointer-events-none absolute inset-0">
+                {/* Scrubbable, like the player's own strip: without it the only reachable
+                    points in the track are the click marks, so "how did this passage come
+                    out?" — the actual question — has no answer. Placing the cursor does
+                    NOT start playback: aiming and auditioning are different gestures, and
+                    audio bursting out of a click meant to position would teach the user to
+                    stop touching the wave. */}
+                <div
+                  data-testid="declick-marks"
+                  className="absolute inset-0 cursor-pointer"
+                  onPointerDown={(e) => {
+                    e.currentTarget.setPointerCapture?.(e.pointerId)
+                    scrubFrom(e.clientX, e.currentTarget)
+                  }}
+                  onPointerMove={(e) => {
+                    if (e.currentTarget.hasPointerCapture?.(e.pointerId))
+                      scrubFrom(e.clientX, e.currentTarget)
+                  }}
+                >
                   {marks.map((m) => (
                     <button
                       key={m.sec}
                       type="button"
                       data-testid="declick-mark"
                       aria-label={tr('declick.markLabel', { sec: m.sec.toFixed(2) })}
+                      // A mark, unlike bare wave, DOES audition on click: a click lasts
+                      // milliseconds, so "put the cursor near it" would be useless — the
+                      // whole point of marking one is to hear that exact click.
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => jump(m.sec)}
-                      // A click lasts milliseconds: a mark you cannot jump to is decoration.
-                      // Each one is the hit target for hearing exactly that click.
-                      className="pointer-events-auto absolute inset-y-0 w-2 -translate-x-1/2 cursor-pointer"
+                      // Deliberately narrow (3px, barely wider than the 1px line it
+                      // wraps): a dusty side carries dozens of marks, and a fat hit box
+                      // would carpet the wave — every attempt to place the cursor would
+                      // land on a mark instead, making the track unscrubbable.
+                      className="absolute inset-y-0 w-[3px] -translate-x-1/2 cursor-pointer"
                       style={{ left: `${m.pct}%` }}
                     >
                       <span className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-warn" />
                     </button>
                   ))}
-                  {preview && (
+                  {/* Shown as soon as there is a wave, not only once a preview exists:
+                      it is the cursor the user is aiming, so it has to be visible while
+                      they aim it. */}
+                  {durationSec > 0 && (
                     <span
                       data-testid="declick-playhead"
-                      className="absolute inset-y-0 w-px bg-fg"
+                      className="pointer-events-none absolute inset-y-0 w-px bg-fg"
                       style={{ left: `${(ab.at / durationSec) * 100}%` }}
                     />
                   )}
