@@ -114,9 +114,9 @@ describe('TrimSection', () => {
     // Default context is ±5 s, so the head lane spans 4.7–14.7 s and the tail
     // lane 85.3–95.3 s. The minutes in between are never drawn.
     expect(
-      await screen.findByTestId('trim-lane-range-start', undefined, { timeout: 3000 }),
-    ).toHaveTextContent('4.7–14.7 s')
-    expect(screen.getByTestId('trim-lane-range-end')).toHaveTextContent('85.3–95.3 s')
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('data-window', '4.70-14.70')
+    expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '85.30-95.30')
     expect(screen.getByTestId('trim-lane-start')).toBeInTheDocument()
     expect(screen.getByTestId('trim-lane-end')).toBeInTheDocument()
   })
@@ -125,12 +125,13 @@ describe('TrimSection', () => {
   // section already shows the silence it is telling you about.
   it('frames the lanes on the detected silence when nothing is staged yet', async () => {
     render(section())
-    // The suggestion sits at the detector's own 9.9 s (the header pill rounds the
-    // padded figure), and each lane frames ±5 s around it.
+    // With nothing staged the handle sits on the track's own edge (0 s), so the
+    // window slides to hold it — which also keeps the suggestion at 9.9 s, and its
+    // scissors, inside the lane where they can actually be clicked.
     expect(
-      await screen.findByTestId('trim-lane-range-start', undefined, { timeout: 3000 }),
-    ).toHaveTextContent('4.9–14.9 s')
-    expect(screen.getByTestId('trim-lane-range-end')).toHaveTextContent('85.1–95.1 s')
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('data-window', '0.00-10.00')
+    expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '90.00-100.00')
   })
 
   // Each lane zooms on its own: a dense head and a silent tail want different
@@ -144,9 +145,9 @@ describe('TrimSection', () => {
     fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
     fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
     expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±1s')
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('8.7–10.7 s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '8.70-10.70')
     expect(screen.getByTestId('trim-context-end')).toHaveTextContent('±5s')
-    expect(screen.getByTestId('trim-lane-range-end')).toHaveTextContent('85.3–95.3 s')
+    expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '85.30-95.30')
   })
 
   // The tightest windows are where a cut is actually judged: at ±0.25 s the lane's
@@ -156,7 +157,7 @@ describe('TrimSection', () => {
     await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
     for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
     expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.25s')
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('9.45–9.95 s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '9.45-9.95')
     expect(screen.getByTestId('trim-zoom-in-start')).toBeDisabled()
   })
 
@@ -167,15 +168,35 @@ describe('TrimSection', () => {
     const onChange = vi.fn()
     const { rerender } = render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
     expect(
-      await screen.findByTestId('trim-lane-range-start', undefined, { timeout: 3000 }),
-    ).toHaveTextContent('4.7–14.7 s')
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('data-window', '4.70-14.70')
     // The app feeds a moved cut back in as `value` — the window must not follow it.
     rerender(section({ value: { startSec: 6.2, endSec: 90.3 }, onChange }))
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('4.7–14.7 s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '4.70-14.70')
     expect(screen.getByTestId('trim-cut-time-start')).toHaveTextContent('6.200 s')
     // Zooming IS a request for a new view, so it re-frames on where the cut now is.
     fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('4.2–8.2 s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '4.20-8.20')
+  })
+
+  // The frame must never lose what it frames: nudging a cut far enough (or zooming
+  // around an older focus) pushed the handle clean out of view — the lane showed
+  // 399.6–401.6 s while the cut sat at 408.3 s, pinned uselessly against the edge,
+  // and the scissors went with it. The window slides to hold the cut, with a margin.
+  it('slides the window to keep a moved cut inside the lane', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    expect(
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('data-window', '4.70-14.70')
+    // A cut dragged well past the window's right edge: the lane must follow it.
+    rerender(section({ value: { startSec: 20, endSec: 90.3 }, onChange }))
+    const lane = screen.getByTestId('trim-lane-start')
+    const [from, to] = (lane.getAttribute('data-window') as string).split('-').map(Number)
+    expect(20).toBeGreaterThan(from)
+    expect(20).toBeLessThan(to)
+    // And it keeps the full context span, sliding rather than stretching.
+    expect(to - from).toBeCloseTo(10, 5)
   })
 
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,

@@ -193,12 +193,6 @@ function Lane({
             is flat silence, and one shared control forced a compromise that fit
             neither. */}
         <span className="flex shrink-0 items-center gap-1">
-          <span
-            data-testid={`trim-lane-range-${side}`}
-            className="text-[10px] tabular-nums text-fg-dim"
-          >
-            {spanSec < 2 ? `${fromSec.toFixed(2)}–${toSec.toFixed(2)} s` : `${fromSec.toFixed(1)}–${toSec.toFixed(1)} s`}
-          </span>
           <button
             type="button"
             data-testid={`trim-zoom-in-${side}`}
@@ -233,6 +227,7 @@ function Lane({
         <canvas
           ref={canvasRef}
           data-testid={`trim-lane-${side}`}
+          data-window={`${fromSec.toFixed(2)}-${toSec.toFixed(2)}`}
           width={LANE_RASTER}
           height={LANE_H}
           className="block h-24 w-full rounded-lg bg-[var(--color-field)]"
@@ -449,14 +444,43 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   }
   const startFocus = focus.current?.start ?? 0
   const endFocus = focus.current?.end ?? durationSec
+  // The window is a frame, but it must never lose what it frames. Nudging a cut far
+  // enough (or zooming in around an older focus) used to push the handle clean out
+  // of view — the lane showed 399.6–401.6 s while the cut sat at 408.3 s, pinned
+  // uselessly against the edge. So the frame is placed, and then SLID (never
+  // resized) the least amount that brings the cut back inside, with a margin so the
+  // handle is never flush against the border.
+  function contain(
+    lane: { from: number; to: number },
+    cutSec: number,
+  ): { from: number; to: number } {
+    const span = lane.to - lane.from
+    const margin = span * 0.1
+    let { from, to } = lane
+    if (cutSec < from + margin) {
+      from = cutSec - margin
+      to = from + span
+    } else if (cutSec > to - margin) {
+      to = cutSec + margin
+      from = to - span
+    }
+    // Never slide past the track itself.
+    if (from < 0) return { from: 0, to: Math.min(durationSec, span) }
+    if (to > durationSec) return { from: Math.max(0, durationSec - span), to: durationSec }
+    return { from, to }
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const startLane = useMemo(() => {
     const from = Math.max(0, startFocus - startContextSec)
-    return { from, to: Math.min(durationSec, from + startContextSec * 2) }
-  }, [startFocus, startContextSec, durationSec])
+    const lane = { from, to: Math.min(durationSec, from + startContextSec * 2) }
+    return contain(lane, startSec)
+  }, [startFocus, startContextSec, durationSec, startSec])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const endLane = useMemo(() => {
     const to = Math.min(durationSec, endFocus + endContextSec)
-    return { from: Math.max(0, to - endContextSec * 2), to }
-  }, [endFocus, endContextSec, durationSec])
+    const lane = { from: Math.max(0, to - endContextSec * 2), to }
+    return contain(lane, endSec)
+  }, [endFocus, endContextSec, durationSec, endSec])
 
   // The by-ear check of a cut: a local element playing the source right at the
   // boundary — from the cut-in (what the converted track will open with), or the
