@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { DeclickSection } from './DeclickSection'
 import { AFTER_COLOR } from './WaveformCompare'
 
@@ -271,6 +272,48 @@ describe('DeclickSection', () => {
     pointerAt(overlay, 'pointerDown', 250)
     expect(elements[1].currentTime).toBe(60)
     expect(elements[0].currentTime).toBe(60)
+  })
+
+  // Space is play/pause everywhere in Surco, so it must work here too — but the SAME
+  // press would otherwise also start the mini-player, and the user would end up with the
+  // whole track blaring underneath the A/B they are trying to judge. The section claims
+  // the key while it is open (see spaceClaim), exactly as the beatgrid does.
+  it('claims Space for its own transport while it is open', async () => {
+    await withPreview()
+    act(() => loadPair())
+    expect(runKeyClaim('play')).toBe(true)
+    expect(play).toHaveBeenCalled()
+  })
+
+  it('pauses on a second Space rather than restarting', async () => {
+    await withPreview()
+    act(() => loadPair())
+    // play() resolves a promise before `playing` flips, so the state has to settle before
+    // the second press — otherwise the test would press Space at a component that still
+    // believes it is stopped.
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    play.mockClear()
+    await act(async () => {
+      runKeyClaim('play')
+    })
+    expect(pause).toHaveBeenCalled()
+    expect(play).not.toHaveBeenCalled()
+  })
+
+  // If the claim outlived the section, Space would be dead for the mini-player forever
+  // after — the key must go back the moment the section folds away.
+  it('gives Space back when it closes', async () => {
+    await withPreview()
+    expect(runKeyClaim('play')).toBe(true)
+    cleanup()
+    expect(runKeyClaim('play')).toBe(false)
+  })
+
+  it('never claims Space while folded — the mini-player still owns it', () => {
+    render(section({ value: 'standard', open: false }))
+    expect(runKeyClaim('play')).toBe(false)
   })
 
   // Placing the cursor is not the same gesture as auditioning: a click on the wave says

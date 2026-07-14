@@ -1,6 +1,6 @@
 import { ChevronRight, Loader2, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DeclickMode, OutputFormat } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
@@ -8,6 +8,7 @@ import { useDeclickAb } from '../hooks/useDeclickAb'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
+import { claimKeys } from '../lib/spaceClaim'
 import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -119,6 +120,21 @@ export function DeclickSection({
     const next = nextClick(clicks?.marks ?? [], ab.at)
     if (next !== null) jump(next)
   }, [clicks, ab.at, jump])
+
+  // Space is play/pause everywhere in Surco, so it has to work on this transport too —
+  // but the same press would ALSO start the mini-player, and the user would be judging
+  // the A/B with the whole track blaring underneath it. Claiming the key (rather than
+  // rebinding it) is the app's answer to exactly this, and the beatgrid already does it.
+  //
+  // Only claimed once there is a preview to drive: with no rendered audio the section has
+  // no transport, and stealing Space from the mini-player to do nothing with it would be
+  // a plain regression.
+  const toggleRef = useRef<() => void>(() => {})
+  toggleRef.current = () => (ab.playing ? ab.pause() : ab.play())
+  useEffect(() => {
+    if (!open || !preview) return
+    return claimKeys({ play: () => toggleRef.current() })
+  }, [open, preview])
 
   // The overlay lives INSIDE the zoomed strip, so its own width is already the zoomed
   // width of the whole track — the ratio across it is the fraction of the track, at any
