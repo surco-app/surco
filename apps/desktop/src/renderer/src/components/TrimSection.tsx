@@ -1,4 +1,4 @@
-import { Scissors, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Scissors, Square, Volume2, ZoomIn, ZoomOut } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -28,8 +28,15 @@ const AUDITION_SEC = 4
 // "zoom" is now how much of the track flanks the cut. A ten-minute track's silent
 // head is a sliver at ×1: this is what made every user zoom and scrub their way to
 // a spot the detector already knew.
-const CONTEXT_SEC = [2, 5, 15, 45] as const
-const DEFAULT_CONTEXT_INDEX = 1
+// Down to a quarter-second because the cut itself needs judging, not just finding:
+// at ±0.25 s the lane's 1200 px span half a second, so a pixel is under a
+// millisecond and the exact edge of the music is something you can SEE.
+const CONTEXT_SEC = [0.25, 0.5, 1, 2, 5, 15, 45] as const
+const DEFAULT_CONTEXT_INDEX = 4
+// The fine steps, on buttons rather than buried in arrow keys: a frame-ish nudge
+// and a tenth. Same figures the arrows use (Shift takes the coarse one).
+const FINE_STEP_SEC = 0.01
+const COARSE_STEP_SEC = 0.1
 // The lane's own raster: one window's worth of pixels, no scrolling.
 const LANE_RASTER = 1200
 const LANE_H = 96
@@ -69,6 +76,11 @@ function Lane({
   onRelease,
   onKeyStep,
   onApplySuggestion,
+  onContextChange,
+  contextIndex,
+  contextSec,
+  contextCount,
+  fineStepSec,
   overlayRef,
   tr,
 }: {
@@ -87,6 +99,11 @@ function Lane({
   onRelease: () => void
   onKeyStep: (deltaSec: number) => void
   onApplySuggestion: (sec: number) => void
+  onContextChange: (index: number) => void
+  contextIndex: number
+  contextSec: number
+  contextCount: number
+  fineStepSec: number
   overlayRef: React.RefObject<HTMLDivElement | null>
   tr: (key: string, opts?: Record<string, unknown>) => string
 }): React.JSX.Element {
@@ -127,12 +144,75 @@ function Lane({
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </span>
-        <span data-testid={`trim-lane-range-${side}`} className="text-[10px] tabular-nums text-fg-dim">
-          {`${fromSec.toFixed(1)}–${toSec.toFixed(1)} s`}
+        {/* The cut's own time, to the millisecond, with a step either side of it:
+            reading the position off the wave is guesswork below a tenth, and the
+            arrow keys that used to be the only fine control were invisible. */}
+        <span className="flex min-w-0 items-center gap-0.5">
+          <button
+            type="button"
+            data-testid={`trim-nudge-back-${side}`}
+            aria-label={tr('trim.nudgeBack')}
+            onClick={() => onKeyStep(-fineStepSec)}
+            className="press flex h-4 w-4 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+          >
+            <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+          </button>
+          <span
+            data-testid={`trim-cut-time-${side}`}
+            className="min-w-0 truncate text-[10px] tabular-nums text-fg-muted"
+          >
+            {`${cut.toFixed(3)} s`}
+          </span>
+          <button
+            type="button"
+            data-testid={`trim-nudge-forward-${side}`}
+            aria-label={tr('trim.nudgeForward')}
+            onClick={() => onKeyStep(fineStepSec)}
+            className="press flex h-4 w-4 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+          >
+            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+          </button>
+        </span>
+        {/* Each lane zooms on its own: the head can be dense music while the tail
+            is flat silence, and one shared control forced a compromise that fit
+            neither. */}
+        <span className="flex shrink-0 items-center gap-0.5">
+          <span
+            data-testid={`trim-lane-range-${side}`}
+            className="text-[10px] tabular-nums text-fg-dim"
+          >
+            {spanSec < 2 ? `${fromSec.toFixed(2)}–${toSec.toFixed(2)} s` : `${fromSec.toFixed(1)}–${toSec.toFixed(1)} s`}
+          </span>
+          <button
+            type="button"
+            data-testid={`trim-zoom-in-${side}`}
+            aria-label={tr('trim.contextNarrow')}
+            disabled={contextIndex <= 0}
+            onClick={() => onContextChange(contextIndex - 1)}
+            className="press flex h-4 w-4 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+          >
+            <ZoomIn className="h-3 w-3" aria-hidden="true" />
+          </button>
+          <span
+            data-testid={`trim-context-${side}`}
+            className="min-w-9 text-center text-[10px] tabular-nums text-fg-dim"
+          >
+            {`±${contextSec < 1 ? contextSec : contextSec.toFixed(0)}s`}
+          </span>
+          <button
+            type="button"
+            data-testid={`trim-zoom-out-${side}`}
+            aria-label={tr('trim.contextWiden')}
+            disabled={contextIndex >= contextCount - 1}
+            onClick={() => onContextChange(contextIndex + 1)}
+            className="press flex h-4 w-4 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
+          >
+            <ZoomOut className="h-3 w-3" aria-hidden="true" />
+          </button>
         </span>
       </div>
       <div className="relative">
@@ -177,7 +257,9 @@ function Lane({
             onKeyDown={(e) => {
               if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
               e.preventDefault()
-              const step = e.shiftKey ? 1 : 0.1
+              // Shift is the coarse step; bare arrows do the fine one, matching the
+              // buttons either side of the readout.
+              const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
               onKeyStep(e.key === 'ArrowLeft' ? -step : step)
             }}
             onPointerDown={(e) => {
@@ -290,8 +372,18 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   )
   // How much track flanks each cut. Replaces the old zoom: there is no scrolling
   // here, so the only question left is how wide a window each lane shows.
-  const [contextIndex, setContextIndex] = useState(DEFAULT_CONTEXT_INDEX)
-  const contextSec = CONTEXT_SEC[contextIndex]
+  const [contextIndex, setContextIndex] = useState<Record<Side, number>>({
+    start: DEFAULT_CONTEXT_INDEX,
+    end: DEFAULT_CONTEXT_INDEX,
+  })
+  const startContextSec = CONTEXT_SEC[contextIndex.start]
+  const endContextSec = CONTEXT_SEC[contextIndex.end]
+  function setContext(which: Side, next: number): void {
+    setContextIndex((c) => ({
+      ...c,
+      [which]: Math.min(CONTEXT_SEC.length - 1, Math.max(0, next)),
+    }))
+  }
   // The live range while a handle is dragged; committed to the track (onChange)
   // only on release, so a drag doesn't spray staleness/session updates per pixel.
   const [draft, setDraft] = useState<TrimRange | null>(null)
@@ -311,13 +403,13 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   const startFocus = value?.startSec ?? suggestion?.startSec ?? 0
   const endFocus = value?.endSec ?? suggestion?.endSec ?? durationSec
   const startLane = useMemo(() => {
-    const from = Math.max(0, startFocus - contextSec)
-    return { from, to: Math.min(durationSec, from + contextSec * 2) }
-  }, [startFocus, contextSec, durationSec])
+    const from = Math.max(0, startFocus - startContextSec)
+    return { from, to: Math.min(durationSec, from + startContextSec * 2) }
+  }, [startFocus, startContextSec, durationSec])
   const endLane = useMemo(() => {
-    const to = Math.min(durationSec, endFocus + contextSec)
-    return { from: Math.max(0, to - contextSec * 2), to }
-  }, [endFocus, contextSec, durationSec])
+    const to = Math.min(durationSec, endFocus + endContextSec)
+    return { from: Math.max(0, to - endContextSec * 2), to }
+  }, [endFocus, endContextSec, durationSec])
 
   // The by-ear check of a cut: a local element playing the source right at the
   // boundary — from the cut-in (what the converted track will open with), or the
@@ -406,7 +498,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       setSnapped(false)
       return sec
     }
-    const catchSec = Math.min(0.3, Math.max(0.02, contextSec * 2 * 0.015))
+    const span = (which === 'start' ? startContextSec : endContextSec) * 2
+    // Tight lanes want a surgical magnet: at ±0.25 s the catch is milliseconds, so
+    // the snap helps place the cut instead of overriding a deliberate one.
+    const catchSec = Math.min(0.3, Math.max(0.002, span * 0.015))
     const snap = Math.abs(sec - target) <= catchSec
     setSnapped(snap)
     return snap ? target : sec
@@ -425,10 +520,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // with both gone the track carries no trim at all.
   function commit(next: TrimRange): void {
     const cleaned: TrimRange = {}
+    // To the millisecond: the tight lanes let the eye place a cut far finer than the
+    // centisecond this used to round to, and the conversion's atrim takes it verbatim.
     if (next.startSec !== undefined && next.startSec > EDGE_SNAP_SEC)
-      cleaned.startSec = Number(next.startSec.toFixed(2))
+      cleaned.startSec = Number(next.startSec.toFixed(3))
     if (next.endSec !== undefined && next.endSec < durationSec - EDGE_SNAP_SEC)
-      cleaned.endSec = Number(next.endSec.toFixed(2))
+      cleaned.endSec = Number(next.endSec.toFixed(3))
     onChange(cleaned.startSec === undefined && cleaned.endSec === undefined ? undefined : cleaned)
   }
 
@@ -502,6 +599,11 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       onKeyStep: (delta: number) => nudge(which, delta),
       onApplySuggestion: (sec: number) =>
         commit(which === 'start' ? { ...value, startSec: sec } : { ...value, endSec: sec }),
+      onContextChange: (index: number) => setContext(which, index),
+      contextIndex: contextIndex[which],
+      contextSec: which === 'start' ? startContextSec : endContextSec,
+      contextCount: CONTEXT_SEC.length,
+      fineStepSec: FINE_STEP_SEC,
       overlayRef: which === 'start' ? startOverlayRef : endOverlayRef,
       tr,
     }
@@ -514,6 +616,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         title={tr('trim.title')}
         open={open}
         onToggle={onToggle}
+        help={tr('trim.hint')}
         summary={value ? undefined : tr('trim.summaryNone')}
         summaryTestId="trim-summary"
         right={
@@ -538,7 +641,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
       />
       {open && (
         <div className="mt-3">
-          <p className="mb-3 text-xs text-fg-dim">{tr('trim.hint')}</p>
           {(loading || wave) && (
             <>
               {/* The action lives IN the detection row, not below the strip: the
@@ -575,38 +677,6 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                     </span>
                   )
                 )}
-                {/* How much track flanks each cut — the old zoom, restated as the
-                    only question two fixed windows can still ask. */}
-                <span className="ml-auto flex shrink-0 items-center gap-0.5">
-                  <button
-                    type="button"
-                    data-testid="waveform-zoom-in"
-                    aria-label={tr('trim.contextNarrow')}
-                    disabled={contextIndex <= 0}
-                    onClick={() => setContextIndex((i) => Math.max(0, i - 1))}
-                    className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-                  >
-                    <ZoomIn className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                  <span
-                    data-testid="trim-context"
-                    className="min-w-8 px-1 text-center text-[10px] tabular-nums text-fg-dim"
-                  >
-                    {`±${contextSec}s`}
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="waveform-zoom-out"
-                    aria-label={tr('trim.contextWiden')}
-                    disabled={contextIndex >= CONTEXT_SEC.length - 1}
-                    onClick={() =>
-                      setContextIndex((i) => Math.min(CONTEXT_SEC.length - 1, i + 1))
-                    }
-                    className="press flex h-5 w-5 items-center justify-center rounded text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-                  >
-                    <ZoomOut className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </span>
               </div>
               {loading || !wave || durationSec <= 0 ? (
                 <WaveformSkeleton testid="trim-loading" />

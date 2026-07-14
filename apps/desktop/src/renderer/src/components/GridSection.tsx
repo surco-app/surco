@@ -353,11 +353,26 @@ export function GridSection({
     () => (shown && durationSec > 0 ? gridLines(shown, durationSec, { from: 0, to: 1 }) : []),
     [shown, durationSec],
   )
+  // The overview's wave is painted through a ref CALLBACK, not a plain effect on
+  // `wave`. Two ways an effect left the lane empty — grid ticks over a blank field,
+  // exactly what users reported: the canvas mounts when a cached wave is ALREADY in
+  // hand (so nothing is left to trigger a draw), and writing the height attribute
+  // (which `tall` flips on maximize) wipes the bitmap. A ref callback fires on every
+  // mount and remount; the effect below covers a wave that lands later.
+  const paintOverview = useCallback(
+    (canvas: HTMLCanvasElement | null): void => {
+      overviewCanvasRef.current = canvas
+      if (!canvas || !wave) return
+      drawWaveform(canvas, wave.peaks, { color: AFTER_COLOR })
+    },
+    [wave],
+  )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `tall` feeds the canvas height attribute, and writing it wipes the bitmap — the redraw must re-run with it.
   useEffect(() => {
     const canvas = overviewCanvasRef.current
     if (!canvas || !wave) return
     drawWaveform(canvas, wave.peaks, { color: AFTER_COLOR })
-  }, [wave])
+  }, [wave, tall])
 
   function centerOn(ratio: number): void {
     const el = scrollerRef.current
@@ -713,6 +728,7 @@ export function GridSection({
         title={tr('grid.title')}
         open={open}
         onToggle={onToggle}
+        help={tr('grid.hint')}
         summary={value || detected ? undefined : tr('grid.summaryNone')}
         summaryTestId="grid-summary"
         right={
@@ -745,7 +761,6 @@ export function GridSection({
       />
       {open && (
         <div className="mt-3">
-          <p className="mb-3 text-xs text-fg-dim">{tr('grid.hint')}</p>
           {detected === null && !shown && (
             <p data-testid="grid-nothing" className="mb-3 text-[10px] text-fg-dim">
               {tr('grid.nothing')}
@@ -1203,7 +1218,7 @@ export function GridSection({
                   }}
                 >
                   <canvas
-                    ref={overviewCanvasRef}
+                    ref={paintOverview}
                     width={OVERLAY_W}
                     height={tall ? 60 : 36}
                     className={`block w-full rounded-md bg-[var(--color-field)] ${tall ? 'h-10' : 'h-6'}`}

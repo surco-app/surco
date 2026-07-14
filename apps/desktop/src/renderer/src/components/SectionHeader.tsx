@@ -1,7 +1,8 @@
-import { ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
+import { ChevronRight, Info, Maximize2, Minimize2 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { type EditorSection, useMaximizedSection } from '../hooks/useEditorSections'
+import { Tooltip } from './Tooltip'
 
 interface SectionHeaderProps {
   title: string
@@ -14,6 +15,10 @@ interface SectionHeaderProps {
   // The digest's testid, named per section so tests never fish among siblings.
   summaryTestId?: string
   right?: React.ReactNode
+  // What the section is for, in a sentence. It rides an ⓘ next to the title rather
+  // than a paragraph under it: the explanation is read once and the two lines it
+  // cost were charged on every visit, pushing the actual work down the panel.
+  help?: string
   // Present on the sections that earn a maximize toggle (the wave-work ones):
   // the header wires itself to the shared maximized-section store, so the
   // Editor's overlay and every header stay one state.
@@ -27,6 +32,7 @@ export function SectionHeader({
   summary,
   summaryTestId,
   right,
+  help,
   sectionId,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -59,6 +65,19 @@ export function SectionHeader({
           </span>
         )}
       </button>
+      {help && (
+        <span
+          data-testid="section-help"
+          role="note"
+          className="relative flex h-5 w-5 shrink-0 items-center justify-center text-fg-dim hover:text-fg-muted"
+        >
+          <Info className="h-3 w-3" aria-hidden="true" />
+          {/* The sentence is the note's content for a screen reader, and the
+              tooltip's label for a pointer — one source, both audiences. */}
+          <span className="sr-only">{help}</span>
+          <Tooltip label={help} />
+        </span>
+      )}
       {right}
       {sectionId !== undefined && (
         <button

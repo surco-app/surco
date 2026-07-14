@@ -133,20 +133,31 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-lane-range-end')).toHaveTextContent('85.1–95.1 s')
   })
 
-  // There is no scrolling here, so the old zoom becomes the one question two fixed
-  // windows can still ask: how much track flanks the cut.
-  it('widens and narrows the context around both cuts', async () => {
+  // Each lane zooms on its own: a dense head and a silent tail want different
+  // windows, and one shared control forced a compromise that fit neither.
+  it('zooms each lane independently of the other', async () => {
     render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
-    const context = await screen.findByTestId('trim-context', undefined, { timeout: 3000 })
+    const context = await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
     expect(context).toHaveTextContent('±5s')
-    fireEvent.click(screen.getByTestId('waveform-zoom-out'))
-    expect(screen.getByTestId('trim-context')).toHaveTextContent('±15s')
-    // The lane follows: 9.7 s ± 15 s, clamped at the track's start.
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('0.0–30.0 s')
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    fireEvent.click(screen.getByTestId('waveform-zoom-in'))
-    expect(screen.getByTestId('trim-context')).toHaveTextContent('±2s')
-    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('7.7–11.7 s')
+    expect(screen.getByTestId('trim-context-end')).toHaveTextContent('±5s')
+    // Narrowing the head lane leaves the tail lane exactly where it was.
+    fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±1s')
+    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('8.7–10.7 s')
+    expect(screen.getByTestId('trim-context-end')).toHaveTextContent('±5s')
+    expect(screen.getByTestId('trim-lane-range-end')).toHaveTextContent('85.3–95.3 s')
+  })
+
+  // The tightest windows are where a cut is actually judged: at ±0.25 s the lane's
+  // 1200 px span half a second, so a pixel is under a millisecond.
+  it('narrows a lane down to a quarter-second of context', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.25s')
+    expect(screen.getByTestId('trim-lane-range-start')).toHaveTextContent('9.45–9.95 s')
+    expect(screen.getByTestId('trim-zoom-in-start')).toBeDisabled()
   })
 
   // A staged trim reads off the strip: shaded discard regions, the cuts readout,
@@ -291,10 +302,27 @@ describe('TrimSection', () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
     const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    // A bare arrow is the fine step (10 ms) — a cut is judged in milliseconds, and
+    // the old tenth was too blunt to place one. Shift takes the coarse tenth.
     fireEvent.keyDown(start, { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.8, endSec: 90.3 })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
     fireEvent.keyDown(start, { key: 'ArrowLeft', shiftKey: true })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 8.7, endSec: 90.3 })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
+  })
+
+  // The same fine step, on buttons either side of the cut's exact time: the arrow
+  // keys were the only fine control and they were invisible.
+  it('steps the cut from the buttons and shows its exact time', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    expect(
+      await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 }),
+    ).toHaveTextContent('9.700 s')
+    expect(screen.getByTestId('trim-cut-time-end')).toHaveTextContent('90.300 s')
+    fireEvent.click(screen.getByTestId('trim-nudge-forward-start'))
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
+    fireEvent.click(screen.getByTestId('trim-nudge-back-end'))
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.7, endSec: 90.29 })
   })
 
   // Folded with a staged trim, the header badges the total cut, like the
