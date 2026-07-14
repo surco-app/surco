@@ -17,28 +17,24 @@ import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
+import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
-import { useTrackProperties } from '../hooks/useTrackProperties'
 import { useStableCallback } from '../hooks/useStableCallback'
-import {
-  type AppleMusicIndex,
-  type StaleLibraryCopy,
-  isInLibrary,
-  staleLibraryCopy,
-} from '../lib/appleMusicLibrary'
+import { useTrackProperties } from '../hooks/useTrackProperties'
+import type { AppleMusicIndex, StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { matchTargetOf } from '../lib/autoMatch'
+import { BULK_FIELDS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
-import { BULK_FIELDS } from '../lib/bulkEdit'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { librarySourceOf } from '../lib/librarySource'
+import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
-import { isLowResCover, formatKHz } from '../lib/quality'
+import { formatKHz, isLowResCover } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -48,23 +44,23 @@ import {
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { selectionStatus } from '../lib/selectionStatus'
+import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { stripParentheticals } from '../lib/textClean'
-import { useAppSettings } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
+import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
+import { GridSection } from './GridSection'
 import { MetadataForm } from './MetadataForm'
-import { DeclickSection } from './DeclickSection'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
-import { GridSection } from './GridSection'
 import { TrimSection } from './TrimSection'
 
 interface Props {
@@ -402,111 +398,17 @@ export const Editor = memo(function Editor({
           artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
         }
       : undefined
-
-  // Whether the confident Discogs suggestion is what proves this track is owned — the raw
-  // tags didn't key-match the library but the release's canonical title/artist does. This is
-  // the one verdict the list can't recompute on its own (it has no open release), so it gets
-  // persisted below so the filter agrees with this badge.
-  // The file's own tags plus its probed length — the library matcher uses the duration to
-  // tell two versions of one title apart, so pass it alongside title/artist.
-  const ownTags = {
-    title: item.meta.title,
-    artist: item.meta.artist,
-    durationSec: item.duration,
-  }
-  // isInLibrary normalizes and scans the Apple Music index, so memoize the verdict on
-  // the exact tags it reads — a keystroke in an unrelated field must not re-run the
-  // library lookup two or three times over.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
-  const resolvedViaDiscogs = useMemo(
-    () =>
-      !!libraryIndex &&
-      !item.musicPersistentId &&
-      !isInLibrary(libraryIndex, ownTags) &&
-      !!suggestedMeta &&
-      isInLibrary(libraryIndex, suggestedMeta),
-    [
-      libraryIndex,
-      item.musicPersistentId,
-      item.meta.title,
-      item.meta.artist,
-      item.duration,
-      suggestedMeta,
-    ],
-  )
-
-  // Hint of whether the song is already in the destination's library — Apple Music or
-  // the Engine DJ database, whichever conversions land in — so the user doesn't
-  // re-import it. Read from the same session snapshot the list and quality filter use
-  // (isInLibrary on item.meta); the editor additionally accepts a confident Discogs
-  // suggestion, so opening the right release can flip a tag the raw filename couldn't match.
-  // That Discogs-proven verdict is persisted (resolvedViaDiscogs, below) so the row and
-  // filter agree with this badge. A track Surco itself added counts as owned even before
-  // the snapshot lands — via its Apple Music persistent ID or its Engine add flag,
-  // whichever library is active. 'idle' hides the badge when no library destination is
-  // chosen and until the snapshot arrives. 'checking' covers the gap that used to flicker
-  // "not in library": the raw tags don't match but Discogs is still resolving, so its
-  // match could still flip this to 'yes' — only once that work settles without a match do
-  // we commit to 'no'.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
-  const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = useMemo(():
-    | 'idle'
-    | 'yes'
-    | 'no'
-    | 'checking' => {
-    if (!librarySource) return 'idle'
-    const owned =
-      librarySource === 'appleMusic'
-        ? item.musicPersistentId || item.inLibraryResolved
-        : item.engineDjAdded || item.inLibraryResolved
-    if (owned) return 'yes'
-    if (!libraryIndex) return 'idle'
-    if (isInLibrary(libraryIndex, ownTags)) return 'yes'
-    if (resolvedViaDiscogs) return 'yes'
-    return discogsResolving ? 'checking' : 'no'
-  }, [
-    librarySource,
-    item.musicPersistentId,
-    item.engineDjAdded,
-    item.inLibraryResolved,
-    item.meta.title,
-    item.meta.artist,
-    item.duration,
+  // Whether the destination library already owns this track, and whether an older copy of it
+  // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
+  // the list and its filter agree with this badge.
+  const { inLibrary, staleMusicCopy } = useLibraryVerdict({
+    item,
     libraryIndex,
-    resolvedViaDiscogs,
+    librarySource,
+    suggestedMeta,
     discogsResolving,
-  ])
-
-  // The library entry this track's Apple Music add superseded: the snapshot still matches
-  // the same song under a DIFFERENT persistent ID than the one the add returned — the old
-  // rip. The footer offers deleting it, closing the "add the new copy, hunt down the old
-  // one in Music" loop. Excluding the add's own ID is what keeps the offer from pointing
-  // at the fresh copy once the snapshot refreshes and holds both. Memoized on the exact
-  // tags it reads, same as the badge above.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
-  const staleMusicCopy = useMemo(
-    () =>
-      librarySource === 'appleMusic' && libraryIndex && item.musicPersistentId
-        ? staleLibraryCopy(libraryIndex, ownTags, item.musicPersistentId)
-        : null,
-    [
-      librarySource,
-      libraryIndex,
-      item.musicPersistentId,
-      item.meta.title,
-      item.meta.artist,
-      item.duration,
-    ],
-  )
-
-  // Pin a Discogs-proven "owned" verdict onto the track so the list and filter read it too,
-  // not just this badge. Only when it's newly proven and not already pinned, so the effect
-  // settles in one write. onChange is App's updateTrack (a shallow merge), so this adds the
-  // flag without disturbing the open edits.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: onChange is identity-stable (App's useStableCallback); excluding it keeps this effect from re-firing on unrelated App renders.
-  useEffect(() => {
-    if (resolvedViaDiscogs && !item.inLibraryResolved) onChange({ inLibraryResolved: true })
-  }, [resolvedViaDiscogs, item.inLibraryResolved])
+    onChange,
+  })
 
   function selectTrack(track: ReleaseTrack): void {
     if (!release) return
