@@ -21,6 +21,7 @@ import { drawWaveform } from '../lib/waveform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
+import { ZoomStepper } from './ZoomStepper'
 import { WaveformSkeleton } from './WaveformSkeleton'
 import { AFTER_COLOR } from './WaveformCompare'
 
@@ -161,14 +162,14 @@ function Lane({
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex items-center justify-between gap-2">
+      <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </span>
         {/* The cut's own time, to the millisecond, with a step either side of it:
             reading the position off the wave is guesswork below a tenth, and the
             arrow keys that used to be the only fine control were invisible. */}
-        <span className="flex min-w-0 items-center gap-1">
+        <span className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             data-testid={`trim-nudge-back-${side}`}
@@ -181,7 +182,7 @@ function Lane({
           </button>
           <span
             data-testid={`trim-cut-time-${side}`}
-            className="min-w-0 truncate text-[10px] tabular-nums text-fg-muted"
+            className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-fg-muted"
           >
             {`${cut.toFixed(3)} s`}
           </span>
@@ -227,36 +228,30 @@ function Lane({
             <Tooltip label={tr('trim.clearSide')} />
           </button>
         </span>
-        <span className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            data-testid={`trim-zoom-in-${side}`}
-            aria-label={tr('trim.contextNarrow')}
-            disabled={contextIndex <= 0}
-            onClick={() => onContextChange(contextIndex - 1)}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-          >
-            <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('trim.contextNarrow')} />
-          </button>
-          <span
-            data-testid={`trim-context-${side}`}
-            className="min-w-9 text-center text-[10px] tabular-nums text-fg-dim"
-          >
-            {`±${contextSec < 1 ? contextSec : contextSec.toFixed(0)}s`}
-          </span>
-          <button
-            type="button"
-            data-testid={`trim-zoom-out-${side}`}
-            aria-label={tr('trim.contextWiden')}
-            disabled={contextIndex >= contextCount - 1}
-            onClick={() => onContextChange(contextIndex + 1)}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-          >
-            <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('trim.contextWiden')} />
-          </button>
-        </span>
+        {/* The one zoom control the whole app shares. Note the ORDER: less on the
+            left, more on the right — the same as everywhere else, even though a
+            tighter trim context makes the NUMBER smaller (±15 s → ±2 s). This lane
+            used to order its buttons by that number, which put "closer" on the
+            opposite side from the beatgrid's. */}
+        <ZoomStepper
+          label={`±${contextSec < 1 ? contextSec : contextSec.toFixed(0)}s`}
+          onOut={() => onContextChange(contextIndex + 1)}
+          onIn={() => onContextChange(contextIndex - 1)}
+          onReset={() => onContextChange(DEFAULT_CONTEXT_INDEX)}
+          outDisabled={contextIndex >= contextCount - 1}
+          inDisabled={contextIndex <= 0}
+          resetDisabled={contextIndex === DEFAULT_CONTEXT_INDEX}
+          labels={{
+            out: tr('trim.contextWiden'),
+            in: tr('trim.contextNarrow'),
+            reset: tr('trim.contextReset'),
+          }}
+          testids={{
+            out: `trim-zoom-out-${side}`,
+            in: `trim-zoom-in-${side}`,
+            reset: `trim-context-${side}`,
+          }}
+        />
       </div>
       <div className="relative">
         <canvas

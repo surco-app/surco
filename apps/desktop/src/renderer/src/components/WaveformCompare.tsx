@@ -10,6 +10,7 @@ import { formatDb } from '../lib/quality'
 import { formatTime, timeTicks } from '../lib/duration'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
+import { ZoomStepper } from './ZoomStepper'
 import { WaveformSkeleton } from './WaveformSkeleton'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
@@ -708,36 +709,25 @@ export function WaveformSolo({
               <Rows2 className="h-3 w-3" aria-hidden="true" />
             </button>
           )}
-          <button
-            type="button"
-            data-testid="waveform-zoom-out"
-            aria-label={tr('editor.waveformZoomOut')}
-            disabled={zoom <= 1}
-            onClick={() => setZoom((z) => Math.max(1, z / 2))}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-          >
-            <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            data-testid="waveform-zoom-reset"
-            aria-label={tr('editor.waveformZoomReset')}
-            disabled={zoom <= 1}
-            onClick={() => setZoom(1)}
-            className="press min-w-6 rounded px-1 text-center text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim"
-          >
-            {zoomLabel(zoom)}
-          </button>
-          <button
-            type="button"
-            data-testid="waveform-zoom-in"
-            aria-label={tr('editor.waveformZoomIn')}
-            disabled={zoom >= ZOOM_MAX}
-            onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-          >
-            <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          <ZoomStepper
+            label={zoomLabel(zoom)}
+            onOut={() => setZoom((z) => Math.max(1, z / 2))}
+            onIn={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
+            onReset={() => setZoom(1)}
+            outDisabled={zoom <= 1}
+            inDisabled={zoom >= ZOOM_MAX}
+            resetDisabled={zoom <= 1}
+            labels={{
+              out: tr('editor.waveformZoomOut'),
+              in: tr('editor.waveformZoomIn'),
+              reset: tr('editor.waveformZoomReset'),
+            }}
+            testids={{
+              out: 'waveform-zoom-out',
+              in: 'waveform-zoom-in',
+              reset: 'waveform-zoom-reset',
+            }}
+          />
         </span>
       </div>
       {previewWave && preview ? (

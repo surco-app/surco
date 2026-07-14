@@ -494,6 +494,7 @@
     "laneEnd": "End",
     "contextNarrow": "Show less around the cut",
     "contextWiden": "Show more around the cut",
+    "contextReset": "Back to the default context",
     "nudgeBack": "Move the cut back",
     "nudgeForward": "Move the cut forward",
     "summaryNone": "Off",

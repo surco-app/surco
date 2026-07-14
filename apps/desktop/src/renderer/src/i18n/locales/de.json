@@ -494,6 +494,7 @@
     "laneEnd": "Ende",
     "contextNarrow": "Weniger um den Schnitt zeigen",
     "contextWiden": "Mehr um den Schnitt zeigen",
+    "contextReset": "Zurück zum Standardkontext",
     "nudgeBack": "Schnitt nach hinten",
     "nudgeForward": "Schnitt nach vorne",
     "summaryNone": "Aus",

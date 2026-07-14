@@ -494,6 +494,7 @@
     "laneEnd": "Fim",
     "contextNarrow": "Ver menos ao redor do corte",
     "contextWiden": "Ver mais ao redor do corte",
+    "contextReset": "Voltar ao contexto padrão",
     "nudgeBack": "Mover o corte para trás",
     "nudgeForward": "Mover o corte para frente",
     "summaryNone": "Não",

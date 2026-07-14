@@ -32,6 +32,7 @@ import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
+import { ZoomStepper } from './ZoomStepper'
 import { AFTER_COLOR, OVERLAY_W, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 
 // The fine correction: about the detector's own resolution, so one press fixes
@@ -1205,35 +1206,27 @@ export function GridSection({
                   )}
                   {/* Zoom: how much of the track the working lane shows. A view
                       control, so it belongs to the view's own row. */}
-                  <span className="flex min-w-0 flex-1 items-center justify-end gap-0.5">
-                    {iconButton(
-                      'waveform-zoom-out',
-                      tr('editor.waveformZoomOut'),
-                      () => setZoom((z) => Math.max(1, z / 2)),
-                      <ZoomOut className={glyph} aria-hidden="true" />,
-                      zoom <= 1,
-                      false,
-                      tall ? 'lg' : 'sm',
-                    )}
-                    <button
-                      type="button"
-                      data-testid="waveform-zoom-reset"
-                      aria-label={tr('editor.waveformZoomReset')}
-                      disabled={zoom <= 1}
-                      onClick={() => setZoom(1)}
-                      className={`press flex min-w-8 items-center justify-center rounded-md px-1 text-[10px] tabular-nums text-fg-dim hover:text-fg disabled:opacity-30 disabled:hover:text-fg-dim ${controlH}`}
-                    >
-                      {zoomLabel(zoom)}
-                    </button>
-                    {iconButton(
-                      'waveform-zoom-in',
-                      tr('editor.waveformZoomIn'),
-                      () => setZoom((z) => Math.min(ZOOM_MAX, z * 2)),
-                      <ZoomIn className={glyph} aria-hidden="true" />,
-                      zoom >= ZOOM_MAX,
-                      false,
-                      tall ? 'lg' : 'sm',
-                    )}
+                  <span className="flex min-w-0 flex-1 items-center justify-end">
+                    <ZoomStepper
+                      label={zoomLabel(zoom)}
+                      onOut={() => setZoom((z) => Math.max(1, z / 2))}
+                      onIn={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
+                      onReset={() => setZoom(1)}
+                      outDisabled={zoom <= 1}
+                      inDisabled={zoom >= ZOOM_MAX}
+                      resetDisabled={zoom <= 1}
+                      size={tall ? 'lg' : 'sm'}
+                      labels={{
+                        out: tr('editor.waveformZoomOut'),
+                        in: tr('editor.waveformZoomIn'),
+                        reset: tr('editor.waveformZoomReset'),
+                      }}
+                      testids={{
+                        out: 'waveform-zoom-out',
+                        in: 'waveform-zoom-in',
+                        reset: 'waveform-zoom-reset',
+                      }}
+                    />
                   </span>
                 </div>
               )}
