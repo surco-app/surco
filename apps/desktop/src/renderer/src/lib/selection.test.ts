@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { clickSelect, deselect, reanchorToVisible, type Selection } from './selection'
+import type { TrackItem } from '../types'
+import {
+  clickSelect,
+  deselect,
+  editScope,
+  reanchorToVisible,
+  type Selection,
+} from './selection'
 
 const ORDER = ['a', 'b', 'c', 'd']
 const empty: Selection = { ids: [], anchor: null }
@@ -104,5 +111,31 @@ describe('reanchorToVisible', () => {
 
   it('does nothing when there was no selection to begin with', () => {
     expect(reanchorToVisible(['a', 'b'], null)).toBeNull()
+  })
+})
+
+describe('editScope', () => {
+  const t = (id: string): TrackItem =>
+    ({ id, inputPath: `/m/${id}.wav`, fileName: `${id}.wav` }) as TrackItem
+
+  // The rows an EDIT acts on: a multi-selection, or the single selected row. This is
+  // deliberately NOT the same rule as the bulk scope (which falls back to the whole visible
+  // list when nothing is selected, so "fill all" with no selection still fills everything).
+  // An edit with nothing selected has nothing to edit — falling back to "everything visible"
+  // would let a stray ⌘Z or an erase-tags land on the entire crate.
+  it('is the multi-selection when several rows are selected', () => {
+    const [a, b, c] = [t('a'), t('b'), t('c')]
+    expect(editScope([a, b], c)).toEqual([a, b])
+  })
+
+  it('is the single selected row when only one is selected', () => {
+    const c = t('c')
+    expect(editScope([], c)).toEqual([c])
+    // A one-length "multi" selection is just the selected row; same answer either way.
+    expect(editScope([c], c)).toEqual([c])
+  })
+
+  it('is empty when nothing is selected — never the whole visible list', () => {
+    expect(editScope([], null)).toEqual([])
   })
 })

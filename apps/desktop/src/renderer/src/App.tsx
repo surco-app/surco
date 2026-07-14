@@ -69,7 +69,13 @@ import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
-import { type ClickMods, clickSelect, reanchorToVisible, type Selection } from './lib/selection'
+import {
+  type ClickMods,
+  clickSelect,
+  editScope,
+  reanchorToVisible,
+  type Selection,
+} from './lib/selection'
 import { sessionEdits } from './lib/sessionEdits'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
@@ -1102,7 +1108,7 @@ export default function App(): React.JSX.Element {
   // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() =>
-    askTrash(selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []),
+    askTrash(editScope(selectedTracks, selected)),
   )
   // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
   // including the ones an active format filter is hiding, unlike the toolbar trash button.
@@ -1276,7 +1282,7 @@ export default function App(): React.JSX.Element {
   // selected track alone. Multi reports a count — the File name section that shows a
   // single rename land is hidden there, so the toast is the only feedback.
   const onRegenerateName = useStableCallback(() => {
-    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const targets = editScope(selectedTracks, selected)
     const patches = outputNamePatches(settings?.filenameFormat ?? '{artist} - {title}', targets)
     for (const p of patches) updateTrack(p.id, { outputName: p.outputName })
     if (targets.length > 1) setNotice(tr('notices.regeneratedNames', { count: patches.length }))
@@ -1289,7 +1295,7 @@ export default function App(): React.JSX.Element {
   // strips use (and main's analysis limiter paces), sequentially so a big selection
   // doesn't starve the analyses the visible editor is waiting on.
   const onTrimDetected = useStableCallback(async () => {
-    const scope = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const scope = editScope(selectedTracks, selected)
     const targets = scope.filter((t) => !t.trim)
     if (targets.length === 0) return
     if (targets.length > 1) setNotice(tr('notices.trimDetecting', { count: targets.length }))
@@ -1354,7 +1360,7 @@ export default function App(): React.JSX.Element {
       })
   })
   const deriveTags = useStableCallback(() => {
-    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const targets = editScope(selectedTracks, selected)
     const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracksUndoable(patches)
   })
@@ -1376,7 +1382,7 @@ export default function App(): React.JSX.Element {
   const applyTitleFormat = useStableCallback(() => {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return
-    const targets = selectedTracks.length > 1 ? selectedTracks : selected ? [selected] : []
+    const targets = editScope(selectedTracks, selected)
     const { patches, skipped, missingFields } = titleFormatSummary(format, targets)
     // A silent no-op reads as a broken button — say WHY nothing changed: name the
     // pattern field that is empty on these tracks when that's the cause (worded by

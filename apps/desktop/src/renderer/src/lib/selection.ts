@@ -1,3 +1,5 @@
+import type { TrackItem } from '../types'
+
 // Multi-selection state for the track list. `ids` is every selected track; `anchor`
 // is the primary one — the track shown in the single-track editor and the pivot a
 // Shift-click ranges from. The interaction mirrors Finder: a plain click selects one,
@@ -65,4 +67,17 @@ export function reanchorToVisible(visibleIds: string[], anchor: string | null): 
   if (!anchor || visibleIds.includes(anchor)) return null
   const first = visibleIds[0]
   return first ? { ids: [first], anchor: first } : { ids: [], anchor: null }
+}
+
+// The rows an edit acts on: the multi-selection, or the single selected row, or nothing.
+//
+// Deliberately not the same rule as the bulk scope (App's `bulkTracks`), which falls back to
+// the whole VISIBLE list when nothing is selected — that is what makes "fill all from names"
+// with an empty selection still fill everything on screen. An edit has no such fallback: with
+// nothing selected there is nothing to edit, and inheriting the bulk rule would let a stray
+// erase-tags or ⌘Z land on the entire crate. Five call sites spelled this ternary out by
+// hand; naming it is what keeps the two scopes from being confused for each other.
+export function editScope(selectedTracks: TrackItem[], selected: TrackItem | null): TrackItem[] {
+  if (selectedTracks.length > 1) return selectedTracks
+  return selected ? [selected] : []
 }
