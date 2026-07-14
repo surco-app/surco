@@ -27,7 +27,11 @@ function wave(): WaveformResult {
 
 const play = vi.fn()
 const pause = vi.fn()
-const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+const audios: {
+  onloadedmetadata: (() => void) | null
+  ontimeupdate: (() => void) | null
+  currentTime: number
+}[] = []
 
 let client: QueryClient
 beforeEach(() => {
