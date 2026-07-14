@@ -341,6 +341,19 @@ textarea {
   transform: scale(0.96);
 }
 
+/* Styling the bar opts out of macOS's overlay scrollbars, so ours takes real layout
+   width — and a bar that only appears once the content overflows takes those 9 px away
+   from the content the moment it shows up, shunting everything sideways. Opening the
+   mini-player is exactly that: it shortens the editor pane, the pane starts to overflow,
+   and a bar pops in that shoves the whole column. Reserving the gutter up front costs the
+   same 9 px whether the bar is there or not, so appearing and disappearing move nothing.
+   (`stable` reserves it only on the scrolling edge; a pane that never overflows still
+   shows no bar.) */
+.overflow-y-auto,
+.overflow-y-scroll {
+  scrollbar-gutter: stable;
+}
+
 ::-webkit-scrollbar {
   width: 9px;
   height: 9px;
@@ -366,6 +379,9 @@ textarea {
    the wave, the wheel and the overview all still scroll; only the bar is gone. */
 .scrollbar-none {
   scrollbar-width: none;
+  /* No bar means no gutter: the rule above would otherwise reserve 9 px for a scrollbar
+     this pane deliberately hides, padding the wave strips with dead space. */
+  scrollbar-gutter: auto;
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
