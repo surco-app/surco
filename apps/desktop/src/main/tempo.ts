@@ -63,18 +63,21 @@ const TEMPO_FIT_MIN_SLOPE = 0.0002
 // A stretch shorter than this has no tempo worth trusting — a couple of beats
 // fit any line — so it never becomes a segment of its own.
 const MIN_SEGMENT_BEATS = 8
-// How large a flux peak must be, as a fraction of the loudest onset in the
-// file, before the tracker will believe a drum was struck there. A breakdown is
-// not silence — a pad swells and wobbles, and its flux has local peaks — so
-// without an absolute bar the tracker reports beats nobody played straight
-// through the breakdown, follows the pad's phase, and lurches the grid when the
-// drums return (measured: a spurious tempo change at the exact moment the beat
-// came back). It only has to separate a struck drum from a swell, and it must
-// stay low: every beat the bar rejects is a beat the tracker cannot use to
-// follow a drifting record. Swept on the fixtures — the grid holds across
-// 0.15–0.2 and this sits mid-plateau; below it a pad starts scoring as a beat
-// again, above it the softer hits a dragging platter is tracked by drop out.
-const ONSET_FLOOR_OF_PEAK = 0.15
+// How large a flux peak must be, relative to a TYPICAL onset on this record
+// (the 90th percentile of the ones present), before the tracker believes a drum
+// was struck there. A breakdown is not silence — a pad swells and wobbles, and
+// its flux has local peaks — so without this bar the tracker reports beats
+// nobody played straight through the breakdown, follows the pad's phase, and
+// lurches the grid when the drums return.
+//
+// Measured against a percentile rather than the loudest onset because the
+// loudest is one frame and every record has outliers: a single crash sets a bar
+// the same record's quieter opening cannot clear, and the tracker then silently
+// loses every beat before it (a fixture with a loud drop lost its first 43
+// beats, anchoring the grid 61 ms off). Swept on the fixtures, every value from
+// 0.3 to 1.0 gives identical grids — the percentile, not this number, is what
+// makes the bar robust — so it sits mid-plateau.
+const ONSET_FLOOR_OF_PEAK = 0.5
 // How many beats the tracker may coast through before the beat it finally hears
 // counts as a SEAM — the far side of a hole it could not see into, where a
 // segment may legitimately begin. A bar or two of no drums is an ordinary drop
@@ -168,21 +171,25 @@ function trackBeats(
   // tempo; too slow and a real ramp never gets tracked.
   const ADAPT = 0.08
 
-  // What this record calls a drum hit. A breakdown is not silence — a pad still
-  // swells and wobbles, and its flux has local peaks — so a tracker that only
-  // asked "is this the biggest frame nearby?" would report beats nobody played
-  // straight through the breakdown, tracking the pad's phase instead of the
-  // drums' and re-phasing the grid when the drums returned.
+  // What counts as a drum hit on this record. A breakdown is not silence — a
+  // pad swells and wobbles, and its flux has local peaks — so a tracker that
+  // only asked "is this the biggest frame nearby?" would report beats nobody
+  // played straight through the breakdown, follow the pad's phase, and lurch
+  // the grid when the drums returned.
   //
-  // The bar is a FRACTION OF WHAT A HIT LOOKS LIKE HERE, read off the strongest
-  // flux in the file. It cannot be an average: how many frames carry flux is a
-  // property of the material, not of the beat — a sparse click train is mostly
-  // zeros and a dense mix mostly isn't — so an average sets a bar that swings
-  // with the arrangement, and the same threshold that rejects a pad in a busy
-  // mix rejects real beats in a sparse one.
-  let loudest = 0
-  for (let f = 0; f < frames; f++) if (flux[f] > loudest) loudest = flux[f]
-  const onsetFloor = loudest * ONSET_FLOOR_OF_PEAK
+  // The bar is a fraction of a TYPICAL onset, not of the loudest one. The
+  // loudest is a single frame and any record has outliers: one crash then sets
+  // a bar the same record's quieter opening cannot clear, and the tracker
+  // silently loses every beat before it (measured: a track with a loud drop lost
+  // its first 43 beats, anchoring the grid 61 ms off the kicks). A high
+  // percentile of the onsets that exist is robust to both — a crash cannot lift
+  // it, a pad cannot reach it.
+  const onsets: number[] = []
+  for (let f = 0; f < frames; f++) if (flux[f] > 0) onsets.push(flux[f])
+  onsets.sort((a, b) => a - b)
+  const typicalOnset =
+    onsets.length > 0 ? onsets[Math.min(onsets.length - 1, Math.floor(onsets.length * 0.9))] : 0
+  const onsetFloor = typicalOnset * ONSET_FLOOR_OF_PEAK
 
   // The strongest flux frame within `search` of `centre`, refined to sub-frame
   // by the same parabola the folds use. Null means "nothing was struck here" —
@@ -218,9 +225,40 @@ function trackBeats(
   let period = period0
   let index = 0
   let lastFound: { atFrame: number; index: number } | null = null
-  // Walk back to the earliest beat of the lattice so tracking starts at the
-  // file's head, not at the anchor the fold happened to report.
-  let at = anchorSec * fps
+
+  // Start the lattice on a REAL onset — but on one that sits on the side of the
+  // beat the phase vote already chose, never simply on the first loud thing in
+  // the file. Two failures have to be avoided at once:
+  //
+  // The fold's phase is a whole-file average, so on a record whose speed slides
+  // it can name a phase that fits no part of the track. The tracker then aims
+  // each prediction up to a quarter period from where the drum really is, finds
+  // nothing inside its search, and coasts — 21 s on the dragging fixture,
+  // losing the first 43 beats and anchoring the grid 61 ms off the kicks.
+  //
+  // But anchoring on the first onset outright hands the grid to whatever is
+  // loudest at the top of the file, and in sidechained dance music that is
+  // routinely the off-beat stab, not the kick — the very trap the low-band
+  // voters upstream exist to escape. So the lattice starts at the first onset
+  // that ALSO lands near the chosen phase: the vote keeps the side, the onset
+  // supplies a real drum to sit on.
+  const foldPhase = ((anchorSec * fps) % period) + (anchorSec < 0 ? period : 0)
+  const onPhase = (f: number): boolean => {
+    const d = Math.abs(((f - foldPhase) % period) + period) % period
+    return Math.min(d, period - d) <= search
+  }
+  let firstOnset = -1
+  for (let f = 1; f < frames - 1; f++)
+    if (
+      flux[f] >= onsetFloor &&
+      flux[f] >= flux[f - 1] &&
+      flux[f] >= flux[f + 1] &&
+      onPhase(f)
+    ) {
+      firstOnset = f
+      break
+    }
+  let at = firstOnset >= 0 ? firstOnset : anchorSec * fps
   while (at - period >= 0) at -= period
   let coasted = 0
   while (at < frames) {
@@ -376,12 +414,19 @@ function detectDrift(
   // autocorrelation and phase fold reported, and neither a tempo nor a segment
   // ever appears out of measurement noise.
   const baseBpm = Math.abs(head.bpm - bpm) / bpm > TEMPO_FIT_MIN_SLOPE ? head.bpm : bpm
-  // Phase is circular, so the anchors are compared the short way round: a
-  // tracked first beat one period along from the folded one is the SAME phase,
-  // and rebasing on that difference would move a line the user is watching.
+  // The base grid is phased on the base segment's own line read at the FIRST
+  // BEAT THE TRACKER HEARD, not at beat 0 of that line. The two differ whenever
+  // the base segment does not start at the head of the file — the fit's
+  // intercept is then an extrapolation backwards across everything the segment
+  // does not cover, and on a record whose speed is sliding that extrapolation
+  // walks the anchor off the very kicks it is meant to sit on (measured: 61 ms,
+  // on a dragging platter whose first segment began 20 s in).
   const headPhase = snapAnchor(head.anchorSec, baseBpm)
   const basePhase = snapAnchor(anchorSec, baseBpm)
   const period = 60 / baseBpm
+  // Phase is circular, so the anchors are compared the short way round: a
+  // tracked first beat one period along from the folded one is the SAME phase,
+  // and rebasing on that difference would move a line the user is watching.
   const gap = Math.abs(headPhase - basePhase)
   const baseAnchor = Math.min(gap, period - gap) > DRIFT_REBASE_SEC ? headPhase : anchorSec
 

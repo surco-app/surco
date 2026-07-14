@@ -399,4 +399,26 @@ describe('detectBeatgrid on a tempo that changes', () => {
     expect(grid?.bpm ?? 0).toBeGreaterThan(126.9)
     expect(grid?.bpm ?? 0).toBeLessThan(127.9)
   })
+
+  it('keeps the grid on the kicks when a drifting record also has a breakdown', () => {
+    // Both at once — a dragging platter AND a stretch with no drums — because
+    // together they broke what neither broke alone. The whole-file phase fold
+    // averages a sliding tempo into a phase that fits nothing, and the beat
+    // tracker, aimed by that phase, then found no drum inside its search and
+    // coasted through the record's opening: 43 beats lost, the grid anchored a
+    // sixth of a beat off the kicks it was drawn to mark.
+    const seconds = 180
+    const [holeFrom, holeTo] = [80, 110]
+    const beats: number[] = []
+    for (let t = 0; t < seconds; ) {
+      beats.push(t)
+      t += 60 / (128 - 2 * (t / seconds))
+    }
+    const audible = beats.filter((t) => t < holeFrom || t >= holeTo)
+    const grid = detectBeatgrid(trainAt(audible, seconds), SR)
+    expect(grid).not.toBeNull()
+    // Only the beats that SOUND can be judged — there is nothing in the hole to
+    // sit on — but every one of them must still land on the grid.
+    expect(worstDriftMs(grid as BeatgridResult, audible)).toBeLessThan(DRIFT_TOL_MS)
+  })
 })
