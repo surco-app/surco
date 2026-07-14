@@ -253,8 +253,12 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          count=$(gh api repos/vigosan/surco-releases/releases --paginate \
-            --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length")
+          # --slurp (not --jq) so the filter sees ONE array of every page: with
+          # --paginate + --jq, gh runs the filter PER PAGE and concatenates the
+          # results, so a second (empty) page made count "1\n0" and the check
+          # failed on a release that was in fact complete.
+          count=$(gh api repos/vigosan/surco-releases/releases --paginate --slurp \
+            | jq "[.[][] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length")
           [ "$count" = "1" ] || { echo "expected 1 release for $GITHUB_REF_NAME, found $count"; exit 1; }
           names=$(gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
             --json assets --jq '.assets[].name')
