@@ -546,6 +546,7 @@
     "fromHereHint": "Começa um novo andamento na linha vermelha, sem mexer na grade anterior (G)",
     "prevSegment": "Mudança de grade anterior ([)",
     "nextSegment": "Próxima mudança de grade (])",
+    "segmentAt": "Segmento da grade em {{time}}, {{bpm}} BPM",
     "centreBeat": "Centralizar batida (C)",
     "tapHint": "Marque o tempo",
     "expand": "Expandir intervalos de batida",

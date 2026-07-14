@@ -29,6 +29,7 @@ import { useMaximizedSection } from '../hooks/useEditorSections'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { beatgridNeedsReview, gridLines } from '../lib/beatgrid'
+import { formatTime } from '../lib/duration'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -1375,6 +1376,28 @@ export function GridSection({
                       style={{ left: `${line.pct}%` }}
                     />
                   ))}
+                  {/* The seams themselves — where one segment hands over to the
+                      next. The working lane only ever shows the handful of beats
+                      in its window, so a grid's seams were invisible unless you
+                      happened to scroll onto one; here the whole track is in
+                      view, so this is the one place they can all be seen at
+                      once. Accent and full height, so they read as structure
+                      over the dim amber bar ticks rather than as another one. */}
+                  {segments.slice(1).map((seg) => (
+                    <span
+                      key={seg.anchorSec}
+                      data-testid="grid-overview-seam"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 z-10 w-0.5 -translate-x-1/2 bg-accent"
+                      style={{ left: `${pct(seg.anchorSec)}%` }}
+                    >
+                      {/* A pip at the top. Over a long track the bar ticks pack
+                          into a solid amber field, and a hairline — accent or
+                          not — simply vanished into it; the pip breaks the
+                          silhouette so the seam is found by shape, not by hue. */}
+                      <span className="absolute -top-px left-1/2 h-1.5 w-1.5 -translate-x-1/2 rotate-45 bg-accent" />
+                    </span>
+                  ))}
                   <span
                     ref={overviewPlayheadRef}
                     data-testid="grid-overview-playhead"
@@ -1408,6 +1431,49 @@ export function GridSection({
                       />
                     </>
                   )}
+                </div>
+              )}
+              {/* The segments as stretches, under the overview they belong to:
+                  the seams above say WHERE the grid changes, this says what each
+                  stretch IS — how long it runs and at what tempo. Only worth a
+                  row once the grid actually has more than one; a constant grid
+                  would just draw one bar saying what the BPM field already says.
+                  Each stretch jumps the view to its own start. */}
+              {shown && durationSec > 0 && segments.length > 1 && (
+                <div
+                  data-testid="grid-segment-bar"
+                  className={`relative mt-1 w-full ${tall ? 'h-5' : 'h-4'}`}
+                >
+                  {segments.map((seg, i) => {
+                    const start = Math.max(0, seg.anchorSec)
+                    const end = segments[i + 1]?.anchorSec ?? durationSec
+                    const width = ((end - start) / durationSec) * 100
+                    return (
+                      <button
+                        type="button"
+                        key={seg.anchorSec}
+                        data-testid="grid-segment-chip"
+                        aria-label={tr('grid.segmentAt', {
+                          bpm: Number(seg.bpm.toFixed(2)),
+                          time: formatTime(start),
+                        })}
+                        onClick={() => navigate(start / durationSec)}
+                        className={`absolute inset-y-0 overflow-hidden border-r border-[var(--color-panel)] text-[9px] tabular-nums last:border-r-0 ${
+                          i === activeSegIndex
+                            ? 'bg-accent/30 text-fg'
+                            : 'bg-[var(--color-panel-2)] text-fg-dim hover:bg-[var(--color-panel-2)]/70'
+                        } ${i === 0 ? 'rounded-l-md' : ''} ${
+                          i === segments.length - 1 ? 'rounded-r-md' : ''
+                        }`}
+                        style={{ left: `${(start / durationSec) * 100}%`, width: `${width}%` }}
+                      >
+                        {/* The tempo only when the stretch is wide enough to hold
+                            it: a 3% sliver would show two clipped digits, which
+                            reads as a rendering fault rather than a number. */}
+                        {width > 12 && <span className="px-1">{seg.bpm.toFixed(1)}</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </>

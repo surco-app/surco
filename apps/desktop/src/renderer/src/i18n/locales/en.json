@@ -546,6 +546,7 @@
     "fromHereHint": "Start a new tempo from the red line, leaving the grid behind it untouched (G)",
     "prevSegment": "Previous grid change ([)",
     "nextSegment": "Next grid change (])",
+    "segmentAt": "Grid segment at {{time}}, {{bpm}} BPM",
     "centreBeat": "Centre beat (C)",
     "tapHint": "Tap the tempo",
     "expand": "Expand beat intervals",

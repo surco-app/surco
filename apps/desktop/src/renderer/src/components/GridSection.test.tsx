@@ -339,6 +339,45 @@ describe('GridSection two-lane layout', () => {
     expect(screen.getByTestId('grid-overview-window')).toBeInTheDocument()
   })
 
+  // A grid's seams were invisible unless you happened to scroll the working lane
+  // onto one — it only ever holds a few seconds of the track. The overview is the
+  // one lane that shows the whole thing, so every seam is marked there, and the
+  // row beneath spells the stretches out: how long each runs, at what tempo.
+  it('marks every seam on the overview and lists the stretches beneath it', async () => {
+    render(
+      section({
+        value: {
+          bpm: 120,
+          anchorSec: 0.25,
+          changes: [
+            { anchorSec: 20, bpm: 121 },
+            { anchorSec: 40, bpm: 122 },
+          ],
+        },
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    // One seam per change — the base is where the grid starts, not a handover.
+    expect(screen.getAllByTestId('grid-overview-seam')).toHaveLength(2)
+    // One chip per segment, base included, each holding its own tempo.
+    const chips = screen.getAllByTestId('grid-segment-chip')
+    expect(chips).toHaveLength(3)
+    expect(chips[0]).toHaveTextContent('120.0')
+    expect(chips[1]).toHaveTextContent('121.0')
+    expect(chips[2]).toHaveTextContent('122.0')
+    // 20 s of a 60 s track: the second stretch starts a third of the way in.
+    expect(chips[1].style.left).toBe(`${(20 / 60) * 100}%`)
+  })
+
+  // A constant grid has one stretch and no handover, so the row would draw a
+  // single bar restating the BPM field. Nothing to navigate, nothing to show.
+  it('draws no stretch row for a single-segment grid', async () => {
+    render(section({ value: { bpm: 120, anchorSec: 0.25 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(screen.queryByTestId('grid-segment-bar')).not.toBeInTheDocument()
+    expect(screen.queryAllByTestId('grid-overview-seam')).toHaveLength(0)
+  })
+
   it('centers the working window where the overview is pressed', async () => {
     stubOverlayRect()
     render(section())
