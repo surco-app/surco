@@ -1034,32 +1034,25 @@ export function GridSection({
                         but they never cross the wave, so the audio stays the thing you
                         are looking at. Before this every beat was a full amber bar with
                         a halo: a picket fence over the music. */}
-                    {lines.map((line) =>
-                      line.downbeat ? (
-                        <span
-                          key={line.sec}
-                          data-testid="grid-line-downbeat"
-                          aria-hidden="true"
-                          className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-[var(--color-warn)]"
-                          style={{ left: `${line.pct}%` }}
-                        />
-                      ) : (
-                        <span
-                          key={line.sec}
-                          data-testid="grid-line"
-                          aria-hidden="true"
-                          className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2"
-                          style={{
-                            left: `${line.pct}%`,
-                            // Ticks at the top and bottom edges only: the middle of the
-                            // lane — where the wave lives — is left alone.
-                            background:
-                              'linear-gradient(to bottom, var(--color-warn) 0 12%, transparent 12% 88%, var(--color-warn) 88% 100%)',
-                            opacity: 0.55,
-                          }}
-                        />
-                      ),
-                    )}
+                    {/* Two ranks, told apart by WEIGHT, not by length. Both cross the
+                        full lane and both sit ABOVE the wave (z-10) — an earlier version
+                        clipped the beats to the lane's edges, and a loud passage simply
+                        swallowed them: the beat lines vanished exactly where there was
+                        music to line them up against. The downbeat (the 1 of the bar) is
+                        opaque and the one the eye locks onto; the three beats between it
+                        are the same amber at a third of the strength — legible over the
+                        wave, quiet enough that they never become a fence. */}
+                    {lines.map((line) => (
+                      <span
+                        key={line.sec}
+                        data-testid={line.downbeat ? 'grid-line-downbeat' : 'grid-line'}
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute inset-y-0 z-10 -translate-x-1/2 bg-[var(--color-warn)] ${
+                          line.downbeat ? 'w-px' : 'w-px opacity-35'
+                        }`}
+                        style={{ left: `${line.pct}%` }}
+                      />
+                    ))}
                     {playheadSec !== null && (
                       <span
                         data-testid="grid-playhead"
