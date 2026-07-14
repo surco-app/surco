@@ -110,6 +110,12 @@ export function Tooltip({
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
       clearTimer()
+      // Close on the way out. The listeners are the only thing that ever HID the
+      // tooltip, so a trigger that vanishes while it is up (its section folds, the
+      // view switches, the button is swapped) left the portal stranded on screen —
+      // a "Move the cut forward" hanging over the spectrogram, belonging to a
+      // button that no longer exists.
+      setPos(null)
     }
   }, [hoverOnly])
 

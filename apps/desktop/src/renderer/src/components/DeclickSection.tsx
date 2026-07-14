@@ -105,12 +105,17 @@ export function DeclickSection({
             {/* The detector's finding as a header pill — the one convention for
                 analysis results — so a clicky track reads at a glance without
                 opening the section (once the count has been measured). */}
-            {!isMulti && typeof clicks === 'number' && clicks > 0 && (
+            {/* A clean track says so: the pill is the ONLY place the count lives now,
+                so staying silent at zero would leave "no clicks" and "never measured"
+                looking identical. */}
+            {!isMulti && typeof clicks === 'number' && (
               <span
                 data-testid="declick-estimate-pill"
                 className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium tabular-nums text-fg-muted"
               >
-                {tr('declick.estimatePill', { count: clicks })}
+                {clicks > 0
+                  ? tr('declick.estimatePill', { count: clicks })
+                  : tr('declick.estimateNonePill')}
               </span>
             )}
             {/* The mode badge only while folded: open, the segmented control right
@@ -128,17 +133,10 @@ export function DeclickSection({
       />
       {open && (
         <div className="mt-3">
-          {/* No intro line — the section title already says what this is. The
-              estimate speaks the user's language (events, not samples) and is
-              deliberately worded "audible": clicks buried under loud passages mask
-              from the detector much as they mask from the ear. */}
-          {!isMulti && typeof clicks === 'number' && (
-            <p data-testid="declick-estimate" className="mb-3 text-xs text-fg-muted">
-              {clicks > 0
-                ? tr('declick.estimate', { count: clicks })
-                : tr('declick.estimateNone')}
-            </p>
-          )}
+          {/* The count is the header's pill and nothing else: stating it AGAIN as a
+              paragraph the moment the section opens was the same fact twice, one line
+              apart. The only prose left here is the chosen preset's own description,
+              which the controls render — that says something the pill cannot. */}
           <DeclickControls value={value} onChange={onChange} />
           {value !== 'off' && !isMulti && (
             <div className="mt-3">

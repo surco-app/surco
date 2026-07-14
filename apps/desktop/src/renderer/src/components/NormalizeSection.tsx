@@ -1,3 +1,4 @@
+import { TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +9,7 @@ import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionHeader } from './SectionHeader'
+import { Tooltip } from './Tooltip'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 interface Props {
@@ -72,6 +74,7 @@ export function NormalizeSection({
         // The badge names the active mode; the summary carries what it omits — the
         // figures the conversion will target — and states "None" when off, so the
         // folded header never reads blank.
+        help={tr('normalize.editorHint')}
         summary={
           value.mode === 'loudness'
             ? `${value.targetLufs} LUFS · ${value.truePeakDb} dBTP`
@@ -108,7 +111,6 @@ export function NormalizeSection({
       />
       {open && (
         <div className="mt-3">
-          <p className="mb-3 text-xs text-fg-dim">{tr('normalize.editorHint')}</p>
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
@@ -126,8 +128,13 @@ export function NormalizeSection({
             </div>
           )}
           {value.mode !== 'none' && (
-            <p data-testid="normalize-cue-warning" className="mt-3 text-xs text-warn">
-              {tr('normalize.cueWarning')}
+            <p
+              data-testid="normalize-cue-warning"
+              className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
+            >
+              <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
+              {tr('normalize.cueWarningShort')}
+              <Tooltip label={tr('normalize.cueWarning')} />
             </p>
           )}
         </div>

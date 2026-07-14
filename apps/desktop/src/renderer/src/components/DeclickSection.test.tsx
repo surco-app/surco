@@ -160,24 +160,25 @@ describe('DeclickSection', () => {
     expect(screen.getByTestId('declick-audition-failed')).toBeInTheDocument()
   })
 
-  // The RX-style counter: an event estimate in the user's language, shown once the
-  // selection has rested (useSettled's 400 ms — hence the findBy timeout).
+  // The RX-style counter lives in the header pill and nowhere else — repeating it as
+  // a paragraph the moment the section opened was the same fact twice.
   it('shows the estimated audible clicks once the selection settles', async () => {
     render(section())
-    const estimate = await screen.findByTestId('declick-estimate', {}, { timeout: 1500 })
+    const estimate = await screen.findByTestId('declick-estimate-pill', {}, { timeout: 1500 })
     expect(estimate).toHaveTextContent('~23')
     expect(window.api.clicks).toHaveBeenCalledWith('/in/track.wav')
   })
 
+  // A clean track must SAY so: silence at zero would read the same as never measured.
   it('states a clean track outright instead of showing a bare zero', async () => {
     ;(window.api.clicks as ReturnType<typeof vi.fn>).mockResolvedValue(0)
     render(section())
-    const estimate = await screen.findByTestId('declick-estimate', {}, { timeout: 1500 })
-    expect(estimate).toHaveTextContent(/No audible clicks/)
+    const estimate = await screen.findByTestId('declick-estimate-pill', {}, { timeout: 1500 })
+    expect(estimate).toHaveTextContent('No clicks')
   })
 
   it('never counts for a multi-selection — the anchor track would misrepresent it', () => {
     render(section({ isMulti: true }))
-    expect(screen.queryByTestId('declick-estimate')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-estimate-pill')).not.toBeInTheDocument()
   })
 })

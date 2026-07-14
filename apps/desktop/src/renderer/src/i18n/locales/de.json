@@ -484,6 +484,7 @@
     "auditionShare": "Die Reparatur würde {{percent}}% dieses Ausschnitts berühren. Bei einem sauberen Rip ist das deutlich unter 1% — wenn Musik zu hören ist, diesen Track in Ruhe lassen.",
     "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
     "estimatePill": "~{{count}} Klicks",
+    "estimateNonePill": "Keine Klicks",
     "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt."
   },
   "trim": {
@@ -566,7 +567,8 @@
     "peakDb": "Peak (dBFS)",
     "peakRemoveDc": "DC-Versatz entfernen (auf 0.0 zentrieren)",
     "peakPerChannel": "Stereokanäle unabhängig normalisieren",
-    "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3 und AIFF erhalten, gehen bei WAV und FLAC aber verloren."
+    "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3 und AIFF erhalten, gehen bei WAV und FLAC aber verloren.",
+    "cueWarningShort": "Kodiert das Audio neu · Cues bleiben bei MP3/AIFF"
   },
   "settings": {
     "tabs": {

@@ -484,6 +484,7 @@
     "auditionShare": "The repair would touch {{percent}}% of this excerpt. On a clean rip this is well under 1% — if you hear music in it, leave this track alone.",
     "estimate": "Estimated audible clicks in this track: ~{{count}}",
     "estimatePill": "~{{count}} clicks",
+    "estimateNonePill": "No clicks",
     "estimateNone": "No audible clicks detected in this track."
   },
   "trim": {
@@ -566,7 +567,8 @@
     "peakDb": "Peak (dBFS)",
     "peakRemoveDc": "Remove DC offset (center on 0.0)",
     "peakPerChannel": "Normalize stereo channels independently",
-    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC."
+    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC.",
+    "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF"
   },
   "settings": {
     "tabs": {

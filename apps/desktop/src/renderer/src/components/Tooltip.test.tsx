@@ -16,6 +16,18 @@ function renderTooltip() {
 }
 
 describe('Tooltip', () => {
+  // The listeners are the only thing that ever hid the tooltip, so a trigger that
+  // disappears while it is up (its section folds, the view switches) used to strand
+  // the portal on screen — a hint hanging over unrelated content, belonging to a
+  // button that no longer exists.
+  it('closes when its trigger unmounts while it is showing', () => {
+    const { unmount } = renderTooltip()
+    fireEvent.focusIn(screen.getByTestId('trigger'))
+    expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    unmount()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
   // A hint shown only on hover is invisible to keyboard users; focusing the control
   // must surface the same information (WCAG 1.4.13).
   it('appears when the trigger is focused', () => {

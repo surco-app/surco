@@ -484,6 +484,7 @@
     "auditionShare": "La reparación tocaría el {{percent}}% de este extracto. En un rip limpio suele ser bastante menos del 1% — si oyes música en la escucha, deja esta pista en paz.",
     "estimate": "Clicks audibles estimados en esta pista: ~{{count}}",
     "estimatePill": "~{{count}} clicks",
+    "estimateNonePill": "Sin clicks",
     "estimateNone": "Sin clicks audibles detectados en esta pista."
   },
   "trim": {
@@ -566,7 +567,8 @@
     "peakDb": "Pico (dBFS)",
     "peakRemoveDc": "Eliminar desplazamiento DC (centrar en 0.0)",
     "peakPerChannel": "Normalizar canales estéreo independientemente",
-    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3 y AIFF, pero se pierden en WAV y FLAC."
+    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3 y AIFF, pero se pierden en WAV y FLAC.",
+    "cueWarningShort": "Reencoda el audio · cues se mantienen en MP3/AIFF"
   },
   "settings": {
     "tabs": {
