@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { revokeCoverUrl, revokeCoverUrlIfUnused } from './coverUrl'
+import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './coverUrl'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -47,5 +47,46 @@ describe('revokeCoverUrlIfUnused', () => {
     revokeCoverUrlIfUnused('https://img/x.jpg', [])
     revokeCoverUrlIfUnused(undefined, [])
     expect(revoke).not.toHaveBeenCalled()
+  })
+})
+
+describe('revokeDisplacedCovers', () => {
+  // The whole batch is weighed against the whole batch. Removing rows one at a time and
+  // asking "does anyone else still hold this blob?" answers YES for every member of a
+  // shared-cover batch — each one sees its not-yet-removed siblings — so a cover applied
+  // across a selection survived the selection's own removal and leaked for the session.
+  // Deciding once, per batch, is what makes the answer right.
+  it('frees a cover shared by the batch when the whole batch goes', () => {
+    const revoke = vi.fn()
+    vi.stubGlobal('URL', { revokeObjectURL: revoke })
+
+    revokeDisplacedCovers(['blob:shared', 'blob:shared', 'blob:shared'], [])
+
+    expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:shared')
+  })
+
+  // The other half of the same rule: a survivor outside the batch still showing that blob
+  // keeps it alive, or its thumbnail would blank.
+  it('keeps a cover a surviving track still shows', () => {
+    const revoke = vi.fn()
+    vi.stubGlobal('URL', { revokeObjectURL: revoke })
+
+    revokeDisplacedCovers(['blob:shared', 'blob:shared'], ['blob:shared'])
+
+    expect(revoke).not.toHaveBeenCalled()
+  })
+
+  // Mixed batch: each distinct blob is judged on its own, and a blob is freed once, not
+  // once per row that carried it.
+  it('frees each orphaned blob exactly once and leaves the kept ones', () => {
+    const revoke = vi.fn()
+    vi.stubGlobal('URL', { revokeObjectURL: revoke })
+
+    revokeDisplacedCovers(
+      ['blob:a', 'blob:a', 'blob:b', 'https://img/x.jpg', undefined],
+      ['blob:b'],
+    )
+
+    expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:a')
   })
 })

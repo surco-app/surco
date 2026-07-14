@@ -59,7 +59,10 @@ interface Params {
   // when a row is rebuilt in place (start over), remove when a row leaves the list,
   // clear when the whole list does.
   onForget: (id: string) => void
-  onRemove: (track: TrackItem) => void
+  // The whole departing batch at once, not one call per row: freeing a shared cover blob
+  // is a decision about the batch as a whole (see revokeDisplacedCovers). A lone removal
+  // is simply a batch of one.
+  onRemove: (tracks: TrackItem[]) => void
   onClear: (tracks: TrackItem[]) => void
   // Fired once a fresh import's metadata read lands, with the read-merged track —
   // App gates the auto-match opt-in on it.
@@ -432,7 +435,7 @@ export function useTrackLibrary({
       setSelection((s) => deselect(s, id))
       if (removed) {
         ignoredPaths.current.add(removed.inputPath)
-        onRemoveRef.current(removed)
+        onRemoveRef.current([removed])
       }
     },
     [setSelection],
@@ -451,10 +454,8 @@ export function useTrackLibrary({
         ids: s.ids.filter((id) => !drop.has(id)),
         anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
       }))
-      for (const track of removed) {
-        ignoredPaths.current.add(track.inputPath)
-        onRemoveRef.current(track)
-      }
+      for (const track of removed) ignoredPaths.current.add(track.inputPath)
+      onRemoveRef.current(removed)
     },
     [setSelection],
   )

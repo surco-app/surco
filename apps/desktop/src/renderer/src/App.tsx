@@ -85,7 +85,7 @@ import { matchStatKey } from './lib/stats'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { changelogReleases } from './lib/changelog'
 import { buildCommands, type Command, runCommand } from './lib/commands'
-import { revokeCoverUrl, revokeCoverUrlIfUnused } from './lib/coverUrl'
+import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { shouldShowDonateNudge } from './lib/donateNudge'
@@ -478,16 +478,22 @@ export default function App(): React.JSX.Element {
     },
     // A row leaving the list also evicts its probe results from the session-long
     // query cache, where the spectrogram image would otherwise be retained until quit.
-    onRemove: (track) => {
-      discogsPrefetched.current.delete(track.id)
-      viewCache.current.delete(track.id)
-      forgetAutoMatch(track.id)
-      removeAnalysisQueries(queryClient, track.inputPath)
+    onRemove: (removed) => {
+      const gone = new Set(removed.map((t) => t.id))
+      for (const track of removed) {
+        discogsPrefetched.current.delete(track.id)
+        viewCache.current.delete(track.id)
+        forgetAutoMatch(track.id)
+        removeAnalysisQueries(queryClient, track.inputPath)
+      }
       // A picked cover's blob URL would otherwise pin the image file until quit — but a
       // cover applied across a selection is shared, so keep it while another row uses it.
-      revokeCoverUrlIfUnused(
-        track.coverUrl,
-        tracksRef.current.filter((t) => t.id !== track.id).map((t) => t.coverUrl),
+      // Weighed against the survivors of the whole batch: judging each row against a list
+      // that still holds its doomed siblings would keep a selection-wide cover alive after
+      // the entire selection is gone.
+      revokeDisplacedCovers(
+        removed.map((t) => t.coverUrl),
+        tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
       )
     },
     onClear: (cleared) => {
@@ -1189,12 +1195,14 @@ export default function App(): React.JSX.Element {
   })
   const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
     const ids = new Set(selectedIds)
-    const displaced = tracksRef.current.filter((t) => ids.has(t.id)).map((t) => t.coverUrl)
+    const displaced: (string | undefined)[] = []
+    const kept: (string | undefined)[] = []
+    // One pass: the selected rows give up their covers, the rest keep theirs.
+    for (const t of tracksRef.current) (ids.has(t.id) ? displaced : kept).push(t.coverUrl)
     patchTracks(selectedIds, { coverUrl, coverPath })
     // The selected tracks just took the new cover; free each old blob only if no
     // unselected track still shows it (a prior apply-to-all can share one blob).
-    const kept = tracksRef.current.filter((t) => !ids.has(t.id)).map((t) => t.coverUrl)
-    for (const old of new Set(displaced)) revokeCoverUrlIfUnused(old, kept)
+    revokeDisplacedCovers(displaced, kept)
   })
   // Stable like the other editor props: saveSettings is recreated per render,
   // and an unstable identity here would re-render the memoized Editor per keystroke.
