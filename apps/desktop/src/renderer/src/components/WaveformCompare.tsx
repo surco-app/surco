@@ -406,7 +406,9 @@ export function Strip({
         if (scrollerRef) scrollerRef.current = el
       }}
       data-testid="waveform-scroller"
-      className={`overflow-y-hidden rounded-lg ${zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}
+      className={`scrollbar-none overflow-y-hidden rounded-lg ${
+        zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'
+      }`}
     >
       <div
         data-testid="waveform-strip"

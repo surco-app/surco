@@ -352,6 +352,18 @@ textarea {
   background-clip: padding-box;
 }
 
+/* A pane that scrolls but shows no bar. For the waveform strips: the overview lane
+   underneath already IS the scrollbar — it shows where you are and takes you
+   elsewhere — so a real one is the same control twice. Worse, it only appeared past
+   ×1 zoom, so its 9 px shoved the whole section down the moment you zoomed. Dragging
+   the wave, the wheel and the overview all still scroll; only the bar is gone. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
