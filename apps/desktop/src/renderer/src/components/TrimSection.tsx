@@ -10,6 +10,7 @@ import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { drawWaveform } from '../lib/waveform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { SectionHeader } from './SectionHeader'
+import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { ZoomStepper } from './ZoomStepper'
 import { WaveformSkeleton } from './WaveformSkeleton'
@@ -747,20 +748,14 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         right={
           value ? (
             !open ? (
-              <span
-                data-testid="trim-active-badge"
-                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-              >
+              <SectionPill tone="accent" testid="trim-active-badge">
                 {`−${cutSeconds((value.startSec ?? 0) + (value.endSec !== undefined && durationSec > 0 ? durationSec - value.endSec : 0))}`}
-              </span>
+              </SectionPill>
             ) : undefined
           ) : detected ? (
-            <span
-              data-testid="trim-detected-pill"
-              className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium text-fg-muted"
-            >
+            <SectionPill tone="neutral" testid="trim-detected-pill">
               {detected}
-            </span>
+            </SectionPill>
           ) : undefined
         }
       />

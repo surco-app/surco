@@ -9,6 +9,7 @@ import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionHeader } from './SectionHeader'
+import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
@@ -99,12 +100,9 @@ export function NormalizeSection({
             {/* The mode badge only while folded: open, the segmented control right
                 below says the same thing. */}
             {value.mode !== 'none' && !open && (
-              <span
-                data-testid="normalize-active-badge"
-                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-              >
+              <SectionPill tone="accent" testid="normalize-active-badge">
                 {tr(`normalize.mode.${value.mode}`)}
-              </span>
+              </SectionPill>
             )}
           </span>
         }

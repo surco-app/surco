@@ -8,6 +8,7 @@ import { useClickCount } from '../hooks/useClickCount'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { DeclickControls } from './DeclickControls'
 import { SectionHeader } from './SectionHeader'
+import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 
 // The formats whose re-encode carries the Traktor cue/beatgrid frame over (see
@@ -121,12 +122,9 @@ export function DeclickSection({
             {/* The mode badge only while folded: open, the segmented control right
                 below says the same thing. */}
             {value !== 'off' && !open && (
-              <span
-                data-testid="declick-active-badge"
-                className="rounded-full bg-[var(--color-accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-accent)]"
-              >
+              <SectionPill tone="accent" testid="declick-active-badge">
                 {tr(`declick.mode.${value}`)}
-              </span>
+              </SectionPill>
             )}
           </span>
         }
