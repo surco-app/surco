@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.58",
+    "date": "July 14, 2026",
+    "title": "Hear what you keep, not what you lose",
+    "items": [
+      {
+        "text": "Vinyl click repair now shows you where the clicks are. Every click the detector finds is marked on the track's own waveform, so a dusty pressing reads at a glance instead of as a number.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "And it lets you hear the result, not the damage. The old audition played only the noise the repair removed — proof the filter fired, but useless for the question you actually have: does my record still sound right? Now Surco renders the repaired track and you switch between it and the original mid-playback, with no gap in the audio. That gap is the whole point: a repair that eats the attack of a snare is a subtle difference, and subtle differences only survive an instant switch.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Jump straight to any click. Clicks last milliseconds, so hunting for one by dragging is hopeless — press Next click to walk them one by one, click a mark to hear that exact one, or drag anywhere on the wave and press Space to play from there.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Surco runs on Linux. The app now ships as an AppImage, built and verified on every release alongside the macOS and Windows builds.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "The beatgrid handles tracks that change tempo. Press G to start a new segment wherever the tempo shifts, step between segments with the bracket keys, and see the seams marked on the overview. The grid audition now runs until you stop it with Space, instead of cutting out mid-judgement.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "A handful of things that were quietly wrong: nudging the grid past the start of the track kept walking it the way you pressed instead of snapping back; a lane pan whose pointer got away no longer sticks; and opening the mini-player no longer shoves the whole editor sideways as a scrollbar appears.",
+        "in": "0.58.0"
+      }
+    ]
+  },
+  {
     "version": "0.57",
     "date": "July 14, 2026",
     "title": "Nothing is lost in silence",

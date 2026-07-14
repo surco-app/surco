@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.58",
+    "date": "14 de julio de 2026",
+    "title": "Escucha lo que te queda, no lo que se va",
+    "items": [
+      {
+        "text": "La reparación de clics ahora te enseña dónde están. Cada clic que detecta queda marcado sobre la onda de la pista, así que un vinilo sucio se lee de un vistazo en lugar de como un número.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Y te deja escuchar el resultado, no el destrozo. La escucha anterior reproducía solo el ruido que la reparación quitaba: servía para comprobar que el filtro hacía algo, pero no respondía a la pregunta que de verdad te haces, que es si tu disco sigue sonando bien. Ahora Surco renderiza la pista reparada y puedes alternar entre ella y la original mientras suena, sin ningún corte en el audio. Ese corte es justo lo que había que evitar: si la reparación se come el ataque de una caja, la diferencia es sutil, y las diferencias sutiles solo se aprecian en un cambio instantáneo.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Salta directamente a cualquier clic. Un clic dura milisegundos, así que buscarlo arrastrando es imposible: pulsa Siguiente clic para recorrerlos uno a uno, pincha una marca para oír ese en concreto, o coloca el cursor en cualquier punto de la onda y pulsa Espacio para reproducir desde ahí.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Surco funciona en Linux. La app se distribuye ahora como AppImage, que se construye y se verifica en cada release junto a las versiones de macOS y Windows.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "El beatgrid ya soporta pistas que cambian de tempo. Pulsa G para empezar un segmento nuevo donde cambie el tempo, sáltate de segmento en segmento con los corchetes y verás las costuras marcadas en el overview. La escucha del grid dura ahora hasta que la paras con Espacio, en vez de cortarse a mitad de la valoración.",
+        "in": "0.58.0"
+      },
+      {
+        "text": "Unas cuantas cosas que fallaban en silencio: empujar el grid más allá del principio de la pista ahora sigue moviéndolo hacia donde pulsas en lugar de saltar atrás; un arrastre de carril que perdía el puntero ya no se queda pegado; y abrir el mini-player ya no desplaza todo el editor de golpe al aparecer la barra de scroll.",
+        "in": "0.58.0"
+      }
+    ]
+  },
+  {
     "version": "0.57",
     "date": "14 de julio de 2026",
     "title": "Nada se pierde en silencio",
