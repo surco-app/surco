@@ -66,8 +66,9 @@
           "Already in that format? Copied as-is, instantly",
           "Quality your way: MP3 bitrate, bit depth and sample rate — or keep the source's",
           "Match the volume to one loudness or peak",
+          "Trim the silence off the head and tail, with both cuts visible on the wave",
           "You pick where each one lands: a folder, next to the original, Apple Music or Engine DJ",
-          "Re-export without touching Traktor cue points"
+          "Re-export without touching Traktor cue points or beatgrid"
         ]
       },
       {
@@ -90,8 +91,9 @@
           "Draws the spectrum and catches fake-lossless MP3s",
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Waveform with zoom, real clipping in red and a preview of the normalized result",
-          "Repairs vinyl clicks: marks each one on the wave, then A/B the repaired track against the original without a gap in the audio",
-          "Beatgrid editor: fix the grid by ear, and carve segments for tracks that change tempo",
+          "Repairs vinyl clicks: marks each one on the wave, jumps you from one to the next, then A/B the repaired track against the original without a gap in the audio",
+          "Beatgrid editor: fix the grid by ear, tap the tempo, and carve segments for tracks that change tempo",
+          "The grid you settle on exports to rekordbox, Traktor, Serato and Engine DJ — segments and all",
           "Detects BPM and key from the audio itself",
           "Warns if a track is already in your Apple Music or Engine DJ — and filters your tracks to the ones you're missing"
         ]
@@ -258,7 +260,7 @@
     "or": "Or with Homebrew",
     "copy": "Copy",
     "copied": "Copied!",
-    "note": "macOS only"
+    "note": "Homebrew: macOS only. Windows and Linux, from the download button."
   },
   "faq": {
     "kicker": "FAQ",
@@ -278,7 +280,19 @@
       },
       {
         "q": "Does it keep cue points and beatgrids?",
-        "a": "Yes. Surco re-exports without touching your Traktor cue points or beatgrid."
+        "a": "When it re-exports without touching the audio, yes: your Traktor cue points and beatgrid pass through intact. Turn on silence trim, normalization or click repair and the audio is re-encoded: with trim, the cues are re-anchored to whatever you cut off, and on WAV and FLAC they're lost. On MP3 and AIFF they survive. Surco warns you right in the section before you convert."
+      },
+      {
+        "q": "Can I fix the beatgrid?",
+        "a": "Yes. The beatgrid editor lays the grid over the waveform so you can square it by ear: line the beats up against the fixed centre reference, tap the tempo out, halve or double the BPM and, if the track speeds up, start a fresh segment right where it changes. The grid you settle on reaches your decks: it's written as a Serato beatgrid inside the converted file, into your Engine DJ library, and into the rekordbox and Traktor exports — one tempo per segment, so tracks that shift tempo come out right too."
+      },
+      {
+        "q": "Can I trim the silence off my rips?",
+        "a": "Yes. Surco detects the silence at the head and the tail and shows you both cuts on the waveform, with zoom and millisecond nudges, so you can hear how it lands before applying anything. Trim one track or a whole selection at once. Note that trimming re-encodes the audio, so check the cue point answer above."
+      },
+      {
+        "q": "What about vinyl clicks and pops?",
+        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio — so you hear whether the repair took the clicks out, and whether it took some of the music with them. It ships off."
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
@@ -367,7 +381,8 @@
           "Press Space to preview the selected track in the floating player before converting. Drag the right edge to widen the list, or double-click it to fit the longest track name."
         ],
         "points": [
-          "Quick filters up top: Suspect, Good, Unanalyzed, Unconverted, Auto-matched — by source too —, Duplicates, and what's in (or missing from) your Apple Music or Engine DJ library.",
+          "Quick filters up top: Suspect, Good, Unanalyzed, Unconverted, Auto-matched — by source too —, Duplicates, Clipping, Silence to trim, Grid to review, and what's in (or missing from) your Apple Music or Engine DJ library.",
+          "A search box filters the list by text, and you can sort it by name, artist, duration or format.",
           "Click to select one track; ⌘ (or Ctrl) + click to add several, and Shift + click for a range.",
           "The ✦ icon marks tracks Surco filled in automatically from Discogs.",
           "The player draws the track's waveform so you can scrub straight to any part, and continuous playback chains the list on its own."
@@ -389,7 +404,9 @@
           "The cover shows its real pixel dimensions so you can judge sharpness.",
           "Copy and paste metadata —cover included— from one track to another via the context menu; ⌘Z undoes it whole.",
           "The { } menu on any text field inserts another field's value right at the cursor — no retyping what the track already knows.",
-          "Mystery track? A button searches Google with the file name already typed, and a command numbers the selection in list order (1, 2, 3…)."
+          "Mystery track? A button searches Google with the file name already typed, and a command numbers the selection in list order (1, 2, 3…).",
+          "The Properties section shows the file's spec sheet —codec, sample rate, bit depth, channels, bitrate, path and size— and tells you when the file doesn't match the quality you ask for in Settings, in case you want to reconvert it.",
+          "Editor sections fold and reorder to taste in Settings → Editor, and any of them expands to fill the window (Esc to come back)."
         ],
         "shot": "editor-en.png",
         "shotCaption": "A track's metadata editor."
@@ -407,10 +424,61 @@
           "Amber “suspect”: a sharp early cutoff — likely a re-encoded fake.",
           "The loudness section also draws the waveform: zoom into any part, see real clipping marked in red and preview how the track will look after normalizing — and, once converted, compare the before and after side by side or overlaid.",
           "Save a PNG report of the spectrum —verdict and cutoff line included— to share when someone asks about that track.",
+          "Turn on “Analyze quality on import” in Settings and every file you drop analyzes itself in the background, so the suspects flag themselves without you lifting a finger.",
           "You can turn off the spectrum or loudness in Settings → Editor if you don't use them."
         ],
         "shot": "calidad-en.png",
         "shotCaption": "A track's spectrum and level readout."
+      },
+      {
+        "id": "declick",
+        "title": "Take the vinyl clicks out",
+        "body": [
+          "A vinyl rip carries the needle's clicks and pops baked into the audio. The click repair section detects them and interpolates them away as it converts, at four strengths: off, soft, standard and strong. Soft is the lightest touch, for delicate material; strong catches long pops too, at the cost of softening the odd transient.",
+          "Surco marks every click it finds on the waveform, so a dirty record reads at a glance instead of as a number. A click lasts milliseconds and you'll never find it by dragging: hit “Next click” to walk them one by one, click a mark to hear that one, or drop the cursor anywhere and press Space to play from there.",
+          "The part that matters is “Hear the result”: Surco renders the whole repaired track and lets you flip between it and the original while it plays, with no gap in the audio. That instant switch is exactly what's needed — if the repair has eaten the attack of a snare, the difference is subtle, and subtle differences only show up when you switch in the moment."
+        ],
+        "points": [
+          "Ships off: you decide whether a track needs it.",
+          "Every detected click is marked on the wave, and you can jump between them.",
+          "The A/B compares the repaired track against the original with no gap, so you hear whether the repair took some music with it.",
+          "It repairs the audio on conversion, so it re-encodes: check the cue point note before applying it to a WAV or FLAC that carries cues."
+        ],
+        "shot": "",
+        "shotCaption": "Clicks marked on the wave, with the A/B audition."
+      },
+      {
+        "id": "recorte",
+        "title": "Trim the silence",
+        "body": [
+          "Rips tend to open with the needle dropping and close on a few seconds of empty groove. The trim section detects the silence at the head and the tail and shows you both cuts on the waveform, one per lane: the start and the end.",
+          "Each cut moves with handles and with millisecond nudges, and each lane has its own zoom and its own audition, so you hear exactly how the track comes in and goes out before you apply anything. Not convinced? Reset it. And if several tracks need it, you can trim the whole selection at once from the command palette."
+        ],
+        "points": [
+          "Two lanes: one for the head cut and one for the tail, each with its own zoom and audition.",
+          "Millisecond precision, by handle or by nudge.",
+          "The list's “Silence to trim” filter gathers the tracks that need it.",
+          "Trimming re-encodes the audio and re-anchors Traktor's cues to the cut; on WAV and FLAC they're lost. Surco warns you in the section."
+        ],
+        "shot": "",
+        "shotCaption": "The head and tail trim lanes over the waveform."
+      },
+      {
+        "id": "beatgrid",
+        "title": "Square the beatgrid",
+        "body": [
+          "Surco detects the tempo, but a vinyl rip rarely lands dead on: the beatgrid section lays the grid over the waveform so you can square it by ear. Drag the wave to travel the track and line the beats up against the red reference in the centre, rekordbox style. If the detected tempo came out half or double, there's a button for each; if you'd rather give it yourself, tap the tempo out.",
+          "When a track speeds up —a played drummer, a live take, an edit— no single BPM holds. Press G at the point where it changes and Surco opens a fresh segment there without touching the previous one; the brackets walk you from one seam to the next, and the overview up top marks them all. Hit “Hear the grid” and a click plays over the beats until you stop it with Space, which is the only honest way to know it's square."
+        ],
+        "points": [
+          "Fixed reference in the centre: you move the track, not the line.",
+          "Half and double BPM, tap tempo, downbeat-here, and undo/redo on every adjustment.",
+          "G opens a new segment where the tempo changes; [ and ] jump between the seams.",
+          "The grid you settle on is written as a Serato beatgrid inside the converted file, into your Engine DJ library, and into the rekordbox and Traktor exports — one tempo node per segment.",
+          "The list's “Grid to review” filter gathers the tracks whose detection can't be trusted."
+        ],
+        "shot": "",
+        "shotCaption": "The grid over the wave, with the centre reference and the segments."
       },
       {
         "id": "discogs",
@@ -434,7 +502,7 @@
         "id": "automatch",
         "title": "Auto-match: tagging without lifting a finger",
         "body": [
-          "With your Discogs token and “Auto-match on import” enabled in Settings, every file you drop searches itself on Discogs in the background. Surco scores each candidate against the file’s title, duration, track number and artist, and only if a match is confident does it apply the metadata for you — artist, album, year, genre, label and cover, exactly as if you had picked it by hand.",
+          "With “Auto-match on import” enabled in Settings, every file you drop searches itself in the background across the sources you have on: Discogs first, Bandcamp as the fallback. Surco scores each candidate against the file’s title, duration, track number and artist, and only if a match is confident does it apply the metadata for you — artist, album, year, genre, label and cover, exactly as if you had picked it by hand.",
           "If no candidate clears that bar, nothing is touched: the track is left for you, and opening its Discogs search shows the best one flagged “Suggested”, one click from confirmed. With the toggle off (the default) the same holds: Surco suggests, but never updates on its own."
         ],
         "points": [
@@ -487,8 +555,8 @@
         ],
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
-          "Re-exporting to the same format keeps Traktor cue points and beatgrid.",
-          "Normalization is off by default; it re-encodes the audio, so it's optional.",
+          "Re-exporting to the same format, without touching the audio, keeps Traktor cue points and beatgrid.",
+          "Normalization, trim and click repair re-encode the audio: on MP3 and AIFF the cues survive, on WAV and FLAC they're lost. They ship off and Surco warns you before you convert.",
           "After converting, send the originals to the trash in a single action."
         ],
         "shot": "convertir-en.png",
@@ -519,7 +587,7 @@
         ],
         "points": [
           "To Apple Music or Engine DJ in one click, during conversion.",
-          "Export rekordbox (.xml) and Traktor (.nml) collections.",
+          "Export rekordbox (.xml) and Traktor (.nml) collections, with the beatgrid you squared baked in.",
           "Surco warns you if a track is already in your Apple Music library.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it.",
           "If Apple Music already held an old copy of that song, Surco spots it when adding the new one and offers to remove it."
@@ -536,7 +604,10 @@
         ],
         "points": [
           "⌘K opens the command palette; ? shows every shortcut.",
-          "Space plays or pauses; the arrows move the selection.",
+          "Space plays or pauses; the arrows move the selection, and ← → seek five seconds inside the track.",
+          "⌘1, ⌘2 and ⌘3 jump between the list, the search results and the editor without touching the mouse.",
+          "⌘F finds and replaces across every track, with regex if you need it, and tells you how many it will touch before it does.",
+          "The beatgrid section has its own family of keys —audition, centre, open a segment, jump a seam— and they remap too.",
           "Every shortcut is reassignable in Settings."
         ],
         "shot": "atajos-en.png",
@@ -554,7 +625,9 @@
           "Define recurring genres and groupings so they show up as suggestions.",
           "Choose which fields to show and which to require, and reorder them to taste or hit “Auto-organize” to sort them into sections in one click.",
           "The Stats tab tallies your lifetime numbers —tracks loaded, converted, analyzed…— and generates an image ready to share.",
-          "In Artwork, smaller covers can be upscaled to your minimum size, and a macOS option makes the Finder show the artwork of converted FLAC files.",
+          "In Artwork, smaller covers can be upscaled to your minimum size or cropped square, and a macOS option makes the Finder show the artwork of converted FLAC files.",
+          "In Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
+          "Analysis is cached so it never runs twice; you can empty that cache, and open the error log, from Settings.",
           "Point the settings folder at iCloud Drive or Dropbox to share your preferences across Macs; the Discogs token never leaves your machine."
         ],
         "shot": "ajustes-en.png",

@@ -66,8 +66,9 @@
           "¿Ya en ese formato? Lo copia tal cual al instante",
           "Calidad a tu gusto: bitrate del MP3, bits y frecuencia — o los del original",
           "Iguala el volumen a un loudness o pico común",
+          "Recorta el silencio del principio y del final, con el corte a la vista sobre la onda",
           "Tú eliges dónde cae cada una: una carpeta, junto al original, Apple Music o Engine DJ",
-          "Reexporta sin tocar cue points ni beatgrid de Traktor"
+          "Reexporta sin tocar los cue points ni el beatgrid de Traktor"
         ]
       },
       {
@@ -90,8 +91,9 @@
           "Dibuja el espectro y caza MP3 falsos antes de cabina",
           "Lectura por colores: LUFS, pico, dinámica y ruido",
           "Forma de onda con zoom, clipping real en rojo y vista previa del resultado normalizado",
-          "Repara los clics del vinilo: marca cada uno sobre la onda y compara la pista reparada con la original sin cortar el audio",
-          "Editor de beatgrid: corrige la rejilla de oído y crea segmentos para pistas que cambian de tempo",
+          "Repara los clics del vinilo: marca cada uno sobre la onda, salta de uno a otro y compara la pista reparada con la original sin cortar el audio",
+          "Editor de beatgrid: corrige la rejilla de oído, marca el tempo a golpes y crea segmentos para las pistas que cambian de tempo",
+          "La rejilla que dejes ajustada se exporta a rekordbox, Traktor, Serato y Engine DJ — segmentos incluidos",
           "Detecta BPM y tonalidad del propio audio",
           "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
         ]
@@ -258,7 +260,7 @@
     "or": "O con Homebrew",
     "copy": "Copiar",
     "copied": "¡Copiado!",
-    "note": "Solo macOS"
+    "note": "Homebrew: solo macOS. Windows y Linux, desde el botón de descarga."
   },
   "faq": {
     "kicker": "Preguntas",
@@ -278,7 +280,19 @@
       },
       {
         "q": "¿Conserva los cue points y el beatgrid?",
-        "a": "Sí. Surco reexporta sin tocar los cue points ni el beatgrid de Traktor."
+        "a": "Al reexportar sin tocar el audio, sí: los cue points y el beatgrid de Traktor pasan intactos. Si activas el recorte de silencio, la normalización o la reparación de clics, el audio se recodifica: con el recorte los cues se recolocan según lo que hayas cortado, y en WAV y FLAC se pierden. En MP3 y AIFF se conservan. Surco te lo avisa en la propia sección antes de que conviertas."
+      },
+      {
+        "q": "¿Puedo ajustar el beatgrid?",
+        "a": "Sí. El editor de beatgrid superpone la rejilla sobre la onda para que la cuadres de oído: alinea los beats con la referencia central, marca el tempo a golpes, dobla o divide el BPM y, si la pista acelera, empieza un segmento nuevo justo donde cambia. La rejilla que dejes ajustada llega a tus platos: se escribe como beatgrid de Serato dentro del archivo convertido, en tu biblioteca de Engine DJ, y en los exports de rekordbox y Traktor — con un tempo por segmento, así que las pistas que cambian de ritmo también salen bien."
+      },
+      {
+        "q": "¿Puedo recortar el silencio de mis rips?",
+        "a": "Sí. Surco detecta el silencio de entrada y de salida y te enseña los dos cortes sobre la onda, con zoom y ajuste al milisegundo, para que escuches cómo queda antes de aplicarlo. Puedes recortar una pista o toda la selección de una vez. Ojo: recortar recodifica el audio, así que revisa la nota sobre los cue points."
+      },
+      {
+        "q": "¿Y los clics y pops del vinilo?",
+        "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics — y si se ha llevado también algo de la música. Viene desactivado."
       },
       {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
@@ -367,7 +381,8 @@
           "Pulsa Espacio para escuchar la pista seleccionada en el reproductor flotante antes de convertir. Arrastra el borde derecho para ensanchar la lista, o haz doble clic para ajustarla al nombre más largo."
         ],
         "points": [
-          "Filtros rápidos arriba: Sospechosas, Buenas, Sin analizar, Sin convertir, Auto-emparejadas — también por fuente —, Duplicadas, y lo que está (o falta) en tu biblioteca de Apple Music o Engine DJ.",
+          "Filtros rápidos arriba: Sospechosas, Buenas, Sin analizar, Sin convertir, Auto-emparejadas — también por fuente —, Duplicadas, Clipping, Silencio por recortar, Grid por revisar, y lo que está (o falta) en tu biblioteca de Apple Music o Engine DJ.",
+          "Un buscador filtra la lista por texto, y puedes ordenarla por nombre, artista, duración o formato.",
           "Haz clic para seleccionar una pista; ⌘ (o Ctrl) + clic para sumar varias y Mayús + clic para un rango.",
           "El icono ✦ marca las pistas que Surco rellenó solo desde Discogs.",
           "El reproductor dibuja la forma de onda de la pista para saltar directo a cualquier parte, y la reproducción continua encadena la lista sola."
@@ -389,7 +404,9 @@
           "La carátula muestra sus dimensiones reales para que valores si es lo bastante nítida.",
           "Copia y pega los metadatos —carátula incluida— de una pista a otra desde el menú contextual; ⌘Z lo deshace entero.",
           "El menú { } de cualquier campo de texto inserta el valor de otro campo justo donde tengas el cursor — sin reescribir lo que la pista ya sabe.",
-          "¿Pista misteriosa? Un botón la busca en Google con el nombre del archivo ya escrito, y un comando numera la selección en orden de lista (1, 2, 3…)."
+          "¿Pista misteriosa? Un botón la busca en Google con el nombre del archivo ya escrito, y un comando numera la selección en orden de lista (1, 2, 3…).",
+          "La sección Propiedades te enseña la ficha técnica del archivo —códec, frecuencia, bits, canales, bitrate, ruta y tamaño— y te avisa si el archivo no coincide con la calidad que pides en Ajustes, por si quieres reconvertirlo.",
+          "Las secciones del editor se pliegan y se reordenan a tu gusto en Ajustes → Editor, y cualquiera se agranda a pantalla completa (Esc para volver)."
         ],
         "shot": "editor-es.png",
         "shotCaption": "El editor de metadatos de una pista."
@@ -407,10 +424,61 @@
           "Ámbar «sospechoso»: corte brusco antes de tiempo — probablemente un fake recomprimido.",
           "La sección de loudness también dibuja la forma de onda: haz zoom a cualquier parte, ve el clipping real marcado en rojo y previsualiza cómo quedará la pista al normalizar — y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
           "Guarda un informe del espectro en PNG —con su veredicto y su línea de corte— para compartirlo cuando alguien te pregunte por esa pista.",
+          "Si activas «Analizar la calidad al importar» en Ajustes, cada archivo que sueltes se analiza solo en segundo plano y las sospechosas se delatan sin que hagas nada.",
           "Puedes desactivar el espectro o el loudness en Ajustes → Editor si no los usas."
         ],
         "shot": "calidad-es.png",
         "shotCaption": "El espectro y la lectura de niveles de una pista."
+      },
+      {
+        "id": "declick",
+        "title": "Quita los clics del vinilo",
+        "body": [
+          "Un rip de vinilo trae los clics y los pops de la aguja pegados al audio. La sección de reparación de clics los detecta y los interpola al convertir, con cuatro niveles: desactivado, suave, estándar y fuerte. Suave es el toque mínimo, para material delicado; fuerte atrapa también los pops largos, a costa de suavizar algún transitorio.",
+          "Surco marca sobre la onda cada clic que encuentra, así que un disco sucio se lee de un vistazo en vez de como un número. Un clic dura milisegundos y buscarlo arrastrando es imposible: pulsa «Siguiente clic» para recorrerlos uno a uno, pincha una marca para oír ese en concreto, o coloca el cursor donde quieras y dale a Espacio para reproducir desde ahí.",
+          "Lo importante es «Escuchar el resultado»: Surco renderiza la pista entera ya reparada y te deja alternar entre ella y la original mientras suena, sin ningún corte en el audio. Ese cambio instantáneo es justo lo que hace falta — si la reparación se ha comido el ataque de una caja, la diferencia es sutil, y las diferencias sutiles solo se aprecian cambiando en caliente."
+        ],
+        "points": [
+          "Viene desactivado: tú decides si la pista lo necesita.",
+          "Cada clic detectado queda marcado en la onda, y puedes saltar de uno a otro.",
+          "El A/B compara la pista reparada con la original sin cortes, para oír si la reparación se ha llevado también algo de música.",
+          "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un WAV o un FLAC con cues."
+        ],
+        "shot": "",
+        "shotCaption": "Los clics marcados sobre la onda y la escucha A/B."
+      },
+      {
+        "id": "recorte",
+        "title": "Recorta el silencio",
+        "body": [
+          "Los rips suelen empezar con la aguja bajando y acabar con unos segundos de surco vacío. La sección de recorte detecta el silencio de entrada y de salida y te enseña los dos cortes sobre la onda, uno en cada carril: el inicio y el final.",
+          "Cada corte se ajusta con asas y con pasos al milisegundo, y cada carril tiene su zoom y su escucha, para que oigas exactamente cómo entra y cómo sale la pista antes de aplicar nada. Si no te convence, lo restableces; si detecta silencio en varias pistas, puedes recortar toda la selección de una vez desde la paleta de comandos."
+        ],
+        "points": [
+          "Dos carriles: uno para el corte de entrada y otro para el de salida, cada uno con su zoom y su escucha.",
+          "Ajuste al milisegundo con las asas o con los pasos.",
+          "El filtro «Silencio por recortar» de la lista te reúne las pistas que lo necesitan.",
+          "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado; en WAV y FLAC se pierden. Surco te lo avisa en la sección."
+        ],
+        "shot": "",
+        "shotCaption": "Los carriles de recorte de entrada y salida sobre la onda."
+      },
+      {
+        "id": "beatgrid",
+        "title": "Cuadra el beatgrid",
+        "body": [
+          "Surco detecta el tempo, pero un vinilo rara vez cae clavado: la sección de beatgrid superpone la rejilla sobre la onda para que la cuadres de oído. Arrastra la onda para recorrer la pista y alinea los beats con la referencia roja del centro, al estilo de rekordbox. Si el tempo detectado va a mitad o al doble, hay un botón para cada cosa; si prefieres darlo tú, marca el tempo a golpes con el tap.",
+          "Cuando la pista acelera —una batería tocada, un directo, un edit— no hay un solo BPM que valga. Pulsa G en el punto donde cambia y Surco empieza ahí un segmento nuevo sin tocar el anterior; los corchetes te llevan de una costura a la siguiente, y la vista general de arriba te las marca todas. Pulsa Escuchar la rejilla y suena un clic sobre los beats hasta que la pares con Espacio, que es la única forma honesta de saber si está cuadrada."
+        ],
+        "points": [
+          "Referencia fija en el centro: mueves la pista, no la línea.",
+          "Mitad y doble de BPM, tap tempo, downbeat aquí, y deshacer y rehacer sobre cada ajuste.",
+          "G abre un segmento nuevo donde cambia el tempo; [ y ] saltan entre las costuras.",
+          "La rejilla que dejes ajustada se escribe como beatgrid de Serato dentro del archivo convertido, en tu biblioteca de Engine DJ, y en los exports de rekordbox y Traktor — con un tempo por cada segmento.",
+          "El filtro «Grid por revisar» te reúne las pistas cuya detección no es de fiar."
+        ],
+        "shot": "",
+        "shotCaption": "La rejilla sobre la onda, con la referencia central y los segmentos."
       },
       {
         "id": "discogs",
@@ -434,7 +502,7 @@
         "id": "automatch",
         "title": "Auto-match: etiquetado sin tocar nada",
         "body": [
-          "Con tu token de Discogs y «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en Discogs en segundo plano. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti — artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano.",
+          "Con «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en segundo plano en las fuentes que tengas encendidas: Discogs primero y Bandcamp de respaldo. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti — artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano.",
           "Si ningún candidato llega a ese listón, no toca nada: la pista queda para ti, y al abrir su búsqueda de Discogs el mejor aparece marcado como «Sugerida», a un clic de confirmarse. Con el interruptor apagado (así viene de serie) pasa lo mismo: Surco sugiere, pero nunca actualiza por su cuenta."
         ],
         "points": [
@@ -487,8 +555,8 @@
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3 — de 320 a 128 kbps, o VBR V0/V2.",
-          "Reexportar al mismo formato conserva los cue points y el beatgrid de Traktor.",
-          "La normalización está desactivada por defecto; recodifica el audio, así que es opcional.",
+          "Reexportar al mismo formato, sin tocar el audio, conserva los cue points y el beatgrid de Traktor.",
+          "La normalización, el recorte y la reparación de clics recodifican el audio: en MP3 y AIFF los cues se conservan, en WAV y FLAC se pierden. Vienen desactivados y Surco te lo avisa antes de convertir.",
           "Tras convertir, puedes mandar los originales a la papelera con una sola acción."
         ],
         "shot": "convertir-es.png",
@@ -519,7 +587,7 @@
         ],
         "points": [
           "A Apple Music o Engine DJ con un clic, durante la conversión.",
-          "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
+          "Exporta colecciones de rekordbox (.xml) y Traktor (.nml), con el beatgrid que hayas cuadrado dentro.",
           "Surco te avisa si una pista ya está en tu biblioteca de Apple Music.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla.",
           "Si Apple Music ya tenía una copia antigua de esa canción, Surco la detecta al añadir la nueva y te ofrece eliminarla."
@@ -536,7 +604,10 @@
         ],
         "points": [
           "⌘K abre la paleta de comandos; ? muestra todos los atajos.",
-          "Espacio reproduce o pausa; las flechas mueven la selección.",
+          "Espacio reproduce o pausa; las flechas mueven la selección y ← → saltan cinco segundos dentro de la pista.",
+          "⌘1, ⌘2 y ⌘3 saltan entre la lista, los resultados de búsqueda y el editor sin tocar el ratón.",
+          "⌘F busca y reemplaza en todas las pistas, con regex si lo necesitas, y te dice cuántas va a tocar antes de hacerlo.",
+          "La sección de beatgrid tiene su propia familia de teclas —escuchar, centrar, abrir segmento, saltar de costura— y también se reasignan.",
           "Todos los atajos son reasignables en Ajustes."
         ],
         "shot": "atajos-es.png",
@@ -554,7 +625,9 @@
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
           "Elige qué campos ver y cuáles obligar, y reordénalos a tu gusto o pulsa «Auto-organizar» para ordenarlos por secciones de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida —pistas cargadas, convertidas, analizadas…— y genera una imagen lista para compartir.",
-          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, y una opción de macOS hace que el Finder muestre la carátula de los FLAC convertidos.",
+          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC convertidos.",
+          "En Búsqueda puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
+          "El análisis se guarda en caché para no repetirlo; puedes vaciarla, y abrir el registro de errores, desde Ajustes.",
           "Apunta la carpeta de configuración a iCloud Drive o Dropbox y comparte tus preferencias entre Macs; el token de Discogs nunca sale de tu máquina."
         ],
         "shot": "ajustes-es.png",
