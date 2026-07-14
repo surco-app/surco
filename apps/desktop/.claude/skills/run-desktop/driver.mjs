@@ -126,6 +126,7 @@ async function repl() {
       else if (cmd === 'play') { await openPlayer(page); console.log('player open') }
       else if (cmd === 'ss') { console.log(await shot(page, arg || 'shot')) }
       else if (cmd === 'click') { await page.locator(arg).first().click(); console.log('clicked ' + arg) }
+      else if (cmd === 'key') { await page.keyboard.press(arg); console.log('pressed ' + arg) }
       else if (cmd === 'eval') { console.log(JSON.stringify(await page.evaluate(arg))) }
       else if (cmd === 'quit') { if (app) await app.close(); console.log('bye'); break }
       else console.log('?' + cmd)
