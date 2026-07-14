@@ -53,6 +53,7 @@ export function Tooltip({
     // point for the timer to read, so the tooltip opens where the cursor actually is.
     let shown = false
     let timer: ReturnType<typeof setTimeout> | null = null
+    let tracking = false
     const last = { x: 0, y: 0 }
     const clearTimer = (): void => {
       if (timer !== null) {
@@ -75,9 +76,33 @@ export function Tooltip({
         }, HOVER_DELAY)
       }
     }
+    // The cursor-tracking listeners cost what they cost times every tooltip on screen, and
+    // the track list carries seven per row. Bound up front they were ~42 idle listeners a
+    // row — ~21,000 across a 500-track crate — to serve a pointer that is only ever over one
+    // row at a time. So the resting cost is this single pointerenter, and the tracking is
+    // bound on the row the cursor actually reaches, then unbound when it leaves.
+    const stopTracking = (): void => {
+      if (!tracking) return
+      tracking = false
+      trigger.removeEventListener('pointermove', onMove)
+      trigger.removeEventListener('pointerleave', onLeave)
+      trigger.removeEventListener('pointerdown', onLeave)
+    }
+    const onEnter = (e: PointerEvent): void => {
+      if (!tracking) {
+        tracking = true
+        trigger.addEventListener('pointermove', onMove)
+        trigger.addEventListener('pointerleave', onLeave)
+        trigger.addEventListener('pointerdown', onLeave)
+      }
+      // Arm the delay from the entry point: a pointer that enters and holds perfectly still
+      // fires no pointermove, and would otherwise never raise the tooltip at all.
+      onMove(e)
+    }
     const onLeave = (): void => {
       clearTimer()
       shown = false
+      stopTracking()
       setPos(null)
     }
     // Keyboard users get the same hint: with no cursor to follow, anchor it to the
@@ -92,9 +117,7 @@ export function Tooltip({
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onLeave()
     }
-    trigger.addEventListener('pointermove', onMove)
-    trigger.addEventListener('pointerleave', onLeave)
-    trigger.addEventListener('pointerdown', onLeave)
+    trigger.addEventListener('pointerenter', onEnter)
     trigger.addEventListener('keydown', onKeyDown)
     // An editable trigger opts out of the focus reveal (it would cover the text being
     // typed); the pointer listeners above still give it a normal hover hint.
@@ -103,12 +126,11 @@ export function Tooltip({
       trigger.addEventListener('focusout', onLeave)
     }
     return () => {
-      trigger.removeEventListener('pointermove', onMove)
-      trigger.removeEventListener('pointerleave', onLeave)
-      trigger.removeEventListener('pointerdown', onLeave)
+      trigger.removeEventListener('pointerenter', onEnter)
       trigger.removeEventListener('keydown', onKeyDown)
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
+      stopTracking()
       clearTimer()
       // Close on the way out. The listeners are the only thing that ever HID the
       // tooltip, so a trigger that vanishes while it is up (its section folds, the

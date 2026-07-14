@@ -1623,9 +1623,9 @@ describe('Editor Discogs apply', () => {
     // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the Tooltip's
     // listener with a real MouseEvent dispatched as a pointermove, then wait out its
     // hover delay.
-    titleSpan.dispatchEvent(
-      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
-    )
+    for (const type of ['pointerenter', 'pointermove']) {
+      titleSpan.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Track One')
   })
 
@@ -1640,9 +1640,9 @@ describe('Editor Discogs apply', () => {
     const titleSpan = screen
       .getByTestId('discogs-result')
       .querySelector('[data-fit]') as HTMLElement
-    titleSpan.dispatchEvent(
-      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
-    )
+    for (const type of ['pointerenter', 'pointermove']) {
+      titleSpan.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
     const tip = await screen.findByRole('tooltip')
     expect(tip).toHaveTextContent('Some Album')
     expect(tip).not.toHaveTextContent('Click to see the tracks')
@@ -2553,7 +2553,9 @@ describe('Editor Discogs format filter hint', () => {
     const filter = screen.getByTestId('discogs-format-filter')
     expect(filter).toBeInTheDocument()
     // The formats live in the themed tooltip, surfaced on hover, not as always-on text.
-    filter.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }))
+    for (const type of ['pointerenter', 'pointermove']) {
+      filter.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
     const tip = await screen.findByRole('tooltip')
     expect(tip).toHaveTextContent('Vinyl')
     expect(tip).toHaveTextContent('CD')

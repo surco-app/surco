@@ -26,7 +26,11 @@ const baseProps = {
 // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the listener with a
 // real MouseEvent (which carries them) dispatched as a pointermove.
 const hover = (el: HTMLElement): void => {
-  el.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }))
+  // Enter then move, as a real pointer does: the Tooltip binds its cursor tracking lazily
+  // on pointerenter, so a bare pointermove now lands on nothing.
+  for (const type of ['pointerenter', 'pointermove']) {
+    el.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+  }
 }
 
 describe('ExportButton', () => {

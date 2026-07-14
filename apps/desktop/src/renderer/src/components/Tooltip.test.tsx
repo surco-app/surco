@@ -15,6 +15,43 @@ function renderTooltip() {
   )
 }
 
+describe('Tooltip pointer listeners', () => {
+  // A tooltip costs whatever it binds, times every row on screen. The track list carries
+  // seven of them per row, so binding the full cursor-tracking machinery up front cost ~42
+  // listeners a row — around 21,000 across a 500-track crate, every one of them idle,
+  // because a pointer is only ever over one row at a time. So the resting cost is a single
+  // pointerenter, and the tracking listeners are bound on the row the cursor actually
+  // reaches. Focus stays bound eagerly: a keyboard user never fires pointerenter, and the
+  // unmount-cleanup has to be able to close a tooltip the focus opened.
+  it('binds the cursor-tracking listeners only once the pointer arrives', () => {
+    // Spy on the prototype so the bindings made inside the mount effect are caught, then
+    // keep only the ones aimed at this trigger — jsdom binds plenty of its own elsewhere.
+    const add = vi.spyOn(HTMLElement.prototype, 'addEventListener')
+    render(
+      <button type="button" data-testid="trigger">
+        Go
+        <Tooltip label="Helpful hint" />
+      </button>,
+    )
+    const trigger = screen.getByTestId('trigger')
+    const boundOnTrigger = (): string[] =>
+      add.mock.calls
+        .filter((_, i) => add.mock.contexts[i] === trigger)
+        .map(([type]) => type as string)
+
+    // At rest: nothing follows the cursor, but focus already works — a keyboard user never
+    // fires pointerenter, and the tooltip has to surface for them too.
+    expect(boundOnTrigger()).not.toContain('pointermove')
+    expect(boundOnTrigger()).toContain('focusin')
+    expect(boundOnTrigger()).toContain('pointerenter')
+
+    fireEvent.pointerEnter(trigger)
+
+    expect(boundOnTrigger()).toContain('pointermove')
+    add.mockRestore()
+  })
+})
+
 describe('Tooltip', () => {
   // The listeners are the only thing that ever hid the tooltip, so a trigger that
   // disappears while it is up (its section folds, the view switches) used to strand
@@ -61,11 +98,15 @@ describe('Tooltip', () => {
   // A hover tooltip that pops up the instant the pointer crosses a control feels cheap
   // and clutters quick passes; like a native help tag it should wait out a short pause.
   // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the listener with a
-  // real MouseEvent (which carries them) dispatched as a pointermove.
+  // real MouseEvent (which carries them).
+  //
+  // Enter THEN move, in that order, because that is what a real pointer does — and the
+  // tooltip now leans on it: the cursor-tracking listeners are bound lazily on
+  // pointerenter, so that event is what arms everything the hover depends on.
   const hover = (trigger: HTMLElement): void => {
-    trigger.dispatchEvent(
-      new MouseEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
-    )
+    for (const type of ['pointerenter', 'pointermove']) {
+      trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
   }
 
   it('waits out a short hover before appearing', () => {
