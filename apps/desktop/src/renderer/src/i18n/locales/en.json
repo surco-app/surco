@@ -530,6 +530,8 @@
     "hint": "Lays a beat grid over the wave for the DJ exports. Line the beats up against the red reference — drag the wave to move along the track.",
     "summaryNone": "Off",
     "detected": "Detected {{bpm}} BPM",
+    "segments_one": "{{count}} segment",
+    "segments_other": "{{count}} segments",
     "review": "Check the grid by ear",
     "nothing": "No steady beat detected.",
     "bpmLabel": "BPM",

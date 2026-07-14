@@ -530,6 +530,8 @@
     "hint": "Pose une grille de beats sur l'onde pour les exports DJ. Alignez les beats sur le repère rouge — faites glisser l'onde pour parcourir le morceau.",
     "summaryNone": "Non",
     "detected": "{{bpm}} BPM détecté",
+    "segments_one": "{{count}} segment",
+    "segments_other": "{{count}} segments",
     "review": "Vérifiez la grille à l'oreille",
     "nothing": "Aucun beat stable détecté.",
     "bpmLabel": "BPM",

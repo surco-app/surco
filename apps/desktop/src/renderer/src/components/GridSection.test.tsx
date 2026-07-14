@@ -124,6 +124,29 @@ describe('GridSection header', () => {
     expect(screen.queryByTestId('grid-detected-pill')).not.toBeInTheDocument()
   })
 
+  // A grid that holds several tempos must say so in the folded header. Showing
+  // the base BPM alone is a lie of omission on the exact records this feature
+  // exists for: on a vinyl rip that drifts, the base tempo is the first
+  // stretch's, not the record's, and the user would fold the section believing
+  // one number describes the whole side.
+  it('declares how many segments a multi-tempo grid holds', () => {
+    render(
+      section({
+        value: { bpm: 128, anchorSec: 0.1, changes: [{ anchorSec: 90, bpm: 126.5 }] },
+        open: false,
+      }),
+    )
+    expect(screen.getByTestId('grid-active-badge')).toHaveTextContent('128.00 BPM · 2 segments')
+  })
+
+  // …and a constant-tempo grid says nothing extra: one tempo needs no segment
+  // count, and printing "1 segment" on every ordinary record is noise.
+  it('leaves a single-tempo grid unadorned', () => {
+    render(section({ value: { bpm: 127.5, anchorSec: 0.1 }, open: false }))
+    expect(screen.getByTestId('grid-active-badge')).toHaveTextContent('127.50 BPM')
+    expect(screen.getByTestId('grid-active-badge')).not.toHaveTextContent('segment')
+  })
+
   // A coin-flip detection (the "grid to review" fact) must be readable here in
   // context, not only in the list filter — warn tint instead of the quiet pill.
   it('wears the review pill when the detection was a coin flip', async () => {

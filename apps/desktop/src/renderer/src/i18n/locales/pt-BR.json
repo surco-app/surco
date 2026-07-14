@@ -530,6 +530,8 @@
     "hint": "Coloca uma grade de batidas sobre a onda para os exports de DJ. Alinhe as batidas pela referência vermelha — arraste a onda para percorrer a faixa.",
     "summaryNone": "Não",
     "detected": "Detectado {{bpm}} BPM",
+    "segments_one": "{{count}} segmento",
+    "segments_other": "{{count}} segmentos",
     "review": "Confira a grade de ouvido",
     "nothing": "Nenhum beat estável detectado.",
     "bpmLabel": "BPM",

@@ -187,6 +187,14 @@ export function GridSection({
   // Every edit commits straight through (buttons and keys only — no drag to
   // preview), so what's shown IS the staged grid, or the detection under it.
   const shown: Beatgrid | undefined = value ?? detected ?? undefined
+  // A multi-segment grid states several tempos, and the folded header shows only
+  // the base one — which on a vinyl rip that drifts is the tempo of the first
+  // stretch, not of the record. Saying how many stretches there are is what
+  // keeps the summary honest about what the grid actually holds.
+  const segmentSuffix = (grid: Beatgrid): string => {
+    const count = 1 + (grid.changes?.length ?? 0)
+    return count > 1 ? ` · ${tr('grid.segments', { count })}` : ''
+  }
   const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
   const lines = useMemo(
     () => (shown && durationSec > 0 ? gridLines(shown, durationSec, view) : []),
@@ -797,7 +805,7 @@ export function GridSection({
           value ? (
             !open ? (
               <SectionPill tone="accent" testid="grid-active-badge">
-                {`${value.bpm.toFixed(2)} BPM`}
+                {`${value.bpm.toFixed(2)} BPM${segmentSuffix(value)}`}
               </SectionPill>
             ) : undefined
           ) : detected ? (
@@ -809,7 +817,7 @@ export function GridSection({
             >
               {beatgridNeedsReview(detected)
                 ? tr('grid.review')
-                : tr('grid.detected', { bpm: detected.bpm.toFixed(1) })}
+                : `${tr('grid.detected', { bpm: detected.bpm.toFixed(1) })}${segmentSuffix(detected)}`}
             </SectionPill>
           ) : undefined
         }

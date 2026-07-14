@@ -530,6 +530,8 @@
     "hint": "Superpone un grid de beats sobre la onda para los exports DJ. Alinea los beats con la referencia roja — arrastra la onda para recorrer la pista.",
     "summaryNone": "No",
     "detected": "Detectado {{bpm}} BPM",
+    "segments_one": "{{count}} segmento",
+    "segments_other": "{{count}} segmentos",
     "review": "Revisa el grid a oído",
     "nothing": "No se detecta un beat estable.",
     "bpmLabel": "BPM",

@@ -530,6 +530,8 @@
     "hint": "Legt ein Beat-Grid über die Wellenform für die DJ-Exporte. Richte die Beats an der roten Referenz aus — ziehe die Welle, um dich zu bewegen.",
     "summaryNone": "Aus",
     "detected": "{{bpm}} BPM erkannt",
+    "segments_one": "{{count}} Segment",
+    "segments_other": "{{count}} Segmente",
     "review": "Grid nach Gehör prüfen",
     "nothing": "Kein stabiler Beat erkannt.",
     "bpmLabel": "BPM",
