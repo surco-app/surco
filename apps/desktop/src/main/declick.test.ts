@@ -1,55 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import {
-  declickRemovedArgs,
-  parseDeclickedSamples,
-  parseDeclickedShare,
-  PREVIEW_SECONDS,
-  previewWindow,
-} from './declick'
+import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 
 // declickFilter itself (modes, sensitivity mapping, safety clamps) is covered in
 // shared/declick.test.ts — it moved to shared so the renderer can show the exact
 // applied filter string.
 
-describe('previewWindow', () => {
-  it('centers the excerpt on the middle of a long track', () => {
-    expect(previewWindow(300)).toEqual({ start: 150 - PREVIEW_SECONDS / 2, length: PREVIEW_SECONDS })
-  })
-
-  it('takes a short track whole from the start', () => {
-    expect(previewWindow(12)).toEqual({ start: 0, length: PREVIEW_SECONDS })
-  })
-
-  it('treats an unknown duration like a short track, never seeking blind', () => {
-    expect(previewWindow(null)).toEqual({ start: 0, length: PREVIEW_SECONDS })
-  })
-})
-
-describe('declickRemovedArgs', () => {
-  it('renders the difference between the source and its repair — the removed clicks alone', () => {
-    const args = declickRemovedArgs(
-      '/in.wav',
-      '/out.wav',
-      'strong',
-      { start: 140, length: 20 },
-    )
-    expect(args?.join(' ')).toContain(
-      '[0:a]asplit=2[a][b];[a]adeclick=b=4,volume=-1[inv];[b][inv]amix=inputs=2:normalize=0[d]',
-    )
-    // Input-side seek so the excerpt decodes fast, and a WAV the <audio> element plays.
-    expect(args?.join(' ')).toContain('-ss 140 -t 20 -i /in.wav')
+describe('declickRepairedArgs', () => {
+  it('renders the repaired track itself — what the user will actually hear', () => {
+    const args = declickRepairedArgs('/in.wav', '/out.wav', 'strong')
+    expect(args?.join(' ')).toContain('-af adeclick=b=4')
+    // No phase-inversion filtergraph: the old audition rendered the *removed* clicks,
+    // and a preview that still did that would answer the wrong question.
+    expect(args?.join(' ')).not.toContain('volume=-1')
+    expect(args?.join(' ')).not.toContain('amix')
     expect(args?.slice(-2)).toEqual(['pcm_s16le', '/out.wav'])
   })
 
+  it('renders the whole track, never an excerpt', () => {
+    // The clicks sit wherever the stylus hit dust, and the marks invite a jump to any
+    // of them — a windowed render would have nothing to play at most of them.
+    const args = declickRepairedArgs('/in.wav', '/out.wav', 'standard')
+    expect(args).not.toContain('-ss')
+    expect(args).not.toContain('-t')
+  })
+
+  it('asks ffmpeg for machine-readable progress, since the render is slow', () => {
+    expect(declickRepairedArgs('/in.wav', '/out.wav', 'standard')?.join(' ')).toContain(
+      '-progress pipe:1',
+    )
+  })
+
   it('has nothing to render when the repair is off', () => {
+    expect(declickRepairedArgs('/in.wav', '/out.wav', 'off')).toBeNull()
+  })
+})
+
+describe('parseProgressSeconds', () => {
+  it('reads the latest position, not the first', () => {
     expect(
-      declickRemovedArgs(
-        '/in.wav',
-        '/out.wav',
-        'off',
-        { start: 0, length: 20 },
-      ),
-    ).toBeNull()
+      parseProgressSeconds('out_time_us=1000000\nprogress=continue\nout_time_us=4500000\n'),
+    ).toBe(4.5)
+  })
+
+  it('says nothing until ffmpeg has reported a position', () => {
+    expect(parseProgressSeconds('progress=continue\n')).toBeNull()
   })
 })
 
@@ -76,32 +70,9 @@ describe('parseDeclickedSamples', () => {
 
   it('reads a clean run as zero, not as missing', () => {
     expect(
-      parseDeclickedSamples('[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 441000 samples (0%).'),
-    ).toBe(0)
-  })
-})
-
-describe('parseDeclickedShare', () => {
-  it('reads the touched share of the stream, for the audition caption', () => {
-    expect(
-      parseDeclickedShare(
-        '[Parsed_adeclick_0 @ 0x1] Detected clicks in 111919 of 1764000 samples (6.34461%).',
+      parseDeclickedSamples(
+        '[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 441000 samples (0%).',
       ),
-    ).toBeCloseTo(111919 / 1764000)
-  })
-
-  it('ignores the empty flush line the filter sometimes prints first', () => {
-    const stderr = [
-      '[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 0 samples (nan%).',
-      '[Parsed_adeclick_0 @ 0x1] Detected clicks in 234 of 441000 samples (0.05%).',
-    ].join('\n')
-    expect(parseDeclickedShare(stderr)).toBeCloseTo(234 / 441000)
-  })
-
-  it('returns null when the filter reported nothing usable', () => {
-    expect(parseDeclickedShare('size= 861kB')).toBeNull()
-    expect(
-      parseDeclickedShare('[Parsed_adeclick_0 @ 0x1] Detected clicks in 0 of 0 samples (nan%).'),
-    ).toBeNull()
+    ).toBe(0)
   })
 })

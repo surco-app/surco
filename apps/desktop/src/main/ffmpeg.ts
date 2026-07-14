@@ -1,6 +1,13 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { constants as fsConstants, copyFile, readFile, rename, stat, unlink } from 'node:fs/promises'
+import {
+  constants as fsConstants,
+  copyFile,
+  readFile,
+  rename,
+  stat,
+  unlink,
+} from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
@@ -27,15 +34,10 @@ import type {
 import { cachedAnalysis } from './analysisCache'
 import { seratoBeatgridVorbis } from './seratoBeatgrid'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { countClicks } from './clickDetect'
+import { detectClicks } from './clickDetect'
 import { declickFilter } from '../shared/declick'
 import { trimFilter } from '../shared/trim'
-import {
-  declickRemovedArgs,
-  parseDeclickedSamples,
-  parseDeclickedShare,
-  previewWindow,
-} from './declick'
+import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -145,7 +147,8 @@ const run = (async (file: string, args: string[], opts?: RunOpts) => {
     }
     throw err
   }
-}) as typeof execFileAsync & ((file: string, args: string[], opts?: RunOpts) => ReturnType<typeof execFileAsync>)
+}) as typeof execFileAsync &
+  ((file: string, args: string[], opts?: RunOpts) => ReturnType<typeof execFileAsync>)
 
 // A stalled network mount (an SMB share that stops responding mid-read) makes an
 // ffmpeg/ffprobe decode block forever. Without a bound, the analysisLimiter slot — and
@@ -859,7 +862,6 @@ function cueShiftFor(
   }
 }
 
-
 // The temp file a conversion renders into before the rename over the final output.
 // Unique per call: bulk runs convert several tracks in parallel, and two tracks whose
 // metadata resolves to the same output name would otherwise share one deterministic
@@ -987,11 +989,26 @@ export async function convertAudio(
       // size) and silently falls back to a byte copy otherwise (other
       // filesystems, or an output folder on a different volume).
       await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
-      await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover, beatgrid: outGrid })
+      await runInWorker({
+        type: 'writeTags',
+        file: tmp,
+        meta,
+        coverPath,
+        removeCover,
+        beatgrid: outGrid,
+      })
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, ext === '.flac' ? outGrid : undefined),
+        convertArgs(
+          input,
+          tmp,
+          plan,
+          meta,
+          coverPath,
+          audioFilter,
+          ext === '.flac' ? outGrid : undefined,
+        ),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1073,26 +1090,52 @@ export function previewWavArgs(input: string, output: string, codec: string): st
   ]
 }
 
-// Renders the 20 s "hear what gets removed" audition for the given repair mode into
-// `output`: a WAV holding only what the repair would take out (declickRemovedArgs),
-// plus the excerpt's touched share off adeclick's stderr — the RX-style caption
-// that tells the user whether the near-silence they hear means "clean rip" or
-// "nothing rendered". null when the mode is off — nothing would be removed,
-// nothing to audition. The caller owns the output path (a quit-swept preview temp).
-// Timed out like the analysis reads: it's an interactive request, and a stalled
-// mount must drop it rather than wedge the button forever.
-export async function renderDeclickRemoved(
+// Renders the whole track repaired, for the A/B against the original. null when the
+// mode is off (nothing to preview) or the render was cancelled. The caller owns the
+// output path (a quit-swept preview temp).
+//
+// Not timed out like the analysis reads: this is a full-length encode, and on a long
+// side at the strong preset it can legitimately outrun ANALYSIS_TIMEOUT_MS — the same
+// reason conversions run unbounded. What bounds it instead is the user: `onChild` hands
+// the process out so a preset change (or a closed section) can kill it outright, which
+// is also what makes the progress bar honest rather than a spinner nobody can escape.
+export async function renderDeclickRepaired(
   input: string,
   output: string,
   mode: DeclickMode,
-): Promise<{ path: string; share: number | null } | null> {
-  const args = declickRemovedArgs(input, output, mode, previewWindow(await probeDuration(input)))
+  onProgress?: (done: number) => void,
+  onChild?: (child: { kill: (signal: string) => void }) => void,
+): Promise<{ path: string } | null> {
+  const args = declickRepairedArgs(input, output, mode)
   if (!args) return null
-  const { stderr } = await run(ffmpegPath, args, {
-    maxBuffer: 1024 * 1024 * 16,
-    timeout: ANALYSIS_TIMEOUT_MS,
+  const duration = await probeDuration(input)
+  return await new Promise((resolve, reject) => {
+    const child = spawn(ffmpegPath, args)
+    // A cancel kills the child mid-write: that's the expected end of a cancelled render,
+    // not a failure (hence the `killed` flag the close handler reads), and the
+    // half-written temp is swept at quit like every other preview render.
+    let killed = false
+    onChild?.({
+      kill: (signal: string) => {
+        killed = true
+        child.kill(signal as NodeJS.Signals)
+      },
+    })
+    child.on('error', reject)
+    let out = ''
+    child.stdout.on('data', (chunk: Buffer) => {
+      out += chunk
+      if (!onProgress || !duration) return
+      const at = parseProgressSeconds(out)
+      if (at !== null) onProgress(Math.min(1, at / duration))
+    })
+    child.on('close', (code) => {
+      if (killed) return resolve(null)
+      if (code !== 0) return reject(new Error(`ffmpeg exited ${code}`))
+      onProgress?.(1)
+      resolve({ path: output })
+    })
   })
-  return { path: output, share: parseDeclickedShare(String(stderr)) }
 }
 
 // Transcodes an AIFF into a WAV the player can decode, preserving the source bit
@@ -1503,7 +1546,11 @@ export async function measureKey(input: string): Promise<KeyResult | null> {
 
 export async function measureBeatgrid(input: string): Promise<BeatgridResult | null> {
   const pcm = await decodeAnalysisPcm(input)
-  return runInWorker<BeatgridResult | null>({ type: 'beatgrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+  return runInWorker<BeatgridResult | null>({
+    type: 'beatgrid',
+    pcm,
+    sampleRate: TEMPO_SAMPLE_RATE,
+  })
 }
 
 // The same detector over one stretch of the track: the editor's "Auto" scoped
@@ -1540,18 +1587,26 @@ function decodeShelfPcm(input: string): Promise<Float32Array> {
   return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64 })
 }
 
-// Estimated audible clicks for the editor's repair section (see clickDetect.ts).
-// Native rate, mono: a stylus click is 1-9 samples wide, so any downsample smears it
-// away. Capped at eight minutes — beyond a typical vinyl side; the count is worded
-// as an estimate — bounding the buffer at ~85 MB. One O(n) pass, no FFT, so unlike
-// bpm/key/shelf it runs inline instead of shipping the buffer to the worker.
-export async function countTrackClicks(input: string): Promise<number> {
+// How far into a track the click detector reads. Eight minutes covers a typical vinyl
+// side, and bounds the native-rate buffer at ~85 MB. Anything past it is unanalysed:
+// the count says "estimate", but the marks drawn on the wave must not imply a clean
+// tail they never looked at, so the renderer is told where the analysis stopped.
+export const CLICK_SCAN_SECONDS = 480
+
+// The editor's repair section: how many audible clicks the track carries and where they
+// sit (see clickDetect.ts). Native rate, mono — a stylus click is 1-9 samples wide, so
+// any downsample smears it away. One O(n) pass, no FFT, so unlike bpm/key/shelf it runs
+// inline instead of shipping the buffer to the worker.
+export async function detectTrackClicks(
+  input: string,
+): Promise<{ count: number; marks: number[]; scannedSec: number }> {
   const pcm = await decodePcm(input, {
     sampleRate: SHELF_SAMPLE_RATE,
-    seconds: 480,
+    seconds: CLICK_SCAN_SECONDS,
     maxBufferMb: 96,
   })
-  return countClicks(pcm, SHELF_SAMPLE_RATE)
+  const marks = detectClicks(pcm, SHELF_SAMPLE_RATE)
+  return { count: marks.length, marks, scannedSec: pcm.length / SHELF_SAMPLE_RATE }
 }
 
 // Two signals the biquad codec-lowpass pass is blind to, both read off the same flat

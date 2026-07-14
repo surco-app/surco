@@ -221,6 +221,11 @@ function setApi(over: Record<string, unknown> = {}): void {
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
     waveform: vi.fn().mockResolvedValue(wave),
+    clicks: vi.fn().mockResolvedValue(null),
+    // The repair section subscribes to render progress on mount, so the bridge must
+    // hand back an unsubscribe even in tests that never open it.
+    onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+    cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     ...over,
   }
 }
@@ -1989,17 +1994,25 @@ describe('App reopen last session', () => {
     // overwrite the very edits being restored.
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/b.wav']),
-      readTags: vi.fn().mockReturnValue(new Promise((r) => { settleSecond = r })),
+      readTags: vi.fn().mockReturnValue(
+        new Promise((r) => {
+          settleSecond = r
+        }),
+      ),
       saveLastSession,
     })
     fireEvent.click(screen.getByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
 
-    await act(async () => { await new Promise((r) => setTimeout(r, 1_600)) })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 1_600))
+    })
     expect(saveLastSession).not.toHaveBeenCalled()
 
     // Once the read lands, the settled two-track list is what gets written.
-    await act(async () => { settleSecond({ title: 'Second' }) })
+    await act(async () => {
+      settleSecond({ title: 'Second' })
+    })
     await waitFor(
       () =>
         expect(saveLastSession).toHaveBeenCalledWith(

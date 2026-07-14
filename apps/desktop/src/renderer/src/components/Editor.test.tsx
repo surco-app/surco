@@ -49,6 +49,11 @@ function renderWithQuery(
 beforeEach(() => {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
+    clicks: vi.fn().mockResolvedValue(null),
+    // The repair section subscribes to render progress on mount, so the bridge
+    // must hand back an unsubscribe even in tests that never open it.
+    onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+    cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     reveal: vi.fn(),
     recordStat: vi.fn(),
     // The Properties effect probes once per single track on mount; resolve to null
@@ -1572,6 +1577,11 @@ describe('Editor Discogs apply', () => {
     const getRelease = vi.fn().mockResolvedValue(release)
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1748,6 +1758,11 @@ describe('Editor Discogs apply', () => {
     }
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1857,6 +1872,11 @@ describe('Editor Discogs apply', () => {
     }
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -1922,6 +1942,11 @@ describe('Editor track preselection', () => {
   function withDiscogs(): void {
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform: 'win32',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -2203,6 +2228,11 @@ describe('Editor Apple Music library badge', () => {
   function setApi(platform: string): void {
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform,
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),
@@ -2314,6 +2344,11 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
   function setApi(): void {
     ;(window as unknown as { api: unknown }).api = {
       recordStat: vi.fn(),
+      clicks: vi.fn().mockResolvedValue(null),
+      // The repair section subscribes to render progress on mount, so the bridge
+      // must hand back an unsubscribe even in tests that never open it.
+      onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
+      cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
       platform: 'darwin',
       reveal: vi.fn(),
       properties: vi.fn().mockResolvedValue(null),

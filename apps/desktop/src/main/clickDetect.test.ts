@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countClicks } from './clickDetect'
+import { countClicks, detectClicks } from './clickDetect'
 
 const RATE = 44100
 
@@ -38,7 +38,8 @@ describe('countClicks', () => {
     // milliseconds, unlike a click's 1-9 samples. The isolation test must reject it.
     const s = sine(2, 0.1)
     const at = Math.round(1 * RATE)
-    for (let i = 0; i < 900; i++) s[at + i] += 0.8 * Math.exp(-i / 180) * Math.sin((2 * Math.PI * 60 * i) / RATE)
+    for (let i = 0; i < 900; i++)
+      s[at + i] += 0.8 * Math.exp(-i / 180) * Math.sin((2 * Math.PI * 60 * i) / RATE)
     expect(countClicks(s, RATE)).toBe(0)
   })
 
@@ -48,5 +49,52 @@ describe('countClicks', () => {
     addClick(s, 1, 0.9, 2)
     addClick(s, 1.002, 0.9, 2)
     expect(countClicks(s, RATE)).toBe(1)
+  })
+})
+
+describe('detectClicks', () => {
+  it('reports where each click sits, not just how many', () => {
+    const s = sine(4)
+    addClick(s, 0.5)
+    addClick(s, 1.5)
+    addClick(s, 2.5)
+    const at = detectClicks(s, RATE)
+    expect(at).toHaveLength(3)
+    // Within a millisecond of the impulse: the marks have to land ON the click for
+    // "jump to this click and listen" to put the playhead anywhere useful.
+    expect(at[0]).toBeCloseTo(0.5, 3)
+    expect(at[1]).toBeCloseTo(1.5, 3)
+    expect(at[2]).toBeCloseTo(2.5, 3)
+  })
+
+  it('returns them in order', () => {
+    const s = sine(4)
+    addClick(s, 2.5)
+    addClick(s, 0.5)
+    addClick(s, 1.5)
+    const at = detectClicks(s, RATE)
+    expect(at).toEqual([...at].sort((a, b) => a - b))
+  })
+
+  it('gives one position for a merged burst', () => {
+    const s = sine(4)
+    addClick(s, 1, 0.9, 2)
+    addClick(s, 1.002, 0.9, 2)
+    expect(detectClicks(s, RATE)).toHaveLength(1)
+  })
+
+  it('finds nothing in clean audio', () => {
+    expect(detectClicks(sine(4), RATE)).toEqual([])
+  })
+
+  // The counter and the marks must never drift onto different calibrations: the count
+  // in the header pill and the marks on the wave describe the same clicks, and a user
+  // who reads "3 clicks" and counts 5 marks has been lied to by one of them.
+  it('agrees with the count it is derived from', () => {
+    const cases = [sine(4), sine(2, 0.1), sine(4)]
+    addClick(cases[0], 0.5)
+    addClick(cases[0], 1.5)
+    addClick(cases[1], 1, 0.2, 2)
+    for (const s of cases) expect(detectClicks(s, RATE)).toHaveLength(countClicks(s, RATE))
   })
 })

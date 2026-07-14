@@ -147,17 +147,22 @@ export interface Api {
     durSec: number,
     buckets: number,
   ) => Promise<{ peaks: number[] } | null>
-  // Renders the "hear what gets removed" audition: a temp WAV holding only what the
-  // given repair mode would take out of the track, playable through surco://, plus
-  // the excerpt's touched share (0..1) for the caption. null when the mode is off
-  // or the render failed.
-  declickPreview: (
-    path: string,
-    mode: DeclickMode,
-  ) => Promise<{ path: string; share: number | null } | null>
-  // Estimated audible clicks in the track (Surco's own event detector, first eight
-  // minutes), for the repair section's readout. null when the estimate failed.
-  clicks: (path: string) => Promise<number | null>
+  // Renders the whole track through the given repair mode into a temp WAV playable
+  // through surco://, for the A/B against the original. Whole track, not an excerpt:
+  // the user judges the repair at the clicks they can see, wherever they sit. Slow
+  // (tens of seconds on a long side), hence the progress events and the cancel.
+  // null when the mode is off, the render failed, or it was cancelled.
+  declickPreview: (path: string, mode: DeclickMode) => Promise<{ path: string } | null>
+  // Progress (0..1) for the running declickPreview render. Returns an unsubscribe.
+  onDeclickPreviewProgress: (fn: (done: number) => void) => () => void
+  // Abandons the running declickPreview render — a preset change invalidates it, and
+  // the user must never wait on audio they no longer asked for.
+  cancelDeclickPreview: () => Promise<void>
+  // The track's audible clicks (Surco's own event detector): how many, where each one
+  // sits in seconds, and how far into the track the detector actually read — past
+  // `scannedSec` nothing was analysed, so the wave must not imply a clean tail.
+  // null when the analysis failed.
+  clicks: (path: string) => Promise<{ count: number; marks: number[]; scannedSec: number } | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   // Tags, duration and cover from a single round-trip, for the import path.

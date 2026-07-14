@@ -8,7 +8,7 @@ import {
   analyzeCutoff,
   analyzeShelf,
   buildSpectrum,
-  countTrackClicks,
+  detectTrackClicks,
   extractCover,
   extractCoverDataUrl,
   generateSpectrogram,
@@ -24,7 +24,7 @@ import {
   probeProperties,
   readMeta,
   readTags,
-  renderDeclickRemoved,
+  renderDeclickRepaired,
   tagsFromProbe,
 } from './ffmpeg'
 import type { DeclickMode } from '../shared/types'
@@ -49,6 +49,12 @@ function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Pr
 // on any window or session state — so they live apart from the stateful handlers in index.ts.
 // allowMedia is the one exception: the declick audition renders a temp WAV the renderer
 // must stream back through surco://, and the allowlist lives with the protocol in index.ts.
+// The in-flight preview render, so a preset change (or an explicit cancel) can kill it.
+// Deliberately NOT run through analysisLimiter like the probes around it: this is a
+// full-length encode running for tens of seconds, and parking it in a limiter slot would
+// stall the waveform and loudness reads the editor needs *while the user waits*.
+let declickRender: { kill: (signal: string) => void } | null = null
+
 export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
@@ -157,14 +163,15 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  // The repair section's "estimated audible clicks" readout: Surco's own event
-  // detector (clickDetect.ts), cached like every per-path probe. 'low': it renders
-  // a dim caption, never something the user sits waiting on.
+  // The repair section's clicks: the count for the header pill, and the marks the wave
+  // draws (and "jump to the next click" seeks to) — one detector pass, one cache entry,
+  // so the number and the marks can never disagree. v2: the v1 entries hold a bare
+  // count, and a stale hit would leave a track showing its pill with no marks.
   ipcMain.handle('audio:clicks', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis('clickcount-v1', inputPath, () =>
+      return await cachedAnalysis('clickcount-v2', inputPath, () =>
         probe('activity.probeClicks', inputPath, () =>
-          analysisLimiter.run(() => countTrackClicks(inputPath), 'low'),
+          analysisLimiter.run(() => detectTrackClicks(inputPath), 'low'),
         ),
       )
     } catch (err) {
@@ -324,17 +331,35 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // would remove, served back through surco:// (hence the allowMedia). Not cached —
   // the render is a couple of seconds and the renderer replays the same temp WAV
   // until the track or the mode changes. 'high': the user is actively waiting on it.
-  ipcMain.handle('audio:declickPreview', async (_e, inputPath: string, mode: DeclickMode) => {
+  ipcMain.handle('audio:declickPreview', async (e, inputPath: string, mode: DeclickMode) => {
+    // Only one preview render is ever in flight: a preset change supersedes the render
+    // it invalidates rather than racing it, so the audio that lands always matches the
+    // dials the user is looking at.
+    declickRender?.kill('SIGKILL')
     try {
-      const out = await analysisLimiter.run(
-        () => renderDeclickRemoved(inputPath, previewTempPath('wav'), mode),
-        'high',
+      const out = await renderDeclickRepaired(
+        inputPath,
+        previewTempPath('wav'),
+        mode,
+        (done) => {
+          if (!e.sender.isDestroyed()) e.sender.send('audio:declickPreviewProgress', done)
+        },
+        (child) => {
+          declickRender = child
+        },
       )
       if (out) allowMedia(out.path)
       return out
     } catch (err) {
       log.error('audio:declickPreview failed', err)
       return null
+    } finally {
+      declickRender = null
     }
+  })
+
+  ipcMain.handle('audio:cancelDeclickPreview', () => {
+    declickRender?.kill('SIGKILL')
+    declickRender = null
   })
 }

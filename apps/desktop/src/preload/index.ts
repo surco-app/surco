@@ -107,7 +107,11 @@ const api: Api = {
   bpm: (path: string): Promise<BpmResult | null> => ipcRenderer.invoke('audio:bpm', path),
   beatgrid: (path: string, fresh?: boolean): Promise<BeatgridResult | null> =>
     ipcRenderer.invoke('audio:beatgrid', path, fresh),
-  beatgridWindow: (path: string, startSec: number, durSec: number): Promise<BeatgridResult | null> =>
+  beatgridWindow: (
+    path: string,
+    startSec: number,
+    durSec: number,
+  ): Promise<BeatgridResult | null> =>
     ipcRenderer.invoke('audio:beatgridWindow', path, startSec, durSec),
   key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
   waveform: (path: string): Promise<WaveformResult | null> =>
@@ -120,7 +124,14 @@ const api: Api = {
   ): Promise<{ peaks: number[] } | null> =>
     ipcRenderer.invoke('audio:waveformWindow', path, startSec, durSec, buckets),
   declickPreview: (path, mode) => ipcRenderer.invoke('audio:declickPreview', path, mode),
-  clicks: (path: string): Promise<number | null> => ipcRenderer.invoke('audio:clicks', path),
+  onDeclickPreviewProgress: (fn: (done: number) => void) => {
+    const listener = (_e: unknown, done: number): void => fn(done)
+    ipcRenderer.on('audio:declickPreviewProgress', listener)
+    return () => ipcRenderer.off('audio:declickPreviewProgress', listener)
+  },
+  cancelDeclickPreview: () => ipcRenderer.invoke('audio:cancelDeclickPreview'),
+  clicks: (path: string): Promise<{ count: number; marks: number[]; scannedSec: number } | null> =>
+    ipcRenderer.invoke('audio:clicks', path),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readMeta: (path: string) => ipcRenderer.invoke('audio:meta', path),

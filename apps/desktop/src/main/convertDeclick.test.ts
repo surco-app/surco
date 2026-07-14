@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
-import { convertAudio, countTrackClicks, renderDeclickRemoved } from './ffmpeg'
+import { convertAudio, detectTrackClicks, renderDeclickRepaired } from './ffmpeg'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-declick-'))
@@ -180,42 +180,87 @@ describe('convertAudio declick', () => {
   }, 30000)
 })
 
-// The "hear what gets removed" audition: the render must isolate the clicks — a
-// difference that still carried the music would defeat its whole purpose (judging
-// whether the repair eats transients).
-describe('renderDeclickRemoved', () => {
-  it('renders an excerpt that is silence plus the removed clicks', async () => {
-    const out = join(dir, 'removed.wav')
-    const result = await renderDeclickRemoved(src, out, 'standard')
+// The A/B preview: the render is what the user hears and judges, so it must be the
+// repaired *music* — clicks gone, the track still there. (Its predecessor rendered only
+// the removed clicks, which proved the filter fired but hid the failure that matters:
+// a repair that eats a snare's attack sounds like just another click in that signal.)
+describe('renderDeclickRepaired', () => {
+  it('renders the repaired track: clicks gone, music intact', async () => {
+    const out = join(dir, 'repaired.wav')
+    const result = await renderDeclickRepaired(src, out, 'standard')
     expect(result?.path).toBe(out)
-    // The clicky source's excerpt must report its clicks — the caption the UI
-    // shows so near-silence reads as "clean", not as a broken render.
-    expect(result?.share).toBeGreaterThan(0)
     const raw = execFileSync(FF, ['-v', 'error', '-i', out, '-f', 'f32le', '-'], {
       maxBuffer: 1024 * 1024 * 64,
     })
     const s = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4)
+    let peak = 0
     let loud = 0
-    let quiet = 0
     for (let i = 0; i < s.length; i++) {
       const a = Math.abs(s[i])
-      if (a > 0.4) loud++
-      else if (a < 0.02) quiet++
+      if (a > peak) peak = a
+      if (a > 0.15) loud++
     }
-    // The sine cancels (nearly all samples fall to silence); the clicks survive.
-    expect(quiet / s.length).toBeGreaterThan(0.9)
-    expect(loud).toBeGreaterThan(0)
-  }, 30000)
+    // The 0.9 impulses are gone (the 0.25 sine is the peak again)...
+    expect(peak).toBeLessThan(0.3)
+    // ...and the sine itself survived: a render that silenced everything would pass the
+    // assertion above while being useless to listen to.
+    expect(loud / s.length).toBeGreaterThan(0.5)
+  }, 60000)
+
+  it('renders the whole track, not an excerpt', async () => {
+    // The 4 s fixture must come back 4 s long: a windowed render would leave most of the
+    // click marks pointing at audio the preview never produced.
+    const out = join(dir, 'whole.wav')
+    await renderDeclickRepaired(src, out, 'standard')
+    const raw = execFileSync(
+      FF,
+      ['-v', 'error', '-i', out, '-f', 'f32le', '-ar', '44100', '-ac', '1', '-'],
+      { maxBuffer: 1024 * 1024 * 64 },
+    )
+    expect(raw.length / 4 / 44100).toBeCloseTo(4, 1)
+  }, 60000)
+
+  it('reports progress as it goes, so the wait is not a blind spinner', async () => {
+    const seen: number[] = []
+    await renderDeclickRepaired(src, join(dir, 'progress.wav'), 'standard', (d) => seen.push(d))
+    expect(seen.length).toBeGreaterThan(0)
+    expect(seen.at(-1)).toBe(1)
+    expect(seen.every((d) => d >= 0 && d <= 1)).toBe(true)
+  }, 60000)
+
+  it('resolves null when cancelled, rather than failing', async () => {
+    // A preset change kills the render mid-write. That is the expected end of a
+    // superseded render, not an error the UI should surface.
+    const pending = renderDeclickRepaired(src, join(dir, 'killed.wav'), 'strong', undefined, (c) =>
+      setTimeout(() => c.kill('SIGKILL'), 10),
+    )
+    expect(await pending).toBeNull()
+  }, 60000)
 
   it('renders nothing when the mode is off', async () => {
-    expect(await renderDeclickRemoved(src, join(dir, 'no.wav'), 'off')).toBeNull()
+    expect(await renderDeclickRepaired(src, join(dir, 'no.wav'), 'off')).toBeNull()
   }, 30000)
 })
 
-// The repair section's counter, through the real decode: the fixture carries one
-// click every half second, and the estimate must count events, not samples.
-describe('countTrackClicks', () => {
+// The repair section's detector, through the real decode: the fixture carries one click
+// every half second, and the detector must find events, not samples.
+describe('detectTrackClicks', () => {
   it('counts the fixture’s clicks exactly', async () => {
-    expect(await countTrackClicks(src)).toBe(8)
+    expect((await detectTrackClicks(src)).count).toBe(8)
+  }, 30000)
+
+  // Through the real decode, not just synthetic arrays: the marks are what the wave
+  // draws and what "jump to the next click" seeks to, so a mark that lands anywhere
+  // but on its click makes both features lie.
+  it('marks each click where it actually sits', async () => {
+    // The fixture's impulses land on every half-second boundary from t=0 (aevalsrc's
+    // mod(t,0.5) fires at zero), so the marks must read 0, 0.5, 1.0 … 3.5.
+    const { marks } = await detectTrackClicks(src)
+    expect(marks).toHaveLength(8)
+    for (let i = 0; i < marks.length; i++) expect(marks[i]).toBeCloseTo(i * 0.5, 2)
+  }, 30000)
+
+  it('reports how far it scanned, so the wave can say where the analysis ends', async () => {
+    expect((await detectTrackClicks(src)).scannedSec).toBeGreaterThan(0)
   }, 30000)
 })

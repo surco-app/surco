@@ -24,12 +24,15 @@ const FLOOR = 0.004
 const ISO_REACH = 80
 const ISO_SKIP = 6
 
-export function countClicks(samples: Float32Array, sampleRate: number): number {
+// Where each click sits, in seconds. The detector always knew — the count is just this
+// list's length — and the marks drawn over the wave (and the "jump to the next click"
+// they enable) need the positions it used to throw away.
+export function detectClicks(samples: Float32Array, sampleRate: number): number[] {
   const minGap = Math.round(MIN_GAP_SEC * sampleRate)
   const d = new Float32Array(samples.length)
   for (let i = 2; i < samples.length; i++)
     d[i] = Math.abs(samples[i] - 2 * samples[i - 1] + samples[i - 2])
-  let clicks = 0
+  const at: number[] = []
   let last = -minGap - 1
   for (let b = 0; b + BLOCK <= d.length; b += BLOCK) {
     let sum = 0
@@ -49,9 +52,16 @@ export function countClicks(samples: Float32Array, sampleRate: number): number {
         env += d[j]
         n++
       }
-      if (d[i] > ISO * K * (env / n)) clicks++
+      if (d[i] > ISO * K * (env / n)) at.push(i / sampleRate)
       last = i
     }
   }
-  return clicks
+  return at
+}
+
+// The count is the marks' length, never a second implementation: a header pill reading
+// "3 clicks" over a wave carrying 5 marks would mean one of the two is lying, and the
+// empirical calibration above is far too easy to drift if it lives in two places.
+export function countClicks(samples: Float32Array, sampleRate: number): number {
+  return detectClicks(samples, sampleRate).length
 }
