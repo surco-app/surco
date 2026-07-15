@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mediaUrl } from '../../../shared/media'
@@ -130,5 +130,93 @@ describe('usePlayer playback prewarm', () => {
     renderHook(() => usePlayer({ tracks: [], selected: null, selectedId: null }))
     vi.advanceTimersByTime(400)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+// The invariant behind a whole class of recurring bugs ("the track sounds but the
+// mini-player never appears"): whenever something is playing, the floating player must be
+// visible — App renders it only on `playerVisible && playerTrack`, so any path that leaves
+// playingId set while playerVisible is false plays audio with no card to see or pause it.
+// These drive the real gestures (double-click a row, play one row while another is
+// selected) and assert that invariant, so a future regression is caught as a class, not
+// one leaked case at a time.
+describe('usePlayer keeps the player visible while a track sounds', () => {
+  // Exposes the hook's state and actions, and — like App — lets selected/selectedId change
+  // independently of what is playing, which is exactly where the desync creeps in.
+  function harness(initial: { tracks: TrackItem[]; selectedId: string | null }) {
+    const api: { player: ReturnType<typeof usePlayer> | null } = { player: null }
+    function Comp({
+      tracks,
+      selectedId,
+    }: {
+      tracks: TrackItem[]
+      selectedId: string | null
+    }): React.JSX.Element {
+      const selected = tracks.find((t) => t.id === selectedId) ?? null
+      const player = usePlayer({ tracks, selected, selectedId })
+      api.player = player
+      return (
+        // biome-ignore lint/a11y/useMediaCaption: silent test fixture
+        <audio ref={player.audioRef} data-testid="audio" />
+      )
+    }
+    const view = render(<Comp {...initial} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    return { api, view, audio, Comp }
+  }
+
+  // The invariant, one place: something is playing (playerTrack is set) → the card shows.
+  function expectInvariant(player: ReturnType<typeof usePlayer>): void {
+    const soundsSomething = player.playerTrack !== null && player.audioRef.current?.src
+    if (soundsSomething) expect(player.playerVisible).toBe(true)
+  }
+
+  it('shows the player when a row is played while another row is selected', () => {
+    const a = track('a', '/m/a.wav')
+    const b = track('b', '/m/b.wav')
+    const { api, view, Comp } = harness({ tracks: [a, b], selectedId: 'a' })
+
+    // Play B (the row's own play button / double-click) while A stays selected — the
+    // screenshot's exact shape: one row sounds, a different row is highlighted.
+    act(() => api.player?.toggleTrack(b))
+    // A selection-follow effect keys off selectedId; re-render with A still selected so it
+    // runs against the just-started playback, the moment the desync used to appear.
+    view.rerender(<Comp tracks={[a, b]} selectedId="a" />)
+
+    // Something is loaded to play (the card has a track to show).
+    expect(api.player?.playerTrack?.id ?? null).not.toBeNull()
+    // biome-ignore lint/style/noNonNullAssertion: player is set after render
+    expectInvariant(api.player!)
+  })
+
+  it('shows the player after double-clicking a row', () => {
+    const a = track('a', '/m/a.wav')
+    const { api } = harness({ tracks: [a], selectedId: 'a' })
+    act(() => api.player?.toggleTrack(a))
+    // biome-ignore lint/style/noNonNullAssertion: player is set after render
+    expectInvariant(api.player!)
+  })
+
+  // The in-place-export restart path: while a track plays, exporting it in place rewrites
+  // the file under the stream, and the watcher restarts playback from the new path — a
+  // startPlayback that does NOT go through toggleTrack. The card must stay up through it.
+  // The invariant living only in toggleTrack (not in startPlayback) is what let a restart
+  // like this sound a track with the player gone; enforcing it in startPlayback fixes the
+  // whole class, and this drives that exact path.
+  it('stays visible when an in-place export restarts the playing track', () => {
+    const a = track('a', '/m/a.wav')
+    const { api, view, audio, Comp } = harness({ tracks: [a], selectedId: 'a' })
+
+    act(() => api.player?.toggleTrack(a))
+    // The file moves under the stream (in-place export renamed it); same id, new path.
+    const moved = track('a', '/m/a-final.aiff')
+    act(() => view.rerender(<Comp tracks={[moved]} selectedId="a" />))
+
+    expect(audio.src).toContain('a-final.aiff')
+    // biome-ignore lint/style/noNonNullAssertion: player is set after render
+    expectInvariant(api.player!)
   })
 })

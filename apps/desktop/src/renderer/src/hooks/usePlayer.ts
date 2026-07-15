@@ -63,6 +63,14 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     audio.currentTime = 0
     playingPathRef.current = track.inputPath
     setPlayingId(track.id)
+    // The invariant, enforced at its one source: sound implies a visible card. App renders
+    // the player only on `playerVisible && playerTrack`, so any path that started audio
+    // without also opening the card (a follow-selection or in-place-export restart racing a
+    // close) left a track sounding with no player to see or pause it — the recurring "it
+    // plays but the mini-player never appears" bug. Every playback start opening the card
+    // too closes the whole class rather than one leaked sequence at a time.
+    playerVisibleRef.current = true
+    setPlayerVisible(true)
     audio.play().catch(() => {})
   }, [])
 
@@ -93,6 +101,18 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
       startPlayback(playing)
     }
   }, [tracks, playingId, startPlayback])
+
+  // Invariant guard and field probe. startPlayback keeps sound and card in step, but if any
+  // path ever leaves a track streaming (playingId set, the element on a real src) with the
+  // card hidden — the "it plays but the mini-player never appears" bug — self-heal by
+  // opening the card and log it, so a sequence that only shows up in the field lands in the
+  // log rather than staying invisible. Runs after commit, so it reads the settled state.
+  useEffect(() => {
+    if (playingId && audioRef.current?.currentSrc && !playerVisible) {
+      window.api.logError(`player invariant: track ${playingId} sounding with no card`)
+      setPlayerVisible(true)
+    }
+  }, [playingId, playerVisible])
 
   // Pressing play on an AIFF (Surco's default DJ format) stalls: Chromium can't
   // decode AIFF, so the surco:// handler transcodes the whole file to a temp WAV
@@ -149,11 +169,10 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // callback stays stable and the memoized rows don't re-render on every play/stop.
   const toggleTrack = useCallback(
     (track: TrackItem): void => {
+      // startPlayback opens the card itself (the invariant lives there), so this only
+      // chooses between play and stop.
       if (playingIdRef.current === track.id) closePlayer()
-      else {
-        setPlayerVisible(true)
-        startPlayback(track)
-      }
+      else startPlayback(track)
     },
     [startPlayback, closePlayer],
   )
