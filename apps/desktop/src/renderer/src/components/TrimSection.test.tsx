@@ -425,14 +425,36 @@ describe('TrimSection', () => {
   })
 
   // The arrows still give the fine step, now from the field where the value is.
+  // Left/right AND up/down both nudge: the cut moves along a horizontal wave, so the
+  // horizontal arrows are the intuitive ones, but a field's arrows are up/down by
+  // habit — so both do the same thing rather than making the user guess.
   it('nudges the cut with the arrows from the time field', async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
     const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
     fireEvent.keyDown(start, { key: 'ArrowUp' })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.71, endSec: 90.3 })
     fireEvent.keyDown(start, { key: 'ArrowDown', shiftKey: true })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.6, endSec: 90.3 })
+    onChange.mockClear()
+    fireEvent.keyDown(start, { key: 'ArrowRight' })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.71, endSec: 90.3 })
+    fireEvent.keyDown(start, { key: 'ArrowLeft', shiftKey: true })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.6, endSec: 90.3 })
+  })
+
+  // The nudge is also two buttons flanking the time, for the mouse-only user who
+  // never learns the arrows: back moves the cut earlier, forward moves it later, by
+  // the same fine step (10 ms) the arrows use.
+  it('nudges the cut with the visible back/forward buttons', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+    const back = await screen.findByTestId('trim-nudge-back-start', undefined, { timeout: 3000 })
+    const forward = screen.getByTestId('trim-nudge-forward-start')
+    fireEvent.click(forward)
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
+    fireEvent.click(back)
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.69, endSec: 90.3 })
   })
 
   // Folded with a staged trim, the header badges the total cut, like the
