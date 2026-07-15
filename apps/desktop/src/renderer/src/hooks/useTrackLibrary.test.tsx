@@ -205,6 +205,85 @@ describe('useTrackLibrary new-tracks prompt lifetime', () => {
   })
 })
 
+describe('useTrackLibrary import batching', () => {
+  // Every file that lands its metadata read used to fire its own setTracks(prev.map(...)).
+  // React coalesces the resulting renders into one, but it still RUNS each updater to fold
+  // the state: N reads each mapping the N-row array is N² element visits (plus N discarded
+  // intermediate arrays) of pure JS — the copy churn that froze a big drop while it loaded.
+  // Coalescing the read patches into a single map keeps that work linear in the file count.
+  // The final rows must match the per-file path exactly: same metadata, duration, and
+  // cleared loading flag.
+  it('applies simultaneous metadata reads with linear, not quadratic, array work', async () => {
+    const N = 40
+    const paths = Array.from({ length: N }, (_, i) => `/m/track-${i}.wav`)
+    let resolveAll: (() => void) | null = null
+    const gate = new Promise<void>((r) => {
+      resolveAll = r
+    })
+    setApi({
+      readMeta: vi.fn(async (path: string) => {
+        await gate
+        const n = path.match(/track-(\d+)/)?.[1] ?? ''
+        return { tags: { title: `Title ${n}`, artist: `Artist ${n}` }, duration: 200, cover: null }
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+
+    // The synchronous part of addPaths (placeholder rows, progress start) settles first.
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await Promise.resolve()
+    })
+
+    // Count element visits over arrays of the crate's size while the reads flush. Per-file
+    // setTracks(prev.map) over the N-row array visits ~N² elements; a batched flush visits ~N.
+    const realMap = Array.prototype.map
+    let bigMapVisits = 0
+    // eslint-disable-next-line no-extend-native
+    Array.prototype.map = function mapSpy<T, U>(
+      this: T[],
+      callback: (value: T, index: number, array: T[]) => U,
+      thisArg?: unknown,
+    ): U[] {
+      if (this.length >= N) bigMapVisits += this.length
+      return realMap.call(this, callback, thisArg) as U[]
+    }
+    try {
+      await act(async () => {
+        resolveAll?.()
+        await new Promise((r) => setTimeout(r, 50))
+      })
+    } finally {
+      Array.prototype.map = realMap
+    }
+
+    // All rows carry their read metadata and are no longer loading.
+    expect(result.current.tracks).toHaveLength(N)
+    for (const t of result.current.tracks) {
+      const n = t.inputPath.match(/track-(\d+)/)?.[1] ?? ''
+      expect(t.meta.title).toBe(`Title ${n}`)
+      expect(t.meta.artist).toBe(`Artist ${n}`)
+      expect(t.duration).toBe(200)
+      expect(t.loadingMeta).toBe(false)
+    }
+    // Sub-quadratic: the reads that resolve in the same microtask checkpoint coalesce, so a
+    // batch rewrites the array a handful of times (~N each), never the full N² (=1600) the
+    // per-file path cost. A generous ceiling still fails hard on the O(n²) regression while
+    // leaving headroom for however the concurrency workers interleave their resolutions.
+    expect(bigMapVisits).toBeLessThan(N * 10)
+  })
+})
+
 describe('useTrackLibrary meta read failures', () => {
   // A file whose tags can't be read still gets a row (parsed from its name), but the user
   // must be told the difference between "this file has no tags" and "the read failed" —

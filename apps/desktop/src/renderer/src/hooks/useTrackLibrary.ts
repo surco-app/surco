@@ -149,6 +149,39 @@ export function useTrackLibrary({
   // source path and consumed (once) by loadTrackMeta.
   const restoredEdits = useRef(new Map<string, SessionEdit>())
 
+  // Coalesces finished metadata reads into a single array rewrite. Each read files a
+  // per-row applier keyed by track id here instead of calling setTracks itself: a big
+  // drop resolves many reads in the same tick, and React runs every queued updater to
+  // fold the state — so per-file setTracks(prev.map) is N maps over the N-row array, i.e.
+  // N² element copies (plus N discarded intermediate arrays) that froze the list while it
+  // loaded. Buffering the appliers and flushing them in one prev.map keeps that work linear
+  // in the file count. The applier still receives each row's live object, so a field the
+  // user typed into mid-read keeps winning through mergeReadMeta exactly as before.
+  const metaPatchBuffer = useRef(new Map<string, (t: TrackItem) => TrackItem>())
+  const metaFlushScheduled = useRef(false)
+  const flushMetaPatches = useCallback((): void => {
+    metaFlushScheduled.current = false
+    const appliers = metaPatchBuffer.current
+    if (appliers.size === 0) return
+    metaPatchBuffer.current = new Map()
+    setTracks((prev) => prev.map((t) => appliers.get(t.id)?.(t) ?? t))
+  }, [])
+  const enqueueMetaPatch = useCallback(
+    (id: string, applier: (t: TrackItem) => TrackItem): void => {
+      metaPatchBuffer.current.set(id, applier)
+      if (metaFlushScheduled.current) return
+      metaFlushScheduled.current = true
+      // A microtask: every read that has already resolved when this one lands shares the
+      // flush, so a batch rewrites the array a handful of times instead of once per file —
+      // the reads that resolve in the same microtask checkpoint coalesce. It fires before
+      // the next paint, so a row's metadata lands with no visible lag versus the per-file
+      // write it replaces, and (unlike a 0ms timer) it settles within the same act() that
+      // awaited the reads, keeping the write synchronous from a caller's point of view.
+      queueMicrotask(flushMetaPatches)
+    },
+    [flushMetaPatches],
+  )
+
   async function addPaths(paths: string[], restore?: Record<string, SessionEdit>): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
@@ -254,14 +287,13 @@ export function useTrackLibrary({
       const finalMeta = saved ? saved.meta : readMeta
       // The row is editable while the read runs, so merge instead of overwriting:
       // a field the user typed into meanwhile keeps the user's value, and the read
-      // fills only what was left untouched.
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === base.id
-            ? { ...t, ...patch, meta: mergeReadMeta(base.meta, t.meta, finalMeta) }
-            : t,
-        ),
-      )
+      // fills only what was left untouched. Queued into the shared flush rather than
+      // written on its own, so a batch of reads costs one array rewrite, not one each.
+      enqueueMetaPatch(base.id, (t) => ({
+        ...t,
+        ...patch,
+        meta: mergeReadMeta(base.meta, t.meta, finalMeta),
+      }))
       onMetaLoaded({ ...base, ...patch, meta: finalMeta })
       return true
     } catch {
@@ -277,17 +309,11 @@ export function useTrackLibrary({
         diskSignature: trackSignature({ meta: base.meta }),
       }
       if (saved) Object.assign(patch, restoredPatch(saved))
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === base.id
-            ? {
-                ...t,
-                ...patch,
-                meta: saved ? mergeReadMeta(base.meta, t.meta, saved.meta) : t.meta,
-              }
-            : t,
-        ),
-      )
+      enqueueMetaPatch(base.id, (t) => ({
+        ...t,
+        ...patch,
+        meta: saved ? mergeReadMeta(base.meta, t.meta, saved.meta) : t.meta,
+      }))
       return false
     }
   }
