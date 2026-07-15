@@ -8,6 +8,7 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
+import * as duplicates from '../lib/duplicates'
 import { waveformOptions } from './useWaveform'
 import { type ViewCacheEntry, useTracksView } from './useTracksView'
 
@@ -113,6 +114,26 @@ describe('useTracksView', () => {
       track('c', { title: 'Ghosts', artist: 'deadmau5' }),
     ])
     expect(result.current.tracksView.map((t) => t.duplicate ?? false)).toEqual([true, true, false])
+  })
+
+  // The duplicate scan folds artist+title (NFD normalize + regex) per track — the heaviest
+  // per-track work here. A background analysis landing re-mints the tracks array without
+  // touching any tag, so re-folding on that tick would burn CPU that competes with typing.
+  // It must re-fold only when an artist or title actually changes.
+  it('does not re-scan duplicates when a tick changes nothing about artist or title', () => {
+    const dupSpy = vi.spyOn(duplicates, 'duplicateIds')
+    const a = track('a', { title: 'Strobe', artist: 'deadmau5' })
+    const b = track('b', { title: 'Ghosts', artist: 'deadmau5' })
+    const { rerender } = setup([a, b])
+    const afterFirst = dupSpy.mock.calls.length
+
+    // A progress tick hands back fresh track objects (new identity) with the same tags.
+    rerender({ tracks: [{ ...a }, { ...b }] })
+    expect(dupSpy.mock.calls.length).toBe(afterFirst)
+
+    // An actual title edit must re-scan.
+    rerender({ tracks: [{ ...a, meta: { ...a.meta, title: 'Ghosts' } }, { ...b }] })
+    expect(dupSpy.mock.calls.length).toBeGreaterThan(afterFirst)
   })
   // The attention filters' facts, derived from whatever wave any consumer decoded:
   // silence flags a suggested cut the track hasn't staged (a staged trim clears it —
