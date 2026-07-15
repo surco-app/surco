@@ -207,7 +207,7 @@ export function QualitySection({
               </div>
             ) : spectrum ? (
               <>
-                <Spectrogram spectrum={spectrum} />
+                <Spectrogram spectrum={spectrum} transcoded={transcoded} />
                 {/* Only when the verdict needs justifying: a full-band good file is
                     already said twice (green badge, cutoff chip), so its caption
                     would be the third telling of the same fact. */}

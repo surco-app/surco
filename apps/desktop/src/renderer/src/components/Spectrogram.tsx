@@ -10,7 +10,16 @@ import { freqAtFraction } from '../lib/spectrumAxis'
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
 const FILTER_ID = 'spectrum-duotone'
 
-export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.JSX.Element {
+export function Spectrogram({
+  spectrum,
+  transcoded = false,
+}: {
+  spectrum: SpectrumResult
+  // A fake lossless: the band above the cutoff is dead, so it gets shaded red and the
+  // cutoff line reads as a wall. The caller (QualitySection) already resolves this from
+  // the container + knee, so the picture reuses that verdict rather than recomputing it.
+  transcoded?: boolean
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
   const ramp = useSpectrumDuotone()
   const { maximized } = useMaximizedSection()
@@ -71,12 +80,33 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
             {f / 1000}k
           </span>
         ))}
+      {/* The dead band above a fake lossless's cutoff: synthetic silence sold as lossless.
+          Shading it red — a faint diagonal wash from the cutoff line to the top of the
+          frame — turns the verdict into something you read at a glance, without decoding
+          the picture. Only for a real transcode, so a genuine dark master is never dressed
+          up as a fake. */}
+      {transcoded && nyquist > 0 && spectrum.cutoffHz !== null && (
+        <div
+          data-testid="spectrum-deadband"
+          aria-hidden="true"
+          style={{ height: `${(1 - spectrum.cutoffHz / nyquist) * 100}%` }}
+          className="spectrum-deadband pointer-events-none absolute inset-x-0 top-0"
+        />
+      )}
       {nyquist > 0 && spectrum.cutoffHz !== null && (
         <div
           style={{ top: `${(1 - spectrum.cutoffHz / nyquist) * 100}%` }}
-          className="pointer-events-none absolute inset-x-0 border-t border-dashed border-[var(--color-fg-muted)]"
+          className={`pointer-events-none absolute inset-x-0 border-t border-dashed ${
+            transcoded ? 'border-[var(--color-danger)]' : 'border-[var(--color-fg-muted)]'
+          }`}
         >
-          <span className="absolute right-1 top-0.5 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[10px] font-medium text-[var(--color-fg)]">
+          <span
+            className={`absolute right-1 top-0.5 rounded border bg-[var(--color-panel)]/80 px-1 text-[10px] font-medium ${
+              transcoded
+                ? 'border-[var(--color-danger)]/40 text-[var(--color-danger)]'
+                : 'border-[var(--color-line)] text-[var(--color-fg)]'
+            }`}
+          >
             {/* The line marks a codec wall only when a knee was actually found; a knee-free
                 taper just shows how far the genuine highs reach, so calling it a "cutoff"
                 there would contradict the "no codec cut" caption below and read as a fake. */}

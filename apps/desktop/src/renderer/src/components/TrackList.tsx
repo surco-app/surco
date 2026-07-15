@@ -17,9 +17,8 @@ import type { OutputFormat } from '../../../shared/types'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
-import type { Verdict } from '../lib/quality'
 import type { ClickMods } from '../lib/selection'
-import { sourceFormat, trackQuality } from '../lib/triage'
+import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem, TrackStatus } from '../types'
 import { Tooltip } from './Tooltip'
 import { TrackContextMenu } from './TrackContextMenu'
@@ -89,25 +88,33 @@ function StatusBadge({
   return <span className={`${badgeBase} ${statusColor[track.status]}`} />
 }
 
+// The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
+// which the row leaves blank (guarded before QualityMark is reached).
+type RowVerdict = Exclude<TrackQuality, 'unanalyzed'>
+
 // The quality verdict reads as a distinct severity glyph, not a second colored dot, so it
 // can't be mistaken for the round conversion-status light on the cover corner (both share the
 // green/amber/red palette). good stays a quiet check — positive confirmation without
-// shouting — while warn/bad escalate by both shape and color.
-const qualityIcon: Record<Verdict, { Icon: LucideIcon; className: string }> = {
+// shouting — while warn/bad escalate by both shape and color. transcoded (fake lossless)
+// shares bad's red octagon: it's the same "reject" severity, distinguished by its "Fake
+// lossless" tooltip rather than a new colour, so the row palette stays green/amber/red.
+const qualityIcon: Record<RowVerdict, { Icon: LucideIcon; className: string }> = {
   good: { Icon: CircleCheck, className: 'text-good/70' },
   warn: { Icon: TriangleAlert, className: 'text-warn' },
   bad: { Icon: OctagonAlert, className: 'text-danger' },
   processed: { Icon: OctagonAlert, className: 'text-danger' },
+  transcoded: { Icon: OctagonAlert, className: 'text-danger' },
 }
 
-const qualityLabel: Record<Verdict, string> = {
+const qualityLabel: Record<RowVerdict, string> = {
   good: 'editor.qualityGood',
   warn: 'editor.qualitySuspect',
   bad: 'editor.qualityBad',
   processed: 'editor.qualityProcessed',
+  transcoded: 'editor.qualityTranscode',
 }
 
-function QualityMark({ verdict, label }: { verdict: Verdict; label: string }): React.JSX.Element {
+function QualityMark({ verdict, label }: { verdict: RowVerdict; label: string }): React.JSX.Element {
   const { Icon, className } = qualityIcon[verdict]
   return (
     <span data-testid="track-quality" data-quality={verdict} className="group/dot relative flex">

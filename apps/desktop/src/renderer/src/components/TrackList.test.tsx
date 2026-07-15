@@ -567,14 +567,22 @@ describe('TrackList quality badge', () => {
   })
 
   // The badge is the whole point of batch triage: a re-encoded MP3 (cutoff far below
-  // Nyquist) must be flaggable in the list without opening each track.
-  it('flags a deeply brick-walled track in red', () => {
-    renderList([track({ id: 'a', spectrum: spectrum(16000) })])
+  // Nyquist) must be flaggable in the list without opening each track. An honest lossy
+  // container keeps the plain 'bad' — the deception verdict is reserved for lossless ones.
+  it('flags a deeply brick-walled lossy track in red', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a.mp3', spectrum: spectrum(16000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'bad')
   })
 
+  // Same cut, but hidden inside a lossless container: the editor's headline is "fake
+  // lossless", and the row must say the same so the fake is spottable without opening it.
+  it('flags a lossless container hiding a codec cut as transcoded', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(16000) })])
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'transcoded')
+  })
+
   it('flags a moderate shortfall in amber', () => {
-    renderList([track({ id: 'a', spectrum: spectrum(18000) })])
+    renderList([track({ id: 'a', inputPath: '/music/a.mp3', spectrum: spectrum(18000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'warn')
   })
 

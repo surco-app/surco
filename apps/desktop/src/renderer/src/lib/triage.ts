@@ -1,16 +1,23 @@
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
-import { qualityVerdict, type Verdict } from './quality'
+import { isTranscode, qualityVerdict, type Verdict } from './quality'
 
 // The per-track quality verdict surfaced as a row badge, so a whole dropped folder
 // can be triaged at a glance instead of opening each track. 'unanalyzed' covers both
 // "spectrum not measured yet" and "cutoff pass was inconclusive" — neither has a
-// verdict to show, and both leave the row blank.
-export type TrackQuality = Verdict | 'unanalyzed'
+// verdict to show, and both leave the row blank. 'transcoded' is a fake-lossless: a
+// lossy cut hidden in a lossless container — the editor's headline verdict, promoted
+// to the row so the deception is spottable without opening the track.
+export type TrackQuality = Verdict | 'unanalyzed' | 'transcoded'
 
 export function trackQuality(track: TrackItem): TrackQuality {
   const s = track.spectrum
   if (!s || s.cutoffHz === null) return 'unanalyzed'
+  // Transcode outranks the plain 'bad' grade the same way it does in the editor: a codec
+  // knee in a .flac/.wav/.aiff means the file lies about its format, which is the headline.
+  // Needs the extension, so it reads inputPath — the spectrum alone can't tell the container.
+  const ext = track.inputPath?.split('.').pop()?.toLowerCase() ?? ''
+  if (isTranscode(ext, s.cutoffHz, s.hasKnee, s.processed)) return 'transcoded'
   return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed, s.hasKnee)
 }
 
@@ -84,7 +91,8 @@ export function sourceFormat(track: TrackItem): string | undefined {
 // choice isolates all the dubious rips.
 function matchesQuality(track: TrackItem, filter: QualityFilter): boolean {
   const q = trackQuality(track)
-  if (filter === 'suspect') return q === 'warn' || q === 'bad' || q === 'processed'
+  if (filter === 'suspect')
+    return q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded'
   return q === filter
 }
 
@@ -239,7 +247,7 @@ export function qualityCounts(tracks: TrackItem[]): {
   let grid = 0
   for (const t of tracks) {
     const q = trackQuality(t)
-    if (q === 'warn' || q === 'bad' || q === 'processed') suspect += 1
+    if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
     else if (q === 'good') good += 1
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1

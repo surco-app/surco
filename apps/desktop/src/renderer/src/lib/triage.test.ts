@@ -63,6 +63,24 @@ describe('trackQuality', () => {
       trackQuality(withSpectrum({ cutoffHz: 20000, sampleRateHz: 44100, processed: true })),
     ).toBe('processed')
   })
+
+  it('is transcoded when a lossless container hides a codec cut (fake lossless)', () => {
+    // The editor's headline verdict for this file is "fake lossless", not a plain "bad
+    // quality": a real codec knee can't occur in genuine lossless. The row must say the
+    // same thing so the fake can be spotted without opening the editor — so the same
+    // spectrum in a .flac is 'transcoded', not 'bad'.
+    const track = withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true })
+    ;(track as { inputPath: string }).inputPath = '/x/on-the-edge.flac'
+    expect(trackQuality(track)).toBe('transcoded')
+  })
+
+  it('stays bad for the same cut inside a lossy container (an honest MP3)', () => {
+    // An MP3 with a 16 kHz knee is just a normal lossy file, not a lie about its format,
+    // so it keeps the plain 'bad' verdict — 'transcoded' is reserved for the deception.
+    const track = withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true })
+    ;(track as { inputPath: string }).inputPath = '/x/on-the-edge.mp3'
+    expect(trackQuality(track)).toBe('bad')
+  })
 })
 
 describe('tracksToAnalyze', () => {

@@ -44,6 +44,21 @@ describe('Spectrogram cutoff label', () => {
   })
 })
 
+// A fake lossless is the most damning verdict: the whole band above the codec cut is dead,
+// synthetic silence dressed up as lossless. Shading that dead band red — only when the file
+// is actually a transcode — makes "the audio ends here" legible without reading a spectrogram.
+describe('Spectrogram dead-band shading', () => {
+  it('shades the band above the cutoff when the file is a transcode', () => {
+    render(<Spectrogram spectrum={{ ...base, hasKnee: true }} transcoded />)
+    expect(screen.getByTestId('spectrum-deadband')).toBeInTheDocument()
+  })
+
+  it('leaves a genuine track unshaded', () => {
+    render(<Spectrogram spectrum={{ ...base, hasKnee: false }} />)
+    expect(screen.queryByTestId('spectrum-deadband')).toBeNull()
+  })
+})
+
 // A sound engineer wants to read the exact frequency anywhere on the spectrogram, not just
 // estimate between the fixed 5 kHz marks. Hovering draws a crosshair labelled with the
 // frequency that row maps to; leaving hides it again.
