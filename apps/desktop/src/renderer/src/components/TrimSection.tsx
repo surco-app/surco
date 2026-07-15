@@ -351,16 +351,20 @@ function Lane({
             onPointerUp={onRelease}
             onPointerCancel={onRelease}
           >
+            {/* Focus SHARPENS the line rather than haloing it: the snap's wide, spread
+                glow, worn as a persistent state, smeared across the wave until the line
+                itself was lost in it. Focus instead widens the line a hair and gives it
+                a tight, spreadless glow — the line stays a crisp line, just brighter. */}
             <span
               aria-hidden="true"
               data-testid={snapped ? `trim-snapped-${side}` : undefined}
-              className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_8px_2px_var(--color-accent)] ${
+              className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
                 snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
               }`}
             />
             <span
               aria-hidden="true"
-              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-150 group-focus-visible:shadow-[0_0_8px_var(--color-accent)] ${
+              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
                 snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
               }`}
             />
