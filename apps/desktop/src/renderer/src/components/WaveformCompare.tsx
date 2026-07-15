@@ -36,6 +36,13 @@ const HIRES_MIN_ZOOM = 8
 // canvas ceiling; past it the base blurs, but the hi-res canvas covers it there.
 const BASE_RASTER_MAX = 32640
 
+// Once the hi-res canvas is drawing the visible detail (past HIRES_MIN_ZOOM), the base is
+// only the blurry backdrop at the edges — so it needs no more than a couple of panels of
+// pixels. Rasterizing it to the full zoom×width instead built a canvas tens of thousands
+// of pixels wide: a huge GPU bitmap that janked the editor and, un-clipped for a frame
+// while a re-render (an auto-match tick) resettled the layout, smeared across the app.
+const BASE_RASTER_HIRES_CAP = 4096
+
 // The ×N chip's text: pinch zoom makes the factor continuous, so round to what
 // the eye needs — tenths under ×10, whole steps above ("×3.4", "×27").
 export function zoomLabel(zoom: number): string {
@@ -413,7 +420,11 @@ export function Strip({
         if (scrollerRef) scrollerRef.current = el
       }}
       data-testid="waveform-scroller"
-      className={`scrollbar-none overflow-y-hidden rounded-lg ${
+      // w-full + min-w-0 + contain pin the scroller to its column's width and isolate its
+      // layout, so the zoom×100% strip inside can only ever scroll — it can never push the
+      // scroller wide and spill the wave across the app, not even for the one frame an
+      // auto-match re-render resettles the layout in.
+      className={`scrollbar-none w-full min-w-0 [contain:layout_paint] overflow-y-hidden rounded-lg ${
         zoom > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'
       }`}
     >
@@ -431,7 +442,10 @@ export function Strip({
       >
         <canvas
           ref={canvasRef}
-          width={Math.min(BASE_RASTER_MAX, Math.round(raster * zoom))}
+          width={Math.min(
+            hiResActive ? BASE_RASTER_HIRES_CAP : BASE_RASTER_MAX,
+            Math.round(raster * zoom),
+          )}
           height={splitActive ? CANVAS_H * 1.5 : tall ? CANVAS_H * 2 : CANVAS_H}
           className={`block w-full rounded-lg bg-[var(--color-field)] ${
             splitActive ? 'h-36' : tall ? 'h-48' : 'h-24'

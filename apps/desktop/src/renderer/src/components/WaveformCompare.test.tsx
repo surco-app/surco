@@ -163,6 +163,43 @@ describe('WaveformCompare', () => {
 
 // The pre-conversion view: the source's wave alone, with the same measured figures,
 // so the normalization controls are tuned against what the file actually looks like.
+describe('Strip base raster at high zoom', () => {
+  // At a deep zoom the base canvas is stretched to zoom×100% of the panel. Rasterizing it
+  // to that full width made a canvas tens of thousands of pixels wide (×32 → ~32k px) — a
+  // huge GPU bitmap that janked and could spill past its clip while the editor re-rendered
+  // (the "waveform smeared across the app" report). Past the hi-res takeover zoom the sharp
+  // detail comes from the separate hi-res canvas, so the base only needs a modest raster.
+  it('caps the base canvas raster well below the giant full-zoom width when zoomed in', () => {
+    // inputPath is what turns the hi-res canvas on past the takeover zoom — the grid lane
+    // always passes it, so the base becomes the mere backdrop the cap applies to.
+    const { container } = renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        inputPath="/m/a.flac"
+        zoom={32}
+      />,
+    )
+    // The first canvas is the stretched base (the hi-res one carries data-testid).
+    const base = container.querySelector('canvas') as HTMLCanvasElement
+    // 600 × 32 would be 19200; the bug's OVERLAY_W path reached ~32640. Capped, the base
+    // stays a few thousand pixels while the hi-res canvas covers the fine detail.
+    expect(base.width).toBeLessThanOrEqual(8192)
+  })
+
+  it('keeps the full base raster at 1× where there is no hi-res canvas', () => {
+    const { container } = renderWithQuery(
+      <Strip wave={wave} loading={false} loudness={undefined} color={AFTER_COLOR} zoom={1} />,
+    )
+    const base = container.querySelector('canvas') as HTMLCanvasElement
+    // At 1× the base IS the wave the user sees, so it keeps its full base raster
+    // (the default CANVAS_W the grid overrides with OVERLAY_W in the real editor).
+    expect(base.width).toBe(600)
+  })
+})
+
 describe('Strip view reporting', () => {
   // An overlay that renders only the visible beats (the grid section) needs the
   // window the strip already tracks internally; the callback hands it out without
