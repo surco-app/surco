@@ -263,9 +263,12 @@ export function coverArgs(input: string, output: string, maxPx?: number): string
   ]
 }
 
-// Display-thumbnail cap. 512 keeps the editor's artwork well sharp on retina while
-// staying ~30-60KB per track instead of the megabyte-scale original.
-const COVER_THUMB_PX = 512
+// Display-thumbnail cap. The editor's artwork renders at w-40 (160 CSS px → 320 px on a
+// 2× retina panel), so 384 keeps it crisp there with margin to spare while cutting the
+// per-track base64 the whole crate holds in memory by ~44% vs the old 512 (384²/512²≈0.56)
+// — the dominant memory scaler on a big crate. The lightbox loads the full-res original on
+// demand, so it never depends on this thumbnail being large.
+const COVER_THUMB_PX = 384
 
 // Original size of the attached picture, probed without decoding it.
 async function probeCoverDims(input: string): Promise<{ width: number; height: number }> {
