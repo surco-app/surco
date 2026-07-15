@@ -1177,7 +1177,11 @@ export function GridSection({
                       aria-valuemax={Number(durationSec.toFixed(2))}
                       aria-valuenow={Number(shown.anchorSec.toFixed(2))}
                       tabIndex={0}
-                      className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none focus-visible:outline-1 focus-visible:outline-accent"
+                      // Focus sharpens the handle's own line and dot rather than
+                      // boxing it: an outline on a strip this thin read as a stray
+                      // rectangle. The tight, spreadless glow keeps the line a crisp
+                      // line — the same treatment the trim handles use.
+                      className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none"
                       style={{ left: `${pct(shown.anchorSec)}%` }}
                       onKeyDown={(e) => {
                         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -1192,11 +1196,11 @@ export function GridSection({
                     >
                       <span
                         aria-hidden="true"
-                        className="absolute inset-y-0 left-1/2 w-px bg-[var(--color-warn)]"
+                        className="absolute inset-y-0 left-1/2 w-px bg-[var(--color-warn)] group-focus-visible:shadow-[0_0_4px_var(--color-warn)]"
                       />
                       <span
                         aria-hidden="true"
-                        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-[var(--color-warn)]"
+                        className="absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-[var(--color-warn)] group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-warn)]"
                       />
                     </div>
                     {/* One handle per grid change, visually a diamond so it reads
@@ -1213,7 +1217,8 @@ export function GridSection({
                         aria-valuemax={Number(durationSec.toFixed(2))}
                         aria-valuenow={Number(change.anchorSec.toFixed(2))}
                         tabIndex={0}
-                        className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none focus-visible:outline-1 focus-visible:outline-accent"
+                        // Same sharpen-not-box focus as the anchor handle above.
+                        className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none"
                         style={{ left: `${pct(change.anchorSec)}%` }}
                         onKeyDown={(e) => {
                           if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -1237,11 +1242,11 @@ export function GridSection({
                       >
                         <span
                           aria-hidden="true"
-                          className="absolute inset-y-0 left-1/2 w-px bg-[var(--color-warn)]"
+                          className="absolute inset-y-0 left-1/2 w-px bg-[var(--color-warn)] group-focus-visible:shadow-[0_0_4px_var(--color-warn)]"
                         />
                         <span
                           aria-hidden="true"
-                          className="absolute top-1/2 left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-[var(--color-warn)]"
+                          className="absolute top-1/2 left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-[var(--color-warn)] group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-warn)]"
                         />
                       </div>
                     ))}
