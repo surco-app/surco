@@ -91,7 +91,11 @@ export function Waveform({
       {playheadSec !== null && durationSec > 0 && (
         <div
           data-testid="waveform-playhead"
-          className="pointer-events-none absolute top-0 h-full w-px bg-accent"
+          // White, not accent: the wave itself is accent-blue, so a blue playhead
+          // vanished into it. bg-fg reads against both the blue bars and the dark
+          // ground, and a soft glow lifts it off a busy stretch — the same white
+          // audition playhead the beatgrid lane uses.
+          className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-fg shadow-[0_0_3px_rgba(0,0,0,0.6)]"
           style={{ left: `${pct(playheadSec)}%` }}
         />
       )}
