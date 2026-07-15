@@ -862,9 +862,30 @@ export function GridSection({
               <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
                 {/* The toolbar reads as rekordbox's GRID EDIT: icon-only verbs in
                     small groups, ordered the way the work actually goes — set the
-                    TEMPO, trim it FINE, place the PHASE, CHECK it (by machine or
-                    by ear), UNDO. Labels live in the tooltips (and aria), so the
-                    row stays one calm line instead of a sentence. */}
+                    TEMPO, trim it FINE, place the PHASE, CHECK it by ear, UNDO.
+                    Labels live in the tooltips (and aria), so the row stays one
+                    calm line instead of a sentence.
+                    Auto is the exception, and it leads: it's what most users
+                    press first, it's the one control here that REBUILDS the grid
+                    rather than nudging it, and buried among identical icons it
+                    read as just another nudge. An accented, labelled button says
+                    "start here" — and its own tint separates it from the fine
+                    verbs without needing a divider. */}
+                <button
+                  type="button"
+                  data-testid="grid-reset"
+                  aria-label={tr('grid.resetHint')}
+                  onClick={autoDetect}
+                  disabled={reprobing}
+                  className={`press relative flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-2.5 text-[11px] font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 ${controlH}`}
+                >
+                  <Wand2
+                    className={`${glyph} ${reprobing ? 'animate-pulse' : ''}`}
+                    aria-hidden="true"
+                  />
+                  {tr('grid.reset')}
+                  <Tooltip label={tr('grid.resetHint')} />
+                </button>
                 <label className="flex shrink-0 items-center gap-1.5 text-[10px] text-fg-dim">
                   <span className="font-medium uppercase tracking-wider">
                     {tr('grid.bpmLabel')}
@@ -998,22 +1019,11 @@ export function GridSection({
                         !hasNextSegment,
                       )}
                     </span>
-                    {/* Let the machine check the grid: Auto listens again and
-                        re-places it, the audition plays the stretch so the ear
-                        can. Neither one places a beat by hand — grouping them
-                        with the verbs that do left the speaker looking stranded
-                        among tools it had nothing to do with. */}
+                    {/* Check the grid by ear: the audition plays the stretch so
+                        you can hear the beats land on it. Its own group — playing
+                        audio is neither a nudge nor the machine's Auto (which now
+                        leads the row), so it sits apart from both. */}
                     <span className="flex shrink-0 items-center gap-0.5">
-                      {iconButton(
-                        'grid-reset',
-                        tr('grid.resetHint'),
-                        autoDetect,
-                        <Wand2
-                          className={`${glyph} ${reprobing ? 'animate-pulse' : ''}`}
-                          aria-hidden="true"
-                        />,
-                        reprobing,
-                      )}
                       {iconButton(
                         'grid-audition',
                         tr('grid.audition'),
