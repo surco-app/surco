@@ -11,7 +11,11 @@ vi.mock('./tempo', () => ({
 }))
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
 vi.mock('./tags', () => ({ writeTags: vi.fn(), copyCueFrames: vi.fn() }))
+vi.mock('./channelScan', () => ({
+  runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
+}))
 
+import { runChannelScan } from './channelScan'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
 import { detectBeatgrid, detectBpm } from './tempo'
@@ -91,6 +95,22 @@ describe('runWorkerJob', () => {
       undefined,
       { bpm: 128, anchorSec: 0.25 },
     )
+  })
+
+  // The channel scan is the one async job: it spawns ffmpeg and streams the native decode,
+  // so it runs here off the main process's event loop. The dispatcher must hand runChannelScan
+  // the input, the main-resolved ffmpegPath, the probed channel count and the timeout, and
+  // await its result — a mismatch would starve the compare strip of clip marks / lanes.
+  it('routes the channel scan to runChannelScan with the ffmpeg path, channels and timeout', async () => {
+    const out = await runWorkerJob({
+      type: 'channelScan',
+      input: '/in.flac',
+      ffmpegPath: '/bin/ffmpeg',
+      channels: 2,
+      timeoutMs: 120000,
+    })
+    expect(runChannelScan).toHaveBeenCalledWith('/in.flac', '/bin/ffmpeg', 2, 120000)
+    expect(out).toEqual({ clipped: [false, true], channels: [] })
   })
 
   it('routes cue copies with source, destination, shift and beatgrid in order', () => {

@@ -1,4 +1,12 @@
-import type { Beatgrid, BeatgridResult, BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import type {
+  Beatgrid,
+  BeatgridResult,
+  BpmResult,
+  KeyResult,
+  TrackMetadata,
+  WaveformScan,
+} from '../shared/types'
+import { runChannelScan } from './channelScan'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
@@ -32,11 +40,24 @@ export type WorkerJob =
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
+  // The native-rate clip/channel scan: spawns ffmpeg and streams ~32M samples through a
+  // per-block reducer. ffmpegPath and channels ride the job as data because the worker has
+  // no `app`/binaries to resolve them; running it here keeps that reduction off the main
+  // process's event loop (the one worker job that is async — it awaits the decode).
+  | { type: 'channelScan'; input: string; ffmpegPath: string; channels: number; timeoutMs: number }
 
-export type WorkerJobResult = BpmResult | BeatgridResult | KeyResult | number[] | null
+export type WorkerJobResult =
+  | BpmResult
+  | BeatgridResult
+  | KeyResult
+  | number[]
+  | WaveformScan
+  | null
 
-export function runWorkerJob(job: WorkerJob): WorkerJobResult {
+export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'channelScan':
+      return runChannelScan(job.input, job.ffmpegPath, job.channels, job.timeoutMs)
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
     case 'beatgrid':

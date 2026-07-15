@@ -79,7 +79,6 @@ import { tmpName } from './tmp'
 import {
   type ChannelWave,
   computePeaks,
-  createChannelScan,
   WAVEFORM_BUCKETS,
   WAVEFORM_SAMPLE_RATE,
 } from './waveform'
@@ -1748,43 +1747,21 @@ export async function measureWaveformWindow(
 // red while Audacity showed sparse marks. Streamed via spawn because a native stereo
 // decode of a long mix is gigabytes of f32, far past any exec buffer, while the scan
 // itself keeps only per-block accumulators.
+// Probe the channel count on the main process (cheap ffprobe), then hand the heavy
+// spawn+stream reduction to the analysis worker so its ~32M-sample loop never blocks the
+// event loop (IPC, menu, the surco:// audio stream). ffmpegPath rides along because the
+// worker has no `app`/binaries to resolve it. The DSP itself is unchanged (runChannelScan).
 async function scanChannels(
   input: string,
 ): Promise<{ clipped: boolean[]; channels: ChannelWave[] }> {
   const { channels } = await probeAudio(input)
-  const scan = createChannelScan(Math.max(1, channels))
-  return new Promise((resolve, reject) => {
-    const child = spawn(
-      ffmpegPath,
-      ['-hide_banner', '-loglevel', 'error', '-i', input, '-map', '0:a:0', '-f', 'f32le', '-'],
-      { stdio: ['ignore', 'pipe', 'ignore'], timeout: ANALYSIS_TIMEOUT_MS },
-    )
-    if (child.pid !== undefined) {
-      try {
-        setPriority(child.pid, osConstants.priority.PRIORITY_BELOW_NORMAL)
-      } catch {
-        // Same best-effort niceness as niceDecode: normal priority is a fine fallback.
-      }
-    }
-    // stdout chunks split at arbitrary byte offsets, so carry each chunk's tail bytes
-    // into the next before viewing as f32 — and copy out of Node's shared Buffer pool,
-    // whose offsets need not be 4-byte aligned (same dance as decodePcm).
-    let tail = Buffer.alloc(0)
-    child.stdout.on('data', (chunk: Buffer) => {
-      const data = tail.length > 0 ? Buffer.concat([tail, chunk]) : chunk
-      const usable = data.length - (data.length % 4)
-      tail = Buffer.from(data.subarray(usable))
-      if (usable === 0) return
-      const aligned = new Uint8Array(usable)
-      aligned.set(data.subarray(0, usable))
-      scan.push(new Float32Array(aligned.buffer))
-    })
-    child.on('error', reject)
-    child.on('close', (code) => {
-      if (code === 0) resolve(scan.finish())
-      else reject(new Error(`channel scan exited with code ${code}`))
-    })
-  })
+  return runInWorker<WaveformScan>({
+    type: 'channelScan',
+    input,
+    ffmpegPath,
+    channels: Math.max(1, channels),
+    timeoutMs: ANALYSIS_TIMEOUT_MS,
+  }) as Promise<{ clipped: boolean[]; channels: ChannelWave[] }>
 }
 
 export async function measureWaveform(input: string): Promise<WaveformResult | null> {
