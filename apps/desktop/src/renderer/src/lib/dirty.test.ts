@@ -54,6 +54,21 @@ describe('isStale', () => {
     expect(isStale({ ...converted(), coverUrl: 'https://example.com/new.jpg' })).toBe(true)
   })
 
+  // Swapping one embedded (base64 data URL) cover for another must still read as stale —
+  // the change-detecting proxy has to distinguish them without carrying the payload.
+  it('is true when an embedded base64 cover is swapped for a different one', () => {
+    const t = converted({ coverUrl: `data:image/jpeg;base64,${'A'.repeat(50000)}` })
+    expect(isStale({ ...t, coverUrl: `data:image/jpeg;base64,${'B'.repeat(50000)}` })).toBe(true)
+  })
+
+  // The whole point of Finding 4: the signature must NOT embed the ~40–110 KB base64
+  // cover, or every staleness check and session save stringifies it per track (tens of MB
+  // across a crate). A proxy keeps the signature small while still detecting change.
+  it('keeps the signature small instead of embedding the base64 cover', () => {
+    const big = `data:image/jpeg;base64,${'A'.repeat(80000)}`
+    expect(trackSignature({ ...converted(), coverUrl: big }).length).toBeLessThan(1000)
+  })
+
   // The trim lives on the track (unlike the declick/normalize dials), so it rides the
   // signature: dragging a handle after an export must bring the Update button back —
   // and, through the same signature in hasStagedEdits, get the edit into session.json.

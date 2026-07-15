@@ -6,6 +6,18 @@ type SignatureFields = Pick<
   'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim' | 'beatgrid'
 >
 
+// A change-detecting proxy for the cover, never the cover itself. An embedded cover is a
+// ~40–110 KB base64 data URL; putting it verbatim in the signature meant stringifying that
+// whole string per track on every staleness check and every debounced session save (tens of
+// MB of JSON across a big crate). A data URL changes at its head or in length whenever the
+// image does, so length + a short prefix distinguishes any real swap without carrying the
+// payload; http/blob URLs are already short, so they pass through whole.
+function coverProxy(url: string | undefined): string {
+  if (!url) return ''
+  if (url.startsWith('data:')) return `${url.length}:${url.slice(0, 64)}`
+  return url
+}
+
 // Serializes the fields that determine the converted output. A snapshot is taken
 // when a track finishes (processedSignature); when the live values diverge from
 // it the track is "stale" — the file on disk no longer matches the editor, so the
@@ -14,7 +26,7 @@ export function trackSignature(track: SignatureFields): string {
   return JSON.stringify([
     track.meta,
     track.outputName ?? '',
-    track.coverUrl ?? '',
+    coverProxy(track.coverUrl),
     track.coverPath ?? '',
     // Normalized so a trim with an unset bound and an absent trim read identically.
     track.trim ? [track.trim.startSec ?? null, track.trim.endSec ?? null] : null,
