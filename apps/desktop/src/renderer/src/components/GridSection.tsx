@@ -877,7 +877,13 @@ export function GridSection({
                   aria-label={tr('grid.resetHint')}
                   onClick={autoDetect}
                   disabled={reprobing}
-                  className={`press relative flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-2.5 text-[11px] font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 ${controlH}`}
+                  // A transparent border of its own: the icon buttons all carry a
+                  // 1px border, so their fill sits inset by it. Without a matching
+                  // border the accent fill runs a pixel proud top and bottom and
+                  // the button reads as taller than the row though the box is the
+                  // same height — the accent border keeps the fill on the shared
+                  // line while staying invisible against it.
+                  className={`press relative flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-2.5 text-[11px] font-medium text-[var(--color-on-accent)] hover:border-[var(--color-accent-hover)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 ${controlH}`}
                 >
                   <Wand2
                     className={`${glyph} ${reprobing ? 'animate-pulse' : ''}`}
