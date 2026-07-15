@@ -324,7 +324,12 @@ function Lane({
             aria-valuemax={Number(durationSec.toFixed(2))}
             aria-valuenow={Number(cut.toFixed(2))}
             tabIndex={0}
-            className="absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none focus-visible:outline-1 focus-visible:outline-accent"
+            // Keyboard focus lights the handle's own line and dot instead of drawing
+            // a box around it: an outline on a strip this thin and tall read as a
+            // stray rectangle, and the arrows (which need the handle focused) made it
+            // a constant sight. The glow is the snap's, so focus and snap speak the
+            // same visual language.
+            className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none"
             style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
             onKeyDown={(e) => {
               if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -349,13 +354,13 @@ function Lane({
             <span
               aria-hidden="true"
               data-testid={snapped ? `trim-snapped-${side}` : undefined}
-              className={`absolute inset-y-0 left-1/2 w-px bg-accent ${
+              className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_8px_2px_var(--color-accent)] ${
                 snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
               }`}
             />
             <span
               aria-hidden="true"
-              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
+              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-150 group-focus-visible:shadow-[0_0_8px_var(--color-accent)] ${
                 snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
               }`}
             />
