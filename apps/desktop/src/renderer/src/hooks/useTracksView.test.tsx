@@ -143,8 +143,12 @@ describe('useTracksView', () => {
     // 100 s: 10 s of surface noise, music with a clipped stretch, clean tail cut.
     const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 ? 0.5 : 0.0005))
     const clipped = peaks.map((_, i) => i === 100)
-    client.setQueryData(['waveform', '/music/a.wav'], { peaks, durationSec: 100, clipped })
-    client.setQueryData(['waveform', '/music/b.wav'], { peaks, durationSec: 100, clipped })
+    // Silence rides the peaks probe; clipping rides the heavier scan probe (its own
+    // cache entry since the split), and the list reads both to keep both facts.
+    client.setQueryData(['waveform', '/music/a.wav'], { peaks, durationSec: 100 })
+    client.setQueryData(['waveform', '/music/b.wav'], { peaks, durationSec: 100 })
+    client.setQueryData(['waveformScan', '/music/a.wav'], { clipped })
+    client.setQueryData(['waveformScan', '/music/b.wav'], { clipped })
     const { result } = setup([track('a'), track('b', {}, { trim: { startSec: 9.9 } })], client)
     expect(result.current.tracksView[0].audioIssues).toEqual({ silence: true, clipping: true })
     // Same wave, but the trim is staged: nothing left to retouch on the silence axis.

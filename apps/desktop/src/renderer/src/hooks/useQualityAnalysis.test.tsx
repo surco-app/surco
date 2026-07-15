@@ -36,7 +36,7 @@ describe('useQualityAnalysis', () => {
   // (those with a spectrum) alone, then return to idle.
   it('analyzes only the not-yet-measured tracks and ends idle', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = {
       current: [
         track('a'),
@@ -55,6 +55,31 @@ describe('useQualityAnalysis', () => {
     expect(measured).toEqual(['/music/a.wav', '/music/c.wav'])
   })
 
+  // Clipping is the second attention-filter fact, and since the clip/channel scan
+  // split into its own probe it no longer rides the peaks wave. The sweep must decode
+  // that scan too, or one "analyze all" would fill the silence bucket collection-wide
+  // but leave the clipping bucket empty for every track the user never opened.
+  it('decodes the clip scan for each not-yet-measured track', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    const waveformScan = vi.fn().mockResolvedValue(null)
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram,
+      waveform: vi.fn().mockResolvedValue(null),
+      waveformScan,
+      onWindowFocus: () => () => {},
+    }
+    const targetsRef = { current: [track('a'), track('b', { spectrum }), track('c')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    const scanned = waveformScan.mock.calls.map((c) => c[0]).sort()
+    expect(scanned).toEqual(['/music/a.wav', '/music/c.wav'])
+  })
+
   // A second trigger while a sweep is already running must not start a competing pass.
   it('ignores a re-trigger while a sweep is in flight', async () => {
     let release: (v: SpectrumResult) => void = () => {}
@@ -62,7 +87,7 @@ describe('useQualityAnalysis', () => {
       release = r
     })
     const spectrogram = vi.fn().mockReturnValue(gate)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a')] }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
@@ -89,7 +114,7 @@ describe('useQualityAnalysis', () => {
       if (path === '/music/b.wav') throw new Error('unreadable')
       return spectrum
     })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a'), track('b'), track('c')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
@@ -107,7 +132,7 @@ describe('useQualityAnalysis', () => {
   // only when something actually failed, so a good folder shows no "0 failed" noise.
   it('does not report errors when every file analyzes cleanly', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
     const targetsRef = { current: [track('a'), track('b')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {

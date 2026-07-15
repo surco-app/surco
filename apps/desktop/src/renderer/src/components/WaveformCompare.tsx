@@ -569,7 +569,7 @@ function ClippedFlag({
   active,
   onToggle,
 }: {
-  wave: WaveformResult | null | undefined
+  wave: (WaveformResult & Partial<WaveformScan>) | null | undefined
   // The ceiling the marks measure against; absent, the marks are the decoder's
   // true-clipping flags instead.
   clipDb?: number

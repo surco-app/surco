@@ -14,7 +14,7 @@ import { type QueryClient, queryOptions } from '@tanstack/react-query'
 // unmounts costs nothing on the way back: the main process still caches the result on disk,
 // so a re-probe is a file read rather than a re-decode.
 export const HEAVY_PROBE_GC_MS = 5 * 60 * 1_000
-const HEAVY_PROBES = new Set(['waveform', 'spectrogram'])
+const HEAVY_PROBES = new Set(['waveform', 'spectrogram', 'waveformScan'])
 
 export function analysisOptions<T>(name: string, inputPath: string, probe: () => Promise<T>) {
   return queryOptions({
