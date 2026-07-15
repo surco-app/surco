@@ -27,6 +27,10 @@
       {
         "text": "Al abrir una sección del editor ves su esqueleto de carga al instante, en lugar de un hueco en blanco mientras se prepara: recorte, reparación de clics, loudness, beatgrid y calidad responden de inmediato.",
         "in": "0.60.1"
+      },
+      {
+        "text": "Cargar una onda ya no da tirones. El análisis de canales que necesita la onda se hace ahora en segundo plano, así que la interfaz sigue respondiendo mientras se prepara una pista pesada en vez de quedarse un instante congelada.",
+        "in": "0.60.2"
       }
     ]
   },
