@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.60",
+    "date": "July 15, 2026",
+    "title": "Fine-tune the grid by hand",
+    "items": [
+      {
+        "text": "The beatgrid's Auto button now leads. It's the first thing you reach for and the one control in that row that rebuilds the whole grid rather than nudging it, so it stops being another icon lost among the rest and becomes the accented button that opens the toolbar — \"start here\".",
+        "in": "0.60.0"
+      },
+      {
+        "text": "And when Auto doesn't land it, you start over. A new button collapses every segment back to one clean tempo, so you can lay the grid by hand from a tidy slate instead of fighting the stretches the detector got wrong. Undo brings it back.",
+        "in": "0.60.0"
+      },
+      {
+        "text": "The waves show what the trim takes away. In click repair, loudness and the beatgrid, the head and tail the silence trim will cut are dimmed over the wave, so you can see at a glance which audio won't reach the export — without anything shifting.",
+        "in": "0.60.0"
+      },
+      {
+        "text": "A silence cut fine-tunes with the arrows. As well as dragging the handle, the left/right arrows and a pair of flanking buttons nudge the cut point a hair at a time, to land the start or the end without wrestling the mouse.",
+        "in": "0.60.0"
+      }
+    ]
+  },
+  {
     "version": "0.59",
     "date": "July 14, 2026",
     "title": "The grid follows the platter",

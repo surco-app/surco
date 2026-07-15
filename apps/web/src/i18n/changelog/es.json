@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.60",
+    "date": "15 de julio de 2026",
+    "title": "Afinar el grid a mano",
+    "items": [
+      {
+        "text": "El botón Auto del beatgrid ahora manda. Es lo primero que pulsas y lo único de esa fila que reconstruye el grid entero en vez de ajustarlo, así que deja de ser un icono más camuflado entre los demás y pasa a ser un botón destacado que abre la barra: «empieza por aquí».",
+        "in": "0.60.0"
+      },
+      {
+        "text": "Y cuando Auto no acierta, empiezas de cero. Un botón nuevo colapsa todos los segmentos a un solo tempo limpio, para que ajustes el grid a mano desde un lienzo ordenado en vez de pelearte con los tramos que el detector no clavó. Reversible con deshacer.",
+        "in": "0.60.0"
+      },
+      {
+        "text": "Las ondas te enseñan lo que el recorte se lleva. En reparación de clics, loudness y beatgrid, la parte que el trim de silencios va a cortar (por delante y por detrás) se muestra atenuada sobre la onda, así ves de un vistazo qué audio no llegará a la salida sin que nada se desplace.",
+        "in": "0.60.0"
+      },
+      {
+        "text": "Un corte de silencio se afina con las flechas. Además de arrastrar el asa, las flechas izquierda/derecha y unos botones a los lados mueven el punto de corte de a poco, para clavar el arranque o el final sin pelearte con el ratón.",
+        "in": "0.60.0"
+      }
+    ]
+  },
+  {
     "version": "0.59",
     "date": "14 de julio de 2026",
     "title": "El grid sigue al plato",
