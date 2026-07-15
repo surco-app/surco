@@ -1,3 +1,4 @@
+import { outputBeatgrid } from '../../../shared/beatgrid'
 import type { DeclickMode, NormalizeConfig, ProcessResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
@@ -36,12 +37,27 @@ export function exportedPatch(
       diskSignature: trackSignature(track),
     }
   }
+  // An in-place export baked the staged trim into the rewritten source: the new
+  // inputPath already starts at the cut. Left staged, the trim would re-cut the
+  // already-cut file on the next Update — eating the start of the track — and the
+  // grid (stated in original-file seconds) would sit a cut's worth ahead. So the
+  // trim is dropped and the grid folded onto the trimmed timeline (outputBeatgrid,
+  // the same fold the DJ exports use). Only when a trim was actually staged —
+  // otherwise nothing shifted and the fields must stay untouched.
+  const settledTrack =
+    result.inPlace && track.trim
+      ? { ...track, trim: undefined, beatgrid: outputBeatgrid(track.beatgrid, track.trim) }
+      : track
   return {
     status: 'done',
     outputPath: result.outputPath,
     ...(result.inPlace && {
       inputPath: result.outputPath,
       fileName: parseFileName(result.outputPath).fileName,
+    }),
+    ...(settledTrack !== track && {
+      trim: settledTrack.trim,
+      beatgrid: settledTrack.beatgrid,
     }),
     // The conversion's automatic Apple Music step already put the current metadata
     // in the library (add or sync), so the footer must show the added state rather
@@ -55,12 +71,12 @@ export function exportedPatch(
     // and filter read it owned without waiting for the library snapshot to refresh.
     ...(result.addedToEngineDj && { engineDjAdded: true }),
     stage: undefined,
-    processedSignature: trackSignature(track),
+    processedSignature: trackSignature(settledTrack),
     processedNormalize: normalize,
     processedDeclick: declick,
     // The staged state now lives in the converted file, so nothing is at risk
     // anymore: the session store stops persisting this track and the reopen offer
     // may expire freely again.
-    diskSignature: trackSignature(track),
+    diskSignature: trackSignature(settledTrack),
   }
 }
