@@ -31,6 +31,10 @@
       {
         "text": "Cargar una onda ya no da tirones. El análisis de canales que necesita la onda se hace ahora en segundo plano, así que la interfaz sigue respondiendo mientras se prepara una pista pesada en vez de quedarse un instante congelada.",
         "in": "0.60.3"
+      },
+      {
+        "text": "Más ligera con el crate lleno. El resto del análisis pesado de audio pasa a segundo plano y las carátulas ocupan menos en memoria, así que con cientos de pistas cargadas la app va más suelta y consume menos.",
+        "in": "0.60.4"
       }
     ]
   },
