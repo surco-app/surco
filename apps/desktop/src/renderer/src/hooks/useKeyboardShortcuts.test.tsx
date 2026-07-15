@@ -123,6 +123,24 @@ describe('useKeyboardShortcuts space claim', () => {
     expect(play).toHaveBeenCalledTimes(1)
   })
 
+  // Two sections with their own transport can be open at once (click repair and the
+  // beatgrid). If the one on top does not claim Space (repair is Off, so it has nothing
+  // to play), the key must still not fall through to the mini-player while the section
+  // BELOW is auditioning — that is the whole track blaring under a live transport, the
+  // exact thing the claim exists to stop. The nearest claimant on the stack owns it.
+  it('keeps Space off the player when a lower open section still claims it', () => {
+    const { play } = setup(false)
+    const grid = vi.fn()
+    const releaseGrid = claimKeys({ play: grid })
+    // The section on top (repair Off) claims its lane keys but not play.
+    const releaseTop = claimKeys({ 'centre-beat': vi.fn() })
+    press({ key: ' ' })
+    expect(grid).toHaveBeenCalledTimes(1)
+    expect(play).not.toHaveBeenCalled()
+    releaseTop()
+    releaseGrid()
+  })
+
   // rekordbox's C centres the nearest beat under the lane's reference. It only
   // acts while a section claims it — a bare letter must stay free otherwise.
   it('routes a bare C to a claiming section and leaves it inert otherwise', () => {

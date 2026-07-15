@@ -73,4 +73,20 @@ describe('spaceClaim', () => {
     expect(runKeyClaim('centre-beat')).toBe(false)
     release()
   })
+
+  // The top section can be open yet have nothing to play (click repair set to Off claims
+  // no play handler). Space must then reach the nearest section BELOW that is still
+  // auditioning, not fall through to the mini-player and blast the whole track under a
+  // live transport. Play searches down the stack; the lane verbs stay top-only.
+  it('runs play from the nearest claimant below when the top has none', () => {
+    const below = vi.fn()
+    const releaseBelow = claimKeys({ play: below })
+    const releaseTop = claimKeys({ 'centre-beat': vi.fn() })
+    expect(runKeyClaim('play')).toBe(true)
+    expect(below).toHaveBeenCalled()
+    // A lane verb the top did not register still does not reach the section below.
+    expect(runKeyClaim('add-segment')).toBe(false)
+    releaseTop()
+    releaseBelow()
+  })
 })

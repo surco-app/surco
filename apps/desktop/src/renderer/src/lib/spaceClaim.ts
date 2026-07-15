@@ -42,12 +42,28 @@ export function claimKeys(handlers: Handlers): () => void {
 }
 
 // True when a section handled the key — the caller must then leave the global command
-// alone. Only the top claimant answers: a section that owns the lane owns it whole, so a
-// key it did not register does not fall through to the section underneath (which the user
-// is not looking at) — it goes to the global command, as if nothing were claimed.
+// alone.
+//
+// Play is answered by the NEAREST open section that claims it, not only the top. Two
+// sections with a transport can be open at once (click repair and the beatgrid); if the
+// top one has nothing to play right now (repair set to Off) the key must not fall through
+// to the mini-player while the one below is still auditioning — that is the whole track
+// blaring under a live transport, the exact thing the claim exists to stop.
+//
+// The lane verbs (centre-beat, add-segment, prev/next-segment) stay top-only: they act on
+// the section the user is looking at, so a key the top did not register is simply not that
+// section's verb and must not reach into the one underneath.
 export function runKeyClaim(key: ClaimedKey): boolean {
-  const handler = claims.at(-1)?.[key]
+  const handler = key === 'play' ? nearestPlay() : claims.at(-1)?.[key]
   if (!handler) return false
   handler()
   return true
+}
+
+function nearestPlay(): (() => void) | undefined {
+  for (let i = claims.length - 1; i >= 0; i--) {
+    const handler = claims[i].play
+    if (handler) return handler
+  }
+  return undefined
 }
