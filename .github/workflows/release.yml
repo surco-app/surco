@@ -174,9 +174,37 @@ jobs:
           APPLE_API_KEY: ${{ runner.temp }}/apple-api-key.p8
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        # Apple's timestamp and notarization servers fail intermittently — a signed
+        # binary gets "A timestamp was expected but was not found", or notarization
+        # times out — and it has taken down whole releases (v0.60.2, v0.60.3) even
+        # though the code was fine. electron-builder is idempotent against the release
+        # it publishes to, so retry the mac build a few times with backoff. A retry only
+        # fires on a transient signing/notarization/network signature; a real, repeatable
+        # failure (bad cert, code error) still fails on the first pass and stops, so this
+        # never masks a genuine break — it just rides out Apple's flakiness.
         run: |
           npx electron-vite build
-          npx electron-builder --mac --publish always
+          transient='timestamp was expected|notariz|Unable to (?:process|upload)|Could not (?:connect|resolve)|timed out|timeout|502 Bad Gateway|503 Service|connection reset|network error|EAI_AGAIN|ETIMEDOUT|ECONNRESET'
+          attempts=3
+          for i in $(seq 1 "$attempts"); do
+            echo "::group::electron-builder --mac (attempt $i/$attempts)"
+            if npx electron-builder --mac --publish always 2>&1 | tee builder.log; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "$i" -eq "$attempts" ]; then
+              echo "::error::mac build failed after $attempts attempts"
+              exit 1
+            fi
+            if ! grep -qEi "$transient" builder.log; then
+              echo "::error::mac build failed with a non-transient error — not retrying"
+              exit 1
+            fi
+            backoff=$((i * 30))
+            echo "Transient signing/notarization failure — retrying in ${backoff}s"
+            sleep "$backoff"
+          done
 
       # Both macOS runners publish a file literally named latest-mac.yml, so on the
       # shared release the second upload clobbers the first and one arch loses its
