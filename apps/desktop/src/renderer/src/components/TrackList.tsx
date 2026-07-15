@@ -64,10 +64,16 @@ const statusColor: Record<TrackStatus, string> = {
 const badgeBase =
   'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)]'
 
-function StatusBadge({ track }: { track: TrackItem }): React.JSX.Element | null {
+function StatusBadge({
+  track,
+  stale,
+}: {
+  track: TrackItem
+  stale: boolean
+}): React.JSX.Element | null {
   // Stale wins over done: a converted track edited afterwards shows steady amber (unlike the
   // processing pulse) so pending Updates stay visible and can be batched for later.
-  if (isStale(track)) return <span className={`${badgeBase} bg-warn`} />
+  if (stale) return <span className={`${badgeBase} bg-warn`} />
   // done lands as a check on a Tokyo Night accent coin — an unmistakable "converted" mark,
   // set apart from the round transient/problem dots by its shape. The check uses the ink token
   // so it keeps contrast on the accent in both the light and dark themes.
@@ -178,6 +184,10 @@ const TrackRow = memo(function TrackRow({
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const quality = trackQuality(t)
+  // isStale JSON.stringifies the track's meta and beatgrid; computing it once per row and
+  // threading it to the badge and the tooltip avoids paying that serialization twice on
+  // every render of a converted row.
+  const stale = isStale(t)
   // Source format read off the input path — the parsed fileName drops its extension —
   // so a mixed crate (WAV rips next to bought MP3s) can be scanned for what still
   // needs a conversion without opening each track. Shared with the per-format filter
@@ -285,9 +295,9 @@ const TrackRow = memo(function TrackRow({
               <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
             </span>
           )}
-          <StatusBadge track={t} />
+          <StatusBadge track={t} stale={stale} />
           <Tooltip
-            label={tr(isStale(t) ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
+            label={tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
             align="start"
             scope="dot"
           />
