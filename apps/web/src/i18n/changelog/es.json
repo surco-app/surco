@@ -30,7 +30,7 @@
       },
       {
         "text": "Cargar una onda ya no da tirones. El análisis de canales que necesita la onda se hace ahora en segundo plano, así que la interfaz sigue respondiendo mientras se prepara una pista pesada en vez de quedarse un instante congelada.",
-        "in": "0.60.2"
+        "in": "0.60.3"
       }
     ]
   },

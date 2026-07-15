@@ -30,7 +30,7 @@
       },
       {
         "text": "Loading a wave no longer stutters. The channel scan the wave needs now runs in the background, so the interface stays responsive while a heavy track prepares instead of locking up for a moment.",
-        "in": "0.60.2"
+        "in": "0.60.3"
       }
     ]
   },
