@@ -226,7 +226,7 @@ const TrackRow = memo(function TrackRow({
       // focus, the shared visibility observer and the rowEls measuring all keep working
       // untouched. contain-intrinsic-size feeds the scrollbar a height estimate for the
       // skipped rows; `auto` then remembers each row's real size once it has rendered.
-      className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_56px]"
+      className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_48px]"
       draggable
       onDragStart={(e) => {
         // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
@@ -273,7 +273,7 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+        className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
           selected
             ? 'bg-[var(--color-accent-soft)]/85'
             : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
@@ -292,12 +292,12 @@ const TrackRow = memo(function TrackRow({
               data-testid="track-cover"
               src={t.embeddedCover}
               alt=""
-              className="h-9 w-9 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+              className="h-8 w-8 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
             />
           ) : (
             <span
               data-testid="track-cover-placeholder"
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
             >
               <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
             </span>
@@ -430,7 +430,7 @@ const TrackRow = memo(function TrackRow({
         type="button"
         aria-label={tr('player.play')}
         onClick={() => onActivate(t)}
-        className="absolute top-1/2 left-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md bg-black/55 text-white opacity-0 backdrop-blur-[1px] transition-opacity pointer-events-none hover:bg-black/70 group-hover:pointer-events-auto group-hover:opacity-100"
+        className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/55 text-white opacity-0 backdrop-blur-[1px] transition-opacity pointer-events-none hover:bg-black/70 group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <Play className="h-4 w-4 fill-current" aria-hidden="true" />
       </button>
