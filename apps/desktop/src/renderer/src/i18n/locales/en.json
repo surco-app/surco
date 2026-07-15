@@ -552,6 +552,7 @@
     "nextSegment": "Next grid change (])",
     "segmentAt": "Grid segment at {{time}}, {{bpm}} BPM",
     "removeSegment": "Remove the tempo change at {{time}}",
+    "clearHint": "Start over: drop every segment back to one clean tempo. Discards the grid's segments.",
     "centreBeat": "Centre beat (C)",
     "tapHint": "Tap the tempo",
     "expand": "Expand beat intervals",

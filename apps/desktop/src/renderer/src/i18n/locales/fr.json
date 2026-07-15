@@ -552,6 +552,7 @@
     "nextSegment": "Changement de grille suivant (])",
     "segmentAt": "Segment de grille à {{time}}, {{bpm}} BPM",
     "removeSegment": "Supprimer le changement de tempo à {{time}}",
+    "clearHint": "Repartir de zéro : ramène tous les segments à un seul tempo. Annule les segments de la grille.",
     "centreBeat": "Centrer le beat (C)",
     "tapHint": "Battez le tempo",
     "expand": "Élargir les intervalles de beats",

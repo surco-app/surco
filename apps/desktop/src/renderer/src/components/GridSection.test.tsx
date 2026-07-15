@@ -413,6 +413,38 @@ describe('GridSection two-lane layout', () => {
     expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: 0 })
   })
 
+  // When the auto grid comes out as a tangle of segments the ear disagrees with,
+  // redoing the detection just returns another tangle. Start-over collapses the
+  // lot to one clean tempo so the user can lay the grid by hand from there.
+  it('collapses a multi-segment grid back to one tempo', async () => {
+    const onChange = vi.fn()
+    render(
+      section({
+        value: {
+          bpm: 120,
+          anchorSec: 0.1,
+          changes: [
+            { anchorSec: 20, bpm: 121 },
+            { anchorSec: 40, bpm: 119 },
+          ],
+        },
+        onChange,
+      }),
+    )
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    fireEvent.click(screen.getByTestId('grid-clear'))
+    // Every segment gone, the base tempo kept — a clean slate, not a blank one.
+    expect(onChange).toHaveBeenCalledWith({ bpm: 120, anchorSec: 0.1 })
+  })
+
+  // A grid that already holds one tempo has nothing to start over from, so the
+  // button is dead — pressing it would only churn an identical grid through undo.
+  it('disables start-over on a single-tempo grid', async () => {
+    render(section({ value: { bpm: 120, anchorSec: 0.1 } }))
+    await screen.findByTestId('grid-overlay', undefined, { timeout: 3000 })
+    expect(screen.getByTestId('grid-clear')).toBeDisabled()
+  })
+
   // The base grid is where the track's grid STARTS. There is no earlier stretch
   // to fall back to, so offering to remove it would be offering to leave the
   // track with no grid at all — a different action, and not this one.

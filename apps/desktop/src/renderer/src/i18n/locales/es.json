@@ -552,6 +552,7 @@
     "nextSegment": "Cambio de grid siguiente (])",
     "segmentAt": "Segmento del grid en {{time}}, {{bpm}} BPM",
     "removeSegment": "Quitar el cambio de tempo de {{time}}",
+    "clearHint": "Empezar de cero: borra todos los segmentos y vuelve a un solo tempo. Descarta los segmentos del grid.",
     "centreBeat": "Centrar beat (C)",
     "tapHint": "Marca el tempo a golpes",
     "expand": "Expandir intervalos de beat",

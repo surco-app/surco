@@ -7,6 +7,7 @@ import {
   Crosshair,
   FoldHorizontal,
   Redo2,
+  RotateCcw,
   SplitSquareHorizontal,
   Square,
   StepBack,
@@ -601,6 +602,20 @@ export function GridSection({
     commit({ ...shown, changes })
   }
 
+  // "Start over": collapse whatever the detector (or the user) built into a
+  // single constant-tempo grid at the base BPM, dropping every segment. When the
+  // auto grid comes out as a tangle of stretches the ear disagrees with, redoing
+  // the detection just hands back another tangle — the point is to get a clean
+  // slate to lay the grid on by hand. Keeps the base bpm/anchor (a sane starting
+  // point beats a blank one) and routes through commit, so a mis-click is one
+  // undo away from the tangle it replaced.
+  function resetGrid(): void {
+    if (!shown) return
+    editHold.current = null
+    if (!shown.changes?.length) return
+    commit({ bpm: shown.bpm, anchorSec: shown.anchorSec })
+  }
+
   // "Auto": drop whatever was staged AND redo the analysis from scratch — the
   // cached detection is deliberately skipped, so a grid computed by an older
   // detector (or one the user distrusts) gets a genuinely fresh verdict rather
@@ -999,6 +1014,17 @@ export function GridSection({
                       )}
                     </span>
                     <span className="flex shrink-0 items-center gap-0.5">
+                      {/* Start over: drop every segment back to one clean tempo.
+                          Its own group next to undo — it destroys the segment
+                          work, and undo is where that gets taken back. Dead when
+                          there is already only one stretch. */}
+                      {iconButton(
+                        'grid-clear',
+                        tr('grid.clearHint'),
+                        resetGrid,
+                        <RotateCcw className={glyph} aria-hidden="true" />,
+                        !shown?.changes?.length,
+                      )}
                       {iconButton(
                         'grid-undo',
                         tr('grid.undo'),

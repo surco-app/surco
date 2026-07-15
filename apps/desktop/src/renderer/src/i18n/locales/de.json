@@ -552,6 +552,7 @@
     "nextSegment": "Nächster Grid-Wechsel (])",
     "segmentAt": "Grid-Segment bei {{time}}, {{bpm}} BPM",
     "removeSegment": "Tempowechsel bei {{time}} entfernen",
+    "clearHint": "Von vorn beginnen: alle Segmente auf ein einziges Tempo zurücksetzen. Verwirft die Segmente des Grids.",
     "centreBeat": "Beat zentrieren (C)",
     "tapHint": "Tempo tippen",
     "expand": "Beat-Abstände vergrößern",
