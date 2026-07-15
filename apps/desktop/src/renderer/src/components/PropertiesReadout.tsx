@@ -3,7 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackProperties } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
-import { formatFileSize } from '../lib/properties'
+import { fileExtension, formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
 import { Tooltip } from './Tooltip'
 
@@ -26,7 +26,9 @@ export function PropertiesReadout({
   duration,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const ext = fileName.includes('.') ? (fileName.split('.').pop() ?? '').toUpperCase() : ''
+  // The extension comes from the real source path, not the parsed fileName: the name has
+  // dropped its extension and a "20. Title" prefix would otherwise print the title as caps.
+  const ext = fileExtension(inputPath)
   // Show only the containing folder's name (the full path lives in the tooltip) so the
   // long absolute path doesn't blow out the row.
   const folderName =

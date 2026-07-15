@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { formatFileSize } from './properties'
+import { fileExtension, formatFileSize } from './properties'
+
+describe('fileExtension', () => {
+  it('reads the real extension off the source path, uppercased', () => {
+    expect(fileExtension('/music/bases buenas/20. Dj Isaac - On The Edge.flac')).toBe('FLAC')
+    expect(fileExtension('/x/song.mp3')).toBe('MP3')
+  })
+
+  // The Properties panel took the extension from the parsed file NAME, which has already
+  // dropped its extension AND carries a track-number dot ("20. Title"): splitting on '.'
+  // there returned the title in caps as the "extension". The real path is the only place
+  // the true container lives, so a dotted title never masquerades as a format again.
+  it('ignores dots in the file body — a track-number prefix is not an extension', () => {
+    expect(fileExtension('/x/20. Dj Isaac - On The Edge (Original Mix).flac')).toBe('FLAC')
+  })
+
+  it('is empty when the path has no extension', () => {
+    expect(fileExtension('/x/song')).toBe('')
+    expect(fileExtension('')).toBe('')
+  })
+})
 
 describe('formatFileSize', () => {
   it('keeps raw bytes below a kilobyte', () => {
