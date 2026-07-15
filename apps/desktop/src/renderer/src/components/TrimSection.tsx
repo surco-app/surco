@@ -416,8 +416,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   // The waveform decodes the full file, so it waits for the selection to rest and
   // for the section to actually be open — same gating as the loudness strip.
   const settled = useSettled(SELECTION_SETTLE_MS)
-  const { data: wave, isFetching } = useWaveform(inputPath, open && settled)
-  const loading = isFetching && !wave
+  const { data: wave } = useWaveform(inputPath, open && settled)
+  // Show the loading skeleton the instant the section opens, not only once the query is
+  // fetching: the decode is gated behind a ~400ms settle, so `isFetching` stays false for
+  // that window and the body used to render nothing — the section looked like it hadn't
+  // opened at all. While it's open and the wave hasn't landed, it's loading.
+  const loading = open && !wave
   const durationSec = wave?.durationSec ?? 0
   const suggestion = useMemo(() => (wave ? detectTrim(wave) : undefined), [wave])
   // The unpadded truth the drag magnet aims at: where the music actually starts/ends.

@@ -73,6 +73,20 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
+  // The decode is gated behind a ~400ms settle, so the query isn't fetching yet for that
+  // window. The section must still show its loading skeleton the instant it opens — before
+  // this it rendered an empty body during the settle and looked like it hadn't opened.
+  it('shows the loading skeleton immediately on open, before the wave decodes', () => {
+    // A waveform that never resolves, so the only thing that can be on screen is the
+    // pre-decode loading state.
+    ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
+      .fn()
+      .mockReturnValue(new Promise(() => {}))
+    render(section())
+    expect(screen.getByTestId('trim-loading')).toBeInTheDocument()
+  })
+
+
   // The detection only suggests — nothing is staged until a scissors marker is
   // clicked, and each side stages alone, so "only the end" is one click. The
   // finding itself rides the header as a pill, the app's one convention for
