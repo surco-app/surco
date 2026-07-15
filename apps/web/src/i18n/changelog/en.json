@@ -19,6 +19,14 @@
       {
         "text": "A silence cut fine-tunes with the arrows. As well as dragging the handle, the left/right arrows and a pair of flanking buttons nudge the cut point a hair at a time, to land the start or the end without wrestling the mouse.",
         "in": "0.60.0"
+      },
+      {
+        "text": "Large libraries no longer bog down. Dropping hundreds of tracks at once — and typing in the editor with many loaded — no longer freezes the list: the app batches the work instead of redoing it track by track, so it stays fluid however full the crate is.",
+        "in": "0.60.1"
+      },
+      {
+        "text": "Opening an editor section shows its loading skeleton instantly, instead of a blank gap while it warms up: trim, click repair, loudness, beatgrid and quality all respond right away.",
+        "in": "0.60.1"
       }
     ]
   },

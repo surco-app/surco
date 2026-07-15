@@ -19,6 +19,14 @@
       {
         "text": "Un corte de silencio se afina con las flechas. Además de arrastrar el asa, las flechas izquierda/derecha y unos botones a los lados mueven el punto de corte de a poco, para clavar el arranque o el final sin pelearte con el ratón.",
         "in": "0.60.0"
+      },
+      {
+        "text": "Las bibliotecas grandes ya no se atascan. Soltar cientos de pistas de golpe —y teclear en el editor con muchas cargadas— dejó de congelar la lista: la app agrupa el trabajo en vez de rehacerlo pista a pista, así que se mantiene fluida por muy lleno que esté el crate.",
+        "in": "0.60.1"
+      },
+      {
+        "text": "Al abrir una sección del editor ves su esqueleto de carga al instante, en lugar de un hueco en blanco mientras se prepara: recorte, reparación de clics, loudness, beatgrid y calidad responden de inmediato.",
+        "in": "0.60.1"
       }
     ]
   },
