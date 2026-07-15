@@ -839,7 +839,13 @@ export default function App(): React.JSX.Element {
     sidebar.autoFit(contentDeficit(rows))
   }, [sidebar.autoFit])
 
-  const selected = tracks.find((t) => t.id === selectedId) ?? null
+  // Memoized so the O(n) lookup runs only when the list or the selection changes, not on
+  // every App render (a progress tick, a drag-over, a hover prefetch) — on a large crate
+  // that scan was paid on each of those frequent renders.
+  const selected = useMemo(
+    () => tracks.find((t) => t.id === selectedId) ?? null,
+    [tracks, selectedId],
+  )
   // With nothing selected there is no editor reporting picks; the convert-all
   // shortcut then falls back to the Settings defaults.
   if (!selected) resetEditorPicks()
@@ -1452,12 +1458,12 @@ export default function App(): React.JSX.Element {
     onStepTrack: moveSelection,
   })
 
+  // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
+  // changes, not on every App render — the same frequent-render concern as `selected` above.
+  const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
-  const progress = topBarProgress(
-    [analysis, matching, batchProgress, importProgress],
-    tracks.some((t) => t.loadingMeta),
-  )
+  const progress = topBarProgress([analysis, matching, batchProgress, importProgress], anyLoadingMeta)
 
   return (
     <SettingsProvider settings={settings}>
