@@ -1186,8 +1186,10 @@ export function GridSection({
                       // Focus sharpens the handle's own line and dot rather than
                       // boxing it: an outline on a strip this thin read as a stray
                       // rectangle. The tight, spreadless glow keeps the line a crisp
-                      // line — the same treatment the trim handles use.
-                      className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none"
+                      // line — the same treatment the trim handles use. shadow-none
+                      // clears the global focus-visible ring (a box-shadow, not an
+                      // outline) that outline-none leaves boxing the strip.
+                      className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none focus-visible:shadow-none"
                       style={{ left: `${pct(shown.anchorSec)}%` }}
                       onKeyDown={(e) => {
                         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -1224,7 +1226,7 @@ export function GridSection({
                         aria-valuenow={Number(change.anchorSec.toFixed(2))}
                         tabIndex={0}
                         // Same sharpen-not-box focus as the anchor handle above.
-                        className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none"
+                        className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-pointer touch-none outline-none focus-visible:shadow-none"
                         style={{ left: `${pct(change.anchorSec)}%` }}
                         onKeyDown={(e) => {
                           if (e.key === 'Delete' || e.key === 'Backspace') {

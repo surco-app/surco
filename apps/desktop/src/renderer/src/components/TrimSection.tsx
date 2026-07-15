@@ -328,8 +328,10 @@ function Lane({
             // a box around it: an outline on a strip this thin and tall read as a
             // stray rectangle, and the arrows (which need the handle focused) made it
             // a constant sight. The glow is the snap's, so focus and snap speak the
-            // same visual language.
-            className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none"
+            // same visual language. outline-none alone leaves the global focus-visible
+            // ring (a box-shadow, not an outline) boxing the 12px-wide strip, so the
+            // shadow-none kills that too.
+            className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
             style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
             onKeyDown={(e) => {
               if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
