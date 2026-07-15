@@ -35,7 +35,6 @@ import type {
 import { cachedAnalysis } from './analysisCache'
 import { seratoBeatgridVorbis } from './seratoBeatgrid'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { detectClicks } from './clickDetect'
 import { declickFilter } from '../shared/declick'
 import { trimFilter } from '../shared/trim'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
@@ -76,12 +75,7 @@ import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import {
-  type ChannelWave,
-  computePeaks,
-  WAVEFORM_BUCKETS,
-  WAVEFORM_SAMPLE_RATE,
-} from './waveform'
+import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
@@ -1601,8 +1595,10 @@ export const CLICK_SCAN_SECONDS = 480
 
 // The editor's repair section: how many audible clicks the track carries and where they
 // sit (see clickDetect.ts). Native rate, mono — a stylus click is 1-9 samples wide, so
-// any downsample smears it away. One O(n) pass, no FFT, so unlike bpm/key/shelf it runs
-// inline instead of shipping the buffer to the worker.
+// any downsample smears it away. Up to ~21M samples over an 8-minute side, so the O(n)
+// second-difference scan ships to the worker (buffer transferred) like bpm/key/shelf —
+// it fires while the user is auditioning the declick preview through surco://, and running
+// it inline stalled that very stream.
 export async function detectTrackClicks(
   input: string,
 ): Promise<{ count: number; marks: number[]; scannedSec: number }> {
@@ -1611,8 +1607,12 @@ export async function detectTrackClicks(
     seconds: CLICK_SCAN_SECONDS,
     maxBufferMb: 96,
   })
-  const marks = detectClicks(pcm, SHELF_SAMPLE_RATE)
-  return { count: marks.length, marks, scannedSec: pcm.length / SHELF_SAMPLE_RATE }
+  const scannedSec = pcm.length / SHELF_SAMPLE_RATE
+  const marks =
+    (await runInWorker<number[]>({ type: 'clicks', pcm, sampleRate: SHELF_SAMPLE_RATE }, [
+      pcm.buffer as ArrayBuffer,
+    ])) ?? []
+  return { count: marks.length, marks, scannedSec }
 }
 
 // Two signals the biquad codec-lowpass pass is blind to, both read off the same flat
@@ -1737,7 +1737,10 @@ export async function measureWaveformWindow(
     maxBufferMb: 32,
   })
   if (samples.length === 0) return null
-  return { peaks: computePeaks(samples, buckets) }
+  const peaks = await runInWorker<number[]>({ type: 'waveformPeaks', pcm: samples, buckets }, [
+    samples.buffer as ArrayBuffer,
+  ])
+  return peaks ? { peaks } : null
 }
 
 // Per-channel scan at the native rate and channel count: true-clipping flags plus
@@ -1773,10 +1776,15 @@ export async function measureWaveform(input: string): Promise<WaveformResult | n
   // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
   // stream): null tells the UI "no waveform", distinct from a decode error.
   if (samples.length === 0) return null
-  return {
-    peaks: computePeaks(samples),
-    durationSec: samples.length / WAVEFORM_SAMPLE_RATE,
-  }
+  // Read the duration before the buffer is transferred to the worker (transfer detaches it,
+  // leaving length 0). The max-abs reduction runs in the worker, off the main event loop —
+  // this fires on every play, exactly while surco:// is streaming.
+  const durationSec = samples.length / WAVEFORM_SAMPLE_RATE
+  const peaks =
+    (await runInWorker<number[]>({ type: 'waveformPeaks', pcm: samples }, [
+      samples.buffer as ArrayBuffer,
+    ])) ?? []
+  return { peaks, durationSec }
 }
 
 // The heavy half of the old waveform, split out so only the compare/player strip pays for

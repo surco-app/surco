@@ -7,11 +7,13 @@ import type {
   WaveformScan,
 } from '../shared/types'
 import { runChannelScan } from './channelScan'
+import { detectClicks } from './clickDetect'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, type CueShift, writeTags } from './tags'
 import { detectBeatgrid, detectBpm } from './tempo'
+import { computePeaks } from './waveform'
 
 // The CPU-bound work that must never run on the main process's event loop: the
 // BPM/key DSP crunches hundreds of FFTs per track, and TagLib rewrites a whole
@@ -22,6 +24,15 @@ export type WorkerJob =
   | { type: 'beatgrid'; pcm: Float32Array; sampleRate: number }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
+  // The click detector's second-difference scan over the whole native-rate side (~21M
+  // samples): one O(n) pass, but big enough to jank the surco:// audition it fires during,
+  // so it runs here like the other reductions rather than on the main event loop.
+  | { type: 'clicks'; pcm: Float32Array; sampleRate: number }
+  // The waveform envelope's max-abs reduction to peak buckets. Runs on every play and most
+  // section opens (priority 'high'), so keeping its full-length walk off the main event loop
+  // matters most of all — it fires right as surco:// starts streaming. buckets defaults to
+  // the overview grid; the deep-zoom window passes its own.
+  | { type: 'waveformPeaks'; pcm: Float32Array; buckets?: number }
   | {
       type: 'writeTags'
       file: string
@@ -66,6 +77,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return detectKey(job.pcm, job.sampleRate)
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
+    case 'clicks':
+      return detectClicks(job.pcm, job.sampleRate)
+    case 'waveformPeaks':
+      return computePeaks(job.pcm, job.buckets)
     case 'writeTags':
       writeTags(
         job.file,

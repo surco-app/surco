@@ -10,15 +10,19 @@ vi.mock('./tempo', () => ({
   detectBeatgrid: vi.fn(() => ({ bpm: 128, confidence: 0.9, anchorSec: 0.25 })),
 }))
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
+vi.mock('./clickDetect', () => ({ detectClicks: vi.fn(() => [1.5, 3.2]) }))
+vi.mock('./waveform', () => ({ computePeaks: vi.fn(() => [0.1, 0.9]) }))
 vi.mock('./tags', () => ({ writeTags: vi.fn(), copyCueFrames: vi.fn() }))
 vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
 }))
 
 import { runChannelScan } from './channelScan'
+import { detectClicks } from './clickDetect'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
 import { detectBeatgrid, detectBpm } from './tempo'
+import { computePeaks } from './waveform'
 
 describe('runWorkerJob', () => {
   it('routes bpm jobs to the tempo detector with the job pcm and rate', () => {
@@ -40,6 +44,20 @@ describe('runWorkerJob', () => {
     const out = runWorkerJob({ type: 'key', pcm, sampleRate: 11025 })
     expect(detectKey).toHaveBeenCalledWith(pcm, 11025)
     expect(out).toEqual({ key: 'Am', confidence: 0.8 })
+  })
+
+  it('routes clicks jobs to the click detector with the job pcm and rate', () => {
+    const pcm = new Float32Array([0.1, 0.2, 0.9])
+    const out = runWorkerJob({ type: 'clicks', pcm, sampleRate: 44100 })
+    expect(detectClicks).toHaveBeenCalledWith(pcm, 44100)
+    expect(out).toEqual([1.5, 3.2])
+  })
+
+  it('routes waveform peaks to computePeaks with the job pcm and bucket count', () => {
+    const pcm = new Float32Array([0.1, 0.2, 0.9])
+    const out = runWorkerJob({ type: 'waveformPeaks', pcm, buckets: 2048 })
+    expect(computePeaks).toHaveBeenCalledWith(pcm, 2048)
+    expect(out).toEqual([0.1, 0.9])
   })
 
   it('routes tag writes with the full file/meta/cover arguments', () => {
