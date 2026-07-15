@@ -2,6 +2,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SpectrumResult } from '../../../shared/types'
+import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useSpectrumDuotone } from '../hooks/useSpectrumDuotone'
 import { formatKHz } from '../lib/quality'
 import { freqAtFraction } from '../lib/spectrumAxis'
@@ -12,6 +13,15 @@ const FILTER_ID = 'spectrum-duotone'
 export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const ramp = useSpectrumDuotone()
+  const { maximized } = useMaximizedSection()
+  // Maximized, the Audio Quality box fills the window; the image must grow with it so the
+  // frequency marks (positioned by percent of this box) and the picture keep the same
+  // height. Fixed at h-80 while maximized, the picture flattened into a thin band stretched
+  // across the window — the "waveform smeared across the background" report. A viewport
+  // height (not h-full, which would need the whole portal→section chain to be a flex column)
+  // grows the box to most of the window the same way the maximized beatgrid does.
+  const tall = maximized === 'quality'
+  const heightClass = tall ? 'h-[70vh]' : 'h-80'
   const nyquist = spectrum.sampleRateHz / 2
   // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
   // that row maps to. Null while the cursor is outside, so the line shows only when reading.
@@ -26,7 +36,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only crosshair that reads the frequency under the cursor on a decorative spectrogram — there is no keyboard analogue and it carries no semantics, the value is informational for the eye following the mouse
     <div
-      className="relative w-full overflow-hidden rounded-lg border border-[var(--color-line)]"
+      className={`relative w-full overflow-hidden rounded-lg border border-[var(--color-line)] ${heightClass}`}
       onMouseMove={onMove}
       onMouseLeave={() => setHover(null)}
     >
@@ -49,7 +59,7 @@ export function Spectrogram({ spectrum }: { spectrum: SpectrumResult }): React.J
         src={spectrum.image || undefined}
         alt={tr('editor.spectrumAlt')}
         style={{ filter: `url(#${FILTER_ID})` }}
-        className="block h-80 w-full object-fill"
+        className={`block w-full object-fill ${tall ? 'h-full' : 'h-80'}`}
       />
       {nyquist > 0 &&
         FREQ_MARKS.filter((f) => f <= nyquist).map((f) => (

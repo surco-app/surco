@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
+import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult } from '../../../shared/types'
 import '../i18n'
+import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { Spectrogram } from './Spectrogram'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  resetEditorSections()
+})
 
 const base: SpectrumResult = {
   image: 'data:image/png;base64,',
@@ -41,6 +47,34 @@ describe('Spectrogram cutoff label', () => {
 // A sound engineer wants to read the exact frequency anywhere on the spectrogram, not just
 // estimate between the fixed 5 kHz marks. Hovering draws a crosshair labelled with the
 // frequency that row maps to; leaving hides it again.
+// Maximizing the Audio Quality section blows its box up to the whole window. The
+// frequency marks (20k/15k/…) position by percent of that box, but the spectrogram image
+// used to keep a fixed 320px height — so the picture flattened into a thin band stretched
+// across the window while the marks spread over the full height, the "waveform smeared
+// across the background" bug. The image must grow WITH its box so the two never desync.
+describe('Spectrogram maximized height', () => {
+  // A tiny harness that flips the shared maximize store to the quality section, the way a
+  // SectionHeader's maximize button does, then renders the spectrogram under it.
+  function Maximized(): React.JSX.Element {
+    const { setMaximized } = useMaximizedSection()
+    useEffect(() => setMaximized('quality'), [setMaximized])
+    return <Spectrogram spectrum={base} />
+  }
+
+  it('lets the image fill its box while maximized instead of a fixed short strip', () => {
+    render(<Maximized />)
+    const img = screen.getByTestId('spectrogram')
+    expect(img.className).toContain('h-full')
+    expect(img.className).not.toContain('h-80')
+  })
+
+  it('keeps the compact fixed height when not maximized', () => {
+    render(<Spectrogram spectrum={base} />)
+    const img = screen.getByTestId('spectrogram')
+    expect(img.className).toContain('h-80')
+  })
+})
+
 describe('Spectrogram hover frequency crosshair', () => {
   // jsdom does no layout, so getBoundingClientRect returns zeros and every hover would read
   // as the top edge. Stub a 400px-tall box so a mid-height hover maps to a real frequency.
