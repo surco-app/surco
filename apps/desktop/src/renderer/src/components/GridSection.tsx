@@ -182,7 +182,21 @@ export function GridSection({
           endFrac: Math.max(0, (durationSec - (trim.endSec ?? durationSec)) / durationSec),
         }
       : undefined
-  const [zoom, setZoom] = useState(WORK_ZOOM)
+  // Opens at ×1 for one frame, then jumps to the working depth. At ×32 from the very first
+  // paint the strip is zoom×100% ≈ 20000 px wide, and on a remount (switching tracks, or
+  // after a section was maximized and restored) that giant element paints for the frame
+  // before its scroller's clip settles onto it — the "waveform smeared across the app"
+  // flash. Starting narrow and widening after the first layout means the wide element only
+  // ever exists once the clip is already in place. The bump lands before the wave decodes,
+  // so the working depth is set under the loading skeleton — no visible zoom jump.
+  const [zoom, setZoom] = useState(1)
+  useEffect(() => {
+    // A timer, not requestAnimationFrame: the audition follow-scroll drives its own rAF
+    // loop that the tests pump by hand, and sharing that queue would let this bump jump
+    // its turn. A 0 ms timer defers past the first paint just the same.
+    const id = setTimeout(() => setZoom(WORK_ZOOM), 0)
+    return () => clearTimeout(id)
+  }, [])
   // Maximized (the header's own toggle drives the store), the lanes double in
   // height — the whole window is available, so the wave takes it.
   const { maximized } = useMaximizedSection()
