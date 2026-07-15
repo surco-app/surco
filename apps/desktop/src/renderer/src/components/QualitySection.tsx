@@ -66,8 +66,12 @@ export function QualitySection({
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
   const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
   const spectrum = spectrumQuery.data
-  const analyzing = spectrumQuery.isFetching
   const analyzeFailed = spectrumQuery.isError
+  // Show the scanning frame the instant the section opens, not only once the query reports
+  // fetching: for the first tick after open the query hasn't started, so `isFetching` is
+  // false and the body rendered nothing — an open chevron over an empty gap. Open with no
+  // result and no error means it's still analyzing.
+  const analyzing = open && showSpectrum && !spectrum && !analyzeFailed
   // The raw ffmpeg failure (with its temp paths and full command) is no help to a
   // user and is already logged in the main process; keep it only as a hover title
   // so the inline state can be a friendly icon + message instead of a red wall.

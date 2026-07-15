@@ -60,7 +60,11 @@ export function DeclickSection({
   const settled = useSettled(SELECTION_SETTLE_MS)
   const solo = open && !isMulti && settled
   const { data: clicks } = useClicks(inputPath, solo)
-  const { data: wave, isFetching } = useWaveform(inputPath, solo)
+  const { data: wave } = useWaveform(inputPath, solo)
+  // The strip loads from the moment the section opens (single-track), not only once the
+  // query is fetching: the decode is gated behind the ~400ms settle, so it shows its
+  // skeleton through that window instead of a blank strip. Multi-select has no strip.
+  const waveLoading = open && !isMulti && !wave
   // Off the wave the strip already loads, like the trim section — no extra probe.
   const durationSec = wave?.durationSec ?? 0
   // The staged trim as head/tail fractions, to dim the audio the export will drop.
@@ -234,7 +238,7 @@ export function DeclickSection({
               </div>
               <Strip
                 wave={wave}
-                loading={isFetching && !wave}
+                loading={waveLoading}
                 loudness={undefined}
                 // A literal colour, never a CSS var: this is a canvas fillStyle, and a
                 // canvas silently ignores `var(...)` — leaving whatever fillStyle was set

@@ -164,9 +164,13 @@ export function GridSection({
   // The waveform decodes the full file and the detection its opening minutes,
   // so both wait for the selection to rest and the section to actually be open.
   const settled = useSettled(SELECTION_SETTLE_MS)
-  const { data: wave, isFetching } = useWaveform(inputPath, open && settled)
+  const { data: wave } = useWaveform(inputPath, open && settled)
   const { data: detected } = useBeatgrid(inputPath, open && settled)
-  const loading = isFetching && !wave
+  // Loading the moment the section opens, not only once the query is fetching: the decode
+  // is gated behind a ~400ms settle, so `isFetching` stays false through that window and
+  // the body used to render nothing — the section showed an open chevron over an empty gap
+  // and looked like it hadn't opened. While it's open and the wave hasn't landed, it loads.
+  const loading = open && !wave
   const durationSec = wave?.durationSec ?? 0
   // The staged trim as head/tail fractions, for dimming the dropped audio over
   // the wave. The grid keeps drawing over the FULL file (its anchors are

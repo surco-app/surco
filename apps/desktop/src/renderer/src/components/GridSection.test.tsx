@@ -108,6 +108,18 @@ function stubOverlayRect(): void {
 }
 
 describe('GridSection header', () => {
+  // The decode is gated behind a ~400ms settle, so the query isn't fetching yet through
+  // that window. The section must still show its loading skeleton the instant it opens —
+  // before this it rendered an empty body under an open chevron and looked like it had not
+  // opened at all (the "sections don't open" report on a big crate of long FLACs).
+  it('shows the loading skeleton immediately on open, before the wave decodes', () => {
+    ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
+      .fn()
+      .mockReturnValue(new Promise(() => {}))
+    render(section())
+    expect(screen.getByTestId('waveform-compare-loading')).toBeInTheDocument()
+  })
+
   // The detection's finding rides the header as a pill, the app's one convention
   // for analysis results — readable without opening the section.
   it('pills the detected tempo once the analysis lands', async () => {
