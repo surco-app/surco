@@ -861,8 +861,14 @@ describe('Editor key suggestion', () => {
 describe('Editor multi-select sequential edits', () => {
   it('keeps applying every shared-field edit to all tracks, not just the first', () => {
     renderWithQuery(<MultiHarness />, { visibleFields: ['title', 'album', 'year', 'genre'] })
-    fireEvent.change(screen.getByTestId('field-year'), { target: { value: '1999' } })
-    fireEvent.change(screen.getByTestId('field-genre'), { target: { value: 'House' } })
+    // Fields commit on blur (the buffer only reaches global state when the user leaves
+    // the field), so each edit is followed by the blur that moving to the next field fires.
+    const year = screen.getByTestId('field-year')
+    fireEvent.change(year, { target: { value: '1999' } })
+    fireEvent.blur(year)
+    const genre = screen.getByTestId('field-genre')
+    fireEvent.change(genre, { target: { value: 'House' } })
+    fireEvent.blur(genre)
     // Both edits must land on both tracks; the bug report is the second one being dropped.
     expect(screen.getByTestId('dump')).toHaveTextContent('a:1999,House|b:1999,House')
   })
@@ -995,7 +1001,10 @@ describe('Editor multi-select', () => {
 
   it('writes a shared-field edit to every selected track', () => {
     const { onChangeAllMeta } = renderMulti()
-    fireEvent.change(screen.getByTestId('field-album'), { target: { value: 'New Album' } })
+    // The field buffers and commits on blur, so leaving the field is what pushes the edit up.
+    const album = screen.getByTestId('field-album')
+    fireEvent.change(album, { target: { value: 'New Album' } })
+    fireEvent.blur(album)
     expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
   })
 

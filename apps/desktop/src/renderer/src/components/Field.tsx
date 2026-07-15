@@ -1,8 +1,15 @@
 import type React from 'react'
-import { memo, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { Tooltip } from './Tooltip'
+
+// How long typing pauses before the edit is committed to the global track array. Each
+// keystroke that reaches that array re-runs an O(number of tracks) derived pipeline
+// (duplicate scan, quality/format tallies, filter+sort), so on a big crate committing
+// per keystroke is what made typing lag. Buffering here and committing on a pause keeps
+// the field instant and runs that walk once per edit instead of once per keypress.
+const COMMIT_DEBOUNCE_MS = 200
 
 interface FieldProps {
   name: string
@@ -38,6 +45,38 @@ export const Field = memo(function Field({
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  // The text the input shows while the user types, kept local so a keystroke doesn't
+  // touch the global track array (and its O(n) pipeline) until they pause or leave.
+  const [draft, setDraft] = useState(value)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Whether the user has an edit in flight the global state hasn't caught up to yet
+  // (typed but the debounce hasn't fired). The Editor remounts per track (key={track.id}),
+  // so a new track selected arrives as a fresh mount, not a `value` prop change — which
+  // leaves exactly one reason `value` changes under a mounted field: the state moved on
+  // its own (an undo, a landed auto-match, an applied Discogs release). We adopt that only
+  // when the field is clean; if the user is mid-edit their words win, so a match landing on
+  // the very row they're typing into can't silently revert it a few seconds later.
+  const dirty = useRef(false)
+  useEffect(() => {
+    if (!dirty.current) setDraft(value)
+  }, [value])
+  // Commit now: flush any pending debounce and push the buffered text up. Used by the
+  // debounce, by blur, and by the chips/menu so every path funnels through one place.
+  function commit(next: string): void {
+    clearTimeout(timer.current)
+    dirty.current = false
+    setDraft(next)
+    onChange(next)
+  }
+  function onType(next: string): void {
+    dirty.current = true
+    setDraft(next)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => commit(next), COMMIT_DEBOUNCE_MS)
+  }
+  // A late debounce firing after the field unmounts (track deselected mid-edit) would
+  // commit into a gone editor; clear it on unmount. Blur already flushes the common case.
+  useEffect(() => () => clearTimeout(timer.current), [])
   // A field never offers itself, and an empty field has nothing to insert.
   const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
   // The menu also formats the field's own text and can offer a "without version"
@@ -45,7 +84,7 @@ export const Field = memo(function Field({
   // there is something to insert, text to format, OR a clean-up to apply.
   const hasMenu =
     insertSources !== undefined &&
-    (insertable.length > 0 || value.trim() !== '' || !!cleanResult || !!formatResult)
+    (insertable.length > 0 || draft.trim() !== '' || !!cleanResult || !!formatResult)
   return (
     <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
@@ -66,9 +105,10 @@ export const Field = memo(function Field({
           ref={inputRef}
           data-testid={`field-${name}`}
           aria-invalid={invalid}
-          value={value}
+          value={draft}
           placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onType(e.target.value)}
+          onBlur={() => commit(draft)}
           className={`w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] ${
             hasMenu ? 'pr-8' : ''
           }`}
@@ -79,16 +119,16 @@ export const Field = memo(function Field({
             OS-native one. An empty field gets none — there's nothing to reveal, and an
             open ⋯ menu suppresses it: the menu sits inside this same wrapper, so the
             value tooltip would float over its rows. */}
-        {value && !menuOpen && <Tooltip label={value} hoverOnly />}
+        {draft && !menuOpen && <Tooltip label={draft} hoverOnly />}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}
             sources={insertable}
-            value={value}
+            value={draft}
             cleanResult={cleanResult}
             formatResult={formatResult}
             inputRef={inputRef}
-            onChange={onChange}
+            onChange={commit}
             onOpenChange={setMenuOpen}
           />
         )}
@@ -96,13 +136,13 @@ export const Field = memo(function Field({
       {suggestions && suggestions.length > 0 && (
         <span className="mt-1.5 flex flex-wrap gap-1.5">
           {suggestions.map((s) => {
-            const on = multiSuggestions ? csvHas(value, s) : value === s
+            const on = multiSuggestions ? csvHas(draft, s) : draft === s
             return (
               <button
                 key={s}
                 type="button"
                 data-testid={`chip-${s}`}
-                onClick={() => onChange(multiSuggestions ? toggleCsv(value, s) : on ? '' : s)}
+                onClick={() => commit(multiSuggestions ? toggleCsv(draft, s) : on ? '' : s)}
                 className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
                   on
                     ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'

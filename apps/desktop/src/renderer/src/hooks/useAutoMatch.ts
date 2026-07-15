@@ -42,6 +42,12 @@ interface Params {
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
+  // The id of the track whose editor field currently holds focus, or null. A field buffers
+  // its text and only commits to the track array on pause/blur, so for a ~200ms window the
+  // user's words aren't in the live meta yet — the meta-identity guard below can't see them
+  // and a match landing in that window would overwrite the row being typed into. So the
+  // sweep also skips whichever track is under active edit, read at apply time.
+  editingRef: { readonly current: string | null }
   // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
   // won or was suggested, why, and every candidate scored along the way.
   reportActivity: (report: LocalActivityReport) => void
@@ -72,6 +78,7 @@ export function useAutoMatch({
   libraryIndexRef,
   searchProvidersRef,
   matchCleanupRef,
+  editingRef,
   reportActivity,
 }: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
@@ -139,7 +146,7 @@ export function useAutoMatch({
       // verdict is discarded silently: reporting it would describe an apply that never
       // happened.
       const live = tracksRef.current.find((x) => x.id === t.id)
-      if (!live || live.meta !== t.meta) return
+      if (!live || live.meta !== t.meta || editingRef.current === t.id) return
       reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
@@ -182,7 +189,15 @@ export function useAutoMatch({
       })
       window.api.recordStat(matchStatKey(m.release.provider))
     },
-    [searchApiAt, updateTrack, tracksRef, libraryIndexRef, matchCleanupRef, reportActivity],
+    [
+      searchApiAt,
+      updateTrack,
+      tracksRef,
+      libraryIndexRef,
+      matchCleanupRef,
+      editingRef,
+      reportActivity,
+    ],
   )
 
   // The queued tracks ready to probe right now: a toolbar-enqueued track always, an

@@ -42,6 +42,7 @@ function track(id: string): TrackItem {
 function setup(
   tracks: TrackItem[],
   libraryIndex: AppleMusicIndex | null = null,
+  editingRef: { current: string | null } = { current: null },
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
@@ -61,6 +62,7 @@ function setup(
       libraryIndexRef,
       searchProvidersRef,
       matchCleanupRef,
+      editingRef,
       reportActivity,
     }),
   )
@@ -81,6 +83,26 @@ describe('useAutoMatch', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true }))
     expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ autoMatched: true }))
     await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
+  // A field buffers its text and only commits to the track array on pause/blur, so while
+  // the user types the edit isn't in the live meta yet and the meta-identity guard can't
+  // see it. If a match landed in that window it would overwrite the row being typed into.
+  // The sweep therefore also leaves alone whichever track is under active edit (editingRef).
+  it('never applies a match to the track whose field is being edited', async () => {
+    setApi()
+    const tracks = [track('a'), track('b')]
+    const editingRef = { current: 'a' }
+    const { result, updateTrack } = setup(tracks, null, editingRef)
+
+    act(() => result.current.enqueueAutoMatch(tracks, false))
+
+    // The untouched track still matches; the one being edited is left alone.
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ autoMatched: true })),
+    )
+    await waitFor(() => expect(result.current.matching).toBeNull())
+    expect(updateTrack).not.toHaveBeenCalledWith('a', expect.anything())
   })
 
   // A plausible-but-unconfirmed match (review tier) is flagged on the row for the user to

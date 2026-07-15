@@ -96,6 +96,9 @@ interface Props {
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
   // overwrites them (derive is already recorded inside onDeriveTags).
   onRecordUndo?: (ids: string[]) => void
+  // Reports which track (if any) has a field focused, so the background auto-match sweep
+  // can leave the row being typed into alone (see App's editingRef). null on blur.
+  onFieldFocusChange?: (id: string | null) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // The explicit "re-encode this one" action: a same-format source rendered again
@@ -166,6 +169,7 @@ export const Editor = memo(function Editor({
   onDeriveTags,
   onApplyTitleFormat,
   onRecordUndo,
+  onFieldFocusChange,
   onChange,
   onProcess,
   onReencode,
@@ -846,18 +850,32 @@ export const Editor = memo(function Editor({
             }
           />
           {formOpen && (
-            <MetadataForm
-              item={item}
-              isMulti={isMulti}
-              selectedTracks={selectedTracks}
-              release={release}
-              coverDims={effectiveCoverDims}
-              setCoverDims={setCoverDims}
-              onChange={onChange}
-              onApplyCoverAll={onApplyCoverAll}
-              onRate={(v) => setField('rating', v)}
-              fields={fieldSpecs}
-            />
+            // Capture focus entering/leaving the field grid so the sweep knows which row is
+            // under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
+            // outside) — moving between two fields must not flash the guard off, which would
+            // reopen the very window it closes. onChange (a text commit) also confirms the row
+            // is under active edit, in case focus arrived without a focus event we saw.
+            <div
+              onFocusCapture={() => onFieldFocusChange?.(item.id)}
+              onChangeCapture={() => onFieldFocusChange?.(item.id)}
+              onBlurCapture={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                  onFieldFocusChange?.(null)
+              }}
+            >
+              <MetadataForm
+                item={item}
+                isMulti={isMulti}
+                selectedTracks={selectedTracks}
+                release={release}
+                coverDims={effectiveCoverDims}
+                setCoverDims={setCoverDims}
+                onChange={onChange}
+                onApplyCoverAll={onApplyCoverAll}
+                onRate={(v) => setField('rating', v)}
+                fields={fieldSpecs}
+              />
+            </div>
           )}
 
           {/* The sections below the metadata form render in the user's order
