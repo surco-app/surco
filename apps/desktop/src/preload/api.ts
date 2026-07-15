@@ -32,6 +32,7 @@ import type {
   TrackMetadata,
   TrackProperties,
   WaveformResult,
+  WaveformScan,
 } from '../shared/types'
 
 export interface Api {
@@ -139,6 +140,8 @@ export interface Api {
   beatgridWindow: (path: string, startSec: number, durSec: number) => Promise<BeatgridResult | null>
   key: (path: string) => Promise<KeyResult | null>
   waveform: (path: string) => Promise<WaveformResult | null>
+  // The native-rate clip/channel scan for the compare/player strip only (marks + split).
+  waveformScan: (path: string) => Promise<WaveformScan | null>
   // A slice of the track re-decoded at full waveform fidelity, for the strips'
   // deep zoom — DAW-style windowed detail past the global envelope's resolution.
   waveformWindow: (

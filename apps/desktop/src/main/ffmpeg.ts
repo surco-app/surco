@@ -30,6 +30,7 @@ import type {
   TrackProperties,
   TrimRange,
   WaveformResult,
+  WaveformScan,
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { seratoBeatgridVorbis } from './seratoBeatgrid'
@@ -75,7 +76,13 @@ import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { type ChannelWave, computePeaks, createChannelScan, WAVEFORM_SAMPLE_RATE } from './waveform'
+import {
+  type ChannelWave,
+  computePeaks,
+  createChannelScan,
+  WAVEFORM_BUCKETS,
+  WAVEFORM_SAMPLE_RATE,
+} from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
@@ -1781,26 +1788,33 @@ async function scanChannels(
 }
 
 export async function measureWaveform(input: string): Promise<WaveformResult | null> {
-  // Best-effort clip marks and channel lanes: a failed scan only loses those,
-  // never the strip.
-  const [samples, scan] = await Promise.all([
-    decodeWaveformPcm(input),
-    scanChannels(input).catch(() => null),
-  ])
+  // Peaks-only now: the cheap 4 kHz mono decode alone. The native-rate channel scan
+  // (clip flags + L/R lanes) is a SEPARATE probe (measureChannelScan / audio:waveform-scan)
+  // that only the player/compare strip requests — so the editor sections that draw just
+  // the envelope (trim, grid, declick, auto-trim) never pay for its ~32M-sample scan.
+  const samples = await decodeWaveformPcm(input)
   // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
   // stream): null tells the UI "no waveform", distinct from a decode error.
   if (samples.length === 0) return null
-  const peaks = computePeaks(samples)
-  // The renderer indexes the scan's arrays by peak bucket, so a mismatched length
-  // (a sub-second clip decodes to fewer buckets than the fixed scan grid) drops
-  // them instead of smearing marks across the wrong bars.
-  const aligned = scan !== null && scan.clipped.length === peaks.length
   return {
-    peaks,
+    peaks: computePeaks(samples),
     durationSec: samples.length / WAVEFORM_SAMPLE_RATE,
-    clipped: aligned ? scan.clipped : undefined,
+  }
+}
+
+// The heavy half of the old waveform, split out so only the compare/player strip pays for
+// it: a full native-rate, native-channel scan for true-clip flags and the split L/R lanes.
+// Best-effort — a failed scan resolves null and the strip just loses its marks, never its
+// wave. Aligned to the fixed WAVEFORM_BUCKETS grid the peaks also use, so the renderer can
+// index clip flags straight by peak bucket; a sub-second clip whose scan lands off-grid is
+// dropped rather than smeared across the wrong bars.
+export async function measureChannelScan(input: string): Promise<WaveformScan | null> {
+  const scan = await scanChannels(input).catch(() => null)
+  if (scan === null || scan.clipped.length !== WAVEFORM_BUCKETS) return null
+  return {
+    clipped: scan.clipped,
     // Lanes only make sense as an L/R pair: mono has nothing to split and surround
     // would need a different layout than two stacked lanes.
-    channels: aligned && scan.channels.length === 2 ? scan.channels : undefined,
+    channels: scan.channels.length === 2 ? scan.channels : undefined,
   }
 }

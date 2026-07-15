@@ -622,13 +622,20 @@ export interface ProcessResult {
 export interface WaveformResult {
   peaks: number[]
   durationSec: number
+}
+
+// The native-rate scan the player/compare strip fetches on top of the peaks: true clip
+// flags and the split L/R lanes. A separate probe (audio:waveform-scan) so the editor
+// sections that draw only the envelope never pay for its heavy native decode. Every field
+// aligns to the same WAVEFORM_BUCKETS grid as WaveformResult.peaks, so the renderer indexes
+// clip flags straight by peak bucket.
+export interface WaveformScan {
   // Per-bucket true digital clipping (a native-rate sample pinned at full scale,
   // Audacity's MAX_AUDIO line) — the peaks alone can't tell clipping from loud, so
-  // the red marks read this. Absent when the scan failed: no marks, never guesses.
-  clipped?: boolean[]
+  // the red marks read this. The probe resolves null when the scan failed: no marks.
+  clipped: boolean[]
   // The same buckets per channel — envelope and clip flags — for the Audacity-style
-  // split L/R view. Present only for stereo files (mono has nothing to split);
-  // absent too when the scan failed, which hides the split toggle.
+  // split L/R view. Present only for stereo files (mono has nothing to split).
   channels?: { peaks: number[]; clipped: boolean[] }[]
 }
 

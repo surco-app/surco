@@ -20,6 +20,7 @@ vi.mock('node:child_process', () => ({
 import {
   analyzeCutoff,
   measureBpm,
+  measureChannelScan,
   measureKey,
   measureLoudness,
   measureWaveform,
@@ -52,6 +53,7 @@ describe('analysis ffmpeg reads are bounded by a kill-timeout', () => {
     await swallow(measureBpm('/in.flac'))
     await swallow(measureKey('/in.flac'))
     await swallow(measureWaveform('/in.flac'))
+    await swallow(measureChannelScan('/in.flac'))
     await swallow(analyzeCutoff('/in.flac', 44100))
 
     expect(calls.length).toBeGreaterThan(0)

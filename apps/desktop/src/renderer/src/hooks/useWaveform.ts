@@ -1,5 +1,5 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
-import type { WaveformResult } from '../../../shared/types'
+import type { WaveformResult, WaveformScan } from '../../../shared/types'
 import { analysisOptions } from '../lib/analysisQueries'
 
 // The one definition of a waveform cache entry, shared by the player's strip and the
@@ -17,4 +17,19 @@ export function useWaveform(
   enabled: boolean,
 ): UseQueryResult<WaveformResult | null> {
   return useQuery({ ...waveformOptions(inputPath), enabled })
+}
+
+// The native-rate clip/channel scan for the compare/player strip only — a separate,
+// heavier probe from the peaks above, so the editor sections that draw just the envelope
+// (trim, grid, declick) never trigger it. Its own cache entry, always complete for its
+// own contract, so the peaks-only wave is never starved of marks and vice versa.
+export function waveformScanOptions(inputPath: string) {
+  return analysisOptions('waveformScan', inputPath, () => window.api.waveformScan(inputPath))
+}
+
+export function useWaveformScan(
+  inputPath: string,
+  enabled: boolean,
+): UseQueryResult<WaveformScan | null> {
+  return useQuery({ ...waveformScanOptions(inputPath), enabled })
 }

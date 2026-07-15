@@ -17,6 +17,7 @@ import {
   measureBpm,
   measureKey,
   measureLoudness,
+  measureChannelScan,
   measureWaveform,
   measureWaveformWindow,
   probeAudio,
@@ -298,13 +299,32 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // cached before that would pin waves with no split view forever.
       // v3: buckets went 2048 → 8192 for the ×32 zoom; older entries would pin
       // the blocky low-resolution wave the deeper zoom exists to replace.
-      return await cachedAnalysis('waveform-v3', inputPath, () =>
+      // v4: the clip/channel scan split into its own probe (audio:waveform-scan);
+      // v3 entries carry the now-removed clipped/channels, so a rename drops them.
+      return await cachedAnalysis('waveform-v4', inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
           analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
         ),
       )
     } catch (err) {
       log.error('audio:waveform failed', err)
+      return null
+    }
+  })
+
+  // The heavy native-rate clip/channel scan, split from audio:waveform so only the
+  // player/compare strip pays for it. Its own cache namespace, so each entry always holds a
+  // complete answer for its own contract — the peaks-only wave is never starved of marks,
+  // and this is never served a wave with no scan.
+  ipcMain.handle('audio:waveform-scan', async (_e, inputPath: string) => {
+    try {
+      return await cachedAnalysis('channelscan-v1', inputPath, () =>
+        probe('activity.probeWaveform', inputPath, () =>
+          analysisLimiter.run(() => measureChannelScan(inputPath), 'high'),
+        ),
+      )
+    } catch (err) {
+      log.error('audio:waveform-scan failed', err)
       return null
     }
   })

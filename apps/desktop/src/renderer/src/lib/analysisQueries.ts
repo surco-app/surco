@@ -36,6 +36,7 @@ export const ANALYSIS_QUERY_KEYS = [
   'bpm',
   'key',
   'waveform',
+  'waveformScan',
   'clicks',
 ] as const
 

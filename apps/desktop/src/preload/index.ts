@@ -15,6 +15,7 @@ import type {
   SessionEdit,
   TrackProperties,
   WaveformResult,
+  WaveformScan,
 } from '../shared/types'
 import type { Api } from './api'
 
@@ -116,6 +117,8 @@ const api: Api = {
   key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
   waveform: (path: string): Promise<WaveformResult | null> =>
     ipcRenderer.invoke('audio:waveform', path),
+  waveformScan: (path: string): Promise<WaveformScan | null> =>
+    ipcRenderer.invoke('audio:waveform-scan', path),
   waveformWindow: (
     path: string,
     startSec: number,

@@ -2,9 +2,14 @@ import { Columns2, Layers2, Rows2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LoudnessResult, NormalizeConfig, WaveformResult } from '../../../shared/types'
+import type {
+  LoudnessResult,
+  NormalizeConfig,
+  WaveformResult,
+  WaveformScan,
+} from '../../../shared/types'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { useWaveform } from '../hooks/useWaveform'
+import { useWaveform, useWaveformScan } from '../hooks/useWaveform'
 import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
 import { formatDb } from '../lib/quality'
 import { formatTime, timeTicks } from '../lib/duration'
@@ -58,18 +63,26 @@ const BEFORE_COLOR = 'rgba(148, 163, 184, 0.7)'
 type CompareView = 'side' | 'overlay'
 
 interface StripData {
-  wave: WaveformResult | null | undefined
+  wave: (WaveformResult & Partial<WaveformScan>) | null | undefined
   loading: boolean
   loudness: LoudnessResult | null | undefined
 }
 
 // One file's decoded envelope plus its measurement — for the "after" side that's
 // the converted output, the figures that say what normalization actually applied.
-// Both share the per-path caches the player and the loudness readout warm.
+// Both share the per-path caches the player and the loudness readout warm. The compare
+// strip is the one consumer of the clip/channel scan (marks + split L/R), so it fetches
+// that separate probe and merges its flags onto the wave — the rest of the strip keeps
+// reading wave.clipped / wave.channels unchanged, none the wiser that they now arrive
+// from their own cache entry rather than baked into the peaks probe.
 function useStripData(path: string, enabled: boolean): StripData {
-  const { data: wave, isFetching } = useWaveform(path, enabled)
+  const { data: peaks, isFetching } = useWaveform(path, enabled)
+  const { data: scan } = useWaveformScan(path, enabled)
   const { data: loudness } = useTrackLoudness(path, enabled)
-  return { wave, loading: isFetching && !wave, loudness }
+  const wave = peaks
+    ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels }
+    : peaks
+  return { wave, loading: isFetching && !peaks, loudness }
 }
 
 function Legend({

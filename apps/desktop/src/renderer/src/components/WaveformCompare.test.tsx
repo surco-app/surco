@@ -4,16 +4,18 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NormalizeConfig, WaveformResult } from '../../../shared/types'
+import type { NormalizeConfig, WaveformResult, WaveformScan } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { AFTER_COLOR, Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
 
-const stereoWave: WaveformResult = {
-  peaks: [0.1, 0.9, 0.4, 1],
-  durationSec: 60,
+const stereoWave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
+
+// The clip/channel scan now arrives from its own probe (window.api.waveformScan), so the
+// clip marks and split lanes are mocked separately from the peaks.
+const stereoScan: WaveformScan = {
   clipped: [false, false, false, true],
   channels: [
     { peaks: [0.1, 0.9, 0.4, 1], clipped: [false, false, false, true] },
@@ -62,6 +64,7 @@ describe('WaveformCompare', () => {
   it('shows a canvas-drawn decoding skeleton per strip while the peaks are pending', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockReturnValue(new Promise<WaveformResult>(() => {})),
+      waveformScan: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
     const skeletons = await screen.findAllByTestId('waveform-compare-loading')
@@ -96,6 +99,7 @@ describe('WaveformCompare', () => {
     }))
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness,
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
@@ -111,6 +115,7 @@ describe('WaveformCompare', () => {
   it('switches to an overlaid single canvas and back', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
@@ -133,6 +138,7 @@ describe('WaveformCompare', () => {
   it('offers an onion-skin fade slider in the overlaid view only', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
@@ -151,6 +157,7 @@ describe('WaveformCompare', () => {
   it('offers the split-channels toggle in the side view only', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(stereoWave),
+      waveformScan: vi.fn().mockResolvedValue(stereoScan),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
@@ -298,6 +305,7 @@ describe('WaveformSolo', () => {
     ;(window as unknown as { api: unknown }).api = {
       // 1.0 and 0.9 poke over -1 dB (0.891); the label carries the ceiling value.
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -309,11 +317,8 @@ describe('WaveformSolo', () => {
   // scale, Audacity's exact criterion) and the label reads "Clipping".
   it('labels the decoded clipping flags as clipping', async () => {
     ;(window as unknown as { api: unknown }).api = {
-      waveform: vi.fn().mockResolvedValue({
-        peaks: [0.1, 0.9, 0.4, 1],
-        durationSec: 60,
-        clipped: [false, false, false, true],
-      }),
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue({ clipped: [false, false, false, true] }),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
@@ -325,11 +330,8 @@ describe('WaveformSolo', () => {
       // The envelope rides near full scale — loud mastering — but the decoder found
       // no pinned samples. Envelope thresholds painted tracks like this solid red;
       // the flags say what actually clipped: nothing.
-      waveform: vi.fn().mockResolvedValue({
-        peaks: [0.9886, 0.995, 0.999],
-        durationSec: 60,
-        clipped: [false, false, false],
-      }),
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.9886, 0.995, 0.999], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue({ clipped: [false, false, false] }),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
@@ -343,6 +345,7 @@ describe('WaveformSolo', () => {
       // No `clipped` field at all (the scan failed): no honest data, no red — the
       // envelope alone must never be promoted back into a clipping verdict.
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 1], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
@@ -354,6 +357,7 @@ describe('WaveformSolo', () => {
   it('shows no clip flag when the wave stays under the ceiling', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.5, 0.4], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -368,6 +372,7 @@ describe('WaveformSolo', () => {
   it('toggles the clip marks from the legend', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -385,6 +390,7 @@ describe('WaveformSolo', () => {
   it('flags predicted peaks over the ceiling in the loudness preview', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       // +6 dB to -14: 0.9 and 1.0 scale past the -1 dBTP ceiling (0.891).
       loudness: vi.fn().mockResolvedValue({
         integratedLufs: -20,
@@ -414,6 +420,7 @@ describe('WaveformSolo', () => {
   it('shows no flag when the loudness preview stays under its ceiling', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       // -6 dB to -14: everything lands well under the ceiling.
       loudness: vi.fn().mockResolvedValue({
         integratedLufs: -8,
@@ -442,6 +449,7 @@ describe('WaveformSolo', () => {
   it('flags a peak target past digital clipping in the peak preview', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(
@@ -460,6 +468,7 @@ describe('WaveformSolo', () => {
   it('shows no flag for a peak target at or under full scale', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(
@@ -480,6 +489,7 @@ describe('WaveformSolo', () => {
   it('reads out time and level under the cursor', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -506,6 +516,7 @@ describe('WaveformSolo', () => {
   it('previews the loudness outcome over the original once measured', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue({
         integratedLufs: -20,
         truePeakDb: -8,
@@ -534,6 +545,7 @@ describe('WaveformSolo', () => {
   it('shows no preview while normalization is off', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -548,6 +560,7 @@ describe('WaveformSolo', () => {
   it('zooms the strip in steps and scrolls horizontally', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -569,6 +582,7 @@ describe('WaveformSolo', () => {
   it('resets the zoom from the factor label', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -588,6 +602,7 @@ describe('WaveformSolo', () => {
   it('pinch-zooms the strip and ignores plain wheel scrolling', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -605,6 +620,7 @@ describe('WaveformSolo', () => {
   it('shows the time ruler only while zoomed', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
@@ -620,6 +636,7 @@ describe('WaveformSolo', () => {
   it('offers the split-channels toggle for stereo waves and flips it', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(stereoWave),
+      waveformScan: vi.fn().mockResolvedValue(stereoScan),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
@@ -645,6 +662,7 @@ describe('WaveformSolo', () => {
     ;(window as unknown as { api: unknown }).api = {
       // A mono file, or a failed scan: nothing honest to split into lanes.
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled normalize={CFG_NONE} />)
@@ -658,6 +676,7 @@ describe('WaveformSolo', () => {
   it('shows no loudness preview before the measurement lands', async () => {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
     }
     renderWithQuery(
