@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next'
 import { gridSegments, normalizeBeatgrid, snapAnchor } from '../../../shared/beatgrid'
 import { claimKeys } from '../lib/spaceClaim'
 import { mediaUrl } from '../../../shared/media'
-import type { Beatgrid } from '../../../shared/types'
+import type { Beatgrid, TrimRange } from '../../../shared/types'
 import { beatgridOptions, useBeatgrid } from '../hooks/useBeatgrid'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
@@ -143,6 +143,7 @@ interface Props {
   onToggle: () => void
   onChange: (grid: Beatgrid | undefined) => void
   inputPath: string
+  trim?: TrimRange
 }
 
 // The per-track beatgrid for the DJ exports: a constant-tempo grid drawn over
@@ -157,6 +158,7 @@ export function GridSection({
   onToggle,
   onChange,
   inputPath,
+  trim,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file and the detection its opening minutes,
@@ -166,6 +168,16 @@ export function GridSection({
   const { data: detected } = useBeatgrid(inputPath, open && settled)
   const loading = isFetching && !wave
   const durationSec = wave?.durationSec ?? 0
+  // The staged trim as head/tail fractions, for dimming the dropped audio over
+  // the wave. The grid keeps drawing over the FULL file (its anchors are
+  // original-file seconds), so this only shades — it never reshapes the lane.
+  const trimShade =
+    trim && durationSec > 0
+      ? {
+          startFrac: Math.max(0, (trim.startSec ?? 0) / durationSec),
+          endFrac: Math.max(0, (durationSec - (trim.endSec ?? durationSec)) / durationSec),
+        }
+      : undefined
   const [zoom, setZoom] = useState(WORK_ZOOM)
   // Maximized (the header's own toggle drives the store), the lanes double in
   // height — the whole window is available, so the wave takes it.
@@ -1059,6 +1071,7 @@ export function GridSection({
                 onViewChange={setView}
                 scrollerRef={scrollerRef}
                 tall={tall}
+                trimShade={trimShade}
                 // No red clip marks: the eye is lining hairlines up with
                 // transients, and on a hot master the flags paint half the
                 // strip red — noise for this job.

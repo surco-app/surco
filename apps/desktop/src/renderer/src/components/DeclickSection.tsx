@@ -2,7 +2,7 @@ import { ChevronRight, Loader2, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DeclickMode, OutputFormat } from '../../../shared/types'
+import type { DeclickMode, OutputFormat, TrimRange } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
 import { useDeclickAb } from '../hooks/useDeclickAb'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
@@ -33,6 +33,9 @@ interface Props {
   // The export format the convert button will use — the cue warning only shows for
   // the formats that actually drop the cues.
   format: OutputFormat
+  // The silence trim staged in the trim section, dimmed over this wave so the
+  // audio the export drops reads at a glance here too.
+  trim?: TrimRange
 }
 
 // The per-track click-repair override: the clicks marked on the track's own wave, and
@@ -51,6 +54,7 @@ export function DeclickSection({
   inputPath,
   isMulti,
   format,
+  trim,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const settled = useSettled(SELECTION_SETTLE_MS)
@@ -59,6 +63,14 @@ export function DeclickSection({
   const { data: wave, isFetching } = useWaveform(inputPath, solo)
   // Off the wave the strip already loads, like the trim section — no extra probe.
   const durationSec = wave?.durationSec ?? 0
+  // The staged trim as head/tail fractions, to dim the audio the export will drop.
+  const trimShade =
+    trim && durationSec > 0
+      ? {
+          startFrac: Math.max(0, (trim.startSec ?? 0) / durationSec),
+          endFrac: Math.max(0, (durationSec - (trim.endSec ?? durationSec)) / durationSec),
+        }
+      : undefined
   const [zoom, setZoom] = useState(1)
   const [view, setView] = useState({ from: 0, to: 1 })
 
@@ -232,6 +244,7 @@ export function DeclickSection({
                 zoom={zoom}
                 onZoomChange={setZoom}
                 onViewChange={setView}
+                trimShade={trimShade}
               >
                 {/* Scrubbable, like the player's own strip: without it the only reachable
                     points in the track are the click marks, so "how did this passage come

@@ -180,6 +180,46 @@ describe('Strip view reporting', () => {
     )
     await waitFor(() => expect(onViewChange).toHaveBeenCalledWith({ from: 0, to: 1 }))
   })
+
+  // The dropped-audio shade lets a section that shows the whole file (declick,
+  // loudness, the beatgrid) still say which head and tail the staged trim will
+  // cut — dimmed, so the wave never reshapes and a grid anchored to the original
+  // file doesn't jump.
+  it('shades the trimmed head and tail as fractions of the strip', () => {
+    renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        trimShade={{ startFrac: 0.1, endFrac: 0.25 }}
+      />,
+    )
+    expect(screen.getByTestId('waveform-trim-shade-start')).toHaveStyle({ width: '10%' })
+    expect(screen.getByTestId('waveform-trim-shade-end')).toHaveStyle({ width: '25%' })
+  })
+
+  // No trim, no shade: an untrimmed track must not dim any of its own wave.
+  it('draws no shade without a staged trim', () => {
+    renderWithQuery(<Strip wave={wave} loading={false} loudness={undefined} color={AFTER_COLOR} />)
+    expect(screen.queryByTestId('waveform-trim-shade-start')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('waveform-trim-shade-end')).not.toBeInTheDocument()
+  })
+
+  // A cut on only one side shades only that side.
+  it('shades only the side that is trimmed', () => {
+    renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        trimShade={{ startFrac: 0.15 }}
+      />,
+    )
+    expect(screen.getByTestId('waveform-trim-shade-start')).toBeInTheDocument()
+    expect(screen.queryByTestId('waveform-trim-shade-end')).not.toBeInTheDocument()
+  })
 })
 
 describe('WaveformSolo', () => {

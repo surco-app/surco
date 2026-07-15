@@ -989,6 +989,7 @@ export const Editor = memo(function Editor({
                         inputPath={item.inputPath}
                         isMulti={isMulti}
                         format={format}
+                        trim={item.trim}
                       />
                     )
                   case 'grid':
@@ -1003,6 +1004,7 @@ export const Editor = memo(function Editor({
                           onToggle={() => setSectionOpen('grid', !gridOpen)}
                           onChange={(beatgrid) => onChange({ beatgrid })}
                           inputPath={item.inputPath}
+                          trim={item.trim}
                         />
                       )
                     )

@@ -109,6 +109,7 @@ export function Strip({
   onViewChange,
   scrollerRef,
   tall = false,
+  trimShade,
   children,
 }: StripData & {
   color: string
@@ -144,6 +145,12 @@ export function Strip({
   // Double-height lanes for a maximized section: the whole window is available,
   // so the wave takes it instead of floating in empty space.
   tall?: boolean
+  // The silence trim staged elsewhere, as fractions of the track (0..1) cut off
+  // the head and tail. Dimmed rather than clipped: the wave stays whole so a
+  // section that anchors times to the ORIGINAL file (the beatgrid) doesn't jump
+  // its grid every time the trim moves, while the user still sees which audio
+  // the export drops. Same shade the trim section's own lanes use.
+  trimShade?: { startFrac?: number; endFrac?: number }
   // Overlay rendered inside the zoomed strip, so children positioned by percent
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
@@ -450,6 +457,25 @@ export function Strip({
           />
         )}
         {loading && <WaveformSkeleton testid="waveform-compare-loading" />}
+        {/* The dropped-audio shade: the head and tail the staged trim cuts, dimmed
+            over the wave rather than removed from it. Percent-positioned like the
+            ruler, so they track the wave through zoom and scroll. */}
+        {trimShade && !loading && (trimShade.startFrac ?? 0) > 0 && (
+          <span
+            data-testid="waveform-trim-shade-start"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 rounded-l-lg bg-[var(--color-panel)]/70"
+            style={{ width: `${(trimShade.startFrac ?? 0) * 100}%` }}
+          />
+        )}
+        {trimShade && !loading && (trimShade.endFrac ?? 0) > 0 && (
+          <span
+            data-testid="waveform-trim-shade-end"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 rounded-r-lg bg-[var(--color-panel)]/70"
+            style={{ width: `${(trimShade.endFrac ?? 0) * 100}%` }}
+          />
+        )}
         {/* The ruler appears with the zoom: at ×1 the strip is an overview and ticks
             are clutter, but zoomed in, "where am I in the track" needs answering
             without dragging the hover chip around. Percent-positioned, so the ticks
@@ -621,6 +647,7 @@ export function WaveformSolo({
   enabled,
   clipDb,
   normalize,
+  trimShade,
 }: {
   inputPath: string
   enabled: boolean
@@ -628,6 +655,9 @@ export function WaveformSolo({
   // decoder's true-clipping flags instead of any envelope threshold.
   clipDb?: number
   normalize: NormalizeConfig
+  // The staged trim's dropped head/tail, dimmed over the wave (same as the other
+  // sections) so the loudness view shows which audio the export leaves out.
+  trimShade?: { startFrac?: number; endFrac?: number }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const source = useStripData(inputPath, enabled)
@@ -747,6 +777,7 @@ export function WaveformSolo({
           raster={OVERLAY_W}
           zoom={zoom}
           onZoomChange={setZoom}
+          trimShade={trimShade}
         />
       ) : (
         <Strip
@@ -759,6 +790,7 @@ export function WaveformSolo({
           zoom={zoom}
           onZoomChange={setZoom}
           inputPath={inputPath}
+          trimShade={trimShade}
         />
       )}
     </div>

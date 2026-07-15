@@ -41,6 +41,16 @@ export function NormalizeSection({
   // source leaves no honest "before" to draw), and never in multi-select, where
   // `item` is just the anchor of the selection.
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
+  // The staged trim as head/tail fractions, to dim the dropped audio over the
+  // wave. Off item.duration (the read-once track length) — WaveformSolo decodes
+  // its own wave, so there is no strip duration to reach here.
+  const trimShade =
+    item.trim && item.duration
+      ? {
+          startFrac: Math.max(0, (item.trim.startSec ?? 0) / item.duration),
+          endFrac: Math.max(0, (item.duration - (item.trim.endSec ?? item.duration)) / item.duration),
+        }
+      : undefined
   // The dB line the strips mark in red: the active mode's own ceiling, so the marks
   // show exactly where the conversion will limit. With normalization off there is no
   // line at all — the strips fall back to the decoder's true-clipping flags, the
@@ -113,7 +123,13 @@ export function NormalizeSection({
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
           {!isMulti && !compare && (
-            <WaveformSolo inputPath={item.inputPath} enabled={settled} clipDb={clipDb} normalize={value} />
+            <WaveformSolo
+              inputPath={item.inputPath}
+              enabled={settled}
+              clipDb={clipDb}
+              normalize={value}
+              trimShade={trimShade}
+            />
           )}
           {compare && item.outputPath && (
             <div ref={compareRef}>
