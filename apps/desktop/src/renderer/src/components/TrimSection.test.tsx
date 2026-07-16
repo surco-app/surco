@@ -83,7 +83,14 @@ describe('TrimSection', () => {
       .fn()
       .mockReturnValue(new Promise(() => {}))
     render(section())
-    expect(screen.getByTestId('trim-loading')).toBeInTheDocument()
+    const skeleton = screen.getByTestId('trim-loading')
+    expect(skeleton).toBeInTheDocument()
+    // The skeleton is `absolute inset-0 h-full`, so it MUST sit in a positioned box with a
+    // fixed lane height. Rendered bare it resolved h-full against the scroll pane and painted
+    // a full-window wave behind the whole app — the reported "giant wave". Its parent pins
+    // the height so that can't happen.
+    expect(skeleton.parentElement?.className).toContain('relative')
+    expect(skeleton.parentElement?.className).toContain('h-24')
   })
 
 

@@ -833,7 +833,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 )}
               </div>
               {loading || !wave || durationSec <= 0 ? (
-                <WaveformSkeleton testid="trim-loading" />
+                // The skeleton is absolute inset-0 h-full, so it needs a positioned box
+                // with the lane's own height. Rendered bare, it resolved h-full against
+                // the scroll pane and painted a full-window wave behind the whole app.
+                <div className="relative h-24">
+                  <WaveformSkeleton testid="trim-loading" />
+                </div>
               ) : (
                 // The lanes are two DIFFERENT places in the track (second 0 and
                 // second 400), not one continuous wave: pressed together the eye read
