@@ -35,6 +35,10 @@
       {
         "text": "The list scrolls smoothly. Scrolling through tracks no longer stutters: covers decode off the main thread and auto-match waits until you stop scrolling before it works, so flying through the crate feels fluid top to bottom.",
         "in": "0.61.2"
+      },
+      {
+        "text": "Skipping through tracks no longer leaves ghost work behind. When you move to another track, the previous one's analyses (spectrum, loudness, waveform) are cancelled instantly instead of decoding on in the background — so when you step down the list sampling each track, the spectrum of the one you're looking at shows up right away instead of waiting behind analyses that no longer matter.",
+        "in": "0.61.3"
       }
     ]
   },

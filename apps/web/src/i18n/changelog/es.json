@@ -35,6 +35,10 @@
       {
         "text": "La lista se desplaza con suavidad. El scroll ya no da tirones al pasar por las pistas: las carátulas se decodifican fuera del hilo principal y el auto-match espera a que dejes de desplazarte antes de trabajar, así que recorrer el crate va fluido de arriba a abajo.",
         "in": "0.61.2"
+      },
+      {
+        "text": "Saltar de pista en pista ya no deja trabajo fantasma. Al pasar a otra pista, los análisis de la anterior (espectro, loudness, onda) se cancelan al instante en vez de seguir decodificando en segundo plano — así, cuando repasas la lista escuchando un trocito de cada una, el espectro de la pista que miras aparece enseguida en lugar de esperar detrás de análisis que ya no importan.",
+        "in": "0.61.3"
       }
     ]
   },
