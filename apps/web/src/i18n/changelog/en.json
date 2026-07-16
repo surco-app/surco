@@ -31,6 +31,10 @@
       {
         "text": "More tracks fit on screen: list rows are more compact and Properties lays out in two columns, half as tall.",
         "in": "0.61.0"
+      },
+      {
+        "text": "The list scrolls smoothly. Scrolling through tracks no longer stutters: covers decode off the main thread and auto-match waits until you stop scrolling before it works, so flying through the crate feels fluid top to bottom.",
+        "in": "0.61.2"
       }
     ]
   },

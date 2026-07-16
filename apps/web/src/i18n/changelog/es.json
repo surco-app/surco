@@ -31,6 +31,10 @@
       {
         "text": "Caben más pistas en pantalla: las filas de la lista son más compactas y Propiedades se muestra a dos columnas, la mitad de alto.",
         "in": "0.61.0"
+      },
+      {
+        "text": "La lista se desplaza con suavidad. El scroll ya no da tirones al pasar por las pistas: las carátulas se decodifican fuera del hilo principal y el auto-match espera a que dejes de desplazarte antes de trabajar, así que recorrer el crate va fluido de arriba a abajo.",
+        "in": "0.61.2"
       }
     ]
   },
