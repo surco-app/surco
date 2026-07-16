@@ -15,8 +15,8 @@ updates:
     # done by hand in a dedicated branch, not swept into the weekly batch:
     # TypeScript 7 (Go port, baseUrl removed), Vite 8 / electron-vite 5 /
     # @vitejs/plugin-react 6 (new plugin overloads), @types/node 26
-    # (TransferListItem gone), jsdom majors, react-router-dom 7 (new router
-    # API). Remove an entry once its migration lands.
+    # (TransferListItem gone), react-router-dom 7 (new router API). Remove an
+    # entry once its migration lands.
     ignore:
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
@@ -27,8 +27,6 @@ updates:
       - dependency-name: electron-vite
         update-types: ["version-update:semver-major"]
       - dependency-name: "@vitejs/plugin-react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: jsdom
         update-types: ["version-update:semver-major"]
       - dependency-name: react-router-dom
         update-types: ["version-update:semver-major"]
