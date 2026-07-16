@@ -3,7 +3,7 @@
   "version": "0.61.0",
   "description": "Organizador de pistas de audio para DJ: convierte a AIFF lossless, etiqueta desde Discogs y manda a Apple Music",
   "main": "./out/main/index.js",
-  "author": "Vicent",
+  "author": "Surco App",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
