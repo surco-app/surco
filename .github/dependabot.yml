@@ -11,15 +11,28 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    # TypeScript 7 (Go port), Vite 8 and @types/node 26 are real migrations
-    # (baseUrl removed, TransferListItem gone, new Vite overloads) — they must
-    # be done by hand in a dedicated branch, not swept into the weekly batch.
+    # Majors on the toolchain are real migrations, not bumps, so they must be
+    # done by hand in a dedicated branch, not swept into the weekly batch:
+    # TypeScript 7 (Go port, baseUrl removed), Vite 8 / electron-vite 5 /
+    # @vitejs/plugin-react 6 (new plugin overloads), @types/node 26
+    # (TransferListItem gone), vitest 4 (vi.fn() mock typing breaks test
+    # doubles), jsdom majors, react-router-dom 7 (new router API).
     ignore:
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
       - dependency-name: vite
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vitest
+        update-types: ["version-update:semver-major"]
+      - dependency-name: electron-vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: jsdom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-router-dom
         update-types: ["version-update:semver-major"]
     groups:
       electron:
