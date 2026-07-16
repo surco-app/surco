@@ -403,22 +403,28 @@ const TrackRow = memo(function TrackRow({
                   )
                 )}
               </span>
-              {format && (
-                <span
-                  data-testid="track-format"
-                  className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
-                >
-                  {format}
-                </span>
-              )}
-              {t.duration !== undefined && (
-                <span
-                  data-testid="track-duration"
-                  className="shrink-0 text-xs tabular-nums text-fg-dim"
-                >
-                  {formatTime(t.duration)}
-                </span>
-              )}
+              {/* Same slot discipline as the sparkle/verdict columns above: the pill
+                  and the duration get fixed-width slots so a wide FLAC pill next to
+                  an MP3 one — or a row still missing either value — never shifts the
+                  columns to its left. */}
+              <span data-testid="track-format-slot" className="flex w-10 shrink-0 justify-center">
+                {format && (
+                  <span
+                    data-testid="track-format"
+                    className="rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
+                  >
+                    {format}
+                  </span>
+                )}
+              </span>
+              <span
+                data-testid="track-duration-slot"
+                className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
+              >
+                {t.duration !== undefined && (
+                  <span data-testid="track-duration">{formatTime(t.duration)}</span>
+                )}
+              </span>
             </span>
           )}
         </span>

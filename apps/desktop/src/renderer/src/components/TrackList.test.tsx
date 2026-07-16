@@ -556,6 +556,20 @@ describe('TrackList format pill', () => {
     renderList([track({ id: 'a', inputPath: '/music/My.Crate/song', fileName: 'song' })])
     expect(screen.queryByTestId('track-format')).toBeNull()
   })
+
+  // The trailing indicators (sparkle, verdict, pill, duration) read as columns the
+  // eye scans down. The pill and duration render inside fixed-width slots that stay
+  // put whether the row has them or not — otherwise a FLAC pill next to an MP3 one,
+  // or a missing duration, shifts every icon to its left row by row.
+  it('reserves the pill and duration slots so the indicator columns never shift', () => {
+    renderList([
+      track({ id: 'flac', inputPath: '/music/a.flac', fileName: 'a', duration: 189 }),
+      track({ id: 'mp3', inputPath: '/music/b.mp3', fileName: 'b', duration: 412 }),
+      track({ id: 'bare', inputPath: '/music/c', fileName: 'c' }),
+    ])
+    expect(screen.getAllByTestId('track-format-slot')).toHaveLength(3)
+    expect(screen.getAllByTestId('track-duration-slot')).toHaveLength(3)
+  })
 })
 
 describe('TrackList quality badge', () => {
