@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The client now paces every call through the shared limiter; mock it to a no-op so
-// these unit tests don't wait on real timers between requests.
-vi.mock('./discogsLimiter', () => ({ discogsLimiter: { acquire: vi.fn() } }))
+// The client paces every call through the bucket its token maps to; mock the selector to
+// hand back one no-op limiter for any token, so these unit tests don't wait on real timers
+// and the acquire count aggregates across both buckets. hoisted so the spy exists when the
+// hoisted vi.mock factory runs.
+const { acquire } = vi.hoisted(() => ({ acquire: vi.fn() }))
+vi.mock('./discogsLimiter', () => ({ discogsLimiterFor: () => ({ acquire }) }))
 
 import type { SearchResult } from '../shared/types'
 import {
@@ -14,7 +17,6 @@ import {
   retryDelayMs,
   search,
 } from './discogs'
-import { discogsLimiter } from './discogsLimiter'
 
 const result = (over: Partial<SearchResult>): SearchResult =>
   ({ id: 1, title: 'X', ...over }) as SearchResult
@@ -207,9 +209,9 @@ describe('search', () => {
     mockFetch([{ id: 31 }])
     const hints = { artist: 'Autechre', title: 'Amber' }
     await search('autechre amber', 'tok', undefined, hints)
-    vi.mocked(discogsLimiter.acquire).mockClear()
+    acquire.mockClear()
     await search('autechre amber', 'tok', undefined, hints)
-    expect(discogsLimiter.acquire).not.toHaveBeenCalled()
+    expect(acquire).not.toHaveBeenCalled()
   })
 
   // The catalog-number candidate searched as free text (q=) matches the code anywhere —
@@ -319,10 +321,10 @@ describe('search rate-limit retry', () => {
   // The first attempt spends a limiter token; the retry is a separate request, so it
   // must take another token rather than slipping past the limiter during a 429 storm.
   it('takes a fresh limiter token for the retry, not just the first attempt', async () => {
-    vi.mocked(discogsLimiter.acquire).mockClear()
+    acquire.mockClear()
     mockSequence([res(429, {}, '0'), res(200, { results: [{ id: 11 }] })])
     await search('retry token query', 'tok')
-    expect(discogsLimiter.acquire).toHaveBeenCalledTimes(2)
+    expect(acquire).toHaveBeenCalledTimes(2)
   })
 
   // Persistent 429s must eventually give up — not loop forever — and surface the

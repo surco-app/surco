@@ -1,7 +1,7 @@
 import { dropOriginalMarker, dropPresentsAlias, trailingWordDrops } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
-import { discogsLimiter } from './discogsLimiter'
+import { discogsLimiterFor } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { buildSearchCandidates } from './searchQuery'
 
@@ -51,7 +51,7 @@ async function api<T>(path: string, token: string, priority?: SearchPriority): P
       // The caller spent one token on the first attempt; a retry is another request,
       // so take a fresh token — otherwise a 429 storm bypasses the limiter exactly
       // when Discogs is already signalling overload.
-      await discogsLimiter.acquire(priority)
+      await discogsLimiterFor(token).acquire(priority)
       continue
     }
     if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
@@ -108,7 +108,7 @@ async function runSearch(
   // Pacing lives with the request itself: the token is taken here, after the cache
   // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)
   // never queues behind the limiter for a call it won't make.
-  await discogsLimiter.acquire(priority)
+  await discogsLimiterFor(token).acquire(priority)
   // The API's `format` param filters server-side, so the whole page comes back in the
   // wanted format instead of a mix we'd thin out afterwards.
   const formatParam = opts.format ? `&format=${encodeURIComponent(opts.format)}` : ''
@@ -288,7 +288,7 @@ export async function getRelease(
     'discogs',
     'activity.loadDiscogsRelease',
     async () => {
-      await discogsLimiter.acquire(priority)
+      await discogsLimiterFor(token).acquire(priority)
       const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
       const release: Release = { ...raw, provider: 'discogs' }
       releaseCache.set(id, release)
