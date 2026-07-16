@@ -229,6 +229,8 @@ export function Player({
             data-testid="player-cover"
             src={track.embeddedCover}
             alt=""
+            // Same as the list covers: keep the base64 JPEG decode off the main thread.
+            decoding="async"
             className="h-10 w-10 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-white/10"
           />
         ) : (

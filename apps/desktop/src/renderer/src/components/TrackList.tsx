@@ -51,6 +51,11 @@ interface Props {
 
 type MenuState = { track: TrackItem; x: number; y: number }
 
+// Rows below this count all get painted up front (see the content-visibility note on the
+// row wrapper): a small crate scrolls over already-rasterized content instead of paying
+// each row's first paint mid-scroll. Past it, skipping off-screen work wins again.
+const DEFER_PAINT_MIN_ROWS = 150
+
 // Only the live/problem states reach this map now: idle renders nothing and done gets its
 // own check badge below. Kept exhaustive so the lookup stays total over TrackStatus.
 const statusColor: Record<TrackStatus, string> = {
@@ -226,7 +231,14 @@ const TrackRow = memo(function TrackRow({
       // focus, the shared visibility observer and the rowEls measuring all keep working
       // untouched. contain-intrinsic-size feeds the scrollbar a height estimate for the
       // skipped rows; `auto` then remembers each row's real size once it has rendered.
-      className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_48px]"
+      // Only worth it past DEFER_PAINT_MIN_ROWS: below that, deferring paint moves the
+      // first-paint cost of each row into the scroll itself and reads as jank, while
+      // painting the whole small list once keeps scrolling on already-rasterized content.
+      className={`group relative ${
+        setSize >= DEFER_PAINT_MIN_ROWS
+          ? '[content-visibility:auto] [contain-intrinsic-size:auto_48px]'
+          : ''
+      }`}
       draggable
       onDragStart={(e) => {
         // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
@@ -292,6 +304,11 @@ const TrackRow = memo(function TrackRow({
               data-testid="track-cover"
               src={t.embeddedCover}
               alt=""
+              // Covers are base64 JPEGs; without these two the browser decodes each one
+              // synchronously on the main thread the moment its row is first painted —
+              // which, combined with content-visibility below, lands mid-scroll and janks.
+              loading="lazy"
+              decoding="async"
               className="h-8 w-8 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
             />
           ) : (
@@ -436,7 +453,11 @@ const TrackRow = memo(function TrackRow({
         type="button"
         aria-label={tr('player.play')}
         onClick={() => onActivate(t)}
-        className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/55 text-white opacity-0 backdrop-blur-[1px] transition-opacity pointer-events-none hover:bg-black/70 group-hover:pointer-events-auto group-hover:opacity-100"
+        // No backdrop-blur here: with one of these per row, Chromium promotes every
+        // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
+        // layers inside the scroller are a known compositor jank source. A slightly
+        // denser plain fill keeps the glyph readable over any cover.
+        className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/65 text-white opacity-0 transition-opacity pointer-events-none hover:bg-black/75 group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <Play className="h-4 w-4 fill-current" aria-hidden="true" />
       </button>
@@ -444,7 +465,8 @@ const TrackRow = memo(function TrackRow({
         type="button"
         aria-label={tr('trackList.remove')}
         onClick={() => onRemove(t.id)}
-        className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/60 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] backdrop-blur-sm transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
+        // Same rule as the ▶ overlay above: no per-row backdrop-blur inside the scroller.
+        className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/90 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
