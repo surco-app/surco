@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { seedEditorSections, useEditorSections } from './useEditorSections'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  clearMaximizedSection,
+  resetEditorSections,
+  seedEditorSections,
+  useEditorSections,
+  useMaximizedSection,
+} from './useEditorSections'
+
+afterEach(() => resetEditorSections())
 
 describe('useEditorSections', () => {
   // The editor remounts per track, so folding a section must outlive that remount —
@@ -46,5 +54,27 @@ describe('useEditorSections', () => {
     expect(result.current.open.properties).toBe(true)
     expect(result.current.open.quality).toBe(false)
     expect(result.current.open.form).toBe(true)
+  })
+
+  // The full-window overlay must drop when a new crate is imported. Otherwise dragging in a
+  // folder while a section is maximized leaves the overlay up, painting the freshly selected
+  // track's still-analyzing spectrum across the whole window behind the editor — the reported
+  // "full-screen wave that shouldn't be there".
+  it('clears the maximized overlay when a crate is imported', () => {
+    const { result } = renderHook(() => useMaximizedSection())
+    act(() => result.current.setMaximized('quality'))
+    expect(result.current.maximized).toBe('quality')
+
+    act(() => clearMaximizedSection())
+    expect(result.current.maximized).toBeNull()
+  })
+
+  it('leaves a track step alone — clear is import-only, not per remount', () => {
+    // A no-op when nothing is maximized keeps arrow-through-the-crate cheap and avoids a
+    // spurious emit on every import when the user never maximized anything.
+    const { result } = renderHook(() => useMaximizedSection())
+    expect(result.current.maximized).toBeNull()
+    act(() => clearMaximizedSection())
+    expect(result.current.maximized).toBeNull()
   })
 })

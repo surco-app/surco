@@ -44,6 +44,17 @@ export function resetEditorSections(): void {
   emit()
 }
 
+// Drop out of the full-window maximized view, from outside React. Surviving a per-track
+// remount is deliberate (arrow through the crate with the beatgrid full-screen), but
+// IMPORTING a new crate is a context change, not a track step: leaving the overlay up
+// would paint the new track's still-analyzing spectrum across the whole window behind the
+// editor. The import path calls this so a dropped folder always lands on the normal layout.
+export function clearMaximizedSection(): void {
+  if (maximized === null) return
+  maximized = null
+  emit()
+}
+
 // The live folded state of a section, read outside React by the list's hover prefetch so
 // folding a section away stops its automatic analysis there too — not just inside the
 // editor. Reads the module store directly so it always sees the latest toggle, the same

@@ -8,6 +8,7 @@ import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
+import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
 import type { TrackItem } from '../types'
 
@@ -201,6 +202,10 @@ export function useTrackLibrary({
     const skipped = audio.length - fresh.length
     if (skipped > 0) onDuplicatesSkipped(skipped)
     if (fresh.length === 0) return
+    // Importing a new crate is a context change, not a track step: if a section was blown
+    // up to the whole window, leave that view now so the freshly selected track's spectrum
+    // doesn't render full-screen behind the editor while it analyzes.
+    clearMaximizedSection()
     // Show the rows the instant they're dropped, parsed from the file name, then fill in
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
