@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
-PackageIdentifier: vigosan.Surco
+PackageIdentifier: SurcoApp.Surco
 PackageVersion: 0.36.1
 InstallerLocale: en-US
 InstallerType: nullsoft

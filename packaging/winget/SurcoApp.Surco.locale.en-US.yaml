@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
-PackageIdentifier: vigosan.Surco
+PackageIdentifier: SurcoApp.Surco
 PackageVersion: 0.36.1
 PackageLocale: en-US
-Publisher: Vicent Gozalbes
+Publisher: Surco App
 PublisherUrl: https://www.getsurco.app/
 PublisherSupportUrl: https://github.com/surco-app/surco/issues
 PackageName: Surco

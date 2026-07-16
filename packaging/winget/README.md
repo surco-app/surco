@@ -8,10 +8,10 @@ once signing ships.
 To submit (from any machine with [komac](https://github.com/russellbanks/Komac)):
 
 ```bash
-komac submit --identifier vigosan.Surco --version <VERSION> \
+komac submit --identifier SurcoApp.Surco --version <VERSION> \
   --urls https://github.com/surco-app/surco-releases/releases/download/v<VERSION>/Surco-<VERSION>-Setup.exe
 ```
 
-or copy these three files to `manifests/v/vigosan/Surco/<VERSION>/` in a winget-pkgs fork and
+or copy these three files to `manifests/s/SurcoApp/Surco/<VERSION>/` in a winget-pkgs fork and
 open the PR. For a new version, update `PackageVersion`, the `InstallerUrl` and the
 `InstallerSha256` (`shasum -a 256 Surco-<VERSION>-Setup.exe`, uppercase).
