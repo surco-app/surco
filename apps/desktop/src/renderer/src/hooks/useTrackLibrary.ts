@@ -497,6 +497,10 @@ export function useTrackLibrary({
     setSelection({ ids: [], anchor: null })
     setPendingNew(null)
     ignoredPaths.current.clear()
+    // Emptying the list is a context change like an import: drop any full-window maximized
+    // view now, so it can't linger on the store and re-open over the next crate's still-
+    // analyzing spectrum. Belt-and-braces with the clear in addPaths.
+    clearMaximizedSection()
     // Stop watching the emptied crate's folders; the next folder load rebuilds the watcher.
     void window.api.unwatchFolders()
     onClear(cleared)
