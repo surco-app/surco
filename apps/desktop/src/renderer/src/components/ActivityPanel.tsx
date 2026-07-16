@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
+  Copy,
   Disc3,
   ExternalLink,
   FileOutput,
@@ -20,7 +21,7 @@ import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
-import type { ActivityRow } from '../lib/activityLog'
+import { type ActivityRow, activityFeedText } from '../lib/activityLog'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 
 type Translate = ReturnType<typeof useTranslation>['t']
@@ -40,6 +41,9 @@ interface Props {
   rows: ActivityRow[]
   onClear: () => void
   onClose: () => void
+  // Receives the whole feed serialized as plain text (activityFeedText) when the header's
+  // copy button is pressed; App writes it to the clipboard and confirms with its toast.
+  onCopy: (text: string) => void
   // The parked position/size restored from settings (already clamped by App) and the
   // callback that persists it — fired when a drag or resize ends, never per move tick.
   geometry: PanelGeometry
@@ -172,8 +176,8 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           )}
           {row.ms !== undefined && (
             <span className="shrink-0 font-mono text-[10px] text-fg-muted">
-            {tr('activity.elapsedMs', { ms: row.ms })}
-          </span>
+              {tr('activity.elapsedMs', { ms: row.ms })}
+            </span>
           )}
           {expandable && (
             <ChevronRight
@@ -223,6 +227,7 @@ export function ActivityPanel({
   rows,
   onClear,
   onClose,
+  onCopy,
   geometry,
   onGeometryChange,
 }: Props): React.JSX.Element {
@@ -327,6 +332,16 @@ export function ActivityPanel({
         <span className="flex-1 select-none text-xs font-medium text-fg">
           {tr('activity.title')}
         </span>
+        <button
+          type="button"
+          data-testid="activity-copy"
+          aria-label={tr('activity.copy')}
+          disabled={rows.length === 0}
+          onClick={() => onCopy(activityFeedText(rows, tr))}
+          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted enabled:hover:bg-[var(--color-panel-2)] enabled:hover:text-fg disabled:opacity-40"
+        >
+          <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
         <button
           type="button"
           data-testid="activity-clear"

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ActivityEvent } from '../../../shared/types'
 import {
   type ActivityRow,
+  activityFeedText,
   applyActivity,
   type LocalActivityReport,
   MAX_ROWS,
@@ -197,5 +198,78 @@ describe('reportRow', () => {
     for (let i = 0; i <= MAX_ROWS; i++) rows = reportRow(rows, `local-${i}`, verdict)
     expect(rows).toHaveLength(MAX_ROWS)
     expect(rows[0].id).toBe(`local-${MAX_ROWS}`)
+  })
+})
+
+describe('activityFeedText', () => {
+  // A fake translator with the same call shape as i18next's t: resolves the two key
+  // kinds the serializer meets predictably, so assertions read as the copied text would.
+  const tr = (key: string, params?: Record<string, unknown>): string => {
+    if (key === 'activity.elapsedMs') return `${params?.ms} ms`
+    if (params && 'query' in params) return `Searching: ${params.query}`
+    return key
+  }
+
+  // The whole point of the copy button: the feed pastes as readable plain text — one
+  // line per row with its status, resolved label and timing — instead of a screenshot.
+  it('renders each row as one line with status, label and timing', () => {
+    const rows: ActivityRow[] = [
+      {
+        id: 'a',
+        kind: 'discogs',
+        status: 'done',
+        labelKey: 'activity.searchDiscogs',
+        labelParams: { query: 'bonobo' },
+        ms: 6569,
+      },
+      { id: 'b', kind: 'match', status: 'error', label: 'No match: Love Calls', ms: 33662 },
+      { id: 'c', kind: 'discogs', status: 'running', label: 'Loading release #72490' },
+    ]
+    const text = activityFeedText(rows, tr)
+    expect(text.split('\n')).toEqual([
+      '[ok] Searching: bonobo — 6569 ms',
+      '[error] No match: Love Calls — 33662 ms',
+      '[running] Loading release #72490',
+    ])
+  })
+
+  // A verdict row folds its probe trail as children; the pasted text must keep that
+  // structure (indented) so the trail reads under the verdict it explains.
+  it("indents a grouped row's children under it, with their details", () => {
+    const rows: ActivityRow[] = [
+      {
+        id: 'g',
+        kind: 'match',
+        status: 'done',
+        label: 'Auto-matched: Rushin',
+        ms: 6614,
+        children: [
+          { id: 'g1', kind: 'discogs', status: 'done', label: 'Candidate A', ms: 300 },
+          { id: 'g2', kind: 'discogs', status: 'error', label: 'Candidate B', detail: 'HTTP 429' },
+        ],
+      },
+    ]
+    const text = activityFeedText(rows, tr)
+    expect(text.split('\n')).toEqual([
+      '[ok] Auto-matched: Rushin — 6614 ms',
+      '  [ok] Candidate A — 300 ms',
+      '  [error] Candidate B',
+      '    HTTP 429',
+    ])
+  })
+
+  // A top-level row's own detail (the API endpoint, an error) travels too — it's the
+  // technical line a bug report needs and exactly what a screenshot can't convey.
+  it("appends a plain row's detail line indented under it", () => {
+    const rows: ActivityRow[] = [
+      {
+        id: 'a',
+        kind: 'discogs',
+        status: 'error',
+        label: 'Loading release',
+        detail: 'Discogs devolvió 500',
+      },
+    ]
+    expect(activityFeedText(rows, tr)).toBe('[error] Loading release\n  Discogs devolvió 500')
   })
 })

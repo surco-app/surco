@@ -148,3 +148,30 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
   const updated: ActivityRow = { ...existing, children, status: groupStatus(children) }
   return rows.map((r) => (r.id === groupId ? updated : r))
 }
+
+// The feed as plain text, for the header's copy button: one line per row —
+// status, resolved label, timing — with children and technical details indented
+// beneath. What a bug report or a support chat needs, where a screenshot flattens
+// the very details (URLs, errors, per-step timings) the panel folds away.
+type Translate = (key: string, params?: ActivityParams) => string
+
+const STATUS_TAG: Record<ActivityRow['status'], string> = {
+  done: '[ok]',
+  error: '[error]',
+  running: '[running]',
+}
+
+function rowLine(row: ActivityRow, tr: Translate, depth: number): string[] {
+  const label = row.labelKey ? tr(row.labelKey, row.labelParams) : (row.label ?? '')
+  const ms = row.ms !== undefined ? ` — ${tr('activity.elapsedMs', { ms: row.ms })}` : ''
+  const pad = '  '.repeat(depth)
+  const lines = [`${pad}${STATUS_TAG[row.status]} ${label}${ms}`]
+  const detail = row.detailKey ? tr(row.detailKey, row.detailParams) : row.detail
+  if (detail) lines.push(`${'  '.repeat(depth + 1)}${detail}`)
+  for (const child of row.children ?? []) lines.push(...rowLine(child, tr, depth + 1))
+  return lines
+}
+
+export function activityFeedText(rows: ActivityRow[], tr: Translate): string {
+  return rows.flatMap((row) => rowLine(row, tr, 0)).join('\n')
+}

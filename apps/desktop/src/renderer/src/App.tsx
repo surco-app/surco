@@ -1463,7 +1463,10 @@ export default function App(): React.JSX.Element {
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
   // and a fresh drop still reading its tags shows as an indeterminate run.
-  const progress = topBarProgress([analysis, matching, batchProgress, importProgress], anyLoadingMeta)
+  const progress = topBarProgress(
+    [analysis, matching, batchProgress, importProgress],
+    anyLoadingMeta,
+  )
 
   return (
     <SettingsProvider settings={settings}>
@@ -1743,6 +1746,10 @@ export default function App(): React.JSX.Element {
               rows={activityRows}
               onClear={clearActivity}
               onClose={() => setActivityOpen(false)}
+              onCopy={(text) => {
+                void window.api.copyText(text)
+                setNotice(tr('notices.copiedActivity'))
+              }}
               geometry={clampPanelGeometry(settings?.activityPanel, {
                 width: window.innerWidth,
                 height: window.innerHeight,

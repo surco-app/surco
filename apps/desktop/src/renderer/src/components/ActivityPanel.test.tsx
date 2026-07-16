@@ -21,6 +21,7 @@ function renderPanel(geometry: PanelGeometry, onGeometryChange = vi.fn()) {
       rows={[]}
       onClear={vi.fn()}
       onClose={vi.fn()}
+      onCopy={vi.fn()}
       geometry={geometry}
       onGeometryChange={onGeometryChange}
     />,
@@ -56,5 +57,44 @@ describe('ActivityPanel geometry persistence', () => {
       pos: { x: 124, y: 180 },
       size: { width: 320, height: 360 },
     })
+  })
+})
+
+describe('ActivityPanel copy', () => {
+  // The feed's whole trail — verdicts, per-step timings, the technical details folded
+  // behind each row — pastes as plain text, so sharing it in a bug report or a chat
+  // doesn't mean a screenshot that flattens exactly those details.
+  it('hands the serialized feed to onCopy when the copy button is pressed', () => {
+    const onCopy = vi.fn()
+    render(
+      <ActivityPanel
+        rows={[
+          {
+            id: 'a',
+            kind: 'discogs',
+            status: 'done',
+            label: 'Loading Discogs release #72490',
+            ms: 2138,
+          },
+          { id: 'b', kind: 'match', status: 'done', label: 'No match: Airplay Edit', ms: 10980 },
+        ]}
+        onClear={vi.fn()}
+        onClose={vi.fn()}
+        onCopy={onCopy}
+        geometry={{ pos: { x: 0, y: 0 }, size: { width: 320, height: 360 } }}
+        onGeometryChange={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('activity-copy'))
+    expect(onCopy).toHaveBeenCalledExactlyOnceWith(
+      '[ok] Loading Discogs release #72490 — 2138 ms\n[ok] No match: Airplay Edit — 10980 ms',
+    )
+  })
+
+  // An empty feed has nothing to share; a disabled button says so instead of copying
+  // an empty string that would paste as nothing and read as a broken button.
+  it('disables the copy button while the feed is empty', () => {
+    renderPanel({ pos: { x: 0, y: 0 }, size: { width: 320, height: 360 } })
+    expect(screen.getByTestId('activity-copy')).toBeDisabled()
   })
 })
