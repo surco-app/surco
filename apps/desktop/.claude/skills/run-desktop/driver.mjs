@@ -129,6 +129,7 @@ async function repl() {
       else if (cmd === 'hover') { await page.locator(arg).first().hover(); console.log('hovered ' + arg) }
       else if (cmd === 'key') { await page.keyboard.press(arg); console.log('pressed ' + arg) }
       else if (cmd === 'eval') { console.log(JSON.stringify(await page.evaluate(arg))) }
+      else if (cmd === 'sleep') { await page.waitForTimeout(Number(arg) || 500); console.log('slept ' + (Number(arg) || 500)) }
       else if (cmd === 'quit') { if (app) await app.close(); console.log('bye'); break }
       else console.log('?' + cmd)
     } catch (e) { console.log('ERR ' + (e?.message || e)) }
