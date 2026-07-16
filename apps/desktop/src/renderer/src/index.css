@@ -154,14 +154,16 @@ textarea {
   }
 }
 
-/* The dead band above a fake lossless's codec cut: a faint red diagonal wash that names
-   the synthetic silence as a reject without the user having to read the spectrogram. A
-   plain class (not a Tailwind arbitrary value) keeps the color-mix legible and reliable. */
+/* The dead band above a fake lossless's codec cut: a dark veil, strongest at the top and
+   fading toward the cutoff line, that reads as "switched off" — the synthetic silence
+   dims out instead of getting painted an alarm color that fights the duotone. The red
+   verdict already lives in the dashed cutoff line and the Fake lossless chip. A plain
+   class (not a Tailwind arbitrary value) keeps the color-mix legible and reliable. */
 .spectrum-deadband {
-  background: repeating-linear-gradient(
-    45deg,
-    color-mix(in srgb, var(--color-danger) 14%, transparent) 0 6px,
-    transparent 6px 12px
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ink) 55%, transparent),
+    color-mix(in srgb, var(--color-ink) 20%, transparent)
   );
 }
 
