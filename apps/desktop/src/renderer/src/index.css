@@ -118,6 +118,20 @@ textarea {
   background: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
+/* The spectrogram placeholder's column field: thin accent bars, masked to fade toward the
+   top so it reads like a real spectrum (energy dense at the bottom, thinning with pitch)
+   rather than an empty frame. A plain class, not a Tailwind arbitrary value, so the
+   color-mix + mask stay reliable. */
+.spectrum-skeleton-field {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent) 22%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+  -webkit-mask-image: linear-gradient(to top, black, transparent 85%);
+  mask-image: linear-gradient(to top, black, transparent 85%);
+}
+
 /* A faint band that drifts across the spectrum frame while analysis runs — a quiet
    scanning cue, not a busy meter. The band is a third of the frame wide; translating
    it on the GPU keeps the motion cheap. */
