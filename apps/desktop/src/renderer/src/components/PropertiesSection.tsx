@@ -5,6 +5,7 @@ import { formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { PropertiesReadout } from './PropertiesReadout'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 
 interface Props {
@@ -51,8 +52,8 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
         summary={summary || undefined}
         summaryTestId="properties-summary"
       />
-      {open &&
-        (properties ? (
+      <SectionBody open={open}>
+        {properties ? (
           <PropertiesReadout
             properties={properties}
             fileName={item.fileName}
@@ -63,7 +64,8 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
           (properties === null || propertiesError) && (
             <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
           )
-        ))}
+        )}
+      </SectionBody>
     </div>
   )
 }

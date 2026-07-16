@@ -10,6 +10,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
 import { claimKeys } from '../lib/spaceClaim'
 import { DeclickControls } from './DeclickControls'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
@@ -208,7 +209,7 @@ export function DeclickSection({
           </span>
         }
       />
-      {open && (
+      <SectionBody open={open}>
         <div className="mt-3">
           <DeclickControls value={value} onChange={onChange} />
           {!isMulti && (
@@ -413,7 +414,7 @@ export function DeclickSection({
             </p>
           )}
         </div>
-      )}
+      </SectionBody>
     </div>
   )
 }

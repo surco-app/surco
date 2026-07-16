@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../shared/types'
 import { formatExtension } from '../../../shared/format'
 import type { TrackItem } from '../types'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
 
@@ -81,7 +82,7 @@ export function OutputNameSection({
           )
         }
       />
-      {open && (
+      <SectionBody open={open}>
         <label className="relative mt-3 block">
           <input
             data-testid="output-name"
@@ -93,12 +94,12 @@ export function OutputNameSection({
             .{formatExtension(format)}
           </span>
         </label>
-      )}
-      {open && willEditInPlace && (
-        <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
-          {tr('editor.outputNameHintInPlace')}
-        </p>
-      )}
+        {willEditInPlace && (
+          <p className="mt-2 text-xs text-fg-dim" data-testid="output-name-hint">
+            {tr('editor.outputNameHintInPlace')}
+          </p>
+        )}
+      </SectionBody>
     </div>
   )
 }

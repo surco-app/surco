@@ -8,6 +8,7 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
@@ -119,7 +120,7 @@ export function NormalizeSection({
           </span>
         }
       />
-      {open && (
+      <SectionBody open={open}>
         <div className="mt-3">
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
@@ -154,7 +155,7 @@ export function NormalizeSection({
             </p>
           )}
         </div>
-      )}
+      </SectionBody>
     </div>
   )
 }

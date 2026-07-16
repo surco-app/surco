@@ -60,6 +60,7 @@ import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
@@ -849,12 +850,12 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
-          {formOpen && (
-            // Capture focus entering/leaving the field grid so the sweep knows which row is
-            // under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
-            // outside) — moving between two fields must not flash the guard off, which would
-            // reopen the very window it closes. onChange (a text commit) also confirms the row
-            // is under active edit, in case focus arrived without a focus event we saw.
+          <SectionBody open={formOpen}>
+            {/* Capture focus entering/leaving the field grid so the sweep knows which row is
+                under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
+                outside) — moving between two fields must not flash the guard off, which would
+                reopen the very window it closes. onChange (a text commit) also confirms the row
+                is under active edit, in case focus arrived without a focus event we saw. */}
             <div
               onFocusCapture={() => onFieldFocusChange?.(item.id)}
               onChangeCapture={() => onFieldFocusChange?.(item.id)}
@@ -876,7 +877,7 @@ export const Editor = memo(function Editor({
                 fields={fieldSpecs}
               />
             </div>
-          )}
+          </SectionBody>
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each

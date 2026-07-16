@@ -16,6 +16,7 @@ import {
 import { renderQualityReport } from '../lib/qualityReport'
 import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
 import { SpectrumLoading } from './SpectrumLoading'
@@ -191,7 +192,7 @@ export function QualitySection({
           </div>
         }
       />
-      {open && (
+      <SectionBody open={open}>
         <div className="mt-3">
           {showSpectrum &&
             (analyzing ? (
@@ -232,7 +233,7 @@ export function QualitySection({
             <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
           )}
         </div>
-      )}
+      </SectionBody>
     </div>
   )
 }
