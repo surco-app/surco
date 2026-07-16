@@ -189,6 +189,7 @@ export function DeclickSection({
         onToggle={onToggle}
         summary={value === 'off' ? tr('declick.mode.off') : undefined}
         summaryTestId="declick-summary"
+        summaryMuted
         right={
           <span className="flex shrink-0 items-center gap-1.5">
             {!isMulti && typeof count === 'number' && (

@@ -793,6 +793,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         help={tr('trim.hint')}
         summary={value ? undefined : tr('trim.summaryNone')}
         summaryTestId="trim-summary"
+        summaryMuted
         right={
           value ? (
             !open ? (

@@ -94,6 +94,8 @@ export function NormalizeSection({
               : tr('normalize.mode.none')
         }
         summaryTestId="normalize-summary"
+        // Only the "None" state recedes; an active target is a live figure worth reading.
+        summaryMuted={value.mode === 'none'}
         right={
           <span className="flex shrink-0 items-center gap-1.5">
             {/* The measurement pill stays up open or folded — it is a fact about

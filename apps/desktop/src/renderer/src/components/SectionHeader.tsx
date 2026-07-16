@@ -14,6 +14,10 @@ interface SectionHeaderProps {
   summary?: string
   // The digest's testid, named per section so tests never fish among siblings.
   summaryTestId?: string
+  // True when the summary is an off/none state rather than a live figure. It steps the
+  // text back a shade (fg-faint, not fg-dim) so a column of folded headers reads the
+  // sections that carry real numbers first and the switched-off ones recede.
+  summaryMuted?: boolean
   right?: React.ReactNode
   // What the section is for, in a sentence. It rides an ⓘ next to the title rather
   // than a paragraph under it: the explanation is read once and the two lines it
@@ -31,6 +35,7 @@ export function SectionHeader({
   onToggle,
   summary,
   summaryTestId,
+  summaryMuted,
   right,
   help,
   sectionId,
@@ -59,7 +64,9 @@ export function SectionHeader({
         {!open && summary && (
           <span
             data-testid={summaryTestId}
-            className="ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums"
+            className={`ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums ${
+              summaryMuted ? 'text-fg-faint' : ''
+            }`}
           >
             {summary}
           </span>

@@ -847,6 +847,7 @@ export function GridSection({
         help={tr('grid.hint')}
         summary={value || detected ? undefined : tr('grid.summaryNone')}
         summaryTestId="grid-summary"
+        summaryMuted
         right={
           value ? (
             !open ? (
