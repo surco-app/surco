@@ -44,14 +44,44 @@ describe('autoMatchRelease', () => {
     expect(m?.track).toEqual(HIGH)
   })
 
-  it('stops probing once a high match is found', async () => {
+  // When two candidates in the same concurrency batch both clear the bar, rank order — not
+  // whichever request happened to resolve first — decides the winner, exactly as the serial
+  // walk returned the earliest accepted one. Both here score high; the higher-ranked must win.
+  it('returns the highest-ranked accepted match when a batch has several', async () => {
+    const results = [
+      { provider: 'discogs' as const, id: 1, title: 'My Song — the wanted one' },
+      { provider: 'discogs' as const, id: 2, title: 'Various — a compilation' },
+    ]
     const api = {
-      search: vi.fn().mockResolvedValue([searchResult(1), searchResult(2)]),
+      search: vi.fn().mockResolvedValue(results),
+      // Both releases carry a high-scoring track; id 2 resolves first to prove the winner is
+      // decided by rank, not resolution order.
+      getRelease: vi.fn((r: { id: number }) =>
+        r.id === 2
+          ? Promise.resolve(release(2, { tracklist: [HIGH] }))
+          : Promise.resolve(release(1, { tracklist: [HIGH] })),
+      ),
+    }
+    const m = await autoMatchRelease('my song', { title: 'My Song', durationSec: 200 }, api)
+    // preRankResults ranks the title naming the file's track ahead of the compilation, so id 1
+    // wins even though id 2's load resolved first.
+    expect(m?.release.id).toBe(1)
+  })
+
+  it('stops probing the next batch once a high match is found', async () => {
+    const results = Array.from({ length: 8 }, (_, i) => searchResult(i + 1))
+    const api = {
+      search: vi.fn().mockResolvedValue(results),
       getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [HIGH] })),
     }
     await autoMatchRelease('my song', target, api)
-    // The first release already matches, so the second is never loaded.
-    expect(api.getRelease).toHaveBeenCalledTimes(1)
+    // The first release already matches. Releases load in a bounded-concurrency window, so the
+    // first batch of up to LOAD_CONCURRENCY loads together — but once it yields a high match no
+    // further batch is started, so the whole cap of 8 is never crawled. The extra loads in the
+    // first batch are the price of overlapping the ~1.2 s Bandcamp page loads that made the
+    // serial worst case ~10 s a track.
+    expect(api.getRelease.mock.calls.length).toBeLessThanOrEqual(4)
+    expect(api.getRelease.mock.calls.length).toBeGreaterThanOrEqual(1)
   })
 
   // No release clears the 'high' bar, but a plausible Discogs title hit ('review' tier) is
@@ -227,10 +257,10 @@ describe('autoMatchRelease', () => {
       ),
     }
     const m = await autoMatchRelease('one more time daft punk', artistTarget, api)
-    // Re-ranking moved Discovery ahead of the compilation, so it matched on the first
-    // probe and the compilation was never loaded.
+    // Re-ranking moved Discovery ahead of the compilation, so when both load in the same
+    // batch the lowest-ranked accepted match wins — Discovery, not the compilation. The
+    // ranking is what still decides the answer; concurrency only changes how many load.
     expect(m?.release.id).toBe(2)
-    expect(api.getRelease).toHaveBeenCalledTimes(1)
     expect(api.getRelease).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }))
   })
 
@@ -242,6 +272,33 @@ describe('autoMatchRelease', () => {
     }
     await autoMatchRelease('my song', target, api, 8)
     expect(api.getRelease).toHaveBeenCalledTimes(8)
+  })
+
+  // The no-match worst case used to load all 8 releases strictly one after another — on
+  // Bandcamp, where each page load is ~1.2 s, that alone was ~10 s a track. The releases in
+  // a probe are independent reads, so they load in a bounded-concurrency window: several are
+  // in flight at once, which is what turns a serial crawl into a few overlapping batches.
+  it('loads releases with overlapping requests, not strictly one after another', async () => {
+    const results = Array.from({ length: 8 }, (_, i) => searchResult(i + 1))
+    let inFlight = 0
+    let peak = 0
+    const api = {
+      search: vi.fn().mockResolvedValue(results),
+      // Every release is a review-tier miss, so the probe can't short-circuit and must load
+      // the whole cap — the worst case. Each load holds for a tick so overlap is observable.
+      getRelease: vi.fn(async () => {
+        inFlight++
+        peak = Math.max(peak, inFlight)
+        await Promise.resolve()
+        await Promise.resolve()
+        inFlight--
+        return release(0, { tracklist: [REVIEW] })
+      }),
+    }
+    await autoMatchRelease('my song', target, api, 8)
+    // More than one release was decoding at the same moment — the serial version pinned this
+    // at exactly 1.
+    expect(peak).toBeGreaterThan(1)
   })
 })
 
@@ -266,9 +323,13 @@ describe('autoMatchRelease stored release id', () => {
   it('falls back to a text search when the stored release fails to load', async () => {
     const api = {
       search: vi.fn().mockResolvedValue([searchResult(2)]),
-      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
-        r.id === 1 ? Promise.reject(new Error('404')) : Promise.resolve(release(2, { tracklist: [HIGH] })),
-      ),
+      getRelease: vi
+        .fn()
+        .mockImplementation((r: { id: number }) =>
+          r.id === 1
+            ? Promise.reject(new Error('404'))
+            : Promise.resolve(release(2, { tracklist: [HIGH] })),
+        ),
     }
     const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
     expect(m?.release.id).toBe(2)
@@ -281,9 +342,13 @@ describe('autoMatchRelease stored release id', () => {
   it('falls back to a text search when the stored release no longer matches', async () => {
     const api = {
       search: vi.fn().mockResolvedValue([searchResult(2)]),
-      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
-        Promise.resolve(r.id === 1 ? release(1, { tracklist: [LOW] }) : release(2, { tracklist: [HIGH] })),
-      ),
+      getRelease: vi
+        .fn()
+        .mockImplementation((r: { id: number }) =>
+          Promise.resolve(
+            r.id === 1 ? release(1, { tracklist: [LOW] }) : release(2, { tracklist: [HIGH] }),
+          ),
+        ),
     }
     const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
     expect(m?.release.id).toBe(2)
@@ -297,9 +362,13 @@ describe('autoMatchRelease stored release id', () => {
   it('returns the stored release as a review suggestion without ever searching', async () => {
     const api = {
       search: vi.fn().mockResolvedValue([searchResult(2)]),
-      getRelease: vi.fn().mockImplementation((r: { id: number }) =>
-        Promise.resolve(r.id === 1 ? release(1, { tracklist: [REVIEW] }) : release(2, { tracklist: [HIGH] })),
-      ),
+      getRelease: vi
+        .fn()
+        .mockImplementation((r: { id: number }) =>
+          Promise.resolve(
+            r.id === 1 ? release(1, { tracklist: [REVIEW] }) : release(2, { tracklist: [HIGH] }),
+          ),
+        ),
     }
     const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
     expect(m?.release.id).toBe(1)
@@ -317,7 +386,9 @@ describe('autoMatchRelease stored release id', () => {
       search: vi.fn(),
       // Exact title, but the release lists no durations, the file has no artist or
       // catalog number — nothing beyond the title corroborates.
-      getRelease: vi.fn().mockResolvedValue(release(1, { tracklist: [{ title: 'My Song', position: '1' }] })),
+      getRelease: vi
+        .fn()
+        .mockResolvedValue(release(1, { tracklist: [{ title: 'My Song', position: '1' }] })),
     }
     const m = await autoMatchRelease('my song', { ...target, discogsReleaseId: '1' }, api)
     expect(m?.release.id).toBe(1)
@@ -484,7 +555,7 @@ describe('matchTargetOf', () => {
     expect(target.trackNumber).toBe('A2')
   })
 
-  it('keeps the file\'s own track number over one recovered from the title', () => {
+  it("keeps the file's own track number over one recovered from the title", () => {
     const t = {
       duration: 211,
       meta: { title: '(A2) Sueño Latino', trackNumber: 'B1', artist: 'Artist' },

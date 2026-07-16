@@ -92,6 +92,15 @@ export function acceptReviewPatch(track: TrackItem): Partial<TrackItem> | undefi
 // browser's auto-probe and the sweep share it so manual and automatic matching agree.
 export const MAX_AUTO_PROBE = 8
 
+// How many releases in a probe load at once. The releases are independent reads, so loading
+// them one after another wasted the whole round-trip per release — worst on Bandcamp, whose
+// page loads run ~1.2 s each, so a no-match crawling all 8 took ~10 s a track. A batch of 4
+// overlaps those round-trips (a no-match now costs ceil(8/4)=2 batches, not 8 serial loads)
+// while staying narrow enough that a match near the front rarely loads more than one batch,
+// and the shared rate-limiter bucket isn't flooded harder than the old two-tracks-at-once
+// sweep already did.
+const LOAD_CONCURRENCY = 4
+
 export interface ProbeMatch {
   release: Release
   track: ReleaseTrack
@@ -144,19 +153,18 @@ export async function probeReleases(
     onProbe?: (candidate: ProbedCandidate) => void
   },
 ): Promise<ProbeMatch | undefined> {
-  let review: ProbeMatch | undefined
-  for (const result of preRankResults(results, target).slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)) {
-    if (opts.cancelled?.()) return undefined
+  // Loads and scores one candidate against the target. Returns null for a load failure or a
+  // structurally broken release (skipped, never thrown) so one bad row never sinks the probe.
+  const scoreCandidate = async (result: SearchResult): Promise<ProbeMatch | null> => {
     let rel: Release
     let m: ReturnType<typeof bestMatch>
     try {
       rel = await opts.loadRelease(result)
       m = bestMatch(rel.tracklist, target)
     } catch {
-      continue
+      return null
     }
-    if (opts.cancelled?.()) return undefined
-    if (!m) continue
+    if (!m) return null
     // A file's catalog number matching one of the release's pressings is the strongest
     // evidence it names this exact release, so it lifts the confidence — enough to carry a
     // review-tier hit over the high bar and apply it unattended. The boosted score drives
@@ -165,15 +173,40 @@ export async function probeReleases(
     const confidence = catalogMatched ? boostForCatalogMatch(m.confidence) : m.confidence
     const tier = corroboratedTier(confidence, target, rel, m.track, catalogMatched)
     const signals = matchSignals(target, rel, m.track, catalogMatched)
-    opts.onProbe?.({ result, confidence, tier })
-    if (confidence >= (opts.minConfidence ?? 0) && opts.accepts(tier)) {
-      return { release: rel, track: m.track, confidence, tier, result, signals }
-    }
-    // Keep walking for an accepted match, but remember the strongest review-tier hit in case
-    // none turns up — the probe order isn't confidence order, so the best review can sit
-    // behind a weaker one.
-    if (opts.collectReview && tier === 'review' && (!review || confidence > review.confidence)) {
-      review = { release: rel, track: m.track, confidence, tier, result, signals }
+    return { release: rel, track: m.track, confidence, tier, result, signals }
+  }
+
+  const ranked = preRankResults(results, target).slice(0, opts.maxProbe ?? MAX_AUTO_PROBE)
+  let review: ProbeMatch | undefined
+  // Walk the ranked candidates a batch at a time, loading the batch's releases at once. The
+  // ranking still decides the answer — batches run front to back and each batch's results are
+  // read in rank order — so this returns exactly the match the old serial walk did; the only
+  // change is that a batch's loads overlap. Once a batch yields an accepted match no further
+  // batch starts, so a hit near the front still costs only the batch it's in.
+  for (let start = 0; start < ranked.length; start += LOAD_CONCURRENCY) {
+    if (opts.cancelled?.()) return undefined
+    const batch = ranked.slice(start, start + LOAD_CONCURRENCY)
+    const scored = await Promise.all(batch.map(scoreCandidate))
+    if (opts.cancelled?.()) return undefined
+    for (let i = 0; i < scored.length; i++) {
+      const candidate = scored[i]
+      if (!candidate) continue
+      opts.onProbe?.({ result: batch[i], confidence: candidate.confidence, tier: candidate.tier })
+      // The first accepted candidate in rank order wins — same as the serial walk returning on
+      // its first accept. Later candidates in this batch already loaded, but none can outrank
+      // an earlier accepted one, so they are only mined for a review fallback below.
+      if (candidate.confidence >= (opts.minConfidence ?? 0) && opts.accepts(candidate.tier)) {
+        return candidate
+      }
+      // Remember the strongest review-tier hit in case nothing clears the bar — rank order
+      // isn't confidence order, so the best review can sit behind a weaker one.
+      if (
+        opts.collectReview &&
+        candidate.tier === 'review' &&
+        (!review || candidate.confidence > review.confidence)
+      ) {
+        review = candidate
+      }
     }
   }
   return opts.collectReview ? review : undefined
