@@ -21,7 +21,7 @@ import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { ZoomStepper } from './ZoomStepper'
-import { WaveformSkeleton } from './WaveformSkeleton'
+import { TrimSkeleton } from './TrimSkeleton'
 import { AFTER_COLOR } from './WaveformCompare'
 
 // A handle can never cross to within a second of the other: a trim that eats the
@@ -833,12 +833,12 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 )}
               </div>
               {loading || !wave || durationSec <= 0 ? (
-                // The skeleton is absolute inset-0 h-full, so it needs a positioned box
-                // with the lane's own height. Rendered bare, it resolved h-full against
-                // the scroll pane and painted a full-window wave behind the whole app.
-                <div className="relative h-24">
-                  <WaveformSkeleton testid="trim-loading" />
-                </div>
+                // The two-lane placeholder: mirrors the START/END split with its control
+                // rows and fixed-height waves, so the real lanes swap in without a jump.
+                // Each wave sits in a positioned h-24 box (the skeleton is absolute
+                // h-full; bare, it once resolved against the scroll pane and painted a
+                // full-window wave behind the whole app).
+                <TrimSkeleton />
               ) : (
                 // The lanes are two DIFFERENT places in the track (second 0 and
                 // second 400), not one continuous wave: pressed together the eye read

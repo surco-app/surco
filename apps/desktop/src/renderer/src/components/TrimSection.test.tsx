@@ -83,14 +83,20 @@ describe('TrimSection', () => {
       .fn()
       .mockReturnValue(new Promise(() => {}))
     render(section())
-    const skeleton = screen.getByTestId('trim-loading')
-    expect(skeleton).toBeInTheDocument()
-    // The skeleton is `absolute inset-0 h-full`, so it MUST sit in a positioned box with a
+    // The two-lane placeholder: a START and an END wave, mirroring the split layout.
+    expect(screen.getByTestId('trim-skeleton')).toBeInTheDocument()
+    const start = screen.getByTestId('trim-loading-start')
+    const end = screen.getByTestId('trim-loading-end')
+    expect(start).toBeInTheDocument()
+    expect(end).toBeInTheDocument()
+    // Each wave is `absolute inset-0 h-full`, so it MUST sit in a positioned box with a
     // fixed lane height. Rendered bare it resolved h-full against the scroll pane and painted
-    // a full-window wave behind the whole app — the reported "giant wave". Its parent pins
-    // the height so that can't happen.
-    expect(skeleton.parentElement?.className).toContain('relative')
-    expect(skeleton.parentElement?.className).toContain('h-24')
+    // a full-window wave behind the whole app — the reported "giant wave". The h-24 parent
+    // pins the height so that can't happen.
+    for (const s of [start, end]) {
+      expect(s.parentElement?.className).toContain('relative')
+      expect(s.parentElement?.className).toContain('h-24')
+    }
   })
 
 
