@@ -76,13 +76,16 @@ interface StripData {
 // reading wave.clipped / wave.channels unchanged, none the wiser that they now arrive
 // from their own cache entry rather than baked into the peaks probe.
 function useStripData(path: string, enabled: boolean): StripData {
-  const { data: peaks, isFetching } = useWaveform(path, enabled)
+  const { data: peaks } = useWaveform(path, enabled)
   const { data: scan } = useWaveformScan(path, enabled)
   const { data: loudness } = useTrackLoudness(path, enabled)
   const wave = peaks
     ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels }
     : peaks
-  return { wave, loading: isFetching && !peaks, loudness }
+  // Skeleton from the moment the strip is enabled until the wave lands — not `isFetching`,
+  // which is briefly false after enable but before the query starts, leaving an empty
+  // canvas. Same rule Trim/Grid use (`open && !wave`) so no blank strip shows on open.
+  return { wave, loading: enabled && !peaks, loudness }
 }
 
 function Legend({
