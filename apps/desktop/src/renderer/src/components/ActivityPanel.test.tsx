@@ -98,3 +98,42 @@ describe('ActivityPanel copy', () => {
     expect(screen.getByTestId('activity-copy')).toBeDisabled()
   })
 })
+
+describe('ActivityPanel timer alignment', () => {
+  // Timers form a right-aligned column the eye scans down. A row without a detail
+  // (no chevron) or without a release link (no open-in-browser button) used to let
+  // its timer slide right into the freed space, so the column jittered row by row.
+  // Every row must reserve those slots whether or not it fills them.
+  it('keeps the timer column identical across expandable, linked and plain rows', () => {
+    render(
+      <ActivityPanel
+        rows={[
+          {
+            id: 'expandable',
+            kind: 'discogs',
+            status: 'done',
+            label: 'Searching Discogs',
+            detail: 'GET /database/search',
+            ms: 4660,
+          },
+          {
+            id: 'linked',
+            kind: 'discogs',
+            status: 'done',
+            label: 'Loading Discogs release #301797',
+            url: 'https://www.discogs.com/release/301797',
+            ms: 4382,
+          },
+          { id: 'plain', kind: 'match', status: 'done', label: 'No match', ms: 20 },
+        ]}
+        onClear={vi.fn()}
+        onClose={vi.fn()}
+        onCopy={vi.fn()}
+        geometry={{ pos: { x: 0, y: 0 }, size: { width: 320, height: 360 } }}
+        onGeometryChange={vi.fn()}
+      />,
+    )
+    expect(screen.getAllByTestId('activity-chevron-slot')).toHaveLength(3)
+    expect(screen.getAllByTestId('activity-url-slot')).toHaveLength(3)
+  })
+})

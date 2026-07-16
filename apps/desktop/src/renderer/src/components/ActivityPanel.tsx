@@ -128,17 +128,30 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
         data-testid="activity-child"
         disabled={!expandable}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 py-1 pr-3 pl-9 text-left enabled:hover:bg-[var(--color-panel-2)] disabled:cursor-default"
+        className="flex w-full items-center gap-2 py-1 pl-9 text-left enabled:hover:bg-[var(--color-panel-2)] disabled:cursor-default"
       >
         <StatusIcon status={row.status} />
         <span className="min-w-0 flex-1 truncate text-[11px] text-fg-muted">
           {rowLabel(tr, row)}
         </span>
         {row.ms !== undefined && (
-          <span className="shrink-0 font-mono text-[10px] text-fg-muted">
+          <span className="shrink-0 text-right font-mono text-[10px] text-fg-muted tabular-nums">
             {tr('activity.elapsedMs', { ms: row.ms })}
           </span>
         )}
+        {/* Mirrors the parent rows' trailing slots (chevron + open-in-browser)
+            so child timers land in the same right-aligned column. */}
+        <span className="h-3 w-3 shrink-0">
+          {expandable && (
+            <ChevronRight
+              className={`h-3 w-3 text-fg-muted transition-transform ${open ? 'rotate-90' : ''}`}
+              aria-hidden="true"
+            />
+          )}
+        </span>
+        {/* ml-1 tops the button's gap-2 up to the parent rows' pr-3, keeping both
+            levels' timers on the exact same column. */}
+        <span className="mr-2 ml-1 h-6 w-6 shrink-0" />
       </button>
       {open && detail && (
         <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-[10px] text-fg-muted">
@@ -175,28 +188,37 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
             </span>
           )}
           {row.ms !== undefined && (
-            <span className="shrink-0 font-mono text-[10px] text-fg-muted">
+            <span className="shrink-0 text-right font-mono text-[10px] text-fg-muted tabular-nums">
               {tr('activity.elapsedMs', { ms: row.ms })}
             </span>
           )}
-          {expandable && (
-            <ChevronRight
-              className={`h-3 w-3 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-90' : ''}`}
-              aria-hidden="true"
-            />
-          )}
+          {/* Always rendered so the timers form one right-aligned column: a row
+              with nothing to expand keeps the chevron's slot instead of letting
+              its timer drift into it. */}
+          <span data-testid="activity-chevron-slot" className="h-3 w-3 shrink-0">
+            {expandable && (
+              <ChevronRight
+                className={`h-3 w-3 text-fg-muted transition-transform ${open ? 'rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+          </span>
         </button>
-        {row.url && (
-          <button
-            type="button"
-            data-testid="activity-open-url"
-            aria-label={tr('activity.openInBrowser')}
-            onClick={() => row.url && openUrl(row.url)}
-            className="press mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-muted opacity-0 hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:opacity-100"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        )}
+        {/* Same slot discipline as the chevron: rows without a release link keep
+            the open-in-browser button's width so every timer ends at the same x. */}
+        <span data-testid="activity-url-slot" className="mr-2 h-6 w-6 shrink-0">
+          {row.url && (
+            <button
+              type="button"
+              data-testid="activity-open-url"
+              aria-label={tr('activity.openInBrowser')}
+              onClick={() => row.url && openUrl(row.url)}
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted opacity-0 hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:opacity-100"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </span>
       </div>
       {open && grouped && (
         <ul className="border-t border-[var(--color-line)] bg-[var(--color-panel-2)]/40">
