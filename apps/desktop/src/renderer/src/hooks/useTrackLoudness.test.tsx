@@ -38,7 +38,9 @@ describe('useTrackLoudness', () => {
       wrapper: wrapper(),
     })
     await waitFor(() => expect(result.current.data).toEqual(sample))
-    expect(measure).toHaveBeenCalledWith('/music/a.wav')
+    // The editor mounts this only for the selected track, the one the user is waiting on,
+    // so it measures at 'high' to jump ahead of a background sweep's 'low' floods.
+    expect(measure).toHaveBeenCalledWith('/music/a.wav', 'high')
   })
 
   // The readout is an opt-in Settings toggle; with it off there is nothing to show, so

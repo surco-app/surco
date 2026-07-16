@@ -9,7 +9,9 @@ import { analysisOptions } from '../lib/analysisQueries'
 // resolves null and the suggestion chip simply doesn't render.
 export function useKey(inputPath: string, enabled: boolean): UseQueryResult<KeyResult | null> {
   return useQuery({
-    ...analysisOptions('key', inputPath, () => window.api.key(inputPath)),
+    // The editor mounts this only for the selected track, the one the user is waiting on, so
+    // it decodes at 'high' to jump ahead of a background sweep's 'low' floods in the limiter.
+    ...analysisOptions('key', inputPath, () => window.api.key(inputPath, 'high')),
     enabled,
   })
 }

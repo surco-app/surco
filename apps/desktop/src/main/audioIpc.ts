@@ -1,6 +1,7 @@
 import { basename } from 'node:path'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { DeclickMode } from '../shared/types'
 import { activity } from './activity'
 import { cachedAnalysis, dropAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
@@ -15,9 +16,9 @@ import {
   measureBeatgrid,
   measureBeatgridWindow,
   measureBpm,
+  measureChannelScan,
   measureKey,
   measureLoudness,
-  measureChannelScan,
   measureWaveform,
   measureWaveformWindow,
   probeAudio,
@@ -28,7 +29,6 @@ import {
   renderDeclickRepaired,
   tagsFromProbe,
 } from './ffmpeg'
-import type { DeclickMode } from '../shared/types'
 import { previewTempPath } from './playback'
 import { recordStat } from './settings'
 
@@ -151,35 +151,41 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     },
   )
 
-  ipcMain.handle('audio:loudness', async (_e, inputPath: string) => {
-    try {
-      return await cachedAnalysis('loudness', inputPath, () =>
-        probe('activity.probeLoudness', inputPath, () =>
-          analysisLimiter.run(() => measureLoudness(inputPath), 'low'),
-        ),
-      )
-    } catch (err) {
-      log.error('audio:loudness failed', err)
-      return null
-    }
-  })
+  ipcMain.handle(
+    'audio:loudness',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+      try {
+        return await cachedAnalysis('loudness', inputPath, () =>
+          probe('activity.probeLoudness', inputPath, () =>
+            analysisLimiter.run(() => measureLoudness(inputPath), priority),
+          ),
+        )
+      } catch (err) {
+        log.error('audio:loudness failed', err)
+        return null
+      }
+    },
+  )
 
   // The repair section's clicks: the count for the header pill, and the marks the wave
   // draws (and "jump to the next click" seeks to) — one detector pass, one cache entry,
   // so the number and the marks can never disagree. v2: the v1 entries hold a bare
   // count, and a stale hit would leave a track showing its pill with no marks.
-  ipcMain.handle('audio:clicks', async (_e, inputPath: string) => {
-    try {
-      return await cachedAnalysis('clickcount-v2', inputPath, () =>
-        probe('activity.probeClicks', inputPath, () =>
-          analysisLimiter.run(() => detectTrackClicks(inputPath), 'low'),
-        ),
-      )
-    } catch (err) {
-      log.error('audio:clicks failed', err)
-      return null
-    }
-  })
+  ipcMain.handle(
+    'audio:clicks',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+      try {
+        return await cachedAnalysis('clickcount-v2', inputPath, () =>
+          probe('activity.probeClicks', inputPath, () =>
+            analysisLimiter.run(() => detectTrackClicks(inputPath), priority),
+          ),
+        )
+      } catch (err) {
+        log.error('audio:clicks failed', err)
+        return null
+      }
+    },
+  )
 
   ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
     try {
@@ -192,7 +198,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:bpm', async (_e, inputPath: string) => {
+  ipcMain.handle('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
       // Unlike a null loudness (a parse failure worth retrying), a null here is
       // a real measurement — beatless material — so it is cached too; only a
@@ -202,7 +208,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         inputPath,
         () =>
           probe('activity.probeBpm', inputPath, () =>
-            analysisLimiter.run(() => measureBpm(inputPath), 'low'),
+            analysisLimiter.run(() => measureBpm(inputPath), priority),
           ),
         () => true,
       )
@@ -212,42 +218,45 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:beatgrid', async (_e, inputPath: string, fresh?: boolean) => {
-    try {
-      // The Grid section's Auto: the user explicitly asked to redo the analysis,
-      // so the cached verdict (possibly from an older detector) must not serve.
-      if (fresh) await dropAnalysis('beatgrid-v6', inputPath)
-      // Same caching contract as audio:bpm: a null (beatless material) is a
-      // real measurement and is cached; only a decode error retries. Its own
-      // namespace rather than a bump of 'bpm': old cached BpmResults carry no
-      // anchor and could never be told apart from a grid, while the BPM chip
-      // keeps its cache untouched. v2: results grew the review signals
-      // (phaseAmbiguity/phaseMargin); v1 entries would pin grids the triage
-      // could never flag. v3: the phase voters were reworked (low-band flux
-      // arbitrates); v2 entries would pin anchors the old energy vote put half
-      // a period off. v4: detection grew the drift scan (changes) — v3 entries
-      // would pin single-segment grids on tracks the scan now segments. v5: the
-      // drift scan now tracks the beat and fits each stretch its own TEMPO
-      // rather than only re-anchoring the phase; v4 entries would pin segments
-      // that all inherit one bpm and walk off the kicks within bars. v6: the
-      // tracker was calibrated on a REAL rip — it no longer locks onto a triplet
-      // layer, and the fit no longer cuts a segment on a single jittery beat;
-      // v5 entries would pin the grids that produced (a steady 123 BPM house
-      // record came out with 22 segments, the last of them at double time).
-      return await cachedAnalysis(
-        'beatgrid-v6',
-        inputPath,
-        () =>
-          probe('activity.probeBeatgrid', inputPath, () =>
-            analysisLimiter.run(() => measureBeatgrid(inputPath), 'low'),
-          ),
-        () => true,
-      )
-    } catch (err) {
-      log.error('audio:beatgrid failed', err)
-      return null
-    }
-  })
+  ipcMain.handle(
+    'audio:beatgrid',
+    async (_e, inputPath: string, fresh?: boolean, priority: 'high' | 'low' = 'low') => {
+      try {
+        // The Grid section's Auto: the user explicitly asked to redo the analysis,
+        // so the cached verdict (possibly from an older detector) must not serve.
+        if (fresh) await dropAnalysis('beatgrid-v6', inputPath)
+        // Same caching contract as audio:bpm: a null (beatless material) is a
+        // real measurement and is cached; only a decode error retries. Its own
+        // namespace rather than a bump of 'bpm': old cached BpmResults carry no
+        // anchor and could never be told apart from a grid, while the BPM chip
+        // keeps its cache untouched. v2: results grew the review signals
+        // (phaseAmbiguity/phaseMargin); v1 entries would pin grids the triage
+        // could never flag. v3: the phase voters were reworked (low-band flux
+        // arbitrates); v2 entries would pin anchors the old energy vote put half
+        // a period off. v4: detection grew the drift scan (changes) — v3 entries
+        // would pin single-segment grids on tracks the scan now segments. v5: the
+        // drift scan now tracks the beat and fits each stretch its own TEMPO
+        // rather than only re-anchoring the phase; v4 entries would pin segments
+        // that all inherit one bpm and walk off the kicks within bars. v6: the
+        // tracker was calibrated on a REAL rip — it no longer locks onto a triplet
+        // layer, and the fit no longer cuts a segment on a single jittery beat;
+        // v5 entries would pin the grids that produced (a steady 123 BPM house
+        // record came out with 22 segments, the last of them at double time).
+        return await cachedAnalysis(
+          'beatgrid-v6',
+          inputPath,
+          () =>
+            probe('activity.probeBeatgrid', inputPath, () =>
+              analysisLimiter.run(() => measureBeatgrid(inputPath), priority),
+            ),
+          () => true,
+        )
+      } catch (err) {
+        log.error('audio:beatgrid failed', err)
+        return null
+      }
+    },
+  )
 
   // The scoped Auto: re-detect one stretch only (a tempo-change segment). Never
   // cached — the window boundaries change with every edit, and the result lands
@@ -269,7 +278,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     },
   )
 
-  ipcMain.handle('audio:key', async (_e, inputPath: string) => {
+  ipcMain.handle('audio:key', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
       // Same caching contract as audio:bpm: a null (atonal material) is a real
       // measurement and is cached; only a decode error retries.
@@ -278,7 +287,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         inputPath,
         () =>
           probe('activity.probeKey', inputPath, () =>
-            analysisLimiter.run(() => measureKey(inputPath), 'low'),
+            analysisLimiter.run(() => measureKey(inputPath), priority),
           ),
         () => true,
       )
@@ -288,29 +297,33 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:waveform', async (_e, inputPath: string) => {
-    try {
-      // Default shouldCache applies: a null waveform means ffmpeg decoded
-      // nothing, which is worth retrying later (e.g. a file mid-download), so
-      // only real envelopes are pinned.
-      // 'high': the waveform is the one decode a user is actively waiting on (they
-      // just hit play), so it jumps ahead of the editor's background passes.
-      // v2: results grew the per-channel lanes (WaveformResult.channels); entries
-      // cached before that would pin waves with no split view forever.
-      // v3: buckets went 2048 → 8192 for the ×32 zoom; older entries would pin
-      // the blocky low-resolution wave the deeper zoom exists to replace.
-      // v4: the clip/channel scan split into its own probe (audio:waveform-scan);
-      // v3 entries carry the now-removed clipped/channels, so a rename drops them.
-      return await cachedAnalysis('waveform-v4', inputPath, () =>
-        probe('activity.probeWaveform', inputPath, () =>
-          analysisLimiter.run(() => measureWaveform(inputPath), 'high'),
-        ),
-      )
-    } catch (err) {
-      log.error('audio:waveform failed', err)
-      return null
-    }
-  })
+  ipcMain.handle(
+    'audio:waveform',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+      try {
+        // Default shouldCache applies: a null waveform means ffmpeg decoded
+        // nothing, which is worth retrying later (e.g. a file mid-download), so
+        // only real envelopes are pinned.
+        // Priority rides in from the caller: the player asks 'high' (the one decode a user is
+        // actively waiting on, having just hit play), while the "analyze all" sweep asks 'low'
+        // so its whole-crate waveform decodes don't crowd the player out of the high lane.
+        // v2: results grew the per-channel lanes (WaveformResult.channels); entries
+        // cached before that would pin waves with no split view forever.
+        // v3: buckets went 2048 → 8192 for the ×32 zoom; older entries would pin
+        // the blocky low-resolution wave the deeper zoom exists to replace.
+        // v4: the clip/channel scan split into its own probe (audio:waveform-scan);
+        // v3 entries carry the now-removed clipped/channels, so a rename drops them.
+        return await cachedAnalysis('waveform-v4', inputPath, () =>
+          probe('activity.probeWaveform', inputPath, () =>
+            analysisLimiter.run(() => measureWaveform(inputPath), priority),
+          ),
+        )
+      } catch (err) {
+        log.error('audio:waveform failed', err)
+        return null
+      }
+    },
+  )
 
   // The heavy native-rate clip/channel scan, split from audio:waveform so only the
   // player/compare strip pays for it. Its own cache namespace, so each entry always holds a

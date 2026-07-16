@@ -133,13 +133,17 @@ export interface Api {
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
-  loudness: (path: string) => Promise<LoudnessResult | null>
+  loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
-  bpm: (path: string) => Promise<BpmResult | null>
-  beatgrid: (path: string, fresh?: boolean) => Promise<BeatgridResult | null>
+  bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
+  beatgrid: (
+    path: string,
+    fresh?: boolean,
+    priority?: 'high' | 'low',
+  ) => Promise<BeatgridResult | null>
   beatgridWindow: (path: string, startSec: number, durSec: number) => Promise<BeatgridResult | null>
-  key: (path: string) => Promise<KeyResult | null>
-  waveform: (path: string) => Promise<WaveformResult | null>
+  key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
+  waveform: (path: string, priority?: 'high' | 'low') => Promise<WaveformResult | null>
   // The native-rate clip/channel scan for the compare/player strip only (marks + split).
   waveformScan: (path: string) => Promise<WaveformScan | null>
   // A slice of the track re-decoded at full waveform fidelity, for the strips'
@@ -165,7 +169,10 @@ export interface Api {
   // sits in seconds, and how far into the track the detector actually read — past
   // `scannedSec` nothing was analysed, so the wave must not imply a clean tail.
   // null when the analysis failed.
-  clicks: (path: string) => Promise<{ count: number; marks: number[]; scannedSec: number } | null>
+  clicks: (
+    path: string,
+    priority?: 'high' | 'low',
+  ) => Promise<{ count: number; marks: number[]; scannedSec: number } | null>
   readTags: (path: string) => Promise<TrackMetadata>
   readDuration: (path: string) => Promise<number | null>
   // Tags, duration and cover from a single round-trip, for the import path.

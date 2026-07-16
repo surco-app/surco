@@ -15,7 +15,9 @@ export interface TrackClicks {
 // never guesses.
 export function useClicks(inputPath: string, enabled: boolean): UseQueryResult<TrackClicks | null> {
   return useQuery({
-    ...analysisOptions('clicks', inputPath, () => window.api.clicks(inputPath)),
+    // The repair section mounts this only for the selected track, the one the user is waiting
+    // on, so it scans at 'high' to jump ahead of a background sweep's 'low' floods.
+    ...analysisOptions('clicks', inputPath, () => window.api.clicks(inputPath, 'high')),
     enabled,
   })
 }

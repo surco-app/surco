@@ -28,7 +28,9 @@ describe('useBpm', () => {
     setApi(detect)
     const { result } = renderHook(() => useBpm('/music/a.wav', true), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.data).toEqual(sample))
-    expect(detect).toHaveBeenCalledWith('/music/a.wav')
+    // The editor mounts this only for the selected track, the one the user is waiting on,
+    // so it decodes at 'high' to jump ahead of a background sweep's 'low' floods.
+    expect(detect).toHaveBeenCalledWith('/music/a.wav', 'high')
   })
 
   // The bpm field can be hidden in Settings (and is in multi-select); with no

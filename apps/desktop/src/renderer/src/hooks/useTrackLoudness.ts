@@ -11,7 +11,9 @@ export function useTrackLoudness(
   enabled: boolean,
 ): UseQueryResult<LoudnessResult | null> {
   return useQuery({
-    ...analysisOptions('loudness', inputPath, () => window.api.loudness(inputPath)),
+    // The editor mounts this only for the selected track, the one the user is waiting on, so
+    // it measures at 'high' to jump ahead of a background sweep's 'low' floods in the limiter.
+    ...analysisOptions('loudness', inputPath, () => window.api.loudness(inputPath, 'high')),
     enabled,
   })
 }

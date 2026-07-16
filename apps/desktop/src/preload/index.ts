@@ -101,22 +101,27 @@ const api: Api = {
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     ipcRenderer.invoke('audio:spectrogram', path, priority),
-  loudness: (path: string): Promise<LoudnessResult | null> =>
-    ipcRenderer.invoke('audio:loudness', path),
+  loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
+    ipcRenderer.invoke('audio:loudness', path, priority),
   properties: (path: string): Promise<TrackProperties | null> =>
     ipcRenderer.invoke('audio:properties', path),
-  bpm: (path: string): Promise<BpmResult | null> => ipcRenderer.invoke('audio:bpm', path),
-  beatgrid: (path: string, fresh?: boolean): Promise<BeatgridResult | null> =>
-    ipcRenderer.invoke('audio:beatgrid', path, fresh),
+  bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
+    ipcRenderer.invoke('audio:bpm', path, priority),
+  beatgrid: (
+    path: string,
+    fresh?: boolean,
+    priority: 'high' | 'low' = 'low',
+  ): Promise<BeatgridResult | null> => ipcRenderer.invoke('audio:beatgrid', path, fresh, priority),
   beatgridWindow: (
     path: string,
     startSec: number,
     durSec: number,
   ): Promise<BeatgridResult | null> =>
     ipcRenderer.invoke('audio:beatgridWindow', path, startSec, durSec),
-  key: (path: string): Promise<KeyResult | null> => ipcRenderer.invoke('audio:key', path),
-  waveform: (path: string): Promise<WaveformResult | null> =>
-    ipcRenderer.invoke('audio:waveform', path),
+  key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>
+    ipcRenderer.invoke('audio:key', path, priority),
+  waveform: (path: string, priority: 'high' | 'low' = 'low'): Promise<WaveformResult | null> =>
+    ipcRenderer.invoke('audio:waveform', path, priority),
   waveformScan: (path: string): Promise<WaveformScan | null> =>
     ipcRenderer.invoke('audio:waveform-scan', path),
   waveformWindow: (
@@ -133,8 +138,11 @@ const api: Api = {
     return () => ipcRenderer.off('audio:declickPreviewProgress', listener)
   },
   cancelDeclickPreview: () => ipcRenderer.invoke('audio:cancelDeclickPreview'),
-  clicks: (path: string): Promise<{ count: number; marks: number[]; scannedSec: number } | null> =>
-    ipcRenderer.invoke('audio:clicks', path),
+  clicks: (
+    path: string,
+    priority: 'high' | 'low' = 'low',
+  ): Promise<{ count: number; marks: number[]; scannedSec: number } | null> =>
+    ipcRenderer.invoke('audio:clicks', path, priority),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readMeta: (path: string) => ipcRenderer.invoke('audio:meta', path),

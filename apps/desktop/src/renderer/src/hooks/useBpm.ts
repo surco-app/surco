@@ -9,7 +9,9 @@ import { analysisOptions } from '../lib/analysisQueries'
 // the suggestion chip simply doesn't render.
 export function useBpm(inputPath: string, enabled: boolean): UseQueryResult<BpmResult | null> {
   return useQuery({
-    ...analysisOptions('bpm', inputPath, () => window.api.bpm(inputPath)),
+    // The editor mounts this only for the selected track, the one the user is waiting on, so
+    // it decodes at 'high' to jump ahead of a background sweep's 'low' floods in the limiter.
+    ...analysisOptions('bpm', inputPath, () => window.api.bpm(inputPath, 'high')),
     enabled,
   })
 }

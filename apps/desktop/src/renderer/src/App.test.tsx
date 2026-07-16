@@ -313,7 +313,9 @@ describe('App quality triage', () => {
     // The waveform prefetch always runs on hover, so its call marks the moment the
     // (debounced) prefetch body executed — at which point the spectrogram must be untouched.
     fireEvent.mouseEnter(rows[1])
-    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav'))
+    // Hover warming is background work, so it decodes at 'low' — the selected track's own
+    // player/editor decodes ask 'high' and still preempt it.
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'low'))
     expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav')
   })
 
@@ -326,7 +328,9 @@ describe('App quality triage', () => {
     const client = await renderApp()
     const rows = await addTwoTracks()
     fireEvent.mouseEnter(rows[1])
-    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav'))
+    // Hover warming is background work, so it decodes at 'low'; the fill lands under the same
+    // path key regardless, so opening the player later serves this warmed entry.
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'low'))
     expect(client.getQueryData(['waveform', '/music/b.wav'])).toEqual(wave)
   })
 

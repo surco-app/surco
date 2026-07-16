@@ -34,7 +34,11 @@ describe('useBeatgrid', () => {
     setApi(detect)
     const { result } = renderHook(() => useBeatgrid('/music/a.wav', true), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.data).toEqual(sample))
-    expect(detect).toHaveBeenCalledWith('/music/a.wav')
+    // The grid section mounts this only for the selected track, the one the user is waiting
+    // on, so it decodes at 'high' to jump ahead of a background sweep's 'low' floods. It is
+    // never the fresh re-detect (that path passes true through GridSection), so fresh stays
+    // undefined here.
+    expect(detect).toHaveBeenCalledWith('/music/a.wav', undefined, 'high')
   })
 
   // The grid section is folded by default (and absent in multi-select); with
