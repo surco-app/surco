@@ -13,8 +13,10 @@ function fakeUpdater(): { on: (e: string, cb: Listener) => void; fire: (v: strin
   }
 }
 
-function fakeWindow(): { webContents: { send: ReturnType<typeof vi.fn> } } {
-  return { webContents: { send: vi.fn() } }
+function fakeWindow(): {
+  webContents: { send: ReturnType<typeof vi.fn<(channel: string, version: string) => void>> }
+} {
+  return { webContents: { send: vi.fn<(channel: string, version: string) => void>() } }
 }
 
 describe('wireUpdateDelivery', () => {

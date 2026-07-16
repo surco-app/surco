@@ -22,9 +22,9 @@ function track(id: string): TrackItem {
 function setup(
   allTracks: TrackItem[],
   extra: {
-    onOldMusicCopyRemoved?: ReturnType<typeof vi.fn>
-    reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn>
-    updateTrack?: ReturnType<typeof vi.fn>
+    onOldMusicCopyRemoved?: ReturnType<typeof vi.fn<() => void>>
+    reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn<(mismatch: boolean) => void>>
+    updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
