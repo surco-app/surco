@@ -25,6 +25,11 @@ import type { TrackItem } from '../types'
 // wider fan-out would burn the quota (and risk 429s) faster than it helps.
 const AUTO_MATCH_CONCURRENCY = 2
 
+// How long after a row scrolls into view before the sweep pumps: long enough to coalesce
+// a whole scroll flick into one pump, short enough that the rows the user stops on start
+// probing near-immediately.
+const VISIBLE_PUMP_SETTLE_MS = 250
+
 interface Params {
   // Live view of the track list: the pump outlives the render that started it, so each
   // track must be read at the moment it's probed/applied, not from a closure snapshot.
@@ -306,11 +311,20 @@ export function useAutoMatch({
 
   // Records which rows are on screen (the list reports it via an IntersectionObserver) and
   // pumps the drain when one appears, so an import's auto-match follows the user's scroll.
+  // The pump is coalesced behind a short timer: a scroll flick crosses dozens of rows in a
+  // burst, and pumping (filter + sort + Discogs probes whose results setTracks and rebuild
+  // the list) on every crossing competes with the scroll itself for the main thread. One
+  // deferred pump per burst starts the probes once the scroll settles.
+  const visiblePump = useRef<ReturnType<typeof setTimeout> | null>(null)
   const onTrackVisible = useCallback(
     (id: string, visible: boolean): void => {
       if (visible) {
         visibleIds.current.add(id)
-        void pumpAutoMatch()
+        if (visiblePump.current !== null) return
+        visiblePump.current = setTimeout(() => {
+          visiblePump.current = null
+          void pumpAutoMatch()
+        }, VISIBLE_PUMP_SETTLE_MS)
       } else {
         visibleIds.current.delete(id)
       }
