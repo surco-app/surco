@@ -8,9 +8,10 @@ const RASTER_W = 600
 const RASTER_H = 96
 const SKELETON_PEAKS = skeletonPeaks(400)
 
-// The legends' muted grey, dimmed — hardcoded like the strips' blue/grey because
-// the canvas raster can't read CSS variables.
-const SKELETON_COLOR = 'rgba(148, 163, 184, 0.35)'
+// A dimmed take on the strips' real wave blue (AFTER_COLOR rgba(96,165,250,0.8)) — close
+// enough that the placeholder reads as "a wave is coming here", faint enough that it never
+// passes for a decoded one. Hardcoded like the strips' colours: the canvas can't read CSS.
+const SKELETON_COLOR = 'rgba(96, 165, 250, 0.30)'
 
 // The decode placeholder, drawn through the same drawWaveform raster as the real
 // strips so the stand-in shares the wave-to-come's geometry: thin bars mirrored
