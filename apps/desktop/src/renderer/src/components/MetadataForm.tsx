@@ -101,6 +101,7 @@ export function MetadataForm({
                   invalid={f.invalid}
                   suggestions={f.suggestions}
                   multiSuggestions={f.multiSuggestions}
+                  suggesting={f.suggesting}
                 />
               )
             return (

@@ -21,6 +21,9 @@ interface FieldProps {
   placeholder?: string
   suggestions?: string[]
   multiSuggestions?: boolean
+  // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
+  // chip until the real one lands, so it doesn't pop into empty space.
+  suggesting?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
@@ -39,6 +42,7 @@ export const Field = memo(function Field({
   placeholder,
   suggestions,
   multiSuggestions,
+  suggesting,
   insertSources,
   cleanResult,
   formatResult,
@@ -133,6 +137,18 @@ export const Field = memo(function Field({
           />
         )}
       </span>
+      {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape
+          of the real one, so the detected value swaps in without popping into empty space.
+          Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
+      {suggesting && !(suggestions && suggestions.length > 0) && (
+        <span className="mt-1.5 flex">
+          <span
+            data-testid={`suggestion-loading-${name}`}
+            aria-hidden="true"
+            className="h-[18px] w-11 animate-pulse rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]"
+          />
+        </span>
+      )}
       {suggestions && suggestions.length > 0 && (
         <span className="mt-1.5 flex flex-wrap gap-1.5">
           {suggestions.map((s) => {

@@ -87,3 +87,32 @@ describe('Field committing', () => {
     expect(input.value).toBe('Hand Typed')
   })
 })
+
+// The BPM/Key chips come from an audio probe that resolves after the form is on screen.
+// Without a placeholder the detected chip popped into empty space; a loading chip holds
+// its spot so the swap is seamless, and it must vanish the instant the real chip lands.
+describe('Field suggestion loading chip', () => {
+  it('shows a placeholder chip while a suggestion is being detected', () => {
+    render(<Field name="bpm" label="BPM" value="" onChange={() => {}} suggesting />)
+    expect(screen.getByTestId('suggestion-loading-bpm')).toBeInTheDocument()
+  })
+
+  it('replaces the placeholder with the real chip once the suggestion lands', () => {
+    const { rerender } = render(
+      <Field name="bpm" label="BPM" value="" onChange={() => {}} suggesting />,
+    )
+    expect(screen.getByTestId('suggestion-loading-bpm')).toBeInTheDocument()
+
+    // The probe resolved: a real suggestion arrives and `suggesting` clears.
+    rerender(
+      <Field name="bpm" label="BPM" value="" onChange={() => {}} suggestions={['128']} />,
+    )
+    expect(screen.queryByTestId('suggestion-loading-bpm')).toBeNull()
+    expect(screen.getByTestId('chip-128')).toBeInTheDocument()
+  })
+
+  it('shows no placeholder when nothing is being detected', () => {
+    render(<Field name="title" label="Title" value="" onChange={() => {}} />)
+    expect(screen.queryByTestId('suggestion-loading-title')).toBeNull()
+  })
+})

@@ -25,6 +25,9 @@ export interface FieldSpec {
   invalid?: boolean
   suggestions?: string[]
   multiSuggestions?: boolean
+  // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
+  // yet, but the field shows a placeholder chip so the real one doesn't pop in cold.
+  suggesting?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
@@ -143,6 +146,13 @@ export function buildFieldSpecs({
                     : def.key === 'key' && detectedKey
                       ? [keyNotation === 'camelot' ? detectedKey.camelot : detectedKey.name]
                       : undefined,
+            // Only in single mode, and only while the probe is genuinely running: the
+            // field is visible (buildFieldSpecs only walks visibleFields) and the result
+            // is still undefined. A failed probe resolves null → no chip, no placeholder.
+            suggesting:
+              !isMulti &&
+              ((def.key === 'bpm' && detectedBpm === undefined) ||
+                (def.key === 'key' && detectedKey === undefined)),
             multiSuggestions: def.key === 'grouping',
           },
         ]
