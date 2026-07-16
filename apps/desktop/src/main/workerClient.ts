@@ -1,4 +1,4 @@
-import type { TransferListItem, Worker } from 'node:worker_threads'
+import type { Transferable, Worker } from 'node:worker_threads'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
 interface Pending {
@@ -8,7 +8,7 @@ interface Pending {
 
 interface Queued extends Pending {
   job: WorkerJob
-  transfer?: readonly TransferListItem[]
+  transfer?: readonly Transferable[]
 }
 
 interface WorkerResponse {
@@ -19,7 +19,7 @@ interface WorkerResponse {
 }
 
 export interface WorkerClient {
-  run: (job: WorkerJob, transfer?: readonly TransferListItem[]) => Promise<WorkerJobResult>
+  run: (job: WorkerJob, transfer?: readonly Transferable[]) => Promise<WorkerJobResult>
 }
 
 // Correlates jobs to responses over a single reused worker: spawning a thread costs
