@@ -89,15 +89,23 @@ export function Waveform({
       />
       {loading && <WaveformSkeleton testid="waveform-loading" />}
       {playheadSec !== null && durationSec > 0 && (
+        // Positioned via transform on a full-width carrier (translateX % is of the
+        // carrier's own width, i.e. the strip) instead of animating `left`, which
+        // forces layout + paint on every ~4 Hz timeupdate; a transform stays on the
+        // compositor, so playback doesn't repaint the strip while the list scrolls.
         <div
-          data-testid="waveform-playhead"
-          // White, not accent: the wave itself is accent-blue, so a blue playhead
-          // vanished into it. bg-fg reads against both the blue bars and the dark
-          // ground, and a soft glow lifts it off a busy stretch — the same white
-          // audition playhead the beatgrid lane uses.
-          className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-fg shadow-[0_0_3px_rgba(0,0,0,0.6)]"
-          style={{ left: `${pct(playheadSec)}%` }}
-        />
+          className="pointer-events-none absolute inset-0"
+          style={{ transform: `translateX(${pct(playheadSec)}%)` }}
+        >
+          <div
+            data-testid="waveform-playhead"
+            // White, not accent: the wave itself is accent-blue, so a blue playhead
+            // vanished into it. bg-fg reads against both the blue bars and the dark
+            // ground, and a soft glow lifts it off a busy stretch — the same white
+            // audition playhead the beatgrid lane uses.
+            className="absolute top-0 left-0 h-full w-0.5 -translate-x-1/2 bg-fg shadow-[0_0_3px_rgba(0,0,0,0.6)]"
+          />
+        </div>
       )}
     </div>
   )

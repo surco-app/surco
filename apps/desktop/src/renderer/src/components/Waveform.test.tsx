@@ -123,8 +123,9 @@ describe('Waveform', () => {
       <Waveform inputPath="/m/a.wav" audioRef={{ current: audio }} active onScrub={vi.fn()} />,
     )
     const playhead = await screen.findByTestId('waveform-playhead')
-    // 15 s of 60 s → a quarter of the way across.
-    expect(playhead).toHaveStyle({ left: '25%' })
+    // 15 s of 60 s → a quarter of the way across. The position rides a transform on the
+    // full-width carrier (not `left`) so each timeupdate composites instead of relayouts.
+    expect(playhead.parentElement).toHaveStyle({ transform: 'translateX(25%)' })
   })
 
   it('hides the playhead when another track (or none) is playing', async () => {
