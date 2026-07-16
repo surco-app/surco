@@ -11,6 +11,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # TypeScript 7 (Go port), Vite 8 and @types/node 26 are real migrations
+    # (baseUrl removed, TransferListItem gone, new Vite overloads) — they must
+    # be done by hand in a dedicated branch, not swept into the weekly batch.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       electron:
         patterns:
