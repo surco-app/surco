@@ -13,8 +13,9 @@ updates:
       interval: weekly
     # Majors on the toolchain are real migrations, not bumps, so they must be
     # done by hand in a dedicated branch, not swept into the weekly batch:
-    # TypeScript 7 (Go port, baseUrl removed), Vite 8 / electron-vite 5 /
-    # @vitejs/plugin-react 6 (new plugin overloads), @types/node 26
+    # TypeScript 7 (Go port, baseUrl removed), Vite 8 (blocked until
+    # electron-vite ships stable Vite 8 support — v6 is still in beta),
+    # @vitejs/plugin-react 6 (rolldown-only, requires Vite 8), @types/node 26
     # (TransferListItem gone), react-router-dom 7 (new router API). Remove an
     # entry once its migration lands.
     ignore:
@@ -23,8 +24,6 @@ updates:
       - dependency-name: vite
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: electron-vite
         update-types: ["version-update:semver-major"]
       - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
