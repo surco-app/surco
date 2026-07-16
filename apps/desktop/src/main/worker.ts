@@ -1,5 +1,5 @@
 import os from 'node:os'
-import type { TransferListItem } from 'node:worker_threads'
+import type { Transferable } from 'node:worker_threads'
 import { createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
@@ -37,7 +37,7 @@ function getClient(): Promise<WorkerClient | null> {
 // loop (IPC, menu, surco:// streaming) never stalls behind DSP or TagLib rewrites.
 export async function runInWorker<T extends WorkerJobResult>(
   job: WorkerJob,
-  transfer?: readonly TransferListItem[],
+  transfer?: readonly Transferable[],
 ): Promise<T> {
   const client = await getClient()
   if (!client) return (await import('./workerJobs')).runWorkerJob(job) as T
