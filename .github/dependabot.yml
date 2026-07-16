@@ -15,8 +15,9 @@ updates:
     # done by hand in a dedicated branch, not swept into the weekly batch:
     # Vite 8 (blocked until electron-vite ships stable Vite 8 support — v6
     # is still in beta), @vitejs/plugin-react 6 (rolldown-only, requires
-    # Vite 8), react-router-dom 7 (new router API). Remove an entry once its
-    # migration lands.
+    # Vite 8), react-router-dom 7 (blocked: vite-react-ssg peers at ^6.14.1
+    # with no v7-compatible release). Remove an entry once its migration
+    # lands.
     ignore:
       - dependency-name: vite
         update-types: ["version-update:semver-major"]
