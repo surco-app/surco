@@ -44,12 +44,35 @@ function renderMenu(over: Record<string, unknown> = {}) {
   return props
 }
 
+describe('TrackContextMenu order', () => {
+  // Items are ordered by workflow priority: metadata work (the app's core loop) first,
+  // file utilities second, destructive actions last — not by how the OS groups file ops.
+  it('lists metadata actions first, file utilities second, destructive actions last', () => {
+    renderMenu({ canPasteMeta: true })
+    const ids = screen
+      .getAllByRole('menuitem')
+      .map((el) => el.getAttribute('data-testid'))
+      .filter((id) => id !== 'track-menu-backdrop')
+    expect(ids).toEqual([
+      'track-menu-search',
+      'track-menu-copy-meta',
+      'track-menu-paste-meta',
+      'track-menu-startover',
+      'track-menu-reveal',
+      'track-menu-open',
+      'track-menu-copy',
+      'track-menu-remove',
+      'track-menu-trash',
+    ])
+  })
+})
+
 describe('TrackContextMenu keyboard', () => {
   // The menu can be opened from the keyboard (Shift+F10 / the context-menu key), so
   // focus must move into it or a keyboard user is stranded with no way to pick an item.
   it('focuses the first item on open', () => {
     renderMenu()
-    expect(screen.getByTestId('track-menu-reveal')).toHaveFocus()
+    expect(screen.getByTestId('track-menu-search')).toHaveFocus()
   })
 
   // The open menu owns its keys. Any that leak to the window-level shortcut handler
@@ -72,9 +95,9 @@ describe('TrackContextMenu keyboard', () => {
     renderMenu()
     const menu = screen.getByTestId('track-menu')
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
-    expect(screen.getByTestId('track-menu-open')).toHaveFocus()
+    expect(screen.getByTestId('track-menu-copy-meta')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
-    expect(screen.getByTestId('track-menu-reveal')).toHaveFocus()
+    expect(screen.getByTestId('track-menu-search')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
     expect(screen.getByTestId('track-menu-trash')).toHaveFocus()
   })

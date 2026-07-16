@@ -47,11 +47,12 @@ function MenuItem({
   )
 }
 
-// Right-click menu for a single track. Reveal/open talk to the OS directly through
-// window.api; the list-level actions (search, copy, remove, trash) are delegated to App so
-// the trash flow can route through its confirm dialog and the copies can confirm with a
-// toast. Labels switch on platform because the OS file manager and recycle location differ
-// between macOS and Windows.
+// Right-click menu for a single track, grouped by workflow priority: metadata work (the
+// app's core loop) first, file utilities second, destructive actions last. Reveal/open talk
+// to the OS directly through window.api; the list-level actions (search, copy, remove,
+// trash) are delegated to App so the trash flow can route through its confirm dialog and
+// the copies can confirm with a toast. Labels switch on platform because the OS file
+// manager and recycle location differ between macOS and Windows.
 export function TrackContextMenu({
   track,
   x,
@@ -149,6 +150,29 @@ export function TrackContextMenu({
         className="animate-pop absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
       >
         <MenuItem
+          testid="track-menu-search"
+          label={tr('trackList.context.search')}
+          onClick={() => run(() => onSearch(track.id))}
+        />
+        <MenuItem
+          testid="track-menu-copy-meta"
+          label={tr('trackList.context.copyMeta')}
+          onClick={() => run(() => onCopyMeta(track))}
+        />
+        {canPasteMeta && (
+          <MenuItem
+            testid="track-menu-paste-meta"
+            label={tr('trackList.context.pasteMeta')}
+            onClick={() => run(() => onPasteMeta(track))}
+          />
+        )}
+        <MenuItem
+          testid="track-menu-startover"
+          label={tr('trackList.context.startOver')}
+          onClick={() => run(() => onStartOver(track))}
+        />
+        <div className="my-1 h-px bg-[var(--color-line)]" />
+        <MenuItem
           testid="track-menu-reveal"
           label={tr(isWin ? 'trackList.context.revealWin' : 'trackList.context.reveal')}
           onClick={() => run(() => window.api.reveal(track.inputPath))}
@@ -163,29 +187,6 @@ export function TrackContextMenu({
           label={tr('trackList.context.copyPath')}
           onClick={() => run(() => onCopyPath(track))}
         />
-        <MenuItem
-          testid="track-menu-search"
-          label={tr('trackList.context.search')}
-          onClick={() => run(() => onSearch(track.id))}
-        />
-        <MenuItem
-          testid="track-menu-startover"
-          label={tr('trackList.context.startOver')}
-          onClick={() => run(() => onStartOver(track))}
-        />
-        <div className="my-1 h-px bg-[var(--color-line)]" />
-        <MenuItem
-          testid="track-menu-copy-meta"
-          label={tr('trackList.context.copyMeta')}
-          onClick={() => run(() => onCopyMeta(track))}
-        />
-        {canPasteMeta && (
-          <MenuItem
-            testid="track-menu-paste-meta"
-            label={tr('trackList.context.pasteMeta')}
-            onClick={() => run(() => onPasteMeta(track))}
-          />
-        )}
         <div className="my-1 h-px bg-[var(--color-line)]" />
         <MenuItem
           testid="track-menu-remove"
