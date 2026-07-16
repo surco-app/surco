@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 
 // The open/close transition for an editor section's body. It wraps the `{open && …}` each
 // section used to inline, and adds three things that snapping in and out never had:
@@ -42,6 +42,10 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
   const [maxHeight, setMaxHeight] = useState<number | undefined>(open ? undefined : 0)
   const innerRef = useRef<HTMLDivElement>(null)
   const reduce = prefersReducedMotion()
+  // Latest open/reduce for the callback ref below, so it can read them without being
+  // recreated (which would detach and reattach the observer on every render).
+  const stateRef = useRef({ open, reduce })
+  stateRef.current = { open, reduce }
 
   // Opening: mount now, then measure and tween to the real height. Closing: tween down to 0
   // from the current height. useLayoutEffect so the from-height is committed before paint,
@@ -73,26 +77,26 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
     }
   }, [open, mounted, reduce])
 
-  // Once mounted while open, drive the tween to the just-measured height (covers the first
-  // open, where the layout effect above ran before the child was in the DOM), and keep the
-  // ceiling matched to the body as it grows (spectrum/waveform arriving late).
-  useEffect(() => {
-    if (!open || reduce) return
-    const el = innerRef.current
-    if (!el) return
+  // A callback ref for the measured body: it fires exactly when the node mounts and
+  // unmounts, which is what the tween needs — on the first open the body isn't in the DOM
+  // during the layout effect above, so this is where it gets measured and where the
+  // ResizeObserver (for late spectrum/waveform growth) is wired. Reading open/reduce
+  // through stateRef keeps the callback stable so React doesn't detach it every render.
+  const roRef = useRef<ResizeObserver | null>(null)
+  const measureRef = useCallback((el: HTMLDivElement | null) => {
+    innerRef.current = el
+    roRef.current?.disconnect()
+    roRef.current = null
+    if (!el || !stateRef.current.open || stateRef.current.reduce) return
     setMaxHeight(el.scrollHeight)
     if (typeof ResizeObserver === 'undefined') return
+    // Only widen the ceiling to fit; never fight a user-driven shrink mid-close.
     const ro = new ResizeObserver(() => {
-      // Only widen the ceiling to fit; never fight a user-driven shrink mid-close.
       if (innerRef.current) setMaxHeight(innerRef.current.scrollHeight)
     })
     ro.observe(el)
-    return () => ro.disconnect()
-    // mounted is intentional: on the first open the body isn't in the DOM when this runs,
-    // so innerRef is null and no observer attaches. It mounts a tick later (mounted:
-    // false→true), and re-running here is what measures it and wires the ResizeObserver.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on mount to measure the just-added body
-  }, [open, mounted, reduce])
+    roRef.current = ro
+  }, [])
 
   const onTransitionEnd = (e: React.TransitionEvent): void => {
     if (e.propertyName !== 'max-height') return
@@ -121,7 +125,7 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
       {/* The inner element is what gets measured; the outer clips it during the tween. A
           faint fade+lift of the content itself softens the reveal beyond the height change. */}
       <div
-        ref={innerRef}
+        ref={measureRef}
         style={
           reduce
             ? undefined
