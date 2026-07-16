@@ -16,6 +16,7 @@ import {
 import { renderQualityReport } from '../lib/qualityReport'
 import type { TrackItem } from '../types'
 import { LoudnessReadout } from './LoudnessReadout'
+import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Spectrogram } from './Spectrogram'
@@ -229,9 +230,16 @@ export function QualitySection({
                 )}
               </>
             ) : null)}
-          {showLoudness && loudness && (
-            <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
-          )}
+          {showLoudness &&
+            (loudness ? (
+              <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
+            ) : (
+              // Measuring (undefined): show the pill placeholders so the figures don't pop
+              // into empty space. A failed measure resolves null, and the skeleton hides —
+              // the readout is simply absent, as before. Gated on the same conditions the
+              // measure is, so a closed/multi section shows nothing.
+              open && settled && loudness === undefined && <LoudnessSkeleton />
+            ))}
         </div>
       </SectionBody>
     </div>
