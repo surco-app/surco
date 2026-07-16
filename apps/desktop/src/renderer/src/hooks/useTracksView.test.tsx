@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import type React from 'react'
 import { useRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
-import type { TrackItem } from '../types'
 import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
 import * as duplicates from '../lib/duplicates'
+import type { TrackItem } from '../types'
+import * as snapshot from './tracksSnapshot'
+import { useTracksView, type ViewCacheEntry } from './useTracksView'
 import { waveformOptions } from './useWaveform'
-import { type ViewCacheEntry, useTracksView } from './useTracksView'
 
 function setApi(): void {
   ;(window as unknown as { api: unknown }).api = {
@@ -21,7 +22,11 @@ function setApi(): void {
   }
 }
 
-function track(id: string, meta: Partial<TrackMetadata> = {}, extra: Partial<TrackItem> = {}): TrackItem {
+function track(
+  id: string,
+  meta: Partial<TrackMetadata> = {},
+  extra: Partial<TrackItem> = {},
+): TrackItem {
   return {
     id,
     inputPath: `/music/${id}.wav`,
@@ -160,10 +165,19 @@ describe('useTracksView', () => {
   // hand, which IS the review.
   it('derives the grid-to-review fact from a cached coin-flip detection', () => {
     const client = new QueryClient()
-    const coinFlip = { bpm: 128, confidence: 0.8, anchorSec: 0.1, phaseAmbiguity: 1, phaseMargin: 1 }
+    const coinFlip = {
+      bpm: 128,
+      confidence: 0.8,
+      anchorSec: 0.1,
+      phaseAmbiguity: 1,
+      phaseMargin: 1,
+    }
     client.setQueryData(['beatgrid', '/music/a.wav'], coinFlip)
     client.setQueryData(['beatgrid', '/music/b.wav'], coinFlip)
-    const { result } = setup([track('a'), track('b', {}, { beatgrid: { bpm: 128, anchorSec: 0.1 } })], client)
+    const { result } = setup(
+      [track('a'), track('b', {}, { beatgrid: { bpm: 128, anchorSec: 0.1 } })],
+      client,
+    )
     expect(result.current.tracksView[0].gridReview).toBe(true)
     expect(result.current.tracksView[1].gridReview).toBeUndefined()
   })
@@ -178,7 +192,11 @@ describe('useTracksView', () => {
     const client = new QueryClient()
     const tracks = ['a', 'b', 'c'].map((id) => track(id))
     for (const t of tracks) {
-      client.setQueryData(['waveform', t.inputPath], { peaks: [0.5], durationSec: 1, clipped: [false] })
+      client.setQueryData(['waveform', t.inputPath], {
+        peaks: [0.5],
+        durationSec: 1,
+        clipped: [false],
+      })
       client.setQueryData(['spectrogram', t.inputPath], spectrum)
     }
 
@@ -238,5 +256,50 @@ describe('useTracksView', () => {
     rerender({ tracks })
 
     expect(result.current.tracksView).toBe(first)
+  })
+
+  // The load-bearing perf contract: during an "analyze all" sweep every probe completion
+  // fires a cache event, and rebuilding the whole positional snapshot (a slot read for every
+  // one of N tracks) on each one is the O(N)-per-event cost that makes a big crate's list
+  // tick. A probe landing for one track must read only that track's slot, never all N — so a
+  // probe event costs exactly one slot read, whatever the crate size.
+  it('patches one slot on a probe event instead of rebuilding the whole snapshot', () => {
+    const client = new QueryClient()
+    const tracks = ['a', 'b', 'c'].map((id) => track(id))
+    const { result } = setup(tracks, client)
+    // Spy AFTER mount so the initial full build isn't counted — we're measuring the per-event
+    // cost, which is what a sweep pays hundreds of times.
+    const buildSpy = vi.spyOn(snapshot, 'buildCacheSnapshot')
+    const patchSpy = vi.spyOn(snapshot, 'patchSnapshot')
+
+    // A single probe finishes for track b — the shape every sweep tick produces.
+    act(() => {
+      client.setQueryData(['spectrogram', '/music/b.wav'], spectrum)
+    })
+
+    // The new verdict is visible…
+    expect(result.current.tracksView[1].spectrum).toEqual(spectrum)
+    // …reached by patching track b's slot (index 1) directly — setQueryData fires more than
+    // one cache event, but each is the same O(1) targeted patch, never a full rebuild over N.
+    expect(patchSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      1,
+      '/music/b.wav',
+      expect.any(Function),
+    )
+    expect(buildSpy).not.toHaveBeenCalled()
+  })
+
+  // The counterpart: a real change to the track set (an import, a removal, a reorder) does
+  // need a fresh positional snapshot, so the full rebuild must run for that. Only a probe
+  // event on an unchanged set is spared it.
+  it('rebuilds the snapshot when the track set itself changes', () => {
+    const client = new QueryClient()
+    const a = track('a')
+    const { rerender } = setup([a], client)
+    const buildSpy = vi.spyOn(snapshot, 'buildCacheSnapshot')
+
+    rerender({ tracks: [a, track('b')] })
+    expect(buildSpy).toHaveBeenCalledTimes(1)
   })
 })
