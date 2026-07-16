@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.61",
+    "date": "July 16, 2026",
+    "title": "Faster matches",
+    "items": [
+      {
+        "text": "Auto-match runs much faster. Each track's candidate releases load several at a time instead of one after another, so a track with no match that used to take half a minute to give up now resolves in a third of the time, and a big crate's whole queue moves along quicker.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "The track you have open goes first. Its waveform, BPM, key and loudness jump ahead of the background analyses, and its metadata search skips the queue — during a whole-crate sweep, what you're looking at responds right away instead of waiting its turn.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "If you add your own Discogs token in Settings, it now runs in its own faster lane: your private quota stops pacing against the app's shared key, so big sweeps feel noticeably lighter.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "The Activity panel has a copy button. The whole log — every search, every timing, every error with its technical detail — copies as plain text ready to paste into a chat or a report, instead of cropping screenshots.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "A fake rip gives itself away from the list. Tracks with a suspicious frequency cutoff show their warning right on the row, and the spectrum shades the dead band so you see at a glance where the audio dies.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "The editor loads without flashes. Every section — wave, spectrum, loudness, properties, BPM and key — shows a skeleton in its real shape while it analyses, and sections open and close with a smooth animation instead of jumping.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "More tracks fit on screen: list rows are more compact and Properties lays out in two columns, half as tall.",
+        "in": "0.61.0"
+      }
+    ]
+  },
+  {
     "version": "0.60",
     "date": "July 15, 2026",
     "title": "Fine-tune the grid by hand",

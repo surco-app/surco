@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.61",
+    "date": "16 de julio de 2026",
+    "title": "Coincidencias más rápidas",
+    "items": [
+      {
+        "text": "El auto-match corre mucho más. Los discos candidatos de cada pista se cargan varios a la vez en vez de uno tras otro, así que una pista sin coincidencia que antes tardaba medio minuto en rendirse ahora resuelve en un tercio del tiempo, y la cola entera de un crate grande avanza más deprisa.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "La pista que tienes abierta va primero. Su onda, BPM, tonalidad y loudness se cuelan por delante de los análisis de fondo, y su búsqueda de metadatos salta la cola — durante un barrido de todo el crate, lo que estás mirando responde al momento en vez de esperar su turno.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "Si añades tu propio token de Discogs en Ajustes, ahora corre por su propio carril más rápido: tu cuota privada deja de compartir ritmo con la clave común de la app, así que los barridos grandes van notablemente más ligeros.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "El panel de Actividad tiene botón de copiar. Todo el registro — cada búsqueda, cada tiempo, cada error con su detalle técnico — se copia como texto plano listo para pegar en un chat o un reporte, en vez de recortar capturas de pantalla.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "Un rip falso se delata desde la lista. Las pistas con recorte de frecuencias sospechoso muestran su aviso directamente en la fila, y el espectro sombrea la banda muerta para que veas de un vistazo dónde muere el audio.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "El editor carga sin parpadeos. Cada sección — onda, espectro, loudness, propiedades, BPM y tonalidad — muestra un esqueleto con su forma real mientras analiza, y las secciones se abren y cierran con una animación suave en vez de saltar.",
+        "in": "0.61.0"
+      },
+      {
+        "text": "Caben más pistas en pantalla: las filas de la lista son más compactas y Propiedades se muestra a dos columnas, la mitad de alto.",
+        "in": "0.61.0"
+      }
+    ]
+  },
+  {
     "version": "0.60",
     "date": "15 de julio de 2026",
     "title": "Afinar el grid a mano",
