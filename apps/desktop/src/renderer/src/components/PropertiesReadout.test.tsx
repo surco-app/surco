@@ -40,3 +40,50 @@ describe('PropertiesReadout extension', () => {
     expect(ext).not.toHaveTextContent(/ISAAC/i)
   })
 })
+
+describe('PropertiesReadout two-column grid', () => {
+  // The long free-text rows (file name, folder) span both columns; a half-width cell would
+  // clip them. The short fixed facts stay single-cell so they pack two-up.
+  it('spans the wide rows and keeps the short facts in a single cell', () => {
+    render(
+      <PropertiesReadout
+        properties={props}
+        fileName="Blutonium Boy - Make It Loud (Original Mix)"
+        inputPath="/music/bases buenas/x.flac"
+        duration={404}
+      />,
+    )
+    expect(screen.getByTestId('property-fileName').className).toContain('col-span-2')
+    expect(screen.getByTestId('property-path').className).toContain('col-span-2')
+    expect(screen.getByTestId('property-kind').className).not.toContain('col-span-2')
+  })
+
+  // With an odd number of short facts the last one stretches full-width, so the grid never
+  // shows an empty half-cell next to it. Dropping only Bitrate leaves AUDIO's shorts at 7
+  // (kind, codec, sampleRate, bitDepth, channels, channelMode, duration) — odd — so its
+  // last short (Duration) stretches. A 6-short even group leaves none stretched.
+  it('stretches the last short row when the shorts come out odd', () => {
+    render(
+      <PropertiesReadout
+        properties={{ ...props, bitrateKbps: null }}
+        fileName="x"
+        inputPath="/x/x.flac"
+        duration={404}
+      />,
+    )
+    expect(screen.getByTestId('property-duration').className).toContain('col-span-2')
+  })
+
+  it('leaves every short row single-cell when the shorts come out even', () => {
+    // Full props → AUDIO shorts = 8 (even), so none of them is stretched.
+    render(
+      <PropertiesReadout
+        properties={props}
+        fileName="x"
+        inputPath="/x/x.flac"
+        duration={404}
+      />,
+    )
+    expect(screen.getByTestId('property-duration').className).not.toContain('col-span-2')
+  })
+})

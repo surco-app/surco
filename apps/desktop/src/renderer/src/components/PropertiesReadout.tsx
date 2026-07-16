@@ -14,7 +14,10 @@ interface Props {
   duration: number | undefined
 }
 
-type PropRow = { id: string; label: string; value: string; full?: string }
+// wide rows span both grid columns: a long free-text value (the file name, the folder
+// button, the tag-format list) would be clipped to a half-width cell, so it keeps the
+// full row while the short fixed facts pack two-up.
+type PropRow = { id: string; label: string; value: string; full?: string; wide?: boolean }
 
 // The technical facts ffprobe reads off the source, formatted for a human (kHz, Bit,
 // kbps, MB) and grouped into Audio / File so a DJ can vet a rip. Each row drops out
@@ -41,8 +44,13 @@ export function PropertiesReadout({
     ms === null
       ? ''
       : new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-  const row = (id: string, label: string, value: string, full?: string): PropRow | false =>
-    value ? { id, label, value, full } : false
+  const row = (
+    id: string,
+    label: string,
+    value: string,
+    full?: string,
+    wide?: boolean,
+  ): PropRow | false => (value ? { id, label, value, full, wide } : false)
   const isRow = (r: PropRow | false): r is PropRow => r !== false
   const groups = [
     {
@@ -77,36 +85,49 @@ export function PropertiesReadout({
           tr('editor.propDuration'),
           duration !== undefined ? formatTime(duration) : '',
         ),
-        row('tagFormats', tr('editor.propTagFormats'), p.tagFormats.join(', ')),
+        row('tagFormats', tr('editor.propTagFormats'), p.tagFormats.join(', '), undefined, true),
       ].filter(isRow),
     },
     {
       id: 'file',
       label: tr('editor.propertiesGroupFile'),
+      // Short facts first so they pack two-up cleanly, then the wide free-text rows
+      // (name, folder) span the full width at the end — interleaving a wide row between
+      // the shorts would leave a half-empty cell whenever the shorts fell odd.
       rows: [
-        row('fileName', tr('editor.propFileName'), fileName),
         row('extension', tr('editor.propExtension'), ext),
-        row('path', tr('editor.propPath'), folderName, inputPath),
         row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes)),
         row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
         row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),
+        row('fileName', tr('editor.propFileName'), fileName, undefined, true),
+        row('path', tr('editor.propPath'), folderName, inputPath, true),
       ].filter(isRow),
     },
   ].filter((g) => g.rows.length > 0)
   return (
     <div data-testid="properties-readout" className="mt-3 space-y-3">
-      {groups.map((group) => (
+      {groups.map((group) => {
+        // The wide rows sit at the end of each group, so any leftover cell can only be
+        // the last SHORT row when the shorts come out odd. Stretch that one to the full
+        // width too, and the grid never shows an empty half-cell.
+        const shortCount = group.rows.filter((r) => !r.wide).length
+        const lastShortId = shortCount % 2 === 1 ? group.rows[shortCount - 1]?.id : undefined
+        return (
         <div key={group.id}>
           <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-fg-dim">
             {group.label}
           </div>
-          <dl className="overflow-hidden rounded-lg bg-[var(--color-field)]">
-            {group.rows.map((r, i) => (
+          {/* Two-up grid: the short fixed facts pack two per row so the panel is half as
+              tall, while a wide row (file name, folder, tag list) keeps the full width.
+              The 1px gaps over the line-coloured backing draw the separators — both the
+              row rules and the seam between the two columns — without per-cell borders. */}
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
+            {group.rows.map((r) => (
               <div
                 key={r.id}
                 data-testid={`property-${r.id}`}
-                className={`flex items-center justify-between gap-4 px-3 py-2 ${
-                  i > 0 ? 'border-t border-[var(--color-line)]' : ''
+                className={`flex items-center justify-between gap-3 bg-[var(--color-field)] px-3 py-2 ${
+                  r.wide || r.id === lastShortId ? 'col-span-2' : ''
                 }`}
               >
                 <dt className="shrink-0 text-xs text-fg-dim">{r.label}</dt>
@@ -134,7 +155,8 @@ export function PropertiesReadout({
             ))}
           </dl>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
