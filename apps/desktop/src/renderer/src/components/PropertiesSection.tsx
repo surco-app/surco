@@ -5,6 +5,7 @@ import { formatFileSize } from '../lib/properties'
 import { formatKHz } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { PropertiesReadout } from './PropertiesReadout'
+import { PropertiesSkeleton } from './PropertiesSkeleton'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 
@@ -60,10 +61,12 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
             inputPath={item.inputPath}
             duration={item.duration}
           />
+        ) : properties === null || propertiesError ? (
+          <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
         ) : (
-          (properties === null || propertiesError) && (
-            <p className="mt-3 text-xs text-fg-dim">{tr('editor.propertiesUnavailable')}</p>
-          )
+          // Still probing (properties === undefined): a placeholder table rather than an
+          // empty open body, so a cold first open doesn't flash a blank section.
+          <PropertiesSkeleton />
         )}
       </SectionBody>
     </div>
