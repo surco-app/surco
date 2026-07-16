@@ -47,6 +47,13 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
   const stateRef = useRef({ open, reduce })
   stateRef.current = { open, reduce }
 
+  // A body mounted already open (the editor remounts per track, sections keep their fold
+  // state) has no opening transition to run: max-height would go from none straight to a
+  // number, which the browser can't animate, so the transitionend that releases the ceiling
+  // never fires — and content that grows later (suggestion chips landing async) gets clipped
+  // by the pinned value. Such a mount must skip the measure and stay unbounded.
+  const mountedOpen = useRef(open)
+
   // Opening: mount now, then measure and tween to the real height. Closing: tween down to 0
   // from the current height. useLayoutEffect so the from-height is committed before paint,
   // or the first frame would jump.
@@ -57,6 +64,8 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
         setMaxHeight(undefined)
         return
       }
+      // Mounted already open: no transition to run, so keep the ceiling released.
+      if (mountedOpen.current) return
       const el = innerRef.current
       // Not mounted yet on the very first open — the mount effect below re-runs the tween.
       if (!el) return
@@ -64,15 +73,19 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
     } else if (mounted && reduce) {
       // No transition to wait on, so transitionend would never fire — unmount straight away
       // rather than leaving the body in the tree forever.
+      mountedOpen.current = false
       setMounted(false)
       setMaxHeight(0)
     } else if (mounted) {
+      // Once closed, later opens are real transitions again and must measure.
+      mountedOpen.current = false
       const el = innerRef.current
       // Pin the current height first so the transition has a from-value, then drop to 0 on
       // the next frame. Setting 0 directly from `none`/auto wouldn't animate.
       if (el) setMaxHeight(el.scrollHeight)
       requestAnimationFrame(() => setMaxHeight(0))
     } else {
+      mountedOpen.current = false
       setMaxHeight(0)
     }
   }, [open, mounted, reduce])
@@ -88,11 +101,13 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
     roRef.current?.disconnect()
     roRef.current = null
     if (!el || !stateRef.current.open || stateRef.current.reduce) return
-    setMaxHeight(el.scrollHeight)
+    if (!mountedOpen.current) setMaxHeight(el.scrollHeight)
     if (typeof ResizeObserver === 'undefined') return
-    // Only widen the ceiling to fit; never fight a user-driven shrink mid-close.
+    // Only widen the ceiling to fit; never fight a user-driven shrink mid-close. And once
+    // the ceiling is released (undefined), leave it released — re-pinning it here would
+    // reintroduce the stuck-ceiling clip this exists to avoid.
     const ro = new ResizeObserver(() => {
-      if (innerRef.current) setMaxHeight(innerRef.current.scrollHeight)
+      setMaxHeight((h) => (h === undefined ? h : (innerRef.current?.scrollHeight ?? h)))
     })
     ro.observe(el)
     roRef.current = ro

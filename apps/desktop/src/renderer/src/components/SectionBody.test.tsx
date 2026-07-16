@@ -83,6 +83,23 @@ describe('SectionBody', () => {
     }
   })
 
+  // Switching tracks remounts the editor, so an already-open section mounts fresh with
+  // open=true. There is no opening transition to run — max-height goes from none to a
+  // number, which the browser can't animate, so transitionend never fires to release the
+  // ceiling. If the mount measurement pins one anyway, content that grows later (suggestion
+  // chips landing async) is clipped by the wrapper's overflow:hidden until the user folds
+  // and reopens the section. A body mounted open must carry no ceiling at all.
+  it('applies no max-height ceiling when mounted already open', () => {
+    render(
+      <SectionBody open>
+        <p data-testid="body">heavy</p>
+      </SectionBody>,
+    )
+    const wrapper = screen.getByTestId('section-body')
+    expect(wrapper.style.maxHeight).toBe('')
+    expect(wrapper.style.overflow).toBe('')
+  })
+
   it('exposes the open state on the wrapper for styling and tests', () => {
     render(
       <SectionBody open>
