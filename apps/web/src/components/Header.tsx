@@ -139,51 +139,56 @@ export default function Header({ page }: { page?: Page }) {
         </div>
       </div>
 
-      {open && (
-        <nav
-          id="mobile-nav"
-          className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-line/70 bg-bg/95 backdrop-blur-md lg:hidden"
-        >
-          <div className="mx-auto max-w-5xl px-6 py-2">
-            {HEADER_SECTIONS.map((id) => (
-              <a
-                key={id}
-                href={sectionHref(id)}
-                onClick={() => setOpen(false)}
-                className="block py-3 text-sm text-muted transition-colors hover:text-fg"
-              >
-                {t(`nav.${id}`)}
-              </a>
-            ))}
+      {/* Stays mounted so open and close both transition (a conditional render
+          unmounts before the exit can play): the panel slides down from the bar
+          and back up into it, links fade with it. `invisible` keeps the closed
+          panel out of the tab order and away from clicks. */}
+      <nav
+        id="mobile-nav"
+        aria-hidden={!open}
+        className={`max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
+          open ? 'border-line/70 opacity-100' : 'invisible -translate-y-2 border-transparent opacity-0'
+        }`}
+      >
+        <div className="mx-auto max-w-5xl px-6 py-2">
+          {HEADER_SECTIONS.map((id) => (
             <a
-              href={guideHref}
+              key={id}
+              href={sectionHref(id)}
               onClick={() => setOpen(false)}
               className="block py-3 text-sm text-muted transition-colors hover:text-fg"
             >
-              {t('nav.guia')}
+              {t(`nav.${id}`)}
             </a>
-            <a
-              href={changelogHref}
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted transition-colors hover:text-fg"
-            >
-              {t('nav.cambios')}
-            </a>
-            <a
-              href={DONATE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 py-3 text-sm text-blue transition-colors hover:text-cyan"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              {t('nav.donar')}
-            </a>
-          </div>
-        </nav>
-      )}
+          ))}
+          <a
+            href={guideHref}
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+          >
+            {t('nav.guia')}
+          </a>
+          <a
+            href={changelogHref}
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+          >
+            {t('nav.cambios')}
+          </a>
+          <a
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 py-3 text-sm text-blue transition-colors hover:text-cyan"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            {t('nav.donar')}
+          </a>
+        </div>
+      </nav>
     </header>
   )
 }

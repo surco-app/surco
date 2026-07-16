@@ -47,7 +47,9 @@ export default function InstallSection() {
                   : 'border-line text-muted hover:border-blue/50 hover:text-fg'
               }`}
             >
-              {copied ? t('install.copied') : t('install.copy')}
+              <span key={String(copied)} className="label-pop inline-block">
+                {copied ? t('install.copied') : t('install.copy')}
+              </span>
             </button>
           </div>
           <p className="mt-4 font-mono text-xs text-faint">{t('install.note')}</p>

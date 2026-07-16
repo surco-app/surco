@@ -36,7 +36,7 @@ export default function Speed() {
               ))}
             </ul>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-bg">
-              <div className="h-full rounded-full bg-red/70" style={{ animation: 'fillSlow 6s linear infinite' }} />
+              <div className="race-slow h-full w-0 rounded-full bg-red/70" />
             </div>
             <p className="mt-2 font-mono text-[10px] text-faint">{t('speed.manualCaption')}</p>
           </div>
@@ -55,9 +55,7 @@ export default function Speed() {
             <div className="relative mt-4 flex items-center gap-3 rounded-xl border border-blue/40 bg-blue/10 px-4 py-3">
               <span className="font-mono text-xs text-blue">▶</span>
               <span className="text-sm font-medium text-fg">{t('speed.combo')}</span>
-              <span className="ml-auto text-green" style={{ animation: 'popcheck 6s ease-out infinite' }}>
-                ✓
-              </span>
+              <span className="race-check ml-auto text-green opacity-0">✓</span>
             </div>
             <ul className="relative mt-4 grid grid-cols-2 gap-2 font-mono text-[11px] text-muted">
               {bullets.map((b) => (
@@ -65,10 +63,7 @@ export default function Speed() {
               ))}
             </ul>
             <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-bg">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-blue to-cyan"
-                style={{ animation: 'fillSnap 6s ease-out infinite' }}
-              />
+              <div className="race-snap h-full w-0 rounded-full bg-gradient-to-r from-blue to-cyan" />
             </div>
             <p className="relative mt-2 font-mono text-[10px] text-faint">{t('speed.oneClick')}</p>
           </div>

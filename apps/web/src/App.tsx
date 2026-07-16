@@ -294,10 +294,11 @@ export default function App() {
         <section className="pt-20 pb-24">
           <Reveal>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              {stack.map((s) => (
+              {stack.map((s, i) => (
                 <span
                   key={s}
-                  className="rounded-full border border-line bg-surface/40 px-4 py-1.5 font-mono text-xs text-muted transition-colors hover:border-blue/40 hover:text-fg"
+                  style={{ '--i': i } as React.CSSProperties}
+                  className="stack-pill rounded-full border border-line bg-surface/40 px-4 py-1.5 font-mono text-xs text-muted transition-colors hover:border-blue/40 hover:text-fg"
                 >
                   {s}
                 </span>
