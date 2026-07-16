@@ -6,7 +6,7 @@ import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
 
-const REPO = 'vigosan/surco-releases'
+const REPO = 'surco-app/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
 
 const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', linux: 'Linux', other: '' }

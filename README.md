@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vigosan/surco-releases/releases/latest"><img src="https://img.shields.io/github/v/release/vigosan/surco-releases?label=release" alt="Latest release" /></a>
-  <a href="https://github.com/vigosan/surco-releases/releases"><img src="https://img.shields.io/github/downloads/vigosan/surco-releases/total" alt="Downloads" /></a>
+  <a href="https://github.com/surco-app/surco-releases/releases/latest"><img src="https://img.shields.io/github/v/release/surco-app/surco-releases?label=release" alt="Latest release" /></a>
+  <a href="https://github.com/surco-app/surco-releases/releases"><img src="https://img.shields.io/github/downloads/surco-app/surco-releases/total" alt="Downloads" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0" /></a>
 </p>
 
@@ -38,10 +38,10 @@ Everything runs on your machine: no account, no telemetry, free forever.
 macOS via Homebrew:
 
 ```bash
-brew install --cask vigosan/surco/surco
+brew install --cask surco-app/surco/surco
 ```
 
-All builds are published at [vigosan/surco-releases](https://github.com/vigosan/surco-releases/releases).
+All builds are published at [surco-app/surco-releases](https://github.com/surco-app/surco-releases/releases).
 
 ## Learn more
 

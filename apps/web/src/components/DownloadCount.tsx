@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { countDownloads, fetchAllReleases } from '../lib/downloads'
 
-const REPO = 'vigosan/surco-releases'
+const REPO = 'surco-app/surco-releases'
 
 // Live social proof, from the same public releases repo the button reads.
 // Stays hidden until at least one real download lands, so the page never shows

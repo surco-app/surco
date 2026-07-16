@@ -97,7 +97,7 @@ describe('fetchAllReleases', () => {
       .mockResolvedValueOnce(page(second))
     vi.stubGlobal('fetch', fetchMock)
 
-    const releases = await fetchAllReleases('vigosan/surco-releases')
+    const releases = await fetchAllReleases('surco-app/surco-releases')
 
     expect(releases).toHaveLength(102)
     expect(fetchMock.mock.calls[1][0]).toContain('page=2')
@@ -107,7 +107,7 @@ describe('fetchAllReleases', () => {
     const fetchMock = vi.fn().mockResolvedValue(page([release('v0')]))
     vi.stubGlobal('fetch', fetchMock)
 
-    expect(await fetchAllReleases('vigosan/surco-releases')).toHaveLength(1)
+    expect(await fetchAllReleases('surco-app/surco-releases')).toHaveLength(1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -121,6 +121,6 @@ describe('fetchAllReleases', () => {
       .mockResolvedValueOnce({ ok: false, status: 403 } as Response)
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(fetchAllReleases('vigosan/surco-releases')).rejects.toThrow()
+    await expect(fetchAllReleases('surco-app/surco-releases')).rejects.toThrow()
   })
 })

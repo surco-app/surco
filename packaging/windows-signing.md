@@ -21,7 +21,7 @@ Trade-offs to know before applying:
 ### Steps (account owner)
 
 1. Apply at signpath.org (Get started → open-source application): project URL
-   `https://github.com/vigosan/surco`, license GPL-3.0, download page
+   `https://github.com/surco-app/surco`, license GPL-3.0, download page
    `https://www.getsurco.app/`, artifacts = NSIS installer built by
    `.github/workflows/release.yml`. Review takes days to a few weeks.
 2. Once approved, SignPath provisions an organization + project; create a CI user

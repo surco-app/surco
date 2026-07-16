@@ -9,7 +9,7 @@ import { buildSearchCandidates } from './searchQuery'
 // `data-tralbum` JSON Bandcamp embeds there. Both are unofficial and can change without
 // notice — the parsing is defensive and the limiter keeps the call rate gentle.
 const SEARCH_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
-const USER_AGENT = 'Surco/0.1 +https://github.com/vigosan/surco'
+const USER_AGENT = 'Surco/0.1 +https://github.com/surco-app/surco'
 
 // A stalled socket would otherwise leave the request — and the limiter token it spent —
 // hanging forever; 10s is generous for endpoints that answer in well under a second.

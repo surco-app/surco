@@ -78,13 +78,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
-          branch=$(gh api repos/vigosan/surco-releases --jq .default_branch)
-          sha=$(gh api "repos/vigosan/surco-releases/git/refs/heads/$branch" --jq .object.sha)
-          gh api repos/vigosan/surco-releases/git/refs \
+          branch=$(gh api repos/surco-app/surco-releases --jq .default_branch)
+          sha=$(gh api "repos/surco-app/surco-releases/git/refs/heads/$branch" --jq .object.sha)
+          gh api repos/surco-app/surco-releases/git/refs \
             -f ref="refs/tags/$GITHUB_REF_NAME" -f sha="$sha" \
             || echo "tag already exists in the releases repo"
-          gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases >/dev/null 2>&1 \
-            || gh release create "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+          gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
                  --draft --title "${GITHUB_REF_NAME#v}" --notes ""
 
   release:
@@ -280,7 +280,7 @@ jobs:
       - name: Overwrite the feed on the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" latest-mac.yml --clobber --repo vigosan/surco-releases
+        run: gh release upload "$GITHUB_REF_NAME" latest-mac.yml --clobber --repo surco-app/surco-releases
 
   # The per-release test for the publish pipeline: a release is only good when its
   # tag carries exactly ONE release with the full asset set. A duplicate release
@@ -299,10 +299,10 @@ jobs:
           # --paginate + --jq, gh runs the filter PER PAGE and concatenates the
           # results, so a second (empty) page made count "1\n0" and the check
           # failed on a release that was in fact complete.
-          count=$(gh api repos/vigosan/surco-releases/releases --paginate --slurp \
+          count=$(gh api repos/surco-app/surco-releases/releases --paginate --slurp \
             | jq "[.[][] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length")
           [ "$count" = "1" ] || { echo "expected 1 release for $GITHUB_REF_NAME, found $count"; exit 1; }
-          names=$(gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+          names=$(gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
             --json assets --jq '.assets[].name')
           status=0
           # The AppImage is x86_64, not x64: electron-builder renames the x64 arch to
@@ -332,7 +332,7 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo vigosan/surco-releases --draft=false
+        run: gh release edit "$GITHUB_REF_NAME" --repo surco-app/surco-releases --draft=false
 
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they
@@ -352,7 +352,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           digest() {
-            gh release view "$GITHUB_REF_NAME" --repo vigosan/surco-releases \
+            gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
               --json assets --jq ".assets[] | select(.name == \"$1\") | .digest" \
               | sed 's/^sha256://'
           }
@@ -369,7 +369,7 @@ jobs:
       - name: Check out the tap
         uses: actions/checkout@v4
         with:
-          repository: vigosan/homebrew-surco
+          repository: surco-app/homebrew-surco
           # Dedicated deploy key, write-scoped to homebrew-surco only, so the push
           # doesn't depend on RELEASES_TOKEN's scope. checkout wires the remote to
           # SSH, so the later `git push` authenticates with this key.

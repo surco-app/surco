@@ -4,11 +4,11 @@ PackageVersion: 0.36.1
 PackageLocale: en-US
 Publisher: Vicent Gozalbes
 PublisherUrl: https://www.getsurco.app/
-PublisherSupportUrl: https://github.com/vigosan/surco/issues
+PublisherSupportUrl: https://github.com/surco-app/surco/issues
 PackageName: Surco
 PackageUrl: https://www.getsurco.app/en
 License: GPL-3.0
-LicenseUrl: https://github.com/vigosan/surco/blob/main/LICENSE
+LicenseUrl: https://github.com/surco-app/surco/blob/main/LICENSE
 ShortDescription: Free, open-source track organizer for DJs
 Description: |-
   Surco finds the right metadata for your tracks on Discogs and Bandcamp,

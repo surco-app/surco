@@ -31,9 +31,9 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 
 ## 4. Release
 
-- Run `npm run release:patch`, `release:minor` or `release:major` to match `$ARGUMENTS`. The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `vigosan/surco-releases`; the web deploys from the same push).
+- Run `npm run release:patch`, `release:minor` or `release:major` to match `$ARGUMENTS`. The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
 
 ## 5. Report
 
 - Confirm CI started with `gh run list --workflow=release.yml --limit 1`. Poll its status briefly if asked — never block on `gh run watch`.
-- Report: the new version, the changelog items you added (or that none were warranted), and the Actions URL. A complete release publishes 12 assets to `vigosan/surco-releases`.
+- Report: the new version, the changelog items you added (or that none were warranted), and the Actions URL. A complete release publishes 12 assets to `surco-app/surco-releases`.

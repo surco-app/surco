@@ -7,7 +7,7 @@ Scope: user
 UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/vigosan/surco-releases/releases/download/v0.36.1/Surco-0.36.1-Setup.exe
+    InstallerUrl: https://github.com/surco-app/surco-releases/releases/download/v0.36.1/Surco-0.36.1-Setup.exe
     InstallerSha256: CFD4AAD8863709D9D43A7676FC87765D0665E15DC2BF897E90D1671319A1B776
 ManifestType: installer
 ManifestVersion: 1.6.0

@@ -4,7 +4,7 @@ import DownloadButton from './DownloadButton'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 
-const COMMAND = 'brew install --cask vigosan/surco/surco'
+const COMMAND = 'brew install --cask surco-app/surco/surco'
 
 export default function InstallSection() {
   const { t } = useTranslation()
