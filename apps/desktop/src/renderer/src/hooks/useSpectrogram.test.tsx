@@ -14,8 +14,11 @@ const sample: SpectrumResult = {
   processed: false,
 }
 
-function setApi(spectrogram: ReturnType<typeof vi.fn>): void {
-  ;(window as unknown as { api: unknown }).api = { spectrogram }
+function setApi(
+  spectrogram: ReturnType<typeof vi.fn>,
+  cancelAnalysis: ReturnType<typeof vi.fn> = vi.fn(),
+): void {
+  ;(window as unknown as { api: unknown }).api = { spectrogram, cancelAnalysis }
 }
 
 function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
@@ -60,5 +63,20 @@ describe('useSpectrogram', () => {
       wrapper: wrapper(),
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+
+  // Browsing quickly leaves each abandoned track's ffmpeg trio decoding to completion,
+  // holding the limiter slots the newly selected track then queues behind. Unmounting
+  // mid-analysis (the editor remounts per track) must tell main to kill that work.
+  it('cancels the analysis in main when unmounted mid-flight', async () => {
+    const analyse = vi.fn().mockReturnValue(new Promise(() => {}))
+    const cancel = vi.fn().mockResolvedValue(undefined)
+    setApi(analyse, cancel)
+    const { unmount } = renderHook(() => useSpectrogram('/music/a.wav', true), {
+      wrapper: wrapper(),
+    })
+    await waitFor(() => expect(analyse).toHaveBeenCalled())
+    unmount()
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith('/music/a.wav'))
   })
 })

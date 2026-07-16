@@ -78,4 +78,101 @@ describe('createConcurrencyLimiter', () => {
     await expect(limiter.run(async () => Promise.reject(new Error('boom')))).rejects.toThrow('boom')
     await expect(limiter.run(async () => 'ok')).resolves.toBe('ok')
   })
+
+  it('drops a queued task whose signal aborts before it gets a slot', async () => {
+    // The point of cancellation: browsing tracks quickly queues analyses for rows the
+    // user already left. Those must never spend a slot decoding audio nobody will look
+    // at — an abort while waiting rejects immediately and the slot goes to live work.
+    const limiter = createConcurrencyLimiter(1)
+    const blocker = deferred()
+    const first = limiter.run(async () => {
+      await blocker.promise
+    })
+    await flush()
+
+    const controller = new AbortController()
+    let ran = false
+    const queued = limiter.run(
+      async () => {
+        ran = true
+      },
+      'high',
+      controller.signal,
+    )
+    controller.abort()
+
+    await expect(queued).rejects.toMatchObject({ name: 'AbortError' })
+    blocker.resolve()
+    await first
+    await flush()
+    expect(ran).toBe(false)
+  })
+
+  it('rejects a task whose signal is already aborted without ever starting it', async () => {
+    // Selecting away can abort before the IPC even reaches the limiter; the request
+    // must not start a decode whose result is already unwanted.
+    const limiter = createConcurrencyLimiter(1)
+    const controller = new AbortController()
+    controller.abort()
+    let ran = false
+    await expect(
+      limiter.run(
+        async () => {
+          ran = true
+        },
+        'high',
+        controller.signal,
+      ),
+    ).rejects.toMatchObject({ name: 'AbortError' })
+    expect(ran).toBe(false)
+  })
+
+  it('frees the slot of an aborted queued task for the next waiter', async () => {
+    // An aborted waiter must leave no ghost in the queue: the task queued behind it
+    // still gets served the moment the running one finishes.
+    const limiter = createConcurrencyLimiter(1)
+    const blocker = deferred()
+    const first = limiter.run(async () => {
+      await blocker.promise
+    })
+    await flush()
+
+    const controller = new AbortController()
+    const aborted = limiter.run(async () => {}, 'high', controller.signal)
+    let laterRan = false
+    const later = limiter.run(async () => {
+      laterRan = true
+    }, 'high')
+    controller.abort()
+    await expect(aborted).rejects.toMatchObject({ name: 'AbortError' })
+
+    blocker.resolve()
+    await first
+    await flush()
+    expect(laterRan).toBe(true)
+    await later
+  })
+
+  it('leaves a running task untouched when its signal aborts mid-flight', async () => {
+    // Killing the underlying ffmpeg child is the task's own job (execFile's signal
+    // support); the limiter only guarantees the slot is accounted for until the task
+    // settles, however that happens.
+    const limiter = createConcurrencyLimiter(1)
+    const controller = new AbortController()
+    const gate = deferred()
+    let finished = false
+    const running = limiter.run(
+      async () => {
+        await gate.promise
+        finished = true
+      },
+      'high',
+      controller.signal,
+    )
+    await flush()
+    controller.abort()
+    gate.resolve()
+    await running
+    expect(finished).toBe(true)
+  })
 })

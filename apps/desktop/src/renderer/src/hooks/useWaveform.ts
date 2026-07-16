@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { WaveformResult, WaveformScan } from '../../../shared/types'
-import { analysisOptions } from '../lib/analysisQueries'
+import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 
 // The one definition of a waveform cache entry, shared by the player's strip and the
 // hover prefetch so a single drifting key can't fork the cache. Keyed by path so
@@ -8,9 +8,13 @@ import { analysisOptions } from '../lib/analysisQueries'
 // The priority rides into the analysis limiter (not the cache key, like spectrogramOptions):
 // the player asks 'high' so its decode jumps ahead of a background "analyze all" sweep's
 // 'low' floods; the cache it fills is the same one regardless, so a warmed 'low' entry
-// serves the player with no re-decode.
+// serves the player with no re-decode. 'high' requests are also cancellable: playing the
+// next track aborts the previous one's full-length decode instead of finishing it.
 export function waveformOptions(inputPath: string, priority: 'high' | 'low' = 'low') {
-  return analysisOptions('waveform', inputPath, () => window.api.waveform(inputPath, priority))
+  const probe = (): Promise<WaveformResult | null> => window.api.waveform(inputPath, priority)
+  return priority === 'high'
+    ? cancellableAnalysisOptions('waveform', inputPath, probe)
+    : analysisOptions('waveform', inputPath, probe)
 }
 
 // Whole-track peak envelope for the player's waveform strip. Disabled until there's a

@@ -165,6 +165,10 @@ export interface Api {
   // Abandons the running declickPreview render — a preset change invalidates it, and
   // the user must never wait on audio they no longer asked for.
   cancelDeclickPreview: () => Promise<void>
+  // Aborts the path's in-flight selection-driven ('high') analyses — fired when the
+  // user browses away from a track so its decodes stop holding limiter slots the newly
+  // selected track then queues behind. Background ('low') analyses are untouched.
+  cancelAnalysis: (path: string) => Promise<void>
   // The track's audible clicks (Surco's own event detector): how many, where each one
   // sits in seconds, and how far into the track the detector actually read — past
   // `scannedSec` nothing was analysed, so the wave must not imply a clean tail.

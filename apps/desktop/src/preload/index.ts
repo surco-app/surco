@@ -138,6 +138,7 @@ const api: Api = {
     return () => ipcRenderer.off('audio:declickPreviewProgress', listener)
   },
   cancelDeclickPreview: () => ipcRenderer.invoke('audio:cancelDeclickPreview'),
+  cancelAnalysis: (path: string): Promise<void> => ipcRenderer.invoke('audio:cancelAnalysis', path),
   clicks: (
     path: string,
     priority: 'high' | 'low' = 'low',

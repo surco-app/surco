@@ -7,31 +7,55 @@ import os from 'node:os'
 // once — each then crawled, and the waveform a DJ was actively waiting on suffered
 // most. Capping the burst keeps each decode fast, and 'high' lets the waveform jump
 // ahead of the background passes when every slot is busy.
-type Resolve = () => void
+type Waiter = { resolve: () => void; signal?: AbortSignal }
+
+function abortError(): Error {
+  const err = new Error('analysis aborted')
+  err.name = 'AbortError'
+  return err
+}
 
 export function createConcurrencyLimiter(max: number): {
-  run: <T>(task: () => Promise<T>, priority?: 'high' | 'low') => Promise<T>
+  run: <T>(task: () => Promise<T>, priority?: 'high' | 'low', signal?: AbortSignal) => Promise<T>
 } {
   let active = 0
-  const high: Resolve[] = []
-  const low: Resolve[] = []
+  const high: Waiter[] = []
+  const low: Waiter[] = []
 
   // One waiter per call, so the invariant "a queue is non-empty only while every slot
   // is busy" holds and a single dispatch per event keeps concurrency at the cap.
+  // Waiters whose signal aborted while queued are skimmed off here rather than
+  // eagerly removed on abort: their run() already rejected, so all a stale entry
+  // could do is waste a shift, never a slot.
   function pump(): void {
     if (active >= max) return
-    const next = high.shift() ?? low.shift()
+    let next = high.shift() ?? low.shift()
+    while (next?.signal?.aborted) next = high.shift() ?? low.shift()
     if (!next) return
     active++
-    next()
+    next.resolve()
   }
 
-  async function run<T>(task: () => Promise<T>, priority: 'high' | 'low' = 'low'): Promise<T> {
-    await new Promise<void>((resolve) => {
-      ;(priority === 'high' ? high : low).push(resolve)
+  // The signal only governs the wait: aborted before a slot frees (or on entry) the
+  // call rejects with AbortError and never runs. Once the task starts, killing its
+  // ffmpeg child is the task's own job (execFile consumes the same signal) — the
+  // limiter just keeps the slot accounted for until the task settles.
+  async function run<T>(
+    task: () => Promise<T>,
+    priority: 'high' | 'low' = 'low',
+    signal?: AbortSignal,
+  ): Promise<T> {
+    if (signal?.aborted) throw abortError()
+    await new Promise<void>((resolve, reject) => {
+      const waiter: Waiter = { resolve, signal }
+      signal?.addEventListener('abort', () => reject(abortError()), { once: true })
+      ;(priority === 'high' ? high : low).push(waiter)
       pump()
     })
+    // Past this point the slot is held (pump incremented active before resolving),
+    // so even an abort that raced the grant must flow through the finally to free it.
     try {
+      if (signal?.aborted) throw abortError()
       return await task()
     } finally {
       active--

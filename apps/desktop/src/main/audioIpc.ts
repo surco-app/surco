@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import type { DeclickMode } from '../shared/types'
 import { activity } from './activity'
 import { cachedAnalysis, dropAnalysis } from './analysisCache'
+import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import {
   analyzeCutoff,
@@ -42,6 +43,21 @@ function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Pr
     group: inputPath,
     groupLabel: basename(inputPath),
   })
+}
+
+// A signal for the probe's ffmpeg decodes, but only for 'high' requests — the
+// selected/playing track the renderer can later disown (audio:cancelAnalysis) when the
+// user browses away. 'low' background work (import auto-analyze, the "analyze all"
+// sweep) gets a signal that never fires, so browsing across the rows a sweep is
+// working through can never kill the sweep's own decodes.
+function cancellable<T>(
+  inputPath: string,
+  priority: 'high' | 'low',
+  job: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  return priority === 'high'
+    ? analysisCancels.run(inputPath, job)
+    : job(new AbortController().signal)
 }
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
@@ -114,38 +130,46 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           'spectrogram-mono-v13',
           inputPath,
           () =>
-            probe('activity.probeSpectrogram', inputPath, async () => {
-              // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
-              // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
-              // quality sweep then put ~3× the intended decodes on the cores. Instead each
-              // pass takes its own slot, so the limiter counts them honestly and caps the
-              // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
-              // overlap when slots are free (no single-track latency hit) and none waits on a
-              // slot it's also holding (no deadlock).
-              const built = await buildSpectrum(inputPath, {
-                probe: probeAudio,
-                spectrogram: (i) => analysisLimiter.run(() => generateSpectrogram(i), priority),
-                cutoff: (i, sr) => analysisLimiter.run(() => analyzeCutoff(i, sr), priority),
-                shelf: (i, sr) => analysisLimiter.run(() => analyzeShelf(i, sr), priority),
-              })
-              // This producer only runs on a cache miss (disk cache hits return above, and
-              // the renderer's React Query cache dedups repeats), so bumping here counts
-              // each track's quality analysis exactly once for the Stats tab.
-              recordStat('analyzed')
-              return built
-            }),
+            probe('activity.probeSpectrogram', inputPath, () =>
+              cancellable(inputPath, priority, async (signal) => {
+                // buildSpectrum fans its three decodes out in parallel, so wrapping the whole
+                // call in one limiter slot let it run 3 ffmpeg under a budget meant for 1 — a
+                // quality sweep then put ~3× the intended decodes on the cores. Instead each
+                // pass takes its own slot, so the limiter counts them honestly and caps the
+                // real ffmpeg count; buildSpectrum holds no slot itself, so the passes still
+                // overlap when slots are free (no single-track latency hit) and none waits on a
+                // slot it's also holding (no deadlock).
+                const built = await buildSpectrum(inputPath, {
+                  probe: probeAudio,
+                  spectrogram: (i) =>
+                    analysisLimiter.run(() => generateSpectrogram(i, signal), priority, signal),
+                  cutoff: (i, sr) =>
+                    analysisLimiter.run(() => analyzeCutoff(i, sr, signal), priority, signal),
+                  shelf: (i, sr) =>
+                    analysisLimiter.run(() => analyzeShelf(i, sr, signal), priority, signal),
+                })
+                // This producer only runs on a cache miss (disk cache hits return above, and
+                // the renderer's React Query cache dedups repeats), so bumping here counts
+                // each track's quality analysis exactly once for the Stats tab.
+                recordStat('analyzed')
+                return built
+              }),
+            ),
           (b) => b.cutoffError === undefined,
         )
         // A cutoff failure still yields a usable spectrogram, so log it (with ffmpeg's
         // stderr) rather than reject — this is the only trace when it breaks on a
-        // machine we can't reach, e.g. Windows.
-        if (cutoffError) log.error('audio:spectrogram cutoff analysis failed', cutoffError)
+        // machine we can't reach, e.g. Windows. An aborted pass is not a failure: the
+        // user browsed away, and the uncached partial result is discarded anyway.
+        if (cutoffError && !isAbortError(cutoffError))
+          log.error('audio:spectrogram cutoff analysis failed', cutoffError)
         // The shelf probe is a best-effort secondary signal: a failure just means no
         // shelf verdict, so log it but (unlike cutoff) don't refuse to cache the rest.
-        if (shelfError) log.error('audio:spectrogram shelf analysis failed', shelfError)
+        if (shelfError && !isAbortError(shelfError))
+          log.error('audio:spectrogram shelf analysis failed', shelfError)
         return { image, cutoffHz, sampleRateHz, processed, hasKnee, upsampled }
       } catch (err) {
-        log.error('audio:spectrogram failed', err)
+        if (!isAbortError(err)) log.error('audio:spectrogram failed', err)
         throw err
       }
     },
@@ -157,11 +181,13 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       try {
         return await cachedAnalysis('loudness', inputPath, () =>
           probe('activity.probeLoudness', inputPath, () =>
-            analysisLimiter.run(() => measureLoudness(inputPath), priority),
+            cancellable(inputPath, priority, (signal) =>
+              analysisLimiter.run(() => measureLoudness(inputPath, signal), priority, signal),
+            ),
           ),
         )
       } catch (err) {
-        log.error('audio:loudness failed', err)
+        if (!isAbortError(err)) log.error('audio:loudness failed', err)
         return null
       }
     },
@@ -315,11 +341,13 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         // v3 entries carry the now-removed clipped/channels, so a rename drops them.
         return await cachedAnalysis('waveform-v4', inputPath, () =>
           probe('activity.probeWaveform', inputPath, () =>
-            analysisLimiter.run(() => measureWaveform(inputPath), priority),
+            cancellable(inputPath, priority, (signal) =>
+              analysisLimiter.run(() => measureWaveform(inputPath, signal), priority, signal),
+            ),
           ),
         )
       } catch (err) {
-        log.error('audio:waveform failed', err)
+        if (!isAbortError(err)) log.error('audio:waveform failed', err)
         return null
       }
     },
@@ -401,5 +429,15 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:cancelDeclickPreview', () => {
     declickRender?.kill('SIGKILL')
     declickRender = null
+  })
+
+  // Fired when a track's selection-driven analyses lost their last consumer (the user
+  // browsed to another row): every 'high' probe registered for the path aborts — queued
+  // ones never take a limiter slot, running ones have their ffmpeg killed — so the slots
+  // go to the track the user is looking at now. Background ('low') work never registers
+  // and is untouched.
+  ipcMain.handle('audio:cancelAnalysis', (_e, inputPath: string) => {
+    log.debug('audio:cancelAnalysis', inputPath)
+    analysisCancels.cancel(inputPath)
   })
 }

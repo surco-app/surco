@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { SpectrumResult } from '../../../shared/types'
-import { analysisOptions } from '../lib/analysisQueries'
+import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 
 // The one definition of a spectrogram cache entry. Four call sites share the cache —
 // this hook, the hover prefetch, the analyze sweep and the list's verdict reader —
@@ -8,10 +8,13 @@ import { analysisOptions } from '../lib/analysisQueries'
 // the analysis limiter (not the cache key): the editor's selected track asks 'high' so
 // its decode jumps ahead of a background sweep's 'low' floods; the cache it fills is the
 // same one regardless, so a warmed 'low' entry serves the editor with no re-decode.
+// 'high' requests are also cancellable: browsing away from the track aborts the trio of
+// ffmpeg passes still decoding for it, so their slots go to the row now selected.
 export function spectrogramOptions(inputPath: string, priority: 'high' | 'low' = 'low') {
-  return analysisOptions('spectrogram', inputPath, () =>
-    window.api.spectrogram(inputPath, priority),
-  )
+  const probe = (): Promise<SpectrumResult> => window.api.spectrogram(inputPath, priority)
+  return priority === 'high'
+    ? cancellableAnalysisOptions('spectrogram', inputPath, probe)
+    : analysisOptions('spectrogram', inputPath, probe)
 }
 
 // Computes the spectrogram (and the lossless-cutoff it implies) for one input. Keyed by

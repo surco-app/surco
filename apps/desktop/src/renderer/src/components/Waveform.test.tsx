@@ -19,6 +19,7 @@ function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
 function setWaveform(result: WaveformResult | null): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(result),
+    cancelAnalysis: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -27,6 +28,7 @@ function setWaveform(result: WaveformResult | null): void {
 function setWaveformPending(): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockReturnValue(new Promise<WaveformResult>(() => {})),
+    cancelAnalysis: vi.fn().mockResolvedValue(undefined),
   }
 }
 

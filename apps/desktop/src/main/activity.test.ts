@@ -95,6 +95,24 @@ describe('createActivity', () => {
     expect(events[1].detail).toContain('Discogs devolvió 429')
   })
 
+  it('closes an aborted task as done, not error, and still rethrows', async () => {
+    // An AbortError means the user cancelled the work themselves (browsing away from a
+    // track cancels its analyses) — a red "failed" row per skipped track would flood
+    // the feed with errors nothing is wrong about. The rejection still propagates so
+    // the caller never caches or returns the partial result.
+    const activity = createActivity()
+    const events: ActivityEvent[] = []
+    activity.subscribe((e) => events.push(e))
+
+    await expect(
+      activity.track('analyze', 'activity.probeSpectrogram', async () => {
+        throw Object.assign(new Error('analysis aborted'), { name: 'AbortError' })
+      }),
+    ).rejects.toThrow('analysis aborted')
+
+    expect(events.map((e) => e.phase)).toEqual(['start', 'done'])
+  })
+
   it('gives each tracked task a distinct id so concurrent steps never share a row', async () => {
     // Two searches can overlap (auto-match runs them with concurrency 2); if they shared
     // an id the panel would collapse them onto one row and lose one.

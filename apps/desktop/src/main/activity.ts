@@ -97,6 +97,14 @@ export function createActivity(): Activity {
         })
         return value
       } catch (err) {
+        // An abort is the user's own doing (browsing away cancels a track's analyses),
+        // not a failure — close the row cleanly instead of flooding the feed with a red
+        // "failed" entry per skipped track. The rejection still propagates below so the
+        // caller never treats the cancelled work as having produced a result.
+        if (err instanceof Error && err.name === 'AbortError') {
+          emit({ ...base, phase: 'done', detail, ms: Math.round(performance.now() - startedAt) })
+          throw err
+        }
         const message = err instanceof Error ? err.message : String(err)
         emit({
           ...base,

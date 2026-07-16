@@ -24,6 +24,29 @@ export function analysisOptions<T>(name: string, inputPath: string, probe: () =>
   })
 }
 
+// analysisOptions for the selection-driven ('high') probes: consumes the AbortSignal
+// React Query fires when the fetch loses its last observer — the user browsed away
+// from the track — and forwards the cancellation to the main process, which kills the
+// path's in-flight ffmpeg decodes so their limiter slots go to the row now selected.
+// Only the 'high' probes wire this: a background prefetch or sweep has no observers to
+// lose, and its 'low' work is not registered for cancellation in main anyway.
+export function cancellableAnalysisOptions<T>(
+  name: string,
+  inputPath: string,
+  probe: () => Promise<T>,
+) {
+  return queryOptions({
+    queryKey: [name, inputPath],
+    queryFn: ({ signal }) => {
+      signal.addEventListener('abort', () => void window.api.cancelAnalysis(inputPath), {
+        once: true,
+      })
+      return probe()
+    },
+    ...(HEAVY_PROBES.has(name) ? { gcTime: HEAVY_PROBE_GC_MS } : {}),
+  })
+}
+
 // The per-path probe families the renderer caches for the whole session, on the
 // queryClient premise that a given path probes to the same facts until quit. Two events
 // break that premise — an in-place export rewriting the file, and a track leaving the

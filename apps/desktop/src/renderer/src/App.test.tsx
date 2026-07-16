@@ -221,6 +221,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
     waveform: vi.fn().mockResolvedValue(wave),
+    cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     clicks: vi.fn().mockResolvedValue(null),
     // The repair section subscribes to render progress on mount, so the bridge must
     // hand back an unsubscribe even in tests that never open it.

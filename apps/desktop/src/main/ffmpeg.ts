@@ -1173,7 +1173,7 @@ export async function stripFlacPicture(input: string, output: string): Promise<v
   await run(ffmpegPath, stripPictureArgs(input, output), { maxBuffer: 1024 * 1024 * 32 })
 }
 
-export async function generateSpectrogram(input: string): Promise<string> {
+export async function generateSpectrogram(input: string, signal?: AbortSignal): Promise<string> {
   const out = join(tmpdir(), tmpName('spec', 'png'))
   try {
     await run(
@@ -1204,7 +1204,7 @@ export async function generateSpectrogram(input: string): Promise<string> {
         'showspectrumpic=s=1000x320:legend=0:color=cividis:gain=1,format=gray',
         out,
       ],
-      { timeout: ANALYSIS_TIMEOUT_MS },
+      { timeout: ANALYSIS_TIMEOUT_MS, signal },
     )
     const buf = await readFile(out)
     return `data:image/png;base64,${buf.toString('base64')}`
@@ -1313,6 +1313,7 @@ export function parseBands(stdout: string): Map<string, number> {
 export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
+  signal?: AbortSignal,
 ): Promise<CutoffResult & { upsampled: boolean }> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
@@ -1347,7 +1348,7 @@ export async function analyzeCutoff(
       'null',
       '-',
     ],
-    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS },
+    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS, signal },
   )
   const rms = parseBands(stdout)
   const bands = freqs.map((freqHz) => ({
@@ -1457,7 +1458,10 @@ export function parseAstats(stderr: string): AstatsResult | null {
 // stderr at info level, so — unlike the other ffmpeg helpers — we must not pass
 // `-loglevel error`, or there would be nothing to parse; we mute only the periodic
 // progress lines with `-nostats`.
-export async function measureLoudness(input: string): Promise<LoudnessResult | null> {
+export async function measureLoudness(
+  input: string,
+  signal?: AbortSignal,
+): Promise<LoudnessResult | null> {
   const { stderr } = await run(
     ffmpegPath,
     [
@@ -1471,7 +1475,7 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
       'null',
       '-',
     ],
-    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS },
+    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS, signal },
   )
   const loud = parseLoudness(stderr)
   if (!loud) return null
@@ -1492,7 +1496,13 @@ export async function measureLoudness(input: string): Promise<LoudnessResult | n
 // analysis decoder below differs only in rate, window and buffer ceiling.
 async function decodePcm(
   input: string,
-  opts: { sampleRate: number; startSec?: number; seconds?: number; maxBufferMb: number },
+  opts: {
+    sampleRate: number
+    startSec?: number
+    seconds?: number
+    maxBufferMb: number
+    signal?: AbortSignal
+  },
 ): Promise<Float32Array> {
   const args = ['-hide_banner', '-loglevel', 'error']
   // Input seek (-ss before -i): ffmpeg jumps straight to the window instead of
@@ -1505,6 +1515,7 @@ async function decodePcm(
     encoding: 'buffer',
     maxBuffer: 1024 * 1024 * opts.maxBufferMb,
     timeout: ANALYSIS_TIMEOUT_MS,
+    signal: opts.signal,
   })
   const bytes = stdout.length - (stdout.length % 4)
   const pcm = new Uint8Array(bytes)
@@ -1585,9 +1596,9 @@ export async function measureBeatgridWindow(
 // Four minutes captures the shelf the whole-file average shows (a short window can
 // miss it) while bounding the buffer: 44.1 kHz × 240 s mono ≈ 42 MB, hence 64 MB.
 const SHELF_SAMPLE_RATE = 44100
-function decodeShelfPcm(input: string): Promise<Float32Array> {
+function decodeShelfPcm(input: string, signal?: AbortSignal): Promise<Float32Array> {
   // 44.1 kHz × 240 s mono ≈ 42 MB, hence the 64 MB ceiling.
-  return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64 })
+  return decodePcm(input, { sampleRate: SHELF_SAMPLE_RATE, seconds: 240, maxBufferMb: 64, signal })
 }
 
 // How far into a track the click detector reads. Eight minutes covers a typical vinyl
@@ -1629,9 +1640,10 @@ export async function detectTrackClicks(
 export async function analyzeShelf(
   input: string,
   sampleRateHz: number,
+  signal?: AbortSignal,
 ): Promise<{ shelfCutoffHz: number | null; kneeCutoffHz: number | null }> {
   if (sampleRateHz !== SHELF_SAMPLE_RATE) return { shelfCutoffHz: null, kneeCutoffHz: null }
-  const pcm = await decodeShelfPcm(input)
+  const pcm = await decodeShelfPcm(input, signal)
   const bands = await runInWorker<number[]>({ type: 'shelf', pcm, sampleRate: SHELF_SAMPLE_RATE }, [
     pcm.buffer as ArrayBuffer,
   ])
@@ -1718,8 +1730,8 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
 // low-rate mono PCM for the editor waveform — the strip spans the full length (no
 // `seconds` window), so a truncated envelope would draw a track that ends early. The
 // 4 kHz rate keeps even a 2-hour mix around 115 MB, inside the 128 MB ceiling.
-function decodeWaveformPcm(input: string): Promise<Float32Array> {
-  return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128 })
+function decodeWaveformPcm(input: string, signal?: AbortSignal): Promise<Float32Array> {
+  return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128, signal })
 }
 
 // A slice of the track re-decoded at full waveform fidelity for the strips' deep
@@ -1770,12 +1782,15 @@ async function scanChannels(
   }) as Promise<{ clipped: boolean[]; channels: ChannelWave[] }>
 }
 
-export async function measureWaveform(input: string): Promise<WaveformResult | null> {
+export async function measureWaveform(
+  input: string,
+  signal?: AbortSignal,
+): Promise<WaveformResult | null> {
   // Peaks-only now: the cheap 4 kHz mono decode alone. The native-rate channel scan
   // (clip flags + L/R lanes) is a SEPARATE probe (measureChannelScan / audio:waveform-scan)
   // that only the player/compare strip requests — so the editor sections that draw just
   // the envelope (trim, grid, declick, auto-trim) never pay for its ~32M-sample scan.
-  const samples = await decodeWaveformPcm(input)
+  const samples = await decodeWaveformPcm(input, signal)
   // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
   // stream): null tells the UI "no waveform", distinct from a decode error.
   if (samples.length === 0) return null
