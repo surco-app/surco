@@ -246,6 +246,7 @@
       "open": "Open file",
       "copyPath": "Copy file path",
       "search": "Search Discogs",
+      "searchWeb": "Search on Google",
       "startOver": "Start over",
       "copyMeta": "Copy all metadata",
       "pasteMeta": "Paste metadata",

@@ -31,6 +31,7 @@ function renderMenu(over: Record<string, unknown> = {}) {
     y: 0,
     onClose: vi.fn(),
     onSearch: vi.fn(),
+    onSearchWeb: vi.fn(),
     onStartOver: vi.fn(),
     onCopyMeta: vi.fn(),
     onCopyPath: vi.fn(),
@@ -55,6 +56,7 @@ describe('TrackContextMenu order', () => {
       .filter((id) => id !== 'track-menu-backdrop')
     expect(ids).toEqual([
       'track-menu-search',
+      'track-menu-search-web',
       'track-menu-copy-meta',
       'track-menu-paste-meta',
       'track-menu-startover',
@@ -95,7 +97,7 @@ describe('TrackContextMenu keyboard', () => {
     renderMenu()
     const menu = screen.getByTestId('track-menu')
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
-    expect(screen.getByTestId('track-menu-copy-meta')).toHaveFocus()
+    expect(screen.getByTestId('track-menu-search-web')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
     expect(screen.getByTestId('track-menu-search')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
@@ -111,6 +113,19 @@ describe('TrackContextMenu keyboard', () => {
     cleanup()
     expect(opener).toHaveFocus()
     opener.remove()
+  })
+})
+
+describe('TrackContextMenu search web', () => {
+  // Delegated to App (not a window.open here) so the query is built from the same
+  // Settings file-name pattern the ⌘K "Search on Google" command uses.
+  it('delegates the Google search to App with the track, then closes', () => {
+    const onSearchWeb = vi.fn()
+    const onClose = vi.fn()
+    const props = renderMenu({ onSearchWeb, onClose })
+    fireEvent.click(screen.getByTestId('track-menu-search-web'))
+    expect(onSearchWeb).toHaveBeenCalledWith(props.track)
+    expect(onClose).toHaveBeenCalled()
   })
 })
 

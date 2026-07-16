@@ -34,6 +34,7 @@ interface Props {
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
   onSearch: (id: string) => void
+  onSearchWeb: (track: TrackItem) => void
   onStartOver: (track: TrackItem) => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
@@ -490,6 +491,7 @@ export const TrackList = memo(function TrackList({
   onRemove,
   onPrefetch,
   onSearch,
+  onSearchWeb,
   onStartOver,
   onCopyMeta,
   onCopyPath,
@@ -610,6 +612,7 @@ export const TrackList = memo(function TrackList({
           y={menu.y}
           onClose={() => setMenu(null)}
           onSearch={onSearch}
+          onSearchWeb={onSearchWeb}
           onStartOver={onStartOver}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}

@@ -10,6 +10,7 @@ interface Props {
   y: number
   onClose: () => void
   onSearch: (id: string) => void
+  onSearchWeb: (track: TrackItem) => void
   onStartOver: (track: TrackItem) => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
@@ -59,6 +60,7 @@ export function TrackContextMenu({
   y,
   onClose,
   onSearch,
+  onSearchWeb,
   onStartOver,
   onCopyMeta,
   onCopyPath,
@@ -153,6 +155,11 @@ export function TrackContextMenu({
           testid="track-menu-search"
           label={tr('trackList.context.search')}
           onClick={() => run(() => onSearch(track.id))}
+        />
+        <MenuItem
+          testid="track-menu-search-web"
+          label={tr('trackList.context.searchWeb')}
+          onClick={() => run(() => onSearchWeb(track))}
         />
         <MenuItem
           testid="track-menu-copy-meta"

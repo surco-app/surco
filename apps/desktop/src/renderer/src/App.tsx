@@ -1225,14 +1225,17 @@ export default function App(): React.JSX.Element {
   })
   // The copy button's one-click twin: opens a Google search for the same name in the
   // default browser. window.open routes through the main process's window-open handler
-  // (shell.openExternal), the same path every external link takes.
-  const onSearchWeb = useStableCallback(() => {
-    if (!selected) return
-    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
+  // (shell.openExternal), the same path every external link takes. The editor button acts
+  // on the current selection; the track context menu passes the right-clicked track.
+  const searchTrackWeb = useStableCallback((track: TrackItem) => {
+    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', track.meta)
     if (name) {
       const query = name.split('/').pop() ?? name
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`)
     }
+  })
+  const onSearchWeb = useStableCallback(() => {
+    if (selected) searchTrackWeb(selected)
   })
   // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
   // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also
@@ -1603,6 +1606,7 @@ export default function App(): React.JSX.Element {
                         onRemove={removeFromList}
                         onPrefetch={handlePrefetch}
                         onSearch={onSearchTrack}
+                        onSearchWeb={searchTrackWeb}
                         onStartOver={startOverTrack}
                         onCopyMeta={onCopyMeta}
                         onCopyPath={onCopyPath}

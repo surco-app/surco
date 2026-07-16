@@ -73,6 +73,7 @@ function renderList(
   const onRemove = vi.fn()
   const onPrefetch = vi.fn()
   const onSearch = vi.fn()
+  const onSearchWeb = vi.fn()
   const onStartOver = vi.fn()
   const onTrash = vi.fn()
   const onCopyMeta = vi.fn()
@@ -89,6 +90,7 @@ function renderList(
       onRemove={onRemove}
       onPrefetch={onPrefetch}
       onSearch={onSearch}
+      onSearchWeb={onSearchWeb}
       onStartOver={onStartOver}
       onTrash={onTrash}
       onCopyMeta={onCopyMeta}
@@ -103,6 +105,7 @@ function renderList(
     onRemove,
     onPrefetch,
     onSearch,
+    onSearchWeb,
     onStartOver,
     onTrash,
     onCopyMeta,
