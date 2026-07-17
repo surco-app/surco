@@ -23,6 +23,10 @@
       {
         "text": "In a batch conversion, a decision about a conflicting file can be applied to the rest of the run at once, instead of answering release by release.",
         "in": "0.63.0"
+      },
+      {
+        "text": "Sending a long track to Apple Music no longer times out while it imports, and when something goes wrong the message now explains why instead of showing internal code, with a button to copy it.",
+        "in": "0.63.1"
       }
     ]
   },

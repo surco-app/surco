@@ -23,6 +23,10 @@
       {
         "text": "En una conversión por lotes, la decisión sobre un archivo en conflicto se puede aplicar al resto del lote de una vez, en lugar de contestar disco a disco.",
         "in": "0.63.0"
+      },
+      {
+        "text": "Enviar a Apple Music una pista larga ya no falla por tiempo de espera mientras se importa, y cuando algo va mal el aviso explica el motivo en vez de mostrar código interno, con un botón para copiarlo.",
+        "in": "0.63.1"
       }
     ]
   },
