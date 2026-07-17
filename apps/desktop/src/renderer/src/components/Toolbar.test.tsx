@@ -25,8 +25,10 @@ function renderBar(over: Partial<Props> = {}): Props {
     batchProgress: { done: 0, total: 0 },
     matching: null,
     hasToken: true,
+    needsToken: false,
     autoMatchable: 2,
     onAnalyzeAll: vi.fn(),
+    onFixToken: vi.fn(),
     onCancelAnalyze: vi.fn(),
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
@@ -76,6 +78,19 @@ describe('Toolbar', () => {
     renderBar({ hasToken: false, allAnalyzed: true })
     expect(screen.getByTestId('auto-match')).toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).toBeDisabled()
+  })
+
+  // Auto-match on but no usable token is a silent dead end: the sweep can't run and the
+  // only hint was a tooltip on a greyed-out button. Surface it as a live "add a token"
+  // affordance that isn't disabled and takes the user straight to where they fix it.
+  it('offers a clickable fix when auto-match is on but the token is missing', () => {
+    const props = renderBar({ needsToken: true, hasToken: false })
+    const button = screen.getByTestId('auto-match')
+    expect(button).not.toBeDisabled()
+    fireEvent.click(button)
+    expect(props.onFixToken).toHaveBeenCalledOnce()
+    // It must not misfire the sweep it can't run.
+    expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 
   // A misfired Convert all used to be unstoppable from anywhere in the UI. The batch

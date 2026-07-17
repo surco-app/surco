@@ -47,6 +47,7 @@
     "cancelConvert": "Cancelar a conversão: as faixas na fila são puladas, as que estão em andamento terminam",
     "autoMatch": "Auto-associar todas as faixas no Discogs",
     "autoMatchNoToken": "Adicione um token do Discogs em Ajustes para auto-associar",
+    "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
     "export": "Exportar para software de DJ",
     "clearAll": "Limpar a lista"

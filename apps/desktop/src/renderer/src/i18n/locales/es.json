@@ -47,6 +47,7 @@
     "cancelConvert": "Cancelar la conversión: las pistas en cola se saltan, las que están en curso terminan",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
+    "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
     "export": "Exportar a software DJ",
     "clearAll": "Vaciar la lista"

@@ -47,6 +47,7 @@
     "cancelConvert": "Konvertierung abbrechen: Tracks in der Warteschlange werden übersprungen, laufende werden beendet",
     "autoMatch": "Alle Tracks automatisch mit Discogs abgleichen",
     "autoMatchNoToken": "Füg in den Einstellungen einen Discogs-Token hinzu, um automatisch abzugleichen",
+    "addToken": "Token hinzufügen",
     "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
     "export": "An DJ-Software exportieren",
     "clearAll": "Liste leeren"

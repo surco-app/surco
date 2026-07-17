@@ -47,6 +47,7 @@
     "cancelConvert": "Annuler la conversion : les morceaux en file sont ignorés, ceux en cours se terminent",
     "autoMatch": "Auto-associer tous les morceaux sur Discogs",
     "autoMatchNoToken": "Ajoute un token Discogs dans les Réglages pour auto-associer",
+    "addToken": "Ajouter un token",
     "autoMatchingCount": "Association auto… {{done}}/{{total}}",
     "export": "Exporter vers un logiciel DJ",
     "clearAll": "Vider la liste"

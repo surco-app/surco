@@ -51,11 +51,16 @@ interface Props {
   // and how many tracks are still matchable (zero disables the button).
   matching: { done: number; total: number } | null
   hasToken: boolean
+  // Auto-match is on in Settings but the provider it needs can't run (no Discogs token) —
+  // so the sweep would silently do nothing. The button then reads as a live "add a token"
+  // fix instead of a disabled control, and onFixToken opens Settings where it's set.
+  needsToken: boolean
   autoMatchable: number
   onAnalyzeAll: () => void
   onCancelAnalyze: () => void
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
+  onFixToken: () => void
   // Stops the running batch between tracks: queued conversions bail as skipped, the
   // ones already in ffmpeg finish.
   onCancelBatch: () => void
@@ -87,11 +92,13 @@ export const Toolbar = memo(function Toolbar({
   allAnalyzed,
   matching,
   hasToken,
+  needsToken,
   autoMatchable,
   onAnalyzeAll,
   onCancelAnalyze,
   onAutoMatch,
   onCancelAutoMatch,
+  onFixToken,
   onCancelBatch,
   onPalette,
   onStats,
@@ -203,13 +210,17 @@ export const Toolbar = memo(function Toolbar({
             <button
               type="button"
               data-testid="auto-match"
-              onClick={matching ? onCancelAutoMatch : onAutoMatch}
-              disabled={!matching && (!hasToken || autoMatchable === 0)}
-              aria-label={tr('header.autoMatch')}
+              onClick={matching ? onCancelAutoMatch : needsToken ? onFixToken : onAutoMatch}
+              // When auto-match is on but the token is missing, the button isn't a dead
+              // disabled control — it's the fix, so it stays enabled and routes to Settings.
+              disabled={!matching && !needsToken && (!hasToken || autoMatchable === 0)}
+              aria-label={needsToken ? tr('header.autoMatchNoToken') : tr('header.autoMatch')}
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
                   ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'w-8 text-fg-muted hover:text-fg'
+                  : needsToken
+                    ? 'border border-[var(--color-warn)] px-2.5 text-xs font-medium text-[var(--color-warn)]'
+                    : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
               <Sparkles
@@ -221,15 +232,18 @@ export const Toolbar = memo(function Toolbar({
                   {matching.done}/{matching.total}
                 </span>
               )}
+              {/* Auto-match on, token missing: name the gap inline so it reads without a
+                  hover — the tooltip alone was the invisible dead end this fixes. */}
+              {!matching && needsToken && <span>{tr('header.addToken')}</span>}
               <Tooltip
                 label={
                   matching
                     ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
-                    : !hasToken
+                    : needsToken
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
                 }
-                hint={matching ? undefined : hintFor('auto-match')}
+                hint={matching || needsToken ? undefined : hintFor('auto-match')}
                 align="end"
               />
             </button>

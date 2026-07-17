@@ -47,6 +47,7 @@
     "cancelConvert": "Cancel the conversion: queued tracks are skipped, the ones underway finish",
     "autoMatch": "Auto-match all tracks on Discogs",
     "autoMatchNoToken": "Add a Discogs token in Settings to auto-match",
+    "addToken": "Add token",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
     "export": "Export to DJ software",
     "clearAll": "Clear the list"
