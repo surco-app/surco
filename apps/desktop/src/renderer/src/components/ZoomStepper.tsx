@@ -5,10 +5,10 @@ import { Tooltip } from './Tooltip'
 // The one zoom control, shared by every section that shows a wave.
 //
 // It exists because the sections had each grown their own, and they disagreed: the
-// trim lane put "closer" on the LEFT, the grid lane put it on the RIGHT. Both had
-// followed their own NUMBER — zooming in made one factor climb (×1 → ×32)
-// but makes the trim's context shrink (±15 s → ±2 s) — so the same gesture ended up
-// on opposite sides depending on which section you were in.
+// trim lane put "closer" on the LEFT, another section put it on the RIGHT. Each had
+// followed its own NUMBER — one factor climbs as you zoom in (×1 → ×32) while the
+// trim's context shrinks (±15 s → ±2 s) — so the same gesture ended up on opposite
+// sides depending on which section you were in.
 //
 // The order is therefore fixed by the ACTION, never by the number: less on the left,
 // more on the right, like every volume and brightness control ever made. And the

@@ -31,7 +31,7 @@ export function useWaveform(
 
 // The native-rate clip/channel scan for the compare/player strip only — a separate,
 // heavier probe from the peaks above, so the editor sections that draw just the envelope
-// (trim, grid, declick) never trigger it. Its own cache entry, always complete for its
+// (trim, declick) never trigger it. Its own cache entry, always complete for its
 // own contract, so the peaks-only wave is never starved of marks and vice versa.
 export function waveformScanOptions(inputPath: string) {
   return analysisOptions('waveformScan', inputPath, () => window.api.waveformScan(inputPath))

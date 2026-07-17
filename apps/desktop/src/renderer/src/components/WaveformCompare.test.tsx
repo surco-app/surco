@@ -184,8 +184,8 @@ describe('Strip base raster at high zoom', () => {
   // (the "waveform smeared across the app" report). Past the hi-res takeover zoom the sharp
   // detail comes from the separate hi-res canvas, so the base only needs a modest raster.
   it('caps the base canvas raster well below the giant full-zoom width when zoomed in', () => {
-    // inputPath is what turns the hi-res canvas on past the takeover zoom — the grid lane
-    // always passes it, so the base becomes the mere backdrop the cap applies to.
+    // inputPath is what turns the hi-res canvas on past the takeover zoom — a zoomable
+    // section always passes it, so the base becomes the mere backdrop the cap applies to.
     const { container } = renderWithQuery(
       <Strip
         wave={wave}
@@ -215,9 +215,9 @@ describe('Strip base raster at high zoom', () => {
 })
 
 describe('Strip view reporting', () => {
-  // An overlay that renders only the visible beats (the grid section) needs the
-  // window the strip already tracks internally; the callback hands it out without
-  // the overlay re-deriving scroll math.
+  // An overlay that renders only what shows needs the window the strip already
+  // tracks internally; the callback hands it out without the overlay re-deriving
+  // scroll math.
   it('reports the visible window to onViewChange', async () => {
     const onViewChange = vi.fn()
     renderWithQuery(

@@ -10,8 +10,7 @@ export interface ClickMark {
 // paint a solid wall over the wave: it reads as "the whole track is broken" and buries
 // the thing the marks exist to show — WHERE the damage clusters. Above this count the
 // visible field thins by a stride; zooming in narrows the window and brings the rest
-// back, so nothing is permanently hidden. (Same bound, same reason, as the beat grid's
-// MAX_LINES.)
+// back, so nothing is permanently hidden.
 export const MAX_MARKS = 96
 
 export function clickMarks(

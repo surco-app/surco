@@ -129,7 +129,6 @@ export function Strip({
   onZoomChange,
   inputPath,
   onViewChange,
-  scrollerRef,
   tall = false,
   trimShade,
   children,
@@ -158,12 +157,8 @@ export function Strip({
   // the 8192 overview buckets into blocks. Absent, deep zoom just magnifies.
   inputPath?: string
   // Reports the visible slice (0..1 fractions of the track) the strip already
-  // tracks for its deep zoom, so an overlay can render only what shows — the
-  // grid section's beat lines would be thousands of nodes drawn full-length.
+  // tracks for its deep zoom, so an overlay can render only what shows.
   onViewChange?: (view: { from: number; to: number }) => void
-  // Hands the scroll container out, so a parent can drive the visible window —
-  // the grid section's overview lane navigates by setting scrollLeft here.
-  scrollerRef?: React.RefObject<HTMLDivElement | null>
   // Double-height lanes for a maximized section: the whole window is available,
   // so the wave takes it instead of floating in empty space.
   tall?: boolean
@@ -323,10 +318,10 @@ export function Strip({
   const win = hiResActive
     ? windowFor(wave.durationSec, view.from, zoom)
     : { startSec: 0, durSec: 0 }
-  // Fetch only once the window RESTS: a fast scrub (the grid section's overview
-  // lane) churns through quantized windows faster than ffmpeg decodes them, and
-  // enqueueing every intermediate one left the queue playing catch-up for
-  // seconds after release. While the fetch waits, the draw below falls back to
+  // Fetch only once the window RESTS: a fast scrub churns through quantized
+  // windows faster than ffmpeg decodes them, and enqueueing every intermediate
+  // one left the queue playing catch-up for seconds after release. While the
+  // fetch waits, the draw below falls back to
   // the coarse overview slice, so the strip stays live — just soft.
   const { startSec: winStart, durSec: winDur } = win
   const [settledWin, setSettledWin] = useState(win)
@@ -432,7 +427,6 @@ export function Strip({
     <div
       ref={(el) => {
         scrollRef.current = el
-        if (scrollerRef) scrollerRef.current = el
       }}
       data-testid="waveform-scroller"
       // w-full + min-w-0 + contain pin the scroller to its column's width and isolate its
@@ -471,8 +465,8 @@ export function Strip({
             same effect that draws, so position and pixels commit together) — the
             capped base raster underneath goes blurry past ~×27, but this covers
             where the eye is. It used to be viewport-sticky and redrawn per scroll
-            frame, which lagged the natively-scrolling overlays (grid lines, ruler)
-            by a frame mid-drag; anchored to the content it scrolls in lockstep and
+            frame, which lagged any natively-scrolling overlay (a ruler, say) by a
+            frame mid-drag; anchored to the content it scrolls in lockstep and
             a fast fling just shows the coarse base at the edges until the next
             redraw. Pointer events pass through so scrub/hover stay the strip's. */}
         {hiResActive && (
