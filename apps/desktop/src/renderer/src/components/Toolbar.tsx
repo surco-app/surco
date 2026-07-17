@@ -113,7 +113,7 @@ export const Toolbar = memo(function Toolbar({
         // aria-label/aria-pressed, matching SegmentedControl's plain-div grouping.
         <div
           data-testid="focus-presets"
-          className="inline-flex items-center gap-0.5 rounded-lg bg-[var(--color-field)] p-0.5"
+          className="ml-3 inline-flex items-center gap-0.5 rounded-lg bg-[var(--color-field)] p-0.5"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
           {FOCUS_PRESETS.map(({ id }) => {
