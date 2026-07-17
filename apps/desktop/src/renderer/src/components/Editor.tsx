@@ -15,6 +15,7 @@ import type {
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
@@ -60,6 +61,7 @@ import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
+import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
@@ -766,6 +768,13 @@ export const Editor = memo(function Editor({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          {/* The pinned metadata form opens the "File" phase; the mapped sections
+              below label "Audio" and "Output" as the group changes down the list. */}
+          <SectionGroupHeading
+            label={tr('editor.groupMetadata')}
+            testid="editor-group-metadata"
+            first
+          />
           <SectionHeader
             title={
               isMulti
@@ -881,11 +890,17 @@ export const Editor = memo(function Editor({
               (Settings → Editor); the form itself is the editor's fixed header. Each
               section keeps its own visibility conditions, so reordering never makes
               one appear where it wouldn't have. */}
-          {editorSections
-            .filter((s) => s.id !== 'form' && s.hidden !== true)
-            .map(({ id }) => {
-              const element = ((): React.ReactNode => {
-                switch (id) {
+          {(() => {
+            // The pinned form already opened the "File" group, so the walk starts
+            // there; a heading is emitted only when a VISIBLE in-column section
+            // changes the group (a maximized section renders to a portal and a
+            // hidden-by-condition one to null — neither shifts the column's phase).
+            let lastGroup = EDITOR_SECTION_GROUP.form
+            return editorSections
+              .filter((s) => s.id !== 'form' && s.hidden !== true)
+              .flatMap(({ id }) => {
+                const element = ((): React.ReactNode => {
+                  switch (id) {
                   case 'properties':
                     return (
                       !isMulti && (
@@ -1024,25 +1039,55 @@ export const Editor = memo(function Editor({
                         isMulti={isMulti}
                       />
                     )
-                  default:
-                    return null
+                    default:
+                      return null
+                  }
+                })()
+                // A maximized section leaves the column (it renders to a portal),
+                // so it neither shows a heading nor shifts the column's phase — the
+                // heading belongs to whatever visible section takes over the flow.
+                if (element && id === maximized) {
+                  return createPortal(
+                    <div
+                      data-testid="section-maximized-overlay"
+                      className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                    >
+                      {element}
+                    </div>,
+                    document.body,
+                    id,
+                  )
                 }
-              })()
-              if (!element || id !== maximized) return element
-              // The maximized section renders into a window-covering portal
-              // instead of its column slot — same element, all its state and
-              // analyses intact, just with the whole app's width and height.
-              return createPortal(
-                <div
-                  data-testid="section-maximized-overlay"
-                  className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
-                >
-                  {element}
-                </div>,
-                document.body,
-                id,
-              )
-            })}
+                // A section hidden by its own conditions (null) doesn't advance the
+                // phase either — the next visible section still opens its group.
+                if (!element) return []
+                const group = EDITOR_SECTION_GROUP[id]
+                if (group === lastGroup) return element
+                lastGroup = group
+                const label =
+                  group === 'audio'
+                    ? tr('editor.groupAudio')
+                    : group === 'output'
+                      ? tr('editor.groupOutput')
+                      : tr('editor.groupMetadata')
+                // The heading owns the group's top separator, so the section right
+                // under it drops its own `mt-6 border-t pt-5` (targeted at its root
+                // div) — otherwise two hairlines stack a few pixels apart.
+                return [
+                  <SectionGroupHeading
+                    key={`group-${group}`}
+                    label={label}
+                    testid={`editor-group-${group}`}
+                  />,
+                  <div
+                    key={`slot-${id}`}
+                    className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-2"
+                  >
+                    {element}
+                  </div>,
+                ]
+              })
+          })()}
         </div>
 
         <ConvertFooter

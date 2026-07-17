@@ -13,6 +13,24 @@ export const EDITOR_SECTION_IDS = [
 ] as const
 export type EditorSectionId = (typeof EDITOR_SECTION_IDS)[number]
 
+// Which phase of the track workflow a section belongs to, so the editor can label a
+// group heading whenever the phase changes down the (user-reorderable) list — the
+// three phases the default order already reads as, made visible: describe the file,
+// operate on its audio, name the output. Derived per section, not a fixed layout, so
+// a reordered list still labels correctly (a moved audio section carries its "AUDIO"
+// heading with it) rather than forcing sections into fixed buckets.
+export type EditorSectionGroup = 'metadata' | 'audio' | 'output'
+
+export const EDITOR_SECTION_GROUP: Record<EditorSectionId, EditorSectionGroup> = {
+  form: 'metadata',
+  properties: 'metadata',
+  quality: 'metadata',
+  trim: 'audio',
+  declick: 'audio',
+  normalize: 'audio',
+  output: 'output',
+}
+
 export interface EditorSectionPref {
   id: EditorSectionId
   // Whether the section starts unfolded when the app launches.

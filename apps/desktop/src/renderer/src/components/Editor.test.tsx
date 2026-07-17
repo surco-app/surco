@@ -2637,9 +2637,9 @@ describe('Editor maximized section', () => {
     expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
   })
 
-  // Only the sections with fine work to do on a wave earn the toggle (trim,
-  // the quality spectrogram). Click repair is a segmented control and
-  // loudness a reference wave — a full window buys them nothing but chrome.
+  // Every section that draws a full-length wave earns the toggle: trim, click
+  // repair (its clicks-found strip), loudness (its before/after preview) and the
+  // quality spectrogram all read better full-window. A text-only section doesn't.
   it('offers maximize on every wave-work section and none on the rest', () => {
     renderEditor({ id: 'a' })
     // The rule is "a section with a full-length waveform earns the whole window":
@@ -2654,5 +2654,29 @@ describe('Editor maximized section', () => {
     // The File name section draws no wave, so it never grows the maximize toggle.
     const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
     expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
+  })
+})
+
+// The editor is a flat list of same-weight sections; the group headings make its
+// three phases (describe the file → operate on the audio → name the output) visible
+// so the eye can find where audio work begins instead of scanning every header.
+describe('Editor section groups', () => {
+  it('labels a group heading at each phase of the default section order', () => {
+    renderEditor({ id: 'a' })
+    // The pinned metadata form opens File; the audio sections and the file-name
+    // section each announce their phase as the group changes down the list.
+    expect(screen.getByTestId('editor-group-metadata')).toBeInTheDocument()
+    expect(screen.getByTestId('editor-group-audio')).toBeInTheDocument()
+    expect(screen.getByTestId('editor-group-output')).toBeInTheDocument()
+  })
+
+  it('opens the audio phase right before the first audio section', () => {
+    renderEditor({ id: 'a' })
+    // The heading sits immediately above Silence trim (the first audio section in
+    // default order): the label belongs to the section it introduces, not floating.
+    const audio = screen.getByTestId('editor-group-audio')
+    const trim = screen.getByTestId('editor-trim')
+    expect(audio.compareDocumentPosition(trim) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(trim.compareDocumentPosition(audio) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
   })
 })
