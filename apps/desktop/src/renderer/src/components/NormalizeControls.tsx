@@ -126,9 +126,16 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
         ))}
       </div>
 
+      {/* Presets and the number fields are one control — the chips fill the fields,
+          the fields fine-tune what the chips set — so they live in one framed block
+          with a hairline splitting "pick a preset" from "or dial exact figures",
+          instead of reading as two loose rows stacked by accident. */}
       {value.mode === 'loudness' && (
-        <div ref={detailRef} className="mt-3 space-y-3">
-          <div className="flex flex-wrap gap-1.5">
+        <div
+          ref={detailRef}
+          className="mt-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)]/40"
+        >
+          <div className="flex flex-wrap gap-1.5 p-3">
             {LOUDNESS_PRESETS.map((p) => {
               const active = value.targetLufs === p.lufs && value.truePeakDb === p.tp
               return (
@@ -158,7 +165,7 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
               {tr('normalize.preset.custom')}
             </button>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 border-t border-[var(--color-line)] p-3">
             <NumberField
               testid="normalize-target-lufs"
               label={tr('normalize.targetLufs')}
@@ -178,40 +185,47 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
 
       {value.mode === 'peak' && (
         <div ref={detailRef} className="mt-3 space-y-3">
-          <div className="flex flex-wrap gap-1.5">
-            {PEAK_PRESETS.map((p) => (
+          {/* Same framed pairing as loudness: the chips set the ceiling, the field
+              tunes it — one block, split by a hairline. The two option checkboxes
+              stay outside it: they modify HOW the ceiling is reached, not what it is. */}
+          <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)]/40">
+            <div className="flex flex-wrap gap-1.5 p-3">
+              {PEAK_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  data-testid={`normalize-preset-${p.id}`}
+                  aria-pressed={value.peakDb === p.peak}
+                  onClick={() => onChange({ ...value, peakDb: p.peak })}
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    value.peakDb === p.peak
+                      ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                      : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
+                  }`}
+                >
+                  {tr(`normalize.preset.${p.id}`)}
+                </button>
+              ))}
               <button
-                key={p.id}
                 type="button"
-                data-testid={`normalize-preset-${p.id}`}
-                aria-pressed={value.peakDb === p.peak}
-                onClick={() => onChange({ ...value, peakDb: p.peak })}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  value.peakDb === p.peak
-                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                    : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-                }`}
+                data-testid="normalize-preset-custom"
+                aria-pressed={peakIsCustom}
+                onClick={() => peakRef.current?.select()}
+                className={customChipClass(peakIsCustom)}
               >
-                {tr(`normalize.preset.${p.id}`)}
+                {tr('normalize.preset.custom')}
               </button>
-            ))}
-            <button
-              type="button"
-              data-testid="normalize-preset-custom"
-              aria-pressed={peakIsCustom}
-              onClick={() => peakRef.current?.select()}
-              className={customChipClass(peakIsCustom)}
-            >
-              {tr('normalize.preset.custom')}
-            </button>
+            </div>
+            <div className="border-t border-[var(--color-line)] p-3">
+              <NumberField
+                testid="normalize-peak"
+                label={tr('normalize.peakDb')}
+                value={value.peakDb}
+                onChange={(n) => onChange({ ...value, peakDb: n })}
+                inputRef={peakRef}
+              />
+            </div>
           </div>
-          <NumberField
-            testid="normalize-peak"
-            label={tr('normalize.peakDb')}
-            value={value.peakDb}
-            onChange={(n) => onChange({ ...value, peakDb: n })}
-            inputRef={peakRef}
-          />
           <label className="flex cursor-pointer items-center gap-3">
             <input
               data-testid="normalize-peak-remove-dc"
