@@ -28,7 +28,7 @@ export function SectionGroupHeading({
   return (
     <div
       data-testid={testid}
-      className={`flex items-center gap-2 ${first ? 'mb-2' : 'mt-7 border-t border-[var(--color-line)] pt-6'}`}
+      className={`flex items-center gap-2 ${first ? 'mb-3' : 'mt-8 border-t border-[var(--color-line)] pt-7'}`}
     >
       <span
         aria-hidden="true"

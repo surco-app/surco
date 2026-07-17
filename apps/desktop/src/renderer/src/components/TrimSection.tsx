@@ -785,7 +785,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
   }
 
   return (
-    <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div data-testid="editor-trim" className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         sectionId="trim"
         title={tr('trim.title')}
@@ -810,7 +810,7 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
         }
       />
       {open && (
-        <div className="mt-3">
+        <div className="mt-4">
           {(loading || wave) && (
             <>
               {/* Only the summary of what will be cut. The per-side actions (hear

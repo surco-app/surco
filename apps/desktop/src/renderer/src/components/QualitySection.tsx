@@ -163,7 +163,7 @@ export function QualitySection({
     }
   }
   return (
-    <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         sectionId="quality"
         title={tr('editor.qualityTitle')}
@@ -198,7 +198,7 @@ export function QualitySection({
         }
       />
       <SectionBody open={open}>
-        <div className="mt-3">
+        <div className="mt-4">
           {showSpectrum &&
             (analyzing ? (
               <SpectrumLoading />

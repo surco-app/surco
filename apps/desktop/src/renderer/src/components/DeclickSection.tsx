@@ -183,7 +183,7 @@ export function DeclickSection({
   const unscanned = clicks && durationSec > clicks.scannedSec + 1
 
   return (
-    <div data-testid="editor-declick" className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div data-testid="editor-declick" className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         title={tr('declick.title')}
         open={open}
@@ -210,7 +210,7 @@ export function DeclickSection({
         }
       />
       <SectionBody open={open}>
-        <div className="mt-3">
+        <div className="mt-4">
           <DeclickControls value={value} onChange={onChange} />
           {!isMulti && (
             <div className="mt-4">

@@ -1084,7 +1084,7 @@ export const Editor = memo(function Editor({
                   />,
                   <div
                     key={`slot-${id}`}
-                    className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-2"
+                    className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-3"
                   >
                     {element}
                   </div>,

@@ -78,7 +78,7 @@ export function NormalizeSection({
     if (compare) compareRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
   }, [compare])
   return (
-    <div data-testid="editor-normalize" className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div data-testid="editor-normalize" className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         title={tr('normalize.title')}
         open={open}
@@ -121,7 +121,7 @@ export function NormalizeSection({
         }
       />
       <SectionBody open={open}>
-        <div className="mt-3">
+        <div className="mt-4">
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
