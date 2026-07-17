@@ -68,7 +68,7 @@
           "Iguala el volumen a un loudness o pico común",
           "Recorta el silencio del principio y del final, con el corte a la vista sobre la onda",
           "Tú eliges dónde cae cada una: una carpeta, junto al original, Apple Music o Engine DJ",
-          "Reexporta sin tocar los cue points ni el beatgrid de Traktor"
+          "Reexporta sin tocar los cue points de Traktor"
         ]
       },
       {
@@ -92,8 +92,6 @@
           "Lectura por colores: LUFS, pico, dinámica y ruido",
           "Forma de onda con zoom, clipping real en rojo y vista previa del resultado normalizado",
           "Repara los clics del vinilo: marca cada uno sobre la onda, salta de uno a otro y compara la pista reparada con la original sin cortar el audio",
-          "Editor de beatgrid: corrige la rejilla de oído, marca el tempo a golpes y crea segmentos para las pistas que cambian de tempo",
-          "La rejilla que dejes ajustada se exporta a rekordbox, Traktor, Serato y Engine DJ — segmentos incluidos",
           "Detecta BPM y tonalidad del propio audio",
           "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
         ]
@@ -279,12 +277,8 @@
         "a": "Por defecto, no. Las pistas convertidas se guardan en una carpeta aparte (Música/Surco) y tus originales quedan intactos. Solo se reemplazan si activas «Sobrescribir original»."
       },
       {
-        "q": "¿Conserva los cue points y el beatgrid?",
-        "a": "Al reexportar sin tocar el audio, sí: los cue points y el beatgrid de Traktor pasan intactos. Si activas el recorte de silencio, la normalización o la reparación de clics, el audio se recodifica: con el recorte los cues se recolocan según lo que hayas cortado, y en WAV y FLAC se pierden. En MP3 y AIFF se conservan. Surco te lo avisa en la propia sección antes de que conviertas."
-      },
-      {
-        "q": "¿Puedo ajustar el beatgrid?",
-        "a": "Sí. El editor de beatgrid superpone la rejilla sobre la onda para que la cuadres de oído: alinea los beats con la referencia central, marca el tempo a golpes, dobla o divide el BPM y, si la pista acelera, empieza un segmento nuevo justo donde cambia. La rejilla que dejes ajustada llega a tus platos: se escribe como beatgrid de Serato dentro del archivo convertido, en tu biblioteca de Engine DJ, y en los exports de rekordbox y Traktor — con un tempo por segmento, así que las pistas que cambian de ritmo también salen bien."
+        "q": "¿Conserva los cue points?",
+        "a": "Al reexportar sin tocar el audio, sí: los cue points de Traktor pasan intactos. Si activas el recorte de silencio, la normalización o la reparación de clics, el audio se recodifica: con el recorte los cues se recolocan según lo que hayas cortado, y en WAV y FLAC se pierden. En MP3 y AIFF se conservan. Surco te lo avisa en la propia sección antes de que conviertas."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
@@ -464,23 +458,6 @@
         "shotCaption": "Los carriles de recorte de entrada y salida sobre la onda."
       },
       {
-        "id": "beatgrid",
-        "title": "Cuadra el beatgrid",
-        "body": [
-          "Surco detecta el tempo, pero un vinilo rara vez cae clavado: la sección de beatgrid superpone la rejilla sobre la onda para que la cuadres de oído. Arrastra la onda para recorrer la pista y alinea los beats con la referencia roja del centro, al estilo de rekordbox. Si el tempo detectado va a mitad o al doble, hay un botón para cada cosa; si prefieres darlo tú, marca el tempo a golpes con el tap.",
-          "Cuando la pista acelera —una batería tocada, un directo, un edit— no hay un solo BPM que valga. Pulsa G en el punto donde cambia y Surco empieza ahí un segmento nuevo sin tocar el anterior; los corchetes te llevan de una costura a la siguiente, y la vista general de arriba te las marca todas. Pulsa Escuchar la rejilla y suena un clic sobre los beats hasta que la pares con Espacio, que es la única forma honesta de saber si está cuadrada."
-        ],
-        "points": [
-          "Referencia fija en el centro: mueves la pista, no la línea.",
-          "Mitad y doble de BPM, tap tempo, downbeat aquí, y deshacer y rehacer sobre cada ajuste.",
-          "G abre un segmento nuevo donde cambia el tempo; [ y ] saltan entre las costuras.",
-          "La rejilla que dejes ajustada se escribe como beatgrid de Serato dentro del archivo convertido, en tu biblioteca de Engine DJ, y en los exports de rekordbox y Traktor — con un tempo por cada segmento.",
-          "El filtro «Grid por revisar» te reúne las pistas cuya detección no es de fiar."
-        ],
-        "shot": "",
-        "shotCaption": "La rejilla sobre la onda, con la referencia central y los segmentos."
-      },
-      {
         "id": "discogs",
         "title": "Etiqueta desde Discogs y Bandcamp",
         "body": [
@@ -555,7 +532,7 @@
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3 — de 320 a 128 kbps, o VBR V0/V2.",
-          "Reexportar al mismo formato, sin tocar el audio, conserva los cue points y el beatgrid de Traktor.",
+          "Reexportar al mismo formato, sin tocar el audio, conserva los cue points de Traktor.",
           "La normalización, el recorte y la reparación de clics recodifican el audio: en MP3 y AIFF los cues se conservan, en WAV y FLAC se pierden. Vienen desactivados y Surco te lo avisa antes de convertir.",
           "Tras convertir, puedes mandar los originales a la papelera con una sola acción."
         ],
@@ -587,7 +564,7 @@
         ],
         "points": [
           "A Apple Music o Engine DJ con un clic, durante la conversión.",
-          "Exporta colecciones de rekordbox (.xml) y Traktor (.nml), con el beatgrid que hayas cuadrado dentro.",
+          "Exporta colecciones de rekordbox (.xml) y Traktor (.nml).",
           "Surco te avisa si una pista ya está en tu biblioteca de Apple Music.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla.",
           "Si Apple Music ya tenía una copia antigua de esa canción, Surco la detecta al añadir la nueva y te ofrece eliminarla."
@@ -607,7 +584,6 @@
           "Espacio reproduce o pausa; las flechas mueven la selección y ← → saltan cinco segundos dentro de la pista.",
           "⌘1, ⌘2 y ⌘3 saltan entre la lista, los resultados de búsqueda y el editor sin tocar el ratón.",
           "⌘F busca y reemplaza en todas las pistas, con regex si lo necesitas, y te dice cuántas va a tocar antes de hacerlo.",
-          "La sección de beatgrid tiene su propia familia de teclas —escuchar, centrar, abrir segmento, saltar de costura— y también se reasignan.",
           "Todos los atajos son reasignables en Ajustes."
         ],
         "shot": "atajos-es.png",

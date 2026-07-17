@@ -68,7 +68,7 @@
           "Match the volume to one loudness or peak",
           "Trim the silence off the head and tail, with both cuts visible on the wave",
           "You pick where each one lands: a folder, next to the original, Apple Music or Engine DJ",
-          "Re-export without touching Traktor cue points or beatgrid"
+          "Re-export without touching Traktor cue points"
         ]
       },
       {
@@ -92,8 +92,6 @@
           "Colour read-out: LUFS, true peak, dynamics and noise",
           "Waveform with zoom, real clipping in red and a preview of the normalized result",
           "Repairs vinyl clicks: marks each one on the wave, jumps you from one to the next, then A/B the repaired track against the original without a gap in the audio",
-          "Beatgrid editor: fix the grid by ear, tap the tempo, and carve segments for tracks that change tempo",
-          "The grid you settle on exports to rekordbox, Traktor, Serato and Engine DJ — segments and all",
           "Detects BPM and key from the audio itself",
           "Warns if a track is already in your Apple Music or Engine DJ — and filters your tracks to the ones you're missing"
         ]
@@ -279,12 +277,8 @@
         "a": "By default, no. Converted tracks are saved to a separate folder (Music/Surco) and your originals stay intact. They're only replaced if you turn on \"Overwrite original\"."
       },
       {
-        "q": "Does it keep cue points and beatgrids?",
-        "a": "When it re-exports without touching the audio, yes: your Traktor cue points and beatgrid pass through intact. Turn on silence trim, normalization or click repair and the audio is re-encoded: with trim, the cues are re-anchored to whatever you cut off, and on WAV and FLAC they're lost. On MP3 and AIFF they survive. Surco warns you right in the section before you convert."
-      },
-      {
-        "q": "Can I fix the beatgrid?",
-        "a": "Yes. The beatgrid editor lays the grid over the waveform so you can square it by ear: line the beats up against the fixed centre reference, tap the tempo out, halve or double the BPM and, if the track speeds up, start a fresh segment right where it changes. The grid you settle on reaches your decks: it's written as a Serato beatgrid inside the converted file, into your Engine DJ library, and into the rekordbox and Traktor exports — one tempo per segment, so tracks that shift tempo come out right too."
+        "q": "Does it keep cue points?",
+        "a": "When it re-exports without touching the audio, yes: your Traktor cue points pass through intact. Turn on silence trim, normalization or click repair and the audio is re-encoded: with trim, the cues are re-anchored to whatever you cut off, and on WAV and FLAC they're lost. On MP3 and AIFF they survive. Surco warns you right in the section before you convert."
       },
       {
         "q": "Can I trim the silence off my rips?",
@@ -464,23 +458,6 @@
         "shotCaption": "The head and tail trim lanes over the waveform."
       },
       {
-        "id": "beatgrid",
-        "title": "Square the beatgrid",
-        "body": [
-          "Surco detects the tempo, but a vinyl rip rarely lands dead on: the beatgrid section lays the grid over the waveform so you can square it by ear. Drag the wave to travel the track and line the beats up against the red reference in the centre, rekordbox style. If the detected tempo came out half or double, there's a button for each; if you'd rather give it yourself, tap the tempo out.",
-          "When a track speeds up —a played drummer, a live take, an edit— no single BPM holds. Press G at the point where it changes and Surco opens a fresh segment there without touching the previous one; the brackets walk you from one seam to the next, and the overview up top marks them all. Hit “Hear the grid” and a click plays over the beats until you stop it with Space, which is the only honest way to know it's square."
-        ],
-        "points": [
-          "Fixed reference in the centre: you move the track, not the line.",
-          "Half and double BPM, tap tempo, downbeat-here, and undo/redo on every adjustment.",
-          "G opens a new segment where the tempo changes; [ and ] jump between the seams.",
-          "The grid you settle on is written as a Serato beatgrid inside the converted file, into your Engine DJ library, and into the rekordbox and Traktor exports — one tempo node per segment.",
-          "The list's “Grid to review” filter gathers the tracks whose detection can't be trusted."
-        ],
-        "shot": "",
-        "shotCaption": "The grid over the wave, with the centre reference and the segments."
-      },
-      {
         "id": "discogs",
         "title": "Tag from Discogs and Bandcamp",
         "body": [
@@ -555,7 +532,7 @@
         ],
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
-          "Re-exporting to the same format, without touching the audio, keeps Traktor cue points and beatgrid.",
+          "Re-exporting to the same format, without touching the audio, keeps Traktor cue points.",
           "Normalization, trim and click repair re-encode the audio: on MP3 and AIFF the cues survive, on WAV and FLAC they're lost. They ship off and Surco warns you before you convert.",
           "After converting, send the originals to the trash in a single action."
         ],
@@ -587,7 +564,7 @@
         ],
         "points": [
           "To Apple Music or Engine DJ in one click, during conversion.",
-          "Export rekordbox (.xml) and Traktor (.nml) collections, with the beatgrid you squared baked in.",
+          "Export rekordbox (.xml) and Traktor (.nml) collections.",
           "Surco warns you if a track is already in your Apple Music library.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it.",
           "If Apple Music already held an old copy of that song, Surco spots it when adding the new one and offers to remove it."
@@ -607,7 +584,6 @@
           "Space plays or pauses; the arrows move the selection, and ← → seek five seconds inside the track.",
           "⌘1, ⌘2 and ⌘3 jump between the list, the search results and the editor without touching the mouse.",
           "⌘F finds and replaces across every track, with regex if you need it, and tells you how many it will touch before it does.",
-          "The beatgrid section has its own family of keys —audition, centre, open a segment, jump a seam— and they remap too.",
           "Every shortcut is reassignable in Settings."
         ],
         "shot": "atajos-en.png",
