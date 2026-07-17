@@ -559,8 +559,14 @@ describe('WaveformSolo', () => {
     const legend = await screen.findByTestId('waveform-preview')
     expect(legend).toHaveTextContent('-14.0 LUFS')
     expect(legend).toHaveTextContent('-1.0 dBTP')
-    // The felt number: how hard the normalization pushes (-20 measured to -14).
-    expect(legend).toHaveTextContent('+6.0 dB')
+    // The felt number — how hard the normalization pushes (-20 measured to -14) —
+    // lives in its own chip now, signed so a boost and a cut read apart at a glance,
+    // instead of trailing the target figures as one more dot-separated number.
+    // The felt number lives in its OWN testid'd chip now — found on its own, not by
+    // fishing it out of the legend's figures — signed so a boost and a cut read apart
+    // at a glance instead of trailing the targets as one more dot-separated number.
+    const delta = await screen.findByTestId('waveform-gain-delta')
+    expect(delta).toHaveTextContent('+6.0 dB')
   })
 
   it('shows no preview while normalization is off', async () => {

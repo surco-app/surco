@@ -707,15 +707,20 @@ export function WaveformSolo({
     preview && source.wave ? { peaks: preview.peaks, durationSec: source.wave.durationSec } : null
   return (
     <div data-testid="waveform-solo" className="mt-3">
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-        <Legend
-          testid="waveform-source"
-          color={previewWave ? BEFORE_COLOR : AFTER_COLOR}
-          label={tr('editor.waveformSource')}
-          loudness={source.loudness}
-        />
+      <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">
+        {/* Original and Preview stack, one per line: comparing two runs of
+            dot-separated figures on the same line is a chore, but aligned in
+            two rows the same columns (loudness · peak) sit under each other and
+            the before/after reads down. Off a preview it collapses to the single
+            Original line. */}
         {previewWave && preview ? (
-          <>
+          <div className="flex min-w-0 flex-col gap-1">
+            <Legend
+              testid="waveform-source"
+              color={BEFORE_COLOR}
+              label={tr('editor.waveformSource')}
+              loudness={source.loudness}
+            />
             <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
               <span
                 aria-hidden="true"
@@ -729,30 +734,50 @@ export function WaveformSolo({
                 {normalize.mode === 'loudness'
                   ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
                   : `${formatDb(normalize.peakDb)} dBFS`}
-                {/* The felt number: how hard this pushes, signed so up and down read apart. */}
-                {` · ${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
               </span>
+              {/* The felt number, on its own chip: how hard the conversion pushes,
+                  the single figure worth reading at a glance. Signed and toned so a
+                  boost (up, accent) and a cut (down, muted) read apart without the
+                  digits — trailing the targets as one more "· −16.5 dB" it hid. */}
+              <span
+                data-testid="waveform-gain-delta"
+                className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${
+                  preview.gainDb >= 0
+                    ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                    : 'bg-[var(--color-panel-2)] text-fg-muted'
+                }`}
+              >
+                {`${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
+              </span>
+              {/* The same switch as the plain view, counting on the PREDICTED wave: it
+                  appears while the dialed values push peaks over the mode's red line
+                  (the loudness ceiling, or digital clipping for peak mode) — dial back
+                  until it goes, and the optimal value found itself. */}
+              <ClippedFlag
+                wave={previewWave}
+                clipDb={preview.limitDb}
+                active={marks}
+                onToggle={() => setMarks((m) => !m)}
+              />
             </span>
-            {/* The same switch as the plain view, counting on the PREDICTED wave: it
-                appears while the dialed values push peaks over the mode's red line
-                (the loudness ceiling, or digital clipping for peak mode) — dial back
-                until it goes, and the optimal value found itself. */}
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+            <Legend
+              testid="waveform-source"
+              color={AFTER_COLOR}
+              label={tr('editor.waveformSource')}
+              loudness={source.loudness}
+            />
             <ClippedFlag
-              wave={previewWave}
-              clipDb={preview.limitDb}
+              wave={source.wave}
+              clipDb={clipDb}
               active={marks}
               onToggle={() => setMarks((m) => !m)}
             />
-          </>
-        ) : (
-          <ClippedFlag
-            wave={source.wave}
-            clipDb={clipDb}
-            active={marks}
-            onToggle={() => setMarks((m) => !m)}
-          />
+          </div>
         )}
-        <span className="ml-auto flex shrink-0 items-center gap-0.5">
+        <span className="flex shrink-0 items-center gap-0.5">
           {/* Audacity-style L/R lanes, only when the decoder shipped them (stereo
               file, scan succeeded) and the strip shows the real wave — the preview's
               predicted envelope is mono, so the toggle hides while it is up. */}
