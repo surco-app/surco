@@ -31,8 +31,14 @@ export function SegmentedControl<T extends string>({
           data-testid={`${testidPrefix}-${id}`}
           aria-pressed={value === id}
           onClick={() => onChange(id)}
-          className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-            value === id ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-muted hover:text-fg'
+          // The selected segment reads as a RAISED pill — a soft shadow + a hairline top
+          // highlight lift it off the recessed track, the way a macOS segmented control's
+          // knob sits proud. Colour alone (panel-2 on the dark track) was too subtle a
+          // difference to call the active state unmistakably.
+          className={`rounded-md px-4 py-1.5 text-sm transition-all ${
+            value === id
+              ? 'bg-[var(--color-panel-2)] text-fg shadow-sm ring-1 ring-[var(--color-line)]'
+              : 'text-fg-muted hover:text-fg'
           }`}
         >
           {labelFor(id)}

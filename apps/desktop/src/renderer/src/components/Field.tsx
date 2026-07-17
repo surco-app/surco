@@ -113,7 +113,12 @@ export const Field = memo(function Field({
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
           onBlur={() => commit(draft)}
-          className={`w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] ${
+          // An empty field should recede, not punch a dark hole in the panel: the fill
+          // sits a hair above the panel (not the heavy near-black --color-field), the
+          // border defines the input, and focus brings the accent ring + surface up.
+          // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
+          // that dominated the form; now they wait quietly until you engage one.
+          className={`w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-3 py-2 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-panel-2)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
             hasMenu ? 'pr-8' : ''
           }`}
         />

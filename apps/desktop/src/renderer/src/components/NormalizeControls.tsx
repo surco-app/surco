@@ -115,9 +115,12 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
             data-testid={`normalize-mode-${mode}`}
             aria-pressed={value.mode === mode}
             onClick={() => onChange({ ...value, mode })}
-            className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+            // Same raised-pill active state as the shared SegmentedControl — this mode
+            // switch predates it and maps a config object, so it stays hand-rolled but
+            // must not drift from the control it looks identical to.
+            className={`rounded-md px-3 py-1.5 text-sm transition-all ${
               value.mode === mode
-                ? 'bg-[var(--color-panel-2)] text-fg'
+                ? 'bg-[var(--color-panel-2)] text-fg shadow-sm ring-1 ring-[var(--color-line)]'
                 : 'text-fg-muted hover:text-fg'
             }`}
           >
