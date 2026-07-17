@@ -146,7 +146,7 @@ export default function Header({ page }: { page?: Page }) {
       <nav
         id="mobile-nav"
         aria-hidden={!open}
-        className={`max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
+        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
           open ? 'border-line/70 opacity-100' : 'invisible -translate-y-2 border-transparent opacity-0'
         }`}
       >
