@@ -1,16 +1,28 @@
 import {
   Activity,
   ChartColumn,
+  Columns3,
+  Disc3,
   Loader2,
   Radio,
   Settings as SettingsIcon,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react'
 import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BatchSummary } from '../lib/batch'
+import { FOCUS_PRESETS, type FocusPresetId } from '../lib/focusPreset'
 import { Tooltip } from './Tooltip'
+
+// The glyph for each focus preset, in the same order FOCUS_PRESETS lists them: a record
+// for "find the release", three even columns for balanced, the audio sliders for "edit".
+const PRESET_ICONS: Record<FocusPresetId, typeof Disc3> = {
+  match: Disc3,
+  balanced: Columns3,
+  edit: SlidersHorizontal,
+}
 
 interface Props {
   isMac: boolean
@@ -19,6 +31,10 @@ interface Props {
   // binding table in App the single source of truth.
   hintFor: (id: string) => string
   trackCount: number
+  // The focus preset whose column widths currently match (null when a drag has moved them
+  // between presets, so no segment is lit), and the handler that reparks both columns.
+  focusPreset: FocusPresetId | null
+  onFocusPreset: (id: FocusPresetId) => void
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
   // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
@@ -61,6 +77,8 @@ export const Toolbar = memo(function Toolbar({
   isMac,
   hintFor,
   trackCount,
+  focusPreset,
+  onFocusPreset,
   importing,
   batchSummary,
   batching,
@@ -87,7 +105,41 @@ export const Toolbar = memo(function Toolbar({
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      <div />
+      {trackCount > 0 ? (
+        // Focus presets: repark the results column for the task at hand (find a match /
+        // balanced / edit) in one click. The divider still fine-tunes; dragging off a
+        // preset clears its highlight (focusPreset goes null). Hidden with no tracks, since
+        // there's no results or editor column to focus yet. Each button carries its own
+        // aria-label/aria-pressed, matching SegmentedControl's plain-div grouping.
+        <div
+          data-testid="focus-presets"
+          className="inline-flex items-center gap-0.5 rounded-lg bg-[var(--color-field)] p-0.5"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {FOCUS_PRESETS.map(({ id }) => {
+            const Icon = PRESET_ICONS[id]
+            const active = focusPreset === id
+            return (
+              <button
+                key={id}
+                type="button"
+                data-testid={`focus-preset-${id}`}
+                aria-pressed={active}
+                onClick={() => onFocusPreset(id)}
+                aria-label={tr(`header.focus.${id}`)}
+                className={`press group relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                  active ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-muted hover:text-fg'
+                }`}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr(`header.focus.${id}`)} />
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <div />
+      )}
       <div
         className="flex items-center gap-2"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}

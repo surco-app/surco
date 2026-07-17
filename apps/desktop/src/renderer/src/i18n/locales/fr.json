@@ -22,6 +22,11 @@
   },
   "header": {
     "add": "Ajouter des fichiers",
+    "focus": {
+      "match": "Élargir les résultats pour associer",
+      "balanced": "Colonnes équilibrées",
+      "edit": "Élargir l’éditeur"
+    },
     "convert": "Convertir",
     "convertSelectedHint": "Convertit les morceaux sélectionnés",
     "convertSelectedEmptyHint": "Sélectionne des morceaux dans la liste pour les convertir",

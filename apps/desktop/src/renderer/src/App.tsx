@@ -60,6 +60,7 @@ import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
+import { activeFocusPreset, type FocusPresetId, focusPresetWidth } from './lib/focusPreset'
 import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { shouldShowOnboarding } from './lib/onboarding'
@@ -1091,6 +1092,19 @@ export default function App(): React.JSX.Element {
     saveSettings({ resultsWidth: width }),
   )
 
+  // The results column width the editor actually renders at (315 until the user first
+  // sizes it) — the same fallback DiscogsPanel seeds its resize hook with.
+  const resultsWidth = settings?.resultsWidth ?? 315
+  // Applies a header focus preset: parks the results column at the preset's width in one
+  // click (the editor, flex-1, takes the rest). The list is left where the user dragged it.
+  // Saved directly, since the editor reads its width from settings.
+  const applyFocusPreset = useStableCallback((id: FocusPresetId) =>
+    saveSettings({ resultsWidth: focusPresetWidth(id) }),
+  )
+  // Which preset the results column currently matches (null once a drag lands between
+  // presets), so the header control lights the active one and clears when the user drags off.
+  const focusPreset = activeFocusPreset(resultsWidth)
+
   // Stable like the other editor props so a search keystroke doesn't re-render the
   // memoized Editor: records which track's field has focus for the sweep's edit guard.
   const onFieldFocusChange = useStableCallback((id: string | null) => {
@@ -1501,6 +1515,8 @@ export default function App(): React.JSX.Element {
               isMac={isMac}
               hintFor={hintFor}
               trackCount={tracks.length}
+              focusPreset={focusPreset}
+              onFocusPreset={applyFocusPreset}
               importing={importProgress}
               batchSummary={batchSummary}
               batching={batching}

@@ -22,6 +22,11 @@
   },
   "header": {
     "add": "Añadir archivos",
+    "focus": {
+      "match": "Ensanchar resultados para emparejar",
+      "balanced": "Columnas equilibradas",
+      "edit": "Ensanchar el editor"
+    },
     "convert": "Convertir",
     "convertSelectedHint": "Convierte las pistas seleccionadas",
     "convertSelectedEmptyHint": "Selecciona pistas en la lista para convertirlas",

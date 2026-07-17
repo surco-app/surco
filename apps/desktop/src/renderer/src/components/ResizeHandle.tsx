@@ -17,6 +17,10 @@ export function useResizableWidth(
   // Resizes the panel by `deficit` px (the content overflow/slack from contentDeficit),
   // clamped to [min, max] — the double-click-to-fit gesture. A zero deficit is a no-op.
   autoFit: (deficit: number) => void
+  // Parks the panel at an absolute width (clamped to [min, max]) WITHOUT committing — for
+  // syncing to a width set elsewhere (a focus preset writes settings; the panel mirrors
+  // it here), where re-committing would loop. A no-op when already at that width.
+  syncTo: (width: number) => void
 } {
   const [width, setWidth] = useState(initial)
   // Refs so the drag's window listeners and the memoized autoFit read the
@@ -71,7 +75,15 @@ export function useResizableWidth(
     [min, max],
   )
 
-  return { width, onPointerDown, autoFit }
+  const syncTo = useCallback(
+    (target: number): void => {
+      const next = Math.min(max, Math.max(min, target))
+      if (next !== widthRef.current) setWidth(next)
+    },
+    [min, max],
+  )
+
+  return { width, onPointerDown, autoFit, syncTo }
 }
 
 export function ResizeHandle({

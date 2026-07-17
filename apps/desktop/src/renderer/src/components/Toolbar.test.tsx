@@ -15,6 +15,8 @@ function renderBar(over: Partial<Props> = {}): Props {
     isMac: true,
     hintFor: () => '',
     trackCount: 3,
+    focusPreset: 'balanced',
+    onFocusPreset: vi.fn(),
     importing: null,
     batchSummary: null,
     batching: false,
@@ -98,6 +100,32 @@ describe('Toolbar', () => {
   it('shows the metadata-read progress while importing', () => {
     renderBar({ importing: { done: 212, total: 319 } })
     expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
+  })
+
+  // A focus preset reparks both columns in one click — the reason the control exists over
+  // dragging two dividers. Clicking a segment must fire with that segment's id.
+  it('applies the clicked focus preset', () => {
+    const props = renderBar()
+    fireEvent.click(screen.getByTestId('focus-preset-edit'))
+    expect(props.onFocusPreset).toHaveBeenCalledWith('edit')
+  })
+
+  // The active preset is lit (aria-pressed) so the user can see which layout they're in;
+  // the others stay unpressed. A drag off every preset (focusPreset null) lights none.
+  it('marks only the active preset, and none once dragged off', () => {
+    renderBar({ focusPreset: 'match' })
+    expect(screen.getByTestId('focus-preset-match')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
+    cleanup()
+    renderBar({ focusPreset: null })
+    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // The presets act on the results and editor columns, which don't exist until the crate
+  // has tracks — an empty list hides the whole control.
+  it('hides the focus presets when the list is empty', () => {
+    renderBar({ trackCount: 0 })
+    expect(screen.queryByTestId('focus-presets')).toBeNull()
   })
 
   // The dot is the only always-visible signal that background work is running while

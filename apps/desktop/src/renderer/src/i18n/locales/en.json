@@ -22,6 +22,11 @@
   },
   "header": {
     "add": "Add files",
+    "focus": {
+      "match": "Widen results to find the match",
+      "balanced": "Balanced columns",
+      "edit": "Widen the editor"
+    },
     "convert": "Convert",
     "convertSelectedHint": "Convert the selected tracks",
     "convertSelectedEmptyHint": "Select tracks in the list to convert them",

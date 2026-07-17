@@ -22,6 +22,11 @@
   },
   "header": {
     "add": "Dateien hinzufügen",
+    "focus": {
+      "match": "Ergebnisse zum Zuordnen verbreitern",
+      "balanced": "Ausgewogene Spalten",
+      "edit": "Editor verbreitern"
+    },
     "convert": "Konvertieren",
     "convertSelectedHint": "Konvertiert die ausgewählten Tracks",
     "convertSelectedEmptyHint": "Wähl Tracks in der Liste aus, um sie zu konvertieren",
