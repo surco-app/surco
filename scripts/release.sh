@@ -6,6 +6,12 @@ set -euo pipefail
 
 bump="${1:?usage: release.sh <patch|minor|major>}"
 
+# Type-check the desktop app before touching the version — `npm test` doesn't run tsc,
+# so a type error (which the release CI's build DOES catch) would otherwise pass the
+# test preflight, tag a broken build, and skip every publish job. Fail here instead,
+# before the tag exists.
+(cd apps/desktop && npx tsc --build)
+
 npm version "$bump" --no-git-tag-version -w apps/desktop
 version=$(node -p "require('./apps/desktop/package.json').version")
 
