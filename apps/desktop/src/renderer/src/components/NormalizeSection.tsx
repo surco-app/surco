@@ -106,12 +106,9 @@ export function NormalizeSection({
                 the file, not a control state, and the body never repeats it as
                 figures this compact. */}
             {measured && (
-              <span
-                data-testid="normalize-measured-pill"
-                className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium tabular-nums text-fg-muted"
-              >
+              <SectionPill tone="neutral" testid="normalize-measured-pill" numeric>
                 {`${formatDb(measured.integratedLufs)} LUFS · ${formatDb(measured.truePeakDb)} dBTP`}
-              </span>
+              </SectionPill>
             )}
             {/* The mode badge only while folded: open, the segmented control right
                 below says the same thing. */}

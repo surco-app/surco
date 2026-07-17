@@ -197,12 +197,9 @@ export function DeclickSection({
         right={
           <span className="flex shrink-0 items-center gap-1.5">
             {!isMulti && typeof count === 'number' && (
-              <span
-                data-testid="declick-estimate-pill"
-                className="whitespace-nowrap rounded-full bg-[var(--color-panel-2)] px-2.5 py-1 text-xs font-medium tabular-nums text-fg-muted"
-              >
+              <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
                 {count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')}
-              </span>
+              </SectionPill>
             )}
             {value !== 'off' && !open && (
               <SectionPill tone="accent" testid="declick-active-badge">

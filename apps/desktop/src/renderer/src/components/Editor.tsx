@@ -61,6 +61,7 @@ import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
+import { SectionPill } from './SectionPill'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
 import { Tooltip } from './Tooltip'
@@ -796,41 +797,43 @@ export const Editor = memo(function Editor({
                 {/* Badge first, button last: the badge appears once the snapshot resolves
                     a verdict, so keeping the button at the row's end stops it shifting when
                     the badge mounts. */}
+                {/* Library membership is a STATUS FACT, not a verdict, so it wears the
+                    neutral pill — the disc icon says what it's about, the text says
+                    which way, and no colour shouts. Coloured green/amber it competed
+                    with the quality section's real go/no-go verdict two rows down. */}
                 {!isMulti && inLibrary === 'yes' && (
-                  <span
-                    data-testid="apple-music-status"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn"
+                  <SectionPill
+                    tone="neutral"
+                    testid="apple-music-status"
+                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
                   >
-                    <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tr(
-                      librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary',
-                    )}
-                  </span>
+                    {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
+                  </SectionPill>
                 )}
                 {!isMulti && inLibrary === 'no' && (
-                  <span
-                    data-testid="apple-music-status"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-good/15 px-2.5 py-1 text-xs font-medium text-good"
+                  <SectionPill
+                    tone="neutral"
+                    testid="apple-music-status"
+                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
                   >
-                    <Disc3 className="h-3.5 w-3.5" aria-hidden="true" />
                     {tr(
                       librarySource === 'engineDj'
                         ? 'editor.notInLibraryEngine'
                         : 'editor.notInLibrary',
                     )}
-                  </span>
+                  </SectionPill>
                 )}
                 {/* The in-between state: Discogs is still searching, so its match could yet
                     prove the track owned — show "Checking…" rather than flashing not-in-library
                     and then correcting it a second later. */}
                 {!isMulti && inLibrary === 'checking' && (
-                  <span
-                    data-testid="apple-music-status"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-fg/10 px-2.5 py-1 text-xs font-medium text-fg-dim"
+                  <SectionPill
+                    tone="neutral"
+                    testid="apple-music-status"
+                    icon={<Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                   >
-                    <Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                     {tr('editor.checkingLibrary')}
-                  </span>
+                  </SectionPill>
                 )}
                 {/* Two pairs, one divider: copy/search act on the file NAME (read-only,
                     hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS.

@@ -19,17 +19,22 @@ import { LoudnessReadout } from './LoudnessReadout'
 import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
+import { SectionPill } from './SectionPill'
 import { Spectrogram } from './Spectrogram'
 import { SpectrumLoading } from './SpectrumLoading'
 import { Tooltip } from './Tooltip'
 
-const qualityBadge: Record<Verdict, { className: string; label: string }> = {
-  good: { className: 'bg-good/15 text-good', label: 'editor.qualityGood' },
-  warn: { className: 'bg-warn/15 text-warn', label: 'editor.qualitySuspect' },
-  bad: { className: 'bg-danger/15 text-danger', label: 'editor.qualityBad' },
+// The verdict pill's tone through the shared SectionPill grammar: a genuine go/no-go
+// on the audio, so it earns real colour — good is the one place green means "clean",
+// warn asks for a look, danger rejects. (Status facts like library membership stay
+// neutral, so these colours never have to compete with a plain fact.)
+const qualityBadge: Record<Verdict, { tone: 'good' | 'warn' | 'danger'; label: string }> = {
+  good: { tone: 'good', label: 'editor.qualityGood' },
+  warn: { tone: 'warn', label: 'editor.qualitySuspect' },
+  bad: { tone: 'danger', label: 'editor.qualityBad' },
   // Regenerated highs are still a reject (red), but the spectrogram looks full,
   // so the badge names the manipulation rather than calling it dull.
-  processed: { className: 'bg-danger/15 text-danger', label: 'editor.qualityProcessed' },
+  processed: { tone: 'danger', label: 'editor.qualityProcessed' },
 }
 
 // The caption under the spectrogram is where the verdict gets justified: each band
@@ -182,13 +187,12 @@ export function QualitySection({
               </button>
             )}
             {verdict && (
-              <span
-                data-testid="quality-badge"
-                data-transcode={transcoded || undefined}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium ${transcoded ? 'bg-danger/15 text-danger' : qualityBadge[verdict].className}`}
+              <SectionPill
+                tone={transcoded ? 'danger' : qualityBadge[verdict].tone}
+                testid="quality-badge"
               >
                 {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
-              </span>
+              </SectionPill>
             )}
           </div>
         }
