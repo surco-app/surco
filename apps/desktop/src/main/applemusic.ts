@@ -5,6 +5,30 @@ import { createConcurrencyLimiter } from './analysisLimiter'
 
 const run = promisify(execFile)
 
+// osascript writes its real failure reason (e.g. "execution error: Music got an error:
+// AppleEvent timed out. (-1712)") to stderr, but execFile's rejection message is
+// "Command failed: osascript -e <the entire script>" — so surfacing err.message dumps
+// the whole AppleScript at the user and hides the one line that explains what went wrong.
+// This prefers stderr, leaving err.message only as a last resort.
+function osascriptError(err: unknown): Error {
+  const e = err as { stderr?: string; message?: string }
+  const stderr = typeof e?.stderr === 'string' ? e.stderr.trim() : ''
+  if (stderr) {
+    // Drop osascript's "line:col:" prefix — it points into a script the user never wrote.
+    return new Error(stderr.replace(/^\d+:\d+:\s*/, ''))
+  }
+  return err instanceof Error ? err : new Error(String(err))
+}
+
+async function runOsascript(script: string, options?: { maxBuffer?: number }): Promise<string> {
+  try {
+    const { stdout } = await run('osascript', ['-e', script], { encoding: 'utf8', ...options })
+    return stdout
+  } catch (err) {
+    throw osascriptError(err)
+  }
+}
+
 // Apple Music imports one file at a time internally, and each add's osascript sits in a
 // retry loop (up to 60s) waiting for that import to settle. Bulk conversions now run their
 // ffmpeg in parallel, so several could reach the add at once and pile concurrent osascripts
@@ -72,23 +96,29 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
 
   return [
     'tell application "Music"',
-    `  set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
-    '  set metaSet to false',
-    '  repeat 600 times',
-    '    try',
-    ...sets,
-    '      set metaSet to true',
-    '      exit repeat',
-    '    on error errMsg number errNum',
-    '      if errNum is not -50 then error errMsg number errNum',
-    '      delay 0.1',
-    '    end try',
-    '  end repeat',
-    '  if not metaSet then error "Apple Music no terminó de importar la pista a tiempo."',
+    // Importing a long extended-mix AIFF into the library, plus writing its artwork, can
+    // outrun the default AppleEvent timeout (~120s) and abort with -1712 even though Music
+    // is still working. Widen it so a slow import settles instead of the add failing on a
+    // track that would have imported fine.
+    '  with timeout of 300 seconds',
+    `    set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
+    '    set metaSet to false',
+    '    repeat 600 times',
+    '      try',
+    ...sets.map((line) => `  ${line}`),
+    '        set metaSet to true',
+    '        exit repeat',
+    '      on error errMsg number errNum',
+    '        if errNum is not -50 then error errMsg number errNum',
+    '        delay 0.1',
+    '      end try',
+    '    end repeat',
+    '    if not metaSet then error "Apple Music no terminó de importar la pista a tiempo."',
     // The persistent ID is the only handle Music guarantees stable across sessions;
     // it travels back to the renderer so later edits update (or reveal) this exact
     // library copy instead of importing a duplicate.
-    '  return persistent ID of theTrack',
+    '    return persistent ID of theTrack',
+    '  end timeout',
     'end tell',
   ].join('\n')
 }
@@ -152,7 +182,7 @@ export function buildLocationScript(persistentId: string): string {
 }
 
 export async function appleMusicEntryLocation(persistentId: string): Promise<string> {
-  const { stdout } = await run('osascript', ['-e', buildLocationScript(persistentId)])
+  const stdout = await runOsascript(buildLocationScript(persistentId))
   return stdout.trim()
 }
 
@@ -307,7 +337,7 @@ export function parseLibraryDump(stdout: string): AppleMusicLookupCandidate[] {
 export async function dumpAppleMusicLibrary(): Promise<AppleMusicLookupCandidate[]> {
   // maxBuffer: a large library's dump can exceed execFile's 1 MB default; ~64 MB holds
   // hundreds of thousands of "name<tab>artist" rows so the snapshot never truncates.
-  const { stdout } = await run('osascript', ['-e', buildLibraryDumpScript()], {
+  const stdout = await runOsascript(buildLibraryDumpScript(), {
     maxBuffer: 64 * 1024 * 1024,
   })
   return parseLibraryDump(stdout)
@@ -318,7 +348,7 @@ export async function addToAppleMusic(
   meta: TrackMetadata,
   coverPath?: string,
 ): Promise<string> {
-  const { stdout } = await run('osascript', ['-e', buildAddScript(filePath, meta, coverPath)])
+  const stdout = await runOsascript(buildAddScript(filePath, meta, coverPath))
   return stdout.trim()
 }
 
@@ -329,16 +359,13 @@ export async function updateInAppleMusic(
   meta: TrackMetadata,
   coverPath?: string,
 ): Promise<string | null> {
-  const { stdout } = await run('osascript', [
-    '-e',
-    buildUpdateScript(persistentId, meta, coverPath),
-  ])
+  const stdout = await runOsascript(buildUpdateScript(persistentId, meta, coverPath))
   const result = stdout.trim()
   return result === 'missing' ? null : result
 }
 
 export async function revealInAppleMusic(persistentId: string): Promise<void> {
-  await run('osascript', ['-e', buildRevealScript(persistentId)])
+  await runOsascript(buildRevealScript(persistentId))
 }
 
 // null means the copy was already gone; otherwise the deleted entry's file path, ''
@@ -349,10 +376,7 @@ export async function deleteFromAppleMusic(
   persistentId: string,
   expectedLabel: string,
 ): Promise<string | null> {
-  const { stdout } = await run('osascript', [
-    '-e',
-    buildDeleteScript(persistentId, expectedLabel),
-  ])
+  const stdout = await runOsascript(buildDeleteScript(persistentId, expectedLabel))
   const result = stdout.trim()
   if (result === 'missing') return null
   if (result === 'mismatch') throw new Error('applemusic-delete-mismatch')

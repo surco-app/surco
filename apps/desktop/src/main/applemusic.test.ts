@@ -49,6 +49,22 @@ describe('buildAddScript', () => {
     expect(script).toContain('if not metaSet then error')
   })
 
+  it('widens the AppleEvent timeout so a slow import of a long track does not abort with -1712', () => {
+    // A long extended-mix AIFF plus its artwork can take longer than the default
+    // ~120s AppleEvent timeout to import, aborting a track that would have imported
+    // fine. The add/write block must sit inside a widened `with timeout` for that not
+    // to be a spurious failure.
+    const script = buildAddScript('/x.aiff', base, '/tmp/cover.jpg')
+    expect(script).toContain('with timeout of 300 seconds')
+    expect(script).toContain('end timeout')
+    const addAt = script.indexOf('add POSIX file')
+    const timeoutAt = script.indexOf('with timeout of 300 seconds')
+    const endTimeoutAt = script.indexOf('end timeout')
+    // The import and every property write must be inside the widened window.
+    expect(timeoutAt).toBeLessThan(addAt)
+    expect(addAt).toBeLessThan(endTimeoutAt)
+  })
+
   it('adds the file via POSIX path and writes only the fields that have values', () => {
     const script = buildAddScript('/Users/vicent/Music/Surco/track.aiff', base)
     expect(script).toContain(
