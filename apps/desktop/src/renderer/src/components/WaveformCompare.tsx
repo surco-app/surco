@@ -703,8 +703,17 @@ export function WaveformSolo({
         : null,
     [source.wave, normalize, source.loudness],
   )
+  // The preview scales the source envelope by the mode's linear gain; scale its RMS body
+  // by the same factor so the two-layer draw keeps its core (rms ≤ peaks holds, both
+  // scaled alike). Without it the preview would fall back to a peaks-only outline.
   const previewWave =
-    preview && source.wave ? { peaks: preview.peaks, durationSec: source.wave.durationSec } : null
+    preview && source.wave
+      ? {
+          peaks: preview.peaks,
+          rms: source.wave.rms.map((r) => r * 10 ** (preview.gainDb / 20)),
+          durationSec: source.wave.durationSec,
+        }
+      : null
   return (
     <div data-testid="waveform-solo" className="mt-3">
       <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">

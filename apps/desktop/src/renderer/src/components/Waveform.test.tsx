@@ -9,7 +9,11 @@ import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { Waveform } from './Waveform'
 
-const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
+const wave: WaveformResult = {
+  peaks: [0.1, 0.9, 0.4, 1],
+  rms: [0.05, 0.45, 0.2, 0.5],
+  durationSec: 60,
+}
 
 function renderWithQuery(ui: React.ReactElement): ReturnType<typeof render> {
   const client = createQueryClient()

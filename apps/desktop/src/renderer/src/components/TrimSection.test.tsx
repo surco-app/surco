@@ -14,14 +14,13 @@ afterEach(cleanup)
 // 100 s track with 10 s of surface noise on each side of the music: the detector
 // (pad 0.3 s) should suggest cutting ~9.7 s from the start and ~9.7 s from the end.
 function noisyEndsWave(): WaveformResult {
-  return {
-    peaks: Array.from({ length: 200 }, (_, i) => (i >= 20 && i < 180 ? 0.3 : 0.0005)),
-    durationSec: 100,
-  }
+  const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 && i < 180 ? 0.3 : 0.0005))
+  return { peaks, rms: peaks, durationSec: 100 }
 }
 
 function musicOnlyWave(): WaveformResult {
-  return { peaks: Array.from({ length: 200 }, () => 0.3), durationSec: 100 }
+  const peaks = Array.from({ length: 200 }, () => 0.3)
+  return { peaks, rms: peaks, durationSec: 100 }
 }
 
 const play = vi.fn()
@@ -98,7 +97,6 @@ describe('TrimSection', () => {
       expect(s.parentElement?.className).toContain('h-24')
     }
   })
-
 
   // The detection only suggests — nothing is staged until a scissors marker is
   // clicked, and each side stages alone, so "only the end" is one click. The

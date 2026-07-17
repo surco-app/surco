@@ -117,7 +117,7 @@ const api: Api = {
     startSec: number,
     durSec: number,
     buckets: number,
-  ): Promise<{ peaks: number[] } | null> =>
+  ): Promise<{ peaks: number[]; rms: number[] } | null> =>
     ipcRenderer.invoke('audio:waveformWindow', path, startSec, durSec, buckets),
   declickPreview: (path, mode) => ipcRenderer.invoke('audio:declickPreview', path, mode),
   onDeclickPreviewProgress: (fn: (done: number) => void) => {

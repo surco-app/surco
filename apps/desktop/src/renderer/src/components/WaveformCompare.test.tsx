@@ -9,9 +9,17 @@ import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { AFTER_COLOR, Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
 
-const wave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
+const wave: WaveformResult = {
+  peaks: [0.1, 0.9, 0.4, 1],
+  rms: [0.05, 0.45, 0.2, 0.5],
+  durationSec: 60,
+}
 
-const stereoWave: WaveformResult = { peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }
+const stereoWave: WaveformResult = {
+  peaks: [0.1, 0.9, 0.4, 1],
+  rms: [0.05, 0.45, 0.2, 0.5],
+  durationSec: 60,
+}
 
 // The clip/channel scan now arrives from its own probe (window.api.waveformScan), so the
 // clip marks and split lanes are mocked separately from the peaks.

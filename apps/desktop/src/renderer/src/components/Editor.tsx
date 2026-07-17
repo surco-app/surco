@@ -902,7 +902,10 @@ export const Editor = memo(function Editor({
             return editorSections
               .filter((s) => s.id !== 'form' && s.hidden !== true)
               .flatMap(({ id }) => {
-                const element = ((): React.ReactNode => {
+                // Typed as element-or-falsy (not the wider ReactNode) so the arrays
+                // returned below are Element lists flatMap accepts, and the `!element`
+                // guard narrows to a real element.
+                const element = ((): React.ReactElement | false | null => {
                   switch (id) {
                   case 'properties':
                     return (
@@ -1050,22 +1053,28 @@ export const Editor = memo(function Editor({
                 // so it neither shows a heading nor shifts the column's phase — the
                 // heading belongs to whatever visible section takes over the flow.
                 if (element && id === maximized) {
-                  return createPortal(
-                    <div
-                      data-testid="section-maximized-overlay"
-                      className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
-                    >
-                      {element}
-                    </div>,
-                    document.body,
-                    id,
-                  )
+                  // Wrapped in an array like every other branch, so flatMap's callback has
+                  // one return shape (a node list) instead of a bare portal.
+                  return [
+                    createPortal(
+                      <div
+                        data-testid="section-maximized-overlay"
+                        className="fixed inset-0 z-50 overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                      >
+                        {element}
+                      </div>,
+                      document.body,
+                      id,
+                    ),
+                  ]
                 }
                 // A section hidden by its own conditions (null) doesn't advance the
                 // phase either — the next visible section still opens its group.
                 if (!element) return []
                 const group = EDITOR_SECTION_GROUP[id]
-                if (group === lastGroup) return element
+                // Wrapped in an array (like the heading branch below) so flatMap gets a
+                // node list, not a bare ReactNode it would try to treat as iterable.
+                if (group === lastGroup) return [element]
                 lastGroup = group
                 const label =
                   group === 'audio'

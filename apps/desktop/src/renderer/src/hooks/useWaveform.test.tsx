@@ -7,7 +7,7 @@ import type { WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import { useWaveform } from './useWaveform'
 
-const sample: WaveformResult = { peaks: [0.1, 0.9, 0.4], durationSec: 212 }
+const sample: WaveformResult = { peaks: [0.1, 0.9, 0.4], rms: [0.05, 0.45, 0.2], durationSec: 212 }
 
 function setApi(waveform: ReturnType<typeof vi.fn>): void {
   ;(window as unknown as { api: unknown }).api = { waveform }

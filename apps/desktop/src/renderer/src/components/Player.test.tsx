@@ -11,7 +11,11 @@ import type { TrackItem } from '../types'
 import { LivePlayer, Player } from './Player'
 import '../i18n'
 
-const wave: WaveformResult = { peaks: [0.2, 0.8, 0.5, 1], durationSec: 60 }
+const wave: WaveformResult = {
+  peaks: [0.2, 0.8, 0.5, 1],
+  rms: [0.1, 0.4, 0.25, 0.5],
+  durationSec: 60,
+}
 
 // The embedded waveform reads its envelope through React Query off window.api and
 // draws to a canvas — both absent in jsdom, so stub the bridge and the 2D context.
