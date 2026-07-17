@@ -136,7 +136,6 @@ describe('filterCommands', () => {
     expect(filterCommands(cmds, 'formáto', {}).map((c) => c.id)).toEqual(['apply-title-format'])
   })
 
-
   it('returns every command when the query is empty, so the menu is browsable', () => {
     expect(filterCommands(commands, '').map((c) => c.id)).toEqual(['add', 'settings', 'all'])
   })
@@ -259,17 +258,41 @@ describe('runCommand', () => {
 
 describe('buildCommands convert-and-advance', () => {
   // ⌘⏎ kicks off the current track's conversion (which runs in the background) and moves
-  // to the next track, so the shortcut works through the crate without a manual step.
-  it('processes the selected track then advances the selection', () => {
-    const processOne = vi.fn()
+  // to the next track, so the shortcut works through the crate without a manual step. The
+  // advance rides processOne's onStarted callback so an in-place overwrite confirms first:
+  // it fires when the run actually commits, not while a confirm dialog is still open.
+  it('processes the selected track then advances the selection when the run starts', () => {
+    // Fire onStarted synchronously, standing in for a conversion that starts with no confirm.
+    const processOne = vi.fn((_id, _f, _n, _r, _d, _dk, onStarted?: () => void) => onStarted?.())
     const moveSelection = vi.fn()
     const cmd = commandById(
       makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
       'process-current',
     )
     cmd.run()
-    expect(processOne).toHaveBeenCalledWith('t1', undefined, undefined, undefined, undefined, undefined)
+    expect(processOne).toHaveBeenCalledWith(
+      't1',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      expect.any(Function),
+    )
     expect(moveSelection).toHaveBeenCalledWith(1)
+  })
+
+  // A cancelled overwrite confirm never calls onStarted, so the selection must stay put —
+  // the shortcut can't step past a track whose conversion the user just declined.
+  it('leaves the selection put when the run never starts (confirm cancelled)', () => {
+    const processOne = vi.fn() // never invokes onStarted
+    const moveSelection = vi.fn()
+    const cmd = commandById(
+      makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
+      'process-current',
+    )
+    cmd.run()
+    expect(moveSelection).not.toHaveBeenCalled()
   })
 })
 

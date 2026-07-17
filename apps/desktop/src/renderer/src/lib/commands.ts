@@ -176,6 +176,9 @@ export interface CommandDeps {
     forceReencode?: boolean,
     destination?: Destination,
     declick?: DeclickMode,
+    // Fires when the conversion actually starts (after an overwrite confirm, if any), so
+    // convert-and-advance only steps the selection once the run commits.
+    onStarted?: () => void,
   ) => unknown
   askConvertAll: (
     targets: TrackItem[],
@@ -504,6 +507,10 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: canProcessSelected,
       run: () => {
         if (!selected) return
+        // Convert-and-advance: the conversion runs in the background, so move straight to
+        // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
+        // The advance rides onStarted so an in-place overwrite confirms first: a cancelled
+        // dialog leaves the selection put, and a confirmed one advances as it fires.
         processOne(
           selected.id,
           editorFormatRef.current ?? undefined,
@@ -511,10 +518,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
           undefined,
           editorDestinationRef.current ?? undefined,
           editorDeclickRef.current ?? undefined,
+          () => moveSelection(1),
         )
-        // Convert-and-advance: the conversion runs in the background, so move straight to
-        // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
-        moveSelection(1)
       },
     },
     {

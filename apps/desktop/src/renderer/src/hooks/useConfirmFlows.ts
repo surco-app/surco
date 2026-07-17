@@ -61,6 +61,14 @@ export interface ConfirmFlows {
     destination?: Destination,
     declick?: DeclickMode,
   ) => void
+  // The single-track counterpart of askConvertAll: it decides overwrite the same way,
+  // then runs the conversion the caller wired (donate nudge, re-encode) rather than the
+  // batch path — so one convert and a batch convert confirm the same irreversible write.
+  askConvertOne: (
+    track: TrackItem,
+    run: () => void,
+    opts?: { destination?: Destination },
+  ) => void
 }
 
 // The destructive/overwriting actions that confirm before firing: trash, delete original,
@@ -279,6 +287,32 @@ export function useConfirmFlows({
     })
   }
 
+  // A single in-place convert unlinks its source just as a batch does, so it asks the
+  // same question before firing. Reused by every entry point to single conversion (the
+  // editor button and the process-current command) via the run callback, which carries
+  // the donate nudge and re-encode the batch path doesn't. Away from overwrite it fires
+  // straight through — only new files are written.
+  function askConvertOne(
+    track: TrackItem,
+    run: () => void,
+    opts: { destination?: Destination } = {},
+  ): void {
+    const overwriting = opts.destination
+      ? opts.destination === 'overwrite'
+      : settings?.overwriteOriginal
+    if (!overwriting) {
+      run()
+      return
+    }
+    openConfirm({
+      title: tr('confirm.convertInPlaceTitle'),
+      message: tr('confirm.convertInPlaceMessage', { count: 1 }),
+      confirmLabel: tr('confirm.convertInPlaceConfirm'),
+      destructive: true,
+      onConfirm: run,
+    })
+  }
+
   return {
     askTrash,
     askDeleteOriginal,
@@ -287,5 +321,6 @@ export function useConfirmFlows({
     askClearAll,
     askRemoveFromList,
     askConvertAll,
+    askConvertOne,
   }
 }

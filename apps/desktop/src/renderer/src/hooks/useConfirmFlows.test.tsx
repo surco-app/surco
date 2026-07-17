@@ -2,6 +2,7 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
+import type { Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import '../i18n'
 import type { ConfirmModal } from './useOverlays'
@@ -25,12 +26,13 @@ function setup(
     onOldMusicCopyRemoved?: ReturnType<typeof vi.fn<() => void>>
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn<(mismatch: boolean) => void>>
     updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
+    settings?: Settings | null
   } = {},
 ) {
   const opened: ConfirmModal[] = []
   const { result } = renderHook(() =>
     useConfirmFlows({
-      settings: null,
+      settings: extra.settings ?? null,
       removeTrack: vi.fn(),
       updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
@@ -160,6 +162,44 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
     })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
+  })
+})
+
+describe('useConfirmFlows single-track overwrite', () => {
+  // Overwriting one source in place is exactly as destructive as overwriting many — the
+  // original is unlinked, not trashed. The batch path already confirms; the single path
+  // must not fire straight into the conversion just because only one track is selected,
+  // or the same irreversible write behaves differently by selection size.
+  it('confirms before an in-place single-track convert', () => {
+    const { flows, opened } = setup([track('a')])
+    const run = vi.fn()
+    flows.askConvertOne(track('a'), run, { destination: 'overwrite' })
+    expect(opened[0].destructive).toBe(true)
+    expect(run).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  // Every non-overwrite destination only writes new files, so a single convert there stays
+  // one action with no dialog — the confirmation is reserved for the irreversible case.
+  it('fires straight through for a non-overwrite single-track convert', () => {
+    const { flows, opened } = setup([track('a')])
+    const run = vi.fn()
+    flows.askConvertOne(track('a'), run, { destination: 'beside' })
+    expect(opened).toHaveLength(0)
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  // With no one-shot destination override the live setting decides, exactly as the batch
+  // path resolves it — an overwrite setting must still confirm a single convert.
+  it('confirms a single convert when the overwrite setting is on and no override is given', () => {
+    const { flows, opened } = setup([track('a')], {
+      settings: { overwriteOriginal: true } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(track('a'), run)
+    expect(opened[0].destructive).toBe(true)
+    expect(run).not.toHaveBeenCalled()
   })
 })
 

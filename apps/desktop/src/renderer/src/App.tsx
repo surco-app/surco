@@ -725,6 +725,7 @@ export default function App(): React.JSX.Element {
     batchProgress,
     batchSummary,
     cancelBatch,
+    cancelOne,
   } = useTrackProcessing({
     tracks,
     settings,
@@ -778,6 +779,7 @@ export default function App(): React.JSX.Element {
     askClearAll,
     askRemoveFromList,
     askConvertAll,
+    askConvertOne,
   } = useConfirmFlows({
     settings,
     removeTrack,
@@ -980,6 +982,11 @@ export default function App(): React.JSX.Element {
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
   const autoMatchable = useMemo(() => tracksToAutoMatch(visibleTracks).length, [visibleTracks])
+  // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
+  // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
+  // dead end. Only with tracks loaded — nothing to match on an empty list.
+  const needsToken =
+    tracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -1025,6 +1032,9 @@ export default function App(): React.JSX.Element {
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
+  // The toolbar's "add a token" fix (shown when auto-match is on but no token is set) opens
+  // Settings straight to Search, where the Discogs token lives.
+  const onFixToken = useStableCallback(() => openSettings('search'))
   // Toolbar is memoized so a keystroke in a metadata field doesn't re-render it;
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
@@ -1125,32 +1135,45 @@ export default function App(): React.JSX.Element {
   // Converting a single track is the donate nudge's moment of value, so every entry
   // point to it must run through here — the Editor's convert button and the
   // process-current command/shortcut alike — or the same action nudges from one and
-  // stays silent from the other.
+  // stays silent from the other. It is also the single funnel that confirms an in-place
+  // overwrite, so a single convert asks the same question a batch does regardless of the
+  // entry point (button or ⌘⏎), and never fires straight into an irreversible write.
   const convertSelected = useStableCallback(
-    async (
+    (
       id: string,
       format?: OutputFormat,
       normalize?: NormalizeConfig,
       forceReencode?: boolean,
       destination?: Destination,
       declick?: DeclickMode,
+      // Runs the moment the conversion actually starts — immediately when it fires straight
+      // through, or on confirm when an in-place overwrite asks first. process-current uses it
+      // to advance the selection only once the run commits, so a cancelled confirm doesn't
+      // step past the track and the advance never lands behind the open dialog.
+      onStarted?: () => void,
     ) => {
-      const outcome = await processOne(
-        id,
-        format,
-        normalize,
-        undefined,
-        forceReencode,
-        destination,
-        declick,
+      const track = tracksRef.current.find((t) => t.id === id)
+      if (!track) return
+      askConvertOne(
+        track,
+        () => {
+          onStarted?.()
+          void processOne(id, format, normalize, undefined, forceReencode, destination, declick).then(
+            (outcome) => {
+              if (outcome === 'converted') void maybeShowDonateNudge()
+            },
+          )
+        },
+        { destination },
       )
-      if (outcome === 'converted') void maybeShowDonateNudge()
-      return outcome
     },
   )
-  const onProcessSelected = useStableCallback(async (format: OutputFormat) => {
+  const onCancelSelected = useStableCallback(() => {
+    if (selected) cancelOne(selected.id)
+  })
+  const onProcessSelected = useStableCallback((format: OutputFormat) => {
     if (selected)
-      await convertSelected(
+      void convertSelected(
         selected.id,
         format,
         editorNormalizeRef.current ?? undefined,
@@ -1161,9 +1184,9 @@ export default function App(): React.JSX.Element {
   })
   // The editor's explicit "Re-encode": a same-format source rendered again with the
   // pinned quality applied — the only path that sets forceReencode.
-  const onReencodeSelected = useStableCallback(async (format: OutputFormat) => {
+  const onReencodeSelected = useStableCallback((format: OutputFormat) => {
     if (selected)
-      await convertSelected(
+      void convertSelected(
         selected.id,
         format,
         editorNormalizeRef.current ?? undefined,
@@ -1525,11 +1548,13 @@ export default function App(): React.JSX.Element {
               allAnalyzed={allAnalyzed}
               matching={matching}
               hasToken={!!settings?.discogsToken}
+              needsToken={needsToken}
               autoMatchable={autoMatchable}
               onAnalyzeAll={onAnalyzeAll}
               onCancelAnalyze={cancelAnalysis}
               onAutoMatch={onAutoMatchAll}
               onCancelAutoMatch={cancelAutoMatch}
+              onFixToken={onFixToken}
               onCancelBatch={cancelBatch}
               onPalette={onOpenPalette}
               onStats={onOpenStats}
@@ -1687,6 +1712,7 @@ export default function App(): React.JSX.Element {
                     onFieldFocusChange={onFieldFocusChange}
                     onChange={onEditorChange}
                     onProcess={onProcessSelected}
+                    onCancel={onCancelSelected}
                     onReencode={onReencodeSelected}
                     onFormatChange={onFormatChange}
                     onDestinationChange={onDestinationChange}
