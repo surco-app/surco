@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.62",
+    "date": "17 de julio de 2026",
+    "title": "El editor, por fases",
+    "items": [
+      {
+        "text": "El editor ahora se lee en tres fases: Archivo, Audio y Salida. Cada bloque de secciones lleva su rótulo con una marca de acento, así que de un vistazo sabes en qué parte del trabajo estás — corregir los datos, limpiar el sonido o elegir cómo exportar — en vez de una lista larga de secciones sueltas.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Presets de foco en la cabecera. Tres iconos reparten el espacio de la columna de resultados según lo que estás haciendo: ancha para buscar el disco, equilibrada, o al mínimo para que el editor respire. Un clic en vez de arrastrar el divisor cada vez.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Las secciones de reparación de clicks y de loudness se pueden maximizar, como el resto de secciones con onda, para trabajar el detalle sin que el resto del editor te robe sitio.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Las ondas se dibujan con más información: un cuerpo relleno que marca el nivel RMS real y las marcas de recorte como líneas de altura completa, así ves de un golpe dónde el audio va fuerte y dónde satura.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Los ajustes de loudness quedan más ordenados: cada preset va junto a su campo numérico como un único control, la leyenda se lee en dos líneas y la ganancia aplicada aparece como un chip con signo.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Nueva opción «Buscar en Google» en el menú de la pista, para abrir una búsqueda del título directamente desde la lista.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Se retira el beatgrid. El BPM y la recolocación de cues al recortar se mantienen; la rejilla de beats deja de formar parte de la app.",
+        "in": "0.62.0"
+      }
+    ]
+  },
+  {
     "version": "0.61",
     "date": "16 de julio de 2026",
     "title": "Coincidencias más rápidas",

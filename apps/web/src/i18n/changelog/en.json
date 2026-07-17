@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.62",
+    "date": "July 17, 2026",
+    "title": "The editor, in phases",
+    "items": [
+      {
+        "text": "The editor now reads in three phases: File, Audio and Output. Each block of sections carries its own heading with an accent tick, so at a glance you know which part of the job you're in — fixing the tags, cleaning up the sound, or choosing how to export — instead of one long list of loose sections.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Focus presets in the header. Three icons split the results column's space to match what you're doing: wide to find the release, balanced, or at its minimum so the editor can breathe. One click instead of dragging the divider every time.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "The click-repair and loudness sections can now be maximized, like the other waveform sections, so you can work the detail without the rest of the editor crowding you out.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "Waveforms are drawn with more information: a filled body marking the real RMS level and clip marks as full-height lines, so you can see at a glance where the audio runs loud and where it clips.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "The loudness controls are tidier: each preset sits next to its number field as one control, the legend reads in two lines, and the applied gain shows as a signed chip.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "New \"Search on Google\" option in the track menu, to open a search for the title straight from the list.",
+        "in": "0.62.0"
+      },
+      {
+        "text": "The beatgrid is retired. BPM and cue relocation on trimming stay; the beat grid is no longer part of the app.",
+        "in": "0.62.0"
+      }
+    ]
+  },
+  {
     "version": "0.61",
     "date": "July 16, 2026",
     "title": "Faster matches",
