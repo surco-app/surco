@@ -227,6 +227,10 @@ function setApi(over: Record<string, unknown> = {}): void {
     // hand back an unsubscribe even in tests that never open it.
     onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
+    // Fired at the top of every convert-all run (it resets main's conflict-decision
+    // memory) and to cancel a single convert; stub both so processAll doesn't throw.
+    beginConversionBatch: vi.fn(),
+    cancelJob: vi.fn(),
     ...over,
   }
 }

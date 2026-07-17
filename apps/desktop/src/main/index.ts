@@ -1,7 +1,7 @@
 import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, } from 'node:path'
+import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
@@ -22,11 +22,10 @@ import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../sh
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type { CoverExportJob, ProcessJob, SessionEdit, Settings } from '../shared/types'
+import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
-import { installCrashGuards, wireRendererRecovery } from './crashGuards'
-import { parseDockFrames } from './dockFrames'
 import {
   addToAppleMusic,
   appleMusicEntryLocation,
@@ -34,27 +33,26 @@ import {
   deleteFromAppleMusic,
   updateInAppleMusic,
 } from './applemusic'
-import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
-import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
+import { installCrashGuards, wireRendererRecovery } from './crashGuards'
+import { parseDockFrames } from './dockFrames'
+import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
+import { registerExportIpc } from './exportIpc'
 import { convertAudio } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
-import { createActiveConversions } from './activeConversions'
 import { createMediaAccess } from './mediaAccess'
-import { createOutputReservations } from './outputReservations'
-import { createTmpManifest } from './tmpManifest'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
+import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
-import { registerExportIpc } from './exportIpc'
-import { registerShellIpc } from './shellIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -66,6 +64,9 @@ import {
   saveSettings,
   setConfigDir,
 } from './settings'
+import { registerShellIpc } from './shellIpc'
+import { createStickyConflict } from './stickyConflict'
+import { createTmpManifest } from './tmpManifest'
 import { wireUpdateDelivery } from './updateDelivery'
 import { armUpdateRecheck } from './updateRecheck'
 import { onWatchedFilesChanged } from './watchedFiles'
@@ -102,6 +103,12 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+// A file-name conflict prompts once per collision, so a batch of similarly-named rips used
+// to interrupt N times. When the user ticks "apply to the rest", that decision is remembered
+// here and reused for every later conflict in the same run — module-scoped so it persists
+// across the separate process:track IPC calls a batch fans out into, and cleared at the top
+// of each run (process:batch-begin) so it never leaks a stale choice into the next batch.
+const stickyConflict = createStickyConflict()
 // The trail a crash or force-quit mid-encode leaves for the NEXT launch to sweep.
 // Always userData (never a user music folder), so a corrupt or stale manifest
 // only ever risks deleting paths this app itself wrote.
@@ -698,6 +705,12 @@ function registerIpc(): void {
     if (typeof jobId === 'string') activeConversions.cancel(jobId)
   })
 
+  // A convert-all run starts: forget any "apply to the rest" conflict choice the previous
+  // run left, so this batch begins asking again rather than silently reusing a stale one.
+  ipcMain.on('process:batch-begin', () => {
+    stickyConflict.reset()
+  })
+
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {
       settings: getSettings(),
@@ -826,22 +839,30 @@ function registerIpc(): void {
       rm,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
-      confirmConflict: async (outputName) => {
-        const t = createMenuT(menuLocale())
-        const win = BrowserWindow.fromWebContents(e.sender)
-        const opts = {
-          type: 'warning' as const,
-          message: outputName,
-          detail: t('conflictExists'),
-          buttons: [t('conflictOverwrite'), t('conflictKeepBoth'), t('conflictSkip')],
-          defaultId: 1,
-          cancelId: 2,
-        }
-        const { response } = win
-          ? await dialog.showMessageBox(win, opts)
-          : await dialog.showMessageBox(opts)
-        return response === 2 ? 'skip' : response === 1 ? 'keepBoth' : 'overwrite'
-      },
+      confirmConflict: (outputName) =>
+        // A prior conflict in this run may already have answered for the rest — resolve
+        // reuses that without prompting again. Cleared at process:batch-begin, never
+        // spanning two runs. Otherwise it shows the box and remembers the choice only when
+        // the "apply to the rest" checkbox was ticked.
+        stickyConflict.resolve(async () => {
+          const t = createMenuT(menuLocale())
+          const win = BrowserWindow.fromWebContents(e.sender)
+          const opts = {
+            type: 'warning' as const,
+            message: outputName,
+            detail: t('conflictExists'),
+            buttons: [t('conflictOverwrite'), t('conflictKeepBoth'), t('conflictSkip')],
+            defaultId: 1,
+            cancelId: 2,
+            checkboxLabel: t('conflictApplyRemaining'),
+            checkboxChecked: false,
+          }
+          const { response, checkboxChecked } = win
+            ? await dialog.showMessageBox(win, opts)
+            : await dialog.showMessageBox(opts)
+          const decision = response === 2 ? 'skip' : response === 1 ? 'keepBoth' : 'overwrite'
+          return { decision, remember: checkboxChecked }
+        }),
       appleMusicEntryLocation,
       // The rollback for an "Apple Music only" add that must not stand. The label is
       // what the delete script verifies the live entry against — the tags the add

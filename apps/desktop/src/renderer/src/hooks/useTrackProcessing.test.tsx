@@ -44,7 +44,9 @@ function track(
 }
 
 function setApi(over: Record<string, unknown>): void {
-  ;(window as unknown as { api: unknown }).api = over
+  // beginConversionBatch fires at the top of every processAll run (it resets main's
+  // conflict-decision memory), so stub it by default; a test that cares can still override.
+  ;(window as unknown as { api: unknown }).api = { beginConversionBatch: vi.fn(), ...over }
 }
 
 // The hook evicts probe caches on in-place exports, so every render needs a

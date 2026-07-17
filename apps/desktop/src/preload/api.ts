@@ -94,6 +94,10 @@ export interface Api {
     track: string,
   ) => Promise<{ outcome: 'deleted' | 'missing'; location?: string } | undefined>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
+  // Marks the start of a convert-all run so main forgets any "apply to the rest"
+  // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
+  // so their conflicts always prompt.
+  beginConversionBatch: () => void
   // Reaches an encode already in flight for this job id; a no-op if it already
   // finished or never started. Fire-and-forget, mirroring dock:frames/track:drag.
   cancelJob: (jobId: string) => void

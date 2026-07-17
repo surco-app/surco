@@ -41,6 +41,7 @@ interface MenuStrings {
   conflictOverwrite: string
   conflictKeepBoth: string
   conflictSkip: string
+  conflictApplyRemaining: string
   appleMusicGone: string
   engineQuitMessage: string
   engineQuitDetail: string
@@ -84,6 +85,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Sobrescribir',
     conflictKeepBoth: 'Conservar ambos',
     conflictSkip: 'Saltar',
+    conflictApplyRemaining: 'Aplicar al resto de conflictos de esta conversión',
     appleMusicGone: 'La pista ya no está en tu biblioteca de Apple Music.',
     engineQuitMessage: 'Engine DJ está abierto',
     engineQuitDetail:
@@ -126,6 +128,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Overwrite',
     conflictKeepBoth: 'Keep both',
     conflictSkip: 'Skip',
+    conflictApplyRemaining: 'Apply to the rest of this conversion’s conflicts',
     appleMusicGone: 'The track is no longer in your Apple Music library.',
     engineQuitMessage: 'Engine DJ is open',
     engineQuitDetail:
@@ -168,6 +171,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Überschreiben',
     conflictKeepBoth: 'Beide behalten',
     conflictSkip: 'Überspringen',
+    conflictApplyRemaining: 'Auf die übrigen Konflikte dieser Konvertierung anwenden',
     appleMusicGone: 'Der Track ist nicht mehr in deiner Apple Music-Bibliothek.',
     engineQuitMessage: 'Engine DJ ist geöffnet',
     engineQuitDetail: 'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
@@ -209,6 +213,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Écraser',
     conflictKeepBoth: 'Conserver les deux',
     conflictSkip: 'Ignorer',
+    conflictApplyRemaining: 'Appliquer au reste des conflits de cette conversion',
     appleMusicGone: 'Le morceau n\'est plus dans ta bibliothèque Apple Music.',
     engineQuitMessage: 'Engine DJ est ouvert',
     engineQuitDetail: 'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
@@ -250,6 +255,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictOverwrite: 'Sobrescrever',
     conflictKeepBoth: 'Manter ambos',
     conflictSkip: 'Pular',
+    conflictApplyRemaining: 'Aplicar aos demais conflitos desta conversão',
     appleMusicGone: 'A faixa não está mais na sua biblioteca do Apple Music.',
     engineQuitMessage: 'O Engine DJ está aberto',
     engineQuitDetail: 'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
