@@ -45,6 +45,10 @@ interface ExportButtonProps {
   destination: Destination
   destinations: readonly Destination[]
   onProcess: (format: OutputFormat) => void
+  // When given, the button stays live while converting: clicking it cancels the in-flight
+  // job instead of firing another convert. Single-only — multi cancels via the toolbar
+  // batch pill — so it's absent (an inert progress bar) in the multi/quiet uses.
+  onCancel?: () => void
   onSelectFormat: (format: OutputFormat) => void
   onSelectDestination: (destination: Destination) => void
 }
@@ -72,6 +76,7 @@ export function ExportButton({
   destination,
   destinations,
   onProcess,
+  onCancel,
   onSelectFormat,
   onSelectDestination,
 }: ExportButtonProps): React.JSX.Element {
@@ -109,6 +114,10 @@ export function ExportButton({
   // STAGE_PROGRESS marks). Only for the prominent button — the quiet re-export
   // variant never shows a processing state.
   const liveStage = !quiet && processing ? stage : undefined
+  // A single convert can be cancelled while it runs: the progress-bar button stays live and
+  // a click stops the job. Only when a cancel handler is wired (single, non-quiet) and the
+  // track is actually converting — the multi/quiet uses keep the inert bar.
+  const cancellable = !quiet && processing && !!onCancel
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: outputFormat.toUpperCase() })
     : tr(labelSpec.key, labelSpec.options)
@@ -135,8 +144,12 @@ export function ExportButton({
       <button
         type="button"
         data-testid="process-btn"
-        onClick={() => onProcess(outputFormat)}
-        disabled={blocked}
+        // While converting, a click cancels (when cancellable) rather than firing a second
+        // convert; the same button is the progress bar and its own stop control.
+        onClick={cancellable ? onCancel : () => onProcess(outputFormat)}
+        // Cancellable keeps the button live during the convert; otherwise the old block
+        // (missing tags, or a non-cancellable processing state) still disables it.
+        disabled={blocked && !cancellable}
         className={
           quiet
             ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
@@ -155,7 +168,13 @@ export function ExportButton({
             style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
           />
         )}
-        <span className="relative">{label}</span>
+        {/* Converting: the stage names progress by default, and a hover swaps in "Cancel"
+            so the click's effect is legible before it's made. Without a cancel handler the
+            stage label just stays. */}
+        <span className={`relative ${cancellable ? 'group-hover:hidden' : ''}`}>{label}</span>
+        {cancellable && (
+          <span className="relative hidden group-hover:inline">{tr('common.cancel')}</span>
+        )}
       </button>
       <button
         type="button"

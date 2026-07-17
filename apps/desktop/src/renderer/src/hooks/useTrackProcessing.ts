@@ -75,6 +75,7 @@ export interface TrackProcessing {
   batchProgress: { done: number; total: number }
   batchSummary: BatchSummary | null
   cancelBatch: () => void
+  cancelOne: (id: string) => void
 }
 
 // The conversion pipeline: convert a single track or a whole selection (with cancel and
@@ -356,6 +357,9 @@ export function useTrackProcessing({
       const pinnedOverwrite = destinationOverride ? undefined : settings?.overwriteOriginal
       cancelBatchRef.current = false
       runningIdsRef.current = ids
+      // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
+      // left, so this one starts asking again rather than reusing a stale decision.
+      window.api.beginConversionBatch()
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
@@ -404,6 +408,14 @@ export function useTrackProcessing({
     for (const id of runningIdsRef.current) window.api.cancelJob(id)
   })
 
+  // Cancel a single in-flight conversion — the editor's convert button uses this so a
+  // long single convert has the escape a batch always had. The job is keyed by track id
+  // (processTrack passes id: track.id), and killing a finished job is a main-side no-op,
+  // so the caller can fire this without racing the completion.
+  const cancelOne = useStableCallback((id: string): void => {
+    window.api.cancelJob(id)
+  })
+
   return {
     processOne,
     processAll,
@@ -413,5 +425,6 @@ export function useTrackProcessing({
     batchProgress,
     batchSummary,
     cancelBatch,
+    cancelOne,
   }
 }

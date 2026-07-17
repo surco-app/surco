@@ -47,6 +47,9 @@ interface ConvertFooterProps {
   // Pre-resolved by the editor: converts the selection in multi mode, the open track
   // in single, so the footer never forks on it.
   onProcess: (format: OutputFormat) => void
+  // Cancels the in-flight single conversion; the primary button turns into a cancel while
+  // it runs. Undefined in multi, where the toolbar batch pill owns the cancel.
+  onCancel?: () => void
   onAddToAppleMusic?: () => void
   onTrashOriginal?: () => void
   // The library copy this track's add superseded (the old rip the fresh copy replaces),
@@ -86,6 +89,7 @@ export function ConvertFooter({
   onSelectFormat,
   onSelectDestination,
   onProcess,
+  onCancel,
   onAddToAppleMusic,
   onTrashOriginal,
   staleMusicCopy,
@@ -283,6 +287,7 @@ export function ConvertFooter({
               destinations={destinations}
               count={isMulti ? selectedCount : undefined}
               onProcess={onProcess}
+              onCancel={onCancel}
               onSelectFormat={onSelectFormat}
               onSelectDestination={onSelectDestination}
             />

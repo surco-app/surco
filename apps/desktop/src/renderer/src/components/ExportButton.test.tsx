@@ -110,6 +110,36 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-progress')).toHaveStyle({ width: '85%' })
   })
 
+  // A long single convert used to be a dead progress bar with no escape. With a cancel
+  // handler the button stays live while converting: clicking it stops the job instead of
+  // firing another convert, so the single flow has the escape a batch always had.
+  it('cancels the in-flight convert on click instead of staying a dead bar', () => {
+    const onProcess = vi.fn()
+    const onCancel = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onProcess={onProcess}
+        onCancel={onCancel}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toBeEnabled()
+    fireEvent.click(btn)
+    expect(onCancel).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // Without a cancel handler the processing button stays the inert progress bar it was —
+  // the cancel affordance is opt-in, so the multi/quiet uses are unaffected.
+  it('stays a disabled bar while processing when no cancel handler is given', () => {
+    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />)
+    expect(screen.getByTestId('process-btn')).toBeDisabled()
+  })
+
   it('names the picked format in the converting stage label', () => {
     render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />)
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Converting to AIFF…')
