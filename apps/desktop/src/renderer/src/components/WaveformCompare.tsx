@@ -21,9 +21,8 @@ import { WaveformSkeleton } from './WaveformSkeleton'
 // Half the player strip's raster per side-by-side column (each sits in half the
 // panel width); the overlaid canvas spans the panel, so it gets the full raster.
 const CANVAS_W = 600
-// Exported (with the strip and its blue) for the trim section, whose full-width
-// wave must read as the same instrument as the loudness preview's.
-export const OVERLAY_W = 1200
+// The overlaid canvas spans the panel, so it gets the full raster.
+const OVERLAY_W = 1200
 // 1.5× the strips' 96 CSS px, so the taller wave stays supersampled-crisp.
 const CANVAS_H = 144
 
@@ -170,7 +169,7 @@ export function Strip({
   tall?: boolean
   // The silence trim staged elsewhere, as fractions of the track (0..1) cut off
   // the head and tail. Dimmed rather than clipped: the wave stays whole so a
-  // section that anchors times to the ORIGINAL file (the beatgrid) doesn't jump
+  // section that anchors times to the ORIGINAL file doesn't jump
   // its grid every time the trim moves, while the user still sees which audio
   // the export drops. Same shade the trim section's own lanes use.
   trimShade?: { startFrac?: number; endFrac?: number }

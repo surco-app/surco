@@ -1,6 +1,4 @@
 import type {
-  Beatgrid,
-  BeatgridResult,
   BpmResult,
   KeyResult,
   TrackMetadata,
@@ -12,7 +10,7 @@ import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, type CueShift, writeTags } from './tags'
-import { detectBeatgrid, detectBpm } from './tempo'
+import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 
 // The CPU-bound work that must never run on the main process's event loop: the
@@ -21,7 +19,6 @@ import { computePeaks } from './waveform'
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
-  | { type: 'beatgrid'; pcm: Float32Array; sampleRate: number }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   // The click detector's second-difference scan over the whole native-rate side (~21M
@@ -44,10 +41,8 @@ export type WorkerJob =
       // them when a trim moved the audio underneath.
       cueSource?: string
       cueShift?: CueShift
-      // The staged beatgrid in output-file time, written as Serato's GEOB.
-      beatgrid?: Beatgrid
     }
-  | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift; beatgrid?: Beatgrid }
+  | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
@@ -57,13 +52,7 @@ export type WorkerJob =
   // process's event loop (the one worker job that is async — it awaits the decode).
   | { type: 'channelScan'; input: string; ffmpegPath: string; channels: number; timeoutMs: number }
 
-export type WorkerJobResult =
-  | BpmResult
-  | BeatgridResult
-  | KeyResult
-  | number[]
-  | WaveformScan
-  | null
+export type WorkerJobResult = BpmResult | KeyResult | number[] | WaveformScan | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
@@ -71,8 +60,6 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return runChannelScan(job.input, job.ffmpegPath, job.channels, job.timeoutMs)
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
-    case 'beatgrid':
-      return detectBeatgrid(job.pcm, job.sampleRate)
     case 'key':
       return detectKey(job.pcm, job.sampleRate)
     case 'shelf':
@@ -82,18 +69,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'waveformPeaks':
       return computePeaks(job.pcm, job.buckets)
     case 'writeTags':
-      writeTags(
-        job.file,
-        job.meta,
-        job.coverPath,
-        job.removeCover,
-        job.cueSource,
-        job.cueShift,
-        job.beatgrid,
-      )
+      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource, job.cueShift)
       return null
     case 'copyCueFrames':
-      copyCueFrames(job.source, job.dest, job.shift, job.beatgrid)
+      copyCueFrames(job.source, job.dest, job.shift)
       return null
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)

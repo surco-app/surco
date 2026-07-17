@@ -559,24 +559,6 @@ describe('SettingsModal shortcuts', () => {
     fireEvent.keyDown(screen.getByTestId(`shortcut-record-${id}`), keyInit)
   }
 
-  // The beatgrid's keys are where the grid work actually happens, but they were
-  // named only in the tooltip of the button they double for — which is not where
-  // anyone looks for a shortcut. They belong on this tab. They are claims, not
-  // bindings (live only while the section is open), so they are listed and NOT
-  // recordable: offering a capture button would promise a rebind that the claim
-  // mechanism cannot honour.
-  it('lists the beatgrid lane keys without offering to rebind them', () => {
-    openShortcuts()
-    const lane = screen.getByTestId('shortcuts-lane')
-    for (const key of ['Space', 'C', 'G', '[', ']']) {
-      expect(lane).toHaveTextContent(key)
-    }
-    expect(lane).toHaveTextContent('New segment at the line')
-    expect(lane).toHaveTextContent('Next grid change')
-    // No capture buttons in here — the rebindable rows live above.
-    expect(lane.querySelectorAll('button')).toHaveLength(0)
-  })
-
   // Recording a keystroke must rebind the command and persist it like any setting, so
   // the user's choice survives the save and reaches the keymap.
   it('records a new chord and saves it as an override', () => {

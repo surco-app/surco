@@ -11,11 +11,8 @@ import {
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
-import { outputBeatgrid } from '../shared/beatgrid'
 import { formatRatingTag } from '../shared/rating'
 import type {
-  Beatgrid,
-  BeatgridResult,
   BpmResult,
   ConversionQuality,
   CoverRead,
@@ -33,7 +30,6 @@ import type {
   WaveformScan,
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
-import { seratoBeatgridVorbis } from './seratoBeatgrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import { declickFilter } from '../shared/declick'
 import { trimFilter } from '../shared/trim'
@@ -603,9 +599,6 @@ export function convertArgs(
   meta: TrackMetadata,
   coverPath?: string,
   audioFilter?: string,
-  // The staged beatgrid in output-file time, for FLAC outputs: Serato reads its
-  // grid from a SERATO_BEATGRID vorbis comment there (GEOB is ID3-only).
-  seratoBeatgrid?: Beatgrid,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -648,8 +641,6 @@ export function convertArgs(
     const rating = Number(meta.rating)
     const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
     args.push('-metadata', `RATING=${value}`)
-    if (seratoBeatgrid)
-      args.push('-metadata', `SERATO_BEATGRID=${seratoBeatgridVorbis(seratoBeatgrid)}`)
   }
   args.push(output)
   return args
@@ -918,10 +909,6 @@ export async function convertAudio(
   // Leading/trailing silence trim, the first filter stage: the seconds the user
   // confirmed in the editor, cut exactly. Forces a re-encode like normalize.
   trim?: TrimRange,
-  // The staged beatgrid (original-file seconds): written into the output as
-  // Serato's grid tag — GEOB on MP3/AIFF, a vorbis comment on FLAC — offset by
-  // the trim exactly like the Traktor cues.
-  beatgrid?: Beatgrid,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -972,8 +959,6 @@ export async function convertAudio(
     [trimAf, declickAf, normalizeAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
-  // A staged trim always re-encodes, so the output-time grid only depends on it.
-  const outGrid = outputBeatgrid(beatgrid, trim)
   const tmp = convertTmpPath(output, ext)
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined
@@ -998,20 +983,11 @@ export async function convertAudio(
         meta,
         coverPath,
         removeCover,
-        beatgrid: outGrid,
       })
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(
-          input,
-          tmp,
-          plan,
-          meta,
-          coverPath,
-          audioFilter,
-          ext === '.flac' ? outGrid : undefined,
-        ),
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1039,7 +1015,6 @@ export async function convertAudio(
           coverPath,
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined),
-          beatgrid: outGrid,
         })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -1056,7 +1031,6 @@ export async function convertAudio(
           source: input,
           dest: tmp,
           shift: cueShiftFor(trim, trimAf !== undefined),
-          beatgrid: outGrid,
         })
     }
     // Last touch before the rename so the header rides the same atomic landing.
@@ -1556,39 +1530,6 @@ export async function measureBpm(input: string): Promise<BpmResult | null> {
 export async function measureKey(input: string): Promise<KeyResult | null> {
   const pcm = await decodeAnalysisPcm(input)
   return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE })
-}
-
-export async function measureBeatgrid(input: string): Promise<BeatgridResult | null> {
-  const pcm = await decodeAnalysisPcm(input)
-  return runInWorker<BeatgridResult | null>({
-    type: 'beatgrid',
-    pcm,
-    sampleRate: TEMPO_SAMPLE_RATE,
-  })
-}
-
-// The same detector over one stretch of the track: the editor's "Auto" scoped
-// to a tempo-change segment re-detects only from that segment's anchor forward,
-// leaving the grid behind it alone. The detector sees the window as its own
-// little track, so its anchor comes back window-relative — shift it out here,
-// where the offset is known.
-export async function measureBeatgridWindow(
-  input: string,
-  startSec: number,
-  durSec: number,
-): Promise<BeatgridResult | null> {
-  const pcm = await decodePcm(input, {
-    sampleRate: TEMPO_SAMPLE_RATE,
-    startSec,
-    seconds: Math.min(durSec, 240),
-    maxBufferMb: 16,
-  })
-  const result = await runInWorker<BeatgridResult | null>({
-    type: 'beatgrid',
-    pcm,
-    sampleRate: TEMPO_SAMPLE_RATE,
-  })
-  return result ? { ...result, anchorSec: result.anchorSec + startSec } : null
 }
 
 // Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's

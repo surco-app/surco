@@ -209,23 +209,6 @@ describe('convertArgs', () => {
     expect(mp3.some((a) => a.startsWith('RATING'))).toBe(false)
   })
 
-  // Serato reads FLAC grids from a SERATO_BEATGRID vorbis comment (GEOB is
-  // ID3-only), so the staged grid rides the encode's own -metadata pass.
-  it('writes the Serato beatgrid comment on FLAC outputs only', () => {
-    const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, meta, undefined, undefined, {
-      bpm: 128,
-      anchorSec: 0.25,
-    })
-    const comment = flac.find((a) => a.startsWith('SERATO_BEATGRID='))
-    expect(comment).toBeDefined()
-    // Enveloped and base64-wrapped like Serato writes it — newline at 72 chars,
-    // dangling 'A' included (see seratoBeatgrid.test for the byte-level checks).
-    expect(comment?.indexOf('\n')).toBe(16 + 72)
-    expect(comment?.endsWith('A')).toBe(true)
-    const bare = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, meta)
-    expect(bare.some((a) => a.startsWith('SERATO_BEATGRID'))).toBe(false)
-  })
-
   it('marks the output bitexact so the muxer writes no ENCODER=Lavf… tag', () => {
     // Verified against ffmpeg 6.1.1: without it every FLAC gains an ENCODER Vorbis
     // comment and every MP3 a TSSE frame; with it both disappear while the MP3

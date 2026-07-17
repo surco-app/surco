@@ -78,7 +78,6 @@ describe('sessionEdits', () => {
         matchConfidence: 0.92,
         matchProvider: 'discogs',
         trim: { startSec: 3.2, endSec: 200 },
-        beatgrid: { bpm: 128, anchorSec: 0.25 },
       }),
     ])
     expect(edits['/music/a.wav']).toMatchObject({
@@ -88,7 +87,6 @@ describe('sessionEdits', () => {
       matchConfidence: 0.92,
       matchProvider: 'discogs',
       trim: { startSec: 3.2, endSec: 200 },
-      beatgrid: { bpm: 128, anchorSec: 0.25 },
     })
   })
 

@@ -7,7 +7,6 @@ import type {
   AppleMusicAddJob,
   AppleMusicLookupCandidate,
   AppleMusicUpdateJob,
-  BeatgridResult,
   BpmResult,
   CoverExportJob,
   CoverRead,
@@ -136,12 +135,6 @@ export interface Api {
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
-  beatgrid: (
-    path: string,
-    fresh?: boolean,
-    priority?: 'high' | 'low',
-  ) => Promise<BeatgridResult | null>
-  beatgridWindow: (path: string, startSec: number, durSec: number) => Promise<BeatgridResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
   waveform: (path: string, priority?: 'high' | 'low') => Promise<WaveformResult | null>
   // The native-rate clip/channel scan for the compare/player strip only (marks + split).

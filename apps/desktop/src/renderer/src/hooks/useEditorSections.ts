@@ -21,7 +21,7 @@ let store: Record<EditorSection, boolean> = toRecord(DEFAULT_EDITOR_SECTIONS)
 
 // The one section blown up to the whole window, if any. Module-level like the
 // folds — and for the same reason, plus one more: surviving the per-track
-// remount is what turns "maximize the beatgrid" into a review flow (arrow
+// remount is what turns "maximize the trim" into a review flow (arrow
 // through the crate, every grid full-screen).
 let maximized: EditorSection | null = null
 
@@ -45,7 +45,7 @@ export function resetEditorSections(): void {
 }
 
 // Drop out of the full-window maximized view, from outside React. Surviving a per-track
-// remount is deliberate (arrow through the crate with the beatgrid full-screen), but
+// remount is deliberate (arrow through the list with the trim full-screen), but
 // IMPORTING a new crate is a context change, not a track step: leaving the overlay up
 // would paint the new track's still-analyzing spectrum across the whole window behind the
 // editor. The import path calls this so a dropped folder always lands on the normal layout.

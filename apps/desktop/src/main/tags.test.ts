@@ -2,7 +2,6 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-  type Id3v2AttachmentFrame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
   type Id3v2Tag,
@@ -291,59 +290,6 @@ describe('writeTags', () => {
     f.dispose()
   })
 
-  // Reads back every "Serato BeatGrid" GEOB payload in the file.
-  function seratoGrids(file: string): Buffer[] {
-    const f = TagFile.createFromPath(file)
-    try {
-      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
-      return id3.frames
-        .filter((fr) => fr.frameId.toString() === 'GEOB')
-        .flatMap((fr) => {
-          const att = fr as Id3v2AttachmentFrame
-          try {
-            return att.description === 'Serato BeatGrid' ? [Buffer.from(att.data.toByteArray())] : []
-          } catch {
-            return []
-          }
-        })
-    } finally {
-      f.dispose()
-    }
-  }
-
-  // The grid the user lined up in the editor must reach Serato exactly: one GEOB
-  // in the documented 15-byte constant-grid shape, living NEXT to Traktor's blob
-  // (each program reads its own frame; clobbering one for the other loses data).
-  it('writes the staged beatgrid as a Serato GEOB beside the Traktor blob', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
-    const file = buildSeed(dir)
-
-    writeTags(file, meta, undefined, false, undefined, undefined, { bpm: 128, anchorSec: 0.25 })
-
-    const bytes = readFileSync(file)
-    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
-    const grids = seratoGrids(file)
-    expect(grids).toHaveLength(1)
-    expect(grids[0]).toHaveLength(15)
-    expect(grids[0].readUInt32BE(2)).toBe(1)
-    expect(grids[0].readFloatBE(6)).toBeCloseTo(0.25, 6)
-    expect(grids[0].readFloatBE(10)).toBe(128)
-  })
-
-  // Re-converting an edited grid must replace the previous frame, not stack a
-  // second one Serato would then pick from at random.
-  it('replaces an existing Serato grid instead of duplicating it', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
-    const file = buildSeed(dir)
-    writeTags(file, meta, undefined, false, undefined, undefined, { bpm: 128, anchorSec: 0.25 })
-
-    writeTags(file, meta, undefined, false, undefined, undefined, { bpm: 96, anchorSec: 0.5 })
-
-    const grids = seratoGrids(file)
-    expect(grids).toHaveLength(1)
-    expect(grids[0].readFloatBE(10)).toBe(96)
-  })
-
   it('clears a field the user emptied', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
@@ -589,29 +535,6 @@ describe('copyCueFrames', () => {
 
     expect(readPrivTree(out)).toBeNull()
     expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
-  })
-
-  // A normalizing convert of an unrated track goes through this pass, not
-  // writeTags — the staged grid must land here too or only rated tracks would
-  // carry it.
-  it('writes the staged grid even when the source carries no cues', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
-    const source = buildSeed(dir)
-    stripCues(source)
-    const dest = join(dir, 'out.mp3')
-    writeFileSync(dest, readFileSync(source))
-
-    copyCueFrames(source, dest, undefined, { bpm: 174, anchorSec: 0.1 })
-
-    const f = TagFile.createFromPath(dest)
-    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
-    const grid = id3.frames
-      .filter((fr) => fr.frameId.toString() === 'GEOB')
-      .map((fr) => fr as Id3v2AttachmentFrame)
-      .find((fr) => fr.description === 'Serato BeatGrid')
-    expect(grid).toBeDefined()
-    expect(Buffer.from((grid as Id3v2AttachmentFrame).data.toByteArray()).readFloatBE(10)).toBe(174)
-    f.dispose()
   })
 
   it('leaves the output untouched when the source carries no cue frame', () => {

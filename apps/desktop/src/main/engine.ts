@@ -8,10 +8,9 @@ import type { Database, SqlJsStatic } from 'sql.js'
 // emitted by libdjinterop (https://github.com/xsco/libdjinterop) — newer Engine DJ versions
 // (incl. 4.x) migrate it forward on open, so we don't have to chase the latest on-disk format.
 //
-// This is a minimal "tracks + one playlist" import: metadata plus, when the user staged one,
-// the beatgrid (beatData + isBeatGridLocked; see engineBeatData.ts). The other performance
-// BLOBs (cues/waveforms) stay NULL with isAnalyzed = 0, so Engine re-analyses on first load —
-// filling the waveforms while the lock keeps the imported grid. No hm.db is needed.
+// This is a minimal "tracks + one playlist" import: metadata only. The performance BLOBs
+// (grid/cues/waveforms) stay NULL with isAnalyzed = 0, so Engine analyses the audio itself
+// on first load. No hm.db is needed.
 
 // One track resolved for the database: the path is relative to the Engine Library directory
 // (the parent of Database2), which is how Engine stores and resolves it.
@@ -31,10 +30,6 @@ export interface EngineTrack {
   durationSec: number | null
   // Engine's 0–100 scale (20 per star), already converted from the "1"–"5" tag.
   rating: number
-  // The staged beatgrid as Engine's compressed beatData blob (engineBeatData.ts),
-  // paired with isBeatGridLocked so Engine's own first-load analysis fills the
-  // waveforms but keeps this grid. Absent = the old behavior: NULL, Engine grids it.
-  beatData?: Uint8Array
 }
 
 // The verbatim 2.18.0 DDL. The misspellings (currentPlayedIndiciator, isPerfomanceData…,
@@ -211,14 +206,14 @@ export function trackRow(t: EngineTrack, epoch: number): (string | number | null
     null,
     null,
     null,
-    // Locked when a grid rides along, so Engine's analysis keeps it (an unlocked
-    // imported grid is overwritten on first analysis).
-    t.beatData ? 1 : 0,
+    // isBeatGridLocked stays 0 and beatData NULL: Surco writes no grid, so
+    // Engine's own first-load analysis grids the track.
+    0,
     null,
     null,
     null,
     null,
-    t.beatData ?? null,
+    null,
     null,
     null,
     null,

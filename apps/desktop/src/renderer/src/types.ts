@@ -1,5 +1,4 @@
 import type {
-  Beatgrid,
   DeclickMode,
   NormalizeConfig,
   OutputFormat,
@@ -67,10 +66,6 @@ export interface TrackItem {
   // hasn't staged; clipping = the decoder's true-clipping flags fired. Undefined
   // until some consumer (player, editor strip, analyze sweep) decodes the wave.
   audioIssues?: { silence: boolean; clipping: boolean }
-  // The beatgrid triage fact, merged from the beatgrid analysis cache the same
-  // passive way: true when the detection looked like a coin flip (see
-  // beatgridNeedsReview) and the user hasn't confirmed a grid by hand yet.
-  gridReview?: boolean
   // True while this track's spectrum analysis is in flight (hover prefetch, editor
   // open or the toolbar sweep), merged in from the React Query fetch status like
   // spectrum above, so the row can show a placeholder instead of an empty slot.
@@ -122,10 +117,6 @@ export interface TrackItem {
   // waveform). On the track — not an editor dial — so it rides trackSignature:
   // editing it flips a done track stale and gets it saved into session.json.
   trim?: TrimRange
-  // The beatgrid staged in the editor, in original-file seconds. Same contract
-  // as trim: on the track so it rides trackSignature — the DJ exports read it,
-  // so nudging it must flip a done track stale and persist across relaunches.
-  beatgrid?: Beatgrid
   status: TrackStatus
   stage?: ProcessStage
   // The format this track is being / was last converted to, captured when the

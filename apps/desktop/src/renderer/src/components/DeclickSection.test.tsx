@@ -313,7 +313,7 @@ describe('DeclickSection', () => {
   // Space is play/pause everywhere in Surco, so it must work here too — but the SAME
   // press would otherwise also start the mini-player, and the user would end up with the
   // whole track blaring underneath the A/B they are trying to judge. The section claims
-  // the key while it is open (see spaceClaim), exactly as the beatgrid does.
+  // the key while it is open (see spaceClaim).
   it('claims Space for its own transport while it is open', async () => {
     await withPreview()
     act(() => loadPair())

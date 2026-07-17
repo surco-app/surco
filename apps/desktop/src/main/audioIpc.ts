@@ -3,7 +3,7 @@ import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { DeclickMode } from '../shared/types'
 import { activity } from './activity'
-import { cachedAnalysis, dropAnalysis } from './analysisCache'
+import { cachedAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import {
@@ -14,8 +14,6 @@ import {
   extractCover,
   extractCoverDataUrl,
   generateSpectrogram,
-  measureBeatgrid,
-  measureBeatgridWindow,
   measureBpm,
   measureChannelScan,
   measureKey,
@@ -243,66 +241,6 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
-
-  ipcMain.handle(
-    'audio:beatgrid',
-    async (_e, inputPath: string, fresh?: boolean, priority: 'high' | 'low' = 'low') => {
-      try {
-        // The Grid section's Auto: the user explicitly asked to redo the analysis,
-        // so the cached verdict (possibly from an older detector) must not serve.
-        if (fresh) await dropAnalysis('beatgrid-v6', inputPath)
-        // Same caching contract as audio:bpm: a null (beatless material) is a
-        // real measurement and is cached; only a decode error retries. Its own
-        // namespace rather than a bump of 'bpm': old cached BpmResults carry no
-        // anchor and could never be told apart from a grid, while the BPM chip
-        // keeps its cache untouched. v2: results grew the review signals
-        // (phaseAmbiguity/phaseMargin); v1 entries would pin grids the triage
-        // could never flag. v3: the phase voters were reworked (low-band flux
-        // arbitrates); v2 entries would pin anchors the old energy vote put half
-        // a period off. v4: detection grew the drift scan (changes) — v3 entries
-        // would pin single-segment grids on tracks the scan now segments. v5: the
-        // drift scan now tracks the beat and fits each stretch its own TEMPO
-        // rather than only re-anchoring the phase; v4 entries would pin segments
-        // that all inherit one bpm and walk off the kicks within bars. v6: the
-        // tracker was calibrated on a REAL rip — it no longer locks onto a triplet
-        // layer, and the fit no longer cuts a segment on a single jittery beat;
-        // v5 entries would pin the grids that produced (a steady 123 BPM house
-        // record came out with 22 segments, the last of them at double time).
-        return await cachedAnalysis(
-          'beatgrid-v6',
-          inputPath,
-          () =>
-            probe('activity.probeBeatgrid', inputPath, () =>
-              analysisLimiter.run(() => measureBeatgrid(inputPath), priority),
-            ),
-          () => true,
-        )
-      } catch (err) {
-        log.error('audio:beatgrid failed', err)
-        return null
-      }
-    },
-  )
-
-  // The scoped Auto: re-detect one stretch only (a tempo-change segment). Never
-  // cached — the window boundaries change with every edit, and the result lands
-  // in the staged grid, not in the analysis store.
-  ipcMain.handle(
-    'audio:beatgridWindow',
-    async (_e, inputPath: string, startSec: number, durSec: number) => {
-      try {
-        if (typeof startSec !== 'number' || typeof durSec !== 'number') return null
-        if (!Number.isFinite(startSec) || !Number.isFinite(durSec)) return null
-        if (startSec < 0 || durSec <= 0) return null
-        return await probe('activity.probeBeatgrid', inputPath, () =>
-          analysisLimiter.run(() => measureBeatgridWindow(inputPath, startSec, durSec), 'low'),
-        )
-      } catch (err) {
-        log.error('audio:beatgridWindow failed', err)
-        return null
-      }
-    },
-  )
 
   ipcMain.handle('audio:key', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {

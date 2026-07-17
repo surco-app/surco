@@ -105,9 +105,9 @@ describe('useKeyboardShortcuts Ctrl+arrow track stepping', () => {
   })
 })
 
-// A section with its own transport (the beatgrid's audition) claims Space while
-// it is open. The whole point of the claim is that ONE press can't both check
-// the grid and start the mini-player playing the whole track underneath.
+// A section with its own transport (click repair's audition) claims Space while
+// it is open. The whole point of the claim is that ONE press can't both start
+// its check and the mini-player playing the whole track underneath.
 describe('useKeyboardShortcuts space claim', () => {
   it('gives Space to a claiming section instead of the player, and returns it after', () => {
     const { play } = setup(false)
@@ -123,63 +123,20 @@ describe('useKeyboardShortcuts space claim', () => {
     expect(play).toHaveBeenCalledTimes(1)
   })
 
-  // Two sections with their own transport can be open at once (click repair and the
-  // beatgrid). If the one on top does not claim Space (repair is Off, so it has nothing
-  // to play), the key must still not fall through to the mini-player while the section
-  // BELOW is auditioning — that is the whole track blaring under a live transport, the
-  // exact thing the claim exists to stop. The nearest claimant on the stack owns it.
-  it('keeps Space off the player when a lower open section still claims it', () => {
+  // Two claimants can be registered at once (a section remounting registers its new
+  // claim before the old one releases). If the one on top does not claim Space (repair
+  // is Off, so it has nothing to play), the key must still not fall through to the
+  // mini-player while the claimant BELOW is auditioning — that is the whole track
+  // blaring under a live transport, the exact thing the claim exists to stop.
+  it('keeps Space off the player when a lower claimant still holds it', () => {
     const { play } = setup(false)
-    const grid = vi.fn()
-    const releaseGrid = claimKeys({ play: grid })
-    // The section on top (repair Off) claims its lane keys but not play.
-    const releaseTop = claimKeys({ 'centre-beat': vi.fn() })
+    const below = vi.fn()
+    const releaseBelow = claimKeys({ play: below })
+    const releaseTop = claimKeys({})
     press({ key: ' ' })
-    expect(grid).toHaveBeenCalledTimes(1)
+    expect(below).toHaveBeenCalledTimes(1)
     expect(play).not.toHaveBeenCalled()
     releaseTop()
-    releaseGrid()
-  })
-
-  // rekordbox's C centres the nearest beat under the lane's reference. It only
-  // acts while a section claims it — a bare letter must stay free otherwise.
-  it('routes a bare C to a claiming section and leaves it inert otherwise', () => {
-    const { play } = setup(false)
-    const centre = vi.fn()
-    const release = claimKeys({ 'centre-beat': centre })
-    press({ key: 'c' })
-    expect(centre).toHaveBeenCalledTimes(1)
-    expect(play).not.toHaveBeenCalled()
-    // A chord is not the bare key: ⌘C must never centre a beat.
-    press({ key: 'c', metaKey: true })
-    expect(centre).toHaveBeenCalledTimes(1)
-    release()
-    press({ key: 'c' })
-    expect(centre).toHaveBeenCalledTimes(1)
-  })
-
-  // G carves a grid segment, the verb that used to force a trip to the mouse.
-  // It rides the same claim as C, so it inherits the same guards — and the one
-  // that matters most is typing: a bare letter that fired while a field had
-  // focus would carve a segment every time someone typed a "g" into a title.
-  it('routes a bare G to a claiming section but never while typing', () => {
-    setup(false)
-    const addSegment = vi.fn()
-    const release = claimKeys({ 'add-segment': addSegment })
-    press({ key: 'g' })
-    expect(addSegment).toHaveBeenCalledTimes(1)
-    // A chord is not the bare key.
-    press({ key: 'g', metaKey: true })
-    expect(addSegment).toHaveBeenCalledTimes(1)
-    // Typing a "g" into a field must never carve a segment.
-    const input = document.createElement('input')
-    document.body.appendChild(input)
-    input.focus()
-    press({ key: 'g' })
-    expect(addSegment).toHaveBeenCalledTimes(1)
-    input.remove()
-    release()
-    press({ key: 'g' })
-    expect(addSegment).toHaveBeenCalledTimes(1)
+    releaseBelow()
   })
 })

@@ -7,7 +7,6 @@ import { runWorkerJob } from './workerJobs'
 // would corrupt files (writeTags) or return analysis for the wrong parameters.
 vi.mock('./tempo', () => ({
   detectBpm: vi.fn(() => ({ bpm: 128, confidence: 0.9 })),
-  detectBeatgrid: vi.fn(() => ({ bpm: 128, confidence: 0.9, anchorSec: 0.25 })),
 }))
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
 vi.mock('./clickDetect', () => ({ detectClicks: vi.fn(() => [1.5, 3.2]) }))
@@ -21,7 +20,7 @@ import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { detectKey } from './musicalKey'
 import { copyCueFrames, writeTags } from './tags'
-import { detectBeatgrid, detectBpm } from './tempo'
+import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 
 describe('runWorkerJob', () => {
@@ -30,13 +29,6 @@ describe('runWorkerJob', () => {
     const out = runWorkerJob({ type: 'bpm', pcm, sampleRate: 11025 })
     expect(detectBpm).toHaveBeenCalledWith(pcm, 11025)
     expect(out).toEqual({ bpm: 128, confidence: 0.9 })
-  })
-
-  it('routes beatgrid jobs to the anchor detector with the job pcm and rate', () => {
-    const pcm = new Float32Array([0.5])
-    const out = runWorkerJob({ type: 'beatgrid', pcm, sampleRate: 11025 })
-    expect(detectBeatgrid).toHaveBeenCalledWith(pcm, 11025)
-    expect(out).toEqual({ bpm: 128, confidence: 0.9, anchorSec: 0.25 })
   })
 
   it('routes key jobs to the key detector with the job pcm and rate', () => {
@@ -70,7 +62,6 @@ describe('runWorkerJob', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
     )
   })
 
@@ -90,28 +81,6 @@ describe('runWorkerJob', () => {
       undefined,
       '/in.mp3',
       { shiftMs: 1300 },
-      undefined,
-    )
-  })
-
-  // The staged grid must reach the same TagLib save as the cues and rating —
-  // a missed pass here would ship converted files with no Serato grid.
-  it('routes the beatgrid through tag writes', () => {
-    const meta = { title: 'T' } as TrackMetadata
-    runWorkerJob({
-      type: 'writeTags',
-      file: '/out/a.mp3',
-      meta,
-      beatgrid: { bpm: 128, anchorSec: 0.25 },
-    })
-    expect(writeTags).toHaveBeenCalledWith(
-      '/out/a.mp3',
-      meta,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      { bpm: 128, anchorSec: 0.25 },
     )
   })
 
@@ -131,19 +100,16 @@ describe('runWorkerJob', () => {
     expect(out).toEqual({ clipped: [false, true], channels: [] })
   })
 
-  it('routes cue copies with source, destination, shift and beatgrid in order', () => {
+  it('routes cue copies with source, destination and shift in order', () => {
     runWorkerJob({
       type: 'copyCueFrames',
       source: '/in.mp3',
       dest: '/out.mp3',
       shift: { shiftMs: 1300, maxMs: 240000 },
-      beatgrid: { bpm: 128, anchorSec: 0.25 },
     })
-    expect(copyCueFrames).toHaveBeenCalledWith(
-      '/in.mp3',
-      '/out.mp3',
-      { shiftMs: 1300, maxMs: 240000 },
-      { bpm: 128, anchorSec: 0.25 },
-    )
+    expect(copyCueFrames).toHaveBeenCalledWith('/in.mp3', '/out.mp3', {
+      shiftMs: 1300,
+      maxMs: 240000,
+    })
   })
 })

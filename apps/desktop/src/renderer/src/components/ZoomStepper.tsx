@@ -5,8 +5,8 @@ import { Tooltip } from './Tooltip'
 // The one zoom control, shared by every section that shows a wave.
 //
 // It exists because the sections had each grown their own, and they disagreed: the
-// trim lane put "closer" on the LEFT, the beatgrid put it on the RIGHT. Both had
-// followed their own NUMBER — zooming in makes the beatgrid's factor climb (×1 → ×32)
+// trim lane put "closer" on the LEFT, the grid lane put it on the RIGHT. Both had
+// followed their own NUMBER — zooming in made one factor climb (×1 → ×32)
 // but makes the trim's context shrink (±15 s → ±2 s) — so the same gesture ended up
 // on opposite sides depending on which section you were in.
 //

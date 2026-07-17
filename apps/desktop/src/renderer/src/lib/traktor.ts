@@ -1,6 +1,4 @@
 import type { TrackItem } from '../types'
-import { gridSegments } from '../../../shared/beatgrid'
-import { exportedBeatgrid } from './beatgrid'
 import { escapeXml } from './xml'
 
 // Builds a Traktor collection (.nml) from the loaded tracks, plus a single "Surco"
@@ -70,25 +68,9 @@ export function buildTraktorNml(tracks: TrackItem[]): string {
         ['FILETYPE', KINDS[ext] ?? ext],
       ])}></INFO>`,
     )
-    // The grid's tempo outranks the free-text tag once a grid is staged: the
-    // TEMPO spaces the very grid the CUE_V2 marker below anchors.
-    const bpm = t.beatgrid ? t.beatgrid.bpm : Number(m.bpm)
+    const bpm = Number(m.bpm)
     if (Number.isFinite(bpm) && bpm > 0) {
       entries.push(`      <TEMPO BPM="${bpm.toFixed(6)}" BPM_QUALITY="100.000000"></TEMPO>`)
-    }
-    const outGrid = t.beatgrid ? exportedBeatgrid(t) : undefined
-    if (outGrid) {
-      // TYPE="4" is Traktor's grid marker; START is in milliseconds — one per
-      // segment: Traktor keeps a single BPM per track, but every marker
-      // re-anchors the phase, so the drift points a multi-segment grid pins
-      // stay pinned. Traktor may still show the grid unlocked — LOCK on the
-      // ENTRY is unverified against a real Traktor and stays a follow-up.
-      for (const s of gridSegments(outGrid)) {
-        const startMs = s.anchorSec * 1000
-        entries.push(
-          `      <CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="${startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>`,
-        )
-      }
     }
     entries.push('    </ENTRY>')
     playlist.push(

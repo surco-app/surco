@@ -5,7 +5,7 @@ import type React from 'react'
 //     right below says the same thing, so the badge would be the second telling).
 //   · neutral — a MEASURED fact (a loudness reading, a click estimate, a detected cut). The
 //     app's one convention for analysis results: readable without opening the section.
-//   · warn — a measurement that wants a look (a coin-flip beatgrid).
+//   · warn — a measurement that wants a look.
 //
 // Hand-rolled in four sections with the same class string copy-pasted each time, and the
 // RX-style sections still to come (de-clip, rumble, crackle) would each have copied it

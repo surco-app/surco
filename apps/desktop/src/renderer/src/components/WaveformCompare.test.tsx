@@ -209,7 +209,7 @@ describe('Strip base raster at high zoom', () => {
     )
     const base = container.querySelector('canvas') as HTMLCanvasElement
     // At 1× the base IS the wave the user sees, so it keeps its full base raster
-    // (the default CANVAS_W the grid overrides with OVERLAY_W in the real editor).
+    // (the default CANVAS_W of the side-by-side columns).
     expect(base.width).toBe(600)
   })
 })
@@ -233,7 +233,7 @@ describe('Strip view reporting', () => {
   })
 
   // The dropped-audio shade lets a section that shows the whole file (declick,
-  // loudness, the beatgrid) still say which head and tail the staged trim will
+  // loudness) still say which head and tail the staged trim will
   // cut — dimmed, so the wave never reshapes and a grid anchored to the original
   // file doesn't jump.
   it('shades the trimmed head and tail as fractions of the strip', () => {

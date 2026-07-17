@@ -12,15 +12,9 @@ import {
   Id3v2UserTextInformationFrame,
   Picture,
   PictureType,
-  StringType,
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
-import {
-  SERATO_BEATGRID_DESC,
-  SERATO_BEATGRID_MIME,
-  seratoBeatgridPayload,
-} from './seratoBeatgrid'
 import { shiftTraktorCues } from './traktor4'
 import {
   starsToRating,
@@ -28,7 +22,7 @@ import {
   TRAKTOR_RATING_USER,
   WMP_RATING_USER,
 } from '../shared/rating'
-import type { Beatgrid, TrackMetadata } from '../shared/types'
+import type { TrackMetadata } from '../shared/types'
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
@@ -67,26 +61,16 @@ export interface CueShift {
 // rather than carried provably pointing at the wrong beats. Best-effort — any
 // failure leaves the (already valid) output as-is rather than aborting the
 // conversion. Only meaningful for ID3 containers.
-export function copyCueFrames(
-  source: string,
-  dest: string,
-  shift?: CueShift,
-  beatgrid?: Beatgrid,
-): void {
+export function copyCueFrames(source: string, dest: string, shift?: CueShift): void {
   try {
     const cues = applyCueShift(readCueFrames(source), shift)
-    if (cues.length === 0 && !beatgrid) return
+    if (cues.length === 0) return
 
     const out = TagFile.createFromPath(dest)
     try {
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
-      if (cues.length > 0) {
-        removeCueFrames(tag)
-        for (const frame of cues) tag.addFrame(frame)
-      }
-      // After the carry-over, so the staged grid replaces the source's Serato
-      // grid rather than the other way round.
-      if (beatgrid) writeSeratoGridFrame(tag, beatgrid)
+      removeCueFrames(tag)
+      for (const frame of cues) tag.addFrame(frame)
       out.save()
     } finally {
       out.dispose()
@@ -98,34 +82,6 @@ export function copyCueFrames(
 
 function isTraktorPriv(frame: Id3v2Frame): frame is Id3v2PrivateFrame {
   return frame instanceof Id3v2PrivateFrame && frame.owner === 'TRAKTOR4'
-}
-
-// Reading .description parses the GEOB body, which TagLib's attachment parser
-// can choke on for foreign blobs (the reason readCueFrames never parses them) —
-// a frame that won't parse isn't Serato's, so it simply doesn't match.
-function isSeratoBeatgridFrame(frame: Id3v2Frame): boolean {
-  if (frame.frameId.toString() !== 'GEOB') return false
-  try {
-    return (frame as Id3v2AttachmentFrame).description === SERATO_BEATGRID_DESC
-  } catch {
-    return false
-  }
-}
-
-// Writes the staged grid as the GEOB frame Serato reads, replacing any grid
-// already there (the file's own, or one just carried over from the cue source —
-// the user's staged grid is the newer truth).
-function writeSeratoGridFrame(tag: Id3v2Tag, grid: Beatgrid): void {
-  for (const frame of tag.frames.filter(isSeratoBeatgridFrame)) tag.removeFrame(frame)
-  const frame = Id3v2AttachmentFrame.fromPicture({
-    type: PictureType.NotAPicture,
-    mimeType: SERATO_BEATGRID_MIME,
-    filename: '',
-    description: SERATO_BEATGRID_DESC,
-    data: ByteVector.fromByteArray(seratoBeatgridPayload(grid)),
-  })
-  frame.textEncoding = StringType.Latin1
-  tag.addFrame(frame)
 }
 
 // Drops the frames a cue carry-over is about to rewrite: every GEOB, and the
@@ -255,7 +211,6 @@ export function writeTags(
   removeCover = false,
   cueSource?: string,
   cueShift?: CueShift,
-  beatgrid?: Beatgrid,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -353,13 +308,6 @@ export function writeTags(
         for (const frame of cues) id3.addFrame(frame)
       }
     }
-
-    // The staged beatgrid, as Serato's GEOB — after the cue carry-over so it
-    // replaces any grid the source brought along. MP3/AIFF only: those are the
-    // formats verified to round-trip GEOB (same set as the Traktor cues); a
-    // Serato-read ID3 chunk in WAV is unverified, so WAV outputs skip it.
-    if (beatgrid && ID3_IN_PLACE.has(extname(file).toLowerCase()))
-      writeSeratoGridFrame(id3, beatgrid)
 
     // A WAV can hold both a RIFF "INFO" chunk and an ID3v2 "id3 " chunk, but
     // ffmpeg's WAV demuxer reads tags from INFO and ignores the ID3 text frames

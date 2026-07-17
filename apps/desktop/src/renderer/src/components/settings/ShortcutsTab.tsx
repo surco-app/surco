@@ -11,17 +11,6 @@ import { Tooltip } from '../Tooltip'
 
 const isMac = isMacOS()
 
-// The beatgrid lane's claimed keys, in the order the work uses them. Listed, not
-// editable: a claim is only live while its section is open, so it has no global
-// binding to record over.
-const LANE_SHORTCUTS: { key: string; i18n: string }[] = [
-  { key: 'Space', i18n: 'settings.shortcuts.laneAudition' },
-  { key: 'C', i18n: 'settings.shortcuts.laneCentre' },
-  { key: 'G', i18n: 'settings.shortcuts.laneAddSegment' },
-  { key: '[', i18n: 'settings.shortcuts.lanePrevSeam' },
-  { key: ']', i18n: 'settings.shortcuts.laneNextSeam' },
-]
-
 interface Props {
   synced: SyncedDraft
   patch: PatchSynced
@@ -130,31 +119,6 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
       <p data-testid="shortcuts-fixed-nav" className="mt-3 text-xs text-fg-dim">
         {tr('settings.shortcuts.fixedNav')}
       </p>
-      {/* The beatgrid lane's own keys. They are not rebindable commands but
-          CLAIMS: bare keys that only act while the section is open, and hand
-          back to the global bindings the moment it closes (a bare G is free for
-          the list again). So they get no capture button — but they are the keys
-          the grid work is actually done with, and until now the only place they
-          were named was the tooltip of the button they double for, which is
-          exactly where nobody looks for a shortcut. */}
-      <div data-testid="shortcuts-lane" className="mt-4">
-        <p className="mb-1.5 text-xs font-medium text-fg-muted">
-          {tr('settings.shortcuts.laneTitle')}
-        </p>
-        <div className="rounded-md border border-[var(--color-line)]">
-          {LANE_SHORTCUTS.map(({ key, i18n }) => (
-            <div
-              key={key}
-              className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] px-2.5 py-1.5 last:border-b-0"
-            >
-              <span className="text-xs text-fg-muted">{tr(i18n)}</span>
-              <span className="shrink-0 rounded border border-[var(--color-line-strong)] px-1.5 py-0.5 font-mono text-[11px] text-fg-muted">
-                {key}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
       {conflictIds.size > 0 && (
         <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">
           {tr('settings.shortcuts.conflict')}

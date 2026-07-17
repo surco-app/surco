@@ -1,7 +1,6 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type {
-  Beatgrid,
   DeclickMode,
   NormalizeConfig,
   OutputFormat,
@@ -12,7 +11,6 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
-import { outputBeatgrid } from '../shared/beatgrid'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
 import {
@@ -50,7 +48,6 @@ export interface ProcessTrackDeps {
     onTmp?: (path: string) => void,
     declick?: DeclickMode,
     trim?: TrimRange,
-    beatgrid?: Beatgrid,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -73,12 +70,7 @@ export interface ProcessTrackDeps {
   ) => Promise<string | null>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
-  addToEngineDj: (
-    target: string,
-    meta: TrackMetadata,
-    coverPath?: string,
-    beatgrid?: Beatgrid,
-  ) => Promise<void>
+  addToEngineDj: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
@@ -222,7 +214,6 @@ export async function runProcessTrack(
         },
         job.declick ?? settings.declick,
         job.trim,
-        job.beatgrid,
       ))
     } finally {
       deps.unregisterActiveConversion(job.id)
@@ -286,12 +277,7 @@ export async function runProcessTrack(
           .catch(() => undefined)
       }
       try {
-        await deps.addToEngineDj(
-          target,
-          job.meta,
-          coverPath ?? extracted?.path,
-          outputBeatgrid(job.beatgrid, job.trim),
-        )
+        await deps.addToEngineDj(target, job.meta, coverPath ?? extracted?.path)
         addedToEngineDj = true
       } finally {
         if (extracted) await extracted.cleanup()

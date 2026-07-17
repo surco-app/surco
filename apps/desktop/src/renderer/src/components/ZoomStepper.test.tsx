@@ -23,7 +23,7 @@ function stepper(over: Partial<React.ComponentProps<typeof ZoomStepper>> = {}) {
 describe('ZoomStepper', () => {
   // The reason this component exists. Each section had grown its own zoom and they
   // disagreed on which side "closer" lived, because each had ordered its buttons by
-  // its own NUMBER: zooming in makes the beatgrid's factor climb (×1 → ×32) but makes
+  // its own NUMBER: zooming in makes one lane's factor climb (×1 → ×32) but makes
   // the trim's context shrink (±15 s → ±2 s). Ordering by the ACTION — less left, more
   // right, like every volume control — is what makes the gesture the same everywhere,
   // and it is the whole point of sharing one component.

@@ -97,28 +97,6 @@ export interface TrimRange {
   endSec?: number
 }
 
-// A beatgrid staged in the editor. Times are seconds into the ORIGINAL file —
-// a staged trim is subtracted only at DJ-export time, like cues, so
-// re-trimming never invalidates the grid. The base grid is constant tempo:
-// beat k falls at anchorSec + k * 60/bpm. `changes` makes it multi-segment
-// (rekordbox's "make an adjustment from the current position"): each change
-// re-anchors the grid from its own beat forward — a vinyl rip that drifts gets
-// pinned back without moving everything behind it. Each change governs from
-// its anchorSec (itself a beat, counted as a downbeat) until the next change;
-// the base governs from the file start to the first change.
-export interface GridChange {
-  anchorSec: number
-  bpm: number
-}
-
-export interface Beatgrid {
-  bpm: number
-  anchorSec: number
-  // Strictly increasing, every anchor past the base one. Absent = constant grid.
-  changes?: GridChange[]
-}
-
-
 export type KeyNotation = 'camelot' | 'musical'
 
 export interface Settings {
@@ -343,8 +321,6 @@ export interface SessionEdit {
   // The staged silence trim — seconds the user confirmed on the waveform but
   // hadn't converted yet, exactly the kind of edit this store exists to save.
   trim?: TrimRange
-  // The staged beatgrid, same reason as trim.
-  beatgrid?: Beatgrid
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -448,10 +424,6 @@ export interface ProcessJob {
   // The silence trim the user confirmed in the editor. No Settings fallback —
   // the exact seconds only exist per track, so it rides the job or not at all.
   trim?: TrimRange
-  // The staged beatgrid, in ORIGINAL-file seconds like the track stores it; the
-  // conversion offsets it by the trim when writing it into the output's tags
-  // (Serato) or the Engine DJ library.
-  beatgrid?: Beatgrid
   // Overwrite-original pinned when the batch started; falls back to the live setting
   // when undefined (single converts read it at click time). Pinned so a Settings flip
   // mid-batch can't turn the remaining queued tracks into unconfirmed in-place rewrites.
@@ -692,28 +664,6 @@ export interface LoudnessResult {
 export interface BpmResult {
   bpm: number
   confidence: number
-}
-
-// BpmResult plus the estimated first-beat phase, detected by folding the onset
-// envelope onto the beat period. anchorSec always lies in [0, 60/bpm): it is
-// the grid's phase, not the first audible hit — a grid through a silent intro
-// is what DJ software expects. Editable suggestion like BpmResult, never
-// trusted unattended.
-export interface BeatgridResult {
-  bpm: number
-  confidence: number
-  anchorSec: number
-  // How coin-flip the beat-vs-off-beat choice was, for the "grid to review"
-  // triage. phaseAmbiguity is the rival phase's attack evidence relative to the
-  // chosen one (0 = no rival, 1 = identical); phaseMargin is how decisively the
-  // low-band energy vote favored the chosen side (>1 = kick side won). A grid
-  // is suspect when the attacks tie AND the energy can't break the tie.
-  phaseAmbiguity: number
-  phaseMargin: number
-  // Present when the drift scan confirmed the phase stepping off mid-track:
-  // the suggested grid is multi-segment, same shape a manual "Adjust from
-  // here" stages. Absent = steady single-segment grid.
-  changes?: GridChange[]
 }
 
 // Musical key detected from the audio (chromagram × Krumhansl profiles in

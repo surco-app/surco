@@ -28,7 +28,7 @@ export function Spectrogram({
   // height. Fixed at h-80 while maximized, the picture flattened into a thin band stretched
   // across the window — the "waveform smeared across the background" report. A viewport
   // height (not h-full, which would need the whole portal→section chain to be a flex column)
-  // grows the box to most of the window the same way the maximized beatgrid does.
+  // grows the box to most of the window the same way the maximized trim does.
   const tall = maximized === 'quality'
   const heightClass = tall ? 'h-[70vh]' : 'h-80'
   const nyquist = spectrum.sampleRateHz / 2

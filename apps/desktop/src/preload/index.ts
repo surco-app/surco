@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
-  BeatgridResult,
   BpmResult,
   DockIconFrames,
   KeyResult,
@@ -107,17 +106,6 @@ const api: Api = {
     ipcRenderer.invoke('audio:properties', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
     ipcRenderer.invoke('audio:bpm', path, priority),
-  beatgrid: (
-    path: string,
-    fresh?: boolean,
-    priority: 'high' | 'low' = 'low',
-  ): Promise<BeatgridResult | null> => ipcRenderer.invoke('audio:beatgrid', path, fresh, priority),
-  beatgridWindow: (
-    path: string,
-    startSec: number,
-    durSec: number,
-  ): Promise<BeatgridResult | null> =>
-    ipcRenderer.invoke('audio:beatgridWindow', path, startSec, durSec),
   key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>
     ipcRenderer.invoke('audio:key', path, priority),
   waveform: (path: string, priority: 'high' | 'low' = 'low'): Promise<WaveformResult | null> =>

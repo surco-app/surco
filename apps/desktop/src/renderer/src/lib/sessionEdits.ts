@@ -31,6 +31,5 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence
   if (track.matchProvider) edit.matchProvider = track.matchProvider
   if (track.trim) edit.trim = track.trim
-  if (track.beatgrid) edit.beatgrid = track.beatgrid
   return edit
 }

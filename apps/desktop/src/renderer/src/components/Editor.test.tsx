@@ -2623,8 +2623,8 @@ describe('Editor Discogs format filter hint', () => {
 
 // The user's ask, verbatim: sections need definition and SPACE to work — so any
 // wave-work section can take over the whole window. The state lives in the
-// module store, so the overlay survives track switches: maximize the beatgrid,
-// arrow through the crate, review every grid full-screen.
+// module store, so the overlay survives track switches: maximize the trim,
+// arrow through the list, review every cut full-screen.
 describe('Editor maximized section', () => {
   it('maximizes a section into a full-window overlay and Esc restores it', async () => {
     renderEditor({ id: 'a' })
@@ -2638,7 +2638,7 @@ describe('Editor maximized section', () => {
   })
 
   // Only the sections with fine work to do on a wave earn the toggle (trim,
-  // beatgrid, the quality spectrogram). Click repair is a segmented control and
+  // the quality spectrogram). Click repair is a segmented control and
   // loudness a reference wave — a full window buys them nothing but chrome.
   it('offers no maximize on the sections with nothing to blow up', () => {
     renderEditor({ id: 'a' })

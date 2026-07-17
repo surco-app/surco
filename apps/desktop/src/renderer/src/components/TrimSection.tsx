@@ -265,7 +265,7 @@ function Lane({
             left, more on the right — the same as everywhere else, even though a
             tighter trim context makes the NUMBER smaller (±15 s → ±2 s). This lane
             used to order its buttons by that number, which put "closer" on the
-            opposite side from the beatgrid's. */}
+            opposite side from the compare strip's. */}
         <ZoomStepper
           label={`±${contextSec < 1 ? contextSec : contextSec.toFixed(0)}s`}
           onOut={() => onContextChange(contextIndex + 1)}

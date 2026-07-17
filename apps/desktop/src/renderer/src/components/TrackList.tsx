@@ -197,7 +197,7 @@ const TrackRow = memo(function TrackRow({
 }: RowProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const quality = trackQuality(t)
-  // isStale JSON.stringifies the track's meta and beatgrid; computing it once per row and
+  // isStale JSON.stringifies the track's meta; computing it once per row and
   // threading it to the badge and the tooltip avoids paying that serialization twice on
   // every render of a converted row.
   const stale = isStale(t)

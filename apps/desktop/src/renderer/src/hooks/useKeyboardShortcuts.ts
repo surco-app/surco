@@ -2,18 +2,8 @@ import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
 import { isTypingTarget, keyToCommandId } from '../lib/keymap'
-import { type ClaimedKey, runKeyClaim } from '../lib/spaceClaim'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
-
-// The bare keys an open lane may claim for itself. Kept as a table so the guard
-// that protects them (not typing, no overlay, no modifier) is written once —
-// each new lane verb is one entry, not another copy of the same four conditions.
-const LANE_KEYS: Record<string, ClaimedKey> = {
-  c: 'centre-beat',
-  g: 'add-segment',
-  '[': 'prev-segment',
-  ']': 'next-segment',
-}
 
 interface Params {
   isMac: boolean
@@ -65,20 +55,10 @@ export function useKeyboardShortcuts(params: Params): void {
         p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }
-      // The open lane's own bare keys: C centres the nearest beat (rekordbox's),
-      // G starts a new grid segment under the reference. Bare letters, so they
-      // never fight a chord — and each acts only while a section actually claims
-      // it (nothing claimed → the key stays free for the list commands).
       const typing = isTypingTarget(document.activeElement)
-      const bare = !typing && !p.overlayOpen && !e.metaKey && !e.ctrlKey && !e.altKey
-      const laneKey = LANE_KEYS[e.key.toLowerCase()]
-      if (bare && laneKey && runKeyClaim(laneKey)) {
-        e.preventDefault()
-        return
-      }
       const id = keyToCommandId(e, typing, p.bindings, p.isMac)
       if (!id) return
-      // A section with its own transport (the beatgrid's audition) claims Space
+      // A section with its own transport (click repair's audition) claims Space
       // while it is open, so one press never starts BOTH its check and the
       // mini-player. Nothing claimed → the global play command runs as always.
       if (id === 'play' && !p.overlayOpen && runKeyClaim('play')) {

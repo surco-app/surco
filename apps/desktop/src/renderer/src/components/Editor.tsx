@@ -54,7 +54,6 @@ import { DiscogsPanel } from './DiscogsPanel'
 import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
-import { GridSection } from './GridSection'
 import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
@@ -250,8 +249,8 @@ export const Editor = memo(function Editor({
   // The one section blown up to the whole window (Settings-independent, module
   // store): its element renders into a portal overlay instead of the column,
   // and Esc restores it. Surviving the per-track remount is deliberate — a
-  // maximized Beatgrid plus arrow-key track switching is a full-screen review
-  // flow over the whole crate.
+  // maximized Trim plus arrow-key track switching is a full-screen review
+  // flow over the whole track list.
   const { maximized, setMaximized } = useMaximizedSection()
   useEffect(() => {
     if (maximized === null) return
@@ -268,7 +267,6 @@ export const Editor = memo(function Editor({
   const trimOpen = sectionOpen.trim
   const declickOpen = sectionOpen.declick
   const normalizeOpen = sectionOpen.normalize
-  const gridOpen = sectionOpen.grid
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
@@ -1010,22 +1008,6 @@ export const Editor = memo(function Editor({
                         format={format}
                         trim={item.trim}
                       />
-                    )
-                  case 'grid':
-                    // One track's grid says nothing about another's: no multi story,
-                    // like properties.
-                    return (
-                      !isMulti && (
-                        <GridSection
-                          key={id}
-                          value={item.beatgrid}
-                          open={gridOpen}
-                          onToggle={() => setSectionOpen('grid', !gridOpen)}
-                          onChange={(beatgrid) => onChange({ beatgrid })}
-                          inputPath={item.inputPath}
-                          trim={item.trim}
-                        />
-                      )
                     )
                   case 'normalize':
                     return (

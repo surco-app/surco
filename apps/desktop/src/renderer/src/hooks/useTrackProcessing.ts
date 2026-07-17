@@ -196,7 +196,6 @@ export function useTrackProcessing({
           normalize: normalizeOverride,
           declick: declickOverride,
           trim: track.trim,
-          beatgrid: track.beatgrid,
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
           keepOutputCopy: destination?.keepOutputCopy,

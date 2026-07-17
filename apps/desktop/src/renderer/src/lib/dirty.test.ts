@@ -76,13 +76,6 @@ describe('isStale', () => {
     expect(isStale({ ...converted(), trim: { startSec: 1.2 } })).toBe(true)
   })
 
-  // The beatgrid lives on the track like the trim, and for the same reason: nudging
-  // the grid after an export must bring the Update button back (the DJ exports read
-  // it) and get the edit saved into session.json through the same signature.
-  it('is true when the beatgrid changes after conversion', () => {
-    expect(isStale({ ...converted(), beatgrid: { bpm: 128, anchorSec: 0.25 } })).toBe(true)
-  })
-
   it('is never stale before a track is done, since those states already show a convert button', () => {
     for (const status of ['idle', 'processing', 'error'] as TrackStatus[]) {
       expect(isStale(converted({ status }))).toBe(false)

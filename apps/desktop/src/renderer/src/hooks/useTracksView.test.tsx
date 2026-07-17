@@ -160,28 +160,6 @@ describe('useTracksView', () => {
     expect(result.current.tracksView[1].audioIssues).toEqual({ silence: false, clipping: true })
   })
 
-  // The grid triage fact rides the same passive observation: a coin-flip
-  // detection flags the track — unless the user already confirmed a grid by
-  // hand, which IS the review.
-  it('derives the grid-to-review fact from a cached coin-flip detection', () => {
-    const client = new QueryClient()
-    const coinFlip = {
-      bpm: 128,
-      confidence: 0.8,
-      anchorSec: 0.1,
-      phaseAmbiguity: 1,
-      phaseMargin: 1,
-    }
-    client.setQueryData(['beatgrid', '/music/a.wav'], coinFlip)
-    client.setQueryData(['beatgrid', '/music/b.wav'], coinFlip)
-    const { result } = setup(
-      [track('a'), track('b', {}, { beatgrid: { bpm: 128, anchorSec: 0.1 } })],
-      client,
-    )
-    expect(result.current.tracksView[0].gridReview).toBe(true)
-    expect(result.current.tracksView[1].gridReview).toBeUndefined()
-  })
-
   // The list reads the cache without subscribing to it per track. This is what lets the
   // heavy families (a waveform's peaks and a spectrogram's PNG — ~0.5 MB a track) ever be
   // collected: React Query only starts a query's gcTime countdown once it has no observers
@@ -214,7 +192,6 @@ describe('useTracksView', () => {
       .map((q) => q.queryKey[0])
     expect(observed).not.toContain('waveform')
     expect(observed).not.toContain('spectrogram')
-    expect(observed).not.toContain('beatgrid')
   })
 
   // The payoff of reading without observing, end to end: with the list rendered, a heavy

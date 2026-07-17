@@ -81,34 +81,18 @@ describe('exportedPatch', () => {
     expect(patch.trim).toBeUndefined()
     // The processed snapshot must describe the post-cut state, not the state that
     // still carried the trim — otherwise the track reads stale the instant it lands.
-    expect(patch.processedSignature).toBe(trackSignature({ ...t, trim: undefined, beatgrid: undefined }))
-    expect(patch.diskSignature).toBe(trackSignature({ ...t, trim: undefined, beatgrid: undefined }))
+    expect(patch.processedSignature).toBe(trackSignature({ ...t, trim: undefined }))
+    expect(patch.diskSignature).toBe(trackSignature({ ...t, trim: undefined }))
   })
 
-  // The staged grid is stated in original-file seconds; the in-place cut shifted the
-  // timeline, so the grid must move back by the cut head (outputBeatgrid's fold) to
-  // stay aligned with the rewritten file. A later Update reads it already re-based.
-  it('re-bases the beatgrid onto the trimmed timeline after an in-place export', () => {
-    const t = track({
-      trim: { startSec: 4 },
-      beatgrid: { bpm: 120, anchorSec: 10 },
-    })
-    const patch = exportedPatch(t, {
-      outputPath: '/music/ATB - Till I Come.wav',
-      inPlace: true,
-    })
-    expect(patch.beatgrid).toEqual({ bpm: 120, anchorSec: 6 })
-  })
-
-  // No trim staged: an in-place export must not invent a trim clear or grid shift.
-  it('leaves the trim and grid untouched after an in-place export with no trim', () => {
-    const t = track({ beatgrid: { bpm: 120, anchorSec: 10 } })
+  // No trim staged: an in-place export must not invent a trim clear.
+  it('leaves the trim untouched after an in-place export with no trim', () => {
+    const t = track({})
     const patch = exportedPatch(t, {
       outputPath: '/music/ATB - Till I Come.wav',
       inPlace: true,
     })
     expect(patch.trim).toBeUndefined()
-    expect(patch.beatgrid).toBeUndefined()
   })
 
   // A real conversion left the source untouched, so the staged trim still describes

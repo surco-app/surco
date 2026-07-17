@@ -141,7 +141,7 @@ export function DeclickSection({
   // Space is play/pause everywhere in Surco, so it has to work on this transport too —
   // but the same press would ALSO start the mini-player, and the user would be judging
   // the A/B with the whole track blaring underneath it. Claiming the key (rather than
-  // rebinding it) is the app's answer to exactly this, and the beatgrid already does it.
+  // rebinding it) is the app's answer to exactly this.
   //
   // Claimed for the WHOLE open section, not just once a preview exists: the user looking
   // at this wave means "play what I am looking at" by Space, and gating the claim on a

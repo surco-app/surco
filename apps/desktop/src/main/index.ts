@@ -725,7 +725,6 @@ function registerIpc(): void {
         onTmp,
         declick,
         trim,
-        beatgrid,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -758,7 +757,6 @@ function registerIpc(): void {
               s.flacFinderCovers && process.platform === 'darwin',
               declick,
               trim,
-              beatgrid,
             ),
           { labelParams: { track } },
         )
@@ -798,7 +796,7 @@ function registerIpc(): void {
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
-      addToEngineDj: async (target, meta, coverPath, beatgrid) => {
+      addToEngineDj: async (target, meta, coverPath) => {
         const win = BrowserWindow.fromWebContents(e.sender)
         if (!(await ensureEngineDjClosed(win))) {
           throw new Error(createMenuT(menuLocale())('engineOpenError'))
@@ -815,7 +813,6 @@ function registerIpc(): void {
               meta,
               s.engineDjPlaylist,
               coverPath,
-              beatgrid,
             )
           },
           { labelParams: { track } },

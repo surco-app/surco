@@ -22,7 +22,6 @@ describe('normalizeEditorSections', () => {
       'trim',
       'declick',
       'normalize',
-      'grid',
       'output',
     ])
   })
@@ -42,9 +41,8 @@ describe('normalizeEditorSections', () => {
       { id: 'properties' as const, open: true },
     ]
     // The sections this store predates follow their default-order neighbours
-    // WHEREVER the user parked those: trim/declick after properties, and grid
-    // after the audio chain it annotates (which here ends at the inserted
-    // declick) — never dumped blindly below the output name.
+    // WHEREVER the user parked those: trim/declick after the properties the user
+    // moved — never dumped blindly below the output name.
     expect(normalizeEditorSections(stored)).toEqual([
       { id: 'form', open: true },
       { id: 'normalize', open: false },
@@ -53,7 +51,6 @@ describe('normalizeEditorSections', () => {
       { id: 'properties', open: true },
       { id: 'trim', open: false },
       { id: 'declick', open: false },
-      { id: 'grid', open: false },
     ])
   })
 
@@ -69,7 +66,6 @@ describe('normalizeEditorSections', () => {
       'trim',
       'declick',
       'normalize',
-      'grid',
       'output',
     ])
   })
@@ -85,13 +81,6 @@ describe('normalizeEditorSections', () => {
   // the fold badge still shows when a mode is active.
   it('ships click repair folded by default', () => {
     expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'declick')?.open).toBe(false)
-  })
-
-  // The beatgrid is DJ-export prep rather than part of every conversion, and opening
-  // it costs a wave decode plus a DSP probe — folded, like click repair, with the
-  // fold badge carrying an active grid.
-  it('ships the beatgrid folded by default', () => {
-    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'grid')?.open).toBe(false)
   })
 
   // Normalization is an occasional mastering choice (the mode ships off), and open it
@@ -145,7 +134,6 @@ describe('normalizeEditorSections', () => {
       'trim',
       'declick',
       'normalize',
-      'grid',
       'output',
     ])
   })

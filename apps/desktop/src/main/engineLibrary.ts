@@ -3,8 +3,7 @@ import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/prom
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
 import { starsTagToEngineRating } from '../shared/rating'
-import type { AppleMusicLookupCandidate, Beatgrid, TrackMetadata } from '../shared/types'
-import { engineBeatData } from './engineBeatData'
+import type { AppleMusicLookupCandidate, TrackMetadata } from '../shared/types'
 import {
   type EngineTrack,
   initEngineLibrary,
@@ -14,7 +13,6 @@ import {
   trackRow,
 } from './engine'
 import { isEngineDjRunning } from './engineProcess'
-import { probeDuration, probeProperties } from './ffmpeg'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
 // conversion destination), unlike engine.ts's export which always builds a fresh
@@ -63,8 +61,7 @@ export async function dumpEngineLibrary(libraryDir: string): Promise<AppleMusicL
 // metadata-only: isAnalyzed, length, cues and playlist memberships survive a
 // re-export untouched — length is Engine's own analysis output (resolveTrack never
 // knows it), so updating it could only ever null a value Engine derived, on a row
-// Engine will not re-analyze. beatData is the one exception, joined at the call
-// site only when this conversion actually carries a staged grid.
+// Engine will not re-analyze.
 const UPDATE_COLUMNS = [
   'bpm',
   'year',
@@ -90,8 +87,6 @@ interface PendingAdd {
   meta: TrackMetadata
   playlist: string
   coverPath?: string
-  // The staged beatgrid in output-file time (the caller already offset the trim).
-  beatgrid?: Beatgrid
   resolve: () => void
   reject: (e: unknown) => void
 }
@@ -109,10 +104,9 @@ export function addToEngineLibrary(
   meta: TrackMetadata,
   playlist: string,
   coverPath?: string,
-  beatgrid?: Beatgrid,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    pending.push({ libraryDir, filePath, meta, playlist, coverPath, beatgrid, resolve, reject })
+    pending.push({ libraryDir, filePath, meta, playlist, coverPath, resolve, reject })
     if (!draining) void drain()
   })
 }
@@ -185,13 +179,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       let trackId: number
       if (existingId !== undefined) {
         trackId = existingId
-        // beatData joins the update only when this conversion carries a grid:
-        // updating it unconditionally would null out grids Engine analyzed
-        // itself on tracks the user never touched the Grid section for.
-        const updatable = row.get('beatData')
-          ? [...UPDATE_COLUMNS, 'beatData', 'isBeatGridLocked']
-          : UPDATE_COLUMNS
-        const cols = updatable.filter(
+        const cols = UPDATE_COLUMNS.filter(
           (c) => live.has(c) && !(KEEP_WHEN_NULL.has(c) && row.get(c) == null),
         )
         db.run(`UPDATE Track SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [
@@ -312,28 +300,6 @@ async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<Engine
     // Unknown at conversion time; Engine fills the length when it analyzes the file.
     durationSec: null,
     rating: starsTagToEngineRating(add.meta.rating ?? ''),
-    beatData: await resolveBeatData(add),
-  }
-}
-
-// The staged grid as Engine's beatData blob, sized to the converted file the
-// row points at. Best-effort like the cover: a failed probe only loses the
-// grid, never the row.
-async function resolveBeatData(add: PendingAdd): Promise<Uint8Array | undefined> {
-  if (!add.beatgrid) return undefined
-  try {
-    const [props, durationSec] = await Promise.all([
-      probeProperties(add.filePath),
-      probeDuration(add.filePath),
-    ])
-    if (!(props.sampleRateHz > 0) || !durationSec || !(durationSec > 0)) return undefined
-    return engineBeatData(
-      add.beatgrid,
-      props.sampleRateHz,
-      Math.round(durationSec * props.sampleRateHz),
-    )
-  } catch {
-    return undefined
   }
 }
 
