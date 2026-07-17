@@ -78,6 +78,30 @@ export const Field = memo(function Field({
     clearTimeout(timer.current)
     timer.current = setTimeout(() => commit(next), COMMIT_DEBOUNCE_MS)
   }
+  // The form is keyboard-first, so Enter commits what's typed at once (no waiting on the
+  // pause-debounce) and moves to the next field — type→Enter→type walks a whole release
+  // in without the mouse. The "next field" is the following field-* input in DOM order, the
+  // same set Tab steps through; the last field just commits with nowhere to advance. Any
+  // modifier (⌘/Ctrl/Alt/Shift, and the IME composition Enter) is left alone so it can't
+  // steal ⌘⏎ (convert) or an insert-menu selection.
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
+    if (
+      e.key !== 'Enter' ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.altKey ||
+      e.shiftKey ||
+      e.nativeEvent.isComposing
+    )
+      return
+    e.preventDefault()
+    commit(draft)
+    const fields = Array.from(
+      document.querySelectorAll<HTMLElement>('input[data-testid^="field-"]'),
+    )
+    const next = fields[fields.indexOf(e.currentTarget) + 1]
+    next?.focus()
+  }
   // A late debounce firing after the field unmounts (track deselected mid-edit) would
   // commit into a gone editor; clear it on unmount. Blur already flushes the common case.
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -112,6 +136,7 @@ export const Field = memo(function Field({
           value={draft}
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
+          onKeyDown={onKeyDown}
           onBlur={() => commit(draft)}
           // An empty field should recede, not punch a dark hole in the panel: the fill
           // sits a hair above the panel (not the heavy near-black --color-field), the

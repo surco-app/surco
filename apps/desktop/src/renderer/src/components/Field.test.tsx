@@ -88,6 +88,43 @@ describe('Field committing', () => {
   })
 })
 
+// The form is keyboard-first, so Enter should behave like it does everywhere else the
+// user types a value and moves on: commit what's typed and jump to the next field, so a
+// whole release is entered without touching the mouse or waiting on the pause-debounce.
+describe('Field Enter commits and advances', () => {
+  it('commits the draft and moves focus to the next field on Enter', () => {
+    const onChange = vi.fn()
+    render(
+      <div>
+        <Field name="title" label="Title" value="" onChange={onChange} />
+        <Field name="artist" label="Artist" value="" onChange={() => {}} />
+      </div>,
+    )
+    const title = screen.getByTestId('field-title') as HTMLInputElement
+    const artist = screen.getByTestId('field-artist')
+    title.focus()
+
+    fireEvent.change(title, { target: { value: 'Song' } })
+    fireEvent.keyDown(title, { key: 'Enter' })
+
+    // The keystroke is committed at once (no waiting on the debounce)...
+    expect(onChange).toHaveBeenCalledWith('Song')
+    // ...and focus has moved on, so the next value can be typed immediately.
+    expect(artist).toHaveFocus()
+  })
+
+  it('commits on Enter even when it is the last field with nowhere to advance', () => {
+    const onChange = vi.fn()
+    render(<Field name="title" label="Title" value="" onChange={onChange} />)
+    const input = screen.getByTestId('field-title')
+
+    fireEvent.change(input, { target: { value: 'Solo' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenCalledWith('Solo')
+  })
+})
+
 // The BPM/Key chips come from an audio probe that resolves after the form is on screen.
 // Without a placeholder the detected chip popped into empty space; a loading chip holds
 // its spot so the swap is seamless, and it must vanish the instant the real chip lands.
@@ -104,9 +141,7 @@ describe('Field suggestion loading chip', () => {
     expect(screen.getByTestId('suggestion-loading-bpm')).toBeInTheDocument()
 
     // The probe resolved: a real suggestion arrives and `suggesting` clears.
-    rerender(
-      <Field name="bpm" label="BPM" value="" onChange={() => {}} suggestions={['128']} />,
-    )
+    rerender(<Field name="bpm" label="BPM" value="" onChange={() => {}} suggestions={['128']} />)
     expect(screen.queryByTestId('suggestion-loading-bpm')).toBeNull()
     expect(screen.getByTestId('chip-128')).toBeInTheDocument()
   })
