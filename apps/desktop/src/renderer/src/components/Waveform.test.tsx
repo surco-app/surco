@@ -39,9 +39,6 @@ beforeEach(() => {
   ;(window as unknown as { PointerEvent: typeof MouseEvent }).PointerEvent = window.MouseEvent
   HTMLElement.prototype.setPointerCapture = vi.fn()
   HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(true)
-  // jsdom has no 2D canvas context (it logs a not-implemented error and returns
-  // null); drawWaveform already handles null, so stub it to keep the noise out.
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
 })
 
 afterEach(() => {

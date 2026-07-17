@@ -25,7 +25,6 @@ describe('Confetti', () => {
 
   it('renders a pointer-transparent overlay canvas when motion is allowed', () => {
     stubReducedMotion(false)
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
     render(<Confetti />)
     const canvas = screen.getByTestId('confetti')
     expect(canvas).toBeInTheDocument()
