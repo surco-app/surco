@@ -277,7 +277,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         // the blocky low-resolution wave the deeper zoom exists to replace.
         // v4: the clip/channel scan split into its own probe (audio:waveform-scan);
         // v3 entries carry the now-removed clipped/channels, so a rename drops them.
-        return await cachedAnalysis('waveform-v4', inputPath, () =>
+        // v5: results grew per-bucket rms for the two-layer draw; v4 entries have
+        // no rms, so a rename re-decodes them rather than draw a body-less wave.
+        return await cachedAnalysis('waveform-v5', inputPath, () =>
           probe('activity.probeWaveform', inputPath, () =>
             cancellable(inputPath, priority, (signal) =>
               analysisLimiter.run(() => measureWaveform(inputPath, signal), priority, signal),

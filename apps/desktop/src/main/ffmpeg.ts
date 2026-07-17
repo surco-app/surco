@@ -1685,7 +1685,7 @@ export async function measureWaveformWindow(
   startSec: number,
   durSec: number,
   buckets: number,
-): Promise<{ peaks: number[] } | null> {
+): Promise<{ peaks: number[]; rms: number[] } | null> {
   const samples = await decodePcm(input, {
     sampleRate: WAVEFORM_SAMPLE_RATE,
     startSec,
@@ -1693,10 +1693,11 @@ export async function measureWaveformWindow(
     maxBufferMb: 32,
   })
   if (samples.length === 0) return null
-  const peaks = await runInWorker<number[]>({ type: 'waveformPeaks', pcm: samples, buckets }, [
-    samples.buffer as ArrayBuffer,
-  ])
-  return peaks ? { peaks } : null
+  const wave = await runInWorker<{ peaks: number[]; rms: number[] }>(
+    { type: 'waveformPeaks', pcm: samples, buckets },
+    [samples.buffer as ArrayBuffer],
+  )
+  return wave ?? null
 }
 
 // Per-channel scan at the native rate and channel count: true-clipping flags plus
@@ -1739,11 +1740,11 @@ export async function measureWaveform(
   // leaving length 0). The max-abs reduction runs in the worker, off the main event loop —
   // this fires on every play, exactly while surco:// is streaming.
   const durationSec = samples.length / WAVEFORM_SAMPLE_RATE
-  const peaks =
-    (await runInWorker<number[]>({ type: 'waveformPeaks', pcm: samples }, [
-      samples.buffer as ArrayBuffer,
-    ])) ?? []
-  return { peaks, durationSec }
+  const wave = await runInWorker<{ peaks: number[]; rms: number[] }>(
+    { type: 'waveformPeaks', pcm: samples },
+    [samples.buffer as ArrayBuffer],
+  )
+  return { peaks: wave?.peaks ?? [], rms: wave?.rms ?? [], durationSec }
 }
 
 // The heavy half of the old waveform, split out so only the compare/player strip pays for

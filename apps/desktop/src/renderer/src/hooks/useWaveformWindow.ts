@@ -22,6 +22,9 @@ export function windowFor(
 
 export interface WaveformWindow {
   peaks: number[]
+  // The RMS body for this window, same grid as peaks — the two-layer draw stays
+  // consistent between the overview strip and the deep-zoom re-decode over it.
+  rms: number[]
   // The slice this data actually covers, stamped by the fetch: keepPreviousData
   // hands back the PREVIOUS window while the next loads, and the drawer must map
   // those peaks by the coords they belong to, never by the ones just requested.
@@ -43,7 +46,7 @@ export function useWaveformWindow(
     queryKey: ['waveform-window', inputPath, startSec, durSec],
     queryFn: async () => {
       const r = await window.api.waveformWindow(inputPath as string, startSec, durSec, WINDOW_BUCKETS)
-      return r ? { peaks: r.peaks, startSec, durSec } : null
+      return r ? { peaks: r.peaks, rms: r.rms, startSec, durSec } : null
     },
     enabled: enabled && !!inputPath && durSec > 0,
     staleTime: Number.POSITIVE_INFINITY,

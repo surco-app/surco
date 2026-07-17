@@ -591,8 +591,11 @@ export interface ProcessResult {
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's
 // waveform strip. durationSec comes from the decoded sample count, so peak
 // index ↔ seconds mapping is exact even when the container's duration lies.
+// rms carries each bucket's RMS body for the Audacity-style two-layer draw
+// (peak outline + solid core); same grid as peaks, always rms[i] ≤ peaks[i].
 export interface WaveformResult {
   peaks: number[]
+  rms: number[]
   durationSec: number
 }
 

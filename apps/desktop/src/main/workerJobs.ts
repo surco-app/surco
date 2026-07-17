@@ -52,7 +52,13 @@ export type WorkerJob =
   // process's event loop (the one worker job that is async — it awaits the decode).
   | { type: 'channelScan'; input: string; ffmpegPath: string; channels: number; timeoutMs: number }
 
-export type WorkerJobResult = BpmResult | KeyResult | number[] | WaveformScan | null
+export type WorkerJobResult =
+  | BpmResult
+  | KeyResult
+  | number[]
+  | { peaks: number[]; rms: number[] }
+  | WaveformScan
+  | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {

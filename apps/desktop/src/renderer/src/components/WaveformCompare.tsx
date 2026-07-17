@@ -205,7 +205,7 @@ export function Strip({
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
       return
     }
-    if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR })
+    if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
     // With no dB line dialed in, the red marks come from the decoder's true-clipping
     // flags — drawWaveform only consults them when clipDb/limitDb are absent.
     const lanes = split && wave.channels?.length === 2 ? wave.channels : null
@@ -229,6 +229,7 @@ export function Strip({
         clipped: wave.clipped,
         limitDb,
         marks,
+        rms: wave.rms,
         clear: !background,
       })
     }
@@ -384,6 +385,7 @@ export function Strip({
         color,
         clipDb,
         marks,
+        rms: hiRes.rms,
         window: {
           from: (view.from - winFrom) / winSpan,
           to: (view.to - winFrom) / winSpan,
@@ -403,7 +405,7 @@ export function Strip({
     // The cached window spans winSpan of the strip; at this zoom that is
     // (winSpan × zoom) panels wide — the bitmap must match, or the bars stretch.
     sizeFor(panelPx * winSpan * zoom)
-    drawWaveform(canvas, hiRes.peaks, { color, clipDb, marks })
+    drawWaveform(canvas, hiRes.peaks, { color, clipDb, marks, rms: hiRes.rms })
     canvas.style.left = `${winFrom * 100}%`
     canvas.style.width = `${winSpan * 100}%`
   }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall, raster, zoom])
@@ -616,9 +618,10 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !before.wave || !after.wave) return
-    drawWaveform(canvas, before.wave.peaks, { color: BEFORE_COLOR })
+    drawWaveform(canvas, before.wave.peaks, { color: BEFORE_COLOR, rms: before.wave.rms })
     drawWaveform(canvas, after.wave.peaks, {
       color: `rgba(96, 165, 250, ${(0.9 * fade).toFixed(3)})`,
+      rms: after.wave.rms,
       clear: false,
     })
   }, [before.wave, after.wave, fade])

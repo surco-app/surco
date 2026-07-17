@@ -154,12 +154,13 @@ function Lane({
     // While the window decodes, the overview's peaks stand in for the same stretch
     // — coarse, but the lane is never blank and never lies about WHERE it is.
     if (win) {
-      drawWaveform(canvas, win.peaks, { color: AFTER_COLOR })
+      drawWaveform(canvas, win.peaks, { color: AFTER_COLOR, rms: win.rms })
       return
     }
     if (!wave || durationSec <= 0) return
     drawWaveform(canvas, wave.peaks, {
       color: AFTER_COLOR,
+      rms: wave.rms,
       window: { from: fromSec / durationSec, to: toSec / durationSec },
     })
   }, [win, wave, fromSec, toSec, durationSec])

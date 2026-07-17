@@ -4,6 +4,20 @@ import type { NormalizeConfig } from '../../../shared/types'
 // can't read CSS variables, and the strips don't retheme either.
 const CLIP_COLOR = 'rgba(247, 118, 142, 0.95)'
 
+// The RMS core drawn over the peak outline, in the same hue but fully opaque: the
+// peak layer is the translucent envelope, this solid inner body is what Audacity's
+// darker fill gives — the contrast that lets a transient stand out of sustained
+// material instead of both melting into one flat block. Derived per-draw from the
+// bar colour so before/after/preview each keep their own hue.
+function rmsColor(base: string): string {
+  // The strips' colours arrive as rgba(r, g, b, a); swap the alpha for a solid
+  // core. A non-rgba colour (unexpected) falls back to the base unchanged.
+  const m = base.match(/^rgba?\(([^)]+)\)$/)
+  if (!m) return base
+  const [r, g, b] = m[1].split(',')
+  return `rgba(${r},${g},${b}, 1)`
+}
+
 // Peaks are absolute (1.0 = 0 dBFS, see main/waveform.ts), so a dB ceiling converts
 // straight to a linear amplitude. Strictly above: a normalized output sitting exactly
 // AT its ceiling is compliant, not clipping.
@@ -70,6 +84,11 @@ export function drawWaveform(
     lane?: { index: number; count: number }
     limitDb?: number
     marks?: boolean
+    // The per-bucket RMS body (same grid as peaks). Present, the strip draws
+    // Audacity-style two layers: the translucent peak outline plus this solid
+    // inner core, the contrast that makes transients read. Absent (the skeleton,
+    // the mono preview envelope), the single peak layer draws as before.
+    rms?: number[]
     // Draw only this slice of the peak array (0..1 fractions of it), stretched
     // across the full canvas — the deep zoom's viewport canvas renders the
     // visible window this way instead of rastering the whole zoomed strip.
@@ -85,12 +104,27 @@ export function drawWaveform(
   const laneH = opts.lane ? h / opts.lane.count : h
   const mid = (opts.lane ? laneH * opts.lane.index : 0) + laneH / 2
   const baseColor = opts.color ?? 'rgba(96, 165, 250, 0.8)'
+  const coreColor = rmsColor(baseColor)
+  const rms = opts.rms
   const limitLin = opts.limitDb !== undefined ? 10 ** (opts.limitDb / 20) : null
   const from = (opts.window?.from ?? 0) * peaks.length
   const to = (opts.window?.to ?? 1) * peaks.length
   const span = to - from
   if (span <= 0) return
   const barW = w / span
+  const halfH = laneH / 2 - 2
+  // Clip marks paint as full-height vertical lines struck over the wave, not as a
+  // recoloured bar: a red bar barely taller than its blue neighbours hides in a
+  // hot passage, while a line crossing the whole lane reads from across the room —
+  // Audacity's red cursor lines. Collected during the wave pass, drawn on top after.
+  const clipXs: number[] = []
+  const isOver = (i: number): boolean =>
+    opts.marks !== false &&
+    (limitLin !== null
+      ? peaks[i] > limitLin
+      : opts.clipDb !== undefined
+        ? clipsOver(peaks[i], opts.clipDb)
+        : opts.clipped?.[i] === true)
   // Upsampling (fewer buckets than pixels — a deep zoom outrunning its data):
   // one rectangle per bucket reads as a wall of fat blocks, so draw per-pixel
   // columns linearly interpolated between bucket centres instead — a soft
@@ -104,33 +138,58 @@ export function drawWaveform(
       const t = Math.min(1, Math.max(0, pos - i0))
       const raw = peaks[i0] * (1 - t) + peaks[i1] * t
       const nearest = t < 0.5 ? i0 : i1
-      const over =
-        opts.marks !== false &&
-        (limitLin !== null
-          ? peaks[nearest] > limitLin
-          : opts.clipDb !== undefined
-            ? clipsOver(peaks[nearest], opts.clipDb)
-            : opts.clipped?.[nearest] === true)
       const amp = limitLin !== null ? Math.min(raw, limitLin) : raw
-      const bar = Math.max(amp * (laneH / 2 - 2), 0.5)
-      ctx.fillStyle = over ? CLIP_COLOR : baseColor
+      const bar = Math.max(amp * halfH, 0.5)
+      ctx.fillStyle = baseColor
       ctx.fillRect(x, mid - bar, 1, bar * 2)
+      if (rms) {
+        const core = Math.min(rms[i0] * (1 - t) + rms[i1] * t, amp) * halfH
+        if (core > 0.5) {
+          ctx.fillStyle = coreColor
+          ctx.fillRect(x, mid - core, 1, core * 2)
+        }
+      }
+      if (isOver(nearest)) clipXs.push(x)
     }
+    strikeClips(ctx, clipXs, mid, halfH, 1)
     return
   }
+  const bw = Math.max(barW - 0.5, 0.5)
   for (let i = Math.max(0, Math.floor(from)); i < Math.min(peaks.length, Math.ceil(to)); i++) {
-    const over =
-      opts.marks !== false &&
-      (limitLin !== null
-        ? peaks[i] > limitLin
-        : opts.clipDb !== undefined
-          ? clipsOver(peaks[i], opts.clipDb)
-          : opts.clipped?.[i] === true)
+    const x = (i - from) * barW
     const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
-    const bar = Math.max(amp * (laneH / 2 - 2), 0.5)
-    ctx.fillStyle = over ? CLIP_COLOR : baseColor
-    ctx.fillRect((i - from) * barW, mid - bar, Math.max(barW - 0.5, 0.5), bar * 2)
+    const bar = Math.max(amp * halfH, 0.5)
+    ctx.fillStyle = baseColor
+    ctx.fillRect(x, mid - bar, bw, bar * 2)
+    if (rms) {
+      const core = Math.min(rms[i], amp) * halfH
+      if (core > 0.5) {
+        ctx.fillStyle = coreColor
+        ctx.fillRect(x, mid - core, bw, core * 2)
+      }
+    }
+    if (isOver(i)) clipXs.push(x)
   }
+  strikeClips(ctx, clipXs, mid, halfH, bw)
+}
+
+// The clip lines struck over the drawn wave: one full-lane-height red line per
+// flagged bucket, coalescing adjacent flags so a run of clipped buckets paints one
+// solid band instead of a moiré of hairlines. Width tracks the bar so a zoomed-in
+// clip stays a visible mark, not a sub-pixel sliver.
+function strikeClips(
+  ctx: CanvasRenderingContext2D,
+  xs: number[],
+  mid: number,
+  halfH: number,
+  barW: number,
+): void {
+  if (xs.length === 0) return
+  ctx.fillStyle = CLIP_COLOR
+  const top = mid - halfH - 2
+  const height = (halfH + 2) * 2
+  const lineW = Math.max(barW, 1)
+  for (const x of xs) ctx.fillRect(x, top, lineW, height)
 }
 
 // A synthetic amplitude envelope for the decode placeholder. Real music swells and

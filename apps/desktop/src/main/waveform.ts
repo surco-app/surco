@@ -15,24 +15,36 @@ export const WAVEFORM_BUCKETS = 8192
 // on a club track, so kick transients survive the max-abs reduction intact.
 export const WAVEFORM_SAMPLE_RATE = 4000
 
-export function computePeaks(samples: Float32Array, buckets = WAVEFORM_BUCKETS): number[] {
+// Alongside the max-abs envelope, each bucket carries its RMS: the Audacity-style
+// two-layer draw (peak outline + solid RMS core) is what lets the eye tell a
+// transient from sustained material — a single translucent layer flattens both
+// into the same block. One pass over the PCM computes both.
+export function computePeaks(
+  samples: Float32Array,
+  buckets = WAVEFORM_BUCKETS,
+): { peaks: number[]; rms: number[] } {
   const count = Math.min(buckets, samples.length)
   const peaks = new Array<number>(count)
+  const rms = new Array<number>(count)
   for (let b = 0; b < count; b++) {
     // Integer bucket edges derived per index so the last bucket always ends
     // exactly at samples.length — a fixed stride would drop a remainder tail.
     const start = Math.floor((b * samples.length) / count)
     const end = Math.floor(((b + 1) * samples.length) / count)
     let max = 0
+    let sq = 0
     for (let i = start; i < end; i++) {
       const v = Math.abs(samples[i])
       if (v > max) max = v
+      sq += v * v
     }
     // Float decodes of hot masters can overshoot ±1.0; the renderer multiplies
-    // by bar height, so clamp rather than let one bucket draw off-canvas.
+    // by bar height, so clamp rather than let one bucket draw off-canvas. The
+    // RMS clamps to the clamped peak so the core never paints past its envelope.
     peaks[b] = Math.min(max, 1)
+    rms[b] = Math.min(end > start ? Math.sqrt(sq / (end - start)) : 0, peaks[b])
   }
-  return peaks
+  return { peaks, rms }
 }
 
 // Audacity's MAX_AUDIO: the int16 full-scale rail (32767/32768). A sample at or past

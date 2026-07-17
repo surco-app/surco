@@ -38,7 +38,7 @@ export function Waveform({
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (canvas && wave) drawWaveform(canvas, wave.peaks)
+    if (canvas && wave) drawWaveform(canvas, wave.peaks, { rms: wave.rms })
   }, [wave])
 
   // Track the player's position only while it streams this track; any other

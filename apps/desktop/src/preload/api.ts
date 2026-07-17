@@ -146,7 +146,7 @@ export interface Api {
     startSec: number,
     durSec: number,
     buckets: number,
-  ) => Promise<{ peaks: number[] } | null>
+  ) => Promise<{ peaks: number[]; rms: number[] } | null>
   // Renders the whole track through the given repair mode into a temp WAV playable
   // through surco://, for the A/B against the original. Whole track, not an excerpt:
   // the user judges the repair at the clicks they can see, wherever they sit. Slow
