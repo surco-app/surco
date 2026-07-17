@@ -266,6 +266,7 @@
     "chooseTrack": "Escolha a faixa para aplicar",
     "matchSuggested": "Sugerida",
     "chooseAlbumHint": "Escolha um álbum da lista para ver as faixas dele.",
+    "noResults": "Nenhum álbum corresponde à sua busca.",
     "formatFilter": "Mostrando só: {{formats}}",
     "providerFilter": "Filtrar resultados por fonte",
     "providerFilterAll": "Todas",

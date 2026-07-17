@@ -1,4 +1,4 @@
-import { ChevronRight, ListFilter } from 'lucide-react'
+import { ChevronRight, ListFilter, SearchX } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -84,6 +84,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     suggestedKey,
     loading,
     busy,
+    noResults,
     error,
     previewRelease,
   } = browser
@@ -273,6 +274,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   </span>
                 </div>
               ))}
+            </div>
+          ) : noResults ? (
+            <div
+              data-testid="discogs-no-results"
+              className="flex flex-col items-center justify-center gap-2 px-6 pt-12 text-center text-xs text-fg-dim"
+            >
+              <SearchX className="h-5 w-5 text-fg-faint" aria-hidden="true" />
+              {tr('editor.noResults')}
             </div>
           ) : results.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>

@@ -266,6 +266,7 @@
     "chooseTrack": "Wähl den Track zum Anwenden",
     "matchSuggested": "Vorgeschlagen",
     "chooseAlbumHint": "Wähl ein Album aus der Liste, um seine Tracks zu sehen.",
+    "noResults": "Keine Alben passen zu deiner Suche.",
     "formatFilter": "Zeige nur: {{formats}}",
     "providerFilter": "Ergebnisse nach Quelle filtern",
     "providerFilterAll": "Alle",

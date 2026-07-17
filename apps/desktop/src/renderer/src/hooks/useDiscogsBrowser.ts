@@ -55,6 +55,10 @@ export interface DiscogsBrowser {
   // premature "not in library" before Discogs has had its say. Distinct from `busy`, which
   // only covers an in-flight request (and gates the Search button), not the debounce window.
   resolving: boolean
+  // A search that ran and settled with zero rows to show — distinct from the idle,
+  // never-searched state so the panel can offer a "no matches" placeholder instead of the
+  // "choose an album" hint.
+  noResults: boolean
   error: string
   previewRelease: (result: SearchResult) => void
 }
@@ -326,6 +330,11 @@ export function useDiscogsBrowser(
   // request even starts (query committed-to-be ≠ the term that's actually running). Not while
   // a search has errored — there's no verdict coming, so the badge must commit, not spin.
   const resolving = query.trim() !== '' && !searchQuery.isError && (busy || searchTerm !== query)
+  // A search that ran and settled with nothing to show — the searched-but-empty case, kept
+  // distinct from the never-searched-yet idle state so the panel can say "no matches" instead
+  // of the "choose an album" hint. Also true when a provider filter empties an otherwise
+  // non-empty result set.
+  const noResults = searchQuery.isSuccess && results.length === 0
   const error = searchQuery.isError
     ? errorMessage(searchQuery.error, tr('editor.searchError'))
     : releaseQuery.isError
@@ -351,6 +360,7 @@ export function useDiscogsBrowser(
       loading,
       busy,
       resolving,
+      noResults,
       error,
       previewRelease,
     }),
@@ -367,6 +377,7 @@ export function useDiscogsBrowser(
       loading,
       busy,
       resolving,
+      noResults,
       error,
       previewRelease,
     ],

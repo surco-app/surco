@@ -266,6 +266,7 @@
     "chooseTrack": "Choisis le morceau à appliquer",
     "matchSuggested": "Suggéré",
     "chooseAlbumHint": "Choisis un album dans la liste pour voir ses morceaux.",
+    "noResults": "Aucun album ne correspond à ta recherche.",
     "formatFilter": "Affichage limité à : {{formats}}",
     "providerFilter": "Filtrer les résultats par source",
     "providerFilterAll": "Toutes",
