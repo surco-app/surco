@@ -1,6 +1,6 @@
 import { Copy, Disc3, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
 import type React from 'react'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
@@ -23,7 +23,7 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex, StaleLibraryCopy } from '../lib/appleMusicLibrary'
-import { matchTargetOf } from '../lib/autoMatch'
+import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -104,6 +104,10 @@ interface Props {
   onFieldFocusChange?: (id: string | null) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
+  // Cancels an in-flight single-track conversion — the button becomes a cancel while it
+  // runs, so a long convert has the escape a batch always had. Multi cancels via the
+  // toolbar batch pill, so this is single-only.
+  onCancel?: () => void
   // The explicit "re-encode this one" action: a same-format source rendered again
   // with the pinned bit depth/sample rate. Offered only when the source doesn't
   // meet the pins — the regular process button stays a metadata-only update.
@@ -175,6 +179,7 @@ export const Editor = memo(function Editor({
   onFieldFocusChange,
   onChange,
   onProcess,
+  onCancel,
   onReencode,
   onFormatChange,
   onDestinationChange,
@@ -199,6 +204,7 @@ export const Editor = memo(function Editor({
   // above keeps the same "only re-render when settings actually change" contract.
   const {
     discogsToken,
+    autoMatch,
     outputFormat,
     addToAppleMusic,
     addToEngineDj,
@@ -449,6 +455,36 @@ export const Editor = memo(function Editor({
     // input node persists across the re-render (stable key), so focusing it now sticks.
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
   }
+
+  // A confident match shouldn't cost a click the sweep would have spared: when the editor
+  // opens on a 'high' match the sweep never reached (filter-hidden row, auto-match off, no
+  // token but a manual search surfaced one), apply it without waiting for the user to click
+  // the suggested row. Guarded so it never fights the user — shouldAutoApplyMatch holds off
+  // on an already-matched track, mid-edit, or in multi-select, and the ref makes it fire at
+  // most once per opened release so the write (which lands as matched: true a tick later)
+  // can't loop. selectTrack itself moves focus to the title to verify, exactly as a manual
+  // pick does, so the auto-apply and the click leave the same keyboard state.
+  const autoAppliedRelease = useRef<number | undefined>(undefined)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectTrack is recreated every render; the effect keys on the release/match signals that decide whether to apply, and the ref guards against re-firing.
+  useEffect(() => {
+    if (autoAppliedRelease.current === release?.id) return
+    const editing = !!document.activeElement?.getAttribute('data-testid')?.startsWith('field-')
+    if (
+      release &&
+      matchedTrack &&
+      shouldAutoApplyMatch({
+        autoMatchOn: autoMatch,
+        tier: matchTier,
+        hasMatchedTrack: true,
+        alreadyMatched: !!item.matched,
+        editing,
+        multi: isMulti,
+      })
+    ) {
+      autoAppliedRelease.current = release.id
+      selectTrack(matchedTrack)
+    }
+  }, [autoMatch, release, matchedTrack, matchTier, item.matched, isMulti])
 
   // Stable identity so the field specs below can memoize: the body still reads the
   // current item.meta on every call (useStableCallback mirrors the latest closure),
@@ -1140,6 +1176,9 @@ export const Editor = memo(function Editor({
           }}
           onExportCollection={onExportCollection}
           onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+          // Single-only: a running multi converts through the toolbar's batch pill, which
+          // owns that cancel. Passing it in multi would cancel just the primary track.
+          onCancel={isMulti ? undefined : onCancel}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
           onTrashOriginal={onTrashOriginal}
           staleMusicCopy={staleMusicCopy}

@@ -9,6 +9,7 @@ import {
   matchTargetOf,
   type ProbedCandidate,
   type ProbeMatch,
+  shouldAutoApplyMatch,
   tracksToAutoMatch,
 } from './autoMatch'
 import { confidenceTier } from './release'
@@ -29,6 +30,45 @@ const REVIEW = { title: 'My Song (Club Mix)', position: '1' }
 const LOW = { title: 'My Different Tune', position: '1' }
 
 const target = { title: 'My Song', durationSec: 200 }
+
+// The editor auto-applies a high-tier match on open so the manual flow doesn't cost the
+// one click the sweep would have spared — but only in the exact conditions the sweep uses,
+// so it never writes over a deliberate pick or an edit in flight.
+describe('shouldAutoApplyMatch', () => {
+  const base = { autoMatchOn: true, tier: 'high' as const, hasMatchedTrack: true, alreadyMatched: false, editing: false, multi: false }
+
+  it('applies a high-tier match on an untouched, unedited single track', () => {
+    expect(shouldAutoApplyMatch(base)).toBe(true)
+  })
+
+  it('stays out of the way entirely when the user turned auto-match off', () => {
+    // Off means "don't write metadata without a deliberate click" — browsing tracks with
+    // j/k must not start applying matches just because the editor opened on each.
+    expect(shouldAutoApplyMatch({ ...base, autoMatchOn: false })).toBe(false)
+  })
+
+  it('never applies a review or low tier — those stay a click', () => {
+    expect(shouldAutoApplyMatch({ ...base, tier: 'review' })).toBe(false)
+    expect(shouldAutoApplyMatch({ ...base, tier: 'low' })).toBe(false)
+    expect(shouldAutoApplyMatch({ ...base, tier: undefined })).toBe(false)
+  })
+
+  it('does nothing when there is no confidently matched track', () => {
+    expect(shouldAutoApplyMatch({ ...base, hasMatchedTrack: false })).toBe(false)
+  })
+
+  it('leaves an already-matched track alone so it never overwrites a pick or the sweep', () => {
+    expect(shouldAutoApplyMatch({ ...base, alreadyMatched: true })).toBe(false)
+  })
+
+  it('holds off while the user is editing a field, so a landing match cannot revert their words', () => {
+    expect(shouldAutoApplyMatch({ ...base, editing: true })).toBe(false)
+  })
+
+  it('never auto-applies in multi-select, where one release cannot speak for the whole selection', () => {
+    expect(shouldAutoApplyMatch({ ...base, multi: true })).toBe(false)
+  })
+})
 
 describe('autoMatchRelease', () => {
   it('returns the first release whose best track is high confidence', async () => {

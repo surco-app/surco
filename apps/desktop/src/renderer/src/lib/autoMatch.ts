@@ -87,6 +87,33 @@ export function acceptReviewPatch(track: TrackItem): Partial<TrackItem> | undefi
   }
 }
 
+// Whether opening a track's editor should write its confident match without waiting for
+// the user to click the suggested tracklist row. The sweep already spares that click on
+// visible rows (it applies 'high' straight off), so this only fires where the sweep didn't
+// reach — a filter-hidden row, or a manual search that just surfaced a 'high' release.
+// Gated on the auto-match setting: off means "no metadata without a deliberate click", so
+// browsing with j/k never starts writing. Then held to the sweep's own terms: only 'high',
+// only a track that isn't already matched (never overwrite a deliberate pick or the sweep's
+// own write), never while a field is being edited (a landing match must not revert typed
+// words), and never in multi-select where one release can't speak for the whole selection.
+export function shouldAutoApplyMatch(o: {
+  autoMatchOn: boolean
+  tier: 'high' | 'review' | 'low' | undefined
+  hasMatchedTrack: boolean
+  alreadyMatched: boolean
+  editing: boolean
+  multi: boolean
+}): boolean {
+  return (
+    o.autoMatchOn &&
+    o.tier === 'high' &&
+    o.hasMatchedTrack &&
+    !o.alreadyMatched &&
+    !o.editing &&
+    !o.multi
+  )
+}
+
 // How many search results to probe before giving up. Each probe loads a full
 // release (one Discogs call), so this caps the calls one file can make — the editor
 // browser's auto-probe and the sweep share it so manual and automatic matching agree.

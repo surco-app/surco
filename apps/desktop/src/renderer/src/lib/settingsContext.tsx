@@ -25,6 +25,10 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 // `?? fallback` per prop at every consumer (the 17-prop wall App used to pass Editor).
 export interface ResolvedSettings {
   discogsToken: string
+  // Whether the background sweep auto-matches on import. The editor reads it so opening a
+  // track only auto-applies a confident match when the user left auto-match on — off means
+  // no metadata is written without a deliberate click.
+  autoMatch: boolean
   outputFormat: OutputFormat
   // The quality pins, read by the editor's "re-encode this one" offer: a same-format
   // source that doesn't meet them gets the explicit action instead of a silent re-encode.
@@ -61,6 +65,7 @@ export interface ResolvedSettings {
 // the settings identity, so consumers' memoization only breaks when settings change.
 const DEFAULTS: ResolvedSettings = {
   discogsToken: '',
+  autoMatch: false,
   outputFormat: 'aiff',
   outputBitDepth: 'source',
   outputSampleRate: 'source',
@@ -93,6 +98,7 @@ export function resolveSettings(settings: Partial<Settings> | null): ResolvedSet
   if (!settings) return DEFAULTS
   return {
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,
+    autoMatch: settings.autoMatch ?? DEFAULTS.autoMatch,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
