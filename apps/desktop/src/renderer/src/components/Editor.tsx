@@ -3,6 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
@@ -15,7 +16,6 @@ import type {
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
-import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
@@ -61,9 +61,9 @@ import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
-import { SectionPill } from './SectionPill'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
+import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
@@ -843,7 +843,9 @@ export const Editor = memo(function Editor({
                     testid="apple-music-status"
                     icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
                   >
-                    {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
+                    {tr(
+                      librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary',
+                    )}
                   </SectionPill>
                 )}
                 {!isMulti && inLibrary === 'no' && (
@@ -943,144 +945,144 @@ export const Editor = memo(function Editor({
                 // guard narrows to a real element.
                 const element = ((): React.ReactElement | false | null => {
                   switch (id) {
-                  case 'properties':
-                    return (
-                      !isMulti && (
-                        <PropertiesSection
+                    case 'properties':
+                      return (
+                        !isMulti && (
+                          <PropertiesSection
+                            key={id}
+                            item={item}
+                            open={propertiesOpen}
+                            onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                          />
+                        )
+                      )
+                    case 'quality':
+                      return (
+                        !isMulti &&
+                        (showSpectrum || showLoudness) && (
+                          <QualitySection
+                            key={id}
+                            item={item}
+                            showSpectrum={showSpectrum}
+                            showLoudness={showLoudness}
+                            open={spectrumOpen}
+                            onToggle={() => setSectionOpen('quality', !spectrumOpen)}
+                            onShowLoudnessHelp={onShowLoudnessHelp}
+                          />
+                        )
+                      )
+                    case 'output':
+                      // Overwrite mode pins the name to the original, so the File Name
+                      // section is replaced by a notice of what the export will do.
+                      if (!isMulti && overwriteOriginal) {
+                        return (
+                          <OverwriteNotice
+                            key={id}
+                            title={tr('editor.overwriteTitle')}
+                            lossy={lossyOverwrite}
+                            hint={
+                              lossyOverwrite
+                                ? tr('editor.overwriteLossyHint')
+                                : willEditInPlace
+                                  ? tr('editor.overwriteHint')
+                                  : tr('editor.overwriteAlacHint')
+                            }
+                          />
+                        )
+                      }
+                      // Multi-select has no single name to edit, but the bulk rename is
+                      // exactly the flow a selection wants: retag a crate, then stamp
+                      // every file name from the pattern at once (djotas's ask). One
+                      // button in the section's slot instead of hiding it entirely.
+                      if (isMulti) {
+                        if (overwriteOriginal) return null
+                        return (
+                          <BulkActionSection
+                            key={id}
+                            testid="output-multi"
+                            buttonTestid="regenerate-output-names-all"
+                            title={tr('editor.outputName')}
+                            label={tr('editor.regenerateAll', { count: multiTracks.length })}
+                            icon={RefreshCw}
+                            onClick={onRegenerateName}
+                          />
+                        )
+                      }
+                      return (
+                        <OutputNameSection
                           key={id}
                           item={item}
-                          open={propertiesOpen}
-                          onToggle={() => setSectionOpen('properties', !propertiesOpen)}
+                          format={format}
+                          defaultOutputName={defaultOutputName}
+                          autoApply={autoApplyFilename}
+                          willEditInPlace={willEditInPlace}
+                          open={outputOpen}
+                          onToggle={() => setSectionOpen('output', !outputOpen)}
+                          onChangeName={(outputName) => onChange({ outputName })}
+                          onRegenerateName={onRegenerateName}
+                          onOpenRename={onOpenRename}
                         />
                       )
-                    )
-                  case 'quality':
-                    return (
-                      !isMulti &&
-                      (showSpectrum || showLoudness) && (
-                        <QualitySection
+                    case 'trim':
+                      // The per-track handles have no multi-select story (the anchor's
+                      // wave would misrepresent the rest), but the detection does: one
+                      // button runs it over the selection and stages each track's own
+                      // suggestion — visible and resettable per track afterwards.
+                      if (isMulti) {
+                        return (
+                          <BulkActionSection
+                            key={id}
+                            testid="trim-multi"
+                            buttonTestid="trim-detect-all"
+                            title={tr('trim.title')}
+                            label={tr('trim.applyAll', { count: multiTracks.length })}
+                            icon={Scissors}
+                            onClick={onTrimDetectedAll}
+                          />
+                        )
+                      }
+                      return (
+                        <TrimSection
                           key={id}
+                          value={item.trim}
+                          open={trimOpen}
+                          onToggle={() => setSectionOpen('trim', !trimOpen)}
+                          onChange={(trim) => onChange({ trim })}
+                          inputPath={item.inputPath}
+                        />
+                      )
+                    case 'declick':
+                      return (
+                        <DeclickSection
+                          key={id}
+                          value={declickCfg}
+                          open={declickOpen}
+                          onToggle={() => setSectionOpen('declick', !declickOpen)}
+                          onChange={(d) => {
+                            setDeclickCfg(d)
+                            onDeclickChange?.(d)
+                          }}
+                          inputPath={item.inputPath}
+                          isMulti={isMulti}
+                          format={format}
+                          trim={item.trim}
+                        />
+                      )
+                    case 'normalize':
+                      return (
+                        <NormalizeSection
+                          key={id}
+                          value={normalizeCfg}
+                          open={normalizeOpen}
+                          onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
+                          onChange={(n) => {
+                            setNormalizeCfg(n)
+                            onNormalizeChange?.(n)
+                          }}
                           item={item}
-                          showSpectrum={showSpectrum}
-                          showLoudness={showLoudness}
-                          open={spectrumOpen}
-                          onToggle={() => setSectionOpen('quality', !spectrumOpen)}
-                          onShowLoudnessHelp={onShowLoudnessHelp}
+                          isMulti={isMulti}
                         />
                       )
-                    )
-                  case 'output':
-                    // Overwrite mode pins the name to the original, so the File Name
-                    // section is replaced by a notice of what the export will do.
-                    if (!isMulti && overwriteOriginal) {
-                      return (
-                        <OverwriteNotice
-                          key={id}
-                          title={tr('editor.overwriteTitle')}
-                          lossy={lossyOverwrite}
-                          hint={
-                            lossyOverwrite
-                              ? tr('editor.overwriteLossyHint')
-                              : willEditInPlace
-                                ? tr('editor.overwriteHint')
-                                : tr('editor.overwriteAlacHint')
-                          }
-                        />
-                      )
-                    }
-                    // Multi-select has no single name to edit, but the bulk rename is
-                    // exactly the flow a selection wants: retag a crate, then stamp
-                    // every file name from the pattern at once (djotas's ask). One
-                    // button in the section's slot instead of hiding it entirely.
-                    if (isMulti) {
-                      if (overwriteOriginal) return null
-                      return (
-                        <BulkActionSection
-                          key={id}
-                          testid="output-multi"
-                          buttonTestid="regenerate-output-names-all"
-                          title={tr('editor.outputName')}
-                          label={tr('editor.regenerateAll', { count: multiTracks.length })}
-                          icon={RefreshCw}
-                          onClick={onRegenerateName}
-                        />
-                      )
-                    }
-                    return (
-                      <OutputNameSection
-                        key={id}
-                        item={item}
-                        format={format}
-                        defaultOutputName={defaultOutputName}
-                        autoApply={autoApplyFilename}
-                        willEditInPlace={willEditInPlace}
-                        open={outputOpen}
-                        onToggle={() => setSectionOpen('output', !outputOpen)}
-                        onChangeName={(outputName) => onChange({ outputName })}
-                        onRegenerateName={onRegenerateName}
-                        onOpenRename={onOpenRename}
-                      />
-                    )
-                  case 'trim':
-                    // The per-track handles have no multi-select story (the anchor's
-                    // wave would misrepresent the rest), but the detection does: one
-                    // button runs it over the selection and stages each track's own
-                    // suggestion — visible and resettable per track afterwards.
-                    if (isMulti) {
-                      return (
-                        <BulkActionSection
-                          key={id}
-                          testid="trim-multi"
-                          buttonTestid="trim-detect-all"
-                          title={tr('trim.title')}
-                          label={tr('trim.applyAll', { count: multiTracks.length })}
-                          icon={Scissors}
-                          onClick={onTrimDetectedAll}
-                        />
-                      )
-                    }
-                    return (
-                      <TrimSection
-                        key={id}
-                        value={item.trim}
-                        open={trimOpen}
-                        onToggle={() => setSectionOpen('trim', !trimOpen)}
-                        onChange={(trim) => onChange({ trim })}
-                        inputPath={item.inputPath}
-                      />
-                    )
-                  case 'declick':
-                    return (
-                      <DeclickSection
-                        key={id}
-                        value={declickCfg}
-                        open={declickOpen}
-                        onToggle={() => setSectionOpen('declick', !declickOpen)}
-                        onChange={(d) => {
-                          setDeclickCfg(d)
-                          onDeclickChange?.(d)
-                        }}
-                        inputPath={item.inputPath}
-                        isMulti={isMulti}
-                        format={format}
-                        trim={item.trim}
-                      />
-                    )
-                  case 'normalize':
-                    return (
-                      <NormalizeSection
-                        key={id}
-                        value={normalizeCfg}
-                        open={normalizeOpen}
-                        onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
-                        onChange={(n) => {
-                          setNormalizeCfg(n)
-                          onNormalizeChange?.(n)
-                        }}
-                        item={item}
-                        isMulti={isMulti}
-                      />
-                    )
                     default:
                       return null
                   }
@@ -1127,10 +1129,7 @@ export const Editor = memo(function Editor({
                     label={label}
                     testid={`editor-group-${group}`}
                   />,
-                  <div
-                    key={`slot-${id}`}
-                    className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-3"
-                  >
+                  <div key={`slot-${id}`} className="[&>div]:mt-0 [&>div]:border-t-0 [&>div]:pt-3">
                     {element}
                   </div>,
                 ]

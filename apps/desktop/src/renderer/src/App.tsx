@@ -985,8 +985,7 @@ export default function App(): React.JSX.Element {
   // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
   // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
   // dead end. Only with tracks loaded — nothing to match on an empty list.
-  const needsToken =
-    tracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
+  const needsToken = tracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -1152,17 +1151,20 @@ export default function App(): React.JSX.Element {
       // step past the track and the advance never lands behind the open dialog.
       onStarted?: () => void,
     ) => {
-      const track = tracksRef.current.find((t) => t.id === id)
-      if (!track) return
       askConvertOne(
-        track,
         () => {
           onStarted?.()
-          void processOne(id, format, normalize, undefined, forceReencode, destination, declick).then(
-            (outcome) => {
-              if (outcome === 'converted') void maybeShowDonateNudge()
-            },
-          )
+          void processOne(
+            id,
+            format,
+            normalize,
+            undefined,
+            forceReencode,
+            destination,
+            declick,
+          ).then((outcome) => {
+            if (outcome === 'converted') void maybeShowDonateNudge()
+          })
         },
         { destination },
       )

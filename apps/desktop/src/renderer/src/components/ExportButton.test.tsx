@@ -103,7 +103,9 @@ describe('ExportButton', () => {
   // current stage as its label and a fill marking where in the pipeline the export
   // is — the same honest phase progress (STAGE_PROGRESS), not a fake percentage.
   it('shows the stage label and its progress fill while processing', () => {
-    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="appleMusic" />)
+    render(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="appleMusic" />,
+    )
     const btn = screen.getByTestId('process-btn')
     expect(btn).toBeDisabled()
     expect(btn).toHaveTextContent('Adding to Apple Music…')
@@ -136,12 +138,16 @@ describe('ExportButton', () => {
   // Without a cancel handler the processing button stays the inert progress bar it was —
   // the cancel affordance is opt-in, so the multi/quiet uses are unaffected.
   it('stays a disabled bar while processing when no cancel handler is given', () => {
-    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />)
+    render(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+    )
     expect(screen.getByTestId('process-btn')).toBeDisabled()
   })
 
   it('names the picked format in the converting stage label', () => {
-    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />)
+    render(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+    )
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Converting to AIFF…')
     const width = screen.getByTestId('process-progress').style.width
     expect(Number.parseFloat(width)).toBeCloseTo(55)

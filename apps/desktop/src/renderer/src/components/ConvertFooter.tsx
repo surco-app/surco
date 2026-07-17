@@ -259,7 +259,10 @@ export function ConvertFooter({
                 className="mb-2 flex items-center justify-between gap-3"
               >
                 <p className="text-xs text-fg-dim">
-                  {tr('editor.reencodeHint', { current: reencode.current, target: reencode.target })}
+                  {tr('editor.reencodeHint', {
+                    current: reencode.current,
+                    target: reencode.target,
+                  })}
                 </p>
                 <button
                   type="button"

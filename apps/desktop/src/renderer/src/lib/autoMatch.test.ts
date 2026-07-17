@@ -35,7 +35,14 @@ const target = { title: 'My Song', durationSec: 200 }
 // one click the sweep would have spared — but only in the exact conditions the sweep uses,
 // so it never writes over a deliberate pick or an edit in flight.
 describe('shouldAutoApplyMatch', () => {
-  const base = { autoMatchOn: true, tier: 'high' as const, hasMatchedTrack: true, alreadyMatched: false, editing: false, multi: false }
+  const base = {
+    autoMatchOn: true,
+    tier: 'high' as const,
+    hasMatchedTrack: true,
+    alreadyMatched: false,
+    editing: false,
+    multi: false,
+  }
 
   it('applies a high-tier match on an untouched, unedited single track', () => {
     expect(shouldAutoApplyMatch(base)).toBe(true)

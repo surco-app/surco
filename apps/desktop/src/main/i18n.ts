@@ -174,7 +174,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictApplyRemaining: 'Auf die übrigen Konflikte dieser Konvertierung anwenden',
     appleMusicGone: 'Der Track ist nicht mehr in deiner Apple Music-Bibliothek.',
     engineQuitMessage: 'Engine DJ ist geöffnet',
-    engineQuitDetail: 'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+    engineQuitDetail:
+      'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
     engineQuitConfirm: 'Engine DJ schließen',
     engineQuitCancel: 'Abbrechen',
     engineOpenError: 'Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.',
@@ -201,22 +202,23 @@ const strings: Record<MenuLang, MenuStrings> = {
     next: 'Morceau suivant',
     help: 'Aide',
     faq: 'Questions fréquentes',
-    guide: 'Guide d\'utilisation',
+    guide: "Guide d'utilisation",
     website: 'Site web de Surco',
     aboutCredits:
       'Fait avec soin par Vicent Gozalbes\nvigosan@gmail.com\n\nMerci à @djotas et à toutes les personnes\nqui partagent idées et retours.\n\ngetsurco.app',
     checkUpdates: 'Rechercher les mises à jour…',
     upToDate: 'Tu as déjà la dernière version de Surco.',
     updateError: 'Impossible de vérifier les mises à jour.',
-    updatesDevOnly: 'Les mises à jour ne sont disponibles que dans l\'app installée.',
+    updatesDevOnly: "Les mises à jour ne sont disponibles que dans l'app installée.",
     conflictExists: 'Un fichier du même nom existe déjà dans le dossier de destination.',
     conflictOverwrite: 'Écraser',
     conflictKeepBoth: 'Conserver les deux',
     conflictSkip: 'Ignorer',
     conflictApplyRemaining: 'Appliquer au reste des conflits de cette conversion',
-    appleMusicGone: 'Le morceau n\'est plus dans ta bibliothèque Apple Music.',
+    appleMusicGone: "Le morceau n'est plus dans ta bibliothèque Apple Music.",
     engineQuitMessage: 'Engine DJ est ouvert',
-    engineQuitDetail: 'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+    engineQuitDetail:
+      'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
     engineQuitConfirm: 'Fermer Engine DJ',
     engineQuitCancel: 'Annuler',
     engineOpenError: 'Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.',
@@ -258,11 +260,13 @@ const strings: Record<MenuLang, MenuStrings> = {
     conflictApplyRemaining: 'Aplicar aos demais conflitos desta conversão',
     appleMusicGone: 'A faixa não está mais na sua biblioteca do Apple Music.',
     engineQuitMessage: 'O Engine DJ está aberto',
-    engineQuitDetail: 'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    engineQuitDetail:
+      'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
     engineQuitConfirm: 'Fechar o Engine DJ',
     engineQuitCancel: 'Cancelar',
     engineOpenError: 'Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.',
-  },}
+  },
+}
 
 // Mirrors the renderer's baseLocale mapping (i18n/locale.ts): regional variants
 // collapse onto a shipped language, Portuguese always lands on pt-BR, and anything

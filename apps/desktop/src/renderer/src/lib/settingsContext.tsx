@@ -1,7 +1,12 @@
 import type React from 'react'
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
-import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
+import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
+import {
+  DEFAULT_EDITOR_SECTIONS,
+  type EditorSectionPref,
+  normalizeEditorSections,
+} from '../../../shared/editorSections'
 import type {
   DeclickMode,
   KeyNotation,
@@ -12,11 +17,6 @@ import type {
   SearchProviderId,
   Settings,
 } from '../../../shared/types'
-import {
-  DEFAULT_EDITOR_SECTIONS,
-  type EditorSectionPref,
-  normalizeEditorSections,
-} from '../../../shared/editorSections'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 

@@ -64,11 +64,7 @@ export interface ConfirmFlows {
   // The single-track counterpart of askConvertAll: it decides overwrite the same way,
   // then runs the conversion the caller wired (donate nudge, re-encode) rather than the
   // batch path — so one convert and a batch convert confirm the same irreversible write.
-  askConvertOne: (
-    track: TrackItem,
-    run: () => void,
-    opts?: { destination?: Destination },
-  ) => void
+  askConvertOne: (run: () => void, opts?: { destination?: Destination }) => void
 }
 
 // The destructive/overwriting actions that confirm before firing: trash, delete original,
@@ -292,11 +288,7 @@ export function useConfirmFlows({
   // editor button and the process-current command) via the run callback, which carries
   // the donate nudge and re-encode the batch path doesn't. Away from overwrite it fires
   // straight through — only new files are written.
-  function askConvertOne(
-    track: TrackItem,
-    run: () => void,
-    opts: { destination?: Destination } = {},
-  ): void {
+  function askConvertOne(run: () => void, opts: { destination?: Destination } = {}): void {
     const overwriting = opts.destination
       ? opts.destination === 'overwrite'
       : settings?.overwriteOriginal

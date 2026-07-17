@@ -5,8 +5,8 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type { Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import '../i18n'
-import type { ConfirmModal } from './useOverlays'
 import { useConfirmFlows } from './useConfirmFlows'
+import type { ConfirmModal } from './useOverlays'
 
 function track(id: string): TrackItem {
   return {
@@ -173,7 +173,7 @@ describe('useConfirmFlows single-track overwrite', () => {
   it('confirms before an in-place single-track convert', () => {
     const { flows, opened } = setup([track('a')])
     const run = vi.fn()
-    flows.askConvertOne(track('a'), run, { destination: 'overwrite' })
+    flows.askConvertOne(run, { destination: 'overwrite' })
     expect(opened[0].destructive).toBe(true)
     expect(run).not.toHaveBeenCalled()
     opened[0].onConfirm()
@@ -185,7 +185,7 @@ describe('useConfirmFlows single-track overwrite', () => {
   it('fires straight through for a non-overwrite single-track convert', () => {
     const { flows, opened } = setup([track('a')])
     const run = vi.fn()
-    flows.askConvertOne(track('a'), run, { destination: 'beside' })
+    flows.askConvertOne(run, { destination: 'beside' })
     expect(opened).toHaveLength(0)
     expect(run).toHaveBeenCalledTimes(1)
   })
@@ -197,7 +197,7 @@ describe('useConfirmFlows single-track overwrite', () => {
       settings: { overwriteOriginal: true } as Settings,
     })
     const run = vi.fn()
-    flows.askConvertOne(track('a'), run)
+    flows.askConvertOne(run)
     expect(opened[0].destructive).toBe(true)
     expect(run).not.toHaveBeenCalled()
   })
