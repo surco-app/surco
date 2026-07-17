@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.63",
+    "date": "17 de julio de 2026",
+    "title": "Convertir con más control",
+    "items": [
+      {
+        "text": "Cuando el editor abre una pista con una coincidencia de alta confianza, ahora la aplica sola: los datos correctos aparecen sin que tengas que confirmar el match que ya era evidente.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "Los campos de metadatos se confirman y saltan al siguiente con Enter, así puedes rellenar el disco entero desde el teclado sin tocar el ratón.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "Convertir una sola pista sobre su propio sitio ahora pide confirmación antes de sobrescribir el archivo original.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "Una conversión de una sola pista se puede cancelar mientras corre, sin esperar a que termine.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "En una conversión por lotes, la decisión sobre un archivo en conflicto se puede aplicar al resto del lote de una vez, en lugar de contestar disco a disco.",
+        "in": "0.63.0"
+      }
+    ]
+  },
+  {
     "version": "0.62",
     "date": "17 de julio de 2026",
     "title": "El editor, por fases",

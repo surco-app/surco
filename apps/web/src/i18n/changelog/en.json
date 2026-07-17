@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.63",
+    "date": "July 17, 2026",
+    "title": "Converting, with more control",
+    "items": [
+      {
+        "text": "When the editor opens a track with a high-confidence match, it now applies it on its own: the right tags show up without you having to confirm a match that was already obvious.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "Metadata fields commit and advance to the next one on Enter, so you can fill in a whole release from the keyboard without touching the mouse.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "Converting a single track in place now asks for confirmation before it overwrites the original file.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "A single-track conversion can be cancelled while it runs, without waiting for it to finish.",
+        "in": "0.63.0"
+      },
+      {
+        "text": "In a batch conversion, a decision about a conflicting file can be applied to the rest of the run at once, instead of answering release by release.",
+        "in": "0.63.0"
+      }
+    ]
+  },
+  {
     "version": "0.62",
     "date": "July 17, 2026",
     "title": "The editor, in phases",
