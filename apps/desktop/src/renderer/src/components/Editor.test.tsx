@@ -2640,14 +2640,19 @@ describe('Editor maximized section', () => {
   // Only the sections with fine work to do on a wave earn the toggle (trim,
   // the quality spectrogram). Click repair is a segmented control and
   // loudness a reference wave — a full window buys them nothing but chrome.
-  it('offers no maximize on the sections with nothing to blow up', () => {
+  it('offers maximize on every wave-work section and none on the rest', () => {
     renderEditor({ id: 'a' })
-    for (const id of ['editor-declick', 'editor-normalize']) {
-      const section = screen.getByTestId(id)
-      expect(within(section).queryByTestId('section-maximize')).toBeNull()
+    // The rule is "a section with a full-length waveform earns the whole window":
+    // trim, declick and loudness all draw one, so all three maximize — leaving the
+    // toggle off declick/loudness (as it used to be) made "which sections zoom?"
+    // arbitrary. A text-only section like File name has nothing to blow up.
+    for (const id of ['editor-trim', 'editor-declick', 'editor-normalize']) {
+      expect(
+        within(screen.getByTestId(id)).getByTestId('section-maximize'),
+      ).toBeInTheDocument()
     }
-    expect(
-      within(screen.getByTestId('editor-trim')).getByTestId('section-maximize'),
-    ).toBeInTheDocument()
+    // The File name section draws no wave, so it never grows the maximize toggle.
+    const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
+    expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
   })
 })

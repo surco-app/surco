@@ -83,6 +83,9 @@ export function NormalizeSection({
         title={tr('normalize.title')}
         open={open}
         onToggle={onToggle}
+        // A wave-work section, so it earns the maximize toggle like Trim: the
+        // before/after preview is worth the whole window when tuning the target.
+        sectionId="normalize"
         // The badge names the active mode; the summary carries what it omits — the
         // figures the conversion will target — and states "None" when off, so the
         // folded header never reads blank.
