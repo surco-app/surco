@@ -3,7 +3,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "change": "Change",
-    "close": "Close"
+    "close": "Close",
+    "copy": "Copy"
   },
   "rename": {
     "title": "Build file name",

@@ -3,7 +3,8 @@
     "cancel": "Cancelar",
     "save": "Salvar",
     "change": "Alterar",
-    "close": "Fechar"
+    "close": "Fechar",
+    "copy": "Copiar"
   },
   "rename": {
     "title": "Gerar nome do arquivo",

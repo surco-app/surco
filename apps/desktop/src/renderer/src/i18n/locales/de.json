@@ -3,7 +3,8 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "change": "Ändern",
-    "close": "Schließen"
+    "close": "Schließen",
+    "copy": "Kopieren"
   },
   "rename": {
     "title": "Dateinamen erstellen",

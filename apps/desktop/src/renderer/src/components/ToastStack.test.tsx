@@ -90,6 +90,32 @@ describe('ToastStack', () => {
     expect(onExpire).not.toHaveBeenCalled()
   })
 
+  // An error's whole value is being reportable: a raw osascript/ffmpeg failure is long and
+  // easy to mistype, so a danger toast must offer a one-click copy of the exact message.
+  it('copies the message from a danger toast, but offers no copy button on a neutral one', () => {
+    const copyText = vi.fn().mockResolvedValue(undefined)
+    ;(window as unknown as { api: { copyText: typeof copyText } }).api = { copyText }
+
+    const { rerender } = render(
+      <ToastStack
+        toasts={[toast({ testid: 'process-error', tone: 'danger', message: 'osascript failed (-1712)' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-error-copy'))
+    expect(copyText).toHaveBeenCalledWith('osascript failed (-1712)')
+
+    rerender(
+      <ToastStack
+        toasts={[toast({ testid: 'app-notice', tone: 'neutral', message: 'saved' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('app-notice-copy')).toBeNull()
+  })
+
   describe('with fake timers', () => {
     beforeEach(() => vi.useFakeTimers())
     afterEach(() => vi.useRealTimers())

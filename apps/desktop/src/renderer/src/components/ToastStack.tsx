@@ -1,8 +1,11 @@
-import { X } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Toast } from '../lib/toastQueue'
+
+// How long the copy button shows its "copied" check before reverting to the copy icon.
+const COPIED_FEEDBACK_MS = 1500
 
 // How long a dismissed card stays mounted for its leave animation — matches the CSS
 // .animate-toast-leave duration, with the timer (not animationend) as the source of
@@ -100,6 +103,16 @@ function ToastCard({
   onClose: (id: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [copied, setCopied] = useState(false)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(copiedTimer.current), [])
+
+  const onCopy = () => {
+    void window.api.copyText(toast.message)
+    setCopied(true)
+    clearTimeout(copiedTimer.current)
+    copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+  }
 
   // A duration arms a one-shot timer; re-running only when the id changes keeps a re-render
   // (e.g. a language switch) from restarting the countdown of an already-aged toast. A
@@ -137,6 +150,21 @@ function ToastCard({
           className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
         >
           {toast.action.label}
+        </button>
+      )}
+      {danger && (
+        <button
+          type="button"
+          data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
+          aria-label={tr('common.copy')}
+          onClick={onCopy}
+          className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-panel-2)] hover:text-fg"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-good" aria-hidden="true" />
+          ) : (
+            <Copy className="h-4 w-4" aria-hidden="true" />
+          )}
         </button>
       )}
       <button
