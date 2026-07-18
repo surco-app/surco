@@ -43,17 +43,17 @@ function probe<T>(labelKey: string, inputPath: string, fn: () => Promise<T>): Pr
   })
 }
 
-// A signal for the probe's ffmpeg decodes, but only for 'high' requests — the
-// selected/playing track the renderer can later disown (audio:cancelAnalysis) when the
-// user browses away. 'low' background work (import auto-analyze, the "analyze all"
-// sweep) gets a signal that never fires, so browsing across the rows a sweep is
-// working through can never kill the sweep's own decodes.
+// A signal for the probe's ffmpeg decodes, but only for foreground ('urgent'/'high')
+// requests — the selected/playing track the renderer can later disown
+// (audio:cancelAnalysis) when the user browses away. 'low' background work (import
+// auto-analyze, the "analyze all" sweep) gets a signal that never fires, so browsing
+// across the rows a sweep is working through can never kill the sweep's own decodes.
 function cancellable<T>(
   inputPath: string,
-  priority: 'high' | 'low',
+  priority: 'urgent' | 'high' | 'low',
   job: (signal: AbortSignal) => Promise<T>,
 ): Promise<T> {
-  return priority === 'high'
+  return priority !== 'low'
     ? analysisCancels.run(inputPath, job)
     : job(new AbortController().signal)
 }
