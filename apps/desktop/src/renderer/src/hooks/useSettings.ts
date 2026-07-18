@@ -98,6 +98,13 @@ export function useSettings({
     if (patch.theme !== undefined) {
       setSettings((s) => (s ? { ...s, theme: patch.theme as ThemePref } : s))
     }
+    // Same for the results-column width a focus preset or divider drag writes: on a slow
+    // config volume the disk round-trip is visible lag, so the column would only repark
+    // once the write lands. Applying it now moves the column in the click's own frame.
+    if (patch.resultsWidth !== undefined) {
+      const resultsWidth = patch.resultsWidth
+      setSettings((s) => (s ? { ...s, resultsWidth } : s))
+    }
     window.api
       .saveSettings(patch)
       .then(setSettings)

@@ -110,3 +110,40 @@ describe('useSettings modal-open refresh', () => {
     expect(result.current.settings?.conversionCount).toBe(5)
   })
 })
+
+describe('useSettings optimistic layout width', () => {
+  // A focus preset (and a divider drag) writes resultsWidth through saveSettings, which
+  // round-trips to disk before returning. On a slow config volume that round-trip is
+  // visible lag — the column doesn't move until the write lands, so rapid preset clicks
+  // feel unresponsive. resultsWidth applies optimistically, like the theme, so the column
+  // reparks in the same frame as the click and the disk write catches up in the background.
+  it('applies resultsWidth immediately, before the disk write resolves', async () => {
+    const initial = settings({ conversionCount: 1, resultsWidth: 315 })
+    let resolveSave: (s: Settings) => void = () => {}
+    const save = new Promise<Settings>((r) => {
+      resolveSave = r
+    })
+    const getSettings = vi.fn().mockResolvedValue(initial)
+    const saveSettings = vi.fn().mockReturnValue(save)
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings, saveSettings }
+
+    const noop = (): void => {}
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+    await waitFor(() => expect(result.current.settings).toEqual(initial))
+
+    act(() => result.current.saveSettings({ resultsWidth: 480 }))
+
+    // The write is still in flight, but the width is already applied.
+    expect(result.current.settings?.resultsWidth).toBe(480)
+
+    // The resolved disk value then reconciles without regressing the width.
+    await act(async () => {
+      resolveSave(settings({ conversionCount: 1, resultsWidth: 480 }))
+      await save
+    })
+    expect(result.current.settings?.resultsWidth).toBe(480)
+  })
+})
