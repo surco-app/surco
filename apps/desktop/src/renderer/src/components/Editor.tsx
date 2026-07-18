@@ -99,6 +99,10 @@ interface Props {
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
   // overwrites them (derive is already recorded inside onDeriveTags).
   onRecordUndo?: (ids: string[]) => void
+  // Marks the given tracks as fully cleared (coverRemoved + metaCleared) so a convert
+  // wipes their rating and cover too — the multi-select sibling of the flags the
+  // single-track clear sets on its onChange patch.
+  onClearExtras?: (ids: string[]) => void
   // Reports which track (if any) has a field focused, so the background auto-match sweep
   // can leave the row being typed into alone (see App's editingRef). null on blur.
   onFieldFocusChange?: (id: string | null) => void
@@ -176,6 +180,7 @@ export const Editor = memo(function Editor({
   onDeriveTags,
   onApplyTitleFormat,
   onRecordUndo,
+  onClearExtras,
   onFieldFocusChange,
   onChange,
   onProcess,
@@ -490,7 +495,9 @@ export const Editor = memo(function Editor({
   // current item.meta on every call (useStableCallback mirrors the latest closure),
   // so a memoized Field keeps one onChange reference across keystrokes in other fields.
   const setField = useStableCallback((key: keyof TrackItem['meta'], value: string): void => {
-    onChange({ meta: { ...item.meta, [key]: value } })
+    // Editing any field ends the "everything was cleared" state, so a later convert
+    // stops wiping the rating — mirrors how setting a cover resets coverRemoved.
+    onChange({ meta: { ...item.meta, [key]: value }, metaCleared: false })
   })
 
   // What the per-field insert menu can offer: every visible text field of THIS
@@ -536,12 +543,16 @@ export const Editor = memo(function Editor({
   // Empties every metadata field — the inverse of the fill controls (filename /
   // Discogs) — so a badly-labelled file can be retagged from scratch instead of
   // deleting fifteen values by hand. The blank comes from the metadata SSOT so a
-  // newly-added field is cleared too, not silently left behind. Artwork is untouched:
-  // the cover picker owns its own remove, and a wrong title rarely means a wrong cover.
+  // newly-added field is cleared too, not silently left behind. "Clear" means the
+  // whole tag: the artwork rides coverRemoved and the rating rides metaCleared, so
+  // the file keeps none of the fields the app manages (Traktor cues aside).
   function clearAllMeta(): void {
     const blank = emptyMetadata()
     onRecordUndo?.((isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id))
-    if (isMulti) onChangeAllMeta?.(blank)
+    if (isMulti) {
+      onChangeAllMeta?.(blank)
+      onClearExtras?.((selectedTracks ?? []).map((t) => t.id))
+    }
     // Clearing the tags un-matches the track, so the sweep may fill it again — including
     // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven
     // owned verdict so it re-resolves against whatever the retag matches.
@@ -552,6 +563,8 @@ export const Editor = memo(function Editor({
         matchReview: false,
         matchProvider: undefined,
         inLibraryResolved: false,
+        coverRemoved: true,
+        metaCleared: true,
       })
   }
 

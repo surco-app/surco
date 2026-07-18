@@ -1057,6 +1057,11 @@ export default function App(): React.JSX.Element {
   const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
     updateTracksMeta(selectedIds, patch),
   )
+  // The multi-select "clear everything" flag pass: mark each cleared track so a
+  // convert wipes its cover and rating, not just the text fields.
+  const onClearExtras = useStableCallback((ids: string[]) =>
+    patchTracks(ids, { coverRemoved: true, metaCleared: true }),
+  )
   // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
   // onto — the fast way to share release-level metadata across a crate.
   const onCopyMeta = useStableCallback((track: TrackItem) => {
@@ -1282,8 +1287,10 @@ export default function App(): React.JSX.Element {
   const clearMeta = useStableCallback(() => {
     if (!selected) return
     recordMetaUndo(selectedTracks.length > 1 ? selectedIds : [selected.id])
-    if (selectedTracks.length > 1) updateTracksMeta(selectedIds, emptyMetadata())
-    else
+    if (selectedTracks.length > 1) {
+      updateTracksMeta(selectedIds, emptyMetadata())
+      onClearExtras(selectedIds)
+    } else
       updateTrack(selected.id, {
         meta: emptyMetadata(),
         matched: false,
@@ -1291,6 +1298,8 @@ export default function App(): React.JSX.Element {
         reviewMatch: undefined,
         matchProvider: undefined,
         inLibraryResolved: false,
+        coverRemoved: true,
+        metaCleared: true,
       })
   })
   const deriveTags = useStableCallback(() => {
@@ -1711,6 +1720,7 @@ export default function App(): React.JSX.Element {
                     onDeriveTags={deriveTracksUndoable}
                     onApplyTitleFormat={applyTitleFormat}
                     onRecordUndo={recordMetaUndo}
+                    onClearExtras={onClearExtras}
                     onFieldFocusChange={onFieldFocusChange}
                     onChange={onEditorChange}
                     onProcess={onProcessSelected}

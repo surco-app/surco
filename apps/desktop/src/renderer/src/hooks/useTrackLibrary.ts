@@ -244,6 +244,7 @@ export function useTrackLibrary({
     if (saved.coverUrl || saved.coverRemoved) patch.coverUrl = saved.coverUrl
     if (saved.coverPath) patch.coverPath = saved.coverPath
     if (saved.coverRemoved) patch.coverRemoved = true
+    if (saved.metaCleared) patch.metaCleared = true
     if (saved.outputName) patch.outputName = saved.outputName
     if (saved.matched) patch.matched = true
     if (saved.autoMatched) patch.autoMatched = true

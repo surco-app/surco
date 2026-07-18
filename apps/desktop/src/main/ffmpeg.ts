@@ -909,6 +909,9 @@ export async function convertAudio(
   // Leading/trailing silence trim, the first filter stage: the seconds the user
   // confirmed in the editor, cut exactly. Forces a re-encode like normalize.
   trim?: TrimRange,
+  // The "clear metadata" intent: wipe the rating along with every other field
+  // (see writeTags). The cover already clears through removeCover.
+  clearExtras?: boolean,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -983,6 +986,7 @@ export async function convertAudio(
         meta,
         coverPath,
         removeCover,
+        clearExtras,
       })
     } else {
       const { stderr } = await run(
@@ -1001,18 +1005,20 @@ export async function convertAudio(
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
         // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
         // that ffmpeg's mp4 muxer has no -metadata names for.
-        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath })
-      } else if (meta.rating?.trim() && (ext === '.mp3' || ext === '.aiff')) {
+        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover, clearExtras })
+      } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
-        // pass to write the Traktor rating. Only done when there's a rating, to
-        // avoid a second tag pass on every conversion. cueSource folds the cue
-        // carry-over (below) into this same save, so the rating never costs a
-        // second whole-file rewrite on top of it.
+        // pass to write the Traktor rating. Only done when there's a rating (or a
+        // clear, which must actively wipe the POPM ffmpeg copied over), to avoid a
+        // second tag pass on every conversion. cueSource folds the cue carry-over
+        // (below) into this same save, so the rating never costs a second whole-file
+        // rewrite on top of it.
         await runInWorker({
           type: 'writeTags',
           file: tmp,
           meta,
           coverPath,
+          clearExtras,
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined),
         })

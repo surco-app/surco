@@ -35,6 +35,17 @@ function userText(id3: Id3v2Tag, description: string): Id3v2UserTextInformationF
   )
 }
 
+// How many POPM (rating) frames a file carries — writeTags writes two (Traktor + WMP).
+function popmCount(file: string): number {
+  const f = TagFile.createFromPath(file)
+  try {
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return id3?.frames.filter((fr) => fr.frameId.toString() === 'POPM').length ?? 0
+  } finally {
+    f.dispose()
+  }
+}
+
 const meta: TrackMetadata = {
   title: 'Till I Come',
   artist: 'ATB',
@@ -250,6 +261,43 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // Converting a file must never wipe a rating the editor didn't surface, so an empty
+  // rating is preserved by default — the deliberate asymmetry clearExtras overrides.
+  it('preserves an existing rating when the field is empty and clearExtras is off', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, rating: '4' })
+    expect(popmCount(file)).toBe(2)
+
+    writeTags(file, { ...meta, rating: '' })
+
+    expect(popmCount(file)).toBe(2)
+  })
+
+  // "Clear metadata" means clear everything the app manages, not just the text fields:
+  // the rating (which convert deliberately preserves) and the embedded cover must go
+  // too. Traktor's cue blob is not a managed field, so it must still survive.
+  it('wipes the rating and cover but keeps the cue frame when clearExtras is set', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    const cover = buildCover(dir)
+    writeTags(file, { ...meta, rating: '4' }, cover)
+    expect(popmCount(file)).toBe(2)
+
+    // The clear pass: blank meta (rating ''), no new cover, removeCover + clearExtras on.
+    writeTags(file, meta, undefined, true, undefined, undefined, true)
+
+    expect(popmCount(file)).toBe(0)
+    const f = TagFile.createFromPath(file)
+    const apic = (f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).frames.filter(
+      (fr) => fr.frameId.toString() === 'APIC',
+    )
+    expect(apic).toHaveLength(0)
+    f.dispose()
+    const bytes = readFileSync(file)
+    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+  })
+
   it('replaces the cover without duplicating it or losing the cue frame', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
@@ -277,10 +325,10 @@ describe('writeTags', () => {
     writeTags(file, meta, cover)
 
     const f = TagFile.createFromPath(file)
-    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)!
+    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)
     // The APIC description is what mp3tag & players show; it must not leak the
     // internal surco-cover-proc-<uuid> temp name (here the raw basename cover.png).
-    expect(picture.description).toBe('Movin Melodies.jpg')
+    expect(picture?.description).toBe('Movin Melodies.jpg')
     f.dispose()
   })
 
@@ -292,8 +340,8 @@ describe('writeTags', () => {
     writeTags(file, { ...meta, album: '' }, cover)
 
     const f = TagFile.createFromPath(file)
-    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)!
-    expect(picture.description).toBe('cover.jpg')
+    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)
+    expect(picture?.description).toBe('cover.jpg')
     f.dispose()
   })
 

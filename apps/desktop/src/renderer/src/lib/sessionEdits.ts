@@ -26,6 +26,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.coverUrl?.startsWith('http')) edit.coverUrl = track.coverUrl
   if (track.coverPath) edit.coverPath = track.coverPath
   if (track.coverRemoved) edit.coverRemoved = true
+  if (track.metaCleared) edit.metaCleared = true
   if (track.matched) edit.matched = true
   if (track.autoMatched) edit.autoMatched = true
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence

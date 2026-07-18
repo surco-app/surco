@@ -41,6 +41,8 @@ export type WorkerJob =
       // them when a trim moved the audio underneath.
       cueSource?: string
       cueShift?: CueShift
+      // The "clear metadata" intent: wipe the rating too (see writeTags).
+      clearExtras?: boolean
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
@@ -75,7 +77,15 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'waveformPeaks':
       return computePeaks(job.pcm, job.buckets)
     case 'writeTags':
-      writeTags(job.file, job.meta, job.coverPath, job.removeCover, job.cueSource, job.cueShift)
+      writeTags(
+        job.file,
+        job.meta,
+        job.coverPath,
+        job.removeCover,
+        job.cueSource,
+        job.cueShift,
+        job.clearExtras,
+      )
       return null
     case 'copyCueFrames':
       copyCueFrames(job.source, job.dest, job.shift)

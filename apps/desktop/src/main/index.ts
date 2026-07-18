@@ -738,6 +738,7 @@ function registerIpc(): void {
         onTmp,
         declick,
         trim,
+        clearExtras,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -770,6 +771,7 @@ function registerIpc(): void {
               s.flacFinderCovers && process.platform === 'darwin',
               declick,
               trim,
+              clearExtras,
             ),
           { labelParams: { track } },
         )

@@ -194,10 +194,14 @@ function setPopm(tag: Id3v2Tag, user: string, byte: number): void {
 // Traktor (its own user, linear steps of 51) and Windows Media Player / foobar's
 // %RATING WMP% (the "Windows Media Player 9 Series" user, non-linear ramp). An
 // empty rating is left untouched rather than cleared, so converting a file never
-// wipes a rating we didn't surface in the editor.
-function setRating(tag: Id3v2Tag, stars: string): void {
+// wipes a rating we didn't surface in the editor — unless `clear` is set, the
+// "clear metadata" intent that wants the rating gone like every other field.
+function setRating(tag: Id3v2Tag, stars: string, clear: boolean): void {
   const n = Number(stars)
-  if (!stars.trim() || !Number.isFinite(n) || n <= 0) return
+  if (!stars.trim() || !Number.isFinite(n) || n <= 0) {
+    if (clear) tag.removeFrames(Id3v2FrameIdentifiers.POPM)
+    return
+  }
   setPopm(tag, TRAKTOR_RATING_USER, starsToRating(n))
   setPopm(tag, WMP_RATING_USER, starsToWmpRating(n))
 }
@@ -212,7 +216,9 @@ function setRating(tag: Id3v2Tag, stars: string): void {
 // rating and the cues merges them into one pass instead of rewriting a 100MB+
 // AIFF twice. `cueShift` re-anchors them when a trim moved the audio, exactly
 // like copyCueFrames. ID3 targets only; the m4a early-return below ignores it,
-// matching copyCueFrames' scope.
+// matching copyCueFrames' scope. `clearExtras` is the "clear metadata" intent: it
+// wipes the rating that would otherwise be preserved-on-empty (the cover already
+// goes via removeCover), so a cleared file keeps none of the fields we manage.
 export function writeTags(
   file: string,
   meta: TrackMetadata,
@@ -220,6 +226,7 @@ export function writeTags(
   removeCover = false,
   cueSource?: string,
   cueShift?: CueShift,
+  clearExtras = false,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -277,7 +284,7 @@ export function writeTags(
       tory.text = [meta.originalYear]
       id3.addFrame(tory)
     }
-    setRating(id3, meta.rating ?? '')
+    setRating(id3, meta.rating ?? '', clearExtras)
     // Quick Tag's judgement fields, both on the TXXX route. Mood's standard frame
     // (TMOO) is ID3v2.4-only — TagLib has no v2.3 equivalent for it, so on the v2.3
     // tags pinned above it would be silently dropped on save. TXXX "MOOD" is what

@@ -82,6 +82,16 @@ function hasCue(file: string): boolean {
   }
 }
 
+function hasPopm(file: string): boolean {
+  const f = TagFile.createFromPath(file)
+  try {
+    const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (tag?.frames ?? []).some((fr) => fr.frameId.toString() === 'POPM')
+  } finally {
+    f.dispose()
+  }
+}
+
 beforeAll(() => {
   // A real, decodable integer-PCM AIFF so convertAudio's probe/re-encode runs for
   // real, with a raw Traktor GEOB cue frame written into its ID3 chunk.
@@ -116,5 +126,44 @@ describe('convertAudio cue preservation', () => {
     } finally {
       f.dispose()
     }
+  })
+
+  // "Clear metadata" then convert: clearExtras forces the empty rating to wipe the
+  // POPM the source carried, so a cleared file keeps none of the fields the app
+  // manages — while the Traktor cue blob, which is not a managed field, survives.
+  it('wipes the rating on a cleared convert but still keeps the cue frame', async () => {
+    // A fresh cued source in its own dir: TagLib holds files open across a shared
+    // temp dir, so this test mints its own to stay independent of the others.
+    const own = mkdtempSync(join(tmpdir(), 'surco-clear-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', cued])
+    injectAiffCue(cued)
+
+    // First give the source a real rating in an mp3, then clear-convert it.
+    const rated = join(own, 'rated-src.mp3')
+    await convertAudio(cued, rated, 'mp3', { ...meta, rating: '4' })
+    expect(hasPopm(rated)).toBe(true)
+
+    const out = join(own, 'out-cleared.mp3')
+    await convertAudio(
+      rated,
+      out,
+      'mp3',
+      { ...meta, rating: '' },
+      undefined, // coverPath
+      undefined, // normalize
+      true, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      undefined, // trim
+      true, // clearExtras
+    )
+
+    expect(hasCue(out)).toBe(true)
+    expect(hasPopm(out)).toBe(false)
   })
 })

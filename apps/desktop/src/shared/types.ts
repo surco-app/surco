@@ -312,6 +312,8 @@ export interface SessionEdit {
   coverUrl?: string
   coverPath?: string
   coverRemoved?: boolean
+  // Rides along so a restored "cleared" track still wipes its rating on convert.
+  metaCleared?: boolean
   // The match flags ride along so the auto-match sweep doesn't re-probe a restored
   // track and overwrite the very metadata the restore just brought back.
   matched?: boolean
@@ -414,6 +416,10 @@ export interface ProcessJob {
   // the cover. Only meaningful when no coverUrl/coverPath is supplied — a cover
   // source always wins over removal.
   removeCover?: boolean
+  // The "clear metadata" action wiped every field, so the rating (which a normal
+  // convert preserves-on-empty) must go too. Set alongside removeCover so a cleared
+  // record keeps none of the tags the app manages. See writeTags.
+  clearExtras?: boolean
   format?: OutputFormat
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.

@@ -436,7 +436,8 @@ describe('Editor search web', () => {
 describe('Editor clear metadata', () => {
   // The inverse of the fill controls (filename / Discogs): one click empties every
   // field so the user can retag a badly-labelled file from scratch instead of
-  // deleting fifteen values by hand. Artwork is untouched — the cover picker owns it.
+  // deleting fifteen values by hand. "Clear" means the whole tag: the cover
+  // (coverRemoved) and the rating (metaCleared) go too, not only the text fields.
   it('empties every metadata field of the track in one click', () => {
     const { onChange } = renderEditor({
       id: 'a',
@@ -473,8 +474,12 @@ describe('Editor clear metadata', () => {
       matched: false,
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.
       matchReview: false,
+      matchProvider: undefined,
       // ...and the Discogs-proven "owned" verdict, so it re-resolves against the retag.
       inLibraryResolved: false,
+      // The whole tag goes, not just text: cover stripped and rating wiped on convert.
+      coverRemoved: true,
+      metaCleared: true,
     })
   })
 })
@@ -487,7 +492,9 @@ describe('Editor compilation field', () => {
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', false)
     fireEvent.click(box)
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ compilation: '1' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ compilation: '1' }) }),
+    )
   })
 
   it('unticks back to an empty value, clearing the tag on the next write', () => {
@@ -497,7 +504,9 @@ describe('Editor compilation field', () => {
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', true)
     fireEvent.click(box)
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ compilation: '' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ compilation: '' }) }),
+    )
   })
 })
 
@@ -669,9 +678,9 @@ describe('Editor genre presets', () => {
       genrePresets: ['Hard Dance', 'Techno'],
     })
     fireEvent.click(screen.getByTestId('chip-Hard Dance'))
-    expect(onChange).toHaveBeenCalledWith({
-      meta: expect.objectContaining({ genre: 'Hard Dance' }),
-    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ genre: 'Hard Dance' }) }),
+    )
   })
 })
 
@@ -811,7 +820,9 @@ describe('Editor bpm suggestion', () => {
     // The tag layer stores whole beats per minute, so the chip offers the
     // rounded figure rather than the raw estimate.
     fireEvent.click(await screen.findByTestId('chip-124'))
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ bpm: '124' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ bpm: '124' }) }),
+    )
   })
 
   // A beatless track measures null; suggesting a made-up tempo would be worse
@@ -834,7 +845,9 @@ describe('Editor key suggestion', () => {
       .mockResolvedValue({ camelot: '8A', name: 'Am', confidence: 0.8 })
     const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['key'] })
     fireEvent.click(await screen.findByTestId('chip-8A'))
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ key: '8A' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ key: '8A' }) }),
+    )
   })
 
   // Classically-trained users read Am, not 8A; the Settings choice decides
@@ -1533,14 +1546,18 @@ describe('Editor star rating', () => {
   it('sets the rating to the clicked star', () => {
     const { onChange } = renderEditor({ id: 'a' })
     fireEvent.click(screen.getByTestId('star-4'))
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '4' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ rating: '4' }) }),
+    )
   })
 
   // Clicking the highest filled star again clears the rating, so a misclick is undoable.
   it('clears the rating when the active star is clicked again', () => {
     const { onChange } = renderEditor({ id: 'a', meta: { rating: '3' } })
     fireEvent.click(screen.getByTestId('star-3'))
-    expect(onChange).toHaveBeenCalledWith({ meta: expect.objectContaining({ rating: '' }) })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ rating: '' }) }),
+    )
   })
 })
 
@@ -2503,9 +2520,9 @@ describe('Editor insert from field', () => {
     expect(screen.queryByTestId('field-insert-option-title')).toBeNull()
     expect(screen.queryByTestId('field-insert-option-artist')).toBeNull()
     fireEvent.click(screen.getByTestId('field-insert-option-year'))
-    expect(onChange).toHaveBeenCalledWith({
-      meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }),
-    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }) }),
+    )
   })
 
   // The title-format row is the single-track twin of the ⌘K bulk apply: it rewrites
@@ -2520,9 +2537,9 @@ describe('Editor insert from field', () => {
     )
     fireEvent.click(screen.getByTestId('field-insert-title'))
     fireEvent.click(screen.getByTestId('field-insert-option-title-format'))
-    expect(onChange).toHaveBeenCalledWith({
-      meta: expect.objectContaining({ title: '(B2) Action (Base)' }),
-    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ title: '(B2) Action (Base)' }) }),
+    )
   })
 
   it('offers no title-format row when the pattern leaves the title as it is', () => {
