@@ -310,11 +310,14 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  // The deep zoom's on-demand slice: no disk cache (windows vary with every scroll
-  // position; react-query holds the quantized ones) and no activity row (it fires
-  // per scroll step — the feed would flood). Params are clamped: the renderer is
-  // trusted UI, but a compromised renderer must not be able to ask for an unbounded
-  // decode. 'high' like the full waveform — the user is looking right at the strip.
+  // The deep zoom's on-demand slice, disk-cached per quantized window: the renderer
+  // snaps startSec/durSec to a viewport-sized grid (windowFor) and fixes buckets, so a
+  // window's key is stable across scrolls and revisits — a bounded handful of entries
+  // per track, not one per scroll pixel. Re-decoding them on every revisit was the one
+  // waveform stage still paying full ffmpeg cost on a cache-warm library. No activity
+  // row (it fires per scroll step — the feed would flood). Params are clamped: the
+  // renderer is trusted UI, but a compromised renderer must not be able to ask for an
+  // unbounded decode. 'high' like the full waveform — the user is looking right at it.
   ipcMain.handle(
     'audio:waveformWindow',
     async (_e, inputPath: string, startSec: number, durSec: number, buckets: number) => {
@@ -324,9 +327,12 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         const start = Math.max(0, startSec)
         const dur = Math.min(600, Math.max(0.05, durSec))
         const count = Math.min(4096, Math.max(16, Math.floor(buckets)))
-        return await analysisLimiter.run(
-          () => measureWaveformWindow(inputPath, start, dur, count),
-          'high',
+        // The clamped params ride in the namespace so each quantized window keys its own
+        // entry; the shared path+mtime hash still invalidates every window when the file
+        // changes. v1: peaks+rms at WAVEFORM_SAMPLE_RATE — bump on any decode-shape change.
+        const ns = `waveform-window-v1 ${start} ${dur} ${count}`
+        return await cachedAnalysis(ns, inputPath, () =>
+          analysisLimiter.run(() => measureWaveformWindow(inputPath, start, dur, count), 'high'),
         )
       } catch (err) {
         log.error('audio:waveformWindow failed', err)
