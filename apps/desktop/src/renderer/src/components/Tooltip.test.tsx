@@ -74,6 +74,27 @@ describe('Tooltip', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful hint')
   })
 
+  // Clicking a button focuses it, and the focus reveal used to re-open the tooltip the
+  // click's own pointerdown had just hidden — leaving the hint stranded over the control
+  // until the pointer moved away (djotas's stuck "Regenerate filename" block). A focus
+  // that arrives right after a pointerdown on the trigger is a mouse click, not keyboard
+  // navigation, so it must not raise the tooltip; only a keyboard focus does.
+  it('does not reappear on the focus a click puts on the trigger', () => {
+    renderTooltip()
+    const trigger = screen.getByTestId('trigger')
+    fireEvent.pointerDown(trigger)
+    fireEvent.focusIn(trigger)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  // A keyboard focus (no preceding pointerdown) still reveals it — that is the whole
+  // point of the focus path for keyboard users.
+  it('still appears on a keyboard focus with no preceding click', () => {
+    renderTooltip()
+    fireEvent.focusIn(screen.getByTestId('trigger'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful hint')
+  })
+
   it('hides again when focus leaves the trigger', () => {
     renderTooltip()
     fireEvent.focusIn(screen.getByTestId('trigger'))

@@ -105,10 +105,25 @@ export function Tooltip({
       stopTracking()
       setPos(null)
     }
+    // A click focuses the button it hit, which fires focusin just like a Tab would — but
+    // the click's pointerdown already ran onLeave, so a plain focus reveal would re-open
+    // the tooltip the click meant to dismiss and strand it over the control (djotas's
+    // stuck "Regenerate filename" block). pointerdown lands right before that focusin, so
+    // it flags the focus as mouse-originated; onFocus then skips the reveal, leaving it to
+    // the hover path. A keyboard focus arrives with no preceding pointerdown, so it still
+    // reveals. The flag self-clears on the next tick in case a pointerdown never focuses.
+    let pointerFocus = false
+    const onPointerDownFocus = (): void => {
+      pointerFocus = true
+      setTimeout(() => {
+        pointerFocus = false
+      }, 0)
+    }
     // Keyboard users get the same hint: with no cursor to follow, anchor it to the
     // trigger's box, and let Escape dismiss it without moving focus (WCAG 1.4.13). Focus
     // skips the hover delay — the wait only earns its keep against an idle pointer.
     const onFocus = (): void => {
+      if (pointerFocus) return
       clearTimer()
       shown = true
       const r = trigger.getBoundingClientRect()
@@ -122,12 +137,14 @@ export function Tooltip({
     // An editable trigger opts out of the focus reveal (it would cover the text being
     // typed); the pointer listeners above still give it a normal hover hint.
     if (!hoverOnly) {
+      trigger.addEventListener('pointerdown', onPointerDownFocus)
       trigger.addEventListener('focusin', onFocus)
       trigger.addEventListener('focusout', onLeave)
     }
     return () => {
       trigger.removeEventListener('pointerenter', onEnter)
       trigger.removeEventListener('keydown', onKeyDown)
+      trigger.removeEventListener('pointerdown', onPointerDownFocus)
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
       stopTracking()
