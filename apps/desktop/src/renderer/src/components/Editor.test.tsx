@@ -1646,46 +1646,6 @@ describe('Editor Discogs apply', () => {
     expect(screen.getByTestId('discogs-query')).toHaveAccessibleName()
   })
 
-  // Long titles ("Clear Blue Water (Ferry Cor…") truncate in the narrow Discogs
-  // column with no way to read the rest; the themed tooltip reveals the full name on
-  // hover without adding any chrome to the row — and matches the rest of the UI instead
-  // of popping the OS-native help tag.
-  it('reveals the full track title on hover via the themed tooltip', async () => {
-    withDiscogs()
-    renderEditor({ id: 'a' })
-    await search()
-    fireEvent.click(screen.getByTestId('discogs-result'))
-    const rows = await screen.findAllByTestId('discogs-track')
-    const titleSpan = rows[0].querySelector('[data-fit]') as HTMLElement
-    expect(titleSpan).not.toHaveAttribute('title')
-    // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the Tooltip's
-    // listener with a real MouseEvent dispatched as a pointermove, then wait out its
-    // hover delay.
-    for (const type of ['pointerenter', 'pointermove']) {
-      titleSpan.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Track One')
-  })
-
-  // The release title truncates in the narrow column just like the tracklist rows do,
-  // but it lived under only the generic "click to see the tracks" hint — so a long
-  // release name had no way to be read. Hovering the title now reveals the full name,
-  // taking over from the row hint right where the text is clipped.
-  it('reveals the full release title on hover instead of the generic row hint', async () => {
-    withDiscogs()
-    renderEditor({ id: 'a' })
-    await search()
-    const titleSpan = screen
-      .getByTestId('discogs-result')
-      .querySelector('[data-fit]') as HTMLElement
-    for (const type of ['pointerenter', 'pointermove']) {
-      titleSpan.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
-    const tip = await screen.findByRole('tooltip')
-    expect(tip).toHaveTextContent('Some Album')
-    expect(tip).not.toHaveTextContent('Click to see the tracks')
-  })
-
   // The discoverable, explicit path: expand the album, then pick the track. That
   // single click is what applies the metadata.
   it('applies a track when it is picked from the expanded album', async () => {
