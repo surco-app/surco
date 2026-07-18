@@ -60,11 +60,11 @@ export function OutputNameSection({
                 <button
                   type="button"
                   data-testid="regenerate-output-name"
+                  aria-label={tr('editor.regenerate')}
                   onClick={onRegenerateName}
-                  className="press group relative flex h-7 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+                  className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
                 >
-                  <RefreshCw className="h-3 w-3" aria-hidden="true" />
-                  {tr('editor.regenerate')}
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                   <Tooltip label={tr('editor.regenerateHint')} align="end" />
                 </button>
               )}
