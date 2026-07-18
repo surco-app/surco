@@ -353,11 +353,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                       aria-hidden="true"
                       className={`mt-0.5 h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
                     />
-                    {/* One tooltip for the whole row: the full release title, which truncates in
-                        this narrow column. It replaces a separate generic "click to see" hint —
-                        two tooltips on the same row (title + hint) could show at once — while the
-                        chevron already signals the row expands. */}
-                    <Tooltip label={r.title} align="start" />
                   </button>
                   <CollapsibleTracks open={expanded}>
                     <div className="pb-1">
@@ -390,12 +385,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.position}
                               </span>
-                              {/* Long titles truncate in this narrow column; the themed
-                                  tooltip reveals the full name on hover, like the track
-                                  list's own rows. */}
                               <span data-fit className="min-w-0 flex-1 truncate text-sm">
                                 {t.title}
-                                <Tooltip label={t.title} />
                               </span>
                               {t === matchedTrack && matchTier && (
                                 // A text label, not a tick: a check icon reads as
