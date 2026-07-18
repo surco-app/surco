@@ -1991,16 +1991,21 @@ describe('Editor track preselection', () => {
     )
   })
 
-  // A check icon reads as "already applied", but nothing is applied until the
-  // user clicks the row — so the suggestion must be a plain text label ("Suggested"),
-  // not a tick, otherwise the user assumes the metadata is already filled in.
-  it('labels the preselection as a suggestion rather than showing an applied-looking tick', async () => {
+  // A check icon reads as "already applied", but nothing is applied until the user
+  // clicks the row — so the suggestion is a sparkle (the same mark the track list uses
+  // for a match), not a tick, with the "Suggested" wording moved into its tooltip. A
+  // tick here would make the user assume the metadata is already filled in. The mark
+  // carries no on-row text, so the row stays a clean number/title/duration line.
+  it('marks the preselection with a sparkle and no on-row label', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix' } })
     await loadTracklist()
     const badge = await screen.findByTestId('track-confidence')
-    expect(badge.tagName).toBe('SPAN')
-    expect(badge).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    expect(badge).toHaveTextContent('')
+    for (const type of ['pointerenter', 'pointermove']) {
+      badge.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
   it('flags a partial-title preselection for review', async () => {

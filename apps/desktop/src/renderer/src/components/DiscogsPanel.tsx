@@ -1,4 +1,4 @@
-import { ChevronRight, ListFilter, SearchX } from 'lucide-react'
+import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -385,31 +385,42 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                                 {t.position}
                               </span>
-                              <span data-fit className="min-w-0 flex-1 truncate text-sm">
+                              <span
+                                data-fit
+                                className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                              >
                                 {t.title}
                               </span>
-                              {t === matchedTrack && matchTier && (
-                                // A text label, not a tick: a check icon reads as
-                                // "already applied", but the metadata is only applied
-                                // when the row is clicked. The tier color tells the
-                                // user whether to trust the suggestion or double-check.
-                                <span
-                                  data-testid="track-confidence"
-                                  data-confidence={matchTier}
-                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                                    matchTier === 'high'
-                                      ? 'bg-good/15 text-good'
-                                      : 'bg-warn/15 text-warn'
-                                  }`}
-                                >
-                                  {tr('editor.matchSuggested')}
-                                </span>
-                              )}
-                              {t.duration && (
-                                <span className="shrink-0 text-xs tabular-nums text-fg-dim">
-                                  {t.duration}
-                                </span>
-                              )}
+                              {/* The suggestion mark mirrors the track list's match sparkle
+                                  (not a tick: a check reads as "already applied", but the
+                                  metadata is only applied when the row is clicked). Accent
+                                  for a confident tier, amber for a review-tier one, so the
+                                  colour tells the user whether to trust it — the same
+                                  vocabulary the left column uses. Sits in a fixed slot so a
+                                  row without a suggestion keeps the duration aligned. */}
+                              <span className="flex w-3 shrink-0 justify-center">
+                                {t === matchedTrack && matchTier && (
+                                  <span
+                                    data-testid="track-confidence"
+                                    data-confidence={matchTier}
+                                    className={`group/dot relative flex ${
+                                      matchTier === 'high'
+                                        ? 'text-[var(--color-accent)]'
+                                        : 'text-warn'
+                                    }`}
+                                  >
+                                    <Sparkles className="h-3 w-3" aria-hidden="true" />
+                                    <Tooltip
+                                      label={tr('editor.matchSuggested')}
+                                      align="end"
+                                      scope="dot"
+                                    />
+                                  </span>
+                                )}
+                              </span>
+                              <span className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
+                                {t.duration}
+                              </span>
                             </button>
                           ))
                         )
