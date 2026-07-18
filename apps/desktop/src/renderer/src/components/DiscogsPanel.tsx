@@ -322,20 +322,28 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                       <span data-fit className="block truncate text-sm leading-snug">
                         {r.title}
                       </span>
-                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="mt-1 flex flex-wrap items-center gap-2">
+                        {/* The provider is an origin label, so it wears the same bordered,
+                            unfilled pill the track list gives the WAV/FLAC format tag —
+                            same vocabulary across both columns. */}
                         <span
                           data-testid="result-provider"
                           data-provider={r.provider}
-                          className="shrink-0 rounded-full bg-[var(--color-panel-2)] px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-fg-faint"
+                          className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium uppercase leading-4 tracking-wide text-fg-dim"
                         >
                           {tr(`settings.provider.${r.provider}`)}
                         </span>
+                        {/* The suggestion is the track list's match sparkle, not a filled
+                            chip: a signal, marked like the row's quality tick, with its
+                            "Suggested" label in the tooltip. Never a check — nothing is
+                            applied until the user opens the release and picks a track. */}
                         {suggested && (
                           <span
                             data-testid="result-suggested"
-                            className="shrink-0 rounded-full bg-good/15 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-good"
+                            className="group/dot relative flex shrink-0 text-[var(--color-accent)]"
                           >
-                            {tr('editor.matchSuggested')}
+                            <Sparkles className="h-3 w-3" aria-hidden="true" />
+                            <Tooltip label={tr('editor.matchSuggested')} align="start" scope="dot" />
                           </span>
                         )}
                       </span>

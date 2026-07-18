@@ -776,6 +776,38 @@ describe('Editor Discogs loading skeleton', () => {
     expect(results[1]).toContainElement(badge)
     expect(results[0]).not.toContainElement(badge)
   })
+
+  // The candidate header speaks the track list's language: the "Suggested" signal is the
+  // same sparkle mark the track list uses for a match (not an on-header text pill), so the
+  // wording lives in its tooltip and a check-looking tick never implies "already applied".
+  it('marks a suggested candidate with a sparkle whose label is in the tooltip', async () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.search = vi.fn(async () => [{ provider: 'bandcamp', id: 1, title: 'The Release' }])
+    api.getRelease = vi.fn(async () => ({
+      id: 1,
+      title: 'The Release',
+      tracklist: [{ position: 'A1', title: 'My Song' }],
+    }))
+    renderEditor({ id: 'a', query: 'artist song', meta: { title: 'My Song' } })
+    const badge = await screen.findByTestId('result-suggested')
+    expect(badge).toHaveTextContent('')
+    for (const type of ['pointerenter', 'pointermove']) {
+      badge.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
+  })
+
+  // The provider is an origin label, not a match signal — so it wears the same
+  // bordered, unfilled pill the track list gives the WAV/FLAC format tag, not a
+  // filled chip that would compete with the sparkle for attention.
+  it('shows the provider as a bordered pill like the track list format tag', async () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.search = vi.fn(async () => [{ provider: 'bandcamp', id: 1, title: 'The Release' }])
+    renderEditor({ id: 'a', query: 'artist song' })
+    const provider = await screen.findByTestId('result-provider')
+    expect(provider.className).toContain('border')
+    expect(provider.className).not.toMatch(/bg-\[var\(--color-panel-2\)\]/)
+  })
 })
 
 describe('Editor embedded cover size', () => {
