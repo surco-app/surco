@@ -1,7 +1,6 @@
 import {
   Activity,
   ChartColumn,
-  Columns3,
   Disc3,
   Loader2,
   Radio,
@@ -17,10 +16,9 @@ import { FOCUS_PRESETS, type FocusPresetId } from '../lib/focusPreset'
 import { Tooltip } from './Tooltip'
 
 // The glyph for each focus preset, in the same order FOCUS_PRESETS lists them: a record
-// for "find the release", three even columns for balanced, the audio sliders for "edit".
+// for "find the release", the audio sliders for "edit".
 const PRESET_ICONS: Record<FocusPresetId, typeof Disc3> = {
   match: Disc3,
-  balanced: Columns3,
   edit: SlidersHorizontal,
 }
 
@@ -114,7 +112,7 @@ export const Toolbar = memo(function Toolbar({
     >
       {trackCount > 0 ? (
         // Focus presets: repark the results column for the task at hand (find a match /
-        // balanced / edit) in one click. The divider still fine-tunes; dragging off a
+        // edit) in one click. The divider still fine-tunes; dragging off a
         // preset clears its highlight (focusPreset goes null). Hidden with no tracks, since
         // there's no results or editor column to focus yet. Each button carries its own
         // aria-label/aria-pressed, matching SegmentedControl's plain-div grouping.

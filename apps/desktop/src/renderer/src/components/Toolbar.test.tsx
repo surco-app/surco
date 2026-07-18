@@ -15,7 +15,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     isMac: true,
     hintFor: () => '',
     trackCount: 3,
-    focusPreset: 'balanced',
+    focusPreset: 'match',
     onFocusPreset: vi.fn(),
     importing: null,
     batchSummary: null,
@@ -133,7 +133,8 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
     cleanup()
     renderBar({ focusPreset: null })
-    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('focus-preset-match')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
   })
 
   // The presets act on the results and editor columns, which don't exist until the crate

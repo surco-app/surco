@@ -60,7 +60,12 @@ import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
-import { activeFocusPreset, type FocusPresetId, focusPresetWidth } from './lib/focusPreset'
+import {
+  activeFocusPreset,
+  DEFAULT_RESULTS_WIDTH,
+  type FocusPresetId,
+  focusPresetWidth,
+} from './lib/focusPreset'
 import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { shouldShowOnboarding } from './lib/onboarding'
@@ -1106,9 +1111,9 @@ export default function App(): React.JSX.Element {
     saveSettings({ resultsWidth: width }),
   )
 
-  // The results column width the editor actually renders at (315 until the user first
-  // sizes it) — the same fallback DiscogsPanel seeds its resize hook with.
-  const resultsWidth = settings?.resultsWidth ?? 315
+  // The results column width the editor actually renders at (the match-preset default
+  // until the user first sizes it) — the same fallback DiscogsPanel seeds its resize hook with.
+  const resultsWidth = settings?.resultsWidth ?? DEFAULT_RESULTS_WIDTH
   // Applies a header focus preset: parks the results column at the preset's width in one
   // click (the editor, flex-1, takes the rest). The list is left where the user dragged it.
   // Saved directly, since the editor reads its width from settings.

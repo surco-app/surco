@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { activeFocusPreset, FOCUS_PRESETS, focusPresetWidth } from './focusPreset'
+import { activeFocusPreset, DEFAULT_RESULTS_WIDTH, FOCUS_PRESETS, focusPresetWidth } from './focusPreset'
 
 describe('FOCUS_PRESETS', () => {
-  it('lists match, balanced and edit in that left-to-right order', () => {
-    expect(FOCUS_PRESETS.map((p) => p.id)).toEqual(['match', 'balanced', 'edit'])
+  it('lists match and edit in that left-to-right order', () => {
+    expect(FOCUS_PRESETS.map((p) => p.id)).toEqual(['match', 'edit'])
   })
 
   // Every preset's results width must stay inside the range the drag handle enforces
@@ -16,29 +16,31 @@ describe('FOCUS_PRESETS', () => {
     }
   })
 
-  // 'balanced' is the app's default results width (315), so a fresh crate — which sits at
-  // that default — shows balanced already lit rather than no preset at all.
-  it('sets balanced to the default results width so a fresh crate reads as balanced', () => {
-    expect(focusPresetWidth('balanced')).toBe(315)
+  // The default results width is 'match' (480), so a fresh crate — which sits at the
+  // default — opens with the match preset lit rather than no preset at all. Match is
+  // the natural first task on a fresh import: widen results to find the release.
+  it('defaults to the match preset width so a fresh crate reads as match', () => {
+    expect(DEFAULT_RESULTS_WIDTH).toBe(focusPresetWidth('match'))
   })
 
   // The editor is flex-1, so it grows as results shrinks. 'match' gives results the most
-  // room (editor waits); 'edit' pinches results to its minimum (editor widest).
-  it('gives results its widest column under match and its narrowest under edit', () => {
-    expect(focusPresetWidth('match')).toBeGreaterThan(focusPresetWidth('balanced'))
-    expect(focusPresetWidth('balanced')).toBeGreaterThan(focusPresetWidth('edit'))
+  // room (editor waits); 'edit' pinches results to its minimum (editor widest). The two
+  // sit far apart on purpose — the dropped 'balanced' was 15px from 'edit', read as one
+  // state, so the toggle now has a clearly perceptible gap.
+  it('gives results a clearly wider column under match than under edit', () => {
+    expect(focusPresetWidth('match') - focusPresetWidth('edit')).toBeGreaterThanOrEqual(120)
   })
 })
 
 describe('activeFocusPreset', () => {
   it('names the preset whose results width the column currently matches', () => {
     expect(activeFocusPreset(focusPresetWidth('match'))).toBe('match')
-    expect(activeFocusPreset(focusPresetWidth('balanced'))).toBe('balanced')
+    expect(activeFocusPreset(focusPresetWidth('edit'))).toBe('edit')
   })
 
   // A drag to any in-between width belongs to no preset, so the segmented control shows
   // nothing selected — the same "custom" state a manually-sized editor shows in VS Code.
   it('is null once a drag moves the column off every preset', () => {
-    expect(activeFocusPreset(517)).toBeNull()
+    expect(activeFocusPreset(390)).toBeNull()
   })
 })
