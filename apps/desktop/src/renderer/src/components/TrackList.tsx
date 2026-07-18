@@ -327,13 +327,18 @@ const TrackRow = memo(function TrackRow({
             scope="dot"
           />
         </span>
-        {/* One tooltip for the whole text block (title + artist): two nested tooltips could
-            both show as the pointer crossed between the stacked lines. It reveals the row's
-            own label and artist — the frozen listLabel, not the editable meta.title, so it
-            matches what the row shows. */}
+        {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
+            what the row shows) is scoped to the text itself, not this flex-1 layout slot:
+            anchored to the slot, it fired across the whole empty tail to the right of a
+            short title. Each text line carries its own copy, each width-fit to its words, so
+            hovering the gap beside the text raises nothing. The two never double up — a fit
+            title and a fit artist don't overlap, and the vertical gap between the stacked
+            lines belongs to neither. */}
         <span data-fit className="relative min-w-0 flex-1">
-          <Tooltip label={rowTooltip(t, tr)} />
-          <span className="block truncate text-sm font-medium text-fg">{t.listLabel}</span>
+          <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
+            <Tooltip label={rowTooltip(t, tr)} />
+            {t.listLabel}
+          </span>
           {t.loadingMeta ? (
             <span
               data-testid="track-loading"
@@ -355,8 +360,11 @@ const TrackRow = memo(function TrackRow({
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
-                {t.meta.artist || tr('trackList.noArtist')}
+              <span className="relative block min-w-0 flex-1 truncate text-xs text-fg-dim">
+                <span className="relative block w-fit max-w-full truncate">
+                  <Tooltip label={rowTooltip(t, tr)} />
+                  {t.meta.artist || tr('trackList.noArtist')}
+                </span>
               </span>
               {/* A failed tag read leaves the row showing only its file-name parse; the mark
                   tells that apart from a file that genuinely carries no tags. Lives in the

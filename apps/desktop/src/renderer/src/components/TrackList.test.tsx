@@ -165,9 +165,11 @@ describe('TrackList', () => {
 
   // Title and artist truncate in the narrow column, but they shared the row through two
   // separate tooltips that could both show as the pointer crossed between the stacked
-  // lines. One tooltip for the whole text block reveals both — the frozen label and the
-  // artist — with no chance of a double pop.
-  it('reveals the label and artist through a single row tooltip', () => {
+  // lines. Each line carries the same tooltip, scoped to its own text — not the flex-1
+  // layout slot, which stretches past a short title and used to fire the tooltip across the
+  // empty tail. Hovering either the frozen label or the artist reveals both; the two never
+  // double up because a width-fit title and a width-fit artist don't overlap.
+  it('reveals the label and artist by hovering either text line', () => {
     renderList([
       track({
         id: 'a',
@@ -175,11 +177,14 @@ describe('TrackList', () => {
         meta: { title: 'Edited Title', artist: 'Boards of Canada' },
       }),
     ])
-    const textBlock = screen.getByText('Frozen Name').closest('[data-fit]') as HTMLElement
-    fireEvent.focusIn(textBlock)
-    const tips = screen.getAllByRole('tooltip')
-    expect(tips).toHaveLength(1)
-    expect(tips[0]).toHaveTextContent('Frozen Name — Boards of Canada')
+    const titleTrigger = screen.getByText('Frozen Name')
+    fireEvent.focusIn(titleTrigger)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
+    fireEvent.focusOut(titleTrigger)
+
+    const artistTrigger = screen.getByText('Boards of Canada')
+    fireEvent.focusIn(artistTrigger)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
   })
 
   it('drags a row out to external apps using its source file and cover', () => {
