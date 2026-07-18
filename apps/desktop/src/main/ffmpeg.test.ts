@@ -193,6 +193,19 @@ describe('convertArgs', () => {
     expect(args).toContain('TBPM=')
   })
 
+  it('drops all carried-over metadata on clearExtras so foreign tags cannot survive', () => {
+    // "Empty every metadata field" must reach frames the app never wrote — a foreign
+    // NOTES the source carried would otherwise ride ffmpeg's default -map_metadata 0
+    // into the re-encode untouched (only managed fields get an overriding empty tag).
+    // -map_metadata -1 copies nothing, leaving only the explicit -metadata flags.
+    const cleared = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta, undefined, undefined, true)
+    expect(cleared).toContain('-map_metadata')
+    expect(cleared[cleared.indexOf('-map_metadata') + 1]).toBe('-1')
+    // A normal convert still relies on the default carry-over — no -map_metadata flag.
+    const normal = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta)
+    expect(normal).not.toContain('-map_metadata')
+  })
+
   it('clears the FLAC RATING comment when the rating field is empty', () => {
     // FLAC is the one format whose rating round-trips through ffprobe, so an empty
     // field at convert time means the file had none or the user erased it — either

@@ -93,6 +93,13 @@ function isTraktorPriv(frame: Id3v2Frame): frame is Id3v2PrivateFrame {
   return frame instanceof Id3v2PrivateFrame && frame.owner === 'TRAKTOR4'
 }
 
+// The frames that carry Traktor's cues/beatgrid: the GEOB blob and the PRIV
+// "TRAKTOR4" real Traktor MP3s use. The set to preserve when everything else is
+// wiped — readCueFrames clones exactly these, clearExtras keeps exactly these.
+function isTraktorCue(frame: Id3v2Frame): boolean {
+  return frame.frameId.toString() === 'GEOB' || isTraktorPriv(frame)
+}
+
 // Drops the frames a cue carry-over is about to rewrite: every GEOB, and the
 // Traktor PRIV specifically — other PRIV owners on the destination stay.
 function removeCueFrames(tag: Id3v2Tag): void {
@@ -109,8 +116,7 @@ function readCueFrames(source: string): Id3v2Frame[] {
     const src = TagFile.createFromPath(source)
     try {
       const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      const cues =
-        tag?.frames.filter((fr) => fr.frameId.toString() === 'GEOB' || isTraktorPriv(fr)) ?? []
+      const cues = tag?.frames.filter(isTraktorCue) ?? []
       return cues.map((fr) => fr.clone())
     } finally {
       src.dispose()
@@ -270,6 +276,14 @@ export function writeTags(
     // and stays readable on the CDJ/rekordbox/Serato setups that mishandle v2.4 —
     // and, for WAV, in mp3tag, which ignores a v2.4 "id3 " chunk entirely.
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
+    // "Empty every metadata field" must reach frames the app never wrote — a foreign
+    // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
+    // read as junk the user couldn't clear. On clearExtras, drop every frame up front so
+    // only the managed fields the writes below repopulate remain; the Traktor cue frames
+    // (GEOB, PRIV "TRAKTOR4") are the beatgrid, not metadata, so they stay — a cueSource
+    // merge below still re-injects them for a carry-over conversion.
+    if (clearExtras)
+      for (const frame of id3.frames.filter((fr) => !isTraktorCue(fr))) id3.removeFrame(frame)
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)

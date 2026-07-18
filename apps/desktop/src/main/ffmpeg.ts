@@ -599,6 +599,7 @@ export function convertArgs(
   meta: TrackMetadata,
   coverPath?: string,
   audioFilter?: string,
+  clearExtras?: boolean,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -612,6 +613,13 @@ export function convertArgs(
 
   args.push('-map', '0:a')
   if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
+  // "Empty every metadata field" must reach frames the app never wrote. The default
+  // -map_metadata 0 copies the source's global metadata into the re-encode, so a
+  // foreign NOTES/COMMENT the app doesn't manage would ride through untouched (only
+  // managed fields get an overriding empty tag). -1 copies nothing, leaving just the
+  // explicit -metadata flags below. Traktor's cues are re-injected separately, so
+  // dropping the carried metadata never costs the beatgrid.
+  if (clearExtras) args.push('-map_metadata', '-1')
 
   // Normalization filter (loudnorm / volume), applied to the audio before encoding.
   if (audioFilter) args.push('-af', audioFilter)
@@ -991,7 +999,7 @@ export async function convertAudio(
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter),
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,

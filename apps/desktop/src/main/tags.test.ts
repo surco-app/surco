@@ -25,6 +25,18 @@ function stripCues(file: string): void {
   f.dispose()
 }
 
+// Injects a foreign TXXX frame the app doesn't manage, modelling the "NOTES"
+// (Medieval CUE Splitter) leftover users hit — a frame clearExtras must wipe.
+function addForeignFrame(file: string, description: string, value: string): void {
+  const f = TagFile.createFromPath(file)
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  const txxx = Id3v2UserTextInformationFrame.fromDescription(description)
+  txxx.text = [value]
+  id3.addFrame(txxx)
+  f.save()
+  f.dispose()
+}
+
 // Reads back a TXXX frame by its description (CATALOGNUMBER, MOOD, ENERGY…).
 function userText(id3: Id3v2Tag, description: string): Id3v2UserTextInformationFrame | undefined {
   return Id3v2UserTextInformationFrame.findUserTextInformationFrame(
@@ -296,6 +308,42 @@ describe('writeTags', () => {
     f.dispose()
     const bytes = readFileSync(file)
     expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+  })
+
+  // "Empty every metadata field" must reach frames the app never wrote — a foreign
+  // TXXX like "NOTES" (left by Medieval CUE Splitter) survived the managed-field
+  // overwrite and read as junk users couldn't clear. clearExtras now strips every
+  // frame that isn't a Traktor cue, so the file is truly empty but the beatgrid stays.
+  it('strips a foreign frame the app never wrote when clearExtras is set', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    addForeignFrame(file, 'NOTES', 'Medieval CUE Splitter (www.medieval.it)')
+    const seeded = TagFile.createFromPath(file)
+    expect(userText(seeded.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')).toBeDefined()
+    seeded.dispose()
+
+    writeTags(file, meta, undefined, true, undefined, undefined, true)
+
+    const f = TagFile.createFromPath(file)
+    expect(userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')).toBeUndefined()
+    f.dispose()
+    expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(true)
+  })
+
+  // A foreign frame is not metadata the user asked to change on a normal convert, so a
+  // plain write (clearExtras off) must leave it alone — only "Empty every field" wipes it.
+  it('keeps a foreign frame on a normal write when clearExtras is off', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    addForeignFrame(file, 'NOTES', 'Medieval CUE Splitter (www.medieval.it)')
+
+    writeTags(file, meta)
+
+    const f = TagFile.createFromPath(file)
+    expect(
+      userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')?.text.join(''),
+    ).toBe('Medieval CUE Splitter (www.medieval.it)')
+    f.dispose()
   })
 
   it('replaces the cover without duplicating it or losing the cue frame', () => {
