@@ -23,14 +23,15 @@ afterEach(() => vi.restoreAllMocks())
 describe('useWaveform', () => {
   // The player's strip is the one decode a DJ is actively waiting on (they just hit play),
   // so it must decode the exact track it shows and jump ahead of any background sweep.
-  it('decodes the input path at high priority and returns the peaks', async () => {
+  it('decodes the input path at urgent priority and returns the peaks', async () => {
     const decode = vi.fn().mockResolvedValue(sample)
     setApi(decode)
     const { result } = renderHook(() => useWaveform('/music/a.wav', true), { wrapper: wrapper() })
     await waitFor(() => expect(result.current.data).toEqual(sample))
-    // 'high': opening the player (or the editor's wave sections) is explicit intent, so it
-    // preempts the 'low' waveform decodes an "analyze all" sweep floods the limiter with.
-    expect(decode).toHaveBeenCalledWith('/music/a.wav', 'high')
+    // 'urgent', not 'high': selecting a track fires spectrum/shelf/loudness as 'high' too,
+    // so a merely-'high' waveform would wait behind its own track's background passes. The
+    // wave the DJ is staring at must preempt those, not just the 'low' sweep floods.
+    expect(decode).toHaveBeenCalledWith('/music/a.wav', 'urgent')
   })
 
   // The full-length decode is the heaviest probe, so a track with no duration yet (or a

@@ -62,10 +62,10 @@ describe('WaveformCompare', () => {
     expect(await screen.findByTestId('waveform-compare')).toBeInTheDocument()
     expect(screen.getByTestId('waveform-before')).toBeInTheDocument()
     expect(screen.getByTestId('waveform-after')).toBeInTheDocument()
-    // Both strips are the open track's own A/B, so they decode at 'high' — the priority
-    // useWaveform asks — to jump ahead of any background sweep's 'low' floods.
-    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/out/a.aiff', 'high'))
-    expect(waveform).toHaveBeenCalledWith('/m/a.wav', 'high')
+    // Both strips are the open track's own A/B, so they decode at 'urgent' — the priority
+    // useWaveform asks — to jump ahead of the selected track's 'high' passes and any sweep.
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/out/a.aiff', 'urgent'))
+    expect(waveform).toHaveBeenCalledWith('/m/a.wav', 'urgent')
   })
 
   // The placeholder must be drawn through the same canvas raster as the real strips
@@ -297,8 +297,9 @@ describe('WaveformSolo', () => {
     renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
     const solo = await screen.findByTestId('waveform-solo')
     await waitFor(() => expect(solo).toHaveTextContent('-7.4 LUFS · 0.2 dBTP'))
-    // The solo strip is the open track's own wave, so it decodes at 'high'.
-    expect(waveform).toHaveBeenCalledWith('/m/a.wav', 'high')
+    // The solo strip is the open track's own wave — the one the user is looking at — so it
+    // decodes at 'urgent', preempting the selected track's own 'high' passes as well as sweeps.
+    expect(waveform).toHaveBeenCalledWith('/m/a.wav', 'urgent')
   })
 
   it('does not decode while disabled', async () => {

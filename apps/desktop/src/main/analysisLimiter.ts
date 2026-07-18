@@ -1,12 +1,16 @@
 import os from 'node:os'
 
 // A concurrency limiter (not a rate limiter like discogsLimiter): it caps how many
-// analysis ffmpeg decodes run at once and serves a two-tier priority queue. Every
+// analysis ffmpeg decodes run at once and serves a three-tier priority queue. Every
 // analysis used to decode in parallel, so selecting a track (spectrum + loudness +
 // bpm + key) and then hitting play (waveform) put five ffmpeg passes on the cores at
 // once — each then crawled, and the waveform a DJ was actively waiting on suffered
-// most. Capping the burst keeps each decode fast, and 'high' lets the waveform jump
-// ahead of the background passes when every slot is busy.
+// most. Capping the burst keeps each decode fast. The tiers: 'urgent' for the one
+// decode a user is staring at (the player waveform), 'high' for the other passes of
+// the actively-selected track, 'low' for background/sweep work. 'urgent' exists
+// because selecting a track fires spectrum/shelf/loudness as 'high' too — the waveform
+// used to wait behind its own track's background passes even though it was 'high'.
+type Priority = 'urgent' | 'high' | 'low'
 type Waiter = { resolve: () => void; signal?: AbortSignal }
 
 function abortError(): Error {
@@ -16,9 +20,10 @@ function abortError(): Error {
 }
 
 export function createConcurrencyLimiter(max: number): {
-  run: <T>(task: () => Promise<T>, priority?: 'high' | 'low', signal?: AbortSignal) => Promise<T>
+  run: <T>(task: () => Promise<T>, priority?: Priority, signal?: AbortSignal) => Promise<T>
 } {
   let active = 0
+  const urgent: Waiter[] = []
   const high: Waiter[] = []
   const low: Waiter[] = []
 
@@ -29,8 +34,8 @@ export function createConcurrencyLimiter(max: number): {
   // could do is waste a shift, never a slot.
   function pump(): void {
     if (active >= max) return
-    let next = high.shift() ?? low.shift()
-    while (next?.signal?.aborted) next = high.shift() ?? low.shift()
+    let next = urgent.shift() ?? high.shift() ?? low.shift()
+    while (next?.signal?.aborted) next = urgent.shift() ?? high.shift() ?? low.shift()
     if (!next) return
     active++
     next.resolve()
@@ -42,14 +47,15 @@ export function createConcurrencyLimiter(max: number): {
   // limiter just keeps the slot accounted for until the task settles.
   async function run<T>(
     task: () => Promise<T>,
-    priority: 'high' | 'low' = 'low',
+    priority: Priority = 'low',
     signal?: AbortSignal,
   ): Promise<T> {
     if (signal?.aborted) throw abortError()
     await new Promise<void>((resolve, reject) => {
       const waiter: Waiter = { resolve, signal }
       signal?.addEventListener('abort', () => reject(abortError()), { once: true })
-      ;(priority === 'high' ? high : low).push(waiter)
+      const queue = priority === 'urgent' ? urgent : priority === 'high' ? high : low
+      queue.push(waiter)
       pump()
     })
     // Past this point the slot is held (pump incremented active before resolving),

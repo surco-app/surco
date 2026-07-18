@@ -140,7 +140,7 @@ export interface Api {
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
-  waveform: (path: string, priority?: 'high' | 'low') => Promise<WaveformResult | null>
+  waveform: (path: string, priority?: 'urgent' | 'high' | 'low') => Promise<WaveformResult | null>
   // The native-rate clip/channel scan for the compare/player strip only (marks + split).
   waveformScan: (path: string) => Promise<WaveformScan | null>
   // A slice of the track re-decoded at full waveform fidelity, for the strips'

@@ -6,15 +6,17 @@ import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQuer
 // hover prefetch so a single drifting key can't fork the cache. Keyed by path so
 // revisiting a track re-reads the disk cache instead of re-decoding the entire file.
 // The priority rides into the analysis limiter (not the cache key, like spectrogramOptions):
-// the player asks 'high' so its decode jumps ahead of a background "analyze all" sweep's
-// 'low' floods; the cache it fills is the same one regardless, so a warmed 'low' entry
-// serves the player with no re-decode. 'high' requests are also cancellable: playing the
-// next track aborts the previous one's full-length decode instead of finishing it.
-export function waveformOptions(inputPath: string, priority: 'high' | 'low' = 'low') {
+// the player asks 'urgent' so its decode jumps ahead not just of a background sweep's 'low'
+// floods but of the selected track's OWN 'high' passes (spectrum/shelf/loudness), which
+// otherwise queue ahead of the wave the DJ is staring at. The cache it fills is the same
+// one regardless, so a warmed 'low' entry serves the player with no re-decode. Foreground
+// (urgent/high) requests are cancellable: playing the next track aborts the previous one's
+// full-length decode instead of finishing it.
+export function waveformOptions(inputPath: string, priority: 'urgent' | 'high' | 'low' = 'low') {
   const probe = (): Promise<WaveformResult | null> => window.api.waveform(inputPath, priority)
-  return priority === 'high'
-    ? cancellableAnalysisOptions('waveform', inputPath, probe)
-    : analysisOptions('waveform', inputPath, probe)
+  return priority === 'low'
+    ? analysisOptions('waveform', inputPath, probe)
+    : cancellableAnalysisOptions('waveform', inputPath, probe)
 }
 
 // Whole-track peak envelope for the player's waveform strip. Disabled until there's a
@@ -25,8 +27,9 @@ export function useWaveform(
   enabled: boolean,
 ): UseQueryResult<WaveformResult | null> {
   // The player mounts this for the track the user just hit play on — the one decode they're
-  // actively waiting on — so it asks 'high' to preempt a background sweep's 'low' decodes.
-  return useQuery({ ...waveformOptions(inputPath, 'high'), enabled })
+  // actively waiting on — so it asks 'urgent' to preempt both a background sweep's 'low'
+  // decodes and the selected track's own 'high' passes (spectrum/shelf/loudness).
+  return useQuery({ ...waveformOptions(inputPath, 'urgent'), enabled })
 }
 
 // The native-rate clip/channel scan for the compare/player strip only — a separate,

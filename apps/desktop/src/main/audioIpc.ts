@@ -263,7 +263,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   ipcMain.handle(
     'audio:waveform',
-    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+    async (_e, inputPath: string, priority: 'urgent' | 'high' | 'low' = 'low') => {
       try {
         // Default shouldCache applies: a null waveform means ffmpeg decoded
         // nothing, which is worth retrying later (e.g. a file mid-download), so

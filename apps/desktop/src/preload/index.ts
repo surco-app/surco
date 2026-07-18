@@ -109,8 +109,10 @@ const api: Api = {
     ipcRenderer.invoke('audio:bpm', path, priority),
   key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>
     ipcRenderer.invoke('audio:key', path, priority),
-  waveform: (path: string, priority: 'high' | 'low' = 'low'): Promise<WaveformResult | null> =>
-    ipcRenderer.invoke('audio:waveform', path, priority),
+  waveform: (
+    path: string,
+    priority: 'urgent' | 'high' | 'low' = 'low',
+  ): Promise<WaveformResult | null> => ipcRenderer.invoke('audio:waveform', path, priority),
   waveformScan: (path: string): Promise<WaveformScan | null> =>
     ipcRenderer.invoke('audio:waveform-scan', path),
   waveformWindow: (

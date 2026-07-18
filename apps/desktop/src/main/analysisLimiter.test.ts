@@ -71,6 +71,37 @@ describe('createConcurrencyLimiter', () => {
     await Promise.all([first, low, high])
   })
 
+  it('serves an urgent task before high-priority ones already waiting', async () => {
+    // Selecting a track queues several 'high' passes (spectrum, shelf, loudness) for the
+    // same file, so the waveform — the one decode a DJ who just hit play is staring at —
+    // used to wait behind them even though it was also 'high'. 'urgent' lets only the
+    // waveform jump the whole high lane, not just the low one.
+    const limiter = createConcurrencyLimiter(1)
+    const blocker = deferred()
+    const order: string[] = []
+
+    const first = limiter.run(async () => {
+      order.push('first')
+      await blocker.promise
+    })
+    await flush()
+
+    const high = limiter.run(async () => {
+      order.push('high')
+    }, 'high')
+    const urgent = limiter.run(async () => {
+      order.push('urgent')
+    }, 'urgent')
+    await flush()
+    expect(order).toEqual(['first'])
+
+    blocker.resolve()
+    await flush()
+    expect(order).toEqual(['first', 'urgent', 'high'])
+
+    await Promise.all([first, high, urgent])
+  })
+
   it('propagates a task failure to its caller and still frees the slot', async () => {
     // A decode that throws (ffmpeg can't read the file) must reject the caller, not the
     // whole limiter, and must release its slot so the queue keeps draining.
