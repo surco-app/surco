@@ -35,6 +35,22 @@
       {
         "text": "Vaciar los metadatos ahora deja la pista de verdad en blanco: además de los campos de texto, borra también la valoración y la carátula, para retaguear un archivo desde cero sin restos.",
         "in": "0.63.2"
+      },
+      {
+        "text": "Vaciar los metadatos también borra las etiquetas sueltas que dejan otras apps (como el «NOTES» de Medieval CUE Splitter): el archivo queda limpio del todo, no solo en los campos que edita Surco.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "La columna de resultados de la búsqueda y sus filas ahora comparten el mismo diseño que tu lista de pistas: la coincidencia sugerida se marca con un icono en vez de una etiqueta que tapaba el nombre, y todo se lee de un vistazo.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "Los botones para ensanchar resultados o editor de la barra superior reaccionan al instante y sus tres anchos se distinguen de verdad, así reencuadras las columnas para la tarea de un clic.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "El paso de audio de la bienvenida está afinado al flujo del DJ.",
+        "in": "0.63.3"
       }
     ]
   },

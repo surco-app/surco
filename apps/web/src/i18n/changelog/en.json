@@ -35,6 +35,22 @@
       {
         "text": "Clearing the metadata now truly blanks the track: on top of the text fields it also wipes the rating and the artwork, so you can retag a file from scratch with nothing left behind.",
         "in": "0.63.2"
+      },
+      {
+        "text": "Clearing the metadata now also removes the stray tags other apps leave behind (like Medieval CUE Splitter's \"NOTES\"): the file comes out fully clean, not just the fields Surco edits.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "The search results column and its rows now share the same design as your track list: a suggested match is marked with an icon instead of a label that covered the name, so everything reads at a glance.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "The widen-results and widen-editor buttons in the top bar respond instantly and their three widths are now clearly distinct, so you can reframe the columns for the task in one click.",
+        "in": "0.63.3"
+      },
+      {
+        "text": "The welcome flow's audio step is tuned to the DJ's workflow.",
+        "in": "0.63.3"
       }
     ]
   },
