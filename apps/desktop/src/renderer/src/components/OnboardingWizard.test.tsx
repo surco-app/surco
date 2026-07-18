@@ -171,15 +171,54 @@ describe('OnboardingWizard destination', () => {
   })
 })
 
-describe('OnboardingWizard spectrum', () => {
-  // The spectrum step shows a faked spectrogram so a brand-new user (no tracks loaded yet)
-  // can see what the feature is — including the lossy-cutoff line it's there to reveal.
-  it('illustrates the spectrum with a preview and a cutoff marker', () => {
-    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    // welcome → token → format → spectrum
+describe('OnboardingWizard audio intents', () => {
+  function openAudioStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    // welcome → token → format → audio
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+  }
+
+  // The spectrum illustration is the payload of the "check quality" intent: it shows the
+  // faked spectrogram (with its lossy-cutoff line) only once that intent is picked, so a
+  // metadata-only DJ never meets it. The fixture seeds showSpectrum:true → intent picked.
+  it('illustrates the spectrum only while the quality intent is picked', () => {
+    openAudioStep()
+    expect(screen.getByTestId('onboarding-intent-quality')).toBeChecked()
     expect(screen.getByTestId('spectrum-preview')).toBeInTheDocument()
     expect(screen.getByText(/cutoff/i)).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('onboarding-intent-quality'))
+    expect(screen.queryByTestId('spectrum-preview')).toBeNull()
+  })
+
+  // The core promise of the reworked wizard: a DJ who only wants correct metadata leaves
+  // the audio-surgery sections hidden. Unpicking quality (the only seeded intent) and
+  // finishing must persist an editor layout with trim/declick/normalize hidden and the
+  // spectrum off — no audio tools the DJ never asked for.
+  it('persists a metadata-only layout when no audio intent is picked', () => {
+    const onFinish = vi.fn()
+    openAudioStep(onFinish)
+    fireEvent.click(screen.getByTestId('onboarding-intent-quality')) // unpick the seeded one
+    fireEvent.click(screen.getByTestId('onboarding-next')) // finish
+    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
+    expect(patch.showSpectrum).toBe(false)
+    const hidden = (patch.editorSections ?? [])
+      .filter((s) => s.hidden)
+      .map((s) => s.id)
+    expect(hidden).toEqual(expect.arrayContaining(['trim', 'declick', 'normalize']))
+  })
+
+  // Picking "restore vinyl" must reveal the vinyl-repair sections in the persisted layout,
+  // so a vinyl DJ's first editor already has trim and declick without a Settings trip.
+  it('reveals the vinyl-repair sections when the restore intent is picked', () => {
+    const onFinish = vi.fn()
+    openAudioStep(onFinish)
+    fireEvent.click(screen.getByTestId('onboarding-intent-restore'))
+    fireEvent.click(screen.getByTestId('onboarding-next')) // finish
+    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
+    const shown = (patch.editorSections ?? [])
+      .filter((s) => !s.hidden)
+      .map((s) => s.id)
+    expect(shown).toEqual(expect.arrayContaining(['trim', 'declick']))
   })
 })
 
@@ -196,8 +235,8 @@ describe('OnboardingWizard auto-match', () => {
 
 describe('OnboardingWizard length', () => {
   // Every extra question delays the first drop of files. The wizard asks only what shapes
-  // the first import — sources + token + auto-match, format + destination, and the
-  // spectrum feature — and defers power-user tuning (naming, presets, fields) to Settings.
+  // the first import — sources + token + auto-match, format + destination, and the audio
+  // workflow — and defers power-user tuning (naming, presets, fields) to Settings.
   it('reaches Finish on the fourth step', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))

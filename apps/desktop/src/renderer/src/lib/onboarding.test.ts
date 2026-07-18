@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { buildOnboardingPatch, shouldShowOnboarding } from './onboarding'
+import type { EditorSectionId } from '../../../shared/editorSections'
+import type { SearchProviderId } from '../../../shared/types'
+import { buildOnboardingPatch, deriveEditorSections, shouldShowOnboarding } from './onboarding'
+
+// Helpers to read the derived section list by concern rather than by index, so the
+// tests survive a reorder of DEFAULT_EDITOR_SECTIONS.
+function shown(sections: ReturnType<typeof deriveEditorSections>): EditorSectionId[] {
+  return sections.filter((s) => !s.hidden).map((s) => s.id)
+}
+function isOpen(sections: ReturnType<typeof deriveEditorSections>, id: EditorSectionId): boolean {
+  return sections.find((s) => s.id === id)?.open === true
+}
 
 describe('shouldShowOnboarding', () => {
   // The wizard is a first-run-only affordance: a returning user who already
@@ -18,12 +29,12 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       searchProviders: ['discogs'],
       outputFormat: 'wav',
-    outputDir: '/out',
-      showSpectrum: false,
+      outputDir: '/out',
+      audioIntents: [],
       autoMatch: true,
       addToAppleMusic: true,
       overwriteOriginal: false,
-    convertBesideOriginal: false,
+      convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: false,
     })
@@ -31,12 +42,13 @@ describe('buildOnboardingPatch', () => {
       discogsToken: 'abc123',
       searchProviders: ['discogs'],
       outputFormat: 'wav',
-    outputDir: '/out',
+      outputDir: '/out',
       showSpectrum: false,
+      editorSections: deriveEditorSections([]),
       autoMatch: true,
       addToAppleMusic: true,
       overwriteOriginal: false,
-    convertBesideOriginal: false,
+      convertBesideOriginal: false,
       addToEngineDj: false,
       keepOutputCopy: false,
       hasSeenOnboarding: true,
@@ -51,7 +63,7 @@ describe('buildOnboardingPatch', () => {
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
     outputDir: '/out',
-      showSpectrum: true,
+      audioIntents: [],
       autoMatch: false,
       addToAppleMusic: true,
       overwriteOriginal: false,
@@ -77,7 +89,7 @@ describe('buildOnboardingPatch', () => {
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
     outputDir: '/out',
-      showSpectrum: true,
+      audioIntents: [],
       autoMatch: true,
       addToAppleMusic: false,
       overwriteOriginal: false,
@@ -95,7 +107,7 @@ describe('buildOnboardingPatch', () => {
       searchProviders: ['bandcamp'],
       outputFormat: 'aiff',
     outputDir: '/out',
-      showSpectrum: true,
+      audioIntents: [],
       autoMatch: true,
       addToAppleMusic: false,
       overwriteOriginal: false,
@@ -115,7 +127,7 @@ describe('buildOnboardingPatch', () => {
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
     outputDir: '/out',
-      showSpectrum: true,
+      audioIntents: [],
       autoMatch: false,
       addToAppleMusic: true,
       overwriteOriginal: false,
@@ -135,7 +147,7 @@ describe('buildOnboardingPatch', () => {
       searchProviders: ['discogs'],
       outputFormat: 'aiff',
     outputDir: '/out',
-      showSpectrum: true,
+      audioIntents: [],
       autoMatch: false,
       addToAppleMusic: false,
       overwriteOriginal: false,
@@ -147,4 +159,110 @@ describe('buildOnboardingPatch', () => {
     expect(patch.keepOutputCopy).toBe(true)
   })
 
+})
+
+describe('deriveEditorSections', () => {
+  // The whole point of the reworked wizard: a DJ who only wants correct metadata
+  // shouldn't be shown the audio-surgery sections they'll never touch. With no audio
+  // intent picked, the editor keeps only the always-present sections and hides the rest.
+  it('hides every audio section when no audio intent is picked', () => {
+    const sections = deriveEditorSections([])
+    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'output'])
+    // trim/declick/normalize are the ones the metadata-only DJ never uses.
+    for (const id of ['trim', 'declick', 'normalize'] as const) {
+      expect(sections.find((s) => s.id === id)?.hidden).toBe(true)
+    }
+  })
+
+  // "Restaurar vinilo" is the noise-repair lane: the two sections that clean a vinyl
+  // rip (silence trim + click repair) become visible, while volume normalize stays hidden.
+  it('reveals trim and declick for the restore-vinyl intent', () => {
+    const sections = deriveEditorSections(['restore'])
+    expect(shown(sections)).toContain('trim')
+    expect(shown(sections)).toContain('declick')
+    expect(sections.find((s) => s.id === 'normalize')?.hidden).toBe(true)
+  })
+
+  // "Ajustar volumen" reveals only the normalize section, leaving the vinyl-repair
+  // sections hidden for a DJ who rips from clean digital sources.
+  it('reveals only normalize for the level-volume intent', () => {
+    const sections = deriveEditorSections(['level'])
+    expect(shown(sections)).toContain('normalize')
+    expect(sections.find((s) => s.id === 'trim')?.hidden).toBe(true)
+    expect(sections.find((s) => s.id === 'declick')?.hidden).toBe(true)
+  })
+
+  // Intents compose: a DJ who both restores vinyl and levels volume gets all three
+  // audio sections, not just the last one picked.
+  it('composes multiple audio intents', () => {
+    const sections = deriveEditorSections(['restore', 'level'])
+    for (const id of ['trim', 'declick', 'normalize'] as const) {
+      expect(shown(sections)).toContain(id)
+    }
+  })
+
+  // The metadata form, quality verdict and output name are the product's core — they
+  // are never hidden regardless of which audio intents are (or aren't) picked.
+  it('always keeps the metadata, quality and output sections', () => {
+    for (const intents of [[], ['restore'], ['level'], ['quality']] as const) {
+      const sections = deriveEditorSections([...intents])
+      for (const id of ['form', 'quality', 'output'] as const) {
+        expect(sections.find((s) => s.id === id)?.hidden).not.toBe(true)
+      }
+    }
+  })
+
+  // The quality intent's payload is the spectrogram (showSpectrum), not the fold state:
+  // the quality section keeps its shipped default so the wizard can't drift from
+  // Settings → Editor. It's shown either way; only the spectrogram analysis is gated.
+  it('leaves the quality section at its default fold regardless of the quality intent', () => {
+    const withoutIntent = isOpen(deriveEditorSections([]), 'quality')
+    expect(isOpen(deriveEditorSections(['quality']), 'quality')).toBe(withoutIntent)
+  })
+})
+
+describe('buildOnboardingPatch with audio intents', () => {
+  // The quality intent is the single control that turns on the spectrogram analysis;
+  // without it a metadata-only DJ isn't paying for the FFT pass.
+  it('enables the spectrum only for the quality intent', () => {
+    const base = {
+      discogsToken: '',
+      searchProviders: ['discogs'] as SearchProviderId[],
+      outputFormat: 'aiff' as const,
+      outputDir: '/out',
+      autoMatch: false,
+      addToAppleMusic: false,
+      overwriteOriginal: false,
+      convertBesideOriginal: false,
+      addToEngineDj: false,
+      keepOutputCopy: true,
+    }
+    expect(buildOnboardingPatch({ ...base, audioIntents: [] }).showSpectrum).toBe(false)
+    expect(buildOnboardingPatch({ ...base, audioIntents: ['quality'] }).showSpectrum).toBe(true)
+  })
+
+  // The finished patch carries the derived section layout so the very first editor a
+  // new DJ opens already matches the workflow they described.
+  it('persists the derived editor sections', () => {
+    const patch = buildOnboardingPatch({
+      discogsToken: '',
+      searchProviders: ['discogs'],
+      outputFormat: 'aiff',
+      outputDir: '/out',
+      audioIntents: ['restore'],
+      autoMatch: false,
+      addToAppleMusic: false,
+      overwriteOriginal: false,
+      convertBesideOriginal: false,
+      addToEngineDj: false,
+      keepOutputCopy: true,
+    })
+    expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
+  })
+
+  // Skipping must still leave the section layout untouched (the defaults), so a skip
+  // never silently hides sections the user didn't ask to hide.
+  it('does not touch editor sections when skipped', () => {
+    expect(buildOnboardingPatch(null).editorSections).toBeUndefined()
+  })
 })

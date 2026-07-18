@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { OutputFormat, SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { buildOnboardingPatch } from '../lib/onboarding'
+import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { DestinationPicker } from './DestinationPicker'
@@ -14,11 +14,14 @@ import { useFocusTrap } from './useFocusTrap'
 
 const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
+// The optional audio intents, in the order they're offered. Correct metadata is the
+// product's core, so it's shown as an always-on row above these rather than a choice.
+const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // Four steps only: what shapes the first import (search sources + auto-match, output
-// format + destination) plus the spectrum feature the welcome can't explain. Naming,
-// grouping/genre presets and the fields editor are power-user tuning that lives in
-// Settings — every extra question here delays the first drop of files.
-const STEPS = ['welcome', 'search', 'format', 'spectrum'] as const
+// format + destination) plus the workflow question that tailors the editor to the DJ.
+// Naming, grouping/genre presets and the fields editor are power-user tuning that lives
+// in Settings — every extra question here delays the first drop of files.
+const STEPS = ['welcome', 'search', 'format', 'audio'] as const
 
 interface Props {
   settings: Settings
@@ -35,7 +38,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
   const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [outputDir, setOutputDir] = useState(settings.outputDir)
-  const [showSpectrum, setShowSpectrum] = useState(settings.showSpectrum)
+  // Seed from the one intent that maps to an existing default (the spectrum). The rest
+  // start unpicked so a first-run editor is minimal until the DJ opts in.
+  const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(
+    settings.showSpectrum ? ['quality'] : [],
+  )
   const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
@@ -59,7 +66,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         searchProviders,
         outputFormat,
         outputDir,
-        showSpectrum,
+        audioIntents,
         autoMatch,
         addToAppleMusic,
         keepOutputCopy,
@@ -90,6 +97,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setOverwriteOriginal(next.overwriteOriginal)
     setConvertBesideOriginal(next.convertBesideOriginal)
     setAddToEngineDj(next.addToEngineDj)
+  }
+  function toggleIntent(intent: AudioIntent, on: boolean): void {
+    setAudioIntents((prev) =>
+      on ? [...prev, intent] : prev.filter((i) => i !== intent),
+    )
   }
 
   return (
@@ -269,25 +281,57 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
               </>
             )}
 
-            {STEPS[step] === 'spectrum' && (
+            {STEPS[step] === 'audio' && (
               <>
                 <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('settings.showSpectrum')}
+                  {tr('onboarding.audioTitle')}
                 </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.spectrumBody')}</p>
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input
-                    data-testid="onboarding-spectrum"
-                    type="checkbox"
-                    checked={showSpectrum}
-                    onChange={(e) => setShowSpectrum(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  <span className="text-sm">{tr('settings.showSpectrum')}</span>
-                </label>
-                <div className="mt-4">
-                  <SpectrumPreview />
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.audioBody')}</p>
+                <div className="flex flex-col gap-3" data-testid="onboarding-audio-intents">
+                  {/* Correct metadata is what Surco is for — shown ticked and disabled so
+                      the DJ reads it as always-on, not as something they could turn off. */}
+                  <label className="flex cursor-not-allowed items-start gap-3 opacity-80">
+                    <input
+                      type="checkbox"
+                      checked
+                      disabled
+                      className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm">
+                      {tr('onboarding.intent.metadata')}
+                      <span className="mt-0.5 block text-xs text-fg-dim">
+                        {tr('onboarding.intent.metadataBody')}
+                      </span>
+                    </span>
+                  </label>
+                  {AUDIO_INTENTS.map((intent) => (
+                    <label
+                      key={intent}
+                      className="flex cursor-pointer items-start gap-3"
+                    >
+                      <input
+                        data-testid={`onboarding-intent-${intent}`}
+                        type="checkbox"
+                        checked={audioIntents.includes(intent)}
+                        onChange={(e) => toggleIntent(intent, e.target.checked)}
+                        className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="text-sm">
+                        {tr(`onboarding.intent.${intent}`)}
+                        <span className="mt-0.5 block text-xs text-fg-dim">
+                          {tr(`onboarding.intent.${intent}Body`)}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
                 </div>
+                {/* The spectrum is the payload of the quality intent — show the same
+                    illustration the old spectrum step had, but only once it's opted into. */}
+                {audioIntents.includes('quality') && (
+                  <div className="mt-4">
+                    <SpectrumPreview />
+                  </div>
+                )}
               </>
             )}
           </div>
