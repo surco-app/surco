@@ -7,6 +7,7 @@ import {
   type Id3v2Tag,
   type Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
+  PictureType,
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
@@ -265,6 +266,34 @@ describe('writeTags', () => {
       (fr) => fr.frameId.toString() === 'APIC',
     )
     expect(apic).toHaveLength(1)
+    f.dispose()
+  })
+
+  it('names the embedded cover after the album, not the temp file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    const cover = buildCover(dir)
+
+    writeTags(file, meta, cover)
+
+    const f = TagFile.createFromPath(file)
+    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)!
+    // The APIC description is what mp3tag & players show; it must not leak the
+    // internal surco-cover-proc-<uuid> temp name (here the raw basename cover.png).
+    expect(picture.description).toBe('Movin Melodies.jpg')
+    f.dispose()
+  })
+
+  it('falls back to a generic cover name when the album is empty', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    const cover = buildCover(dir)
+
+    writeTags(file, { ...meta, album: '' }, cover)
+
+    const f = TagFile.createFromPath(file)
+    const picture = f.tag.pictures.find((p) => p.type === PictureType.FrontCover)!
+    expect(picture.description).toBe('cover.jpg')
     f.dispose()
   })
 

@@ -38,6 +38,15 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // WAV/FLAC do not round-trip GEOB cleanly through TagLib, so they stay on ffmpeg.
 const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 
+// Picture.fromPath derives the APIC description from the temp basename
+// (surco-cover-proc-<uuid>.jpg), which mp3tag and DJ software display verbatim. Users
+// read that internal name as leftover junk, so we override it with the album name —
+// the cover is the release's, not the track's. Album-less files fall back to "cover".
+function coverName(meta: TrackMetadata): string {
+  const base = meta.album.replace(/[/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim()
+  return `${base || 'cover'}.jpg`
+}
+
 export function preservesCuesInPlace(ext: string): boolean {
   return ID3_IN_PLACE.has(ext.toLowerCase())
 }
@@ -298,6 +307,7 @@ export function writeTags(
     if (coverPath) {
       const picture = Picture.fromPath(coverPath)
       picture.type = PictureType.FrontCover
+      picture.description = coverName(meta)
       id3.addFrame(Id3v2AttachmentFrame.fromPicture(picture))
     }
 
