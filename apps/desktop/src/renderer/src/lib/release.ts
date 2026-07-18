@@ -48,7 +48,7 @@ export function resultFromRelease(rel: Release): SearchResult {
     title: albumArtist ? `${albumArtist} - ${rel.title}` : rel.title,
     year: rel.year ? String(rel.year) : undefined,
     thumb: coverOf(rel),
-    label: rel.labels?.map((l) => l.name),
+    label: rel.labels?.map((l) => cleanName(l.name)),
   }
 }
 
@@ -476,7 +476,7 @@ export function buildReleaseMeta(
   const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
   const trackArtist = joinArtists(track?.artists)
   const label = rel.labels?.[0]
-  const publisher = label?.name?.trim() ?? ''
+  const publisher = cleanName(label?.name?.trim() ?? '')
   const catno = label?.catno?.trim() ?? ''
   const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
   const pos = track ? splitPosition(track.position) : undefined

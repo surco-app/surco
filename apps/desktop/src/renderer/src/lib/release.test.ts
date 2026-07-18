@@ -168,6 +168,11 @@ describe('resultFromRelease', () => {
     const rel = release({ labels: [{ name: 'Warp', catno: 'WARP1' }] })
     expect(resultFromRelease(rel).label).toEqual(['Warp'])
   })
+
+  it('strips the Discogs disambiguation suffix from label names', () => {
+    const rel = release({ labels: [{ name: 'Boy Records (2)', catno: 'BOY1' }] })
+    expect(resultFromRelease(rel).label).toEqual(['Boy Records'])
+  })
 })
 
 describe('scoreTrack', () => {
@@ -864,6 +869,11 @@ describe('buildReleaseMeta', () => {
     expect(
       buildReleaseMeta(meta({ catalogNumber: 'OLD' }), none, undefined).meta.catalogNumber,
     ).toBe('OLD')
+  })
+
+  it('strips the Discogs disambiguation suffix from the publisher', () => {
+    const rel = release({ labels: [{ name: 'Boy Records (2)', catno: 'BOY1' }] })
+    expect(buildReleaseMeta(meta(), rel, undefined).meta.publisher).toBe('Boy Records')
   })
 
   it('leaves fields the release does not carry untouched', () => {
