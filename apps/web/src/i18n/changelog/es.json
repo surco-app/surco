@@ -27,6 +27,14 @@
       {
         "text": "Enviar a Apple Music una pista larga ya no falla por tiempo de espera mientras se importa, y cuando algo va mal el aviso explica el motivo en vez de mostrar código interno, con un botón para copiarlo.",
         "in": "0.63.1"
+      },
+      {
+        "text": "Los nombres de sello dejan de arrastrar el número que Discogs pone entre paréntesis para distinguir sellos que se llaman igual («One Way Records (8)»): ahora sale limpio, tanto en la etiqueta como en el nombre del archivo, sin tener que borrarlo a mano.",
+        "in": "0.63.2"
+      },
+      {
+        "text": "Vaciar los metadatos ahora deja la pista de verdad en blanco: además de los campos de texto, borra también la valoración y la carátula, para retaguear un archivo desde cero sin restos.",
+        "in": "0.63.2"
       }
     ]
   },

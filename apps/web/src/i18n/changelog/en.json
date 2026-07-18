@@ -27,6 +27,14 @@
       {
         "text": "Sending a long track to Apple Music no longer times out while it imports, and when something goes wrong the message now explains why instead of showing internal code, with a button to copy it.",
         "in": "0.63.1"
+      },
+      {
+        "text": "Label names no longer carry the number Discogs puts in parentheses to tell same-named labels apart (\"One Way Records (8)\"): it comes out clean now, both in the tag and in the file name, with no more deleting it by hand.",
+        "in": "0.63.2"
+      },
+      {
+        "text": "Clearing the metadata now truly blanks the track: on top of the text fields it also wipes the rating and the artwork, so you can retag a file from scratch with nothing left behind.",
+        "in": "0.63.2"
       }
     ]
   },
