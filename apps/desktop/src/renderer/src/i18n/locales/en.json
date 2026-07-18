@@ -25,6 +25,7 @@
     "add": "Add files",
     "focus": {
       "match": "Widen results to find the match",
+      "balanced": "Balanced columns",
       "edit": "Widen the editor"
     },
     "convert": "Convert",

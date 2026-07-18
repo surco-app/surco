@@ -25,6 +25,7 @@
     "add": "Ajouter des fichiers",
     "focus": {
       "match": "Élargir les résultats pour associer",
+      "balanced": "Colonnes équilibrées",
       "edit": "Élargir l’éditeur"
     },
     "convert": "Convertir",

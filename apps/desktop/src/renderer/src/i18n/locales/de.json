@@ -25,6 +25,7 @@
     "add": "Dateien hinzufügen",
     "focus": {
       "match": "Ergebnisse zum Zuordnen verbreitern",
+      "balanced": "Ausgewogene Spalten",
       "edit": "Editor verbreitern"
     },
     "convert": "Konvertieren",

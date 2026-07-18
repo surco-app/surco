@@ -130,11 +130,11 @@ describe('Toolbar', () => {
   it('marks only the active preset, and none once dragged off', () => {
     renderBar({ focusPreset: 'match' })
     expect(screen.getByTestId('focus-preset-match')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
     cleanup()
     renderBar({ focusPreset: null })
-    expect(screen.getByTestId('focus-preset-match')).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
   })
 
   // The presets act on the results and editor columns, which don't exist until the crate

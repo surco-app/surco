@@ -25,6 +25,7 @@
     "add": "Adicionar arquivos",
     "focus": {
       "match": "Alargar resultados para corresponder",
+      "balanced": "Colunas equilibradas",
       "edit": "Alargar o editor"
     },
     "convert": "Converter",

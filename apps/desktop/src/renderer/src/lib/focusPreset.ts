@@ -1,11 +1,11 @@
-// The two header "focus" presets. Each parks the search-results column at a width tuned
-// for a task; the editor is flex-1, so it takes whatever results leaves — wider under
-// 'match' (results wide to scan for the release), narrower under 'edit' (results at its
-// minimum so the editor takes over). A single click reparks it instead of dragging the
-// divider. The list column is left untouched: it stays wherever the user dragged it,
-// independent of the focus. A dropped third preset ('balanced', 315) sat 15px from 'edit'
-// and read as the same state — two well-separated presets carry the same intent clearly.
-export type FocusPresetId = 'match' | 'edit'
+// The three header "focus" presets. Each parks the search-results column at a width tuned
+// for a task; the editor is flex-1, so it takes whatever results leaves — widest under
+// 'edit' (results at its minimum), narrowest under 'match' (results wide to scan), and an
+// even split under 'balanced'. A single click reparks it instead of dragging the divider.
+// The list column is left untouched: it stays wherever the user dragged it, independent of
+// the focus. The three widths sit ~80px apart so each reads as a distinct layout — an
+// earlier 'balanced' at 315 was only 15px from 'edit' and looked like the same state.
+export type FocusPresetId = 'match' | 'balanced' | 'edit'
 
 export interface FocusPreset {
   id: FocusPresetId
@@ -13,9 +13,11 @@ export interface FocusPreset {
 }
 
 // Widths stay inside the results drag range (300–720) so a preset reads back as active
-// until the user drags off it.
+// until the user drags off it, and are spaced evenly (480 / 400 / 300) so no two presets
+// look alike.
 export const FOCUS_PRESETS: readonly FocusPreset[] = [
   { id: 'match', resultsWidth: 480 },
+  { id: 'balanced', resultsWidth: 400 },
   { id: 'edit', resultsWidth: 300 },
 ]
 
