@@ -1,8 +1,21 @@
 import type { TrackMetadata } from '../../../shared/types'
+import { cleanName } from './release'
+
+// Discogs tags same-named labels with a trailing "(8)" disambiguator; like the artist,
+// the label token must shed it or every rendered name/title carries the "(8)" for the
+// user to delete by hand. Cleaned per-token (only the label) at render time so a
+// publisher typed by hand or read from an already-tagged file is covered too — not just
+// the fresh Discogs-apply path. Only {publisher} is cleaned: a real title or album may
+// legitimately end in "(2)".
+function tokenValue(meta: TrackMetadata, key: string): string {
+  const value = (meta as unknown as Record<string, string>)[key]
+  if (!value) return ''
+  return key === 'publisher' ? cleanName(value) : value
+}
 
 export function renderOutputName(format: string, meta: TrackMetadata): string {
   const filled = format.replace(/\{(\w+)\}/g, (_, key) => {
-    const value = (meta as unknown as Record<string, string>)[key]
+    const value = tokenValue(meta, key)
     // Strip path separators from a field's value so e.g. "AC/DC" never spills into a
     // folder; only a literal "/" the user writes in the template splits directories.
     return value ? value.trim().replace(/[/\\]/g, '-') : ''
@@ -33,7 +46,7 @@ export function renderOutputName(format: string, meta: TrackMetadata): string {
 export function renderTitle(format: string, meta: TrackMetadata): string {
   return format
     .replace(/\{(\w+)\}/g, (_, key) => {
-      const value = (meta as unknown as Record<string, string>)[key]
+      const value = tokenValue(meta, key)
       return value ? value.trim() : ''
     })
     .replace(/\(\s*\)|\[\s*\]/g, '')

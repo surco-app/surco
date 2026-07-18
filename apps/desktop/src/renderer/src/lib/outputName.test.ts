@@ -120,6 +120,23 @@ describe('renderOutputName', () => {
       'AC-DC - TNT',
     )
   })
+
+  // Discogs disambiguates same-named labels with a trailing "(8)"; the artist token
+  // already comes out clean, so the label must too — otherwise the file is left as
+  // "[One Way Records (8)]" for the user to fix by hand. Cleaned at render time so a
+  // publisher typed by hand or read from an already-tagged file is covered too.
+  it('strips the Discogs disambiguation suffix from the label token', () => {
+    const r = renderOutputName(
+      '{artist} - {title} [{publisher}] {year}',
+      meta({
+        artist: 'DJ Hotas',
+        title: 'One Way',
+        publisher: 'One Way Records (8)',
+        year: '2024',
+      }),
+    )
+    expect(r).toBe('DJ Hotas - One Way [One Way Records] 2024')
+  })
 })
 
 describe('renderTitle', () => {
@@ -143,6 +160,16 @@ describe('renderTitle', () => {
   it('renders an empty pattern or all-blank fields to an empty string', () => {
     expect(renderTitle('', meta({ title: 'Action' }))).toBe('')
     expect(renderTitle('({trackNumber})', meta({}))).toBe('')
+  })
+
+  // Same Discogs "(8)" disambiguator as the filename side: a label baked into the
+  // title tag must not carry it either.
+  it('strips the Discogs disambiguation suffix from the label token', () => {
+    const r = renderTitle(
+      '{title} [{publisher}]',
+      meta({ title: 'One Way', publisher: 'One Way Records (8)' }),
+    )
+    expect(r).toBe('One Way [One Way Records]')
   })
 })
 
