@@ -10,6 +10,7 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 ## 1. Preflight
 
 - The working tree must be clean and the current branch must be `main`. Run `git pull --ff-only origin main`. Abort on any failure.
+- Type-check exactly as CI does, from `apps/desktop`: `npx tsc --build`. Abort if it errors. This is NOT optional and NOT the same as `tsc --noEmit` — CI runs `tsc --build` (project references), which catches errors a `--noEmit` from a subdir misses, and `npm test` does not type-check at all. Releasing over a red `tsc --build` is exactly the failure this step exists to prevent.
 - Run the full test suite from the repo root (`npm test`). Abort if anything is red — never release over failing tests.
 
 ## 2. Compute the new version
