@@ -455,7 +455,8 @@
     "sectionRestore": "Restaurar a seção",
     "otherTagsTitle": "Outros metadados",
     "otherTagsSummary": "{{count}} tags",
-    "otherTagsRemove": "Remover {{name}}"
+    "otherTagsRemove": "Remover {{name}}",
+    "otherTagsRestore": "Restaurar {{name}}"
   },
   "fields": {
     "title": "Título",

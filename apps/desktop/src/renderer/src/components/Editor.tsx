@@ -977,10 +977,13 @@ export const Editor = memo(function Editor({
                             key={id}
                             foreignTags={item.foreignTags ?? []}
                             foreignRemoved={item.foreignRemoved ?? []}
-                            onRemove={(name) => {
+                            onToggleRemove={(name) => {
                               const current = item.foreignRemoved ?? []
-                              if (!current.includes(name))
-                                onChange({ foreignRemoved: [...current, name] })
+                              onChange({
+                                foreignRemoved: current.includes(name)
+                                  ? current.filter((n) => n !== name)
+                                  : [...current, name],
+                              })
                             }}
                             open={sectionOpen.otherTags}
                             onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}

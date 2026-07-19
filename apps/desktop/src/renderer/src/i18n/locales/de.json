@@ -455,7 +455,8 @@
     "sectionRestore": "Abschnitt wiederherstellen",
     "otherTagsTitle": "Weitere Metadaten",
     "otherTagsSummary": "{{count}} Tags",
-    "otherTagsRemove": "{{name}} entfernen"
+    "otherTagsRemove": "{{name}} entfernen",
+    "otherTagsRestore": "{{name}} wiederherstellen"
   },
   "fields": {
     "title": "Titel",
