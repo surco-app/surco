@@ -23,6 +23,10 @@
       {
         "text": "La sección de metadatos se ve más limpia: la cabecera ocupa menos, las sugerencias de género y grouping ya no se amontonan y se agrupan tras un «+N» cuando hay muchas.",
         "in": "0.64.0"
+      },
+      {
+        "text": "El grouping que Apple Music guarda a su manera ahora se lee bien: un fichero que pasó por tu biblioteca vuelve a Surco con su grouping intacto, en vez de aparecer vacío.",
+        "in": "0.64.1"
       }
     ]
   },

@@ -23,6 +23,10 @@
       {
         "text": "The metadata section looks cleaner: the header takes less room, and the genre and grouping suggestions no longer pile up — they collapse behind a \"+N\" when there are many.",
         "in": "0.64.0"
+      },
+      {
+        "text": "The grouping Apple Music stores its own way now reads correctly: a file that went through your library comes back into Surco with its grouping intact, instead of showing up empty.",
+        "in": "0.64.1"
       }
     ]
   },
