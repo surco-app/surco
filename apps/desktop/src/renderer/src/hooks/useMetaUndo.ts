@@ -19,6 +19,14 @@ interface MetaSnapshot {
   reviewMatch: TrackItem['reviewMatch']
   matchConfidence: TrackItem['matchConfidence']
   inLibraryResolved: TrackItem['inLibraryResolved']
+  // The "clear all" intents ride the same snapshot as the fields they clear alongside:
+  // metaCleared/coverRemoved wipe the rating and art on convert, foreignRemoved marks the
+  // inspector's foreign tags for deletion. Undoing a clear must revert these too, or ⌘Z
+  // leaves the track still flagged for a wipe. Stored (and restored) verbatim, including
+  // undefined, so a track that wasn't flagged returns to unflagged rather than to `false`.
+  metaCleared: TrackItem['metaCleared']
+  coverRemoved: TrackItem['coverRemoved']
+  foreignRemoved: TrackItem['foreignRemoved']
   // Present only when the operation also overwrites artwork (paste). Recording it
   // unconditionally would make undoing a plain tag sweep revert a cover the user
   // changed afterwards — the snapshot may only restore what its operation touched.
@@ -59,6 +67,9 @@ export function useMetaUndo(
         reviewMatch: t.reviewMatch,
         matchConfidence: t.matchConfidence,
         inLibraryResolved: t.inLibraryResolved,
+        metaCleared: t.metaCleared,
+        coverRemoved: t.coverRemoved,
+        foreignRemoved: t.foreignRemoved,
         ...(opts?.cover ? { cover: { url: t.coverUrl, path: t.coverPath } } : {}),
       })),
     )
@@ -86,6 +97,9 @@ export function useMetaUndo(
           reviewMatch: s.reviewMatch,
           matchConfidence: s.matchConfidence,
           inLibraryResolved: s.inLibraryResolved,
+          metaCleared: s.metaCleared,
+          coverRemoved: s.coverRemoved,
+          foreignRemoved: s.foreignRemoved,
           ...(s.cover ? { coverUrl: s.cover.url, coverPath: s.cover.path } : {}),
         }
       }),

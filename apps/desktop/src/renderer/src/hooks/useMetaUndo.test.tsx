@@ -80,6 +80,37 @@ describe('useMetaUndo', () => {
     expect(restored.inLibraryResolved).toBe(true)
   })
 
+  // "Clear all" doesn't just empty the fields — it flags the track for a full wipe on
+  // convert (metaCleared/coverRemoved) and marks every foreign tag for deletion
+  // (foreignRemoved). Undoing must clear those intents too, or after ⌘Z the inspector
+  // still shows the foreign tags struck through and the next convert still wipes them.
+  it('reverts the clear-all intents (metaCleared, coverRemoved, foreignRemoved)', () => {
+    const { result } = setup([
+      track('a', { title: 'Keep' }, { foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] }),
+    ])
+    act(() => {
+      result.current.record(result.current.tracks)
+      // What clearAllMeta stamps onto the track.
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          meta: emptyMetadata(),
+          metaCleared: true,
+          coverRemoved: true,
+          foreignRemoved: ['SERATO_MARKERS_V2'],
+        })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    const restored = result.current.tracks[0]
+    expect(restored.meta.title).toBe('Keep')
+    expect(restored.metaCleared).toBeUndefined()
+    expect(restored.coverRemoved).toBeUndefined()
+    expect(restored.foreignRemoved).toBeUndefined()
+  })
+
   // Two successive operations must unwind in reverse order, or undoing after a
   // fill-then-replace would resurrect the intermediate state instead of stepping back.
   it('undoes the most recent operation first', () => {
