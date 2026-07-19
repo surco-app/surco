@@ -65,6 +65,7 @@ describe('EditorTab sections', () => {
     const rows = screen.getAllByTestId(/^settings-section-row-/)
     expect(rows.map((r) => r.dataset.testid)).toEqual([
       'settings-section-row-form',
+      'settings-section-row-otherTags',
       'settings-section-row-properties',
       'settings-section-row-quality',
       'settings-section-row-trim',
@@ -88,7 +89,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-down-properties'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
+      ['form', 'otherTags', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
         (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -99,7 +100,7 @@ describe('EditorTab sections', () => {
     fireEvent.click(screen.getByTestId('settings-section-up-quality'))
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
+      ['form', 'otherTags', 'quality', 'properties', 'trim', 'declick', 'normalize', 'output'].map(
         (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -116,7 +117,7 @@ describe('EditorTab sections', () => {
     fireEvent.drop(screen.getByTestId('settings-section-row-normalize'), { dataTransfer: dt })
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
-      ['form', 'properties', 'quality', 'trim', 'declick', 'output', 'normalize'].map(
+      ['form', 'otherTags', 'properties', 'quality', 'trim', 'declick', 'output', 'normalize'].map(
         (id) => DEFAULT_EDITOR_SECTIONS.find((s) => s.id === id),
       ),
     )
@@ -168,7 +169,9 @@ describe('EditorTab sections', () => {
     renderTab()
     expect(screen.queryByTestId('settings-section-up-form')).not.toBeInTheDocument()
     expect(screen.queryByTestId('settings-section-down-form')).not.toBeInTheDocument()
-    expect(screen.getByTestId('settings-section-up-properties')).toBeDisabled()
+    // otherTags is the first reorderable section after the pinned form, so its up arrow
+    // is disabled (nothing above it can be moved past the form).
+    expect(screen.getByTestId('settings-section-up-otherTags')).toBeDisabled()
   })
 
   it('disables the last row’s down arrow', () => {

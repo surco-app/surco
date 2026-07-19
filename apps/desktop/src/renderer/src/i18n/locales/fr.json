@@ -757,6 +757,7 @@
       "title": "Sections de l'éditeur",
       "hint": "Choisissez les sections ouvertes au départ et leur ordre sous le formulaire de métadonnées.",
       "form": "Métadonnées",
+      "otherTags": "Autres métadonnées",
       "properties": "Propriétés",
       "quality": "Qualité audio",
       "output": "Nom du fichier",

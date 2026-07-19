@@ -17,6 +17,7 @@ describe('normalizeEditorSections', () => {
     const ids = normalizeEditorSections(stored).map((s) => s.id)
     expect(ids).toEqual([
       'form',
+      'otherTags',
       'properties',
       'quality',
       'trim',
@@ -45,6 +46,7 @@ describe('normalizeEditorSections', () => {
     // moved — never dumped blindly below the output name.
     expect(normalizeEditorSections(stored)).toEqual([
       { id: 'form', open: true },
+      { id: 'otherTags', open: false },
       { id: 'normalize', open: false },
       { id: 'output', open: true },
       { id: 'quality', open: false },
@@ -61,6 +63,7 @@ describe('normalizeEditorSections', () => {
     const ids = DEFAULT_EDITOR_SECTIONS.map((s) => s.id)
     expect(ids).toEqual([
       'form',
+      'otherTags',
       'properties',
       'quality',
       'trim',
@@ -68,6 +71,24 @@ describe('normalizeEditorSections', () => {
       'normalize',
       'output',
     ])
+  })
+
+  // Other Metadata sits in the metadata group right after the form; a store predating it
+  // must receive it there, not appended below File Name.
+  it('inserts otherTags after the form in a store that predates it', () => {
+    const result = normalizeEditorSections([
+      { id: 'form', open: true },
+      { id: 'properties', open: false },
+    ])
+    const ids = result.map((s) => s.id)
+    expect(ids).toContain('otherTags')
+    expect(ids.indexOf('otherTags')).toBe(ids.indexOf('form') + 1)
+  })
+
+  // Folded by default, and it renders nothing when the track carries no foreign tags,
+  // so it stays out of the way until it applies.
+  it('ships otherTags folded by default', () => {
+    expect(DEFAULT_EDITOR_SECTIONS.find((s) => s.id === 'otherTags')?.open).toBe(false)
   })
 
   // Folded by default: the header pill and the attention filter still surface the
@@ -129,6 +150,7 @@ describe('normalizeEditorSections', () => {
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
     expect(ids).toEqual([
       'form',
+      'otherTags',
       'properties',
       'quality',
       'trim',

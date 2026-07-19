@@ -4,6 +4,7 @@
 
 export const EDITOR_SECTION_IDS = [
   'form',
+  'otherTags',
   'properties',
   'quality',
   'output',
@@ -23,6 +24,7 @@ export type EditorSectionGroup = 'metadata' | 'audio' | 'output'
 
 export const EDITOR_SECTION_GROUP: Record<EditorSectionId, EditorSectionGroup> = {
   form: 'metadata',
+  otherTags: 'metadata',
   properties: 'metadata',
   quality: 'metadata',
   trim: 'audio',
@@ -49,6 +51,9 @@ export interface EditorSectionPref {
 // size the gain on the repaired audio — and the name last.
 export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'form', open: true },
+  // The third-party tags the app doesn't manage. Folded by default, and it renders
+  // nothing when the track carries none, so it stays out of the way until it applies.
+  { id: 'otherTags', open: false },
   // Reference figures, consulted when the quality verdict raises an eyebrow.
   { id: 'properties', open: false },
   { id: 'quality', open: true },

@@ -948,19 +948,6 @@ export const Editor = memo(function Editor({
               />
             </div>
           </SectionBody>
-          {/* Part of the form body, so it hides when the section folds — it renders after
-              SectionBody (not inside it) only because it sits below the field grid, not
-              because it should survive a fold. */}
-          {formOpen && !isMulti && (
-            <ForeignTagsInspector
-              foreignTags={item.foreignTags ?? []}
-              foreignRemoved={item.foreignRemoved ?? []}
-              onRemove={(name) => {
-                const current = item.foreignRemoved ?? []
-                if (!current.includes(name)) onChange({ foreignRemoved: [...current, name] })
-              }}
-            />
-          )}
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each
@@ -980,6 +967,26 @@ export const Editor = memo(function Editor({
                 // guard narrows to a real element.
                 const element = ((): React.ReactElement | false | null => {
                   switch (id) {
+                    case 'otherTags':
+                      // Single-track only, and the inspector returns null when the track
+                      // carries no foreign tags, so an enabled-but-empty section shows
+                      // nothing. Its fold state rides the section store like the rest.
+                      return (
+                        !isMulti && (
+                          <ForeignTagsInspector
+                            key={id}
+                            foreignTags={item.foreignTags ?? []}
+                            foreignRemoved={item.foreignRemoved ?? []}
+                            onRemove={(name) => {
+                              const current = item.foreignRemoved ?? []
+                              if (!current.includes(name))
+                                onChange({ foreignRemoved: [...current, name] })
+                            }}
+                            open={sectionOpen.otherTags}
+                            onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
+                          />
+                        )
+                      )
                     case 'properties':
                       return (
                         !isMulti && (
