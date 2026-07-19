@@ -356,7 +356,11 @@ export function writeTags(
       id3.addFrame(Id3v2AttachmentFrame.fromPicture(picture))
     }
 
-    if (cueSource) {
+    // Skipped on clearExtras: the frame wipe above already dropped the cue, and a
+    // re-encode to a different ID3 format folds this carry-over into the same
+    // writeTags call as the rating (see ffmpeg.ts), so without this guard "clear
+    // everything" would silently bring the cue right back.
+    if (cueSource && !clearExtras) {
       const cues = applyCueShift(readCueFrames(cueSource), cueShift)
       if (cues.length > 0) {
         removeCueFrames(id3)

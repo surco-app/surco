@@ -166,4 +166,32 @@ describe('convertAudio cue preservation', () => {
     expect(hasCue(out)).toBe(false)
     expect(hasPopm(out)).toBe(false)
   })
+
+  // The re-encode path folds the cue carry-over into the same writeTags call as the
+  // rating (cueSource: input, see ffmpeg.ts), so a clearExtras re-encode must not let
+  // that carry-over reinject the very cues clearExtras just wiped — converting a cued
+  // AIFF to a different ID3 format (forcing the encode path, not the in-place stream
+  // copy) with clearExtras must drop the cue for good.
+  it('does not reinject the source cue frame on a cleared re-encode to a different format', async () => {
+    expect(hasCue(src)).toBe(true)
+    const out = join(dir, 'out-cleared-reencode.mp3')
+    await convertAudio(
+      src,
+      out,
+      'mp3',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      undefined, // trim
+      true, // clearExtras
+    )
+    expect(hasCue(out)).toBe(false)
+  })
 })
