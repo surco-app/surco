@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.64",
+    "date": "July 19, 2026",
+    "title": "Every tag, visible and under control",
+    "items": [
+      {
+        "text": "The editor now shows every tag a file carries, not just the usual fields: a new \"Other metadata\" section lists the ones other apps leave behind (Serato, Traktor, MusicBrainz, ReplayGain…) so you can see exactly what your track is carrying.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "You can delete those third-party tags one at a time or all at once, and un-mark any of them if you change your mind before exporting.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "\"Clear all metadata\" now really clears: it used to leave other apps' tags stuck to the file; now the track goes out with only what you put on it.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "WAV files now show all of their tags in the editor, including the ones that used to stay hidden.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "The metadata section looks cleaner: the header takes less room, and the genre and grouping suggestions no longer pile up — they collapse behind a \"+N\" when there are many.",
+        "in": "0.64.0"
+      }
+    ]
+  },
+  {
     "version": "0.63",
     "date": "July 17, 2026",
     "title": "Converting, with more control",

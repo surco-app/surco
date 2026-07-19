@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.64",
+    "date": "19 de julio de 2026",
+    "title": "Todos los metadatos, a la vista y bajo control",
+    "items": [
+      {
+        "text": "El editor ahora muestra todos los metadatos que lleva un fichero, no solo los campos habituales: una sección nueva de «Otros metadatos» lista los que dejan otras apps (Serato, Traktor, MusicBrainz, ReplayGain…) para que veas exactamente qué carga tu pista.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "Puedes borrar esos metadatos de terceros uno a uno o todos de golpe, y desmarcar cualquiera si cambias de idea antes de exportar.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "«Borrar todos los metadatos» ahora limpia de verdad: antes dejaba etiquetas de otras apps pegadas al fichero; ahora la pista sale con solo lo que tú has puesto.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "Los ficheros WAV ahora enseñan todas sus etiquetas en el editor, incluidas las que antes quedaban ocultas.",
+        "in": "0.64.0"
+      },
+      {
+        "text": "La sección de metadatos se ve más limpia: la cabecera ocupa menos, las sugerencias de género y grouping ya no se amontonan y se agrupan tras un «+N» cuando hay muchas.",
+        "in": "0.64.0"
+      }
+    ]
+  },
+  {
     "version": "0.63",
     "date": "17 de julio de 2026",
     "title": "Convertir con más control",
