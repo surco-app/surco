@@ -453,7 +453,9 @@
     "searchWebHint": "Recherche le nom du fichier sur Google",
     "sectionMaximize": "Agrandir la section",
     "sectionRestore": "Restaurer la section",
-    "otherTags": "Autres métadonnées ({{count}})"
+    "otherTagsTitle": "Autres métadonnées",
+    "otherTagsSummary": "{{count}} tags",
+    "otherTagsRemove": "Supprimer {{name}}"
   },
   "fields": {
     "title": "Titre",

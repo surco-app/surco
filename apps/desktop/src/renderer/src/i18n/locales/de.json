@@ -453,7 +453,9 @@
     "searchWebHint": "Sucht den Dateinamen auf Google",
     "sectionMaximize": "Abschnitt maximieren",
     "sectionRestore": "Abschnitt wiederherstellen",
-    "otherTags": "Weitere Metadaten ({{count}})"
+    "otherTagsTitle": "Weitere Metadaten",
+    "otherTagsSummary": "{{count}} Tags",
+    "otherTagsRemove": "{{name}} entfernen"
   },
   "fields": {
     "title": "Titel",

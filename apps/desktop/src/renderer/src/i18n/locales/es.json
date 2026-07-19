@@ -453,7 +453,9 @@
     "searchWebHint": "Busca el nombre del archivo en Google",
     "sectionMaximize": "Maximizar la sección",
     "sectionRestore": "Restaurar la sección",
-    "otherTags": "Otros metadatos ({{count}})"
+    "otherTagsTitle": "Otros metadatos",
+    "otherTagsSummary": "{{count}} etiquetas",
+    "otherTagsRemove": "Borrar {{name}}"
   },
   "fields": {
     "title": "Título",
