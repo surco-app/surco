@@ -76,6 +76,21 @@ describe('isStale', () => {
     expect(isStale({ ...converted(), trim: { startSec: 1.2 } })).toBe(true)
   })
 
+  // Deleting a single foreign tag in the inspector on an already-converted track must
+  // bring the Update button back — without foreignRemoved in the signature, the file's
+  // own frame delete never diverges from the snapshot and the pending removal is stuck.
+  it('is true when a foreign tag is marked removed after conversion', () => {
+    expect(isStale({ ...converted(), foreignRemoved: ['SERATO_MARKERS_V2'] })).toBe(true)
+  })
+
+  // An absent foreignRemoved and an empty array both mean "nothing marked for removal",
+  // matching the trim normalization above — the signature must read them identically.
+  it('reads an absent foreignRemoved the same as an empty one', () => {
+    expect(trackSignature(converted({ foreignRemoved: [] }))).toBe(
+      trackSignature(converted({ foreignRemoved: undefined })),
+    )
+  })
+
   it('is never stale before a track is done, since those states already show a convert button', () => {
     for (const status of ['idle', 'processing', 'error'] as TrackStatus[]) {
       expect(isStale(converted({ status }))).toBe(false)
