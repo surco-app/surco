@@ -180,7 +180,10 @@ export const Field = memo(function Field({
         </span>
       )}
       {suggestions && suggestions.length > 0 && (
-        <span className="mt-1.5 flex flex-wrap gap-1.5">
+        <span
+          data-testid="field-suggestions"
+          className="mt-1.5 flex gap-1.5 overflow-x-auto"
+        >
           {suggestions.map((s) => {
             const on = multiSuggestions ? csvHas(draft, s) : draft === s
             return (
@@ -189,7 +192,7 @@ export const Field = memo(function Field({
                 type="button"
                 data-testid={`chip-${s}`}
                 onClick={() => commit(multiSuggestions ? toggleCsv(draft, s) : on ? '' : s)}
-                className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
+                className={`press shrink-0 rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
                   on
                     ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
