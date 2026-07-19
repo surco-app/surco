@@ -168,7 +168,7 @@ describe('Field suggestion chips layout', () => {
     expect(container.className).not.toContain('overflow-x-auto')
   })
 
-  it('muestra solo los tres primeros chips y agrupa el resto en +N', () => {
+  it('muestra solo los dos primeros chips y agrupa el resto en +N', () => {
     render(
       <Field
         name="genre"
@@ -180,10 +180,9 @@ describe('Field suggestion chips layout', () => {
     )
     expect(screen.getByTestId('chip-Electronic')).toBeInTheDocument()
     expect(screen.getByTestId('chip-asia records')).toBeInTheDocument()
-    expect(screen.getByTestId('chip-eurobeat')).toBeInTheDocument()
-    // The 4th and 5th are hidden behind the "+2" chip until expanded.
-    expect(screen.queryByTestId('chip-happy music')).not.toBeInTheDocument()
-    expect(screen.getByTestId('chip-more')).toHaveTextContent('2')
+    // The 3rd onward hide behind the "+3" chip until expanded.
+    expect(screen.queryByTestId('chip-eurobeat')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('3')
   })
 
   it('despliega el resto al pulsar +N', () => {
@@ -203,17 +202,17 @@ describe('Field suggestion chips layout', () => {
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
   })
 
-  it('no muestra +N cuando hay tres o menos sugerencias', () => {
+  it('no muestra +N cuando hay dos o menos sugerencias', () => {
     render(
       <Field
         name="genre"
         label="Genre"
         value=""
         onChange={() => {}}
-        suggestions={['Electronic', 'asia records', 'eurobeat']}
+        suggestions={['Electronic', 'asia records']}
       />,
     )
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
-    expect(screen.getByTestId('chip-eurobeat')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-asia records')).toBeInTheDocument()
   })
 })

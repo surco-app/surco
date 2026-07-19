@@ -13,7 +13,7 @@ import { Tooltip } from './Tooltip'
 const COMMIT_DEBOUNCE_MS = 200
 
 // How many suggestion chips show before the rest collapse behind a "+N" chip.
-const SUGGESTION_PREVIEW = 3
+const SUGGESTION_PREVIEW = 2
 
 interface FieldProps {
   name: string
