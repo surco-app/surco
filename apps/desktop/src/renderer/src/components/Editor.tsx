@@ -495,9 +495,10 @@ export const Editor = memo(function Editor({
   // current item.meta on every call (useStableCallback mirrors the latest closure),
   // so a memoized Field keeps one onChange reference across keystrokes in other fields.
   const setField = useStableCallback((key: keyof TrackItem['meta'], value: string): void => {
-    // Editing any field ends the "everything was cleared" state, so a later convert
-    // stops wiping the rating — mirrors how setting a cover resets coverRemoved.
-    onChange({ meta: { ...item.meta, [key]: value }, metaCleared: false })
+    // Editing a field no longer cancels "clear all": metaCleared persists until the
+    // user explicitly undoes it, so a convert after a partial re-fill still wipes the
+    // foreign tags the clear was meant to drop.
+    onChange({ meta: { ...item.meta, [key]: value } })
   })
 
   // What the per-field insert menu can offer: every visible text field of THIS

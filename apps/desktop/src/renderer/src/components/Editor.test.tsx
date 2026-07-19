@@ -484,6 +484,22 @@ describe('Editor clear metadata', () => {
   })
 })
 
+describe('Editor field edit after clear', () => {
+  // "Clear" must survive typing: the bug this guards against had every field edit
+  // resetting metaCleared to false, so filling in even one field after clearing
+  // silently cancelled the clear and export re-copied the original's foreign tags.
+  it('keeps metaCleared set after editing a field', () => {
+    const { onChange } = renderEditor({ id: 'a', metaCleared: true }, 'wav', {
+      visibleFields: ['title'],
+    })
+    const title = screen.getByTestId('field-title')
+    fireEvent.change(title, { target: { value: 'New Title' } })
+    fireEvent.blur(title)
+    const patch = onChange.mock.calls.at(-1)?.[0]
+    expect(patch).not.toHaveProperty('metaCleared', false)
+  })
+})
+
 describe('Editor compilation field', () => {
   // A compilation is a yes/no fact, not free text: a checkbox writes the exact
   // '1' the TCMP/COMPILATION tag needs, where a text field would invite junk.
