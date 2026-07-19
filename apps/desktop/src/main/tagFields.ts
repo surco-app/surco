@@ -111,3 +111,10 @@ export const TAG_FIELDS: TagField[] = [
   // to stop — so it stays free text, like the key or the comment.
   { key: 'energy', aliases: ['energy', 'energylevel'], id3: 'ENERGY' },
 ]
+
+// El conjunto plano de todos los alias que la app gestiona, en minúsculas. El lector
+// de tags foráneos lo usa para saber qué NO es gestionado: cualquier clave del probe
+// fuera de este set es un tag de terceros que el inspector debe mostrar.
+export const MANAGED_ALIASES: Set<string> = new Set(
+  TAG_FIELDS.flatMap((field) => field.aliases.map((a) => a.toLowerCase())),
+)

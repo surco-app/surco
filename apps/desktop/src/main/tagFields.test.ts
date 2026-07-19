@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { METADATA_KEYS } from '../shared/metadata'
-import { TAG_FIELDS } from './tagFields'
+import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 
 describe('TAG_FIELDS', () => {
   it('maps exactly the TrackMetadata fields, so a new field is never silently unreadable/unwritable', () => {
@@ -15,5 +15,14 @@ describe('TAG_FIELDS', () => {
         expect(alias, `${field.key} alias "${alias}"`).toBe(alias.toLowerCase())
       }
     }
+  })
+})
+
+describe('MANAGED_ALIASES', () => {
+  it('incluye cada alias de TAG_FIELDS en minúsculas', () => {
+    expect(MANAGED_ALIASES.has('serato_markers_v2')).toBe(false)
+    expect(MANAGED_ALIASES.has('title')).toBe(true)
+    expect(MANAGED_ALIASES.has('albumartist2')).toBe(true)
+    expect(MANAGED_ALIASES.has('energylevel')).toBe(true)
   })
 })

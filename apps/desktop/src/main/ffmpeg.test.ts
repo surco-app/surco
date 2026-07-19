@@ -10,6 +10,7 @@ import {
   coverArgs,
   coverFilter,
   cutoffFilter,
+  foreignTagsFromProbe,
   formatMatchesInput,
   parseAstats,
   parseBands,
@@ -1166,6 +1167,40 @@ describe('tagsFromProbe', () => {
       mood: '',
       energy: '',
     })
+  })
+})
+
+describe('foreignTagsFromProbe', () => {
+  it('devuelve los tags no gestionados y omite los gestionados y el encoder', () => {
+    const data = {
+      format: {
+        tags: {
+          TITLE: 'Original',
+          ARTIST: 'Artista',
+          SERATO_MARKERS_V2: 'YXBwbGlj',
+          TRAKTOR4: 'dlVHblob',
+          MUSICBRAINZ_TRACKID: '7c2136cc',
+          encoder: 'Lavf60.16.100',
+        },
+      },
+    }
+    const foreign = foreignTagsFromProbe(data)
+    const names = foreign.map((t) => t.name.toUpperCase())
+    expect(names).toContain('SERATO_MARKERS_V2')
+    expect(names).toContain('TRAKTOR4')
+    expect(names).toContain('MUSICBRAINZ_TRACKID')
+    expect(names).not.toContain('TITLE')
+    expect(names).not.toContain('ARTIST')
+    expect(names.map((n) => n.toLowerCase())).not.toContain('encoder')
+  })
+
+  it('omite la descripción de la carátula del stream de vídeo', () => {
+    const data = {
+      format: { tags: { SERATO_ANALYSIS: 'x' } },
+      streams: [{ codec_type: 'video', tags: { comment: 'Cover (front)' } }],
+    }
+    const foreign = foreignTagsFromProbe(data)
+    expect(foreign.map((t) => t.name)).toEqual(['SERATO_ANALYSIS'])
   })
 })
 

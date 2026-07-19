@@ -396,6 +396,14 @@ export interface CoverRead {
 // One import-time read of a file's tags, duration and cover together: the three used to
 // be separate IPC calls that each re-probed the same file, so a big drop spawned four
 // processes per track where two now suffice.
+// Un tag que el fichero lleva pero que la app no gestiona (SERATO_MARKERS_V2, TRAKTOR4,
+// MUSICBRAINZ_*, REPLAYGAIN_*…). El inspector los muestra y permite borrarlos. El valor
+// puede venir truncado por ffprobe en blobs enormes; se muestra tal cual (solo lectura).
+export interface ForeignTag {
+  name: string
+  value: string
+}
+
 export interface MetaRead {
   tags: TrackMetadata
   duration: number | null

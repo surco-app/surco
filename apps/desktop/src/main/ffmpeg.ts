@@ -17,6 +17,7 @@ import type {
   ConversionQuality,
   CoverRead,
   DeclickMode,
+  ForeignTag,
   KeyResult,
   LoudnessResult,
   MetaRead,
@@ -66,7 +67,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { TAG_FIELDS } from './tagFields'
+import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
@@ -198,6 +199,30 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
   return meta
+}
+
+// Como tagsFromProbe, pero al revés: recoge las claves que la app NO gestiona. Recorre las
+// mismas fuentes (format.tags + los stream.tags no-vídeo, saltando la descripción de la
+// carátula que vive en el stream de vídeo), y devuelve cada par cuyo nombre en minúsculas
+// no está en MANAGED_ALIASES. El `encoder` que ffmpeg estampa se descarta: no es metadato
+// del usuario. La primera aparición de un nombre gana, para no duplicar un tag que aparezca
+// en varias fuentes.
+export function foreignTagsFromProbe(data: ProbeTags): ForeignTag[] {
+  const sources: Record<string, unknown>[] = [
+    data.format?.tags,
+    ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
+  ].filter((t): t is Record<string, unknown> => Boolean(t))
+  const seen = new Set<string>()
+  const foreign: ForeignTag[] = []
+  for (const tags of sources) {
+    for (const [key, value] of Object.entries(tags)) {
+      const lower = key.toLowerCase()
+      if (lower === 'encoder' || MANAGED_ALIASES.has(lower) || seen.has(lower)) continue
+      seen.add(lower)
+      foreign.push({ name: key, value: String(value ?? '') })
+    }
+  }
+  return foreign
 }
 
 // The container's total duration in seconds, for the track row's time readout.
