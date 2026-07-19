@@ -313,6 +313,48 @@ describe('useTrackLibrary foreign tags', () => {
 
     expect(result.current.tracks[0]?.foreignTags).toEqual(foreign)
   })
+
+  // Bulk "clear everything" flags every selected track's own foreign tags as removed,
+  // not a shared list: patchTracks applies one flat patch to every id, which would
+  // either drop one track's foreign tags or wrongly stamp another's onto it.
+  it('clearExtrasTracks marks each track with its own foreignRemoved', async () => {
+    setApi({
+      readMeta: vi
+        .fn()
+        .mockResolvedValueOnce({
+          tags: { title: '', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }],
+        })
+        .mockResolvedValueOnce({
+          tags: { title: '', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [{ name: 'TRAKTOR4', value: 'y' }],
+        }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const [a, b] = result.current.tracks
+    act(() => result.current.clearExtrasTracks([a.id, b.id]))
+
+    const [ra, rb] = result.current.tracks
+    expect(ra.foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
+    expect(ra.coverRemoved).toBe(true)
+    expect(ra.metaCleared).toBe(true)
+    expect(rb.foreignRemoved).toEqual(['TRAKTOR4'])
+  })
 })
 
 describe('useTrackLibrary meta read failures', () => {

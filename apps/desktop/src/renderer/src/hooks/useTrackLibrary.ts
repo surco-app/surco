@@ -103,6 +103,7 @@ export interface TrackLibrary {
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
+  clearExtrasTracks: (ids: string[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   startOverTrack: (track: TrackItem) => void
   removeTrack: (id: string) => void
@@ -445,6 +446,25 @@ export function useTrackLibrary({
     setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
   }, [])
 
+  // Bulk "clear everything": unlike patchTracks' flat patch, foreignRemoved must be
+  // each track's OWN foreign tag names, so this reads t.foreignTags per row instead
+  // of taking a shared patch.
+  const clearExtrasTracks = useCallback((ids: string[]): void => {
+    const targets = new Set(ids)
+    setTracks((prev) =>
+      prev.map((t) =>
+        targets.has(t.id)
+          ? {
+              ...t,
+              coverRemoved: true,
+              metaCleared: true,
+              foreignRemoved: (t.foreignTags ?? []).map((tag) => tag.name),
+            }
+          : t,
+      ),
+    )
+  }, [])
+
   // Merges each track's own filename-derived tags into its metadata (one patch per id),
   // leaving fields the pattern didn't match untouched.
   const deriveTracks = useCallback(
@@ -520,6 +540,7 @@ export function useTrackLibrary({
     updateTrack,
     updateTracksMeta,
     patchTracks,
+    clearExtrasTracks,
     deriveTracks,
     startOverTrack,
     removeTrack,

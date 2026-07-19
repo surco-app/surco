@@ -440,6 +440,7 @@ export default function App(): React.JSX.Element {
     updateTrack,
     updateTracksMeta,
     patchTracks,
+    clearExtrasTracks,
     deriveTracks,
     startOverTrack,
     removeTrack,
@@ -1063,10 +1064,9 @@ export default function App(): React.JSX.Element {
     updateTracksMeta(selectedIds, patch),
   )
   // The multi-select "clear everything" flag pass: mark each cleared track so a
-  // convert wipes its cover and rating, not just the text fields.
-  const onClearExtras = useStableCallback((ids: string[]) =>
-    patchTracks(ids, { coverRemoved: true, metaCleared: true }),
-  )
+  // convert wipes its cover and rating, not just the text fields — and its own
+  // foreign tags, which differ per track so a flat patchTracks patch can't carry them.
+  const onClearExtras = useStableCallback((ids: string[]) => clearExtrasTracks(ids))
   // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
   // onto — the fast way to share release-level metadata across a crate.
   const onCopyMeta = useStableCallback((track: TrackItem) => {

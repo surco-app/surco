@@ -480,7 +480,24 @@ describe('Editor clear metadata', () => {
       // The whole tag goes, not just text: cover stripped and rating wiped on convert.
       coverRemoved: true,
       metaCleared: true,
+      foreignRemoved: [],
     })
+  })
+
+  // Clearing must also drop the third-party tags the app doesn't manage (Serato/Traktor
+  // cues) so the export strips them too, not just the fields the editor renders.
+  it('borrar todo marca cada tag foráneo como eliminado', () => {
+    const { onChange } = renderEditor({
+      id: 'a',
+      foreignTags: [
+        { name: 'SERATO_MARKERS_V2', value: 'x' },
+        { name: 'TRAKTOR4', value: 'y' },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('clear-meta-btn'))
+    const patch = onChange.mock.calls.at(-1)?.[0]
+    expect(patch.foreignRemoved).toEqual(['SERATO_MARKERS_V2', 'TRAKTOR4'])
+    expect(patch.metaCleared).toBe(true)
   })
 })
 

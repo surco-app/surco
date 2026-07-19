@@ -566,6 +566,7 @@ export const Editor = memo(function Editor({
         inLibraryResolved: false,
         coverRemoved: true,
         metaCleared: true,
+        foreignRemoved: (item.foreignTags ?? []).map((t) => t.name),
       })
   }
 
