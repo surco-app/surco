@@ -481,7 +481,8 @@
     "rating": "Rating",
     "mood": "Mood",
     "energy": "Energy",
-    "suggestionsLabel": "Suggestions"
+    "suggestionsLabel": "Suggestions",
+    "suggestionsMore": "Show {{count}} more"
   },
   "declick": {
     "title": "Vinyl click repair",

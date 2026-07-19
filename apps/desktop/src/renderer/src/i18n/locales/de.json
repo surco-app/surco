@@ -481,7 +481,8 @@
     "rating": "Bewertung",
     "mood": "Stimmung",
     "energy": "Energie",
-    "suggestionsLabel": "Vorschläge"
+    "suggestionsLabel": "Vorschläge",
+    "suggestionsMore": "{{count}} weitere anzeigen"
   },
   "declick": {
     "title": "Vinyl-Klick-Reparatur",

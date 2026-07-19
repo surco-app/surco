@@ -481,7 +481,8 @@
     "rating": "Avaliação",
     "mood": "Clima",
     "energy": "Energia",
-    "suggestionsLabel": "Sugestões"
+    "suggestionsLabel": "Sugestões",
+    "suggestionsMore": "Mostrar mais {{count}}"
   },
   "declick": {
     "title": "Reparo de clicks de vinil",
