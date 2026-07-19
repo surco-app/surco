@@ -34,7 +34,7 @@ export function ForeignTagsInspector({
           aria-hidden="true"
         />
         <span className="text-xs text-fg-muted">
-          {tr('editor.advancedTags', { count: foreignTags.length })}
+          {tr('editor.otherTags', { count: foreignTags.length })}
         </span>
       </button>
       {open && (
