@@ -43,6 +43,8 @@ export type WorkerJob =
       cueShift?: CueShift
       // The "clear metadata" intent: wipe the rating too (see writeTags).
       clearExtras?: boolean
+      // The specific third-party tags the inspector's user marked for deletion.
+      foreignRemoved?: string[]
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
@@ -85,6 +87,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
         job.cueSource,
         job.cueShift,
         job.clearExtras,
+        job.foreignRemoved,
       )
       return null
     case 'copyCueFrames':

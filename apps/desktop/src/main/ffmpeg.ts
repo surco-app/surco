@@ -953,6 +953,9 @@ export async function convertAudio(
   // The "clear metadata" intent: wipe the rating along with every other field
   // (see writeTags). The cover already clears through removeCover.
   clearExtras?: boolean,
+  // The specific third-party tags the inspector's user marked for deletion
+  // (SERATO_MARKERS_V2, TRAKTOR4, …), independent of clearExtras. See writeTags.
+  foreignRemoved?: string[],
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -1028,11 +1031,12 @@ export async function convertAudio(
         coverPath,
         removeCover,
         clearExtras,
+        foreignRemoved,
       })
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras),
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras, foreignRemoved),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1046,7 +1050,15 @@ export async function convertAudio(
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
         // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
         // that ffmpeg's mp4 muxer has no -metadata names for.
-        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover, clearExtras })
+        await runInWorker({
+          type: 'writeTags',
+          file: tmp,
+          meta,
+          coverPath,
+          removeCover,
+          clearExtras,
+          foreignRemoved,
+        })
       } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating (or a
@@ -1060,6 +1072,7 @@ export async function convertAudio(
           meta,
           coverPath,
           clearExtras,
+          foreignRemoved,
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined),
         })

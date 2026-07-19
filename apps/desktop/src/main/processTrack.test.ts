@@ -87,6 +87,7 @@ describe('runProcessTrack — plain conversion', () => {
       'off',
       undefined,
       undefined,
+      undefined,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -125,6 +126,16 @@ describe('runProcessTrack — plain conversion', () => {
     await runProcessTrack(job({ trim: { startSec: 1.5, endSec: 200 } }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
     expect(call[11]).toEqual({ startSec: 1.5, endSec: 200 })
+  })
+
+  // The inspector's foreign-tag deletions ride the job like trim — no Settings
+  // fallback, only meaningful per track — and must reach convertAudio so ffmpeg.ts
+  // can thread them into convertArgs/writeTags.
+  it('threads the job’s foreign-tag removals through to the encoder', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job({ foreignRemoved: ['SERATO_MARKERS_V2', 'TRAKTOR4'] }), deps)
+    const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(call[13]).toEqual(['SERATO_MARKERS_V2', 'TRAKTOR4'])
   })
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
@@ -167,6 +178,7 @@ describe('runProcessTrack — cover handling', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -222,6 +234,7 @@ describe('runProcessTrack — output conflict', () => {
       'off',
       undefined,
       undefined,
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -243,6 +256,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -392,6 +406,7 @@ describe('runProcessTrack — forced re-encode', () => {
       'off',
       undefined,
       undefined,
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -416,6 +431,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -447,6 +463,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -508,6 +525,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -604,6 +622,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )
@@ -818,6 +837,7 @@ describe('runProcessTrack — Apple Music only', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
     )

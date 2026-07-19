@@ -429,6 +429,9 @@ export interface ProcessJob {
   // convert preserves-on-empty) must go too. Set alongside removeCover so a cleared
   // record keeps none of the tags the app manages. See writeTags.
   clearExtras?: boolean
+  // Los tags de terceros que el usuario marcó para borrar en el inspector. Se aplican al
+  // exportar tanto en la ruta ffmpeg (convertArgs) como en la TagLib (writeTags).
+  foreignRemoved?: string[]
   format?: OutputFormat
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.
