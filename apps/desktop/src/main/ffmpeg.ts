@@ -69,7 +69,7 @@ import {
 } from './normalize'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
-import { preservesCuesInPlace } from './tags'
+import { preservesCuesInPlace, readItunesGrouping } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
@@ -427,8 +427,16 @@ export async function readMeta(input: string): Promise<MetaRead> {
       Number.isFinite(width) && Number.isFinite(height)
         ? { width, height }
         : { width: 0, height: 0 }
+    const tags = tagsFromProbe(data)
+    // iTunes writes grouping to its own GRP1 frame, which ffprobe/ffmpeg don't surface — so a
+    // file re-saved by Apple Music reads back with no grouping. When the probe found none,
+    // fall back to reading GRP1 directly through TagLib (ID3 containers only; a no-op elsewhere).
+    if (!tags.grouping.trim()) {
+      const itunesGrouping = readItunesGrouping(input)
+      if (itunesGrouping) tags.grouping = itunesGrouping
+    }
     return {
-      tags: tagsFromProbe(data),
+      tags,
       duration: Number.isFinite(seconds) ? seconds : null,
       cover: await extractCover(input, dims),
       // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a

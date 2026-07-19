@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -1583,5 +1583,39 @@ describe('readMeta', () => {
     const result = await readMeta(wav)
 
     expect(result.foreignTags.some((t) => t.name === 'SERATO_MARKERS_V2')).toBe(true)
+  })
+
+  // A file re-saved by Apple Music keeps its grouping only in iTunes' GRP1 frame, which
+  // ffprobe doesn't surface — readMeta must fall back to reading GRP1 so the grouping isn't
+  // lost on re-import. GRP1 isn't a standard TagLib identifier, so it's written as raw ID3
+  // bytes: a v2.3 header + a GRP1 text frame ([encoding byte][Latin1 text]).
+  it("reads grouping from the iTunes GRP1 frame the probe can't see", async () => {
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const tit2 = frame('TIT2', Buffer.concat([Buffer.from([0]), Buffer.from('T', 'latin1')]))
+    const grp1 = frame(
+      'GRP1',
+      Buffer.concat([Buffer.from([0]), Buffer.from('Bases, Cantaditas', 'latin1')]),
+    )
+    const body = Buffer.concat([tit2, grp1])
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const mp3 = join(testDir, 'grp1.mp3')
+    writeFileSync(mp3, Buffer.concat([header, body, audio]))
+
+    const result = await readMeta(mp3)
+
+    expect(result.tags.grouping).toBe('Bases, Cantaditas')
   })
 })
