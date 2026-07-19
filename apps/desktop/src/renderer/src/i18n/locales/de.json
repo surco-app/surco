@@ -450,7 +450,8 @@
     "searchWeb": "Auf Google suchen",
     "searchWebHint": "Sucht den Dateinamen auf Google",
     "sectionMaximize": "Abschnitt maximieren",
-    "sectionRestore": "Abschnitt wiederherstellen"
+    "sectionRestore": "Abschnitt wiederherstellen",
+    "advancedTags": "Erweiterte Metadaten ({{count}})"
   },
   "fields": {
     "title": "Titel",

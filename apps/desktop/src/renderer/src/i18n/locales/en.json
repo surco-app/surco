@@ -450,7 +450,8 @@
     "searchWeb": "Search on Google",
     "searchWebHint": "Search Google for the file name",
     "sectionMaximize": "Maximize the section",
-    "sectionRestore": "Restore the section"
+    "sectionRestore": "Restore the section",
+    "advancedTags": "Advanced metadata ({{count}})"
   },
   "fields": {
     "title": "Title",

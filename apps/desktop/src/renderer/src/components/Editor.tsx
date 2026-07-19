@@ -55,6 +55,7 @@ import { DiscogsPanel } from './DiscogsPanel'
 import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
+import { ForeignTagsInspector } from './ForeignTagsInspector'
 import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
@@ -941,6 +942,16 @@ export const Editor = memo(function Editor({
               />
             </div>
           </SectionBody>
+          {!isMulti && (
+            <ForeignTagsInspector
+              foreignTags={item.foreignTags ?? []}
+              foreignRemoved={item.foreignRemoved ?? []}
+              onRemove={(name) => {
+                const current = item.foreignRemoved ?? []
+                if (!current.includes(name)) onChange({ foreignRemoved: [...current, name] })
+              }}
+            />
+          )}
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each
