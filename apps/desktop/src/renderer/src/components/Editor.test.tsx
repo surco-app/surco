@@ -1325,6 +1325,45 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
   })
 
+  // "Other metadata" is part of the form body, so it folds with the section: a folded
+  // METADATA header must not leave the inspector dangling below an otherwise-collapsed
+  // section (which reads as a stray, orphaned control).
+  it('hides the other-metadata inspector while the form is folded', () => {
+    renderEditor(
+      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
+      'wav',
+      {
+        editorSections: [
+          { id: 'form', open: false },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
+  })
+
+  // The complement: with the form open, the inspector is present for a track that
+  // carries foreign tags — folding is what hides it, not an unconditional removal.
+  it('shows the other-metadata inspector while the form is open', () => {
+    renderEditor(
+      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
+      'wav',
+      {
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    expect(screen.getByTestId('foreign-tags-toggle')).toBeInTheDocument()
+  })
+
   // The header's icon actions (copy name, search web, clear, derive) all act on the
   // fields below — folded, there is nothing on screen they refer to, so they fold
   // with the section instead of floating next to the summary.
