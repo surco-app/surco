@@ -3,6 +3,12 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
+import {
+  type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
+  File as TagFile,
+  TagTypes,
+} from 'node-taglib-sharp'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -15,7 +21,7 @@ import {
   coverArgs,
   coverFilter,
   cutoffFilter,
-  foreignTagsFromProbe,
+  foreignTagsFromFfmetadata,
   formatMatchesInput,
   parseAstats,
   parseBands,
@@ -1206,37 +1212,32 @@ describe('tagsFromProbe', () => {
   })
 })
 
-describe('foreignTagsFromProbe', () => {
-  it('devuelve los tags no gestionados y omite los gestionados y el encoder', () => {
-    const data = {
-      format: {
-        tags: {
-          TITLE: 'Original',
-          ARTIST: 'Artista',
-          SERATO_MARKERS_V2: 'YXBwbGlj',
-          TRAKTOR4: 'dlVHblob',
-          MUSICBRAINZ_TRACKID: '7c2136cc',
-          encoder: 'Lavf60.16.100',
-        },
-      },
-    }
-    const foreign = foreignTagsFromProbe(data)
-    const names = foreign.map((t) => t.name.toUpperCase())
-    expect(names).toContain('SERATO_MARKERS_V2')
-    expect(names).toContain('TRAKTOR4')
-    expect(names).toContain('MUSICBRAINZ_TRACKID')
-    expect(names).not.toContain('TITLE')
-    expect(names).not.toContain('ARTIST')
-    expect(names.map((n) => n.toLowerCase())).not.toContain('encoder')
+describe('foreignTagsFromFfmetadata', () => {
+  it('parsea las claves no gestionadas y omite header, comentarios, encoder y gestionados', () => {
+    const dump = [
+      ';FFMETADATA1',
+      'title=Original',
+      'artist=Artista',
+      'SERATO_MARKERS_V2=YXBwbGlj',
+      'TRAKTOR4=dlVHblob',
+      '#un comentario',
+      'MUSICBRAINZ_TRACKID=7c2136cc',
+      'encoder=Lavf60.16.100',
+    ].join('\n')
+    const foreign = foreignTagsFromFfmetadata(dump)
+    const names = foreign.map((t) => t.name)
+    expect(names).toEqual(['SERATO_MARKERS_V2', 'TRAKTOR4', 'MUSICBRAINZ_TRACKID'])
+    expect(foreign[0].value).toBe('YXBwbGlj')
   })
 
-  it('omite la descripción de la carátula del stream de vídeo', () => {
-    const data = {
-      format: { tags: { SERATO_ANALYSIS: 'x' } },
-      streams: [{ codec_type: 'video', tags: { comment: 'Cover (front)' } }],
-    }
-    const foreign = foreignTagsFromProbe(data)
-    expect(foreign.map((t) => t.name)).toEqual(['SERATO_ANALYSIS'])
+  it('deshace el escape ffmetadata de los caracteres reservados en el valor', () => {
+    const foreign = foreignTagsFromFfmetadata('FOREIGN_NOTE=a\\=b\\;c')
+    expect(foreign).toEqual([{ name: 'FOREIGN_NOTE', value: 'a=b;c' }])
+  })
+
+  it('une un valor que continúa en la línea siguiente con backslash', () => {
+    const foreign = foreignTagsFromFfmetadata('FOREIGN_MULTI=línea uno\\\nlínea dos')
+    expect(foreign).toEqual([{ name: 'FOREIGN_MULTI', value: 'línea uno\nlínea dos' }])
   })
 })
 
@@ -1549,5 +1550,38 @@ describe('readMeta', () => {
 
     expect(result).toHaveProperty('foreignTags')
     expect(result.foreignTags).toEqual([])
+  })
+
+  // WAV stores foreign tags in an ID3 "id3 " chunk as TXXX frames. The bundled
+  // ffprobe (4.4.1) does not surface those frames, so a WAV's foreign tags were
+  // invisible to the inspector even though the file carried them — readMeta must
+  // read them through ffmpeg's -f ffmetadata, which does expose them.
+  it('reads a WAV file\'s foreign TXXX tags (invisible to the bundled ffprobe)', async () => {
+    const wav = join(testDir, 'foreign.wav')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=0.5',
+      '-c:a',
+      'pcm_s16le',
+      wav,
+    ])
+    const f = TagFile.createFromPath(wav)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      id3.version = 3
+      const txxx = Id3v2UserTextInformationFrame.fromDescription('SERATO_MARKERS_V2')
+      txxx.text = ['YXBwbGlj']
+      id3.addFrame(txxx)
+      f.save()
+    } finally {
+      f.dispose()
+    }
+
+    const result = await readMeta(wav)
+
+    expect(result.foreignTags.some((t) => t.name === 'SERATO_MARKERS_V2')).toBe(true)
   })
 })
