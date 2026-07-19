@@ -1,8 +1,8 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import {
-  constants as fsConstants,
   copyFile,
+  constants as fsConstants,
   readFile,
   rename,
   stat,
@@ -11,7 +11,9 @@ import {
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
+import { declickFilter } from '../shared/declick'
 import { formatRatingTag } from '../shared/rating'
+import { trimFilter } from '../shared/trim'
 import type {
   BpmResult,
   ConversionQuality,
@@ -21,10 +23,10 @@ import type {
   KeyResult,
   LoudnessResult,
   MetaRead,
+  Mp3Quality,
   NormalizeConfig,
   OutputFormat,
   TrackMetadata,
-  Mp3Quality,
   TrackProperties,
   TrimRange,
   WaveformResult,
@@ -32,9 +34,6 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
 import { ffmpegPath, ffprobePath } from './binaries'
-import { declickFilter } from '../shared/declick'
-import { trimFilter } from '../shared/trim'
-import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -47,6 +46,7 @@ import {
   UPSAMPLE_PROBE_ABOVE_HZ,
   UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
+import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import {
   detectFftKnee,
   detectFlatShelf,
@@ -54,8 +54,8 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import {
-  limitedLoudnormFilter,
   astatsArgs,
+  limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
   parseAstatsChannels,
@@ -201,28 +201,60 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   return meta
 }
 
-// Como tagsFromProbe, pero al revés: recoge las claves que la app NO gestiona. Recorre las
-// mismas fuentes (format.tags + los stream.tags no-vídeo, saltando la descripción de la
-// carátula que vive en el stream de vídeo), y devuelve cada par cuyo nombre en minúsculas
-// no está en MANAGED_ALIASES. El `encoder` que ffmpeg estampa se descarta: no es metadato
-// del usuario. La primera aparición de un nombre gana, para no duplicar un tag que aparezca
-// en varias fuentes.
-export function foreignTagsFromProbe(data: ProbeTags): ForeignTag[] {
-  const sources: Record<string, unknown>[] = [
-    data.format?.tags,
-    ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
-  ].filter((t): t is Record<string, unknown> => Boolean(t))
+// Parses an `ffmpeg -f ffmetadata` dump into the foreign (unmanaged) tags: every KEY=VALUE
+// pair whose name (lowercased) isn't in MANAGED_ALIASES, minus the encoder stamp. The bundled
+// ffprobe (4.4.1) doesn't surface a WAV's ID3 TXXX frames, so reading foreign tags from the
+// probe JSON missed them; the bundled ffmpeg does expose them, so readMeta reads them this
+// way for every format (one code path, no per-container branch).
+//
+// ffmetadata format: `KEY=VALUE` per line; lines starting with `;` or `#` are comments; a
+// value continues onto the next line when it ends with a backslash, and `=`, `;`, `#`, `\`
+// and newlines inside a value are backslash-escaped. Only the FFMETADATA1 header line and
+// the encoder stamp are dropped beyond the managed-alias filter.
+export function foreignTagsFromFfmetadata(text: string): ForeignTag[] {
   const seen = new Set<string>()
   const foreign: ForeignTag[] = []
-  for (const tags of sources) {
-    for (const [key, value] of Object.entries(tags)) {
-      const lower = key.toLowerCase()
-      if (lower === 'encoder' || MANAGED_ALIASES.has(lower) || seen.has(lower)) continue
-      seen.add(lower)
-      foreign.push({ name: key, value: String(value ?? '') })
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.startsWith(';') || line.startsWith('#') || line.startsWith('FFMETADATA')) continue
+    const eq = line.indexOf('=')
+    if (eq < 0) continue
+    const name = unescapeFfmetadata(line.slice(0, eq))
+    let rawValue = line.slice(eq + 1)
+    // A trailing unescaped backslash continues the value onto the next line.
+    while (rawValue.endsWith('\\') && !rawValue.endsWith('\\\\') && i + 1 < lines.length) {
+      rawValue = `${rawValue.slice(0, -1)}\n${lines[++i]}`
     }
+    const lower = name.toLowerCase()
+    if (lower === 'encoder' || MANAGED_ALIASES.has(lower) || seen.has(lower)) continue
+    seen.add(lower)
+    foreign.push({ name, value: unescapeFfmetadata(rawValue) })
   }
   return foreign
+}
+
+// Undoes ffmetadata's backslash-escaping of the reserved characters, so a value or key
+// reads back exactly as it was written.
+function unescapeFfmetadata(text: string): string {
+  return text.replace(/\\([=;#\\\n])/g, '$1')
+}
+
+// Reads the foreign tags through ffmpeg's ffmetadata muxer (see foreignTagsFromFfmetadata):
+// `-i input -f ffmetadata -` writes the tags to stdout without decoding the audio, so it's
+// as cheap as a probe. Best-effort — a failure yields no foreign tags rather than aborting
+// the import, matching readMeta's degraded-on-failure contract.
+export async function readForeignTags(input: string): Promise<ForeignTag[]> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      ['-v', 'error', '-i', input, '-f', 'ffmetadata', '-'],
+      { timeout: ANALYSIS_TIMEOUT_MS },
+    )
+    return foreignTagsFromFfmetadata(String(stdout))
+  } catch {
+    return []
+  }
 }
 
 // The container's total duration in seconds, for the track row's time readout.
@@ -399,7 +431,10 @@ export async function readMeta(input: string): Promise<MetaRead> {
       tags: tagsFromProbe(data),
       duration: Number.isFinite(seconds) ? seconds : null,
       cover: await extractCover(input, dims),
-      foreignTags: foreignTagsFromProbe(data),
+      // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a
+      // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
+      // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
+      foreignTags: await readForeignTags(input),
     }
   } catch {
     // A probe failure leaves an editable row with no tags/duration/cover — the same
