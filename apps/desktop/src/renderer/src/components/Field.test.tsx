@@ -151,3 +151,20 @@ describe('Field suggestion loading chip', () => {
     expect(screen.queryByTestId('suggestion-loading-title')).toBeNull()
   })
 })
+
+describe('Field suggestion chips layout', () => {
+  it('renderiza las sugerencias en una fila con scroll, sin wrap', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value=""
+        onChange={() => {}}
+        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
+      />,
+    )
+    const container = screen.getByTestId('field-suggestions')
+    expect(container.className).toContain('overflow-x-auto')
+    expect(container.className).not.toContain('flex-wrap')
+  })
+})

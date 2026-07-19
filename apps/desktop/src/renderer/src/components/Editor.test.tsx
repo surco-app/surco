@@ -1347,6 +1347,12 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
   })
 
+  it('muestra las etiquetas de los grupos de acciones en el header', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    expect(screen.getByTestId('actions-file-label')).toBeInTheDocument()
+    expect(screen.getByTestId('actions-tags-label')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))
@@ -2310,21 +2316,22 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: owned,
     })
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Already in your Apple Music library',
+      'In library',
     )
   })
 
-  // With Engine DJ as the destination the same badge reads the Engine library — and
-  // names it, so the user never wonders which library "already in" refers to. Not
-  // macOS-gated: the Engine database is plain SQLite on every platform.
-  it('names Engine DJ when it is the destination library', () => {
+  // With Engine DJ as the destination the same badge reads the Engine library. Its text is
+  // the short "In library" (which library it means now rides the icon/tooltip, not the text),
+  // so the assertion checks the badge still shows for an Engine-owned track. Not macOS-gated:
+  // the Engine database is plain SQLite on every platform.
+  it('shows the library badge when Engine DJ is the destination library', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
       addToEngineDj: true,
       libraryIndex: owned,
     })
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Already in your Engine DJ library',
+      'In library',
     )
   })
 
@@ -2335,7 +2342,7 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: owned,
     })
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in your Apple Music library',
+      'Not in library',
     )
   })
 
@@ -2349,7 +2356,7 @@ describe('Editor Apple Music library badge', () => {
       { libraryIndex: null },
     )
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Already in your Apple Music library',
+      'In library',
     )
   })
 
@@ -2429,7 +2436,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     )
     // The file's own artist tag isn't in the library, so the badge starts negative.
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in your Apple Music library',
+      'Not in library',
     )
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
@@ -2439,7 +2446,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
     // even though the file tag never matched on its own.
     expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
-      'Already in your Apple Music library',
+      'In library',
     )
   })
 
@@ -2461,7 +2468,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in your Apple Music library',
+      'Not in library',
     )
   })
 
@@ -2530,7 +2537,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     await screen.findByTestId('discogs-result')
     await waitFor(() =>
       expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-        'Not in your Apple Music library',
+        'Not in library',
       ),
     )
   })

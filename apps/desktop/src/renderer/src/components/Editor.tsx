@@ -845,14 +845,9 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             right={
-              <div className="flex items-center gap-3">
-                {/* Badge first, button last: the badge appears once the snapshot resolves
-                    a verdict, so keeping the button at the row's end stops it shifting when
-                    the badge mounts. */}
-                {/* Library membership is a STATUS FACT, not a verdict, so it wears the
-                    neutral pill — the disc icon says what it's about, the text says
-                    which way, and no colour shouts. Coloured green/amber it competed
-                    with the quality section's real go/no-go verdict two rows down. */}
+              <div className="flex flex-col items-end gap-2">
+                {/* Row 1 — status: the library badge (state, not an action), which stays
+                    visible while the section is folded. Same yes/no/checking logic as before. */}
                 {!isMulti && inLibrary === 'yes' && (
                   <SectionPill
                     tone="neutral"
@@ -877,9 +872,6 @@ export const Editor = memo(function Editor({
                     )}
                   </SectionPill>
                 )}
-                {/* The in-between state: Discogs is still searching, so its match could yet
-                    prove the track owned — show "Checking…" rather than flashing not-in-library
-                    and then correcting it a second later. */}
                 {!isMulti && inLibrary === 'checking' && (
                   <SectionPill
                     tone="neutral"
@@ -889,26 +881,40 @@ export const Editor = memo(function Editor({
                     {tr('editor.checkingLibrary')}
                   </SectionPill>
                 )}
-                {/* Two pairs, one divider: copy/search act on the file NAME (read-only,
-                    hunt a better rip elsewhere); eraser/tag act on the metadata FIELDS.
-                    Each pair packs tighter (gap-1.5) than the row (gap-3) so the
-                    grouping reads at a glance. All of them act on the fields below,
-                    so they fold with the section — only the library badge (state,
-                    not action) stays on a folded header. */}
-                {formOpen && !isMulti && (
-                  <div className="flex items-center gap-1.5">
-                    {copyFilenameButton}
-                    {searchWebButton}
-                  </div>
-                )}
-                {formOpen && !isMulti && (
-                  <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
-                )}
+                {/* Row 2 — actions: two labelled groups. "File" acts on the file name
+                    (copy/search), "Tags" on the metadata (clear/fill). Only while the
+                    section is open; the file group only in single-select (as before). */}
                 {formOpen && (
-                  <div className="flex items-center gap-1.5">
-                    {clearButton}
-                    {deriveButton}
-                    {titleFormatButton}
+                  <div className="flex items-center gap-3">
+                    {!isMulti && (
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          data-testid="actions-file-label"
+                          className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
+                        >
+                          {tr('editor.actionsFile')}
+                        </span>
+                        {copyFilenameButton}
+                        {searchWebButton}
+                      </div>
+                    )}
+                    {!isMulti && (
+                      <div
+                        aria-hidden="true"
+                        className="h-5 w-px self-center bg-[var(--color-line)]"
+                      />
+                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        data-testid="actions-tags-label"
+                        className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
+                      >
+                        {tr('editor.actionsTags')}
+                      </span>
+                      {clearButton}
+                      {deriveButton}
+                      {titleFormatButton}
+                    </div>
                   </div>
                 )}
               </div>
