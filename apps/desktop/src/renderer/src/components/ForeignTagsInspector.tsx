@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ForeignTag } from '../../../shared/types'
@@ -8,7 +8,9 @@ import { SectionHeader } from './SectionHeader'
 interface ForeignTagsInspectorProps {
   foreignTags: ForeignTag[]
   foreignRemoved: string[]
-  onRemove: (name: string) => void
+  // Flips a tag's "marked for deletion" state: the button marks a live tag and un-marks a
+  // struck-through one, so a mis-click is reversible in place instead of only via ⌘Z.
+  onToggleRemove: (name: string) => void
   open: boolean
   onToggle: () => void
 }
@@ -20,7 +22,7 @@ interface ForeignTagsInspectorProps {
 export function ForeignTagsInspector({
   foreignTags,
   foreignRemoved,
-  onRemove,
+  onToggleRemove,
   open,
   onToggle,
 }: ForeignTagsInspectorProps): React.JSX.Element | null {
@@ -66,17 +68,27 @@ export function ForeignTagsInspector({
                 >
                   {tag.value}
                 </span>
-                {/* X appears on hover — always-on would put an X on every row and clutter the
-                    card. The row is a group so hover on any part reveals it; focus-visible
-                    keeps it reachable by keyboard. */}
+                {/* One toggle: an X marks a live tag for deletion, an undo arrow restores a
+                    struck-through one. A live tag's X only shows on hover so the card stays
+                    clean; a marked tag's restore button stays visible always, since that's
+                    the only way to undo the mark in place. focus-visible keeps both reachable
+                    by keyboard. */}
                 <button
                   type="button"
                   data-testid="foreign-tag-remove"
-                  aria-label={tr('editor.otherTagsRemove', { name: tag.name })}
-                  onClick={() => onRemove(tag.name)}
-                  className="press flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted opacity-0 transition-opacity hover:bg-[var(--color-panel-2)] hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
+                  aria-label={tr(removed ? 'editor.otherTagsRestore' : 'editor.otherTagsRemove', {
+                    name: tag.name,
+                  })}
+                  onClick={() => onToggleRemove(tag.name)}
+                  className={`press flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted transition-opacity hover:bg-[var(--color-panel-2)] hover:text-fg focus-visible:opacity-100 ${
+                    removed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
                 >
-                  <X className="h-3 w-3" aria-hidden="true" />
+                  {removed ? (
+                    <Undo2 className="h-3 w-3" aria-hidden="true" />
+                  ) : (
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  )}
                 </button>
               </li>
             )

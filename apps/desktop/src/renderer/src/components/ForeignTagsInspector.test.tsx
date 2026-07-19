@@ -13,7 +13,7 @@ describe('ForeignTagsInspector', () => {
       <ForeignTagsInspector
         foreignTags={[]}
         foreignRemoved={[]}
-        onRemove={vi.fn()}
+        onToggleRemove={vi.fn()}
         open={false}
         onToggle={vi.fn()}
       />,
@@ -29,7 +29,7 @@ describe('ForeignTagsInspector', () => {
           { name: 'TRAKTOR4', value: 'y' },
         ]}
         foreignRemoved={[]}
-        onRemove={vi.fn()}
+        onToggleRemove={vi.fn()}
         open={false}
         onToggle={vi.fn()}
       />,
@@ -43,7 +43,7 @@ describe('ForeignTagsInspector', () => {
       <ForeignTagsInspector
         foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
         foreignRemoved={[]}
-        onRemove={vi.fn()}
+        onToggleRemove={vi.fn()}
         open={false}
         onToggle={onToggle}
       />,
@@ -52,28 +52,28 @@ describe('ForeignTagsInspector', () => {
     expect(onToggle).toHaveBeenCalled()
   })
 
-  it('lista los foráneos cuando open y permite borrar uno', () => {
-    const onRemove = vi.fn()
+  it('lista los foráneos cuando open y pide marcar uno al pulsar su botón', () => {
+    const onToggleRemove = vi.fn()
     render(
       <ForeignTagsInspector
         foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
         foreignRemoved={[]}
-        onRemove={onRemove}
+        onToggleRemove={onToggleRemove}
         open={true}
         onToggle={vi.fn()}
       />,
     )
     expect(screen.getByTestId('foreign-tags-list')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('foreign-tag-remove'))
-    expect(onRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
+    expect(onToggleRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
   })
 
-  it('da al botón de borrar un nombre accesible con acción y tag', () => {
+  it('un tag sin marcar tiene el botón "borrar"', () => {
     render(
       <ForeignTagsInspector
         foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
         foreignRemoved={[]}
-        onRemove={vi.fn()}
+        onToggleRemove={vi.fn()}
         open={true}
         onToggle={vi.fn()}
       />,
@@ -83,12 +83,29 @@ describe('ForeignTagsInspector', () => {
     )
   })
 
+  it('un tag ya marcado tiene el botón "restaurar" y al pulsarlo pide desmarcar', () => {
+    const onToggleRemove = vi.fn()
+    render(
+      <ForeignTagsInspector
+        foreignTags={[{ name: 'TRAKTOR4', value: 'y' }]}
+        foreignRemoved={['TRAKTOR4']}
+        onToggleRemove={onToggleRemove}
+        open={true}
+        onToggle={vi.fn()}
+      />,
+    )
+    // The button flips to "restore" so the user can tell it now reverts, not re-deletes.
+    expect(screen.getByTestId('foreign-tag-remove')).toHaveAccessibleName('Restore TRAKTOR4')
+    fireEvent.click(screen.getByTestId('foreign-tag-remove'))
+    expect(onToggleRemove).toHaveBeenCalledWith('TRAKTOR4')
+  })
+
   it('muestra tachado un tag ya en foreignRemoved', () => {
     render(
       <ForeignTagsInspector
         foreignTags={[{ name: 'TRAKTOR4', value: 'y' }]}
         foreignRemoved={['TRAKTOR4']}
-        onRemove={vi.fn()}
+        onToggleRemove={vi.fn()}
         open={true}
         onToggle={vi.fn()}
       />,

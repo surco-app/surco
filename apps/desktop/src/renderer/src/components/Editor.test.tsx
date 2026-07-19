@@ -1381,6 +1381,51 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
   })
 
+  // Clicking a live tag's button marks it for deletion.
+  it('marks a foreign tag for removal on click', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }], foreignRemoved: [] },
+      'wav',
+      {
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'otherTags', open: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    fireEvent.click(screen.getByTestId('foreign-tag-remove'))
+    expect(onChange).toHaveBeenCalledWith({ foreignRemoved: ['SERATO_MARKERS_V2'] })
+  })
+
+  // The bug this fixes: clicking an already-marked tag un-marks it (removes it from
+  // foreignRemoved) instead of doing nothing, so a mis-click is reversible in place.
+  it('un-marks a foreign tag already marked for removal', () => {
+    const { onChange } = renderEditor(
+      {
+        id: 'a',
+        foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }],
+        foreignRemoved: ['SERATO_MARKERS_V2'],
+      },
+      'wav',
+      {
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'otherTags', open: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    fireEvent.click(screen.getByTestId('foreign-tag-remove'))
+    expect(onChange).toHaveBeenCalledWith({ foreignRemoved: [] })
+  })
+
   // The header's icon actions (copy name, search web, clear, derive) all act on the
   // fields below — folded, there is nothing on screen they refer to, so they fold
   // with the section instead of floating next to the summary.
