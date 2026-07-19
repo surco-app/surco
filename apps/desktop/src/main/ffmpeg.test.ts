@@ -274,6 +274,36 @@ describe('convertArgs', () => {
     expect(args.slice(i, i + 4)).toEqual(['-c:a', 'libmp3lame', '-b:a', '320k'])
     expect(convertArgs('/in.mp3', '/o.mp3', { codec: 'copy' }, meta)).not.toContain('-b:a')
   })
+
+  it('vacía cada tag foráneo pedido con -metadata NOMBRE=', () => {
+    const args = convertArgs(
+      '/in.flac',
+      '/o.flac',
+      { codec: 'flac' },
+      meta,
+      undefined,
+      undefined,
+      false,
+      ['SERATO_MARKERS_V2', 'TRAKTOR4'],
+    )
+    const joined = args.join(' ')
+    expect(joined).toContain('-metadata SERATO_MARKERS_V2=')
+    expect(joined).toContain('-metadata TRAKTOR4=')
+  })
+
+  it('no añade clears de foráneos cuando la lista está vacía', () => {
+    const args = convertArgs(
+      '/in.flac',
+      '/o.flac',
+      { codec: 'flac' },
+      meta,
+      undefined,
+      undefined,
+      false,
+      [],
+    )
+    expect(args.join(' ')).not.toContain('SERATO_MARKERS_V2')
+  })
 })
 
 describe('convertArgs for an M4A target', () => {

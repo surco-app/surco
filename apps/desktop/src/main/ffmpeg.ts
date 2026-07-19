@@ -626,6 +626,7 @@ export function convertArgs(
   coverPath?: string,
   audioFilter?: string,
   clearExtras?: boolean,
+  foreignRemoved?: string[],
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -676,6 +677,12 @@ export function convertArgs(
     const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
     args.push('-metadata', `RATING=${value}`)
   }
+  // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
+  // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
+  // explícita sobre tags concretos, independiente del "borrar todo" (-map_metadata -1, que
+  // ya se los lleva por delante cuando está activo, así que estos clears son redundantes
+  // pero inofensivos en ese caso).
+  for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   args.push(output)
   return args
 }
