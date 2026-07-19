@@ -948,7 +948,10 @@ export const Editor = memo(function Editor({
               />
             </div>
           </SectionBody>
-          {!isMulti && (
+          {/* Part of the form body, so it hides when the section folds — it renders after
+              SectionBody (not inside it) only because it sits below the field grid, not
+              because it should survive a fold. */}
+          {formOpen && !isMulti && (
             <ForeignTagsInspector
               foreignTags={item.foreignTags ?? []}
               foreignRemoved={item.foreignRemoved ?? []}
