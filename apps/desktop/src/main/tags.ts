@@ -293,12 +293,11 @@ export function writeTags(
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
     // "Empty every metadata field" must reach frames the app never wrote — a foreign
     // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
-    // read as junk the user couldn't clear. On clearExtras, drop every frame up front so
-    // only the managed fields the writes below repopulate remain; the Traktor cue frames
-    // (GEOB, PRIV "TRAKTOR4") are the beatgrid, not metadata, so they stay — a cueSource
-    // merge below still re-injects them for a carry-over conversion.
-    if (clearExtras)
-      for (const frame of id3.frames.filter((fr) => !isTraktorCue(fr))) id3.removeFrame(frame)
+    // read as junk the user couldn't clear. On clearExtras, drop every frame up front,
+    // including the Traktor cue frames (GEOB, PRIV "TRAKTOR4") — "clear everything" means
+    // the beatgrid too; a cueSource merge below still re-injects them for a carry-over
+    // conversion. Iterate a copy since removeFrame mutates id3.frames as it goes.
+    if (clearExtras) for (const frame of id3.frames.slice()) id3.removeFrame(frame)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
     // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
     // matches the name outright. Applies always, not just on clearExtras.

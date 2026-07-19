@@ -332,9 +332,9 @@ describe('writeTags', () => {
   })
 
   // "Clear metadata" means clear everything the app manages, not just the text fields:
-  // the rating (which convert deliberately preserves) and the embedded cover must go
-  // too. Traktor's cue blob is not a managed field, so it must still survive.
-  it('wipes the rating and cover but keeps the cue frame when clearExtras is set', () => {
+  // the rating (which convert deliberately preserves), the embedded cover, and even
+  // Traktor's cue blob — "clear everything" means everything, cues included.
+  it('wipes the rating, cover and cue frame when clearExtras is set', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
     const cover = buildCover(dir)
@@ -352,13 +352,13 @@ describe('writeTags', () => {
     expect(apic).toHaveLength(0)
     f.dispose()
     const bytes = readFileSync(file)
-    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(false)
   })
 
   // "Empty every metadata field" must reach frames the app never wrote — a foreign
   // TXXX like "NOTES" (left by Medieval CUE Splitter) survived the managed-field
   // overwrite and read as junk users couldn't clear. clearExtras now strips every
-  // frame that isn't a Traktor cue, so the file is truly empty but the beatgrid stays.
+  // frame, cues included, so the file is truly empty.
   it('strips a foreign frame the app never wrote when clearExtras is set', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
@@ -372,7 +372,7 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     expect(userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')).toBeUndefined()
     f.dispose()
-    expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(true)
+    expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(false)
   })
 
   // A foreign frame is not metadata the user asked to change on a normal convert, so a

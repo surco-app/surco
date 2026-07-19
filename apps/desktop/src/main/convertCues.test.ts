@@ -129,9 +129,9 @@ describe('convertAudio cue preservation', () => {
   })
 
   // "Clear metadata" then convert: clearExtras forces the empty rating to wipe the
-  // POPM the source carried, so a cleared file keeps none of the fields the app
-  // manages — while the Traktor cue blob, which is not a managed field, survives.
-  it('wipes the rating on a cleared convert but still keeps the cue frame', async () => {
+  // POPM the source carried, and now the Traktor cue blob too — "clear everything"
+  // means everything, cues included.
+  it('wipes the rating and the cue frame on a cleared convert', async () => {
     // A fresh cued source in its own dir: TagLib holds files open across a shared
     // temp dir, so this test mints its own to stay independent of the others.
     const own = mkdtempSync(join(tmpdir(), 'surco-clear-'))
@@ -163,7 +163,7 @@ describe('convertAudio cue preservation', () => {
       true, // clearExtras
     )
 
-    expect(hasCue(out)).toBe(true)
+    expect(hasCue(out)).toBe(false)
     expect(hasPopm(out)).toBe(false)
   })
 })
