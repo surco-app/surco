@@ -399,11 +399,12 @@ export async function readMeta(input: string): Promise<MetaRead> {
       tags: tagsFromProbe(data),
       duration: Number.isFinite(seconds) ? seconds : null,
       cover: await extractCover(input, dims),
+      foreignTags: foreignTagsFromProbe(data),
     }
   } catch {
     // A probe failure leaves an editable row with no tags/duration/cover — the same
     // degraded state the three granular reads reached when each failed on its own.
-    return { tags: {} as TrackMetadata, duration: null, cover: null }
+    return { tags: {} as TrackMetadata, duration: null, cover: null, foreignTags: [] }
   }
 }
 

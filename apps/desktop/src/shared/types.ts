@@ -408,6 +408,7 @@ export interface MetaRead {
   tags: TrackMetadata
   duration: number | null
   cover: CoverRead | null
+  foreignTags: ForeignTag[]
 }
 
 export interface ProcessJob {

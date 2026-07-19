@@ -1,4 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
@@ -18,6 +23,7 @@ import {
   planConversion,
   previewWavArgs,
   propertiesFromProbe,
+  readMeta,
   stripPictureArgs,
   tagsFromProbe,
 } from './ffmpeg'
@@ -1453,5 +1459,65 @@ describe('buildSpectrum', () => {
         }),
       ),
     ).rejects.toBe(boom)
+  })
+})
+
+describe('readMeta', () => {
+  const FF = ffmpegStatic as unknown as string
+  const testDir = mkdtempSync(join(tmpdir(), 'surco-readmeta-'))
+  let flacWithForeignTag: string
+  let cleanFlac: string
+
+  beforeAll(() => {
+    flacWithForeignTag = join(testDir, 'foreign.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=0.5',
+      '-metadata',
+      'title=Test Track',
+      '-metadata',
+      'artist=Test Artist',
+      '-metadata',
+      'SERATO_MARKERS_V2=YXBwbGlj',
+      flacWithForeignTag,
+    ])
+
+    cleanFlac = join(testDir, 'clean.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=0.5',
+      '-metadata',
+      'title=Clean Track',
+      cleanFlac,
+    ])
+  })
+
+  it('includes foreignTags in the result with foreign tags present', async () => {
+    const result = await readMeta(flacWithForeignTag)
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toBeInstanceOf(Array)
+    expect(result.foreignTags.some((t) => t.name === 'SERATO_MARKERS_V2')).toBe(true)
+  })
+
+  it('includes an empty foreignTags array when no foreign tags are present', async () => {
+    const result = await readMeta(cleanFlac)
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toBeInstanceOf(Array)
+    expect(result.foreignTags.length).toBe(0)
+  })
+
+  it('includes an empty foreignTags array on read failure', async () => {
+    const result = await readMeta('/nonexistent/path/to/file.flac')
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toEqual([])
   })
 })
