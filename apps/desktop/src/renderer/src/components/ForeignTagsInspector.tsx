@@ -27,7 +27,7 @@ export function ForeignTagsInspector({
         type="button"
         data-testid="foreign-tags-toggle"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-[var(--color-panel-2)]"
+        className="flex w-full items-center gap-2 py-1.5 text-left hover:bg-[var(--color-panel-2)]"
       >
         <ChevronRight
           className={`h-3 w-3 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-90' : ''}`}
@@ -46,7 +46,7 @@ export function ForeignTagsInspector({
                 key={tag.name}
                 data-testid="foreign-tag-row"
                 data-removed={removed}
-                className="flex items-center gap-2 border-b border-[var(--color-line)] px-3 py-1 last:border-0"
+                className="flex items-center gap-2 border-b border-[var(--color-line)] py-1 last:border-0"
               >
                 <span
                   className={`min-w-0 flex-1 truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg'}`}
