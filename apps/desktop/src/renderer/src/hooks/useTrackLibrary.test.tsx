@@ -355,6 +355,38 @@ describe('useTrackLibrary foreign tags', () => {
     expect(ra.metaCleared).toBe(true)
     expect(rb.foreignRemoved).toEqual(['TRAKTOR4'])
   })
+
+  // A per-tag delete staged before a crash/reopen must come back on the restored row,
+  // exactly like metaCleared — otherwise the reopened session silently forgets which
+  // foreign tags the user had already marked for removal.
+  it('restores foreignRemoved from a saved session edit', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Restored' } as never, foreignRemoved: ['SERATO_MARKERS_V2'] },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
+  })
 })
 
 describe('useTrackLibrary meta read failures', () => {

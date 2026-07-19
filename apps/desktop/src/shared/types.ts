@@ -314,6 +314,8 @@ export interface SessionEdit {
   coverRemoved?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
+  // The per-tag inspector deletes, so a restored track still drops them on convert.
+  foreignRemoved?: string[]
   // The match flags ride along so the auto-match sweep doesn't re-probe a restored
   // track and overwrite the very metadata the restore just brought back.
   matched?: boolean
