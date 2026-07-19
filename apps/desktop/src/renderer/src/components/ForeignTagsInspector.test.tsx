@@ -9,7 +9,15 @@ afterEach(cleanup)
 
 describe('ForeignTagsInspector', () => {
   it('no se muestra cuando no hay tags foráneos', () => {
-    render(<ForeignTagsInspector foreignTags={[]} foreignRemoved={[]} onRemove={vi.fn()} />)
+    render(
+      <ForeignTagsInspector
+        foreignTags={[]}
+        foreignRemoved={[]}
+        onRemove={vi.fn()}
+        open={false}
+        onToggle={vi.fn()}
+      />,
+    )
     expect(screen.queryByTestId('foreign-tags-toggle')).toBeNull()
   })
 
@@ -22,21 +30,39 @@ describe('ForeignTagsInspector', () => {
         ]}
         foreignRemoved={[]}
         onRemove={vi.fn()}
+        open={false}
+        onToggle={vi.fn()}
       />,
     )
     expect(screen.getByTestId('foreign-tags-summary')).toHaveTextContent('2')
   })
 
-  it('lista los foráneos al abrir el toggle y permite borrar uno', () => {
+  it('llama onToggle al pulsar la cabecera', () => {
+    const onToggle = vi.fn()
+    render(
+      <ForeignTagsInspector
+        foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
+        foreignRemoved={[]}
+        onRemove={vi.fn()}
+        open={false}
+        onToggle={onToggle}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
+    expect(onToggle).toHaveBeenCalled()
+  })
+
+  it('lista los foráneos cuando open y permite borrar uno', () => {
     const onRemove = vi.fn()
     render(
       <ForeignTagsInspector
         foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
         foreignRemoved={[]}
         onRemove={onRemove}
+        open={true}
+        onToggle={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
     expect(screen.getByTestId('foreign-tags-list')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('foreign-tag-remove'))
     expect(onRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
@@ -48,11 +74,10 @@ describe('ForeignTagsInspector', () => {
         foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
         foreignRemoved={[]}
         onRemove={vi.fn()}
+        open={true}
+        onToggle={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
-    // Not just the tag name: a screen reader must hear the action, or "SERATO_MARKERS_V2,
-    // button" reads as a label, not a delete control.
     expect(screen.getByTestId('foreign-tag-remove')).toHaveAccessibleName(
       'Remove SERATO_MARKERS_V2',
     )
@@ -64,9 +89,10 @@ describe('ForeignTagsInspector', () => {
         foreignTags={[{ name: 'TRAKTOR4', value: 'y' }]}
         foreignRemoved={['TRAKTOR4']}
         onRemove={vi.fn()}
+        open={true}
+        onToggle={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
     expect(screen.getByTestId('foreign-tag-row')).toHaveAttribute('data-removed', 'true')
   })
 })

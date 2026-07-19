@@ -757,6 +757,7 @@
       "title": "Editor-Bereiche",
       "hint": "Wähle, welche Bereiche geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",
       "form": "Metadaten",
+      "otherTags": "Weitere Metadaten",
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "output": "Dateiname",

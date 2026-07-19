@@ -1325,35 +1325,16 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
   })
 
-  // "Other metadata" is part of the form body, so it folds with the section: a folded
-  // METADATA header must not leave the inspector dangling below an otherwise-collapsed
-  // section (which reads as a stray, orphaned control).
-  it('hides the other-metadata inspector while the form is folded', () => {
-    renderEditor(
-      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
-      'wav',
-      {
-        editorSections: [
-          { id: 'form', open: false },
-          { id: 'properties', open: false },
-          { id: 'quality', open: false },
-          { id: 'normalize', open: false },
-          { id: 'output', open: false },
-        ],
-      },
-    )
-    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
-  })
-
-  // The complement: with the form open, the inspector is present for a track that
-  // carries foreign tags — folding is what hides it, not an unconditional removal.
-  it('shows the other-metadata inspector while the form is open', () => {
+  // Other Metadata is now a section of its own — it shows for a single track that carries
+  // foreign tags, independent of the metadata form's own fold state.
+  it('renders Other Metadata as a section when the track has foreign tags', () => {
     renderEditor(
       { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
       'wav',
       {
         editorSections: [
           { id: 'form', open: true },
+          { id: 'otherTags', open: false },
           { id: 'properties', open: false },
           { id: 'quality', open: false },
           { id: 'normalize', open: false },
@@ -1362,6 +1343,42 @@ describe('Editor export control', () => {
       },
     )
     expect(screen.getByTestId('foreign-tags-toggle')).toBeInTheDocument()
+  })
+
+  // The inspector returns null with no foreign tags, so the section shows nothing rather
+  // than an empty header even when the section is enabled.
+  it('does not render Other Metadata when the track has no foreign tags', () => {
+    renderEditor({ id: 'a', foreignTags: [] }, 'wav', {
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'otherTags', open: false },
+        { id: 'properties', open: false },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
+  })
+
+  // Hiding the section in Settings removes it from the editor even for a track that has
+  // foreign tags — the eye toggle is how a DJ drops a section they never use.
+  it('does not render Other Metadata when the section is hidden', () => {
+    renderEditor(
+      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
+      'wav',
+      {
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'otherTags', open: false, hidden: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
   })
 
   // The header's icon actions (copy name, search web, clear, derive) all act on the

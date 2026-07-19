@@ -757,6 +757,7 @@
       "title": "Secciones del editor",
       "hint": "Elige qué secciones empiezan abiertas y su orden debajo del formulario de metadatos.",
       "form": "Metadatos",
+      "otherTags": "Otros metadatos",
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "output": "Nombre del archivo",

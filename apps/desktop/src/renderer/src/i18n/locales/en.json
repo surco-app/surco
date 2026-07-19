@@ -757,6 +757,7 @@
       "title": "Editor sections",
       "hint": "Choose which sections start open and their order below the metadata form.",
       "form": "Metadata",
+      "otherTags": "Other metadata",
       "properties": "Properties",
       "quality": "Audio quality",
       "output": "File name",

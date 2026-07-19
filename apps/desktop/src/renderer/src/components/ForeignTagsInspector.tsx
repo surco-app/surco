@@ -1,6 +1,5 @@
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ForeignTag } from '../../../shared/types'
 import { SectionBody } from './SectionBody'
@@ -10,19 +9,22 @@ interface ForeignTagsInspectorProps {
   foreignTags: ForeignTag[]
   foreignRemoved: string[]
   onRemove: (name: string) => void
+  open: boolean
+  onToggle: () => void
 }
 
 // Renders nowhere when there's nothing foreign to show — most files carry no third-party
 // tags, so this stays out of the way until it does. Adopts the Properties section's look
-// (spacing, header, carded rows) so the two read as one system; kept fixed under the
-// metadata form (folds with it) rather than being a configurable section of its own.
+// (spacing, header, carded rows) and is a real editor section: its fold state rides the
+// section store (open/onToggle from the caller), so Settings → Editor can hide or reorder it.
 export function ForeignTagsInspector({
   foreignTags,
   foreignRemoved,
   onRemove,
+  open,
+  onToggle,
 }: ForeignTagsInspectorProps): React.JSX.Element | null {
   const { t: tr } = useTranslation()
-  const [open, setOpen] = useState(false)
   if (foreignTags.length === 0) return null
 
   return (
@@ -33,7 +35,7 @@ export function ForeignTagsInspector({
       <SectionHeader
         title={tr('editor.otherTagsTitle')}
         open={open}
-        onToggle={() => setOpen((v) => !v)}
+        onToggle={onToggle}
         summary={tr('editor.otherTagsSummary', { count: foreignTags.length })}
         summaryTestId="foreign-tags-summary"
       />
