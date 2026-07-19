@@ -481,7 +481,6 @@
     "rating": "Rating",
     "mood": "Mood",
     "energy": "Energy",
-    "suggestionsLabel": "Suggestions",
     "suggestionsMore": "Show {{count}} more"
   },
   "declick": {

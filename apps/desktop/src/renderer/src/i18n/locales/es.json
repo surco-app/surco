@@ -481,7 +481,6 @@
     "rating": "Puntuación",
     "mood": "Estado de ánimo",
     "energy": "Energía",
-    "suggestionsLabel": "Sugerencias",
     "suggestionsMore": "Mostrar {{count}} más"
   },
   "declick": {

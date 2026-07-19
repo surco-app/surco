@@ -192,12 +192,6 @@ export const Field = memo(function Field({
           data-testid="field-suggestions"
           className="mt-1.5 flex flex-wrap items-center gap-1.5"
         >
-          {/* A quiet "Suggestions" label anchors the chips to their field, so they read as
-              this field's suggestions rather than a stray row. The chips wrap onto new lines
-              (never a horizontal scroll rail), growing the field down instead. */}
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint">
-            {tr('fields.suggestionsLabel')}
-          </span>
           {/* Show the first SUGGESTION_PREVIEW chips; the rest hide behind a "+N" chip until
               the user expands the list. Once expanded it stays open for this field's mount. */}
           {(chipsExpanded ? suggestions : suggestions.slice(0, SUGGESTION_PREVIEW)).map((s) => {
