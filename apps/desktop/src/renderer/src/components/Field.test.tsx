@@ -153,7 +153,7 @@ describe('Field suggestion loading chip', () => {
 })
 
 describe('Field suggestion chips layout', () => {
-  it('renderiza las sugerencias en una fila con scroll, sin wrap', () => {
+  it('envuelve las sugerencias sin scroll horizontal', () => {
     render(
       <Field
         name="genre"
@@ -164,7 +164,7 @@ describe('Field suggestion chips layout', () => {
       />,
     )
     const container = screen.getByTestId('field-suggestions')
-    expect(container.className).toContain('overflow-x-auto')
-    expect(container.className).not.toContain('flex-wrap')
+    expect(container.className).toContain('flex-wrap')
+    expect(container.className).not.toContain('overflow-x-auto')
   })
 })

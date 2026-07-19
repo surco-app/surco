@@ -429,8 +429,6 @@
     "notInLibrary": "No en biblioteca",
     "notInLibraryEngine": "No en biblioteca",
     "checkingLibrary": "Comprobando…",
-    "actionsFile": "Archivo",
-    "actionsTags": "Etiquetas",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
@@ -482,7 +480,8 @@
     "compilation": "Recopilatorio",
     "rating": "Puntuación",
     "mood": "Estado de ánimo",
-    "energy": "Energía"
+    "energy": "Energía",
+    "suggestionsLabel": "Sugerencias"
   },
   "declick": {
     "title": "Reparación de clicks de vinilo",
